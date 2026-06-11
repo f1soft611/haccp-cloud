@@ -13,6 +13,8 @@ export type PlatformAdminDashboardKpis = {
   tenantsWithoutCcpDocs: number;
 };
 
+export type TenantActivationStatus = 'ACTIVE' | 'INACTIVE';
+
 export type TenantCodeIssuanceSummary = {
   totalIssued: number;
   issuedThisMonth: number;
@@ -21,7 +23,7 @@ export type TenantCodeIssuanceSummary = {
     tenantCode: string;
     companyName: string;
     issuedAt: string;
-    status: 'ACTIVE' | 'INACTIVE';
+    status: TenantActivationStatus;
   }>;
 };
 
@@ -36,7 +38,7 @@ export type PlatformAdminTenantList = {
     companyName: string;
     adminName: string;
     adminEmail: string;
-    status: 'ACTIVE' | 'INACTIVE';
+    status: TenantActivationStatus;
     createdAt: string;
   }>;
 };
@@ -73,12 +75,15 @@ export async function getPlatformAdminDashboardKpis(): Promise<PlatformAdminDash
   return data;
 }
 
-export async function listPlatformAdminTenantCodeIssuance(): Promise<TenantCodeIssuanceSummary> {
+export async function listPlatformAdminTenantCodeIssuanceSummary(): Promise<TenantCodeIssuanceSummary> {
   const { data } = await apiClient.get<TenantCodeIssuanceSummary>(
     '/platform-admin/dashboard/tenant-code-issuance',
   );
   return data;
 }
+
+export const listPlatformAdminTenantCodeIssuance =
+  listPlatformAdminTenantCodeIssuanceSummary;
 
 export async function listPlatformAdminTenants(): Promise<PlatformAdminTenantList> {
   const { data } = await apiClient.get<PlatformAdminTenantList>(

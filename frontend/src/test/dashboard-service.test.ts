@@ -3,9 +3,15 @@ import { apiClient } from '../services/apiClient';
 import {
   getDashboardMetrics,
   getPlatformAdminDashboardKpis,
+  listPlatformAdminTenantCodeIssuanceSummary,
   listPlatformAdminTenantCodeIssuance,
   listPlatformAdminTenants,
   listPlatformAdminCcpDocuments,
+  type DashboardMetrics,
+  type PlatformAdminDashboardKpis,
+  type PlatformAdminCcpDocuments,
+  type PlatformAdminTenantList,
+  type TenantCodeIssuanceSummary,
 } from '../services/dashboardService';
 
 vi.mock('../services/apiClient', () => ({
@@ -16,14 +22,13 @@ vi.mock('../services/apiClient', () => ({
 
 describe('dashboardService', () => {
   it('calls platform admin KPI endpoint', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      data: {
-        activeTenants: 12,
-        newTenantsLast7Days: 3,
-        ccpDocCompletionRate: 87,
-        tenantsWithoutCcpDocs: 2,
-      },
-    });
+    const kpiPayload: PlatformAdminDashboardKpis = {
+      activeTenants: 12,
+      newTenantsLast7Days: 3,
+      ccpDocCompletionRate: 87,
+      tenantsWithoutCcpDocs: 2,
+    };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: kpiPayload });
 
     const result = await getPlatformAdminDashboardKpis();
 
@@ -32,9 +37,12 @@ describe('dashboardService', () => {
   });
 
   it('keeps tenant dashboard metrics contract for backward compatibility', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      data: { totalDocuments: 10, draftTemplates: 2, updatedToday: 4 },
-    });
+    const metricsPayload: DashboardMetrics = {
+      totalDocuments: 10,
+      draftTemplates: 2,
+      updatedToday: 4,
+    };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: metricsPayload });
 
     const result = await getDashboardMetrics('TENANT-A');
 
@@ -45,14 +53,13 @@ describe('dashboardService', () => {
   });
 
   it('calls tenant code issuance endpoint', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      data: {
-        totalIssued: 100,
-        issuedThisMonth: 10,
-        issuedThisWeek: 3,
-        recentIssues: [],
-      },
-    });
+    const issuancePayload: TenantCodeIssuanceSummary = {
+      totalIssued: 100,
+      issuedThisMonth: 10,
+      issuedThisWeek: 3,
+      recentIssues: [],
+    };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: issuancePayload });
 
     await listPlatformAdminTenantCodeIssuance();
 
@@ -61,13 +68,29 @@ describe('dashboardService', () => {
     );
   });
 
+  it('supports the clearer tenant code issuance summary name', async () => {
+    const issuancePayload: TenantCodeIssuanceSummary = {
+      totalIssued: 101,
+      issuedThisMonth: 11,
+      issuedThisWeek: 4,
+      recentIssues: [],
+    };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: issuancePayload });
+
+    const result = await listPlatformAdminTenantCodeIssuanceSummary();
+
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/platform-admin/dashboard/tenant-code-issuance',
+    );
+    expect(result.totalIssued).toBe(101);
+  });
+
   it('calls tenant list endpoint', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      data: {
-        summary: { total: 20, active: 18, inactive: 2 },
-        items: [],
-      },
-    });
+    const tenantListPayload: PlatformAdminTenantList = {
+      summary: { total: 20, active: 18, inactive: 2 },
+      items: [],
+    };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: tenantListPayload });
 
     await listPlatformAdminTenants();
 
@@ -75,19 +98,50 @@ describe('dashboardService', () => {
   });
 
   it('calls ccp documents endpoint', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce({
-      data: {
-        overall: {
-          completionRate: 80,
-          completedTenants: 16,
-          totalTenants: 20,
-        },
-        items: [],
+    const ccpDocumentsPayload: PlatformAdminCcpDocuments = {
+      overall: {
+        completionRate: 80,
+        completedTenants: 16,
+        totalTenants: 20,
       },
-    });
+      items: [],
+    };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: ccpDocumentsPayload });
 
     await listPlatformAdminCcpDocuments();
 
     expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/dashboard/ccp-documents');
   });
+
+  it.each([
+    [
+      'KPI',
+      () => getPlatformAdminDashboardKpis(),
+      '/platform-admin/dashboard/kpis',
+    ],
+    [
+      'tenant code issuance summary',
+      () => listPlatformAdminTenantCodeIssuanceSummary(),
+      '/platform-admin/dashboard/tenant-code-issuance',
+    ],
+    [
+      'tenant list',
+      () => listPlatformAdminTenants(),
+      '/platform-admin/dashboard/tenants',
+    ],
+    [
+      'CCP documents',
+      () => listPlatformAdminCcpDocuments(),
+      '/platform-admin/dashboard/ccp-documents',
+    ],
+  ])(
+    'propagates API errors for platform admin %s requests',
+    async (_label, request, endpoint) => {
+      const expectedError = new Error('network failure');
+      vi.mocked(apiClient.get).mockRejectedValueOnce(expectedError);
+
+      await expect(request()).rejects.toBe(expectedError);
+      expect(apiClient.get).toHaveBeenCalledWith(endpoint);
+    },
+  );
 });
