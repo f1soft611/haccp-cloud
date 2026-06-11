@@ -41,4 +41,13 @@ export const appTheme = createTheme({
   shape: {
     borderRadius: 10,
   },
+  typography: {
+    fontFamily: [
+      'Pretendard',
+      'Apple SD Gothic Neo',
+      'Noto Sans KR',
+      'Segoe UI',
+      'sans-serif',
+    ].join(','),
+  },
 });
