@@ -131,10 +131,7 @@ export function DashboardPage() {
   const userId = useAuthStore((state) => state.userId || '-');
   const role = useAuthStore((state) => state.role);
   const dashboardConfig = getDashboardConfigByRole(role);
-
-  if (dashboardConfig.view === 'platformAdmin') {
-    return <PlatformAdminDashboard />;
-  }
+  const isPlatformAdminView = dashboardConfig.view === 'platformAdmin';
 
   const {
     data: metrics,
@@ -143,6 +140,7 @@ export function DashboardPage() {
   } = useQuery({
     queryKey: ['dashboard', tenantCode],
     queryFn: () => getDashboardMetrics(tenantCode),
+    enabled: !isPlatformAdminView,
   });
   const {
     data: documents = [],
@@ -151,6 +149,7 @@ export function DashboardPage() {
   } = useQuery({
     queryKey: ['documents', tenantCode],
     queryFn: () => listDocuments(tenantCode),
+    enabled: !isPlatformAdminView,
   });
 
   const totalDocuments = metrics?.totalDocuments ?? 0;
@@ -210,6 +209,10 @@ export function DashboardPage() {
 
     return result;
   }, [portalItems, portalSearch]);
+
+  if (isPlatformAdminView) {
+    return <PlatformAdminDashboard />;
+  }
 
   const isLoading = isMetricsLoading || isDocumentsLoading;
   const isError = isMetricsError || isDocumentsError;
