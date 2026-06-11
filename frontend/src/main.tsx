@@ -3,12 +3,16 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
 import { AppProviders } from './app/providers/AppProviders.tsx';
+import { shouldEnableMocking } from './app/runtime/mockMode.ts';
 
 async function enableMocking() {
-  const shouldEnableMocking =
-    import.meta.env.DEV || import.meta.env.VITE_ENABLE_MSW === 'true';
+  const enableMockApi = shouldEnableMocking({
+    isDev: import.meta.env.DEV,
+    explicitMockFlag: import.meta.env.VITE_ENABLE_MSW,
+    apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+  });
 
-  if (!shouldEnableMocking) {
+  if (!enableMockApi) {
     return;
   }
 

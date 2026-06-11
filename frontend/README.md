@@ -12,5 +12,6 @@ The app can run with mock APIs powered by MSW.
 
 - Local development: MSW is enabled by default.
 - Vercel preview/production: set `VITE_ENABLE_MSW=true` in Environment Variables, then redeploy.
+- Production fallback: if `VITE_API_BASE_URL` is not provided, MSW is enabled automatically so login and onboarding can still be tested before backend integration.
 
 With `VITE_ENABLE_MSW=true`, login and dashboard data are served from `src/mocks/handlers.ts` instead of a real backend.
