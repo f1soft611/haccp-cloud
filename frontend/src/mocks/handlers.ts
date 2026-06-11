@@ -10,6 +10,7 @@ import type { UserItem } from '../services/usersService';
 type TenantItem = {
   tenantCode: string;
   companyName: string;
+  businessRegistrationNumber: string;
   createdAt: string;
 };
 
@@ -32,11 +33,13 @@ let tenants: TenantItem[] = [
   {
     tenantCode: 'TENANT-A',
     companyName: '알파푸드',
+    businessRegistrationNumber: '123-45-67890',
     createdAt: '2026-06-10T09:00:00.000Z',
   },
   {
     tenantCode: 'TENANT-B',
     companyName: '베타HACCP',
+    businessRegistrationNumber: '234-56-78901',
     createdAt: '2026-06-10T09:30:00.000Z',
   },
 ];
@@ -409,7 +412,8 @@ export const handlers = [
       );
     }
 
-    const role = roleByUserId[payload.userId] ?? 'USER';
+    const normalizedUserId = payload.userId.trim().toLowerCase();
+    const role = roleByUserId[normalizedUserId] ?? 'USER';
     const userCount = tenantScoped(users, payload.tenantCode).length;
     const departmentCount = tenantScoped(
       departments,
@@ -467,27 +471,54 @@ export const handlers = [
   http.post('/api/tenants/issue-code', async ({ request }) => {
     const payload = (await request.json()) as {
       companyName?: string;
+      businessRegistrationNumber?: string;
+      representativeName?: string;
+      businessType?: string;
+      address?: string;
+      phoneNumber?: string;
+      registrationDate?: string;
       adminName?: string;
       adminEmail?: string;
     };
 
     const companyName = payload.companyName?.trim() ?? '';
+    const businessRegistrationNumber =
+      payload.businessRegistrationNumber?.trim() ?? '';
     const adminName = payload.adminName?.trim() ?? '';
     const adminEmail = payload.adminEmail?.trim() ?? '';
 
-    if (!companyName || !adminName || !adminEmail) {
+    if (
+      !companyName ||
+      !businessRegistrationNumber ||
+      !adminName ||
+      !adminEmail
+    ) {
       return HttpResponse.json(
         { message: '입력값이 올바르지 않습니다.' },
         { status: 400 },
       );
     }
 
+    const duplicated = tenants.some(
+      (item) => item.businessRegistrationNumber === businessRegistrationNumber,
+    );
+    if (duplicated) {
+      return HttpResponse.json(
+        {
+          code: 'DUPLICATE_BRN',
+          message: '이미 등록된 사업자번호입니다.',
+        },
+        { status: 409 },
+      );
+    }
+
     const tenantCode = `TENANT-${issuedTenantSequence}`;
     issuedTenantSequence += 1;
 
-    const created = {
+    const created: TenantItem = {
       tenantCode,
       companyName,
+      businessRegistrationNumber,
       createdAt: new Date().toISOString(),
     };
 
@@ -756,8 +787,9 @@ export const handlers = [
 
   http.get('/api/platform-admin/dashboard/tenant-code-issuance', () => {
     const recentIssues = [...tenants]
-      .sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
       .slice(0, 5)
       .map((tenant) => ({

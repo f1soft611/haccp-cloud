@@ -9,6 +9,7 @@ import { DepartmentsPage } from '../../pages/DepartmentsPage';
 import { DocumentsPage } from '../../pages/DocumentsPage';
 import { DocumentHistoryPage } from '../../pages/DocumentHistoryPage';
 import { NotFoundPage } from '../../pages/NotFoundPage';
+import { TenantFirstLoginSetupPage } from '../../pages/TenantFirstLoginSetupPage';
 
 export function AppRoutes() {
   return (
@@ -36,6 +37,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
               <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tenant-first-setup"
+          element={
+            <ProtectedRoute allowedRoles={['TENANT_ADMIN']}>
+              <TenantFirstLoginSetupPage />
             </ProtectedRoute>
           }
         />

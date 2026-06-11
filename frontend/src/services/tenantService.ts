@@ -1,13 +1,47 @@
 import { apiClient } from './apiClient';
 
-export type TenantOnboardRequest = {
-  tenantCode: string;
+export type IssueTenantCodeRequest = {
   companyName: string;
+  businessRegistrationNumber: string;
+  representativeName: string;
+  businessType: string;
+  address: string;
+  phoneNumber: string;
+  registrationDate: string;
   adminName: string;
   adminEmail: string;
 };
 
-export async function onboardTenant(payload: TenantOnboardRequest) {
-  const { data } = await apiClient.post('/tenants', payload);
-  return data as { tenantCode: string; companyName: string; createdAt: string };
+export type MailDispatchStatus = 'MOCK_SENT' | 'QUEUED' | 'SENT' | 'FAILED';
+
+export type IssueTenantCodeResponse = {
+  tenantCode: string;
+  companyName: string;
+  businessRegistrationNumber: string;
+  adminEmail: string;
+  createdAt: string;
+  mailDispatchStatus: MailDispatchStatus;
+};
+
+export type SampleTenantItem = {
+  tenantCode: string;
+  companyName: string;
+  businessRegistrationNumber?: string;
+  adminEmail: string;
+  issuedAt: string;
+};
+
+export async function issueTenantCode(
+  payload: IssueTenantCodeRequest,
+): Promise<IssueTenantCodeResponse> {
+  const { data } = await apiClient.post<IssueTenantCodeResponse>(
+    '/tenants/issue-code',
+    payload,
+  );
+  return data;
+}
+
+export async function listSampleTenants(): Promise<SampleTenantItem[]> {
+  const { data } = await apiClient.get<SampleTenantItem[]>('/tenants/samples');
+  return data;
 }

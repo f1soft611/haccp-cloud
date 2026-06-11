@@ -6,9 +6,10 @@
 역할별 대시보드를 독립적으로 확장할 수 있는 레지스트리 기반 구조를 도입한다.
 
 이번 범위에서는 PLATFORM_ADMIN 전용으로
+
 - KPI 4개(활성 업체 수, 신규 업체(7일), CCP 문서 생성 완료율, 문서 미생성 업체 수)
 - 본문 3섹션(업체 코드 발급 현황, 업체 목록, CCP 문서 생성 현황)
-을 실제 API 계약으로 제공한다.
+  을 실제 API 계약으로 제공한다.
 
 ## 2. Confirmed Decisions
 
@@ -70,7 +71,7 @@
     companyName: string;
     issuedAt: string;
     status: 'ACTIVE' | 'INACTIVE';
-  }>
+    }>
 
 ### 5.3 Tenant List Contract
 
@@ -79,7 +80,7 @@
     total: number;
     active: number;
     inactive: number;
-  }
+    }
   - items: Array<{
     tenantCode: string;
     companyName: string;
@@ -87,7 +88,7 @@
     adminEmail: string;
     status: 'ACTIVE' | 'INACTIVE';
     createdAt: string;
-  }>
+    }>
 
 ### 5.4 CCP Document Generation Status Contract
 
@@ -96,7 +97,7 @@
     completionRate: number;
     completedTenants: number;
     totalTenants: number;
-  }
+    }
   - items: Array<{
     tenantCode: string;
     companyName: string;
@@ -104,7 +105,7 @@
     requiredCount: number;
     completionRate: number;
     updatedAt: string;
-  }>
+    }>
 
 ### 5.5 API Failure Isolation Rule
 

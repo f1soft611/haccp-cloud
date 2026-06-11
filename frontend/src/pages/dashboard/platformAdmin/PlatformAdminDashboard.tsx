@@ -1,5 +1,6 @@
-import { Alert, CircularProgress, Stack, Typography } from '@mui/material';
+import { Alert, CircularProgress, Stack } from '@mui/material';
 import { useQueries } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   getPlatformAdminDashboardKpis,
   listPlatformAdminCcpDocuments,
@@ -10,6 +11,7 @@ import { APP_LABELS } from '../../../shared/ui/labels';
 import { PlatformAdminPanels } from './PlatformAdminPanels';
 
 export function PlatformAdminDashboard() {
+  const navigate = useNavigate();
   const [
     kpisQuery,
     tenantCodeIssuanceQuery,
@@ -82,12 +84,9 @@ export function PlatformAdminDashboard() {
 
   return (
     <Stack spacing={2} data-testid="platform-admin-dashboard">
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="h5" fontWeight={800}>
-          {APP_LABELS.dashboard.platformAdmin.title}
-        </Typography>
-        {isLoading ? <CircularProgress size={20} /> : null}
-      </Stack>
+      {isLoading ? (
+        <CircularProgress size={20} sx={{ alignSelf: 'flex-end' }} />
+      ) : null}
 
       {isError ? (
         <Alert severity="warning">
@@ -112,6 +111,7 @@ export function PlatformAdminDashboard() {
         onRetryCcpDocuments={() => {
           void ccpDocumentsQuery.refetch();
         }}
+        onNavigateToOnboarding={() => navigate('/onboarding')}
       />
     </Stack>
   );

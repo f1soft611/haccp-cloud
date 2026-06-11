@@ -101,6 +101,33 @@ describe('App shell', () => {
     expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
   });
 
+  it('routes PLATFORM_ADMIN login id to platform admin dashboard regardless of letter case', async () => {
+    render(
+      <AppProviders>
+        <App />
+      </AppProviders>,
+    );
+
+    fireEvent.change(
+      await screen.findByLabelText(APP_LABELS.field.tenantCode),
+      { target: { value: 'TENANT-A' } },
+    );
+    fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
+      target: { value: 'PLATFORM_ADMIN' },
+    });
+    fireEvent.change(screen.getByLabelText(APP_LABELS.field.password), {
+      target: { value: 'Passw0rd!' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.login }),
+    );
+
+    expect(
+      await screen.findByTestId('platform-admin-dashboard'),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-user-hub')).not.toBeInTheDocument();
+  });
+
   it('warns and falls back to onboardingStatus when onboardingRequired is missing in login response', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

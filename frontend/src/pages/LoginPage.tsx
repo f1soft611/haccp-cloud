@@ -31,6 +31,8 @@ export function LoginPage() {
         tenantCode: result.tenantCode,
         userId: result.userId,
         role: result.role,
+        onboardingRequired: result.onboardingRequired,
+        onboardingStatus: result.onboardingStatus,
       });
       navigate('/dashboard', { replace: true });
     } catch {

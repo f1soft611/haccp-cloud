@@ -159,7 +159,9 @@ describe('dashboardService', () => {
   ])(
     'returns safe fallback data for platform admin %s API errors',
     async (_label, request, endpoint, expectedPartial) => {
-      vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('network failure'));
+      vi.mocked(apiClient.get).mockRejectedValueOnce(
+        new Error('network failure'),
+      );
 
       const result = await request();
 

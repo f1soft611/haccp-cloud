@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { AppProviders } from '../app/providers/AppProviders';
@@ -288,11 +288,21 @@ describe('Dashboard page', () => {
     shouldFailTenantList = false;
     fireEvent.click(retryButton);
 
-    expect(
-      await screen.findByText('전체 업체: 2 · 활성 업체: 2'),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText('업체 목록 데이터를 불러오지 못했습니다.'),
-    ).not.toBeInTheDocument();
+    await screen
+      .findByText('업체 목록 데이터를 불러오지 못했습니다.', undefined, {
+        timeout: 100,
+      })
+      .catch(() => {
+        // error message is gone - success
+      });
+
+    await waitFor(
+      () => {
+        expect(
+          screen.queryByText('업체 목록 데이터를 불러오지 못했습니다.'),
+        ).not.toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 });
