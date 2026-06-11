@@ -462,6 +462,7 @@ export const handlers = [
     const created = {
       tenantCode: payload.tenantCode,
       companyName: payload.companyName,
+      businessRegistrationNumber: '',
       createdAt: new Date().toISOString(),
     };
     tenants = [created, ...tenants];
