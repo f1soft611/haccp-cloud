@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../services/apiClient';
 import {
   getDashboardMetrics,
@@ -21,6 +21,10 @@ vi.mock('../services/apiClient', () => ({
 }));
 
 describe('dashboardService', () => {
+  beforeEach(() => {
+    vi.mocked(apiClient.get).mockReset();
+  });
+
   it('calls platform admin KPI endpoint', async () => {
     const kpiPayload: PlatformAdminDashboardKpis = {
       activeTenants: 12,
@@ -32,6 +36,7 @@ describe('dashboardService', () => {
 
     const result = await getPlatformAdminDashboardKpis();
 
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/dashboard/kpis');
     expect(result.activeTenants).toBe(12);
   });
@@ -46,6 +51,7 @@ describe('dashboardService', () => {
 
     const result = await getDashboardMetrics('TENANT-A');
 
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith('/dashboard', {
       headers: { 'x-tenant-code': 'TENANT-A' },
     });
@@ -63,6 +69,7 @@ describe('dashboardService', () => {
 
     await listPlatformAdminTenantCodeIssuance();
 
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith(
       '/platform-admin/dashboard/tenant-code-issuance',
     );
@@ -79,6 +86,7 @@ describe('dashboardService', () => {
 
     const result = await listPlatformAdminTenantCodeIssuanceSummary();
 
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith(
       '/platform-admin/dashboard/tenant-code-issuance',
     );
@@ -94,6 +102,7 @@ describe('dashboardService', () => {
 
     await listPlatformAdminTenants();
 
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/dashboard/tenants');
   });
 
@@ -110,6 +119,7 @@ describe('dashboardService', () => {
 
     await listPlatformAdminCcpDocuments();
 
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/dashboard/ccp-documents');
   });
 
@@ -141,6 +151,7 @@ describe('dashboardService', () => {
       vi.mocked(apiClient.get).mockRejectedValueOnce(expectedError);
 
       await expect(request()).rejects.toBe(expectedError);
+      expect(apiClient.get).toHaveBeenCalledTimes(1);
       expect(apiClient.get).toHaveBeenCalledWith(endpoint);
     },
   );
