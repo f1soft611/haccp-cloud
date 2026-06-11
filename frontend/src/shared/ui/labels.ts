@@ -22,6 +22,7 @@ export const APP_LABELS = {
   pageTitle: {
     login: '로그인',
     onboarding: '업체 온보딩',
+    tenantFirstSetup: '업체 관리자 최초 설정',
     users: '사용자 관리',
     departments: '부서 관리',
     documents: '문서 템플릿',
@@ -48,8 +49,11 @@ export const APP_LABELS = {
   action: {
     login: '로그인',
     createTenant: '업체 생성',
+    issueTenantCode: '업체 코드 발급',
+    retry: '다시 시도',
     addUser: '사용자 추가',
     addDepartment: '부서 추가',
+    completeFirstSetup: '초기 설정 완료',
     addTemplate: '템플릿 추가',
     activate: '활성화',
     deactivate: '비활성화',
@@ -74,10 +78,30 @@ export const APP_LABELS = {
     loginFailed:
       '로그인 실패: 업체 코드, 사용자 ID 또는 비밀번호를 확인하세요.',
     onboardingDescription:
-      '플랫폼 관리자가 신규 업체와 초기 관리자 정보를 등록합니다.',
-    onboardingSuccess: '업체 등록이 완료되었습니다.',
-    onboardingFailed: '업체 등록에 실패했습니다. 업체 코드를 확인하세요.',
+      '플랫폼 관리자가 신규 업체 관리자 정보를 입력해 업체 코드를 발급합니다.',
+    onboardingSuccess: '업체 코드 발급 및 안내 메일 발송이 완료되었습니다.',
+    onboardingFailed: '업체 코드 발급에 실패했습니다. 입력값을 확인하세요.',
+    tenantFirstSetupGuide:
+      '사용자 1명 이상과 부서 1개 이상을 생성한 뒤 초기 설정 완료를 진행하세요.',
+    tenantFirstSetupStatusError:
+      '초기 설정 진행 상태를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
+    tenantFirstSetupRequirementFailed:
+      '완료 조건 미충족: 사용자 1명 이상, 부서 1개 이상이 필요합니다.',
+    tenantFirstSetupCompleted:
+      '초기 설정이 완료되었습니다. 대시보드로 이동할 수 있습니다.',
+    tenantFirstSetupCompleteFailed:
+      '초기 설정 완료 처리에 실패했습니다. 조건을 확인한 뒤 다시 시도해주세요.',
+    tenantFirstSetupMissingTenantCode:
+      '업체 코드 정보를 확인할 수 없습니다. 다시 로그인 후 시도해주세요.',
     notFoundDescription: '요청한 페이지를 찾을 수 없습니다.',
+  },
+  onboarding: {
+    issuedTenantCode: '발급된 업체 코드',
+    mailDispatchStatus: '메일 발송 상태',
+    sampleTenantListTitle: '샘플 업체 코드 목록',
+    sampleTenantListLoading: '샘플 업체 코드를 불러오는 중입니다.',
+    sampleTenantListError: '샘플 업체 코드를 불러오지 못했습니다.',
+    sampleTenantListEmpty: '표시할 샘플 업체 코드가 없습니다.',
   },
   dashboard: {
     sectionHeading: 'DOCUMENT MANAGEMENT PORTAL',
@@ -128,6 +152,29 @@ export const APP_LABELS = {
       '오늘 변경 이력 점검',
     ],
     searchPlaceholder: '구분명, 담당자 검색...',
+    platformAdmin: {
+      title: '플랫폼 관리자 운영 대시보드',
+      errorMessage:
+        '플랫폼 관리자 대시보드 데이터를 불러오지 못했습니다. 잠시 후 다시 시도하세요.',
+      kpi: {
+        activeTenants: '활성 업체 수',
+        newTenantsLast7Days: '최근 7일 신규 업체',
+        ccpDocCompletionRate: 'CCP 문서 작성률',
+        tenantsWithoutCcpDocs: 'CCP 문서 미작성 업체',
+      },
+      sections: {
+        tenantCodeIssuance: '업체 코드 발급 현황',
+        tenantList: '업체 목록',
+        ccpDocuments: 'CCP 문서 현황',
+      },
+      summary: {
+        totalIssued: '전체 발급',
+        issuedThisWeek: '주간 발급',
+        totalTenants: '전체 업체',
+        activeTenants: '활성 업체',
+        completionRate: '평균 작성률',
+      },
+    },
   },
 } as const;
 

@@ -64,36 +64,29 @@ describe('Dashboard page', () => {
     ).toHaveAttribute('href', '/document-history');
   });
 
-  it.each(['TENANT_ADMIN', 'PLATFORM_ADMIN'] as const)(
-    'shows shared admin management links for %s role',
-    async (adminRole) => {
-      useAuthStore.setState({
-        role: adminRole,
-      });
+  it('shows shared admin management links for TENANT_ADMIN role', async () => {
+    useAuthStore.setState({
+      role: 'TENANT_ADMIN',
+    });
 
-      render(
-        <AppProviders>
-          <DashboardPage />
-        </AppProviders>,
-      );
+    render(
+      <AppProviders>
+        <DashboardPage />
+      </AppProviders>,
+    );
 
-      expect(
-        await screen.findByTestId('dashboard-admin-hub'),
-      ).toBeInTheDocument();
-      expect(
-        screen.queryByTestId('dashboard-user-hub'),
-      ).not.toBeInTheDocument();
+    expect(await screen.findByTestId('dashboard-admin-hub')).toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-user-hub')).not.toBeInTheDocument();
 
-      expect(
-        screen.getByRole('link', { name: APP_LABELS.dashboard.hubs.users }),
-      ).toHaveAttribute('href', '/users');
-      expect(
-        screen.getByRole('link', {
-          name: APP_LABELS.dashboard.hubs.departments,
-        }),
-      ).toHaveAttribute('href', '/departments');
-    },
-  );
+    expect(
+      screen.getByRole('link', { name: APP_LABELS.dashboard.hubs.users }),
+    ).toHaveAttribute('href', '/users');
+    expect(
+      screen.getByRole('link', {
+        name: APP_LABELS.dashboard.hubs.departments,
+      }),
+    ).toHaveAttribute('href', '/departments');
+  });
 
   it('hides onboarding link for TENANT_ADMIN', async () => {
     useAuthStore.setState({
@@ -115,9 +108,10 @@ describe('Dashboard page', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows onboarding link for PLATFORM_ADMIN', async () => {
+  it('shows platform admin management KPIs and sections', async () => {
     useAuthStore.setState({
       role: 'PLATFORM_ADMIN',
+      userId: 'platform_admin',
     });
 
     render(
@@ -126,12 +120,43 @@ describe('Dashboard page', () => {
       </AppProviders>,
     );
 
-    await screen.findByTestId('dashboard-admin-hub');
+    expect(
+      await screen.findByRole('heading', {
+        name: APP_LABELS.dashboard.platformAdmin.sections.tenantCodeIssuance,
+      }),
+    ).toBeInTheDocument();
 
     expect(
-      screen.getByRole('link', {
-        name: APP_LABELS.dashboard.hubs.onboarding,
+      screen.getByRole('heading', {
+        name: APP_LABELS.dashboard.platformAdmin.sections.tenantList,
       }),
-    ).toHaveAttribute('href', '/onboarding');
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('heading', {
+        name: APP_LABELS.dashboard.platformAdmin.sections.ccpDocuments,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('hides legacy haccp operations blocks for PLATFORM_ADMIN', async () => {
+    useAuthStore.setState({
+      role: 'PLATFORM_ADMIN',
+      userId: 'platform_admin',
+    });
+
+    render(
+      <AppProviders>
+        <DashboardPage />
+      </AppProviders>,
+    );
+
+    await screen.findByTestId('platform-admin-dashboard');
+
+    expect(
+      screen.queryByRole('heading', {
+        name: APP_LABELS.dashboard.blocks.todos,
+      }),
+    ).not.toBeInTheDocument();
   });
 });

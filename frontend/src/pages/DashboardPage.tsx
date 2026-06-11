@@ -18,6 +18,8 @@ import {
   listDocuments,
   type DocumentTemplate,
 } from '../services/documentsService';
+import { getDashboardConfigByRole } from './dashboard/roleDashboardConfig';
+import { PlatformAdminDashboard } from './dashboard/platformAdmin/PlatformAdminDashboard';
 import { useAuthStore } from '../shared/store/authStore';
 import { getDashboardMetrics } from '../services/dashboardService';
 import { APP_LABELS, getRoleLabel } from '../shared/ui/labels';
@@ -128,6 +130,12 @@ export function DashboardPage() {
   const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
   const userId = useAuthStore((state) => state.userId || '-');
   const role = useAuthStore((state) => state.role);
+  const dashboardConfig = getDashboardConfigByRole(role);
+
+  if (dashboardConfig.view === 'platformAdmin') {
+    return <PlatformAdminDashboard />;
+  }
+
   const {
     data: metrics,
     isLoading: isMetricsLoading,
