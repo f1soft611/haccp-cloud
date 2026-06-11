@@ -13,6 +13,15 @@ type TenantItem = {
   createdAt: string;
 };
 
+type SampleTenantItem = {
+  tenantCode: string;
+  companyName: string;
+  adminEmail: string;
+  issuedAt: string;
+};
+
+type OnboardingStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+
 const roleByUserId: Record<string, UserRole> = {
   platform_admin: 'PLATFORM_ADMIN',
   tenant_admin: 'TENANT_ADMIN',
@@ -31,6 +40,23 @@ let tenants: TenantItem[] = [
     createdAt: '2026-06-10T09:30:00.000Z',
   },
 ];
+
+const sampleTenants: SampleTenantItem[] = [
+  {
+    tenantCode: 'TENANT-SAMPLE-01',
+    companyName: '샘플푸드 1호',
+    adminEmail: 'admin1@samplefood.com',
+    issuedAt: '2026-06-10T09:00:00.000Z',
+  },
+  {
+    tenantCode: 'TENANT-SAMPLE-02',
+    companyName: '샘플푸드 2호',
+    adminEmail: 'admin2@samplefood.com',
+    issuedAt: '2026-06-10T09:30:00.000Z',
+  },
+];
+
+let issuedTenantSequence = 101;
 
 let users: UserItem[] = [
   {
@@ -334,11 +360,31 @@ function getTenantCodeFromHeader(request: Request): string {
   return request.headers.get('x-tenant-code') || 'TENANT-A';
 }
 
+function getRequiredTenantCodeFromHeader(request: Request): string | null {
+  const tenantCode = request.headers.get('x-tenant-code')?.trim();
+  return tenantCode ? tenantCode : null;
+}
+
 function tenantScoped<T extends { tenantCode: string }>(
   list: T[],
   tenantCode: string,
 ): T[] {
   return list.filter((item) => item.tenantCode === tenantCode);
+}
+
+function resolveOnboardingStatus(
+  userCount: number,
+  departmentCount: number,
+): OnboardingStatus {
+  if (userCount >= 1 && departmentCount >= 1) {
+    return 'COMPLETED';
+  }
+
+  if (userCount === 0 && departmentCount === 0) {
+    return 'NOT_STARTED';
+  }
+
+  return 'IN_PROGRESS';
 }
 
 export const handlers = [
@@ -364,12 +410,23 @@ export const handlers = [
     }
 
     const role = roleByUserId[payload.userId] ?? 'USER';
+    const userCount = tenantScoped(users, payload.tenantCode).length;
+    const departmentCount = tenantScoped(
+      departments,
+      payload.tenantCode,
+    ).length;
+    const onboardingStatus = resolveOnboardingStatus(
+      userCount,
+      departmentCount,
+    );
 
     return HttpResponse.json({
       tenantCode: payload.tenantCode,
       userId: payload.userId,
       role,
       accessToken: `token-${payload.tenantCode}-${payload.userId}`,
+      onboardingRequired: onboardingStatus !== 'COMPLETED',
+      onboardingStatus,
     });
   }),
 
@@ -405,6 +462,104 @@ export const handlers = [
     };
     tenants = [created, ...tenants];
     return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.post('/api/tenants/issue-code', async ({ request }) => {
+    const payload = (await request.json()) as {
+      companyName?: string;
+      adminName?: string;
+      adminEmail?: string;
+    };
+
+    const companyName = payload.companyName?.trim() ?? '';
+    const adminName = payload.adminName?.trim() ?? '';
+    const adminEmail = payload.adminEmail?.trim() ?? '';
+
+    if (!companyName || !adminName || !adminEmail) {
+      return HttpResponse.json(
+        { message: '입력값이 올바르지 않습니다.' },
+        { status: 400 },
+      );
+    }
+
+    const tenantCode = `TENANT-${issuedTenantSequence}`;
+    issuedTenantSequence += 1;
+
+    const created = {
+      tenantCode,
+      companyName,
+      createdAt: new Date().toISOString(),
+    };
+
+    tenants = [created, ...tenants];
+
+    return HttpResponse.json(
+      {
+        ...created,
+        adminEmail,
+        mailDispatchStatus: 'MOCK_SENT',
+      },
+      { status: 201 },
+    );
+  }),
+
+  http.get('/api/tenants/samples', () => {
+    return HttpResponse.json(sampleTenants);
+  }),
+
+  http.get('/api/first-login-setup/status', ({ request }) => {
+    const tenantCode = getRequiredTenantCodeFromHeader(request);
+
+    if (!tenantCode) {
+      return HttpResponse.json(
+        { message: 'x-tenant-code header is required.' },
+        { status: 400 },
+      );
+    }
+
+    const userCount = tenantScoped(users, tenantCode).length;
+    const departmentCount = tenantScoped(departments, tenantCode).length;
+    const onboardingStatus = resolveOnboardingStatus(
+      userCount,
+      departmentCount,
+    );
+
+    return HttpResponse.json({
+      tenantCode,
+      userCount,
+      departmentCount,
+      onboardingRequired: onboardingStatus !== 'COMPLETED',
+      onboardingStatus,
+    });
+  }),
+
+  http.post('/api/first-login-setup/complete', ({ request }) => {
+    const tenantCode = getRequiredTenantCodeFromHeader(request);
+
+    if (!tenantCode) {
+      return HttpResponse.json(
+        { message: 'x-tenant-code header is required.' },
+        { status: 400 },
+      );
+    }
+
+    const userCount = tenantScoped(users, tenantCode).length;
+    const departmentCount = tenantScoped(departments, tenantCode).length;
+
+    if (userCount < 1 || departmentCount < 1) {
+      return HttpResponse.json(
+        { message: '사용자 1명 이상, 부서 1개 이상이 필요합니다.' },
+        { status: 422 },
+      );
+    }
+
+    return HttpResponse.json({
+      tenantCode,
+      userCount,
+      departmentCount,
+      onboardingRequired: false,
+      onboardingStatus: 'COMPLETED',
+    });
   }),
 
   http.get('/api/users', ({ request }) => {
@@ -556,6 +711,152 @@ export const handlers = [
   http.get('/api/document-history', ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     return HttpResponse.json(tenantScoped(histories, tenantCode));
+  }),
+
+  http.get('/api/platform-admin/dashboard/kpis', () => {
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    const activeTenants = tenants.length;
+    const newTenantsLast7Days = tenants.filter(
+      (item) => new Date(item.createdAt) >= sevenDaysAgo,
+    ).length;
+
+    const ccpByTenant = tenants.map((tenant) => {
+      const tenantDocs = documents.filter(
+        (item) => item.tenantCode === tenant.tenantCode,
+      );
+      const generatedCount = tenantDocs.filter((item) =>
+        item.category.toUpperCase().includes('CCP'),
+      ).length;
+      const requiredCount = 3;
+      return {
+        generatedCount,
+        requiredCount,
+      };
+    });
+
+    const completedTenants = ccpByTenant.filter(
+      (item) => item.generatedCount >= item.requiredCount,
+    ).length;
+
+    const ccpDocCompletionRate =
+      activeTenants === 0
+        ? 0
+        : Math.round((completedTenants / activeTenants) * 100);
+
+    return HttpResponse.json({
+      activeTenants,
+      newTenantsLast7Days,
+      ccpDocCompletionRate,
+      tenantsWithoutCcpDocs: activeTenants - completedTenants,
+    });
+  }),
+
+  http.get('/api/platform-admin/dashboard/tenant-code-issuance', () => {
+    const recentIssues = [...tenants]
+      .sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, 5)
+      .map((tenant) => ({
+        tenantCode: tenant.tenantCode,
+        companyName: tenant.companyName,
+        issuedAt: tenant.createdAt,
+        status: 'ACTIVE' as const,
+      }));
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
+
+    return HttpResponse.json({
+      totalIssued: tenants.length,
+      issuedThisMonth: tenants.filter(
+        (item) => new Date(item.createdAt) >= monthStart,
+      ).length,
+      issuedThisWeek: tenants.filter(
+        (item) => new Date(item.createdAt) >= weekStart,
+      ).length,
+      recentIssues,
+    });
+  }),
+
+  http.get('/api/platform-admin/dashboard/tenants', () => {
+    const items = tenants.map((tenant) => {
+      const tenantAdmin = users.find(
+        (user) =>
+          user.tenantCode === tenant.tenantCode && user.role === 'TENANT_ADMIN',
+      );
+
+      return {
+        tenantCode: tenant.tenantCode,
+        companyName: tenant.companyName,
+        adminName: tenantAdmin?.name ?? '-',
+        adminEmail: tenantAdmin?.email ?? '-',
+        status: 'ACTIVE' as const,
+        createdAt: tenant.createdAt,
+      };
+    });
+
+    return HttpResponse.json({
+      summary: {
+        total: items.length,
+        active: items.length,
+        inactive: 0,
+      },
+      items,
+    });
+  }),
+
+  http.get('/api/platform-admin/dashboard/ccp-documents', () => {
+    const items = tenants.map((tenant) => {
+      const tenantDocs = documents.filter(
+        (item) => item.tenantCode === tenant.tenantCode,
+      );
+      const ccpDocs = tenantDocs.filter((item) =>
+        item.category.toUpperCase().includes('CCP'),
+      );
+      const generatedCount = ccpDocs.length;
+      const requiredCount = 3;
+      const completionRate = Math.min(
+        100,
+        Math.round((generatedCount / requiredCount) * 100),
+      );
+      const updatedAt = ccpDocs[0]?.updatedAt ?? tenant.createdAt;
+
+      return {
+        tenantCode: tenant.tenantCode,
+        companyName: tenant.companyName,
+        generatedCount,
+        requiredCount,
+        completionRate,
+        updatedAt,
+      };
+    });
+
+    const completedTenants = items.filter(
+      (item) => item.completionRate >= 100,
+    ).length;
+    const totalTenants = items.length;
+    const completionRate =
+      totalTenants === 0
+        ? 0
+        : Math.round(
+            items.reduce((sum, item) => sum + item.completionRate, 0) /
+              totalTenants,
+          );
+
+    return HttpResponse.json({
+      overall: {
+        completionRate,
+        completedTenants,
+        totalTenants,
+      },
+      items,
+    });
   }),
 
   http.get('/api/dashboard', ({ request }) => {

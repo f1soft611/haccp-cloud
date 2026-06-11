@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { http, HttpResponse } from 'msw';
 import { AppProviders } from '../app/providers/AppProviders';
+import { server } from '../mocks/server';
 import { DashboardPage } from '../pages/DashboardPage';
 import { useAuthStore } from '../shared/store/authStore';
 import { APP_LABELS } from '../shared/ui/labels';
@@ -75,7 +77,9 @@ describe('Dashboard page', () => {
       </AppProviders>,
     );
 
-    expect(await screen.findByTestId('dashboard-admin-hub')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('dashboard-admin-hub'),
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('dashboard-user-hub')).not.toBeInTheDocument();
 
     expect(
@@ -157,6 +161,39 @@ describe('Dashboard page', () => {
       screen.queryByRole('heading', {
         name: APP_LABELS.dashboard.blocks.todos,
       }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows independent section warning when tenant list API fails', async () => {
+    server.use(
+      http.get('/api/platform-admin/dashboard/tenants', () =>
+        HttpResponse.json({ message: 'error' }, { status: 500 }),
+      ),
+    );
+
+    useAuthStore.setState({
+      role: 'PLATFORM_ADMIN',
+      userId: 'platform_admin',
+    });
+
+    render(
+      <AppProviders>
+        <DashboardPage />
+      </AppProviders>,
+    );
+
+    expect(
+      await screen.findByText('업체 목록 데이터를 불러오지 못했습니다.'),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('heading', {
+        name: APP_LABELS.dashboard.platformAdmin.sections.ccpDocuments,
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByText(APP_LABELS.dashboard.platformAdmin.errorMessage),
     ).not.toBeInTheDocument();
   });
 });

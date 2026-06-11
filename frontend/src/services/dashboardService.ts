@@ -11,6 +11,7 @@ export type PlatformAdminDashboardKpis = {
   newTenantsLast7Days: number;
   ccpDocCompletionRate: number;
   tenantsWithoutCcpDocs: number;
+  hasError?: boolean;
 };
 
 export type TenantActivationStatus = 'ACTIVE' | 'INACTIVE';
@@ -19,6 +20,7 @@ export type TenantCodeIssuanceSummary = {
   totalIssued: number;
   issuedThisMonth: number;
   issuedThisWeek: number;
+  hasError?: boolean;
   recentIssues: Array<{
     tenantCode: string;
     companyName: string;
@@ -28,6 +30,7 @@ export type TenantCodeIssuanceSummary = {
 };
 
 export type PlatformAdminTenantList = {
+  hasError?: boolean;
   summary: {
     total: number;
     active: number;
@@ -44,6 +47,7 @@ export type PlatformAdminTenantList = {
 };
 
 export type PlatformAdminCcpDocuments = {
+  hasError?: boolean;
   overall: {
     completionRate: number;
     completedTenants: number;
@@ -69,32 +73,76 @@ export async function getDashboardMetrics(
 }
 
 export async function getPlatformAdminDashboardKpis(): Promise<PlatformAdminDashboardKpis> {
-  const { data } = await apiClient.get<PlatformAdminDashboardKpis>(
-    '/platform-admin/dashboard/kpis',
-  );
-  return data;
+  try {
+    const { data } = await apiClient.get<PlatformAdminDashboardKpis>(
+      '/platform-admin/dashboard/kpis',
+    );
+    return data;
+  } catch {
+    return {
+      activeTenants: 0,
+      newTenantsLast7Days: 0,
+      ccpDocCompletionRate: 0,
+      tenantsWithoutCcpDocs: 0,
+      hasError: true,
+    };
+  }
 }
 
 export async function listPlatformAdminTenantCodeIssuanceSummary(): Promise<TenantCodeIssuanceSummary> {
-  const { data } = await apiClient.get<TenantCodeIssuanceSummary>(
-    '/platform-admin/dashboard/tenant-code-issuance',
-  );
-  return data;
+  try {
+    const { data } = await apiClient.get<TenantCodeIssuanceSummary>(
+      '/platform-admin/dashboard/tenant-code-issuance',
+    );
+    return data;
+  } catch {
+    return {
+      totalIssued: 0,
+      issuedThisMonth: 0,
+      issuedThisWeek: 0,
+      hasError: true,
+      recentIssues: [],
+    };
+  }
 }
 
 export const listPlatformAdminTenantCodeIssuance =
   listPlatformAdminTenantCodeIssuanceSummary;
 
 export async function listPlatformAdminTenants(): Promise<PlatformAdminTenantList> {
-  const { data } = await apiClient.get<PlatformAdminTenantList>(
-    '/platform-admin/dashboard/tenants',
-  );
-  return data;
+  try {
+    const { data } = await apiClient.get<PlatformAdminTenantList>(
+      '/platform-admin/dashboard/tenants',
+    );
+    return data;
+  } catch {
+    return {
+      hasError: true,
+      summary: {
+        total: 0,
+        active: 0,
+        inactive: 0,
+      },
+      items: [],
+    };
+  }
 }
 
 export async function listPlatformAdminCcpDocuments(): Promise<PlatformAdminCcpDocuments> {
-  const { data } = await apiClient.get<PlatformAdminCcpDocuments>(
-    '/platform-admin/dashboard/ccp-documents',
-  );
-  return data;
+  try {
+    const { data } = await apiClient.get<PlatformAdminCcpDocuments>(
+      '/platform-admin/dashboard/ccp-documents',
+    );
+    return data;
+  } catch {
+    return {
+      hasError: true,
+      overall: {
+        completionRate: 0,
+        completedTenants: 0,
+        totalTenants: 0,
+      },
+      items: [],
+    };
+  }
 }
