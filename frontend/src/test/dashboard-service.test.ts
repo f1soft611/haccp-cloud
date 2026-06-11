@@ -37,7 +37,9 @@ describe('dashboardService', () => {
     const result = await getPlatformAdminDashboardKpis();
 
     expect(apiClient.get).toHaveBeenCalledTimes(1);
-    expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/dashboard/kpis');
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/platform-admin/dashboard/kpis',
+    );
     expect(result.activeTenants).toBe(12);
   });
 
@@ -103,7 +105,9 @@ describe('dashboardService', () => {
     await listPlatformAdminTenants();
 
     expect(apiClient.get).toHaveBeenCalledTimes(1);
-    expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/dashboard/tenants');
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/platform-admin/dashboard/tenants',
+    );
   });
 
   it('calls ccp documents endpoint', async () => {
@@ -115,12 +119,16 @@ describe('dashboardService', () => {
       },
       items: [],
     };
-    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: ccpDocumentsPayload });
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: ccpDocumentsPayload,
+    });
 
     await listPlatformAdminCcpDocuments();
 
     expect(apiClient.get).toHaveBeenCalledTimes(1);
-    expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/dashboard/ccp-documents');
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/platform-admin/dashboard/ccp-documents',
+    );
   });
 
   it.each([
@@ -128,29 +136,34 @@ describe('dashboardService', () => {
       'KPI',
       () => getPlatformAdminDashboardKpis(),
       '/platform-admin/dashboard/kpis',
+      { hasError: true, activeTenants: 0 },
     ],
     [
       'tenant code issuance summary',
       () => listPlatformAdminTenantCodeIssuanceSummary(),
       '/platform-admin/dashboard/tenant-code-issuance',
+      { hasError: true, totalIssued: 0 },
     ],
     [
       'tenant list',
       () => listPlatformAdminTenants(),
       '/platform-admin/dashboard/tenants',
+      { hasError: true, items: [] },
     ],
     [
       'CCP documents',
       () => listPlatformAdminCcpDocuments(),
       '/platform-admin/dashboard/ccp-documents',
+      { hasError: true, items: [] },
     ],
   ])(
-    'propagates API errors for platform admin %s requests',
-    async (_label, request, endpoint) => {
-      const expectedError = new Error('network failure');
-      vi.mocked(apiClient.get).mockRejectedValueOnce(expectedError);
+    'returns safe fallback data for platform admin %s API errors',
+    async (_label, request, endpoint, expectedPartial) => {
+      vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('network failure'));
 
-      await expect(request()).rejects.toBe(expectedError);
+      const result = await request();
+
+      expect(result).toMatchObject(expectedPartial);
       expect(apiClient.get).toHaveBeenCalledTimes(1);
       expect(apiClient.get).toHaveBeenCalledWith(endpoint);
     },

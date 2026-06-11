@@ -90,6 +90,29 @@ describe('Dashboard page', () => {
         name: APP_LABELS.dashboard.hubs.departments,
       }),
     ).toHaveAttribute('href', '/departments');
+
+    expect(screen.queryByTestId('platform-admin-dashboard')).not.toBeInTheDocument();
+  });
+
+  it('keeps tenant admin legacy dashboard blocks and does not render platform admin view', async () => {
+    useAuthStore.setState({
+      role: 'TENANT_ADMIN',
+      userId: 'tenant_admin',
+    });
+
+    render(
+      <AppProviders>
+        <DashboardPage />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByTestId('dashboard-admin-hub')).toBeInTheDocument();
+    expect(screen.queryByTestId('platform-admin-dashboard')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        name: APP_LABELS.dashboard.blocks.todos,
+      }),
+    ).toBeInTheDocument();
   });
 
   it('hides onboarding link for TENANT_ADMIN', async () => {
@@ -156,6 +179,8 @@ describe('Dashboard page', () => {
     );
 
     await screen.findByTestId('platform-admin-dashboard');
+
+    expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
 
     expect(
       screen.queryByRole('heading', {
