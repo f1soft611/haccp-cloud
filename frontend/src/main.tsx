@@ -5,10 +5,15 @@ import App from './App.tsx';
 import { AppProviders } from './app/providers/AppProviders.tsx';
 
 async function enableMocking() {
-  if (import.meta.env.DEV) {
-    const { worker } = await import('./mocks/browser.ts');
-    await worker.start({ onUnhandledRequest: 'bypass' });
+  const shouldEnableMocking =
+    import.meta.env.DEV || import.meta.env.VITE_ENABLE_MSW === 'true';
+
+  if (!shouldEnableMocking) {
+    return;
   }
+
+  const { worker } = await import('./mocks/browser.ts');
+  await worker.start({ onUnhandledRequest: 'bypass' });
 }
 
 void enableMocking().then(() => {
