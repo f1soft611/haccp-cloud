@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { AppProviders } from '../app/providers/AppProviders';
@@ -91,7 +91,9 @@ describe('Dashboard page', () => {
       }),
     ).toHaveAttribute('href', '/departments');
 
-    expect(screen.queryByTestId('platform-admin-dashboard')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('platform-admin-dashboard'),
+    ).not.toBeInTheDocument();
   });
 
   it('keeps tenant admin legacy dashboard blocks and does not render platform admin view', async () => {
@@ -106,8 +108,12 @@ describe('Dashboard page', () => {
       </AppProviders>,
     );
 
-    expect(await screen.findByTestId('dashboard-admin-hub')).toBeInTheDocument();
-    expect(screen.queryByTestId('platform-admin-dashboard')).not.toBeInTheDocument();
+    expect(
+      await screen.findByTestId('dashboard-admin-hub'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('platform-admin-dashboard'),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole('heading', {
         name: APP_LABELS.dashboard.blocks.todos,
@@ -219,6 +225,74 @@ describe('Dashboard page', () => {
 
     expect(
       screen.queryByText(APP_LABELS.dashboard.platformAdmin.errorMessage),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows section retry button and recovers tenant list after retry', async () => {
+    let shouldFailTenantList = true;
+
+    server.use(
+      http.get('/api/platform-admin/dashboard/tenants', () => {
+        if (shouldFailTenantList) {
+          return HttpResponse.json({ message: 'error' }, { status: 500 });
+        }
+
+        return HttpResponse.json({
+          summary: {
+            total: 2,
+            active: 2,
+            inactive: 0,
+          },
+          items: [
+            {
+              tenantCode: 'TENANT-A',
+              companyName: '알파푸드',
+              adminName: '관리자A',
+              adminEmail: 'admin.a@alpha.com',
+              status: 'ACTIVE',
+              createdAt: '2026-06-10T09:00:00.000Z',
+            },
+            {
+              tenantCode: 'TENANT-B',
+              companyName: '베타HACCP',
+              adminName: '관리자B',
+              adminEmail: 'admin.b@beta.com',
+              status: 'ACTIVE',
+              createdAt: '2026-06-10T09:30:00.000Z',
+            },
+          ],
+        });
+      }),
+    );
+
+    useAuthStore.setState({
+      role: 'PLATFORM_ADMIN',
+      userId: 'platform_admin',
+    });
+
+    render(
+      <AppProviders>
+        <DashboardPage />
+      </AppProviders>,
+    );
+
+    expect(
+      await screen.findByText('업체 목록 데이터를 불러오지 못했습니다.'),
+    ).toBeInTheDocument();
+
+    const retryButton = screen.getByRole('button', {
+      name: APP_LABELS.action.retry,
+    });
+    expect(retryButton).toBeInTheDocument();
+
+    shouldFailTenantList = false;
+    fireEvent.click(retryButton);
+
+    expect(
+      await screen.findByText('전체 업체: 2 · 활성 업체: 2'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('업체 목록 데이터를 불러오지 못했습니다.'),
     ).not.toBeInTheDocument();
   });
 });

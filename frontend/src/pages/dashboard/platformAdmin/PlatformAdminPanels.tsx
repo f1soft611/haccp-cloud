@@ -1,4 +1,4 @@
-import { Alert, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Alert, Button, Grid, Paper, Stack, Typography } from '@mui/material';
 import type {
   PlatformAdminCcpDocuments,
   PlatformAdminDashboardKpis,
@@ -12,6 +12,10 @@ type PlatformAdminPanelsProps = {
   tenantCodeIssuance: TenantCodeIssuanceSummary;
   tenantList: PlatformAdminTenantList;
   ccpDocuments: PlatformAdminCcpDocuments;
+  onRetryKpis: () => void;
+  onRetryTenantCodeIssuance: () => void;
+  onRetryTenantList: () => void;
+  onRetryCcpDocuments: () => void;
 };
 
 function PanelCard({
@@ -50,11 +54,13 @@ function SectionPaper({
   summary,
   isError,
   errorMessage,
+  onRetry,
 }: {
   title: string;
   summary: string;
   isError?: boolean;
   errorMessage?: string;
+  onRetry?: () => void;
 }) {
   return (
     <Paper
@@ -69,7 +75,17 @@ function SectionPaper({
         {title}
       </Typography>
       {isError ? (
-        <Alert severity="warning" sx={{ mt: 1.25 }}>
+        <Alert
+          severity="warning"
+          sx={{ mt: 1.25 }}
+          action={
+            onRetry ? (
+              <Button color="inherit" size="small" onClick={onRetry}>
+                {APP_LABELS.action.retry}
+              </Button>
+            ) : undefined
+          }
+        >
           {errorMessage}
         </Alert>
       ) : summary ? (
@@ -86,6 +102,10 @@ export function PlatformAdminPanels({
   tenantCodeIssuance,
   tenantList,
   ccpDocuments,
+  onRetryKpis,
+  onRetryTenantCodeIssuance,
+  onRetryTenantList,
+  onRetryCcpDocuments,
 }: PlatformAdminPanelsProps) {
   const hasKpiError = kpis.hasError === true;
   const hasTenantCodeIssuanceError = tenantCodeIssuance.hasError === true;
@@ -95,7 +115,16 @@ export function PlatformAdminPanels({
   return (
     <Stack spacing={2}>
       {hasKpiError ? (
-        <Alert severity="warning">핵심 지표 데이터를 불러오지 못했습니다.</Alert>
+        <Alert
+          severity="warning"
+          action={
+            <Button color="inherit" size="small" onClick={onRetryKpis}>
+              {APP_LABELS.action.retry}
+            </Button>
+          }
+        >
+          핵심 지표 데이터를 불러오지 못했습니다.
+        </Alert>
       ) : (
         <Grid container spacing={1.5}>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -114,14 +143,18 @@ export function PlatformAdminPanels({
           </Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
             <PanelCard
-              title={APP_LABELS.dashboard.platformAdmin.kpi.ccpDocCompletionRate}
+              title={
+                APP_LABELS.dashboard.platformAdmin.kpi.ccpDocCompletionRate
+              }
               primary={`${kpis.ccpDocCompletionRate}%`}
               secondary={`${APP_LABELS.dashboard.platformAdmin.kpi.tenantsWithoutCcpDocs}: ${kpis.tenantsWithoutCcpDocs}`}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
             <PanelCard
-              title={APP_LABELS.dashboard.platformAdmin.kpi.tenantsWithoutCcpDocs}
+              title={
+                APP_LABELS.dashboard.platformAdmin.kpi.tenantsWithoutCcpDocs
+              }
               primary={String(kpis.tenantsWithoutCcpDocs)}
               secondary={
                 APP_LABELS.dashboard.platformAdmin.kpi.ccpDocCompletionRate
@@ -134,10 +167,13 @@ export function PlatformAdminPanels({
       <Grid container spacing={1.5}>
         <Grid size={{ xs: 12, lg: 4 }}>
           <SectionPaper
-            title={APP_LABELS.dashboard.platformAdmin.sections.tenantCodeIssuance}
+            title={
+              APP_LABELS.dashboard.platformAdmin.sections.tenantCodeIssuance
+            }
             summary={`${APP_LABELS.dashboard.platformAdmin.summary.totalIssued}: ${tenantCodeIssuance.totalIssued} · ${APP_LABELS.dashboard.platformAdmin.summary.issuedThisWeek}: ${tenantCodeIssuance.issuedThisWeek}`}
             isError={hasTenantCodeIssuanceError}
             errorMessage="업체 코드 발급 현황 데이터를 불러오지 못했습니다."
+            onRetry={onRetryTenantCodeIssuance}
           />
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
@@ -146,6 +182,7 @@ export function PlatformAdminPanels({
             summary={`${APP_LABELS.dashboard.platformAdmin.summary.totalTenants}: ${tenantList.summary.total} · ${APP_LABELS.dashboard.platformAdmin.summary.activeTenants}: ${tenantList.summary.active}`}
             isError={hasTenantListError}
             errorMessage="업체 목록 데이터를 불러오지 못했습니다."
+            onRetry={onRetryTenantList}
           />
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
@@ -154,6 +191,7 @@ export function PlatformAdminPanels({
             summary={`${APP_LABELS.dashboard.platformAdmin.summary.completionRate}: ${ccpDocuments.overall.completionRate}%`}
             isError={hasCcpDocumentsError}
             errorMessage="CCP 문서 현황 데이터를 불러오지 못했습니다."
+            onRetry={onRetryCcpDocuments}
           />
         </Grid>
       </Grid>
