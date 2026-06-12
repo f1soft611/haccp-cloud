@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CommonCodeDAO">
+
+	<resultMap id="commonCodeResult" type="egovframework.let.basedata.commoncode.domain.model.CommonCode">
+		<result property="codeId" column="CODE_ID"/>
+		<result property="codeIdNm" column="CODE_ID_NM"/>
+		<result property="codeIdDc" column="CODE_ID_DC"/>
+		<result property="useAt" column="USE_AT"/>
+		<result property="clCode" column="CL_CODE"/>
+		<result property="frstRegistPnttm" column="FRST_REGIST_PNTTM"/>
+		<result property="frstRegisterId" column="FRST_REGISTER_ID"/>
+		<result property="lastUpdtPnttm" column="LAST_UPDT_PNTTM"/>
+		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>
+	</resultMap>
+
+	<select id="CommonCodeDAO.selectCommonCodeList" parameterType="egovframework.let.basedata.commoncode.domain.model.CommonCodeVO" resultMap="commonCodeResult">
+		SELECT
+			CODE_ID,
+			CODE_ID_NM,
+			CODE_ID_DC,
+			USE_AT,
+			CL_CODE,
+			CONVERT(VARCHAR(19), FRST_REGIST_PNTTM, 120) AS FRST_REGIST_PNTTM,
+			FRST_REGISTER_ID,
+			CONVERT(VARCHAR(19), LAST_UPDT_PNTTM, 120) AS LAST_UPDT_PNTTM,
+			LAST_UPDUSR_ID
+		FROM MES_CCMMN_CODE
+		WHERE 1=1
+		<if test="searchCnd != null and searchCnd != '' and searchWrd != null and searchWrd != ''">
+			<choose>
+				<when test="searchCnd == 0">
+					AND CODE_ID LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == 1">
+					AND CODE_ID_NM LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == 2">
+					AND CODE_ID_DC LIKE '%' + #{searchWrd} + '%'
+				</when>
+			</choose>
+		</if>
+		<if test="useAt != null and useAt != ''">
+			AND USE_AT = #{useAt}
+		</if>
+		<if test="clCode != null and clCode != ''">
+			AND CL_CODE = #{clCode}
+		</if>
+		ORDER BY FRST_REGIST_PNTTM DESC
+		<if test="firstIndex != null and recordCountPerPage != null">
+			OFFSET #{firstIndex} ROWS
+			FETCH NEXT #{recordCountPerPage} ROWS ONLY
+		</if>
+	</select>
+
+	<select id="CommonCodeDAO.selectCommonCodeListCnt" parameterType="egovframework.let.basedata.commoncode.domain.model.CommonCodeVO" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM MES_CCMMN_CODE
+		WHERE 1=1
+		<if test="searchCnd != null and searchCnd != '' and searchWrd != null and searchWrd != ''">
+			<choose>
+				<when test="searchCnd == 0">
+					AND CODE_ID LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == 1">
+					AND CODE_ID_NM LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == 2">
+					AND CODE_ID_DC LIKE '%' + #{searchWrd} + '%'
+				</when>
+			</choose>
+		</if>
+		<if test="useAt != null and useAt != ''">
+			AND USE_AT = #{useAt}
+		</if>
+		<if test="clCode != null and clCode != ''">
+			AND CL_CODE = #{clCode}
+		</if>
+	</select>
+
+	<select id="CommonCodeDAO.selectCommonCode" parameterType="String" resultMap="commonCodeResult">
+		SELECT
+			CODE_ID,
+			CODE_ID_NM,
+			CODE_ID_DC,
+			USE_AT,
+			CL_CODE,
+			CONVERT(VARCHAR(19), FRST_REGIST_PNTTM, 120) AS FRST_REGIST_PNTTM,
+			FRST_REGISTER_ID,
+			CONVERT(VARCHAR(19), LAST_UPDT_PNTTM, 120) AS LAST_UPDT_PNTTM,
+			LAST_UPDUSR_ID
+		FROM MES_CCMMN_CODE
+		WHERE CODE_ID = #{codeId}
+	</select>
+
+	<insert id="CommonCodeDAO.insertCommonCode" parameterType="egovframework.let.basedata.commoncode.domain.model.CommonCode">
+		INSERT INTO MES_CCMMN_CODE (
+			CODE_ID,
+			CODE_ID_NM,
+			CODE_ID_DC,
+			USE_AT,
+			CL_CODE,
+			FRST_REGISTER_ID
+		) VALUES (
+			#{codeId},
+			#{codeIdNm},
+			#{codeIdDc},
+			#{useAt},
+			#{clCode},
+			#{frstRegisterId}
+		)
+	</insert>
+
+	<update id="CommonCodeDAO.updateCommonCode" parameterType="egovframework.let.basedata.commoncode.domain.model.CommonCode">
+		UPDATE MES_CCMMN_CODE
+		SET
+			CODE_ID_NM = #{codeIdNm},
+			CODE_ID_DC = #{codeIdDc},
+			USE_AT = #{useAt},
+			CL_CODE = #{clCode},
+			LAST_UPDT_PNTTM = GETDATE(),
+			LAST_UPDUSR_ID = #{lastUpdusrId}
+		WHERE CODE_ID = #{codeId}
+	</update>
+
+	<delete id="CommonCodeDAO.deleteCommonCode" parameterType="String">
+-- 		DELETE FROM MES_CCMMN_CODE
+		UPDATE MES_CCMMN_CODE
+		SET
+			USE_AT = 'N',
+			LAST_UPDT_PNTTM = GETDATE(),
+			LAST_UPDUSR_ID = 'SYSTEM'
+		WHERE CODE_ID = #{codeId}
+	</delete>
+
+	<select id="CommonCodeDAO.selectCodeIdCheck" parameterType="String" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM MES_CCMMN_CODE
+		WHERE CODE_ID = #{codeId}
+	</select>
+
+	<select id="CommonCodeDAO.selectCodeIdCheckForUpdate" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM MES_CCMMN_CODE
+		WHERE CODE_ID = #{codeId}
+		AND CODE_ID != #{originalCodeId}
+	</select>
+
+</mapper>

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ProcessDAO">
+
+	<resultMap id="processResult" type="egovframework.let.basedata.process.domain.model.Process">
+		<result property="factoryCode" column="FACTORY_CODE"/>
+		<result property="processId" column="WORK_ID"/>
+		<result property="processCode" column="WORK_CODE"/>
+		<result property="processName" column="WORK_NAME"/>
+		<result property="description" column="DESCRIPTION"/>
+		<result property="processType" column="WORK_TYPE"/>
+		<result property="erpProcessMapping" column="ERP_PROCESS_MAPPING"/>
+		<result property="equipmentIntegrationYn" column="EQUIPMENT_INTEGRATION_YN"/>
+		<result property="status" column="STATUS"/>
+		<result property="useYn" column="USE_YN"/>
+		<result property="sortOrder" column="SORT_ORDER"/>
+		<result property="regUserId" column="OPMAN_CODE"/>
+		<result property="regDt" column="OPTIME"/>
+		<result property="updUserId" column="OPMAN_CODE2"/>
+		<result property="updDt" column="OPTIME2"/>
+	</resultMap>
+
+	<select id="ProcessDAO.selectProcessList" parameterType="egovframework.let.basedata.process.domain.model.ProcessVO" resultMap="processResult">
+		SELECT
+		FACTORY_CODE,
+		WORK_ID,
+		WORK_CODE,
+		WORK_NAME,
+		DESCRIPTION,
+		WORK_TYPE,
+		ERP_PROCESS_MAPPING,
+		EQUIPMENT_INTEGRATION_YN,
+		STATUS,
+		USE_YN,
+		SORT_ORDER,
+		OPMAN_CODE,
+		CONVERT(VARCHAR(19), OPTIME, 120) AS OPTIME,
+		OPMAN_CODE2,
+		CONVERT(VARCHAR(19), OPTIME2, 120) AS OPTIME2
+		FROM TPR102
+		WHERE 1=1
+		AND FACTORY_CODE = #{factoryCode}
+		<if test="searchCnd != null and searchCnd != '' and searchWrd != null and searchWrd != ''">
+			<choose>
+				<when test="searchCnd == 0">
+					AND WORK_CODE LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == 1">
+					AND WORK_NAME LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == 2">
+					AND WORK_TYPE LIKE '%' + #{searchWrd} + '%'
+				</when>
+			</choose>
+		</if>
+		<if test="status != null and status != ''">
+			AND STATUS = #{status}
+		</if>
+		<if test="equipmentIntegrationYn != null and equipmentIntegrationYn != ''">
+			AND EQUIPMENT_INTEGRATION_YN = #{equipmentIntegrationYn}
+		</if>
+		<if test="useYn != null and useYn != ''">
+			AND USE_YN = #{useYn}
+		</if>
+		ORDER BY SORT_ORDER ASC, OPTIME DESC
+		<if test="firstIndex != null and recordCountPerPage != null">
+			OFFSET #{firstIndex} ROWS
+			FETCH NEXT #{recordCountPerPage} ROWS ONLY
+		</if>
+	</select>
+
+	<select id="ProcessDAO.selectProcessListCnt"
+			parameterType="egovframework.let.basedata.process.domain.model.ProcessVO" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM TPR102
+		WHERE 1=1
+		AND FACTORY_CODE = #{factoryCode}
+		<if test="searchCnd != null and searchCnd != '' and searchWrd != null and searchWrd != ''">
+			<choose>
+				<when test="searchCnd == 0">
+					AND WORK_CODE LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == 1">
+					AND WORK_NAME LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == 2">
+					AND WORK_TYPE LIKE '%' + #{searchWrd} + '%'
+				</when>
+			</choose>
+		</if>
+		<if test="status != null and status != ''">
+			AND STATUS = #{status}
+		</if>
+		<if test="useYn != null and useYn != ''">
+			AND USE_YN = #{useYn}
+		</if>
+		<if test="equipmentIntegrationYn != null and equipmentIntegrationYn != ''">
+			AND EQUIPMENT_INTEGRATION_YN = #{equipmentIntegrationYn}
+		</if>
+	</select>
+
+	<select id="ProcessDAO.selectProcess" parameterType="map" resultMap="processResult">
+		SELECT
+			FACTORY_CODE,
+			WORK_ID,
+			WORK_CODE,
+			WORK_NAME,
+			DESCRIPTION,
+			WORK_TYPE,
+			ERP_PROCESS_MAPPING,
+			EQUIPMENT_INTEGRATION_YN,
+			STATUS,
+			USE_YN,
+			SORT_ORDER,
+			OPMAN_CODE,
+			CONVERT(VARCHAR(19), OPTIME, 120) AS OPTIME,
+			OPMAN_CODE2,
+			CONVERT(VARCHAR(19), OPTIME2, 120) AS OPTIME2
+		FROM TPR102
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND WORK_ID = #{processId}
+	</select>
+
+	<insert id="ProcessDAO.insertProcess" parameterType="egovframework.let.basedata.process.domain.model.Process">
+		INSERT INTO TPR102 (
+			FACTORY_CODE,
+			WORK_ID,
+			WORK_CODE,
+			WORK_NAME,
+			DESCRIPTION,
+			WORK_TYPE,
+			ERP_PROCESS_MAPPING,
+			EQUIPMENT_INTEGRATION_YN,
+			STATUS,
+			USE_YN,
+			SORT_ORDER,
+			OPMAN_CODE,
+			OPTIME
+		) VALUES (
+					 #{factoryCode},
+					 #{processId},
+					 #{processCode},
+					 #{processName},
+					 #{description},
+					 #{processType},
+					 #{erpProcessMapping},
+					 ISNULL(#{equipmentIntegrationYn}, 'N'),
+					 ISNULL(#{status}, 'ACTIVE'),
+					 ISNULL(#{useYn}, 'Y'),
+					 #{sortOrder},
+					 #{regUserId},
+					 GETDATE()
+				 )
+	</insert>
+
+	<update id="ProcessDAO.updateProcess" parameterType="egovframework.let.basedata.process.domain.model.Process">
+		UPDATE TPR102
+		SET
+			WORK_CODE = #{processCode},
+			WORK_NAME = #{processName},
+			DESCRIPTION = #{description},
+			WORK_TYPE = #{processType},
+			ERP_PROCESS_MAPPING = #{erpProcessMapping},
+			EQUIPMENT_INTEGRATION_YN = #{equipmentIntegrationYn},
+			STATUS = #{status},
+			USE_YN = #{useYn},
+			SORT_ORDER = #{sortOrder},
+			OPMAN_CODE2 = #{updUserId},
+			OPTIME2 = GETDATE()
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND WORK_ID = #{processId}
+	</update>
+
+	<delete id="ProcessDAO.deleteProcess" parameterType="map">
+		DELETE FROM TPR102
+		WHERE WORK_ID = #{processId}
+	</delete>
+
+	<!-- 공정 코드 중복 체크 -->
+	<select id="ProcessDAO.selectProcessCodeCheck" parameterType="map" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM TPR102
+		WHERE WORK_CODE = #{processCode}
+	</select>
+
+	<!-- 공정 코드 중복 체크 (수정 시) -->
+	<select id="ProcessDAO.selectProcessCodeCheckForUpdate" parameterType="map" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM TPR102
+		WHERE WORK_CODE = #{processCode}
+		  AND WORK_ID != #{processId}
+	</select>
+
+</mapper>

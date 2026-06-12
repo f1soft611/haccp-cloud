@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MesTPDROUItemProcMatInterfaceDAO">
+
+    <!-- MES 제품별공정별소요자재(TCO501) 정보 존재 여부 확인 -->
+    <select id="selectMesTPDROUItemProcMatCount" parameterType="map" resultType="int">
+                SELECT COUNT(1) AS cnt
+                FROM TCO501
+                WHERE COMPANY_SEQ = #{CompanySeq}
+                    AND ITEM_SEQ = #{ItemSeq}
+                    AND BOM_REV = #{BOMRev}
+                    AND PROC_REV = #{ProcRev}
+                    AND PROC_SEQ = #{ProcSeq}
+                    AND SERL = #{Serl}
+    </select>
+
+    <!-- MES 제품별공정별소요자재(TCO501) 정보 삽입 -->
+    <insert id="insertMesTPDROUItemProcMat" parameterType="map">
+        INSERT INTO TCO501 (
+            COMPANY_SEQ,
+            ITEM_SEQ,
+            BOM_REV,
+            PROC_REV,
+            PROC_SEQ,
+            SERL,
+            MAT_ITEM_SEQ,
+            UNIT_SEQ,
+            NEED_QTY_NUMERATOR,
+            NEED_QTY_DENOMINATOR,
+            SM_DELV_TYPE,
+            UPPER_ITEM_SEQ,
+            UPPER_BOM_REV,
+            BOM_ITEM_SERL,
+            LAST_USER_SEQ,
+            LAST_DATE_TIME
+        ) VALUES (
+            #{CompanySeq},
+            #{ItemSeq},
+            #{BOMRev},
+            #{ProcRev},
+            #{ProcSeq},
+            #{Serl},
+            #{MatItemSeq},
+            #{UnitSeq},
+            #{NeedQtyNumerator},
+            #{NeedQtyDenominator},
+            #{SMDelvType},
+            #{UpperItemSeq},
+            #{UpperBOMRev},
+            #{BOMItemSerl},
+            #{LastUserSeq},
+            #{LastDateTime}
+        )
+    </insert>
+
+    <!-- MES 제품별공정별소요자재(TCO501) 정보 업데이트 -->
+    <update id="updateMesTPDROUItemProcMat" parameterType="map">
+                UPDATE TCO501
+                SET
+                        MAT_ITEM_SEQ = #{MatItemSeq},
+                        UNIT_SEQ = #{UnitSeq},
+                        NEED_QTY_NUMERATOR = #{NeedQtyNumerator},
+                        NEED_QTY_DENOMINATOR = #{NeedQtyDenominator},
+                        SM_DELV_TYPE = #{SMDelvType},
+                        UPPER_ITEM_SEQ = #{UpperItemSeq},
+                        UPPER_BOM_REV = #{UpperBOMRev},
+                        BOM_ITEM_SERL = #{BOMItemSerl},
+                        LAST_USER_SEQ = #{LastUserSeq},
+                        LAST_DATE_TIME = #{LastDateTime}
+                WHERE COMPANY_SEQ = #{CompanySeq}
+                    AND ITEM_SEQ = #{ItemSeq}
+                    AND BOM_REV = #{BOMRev}
+                    AND PROC_REV = #{ProcRev}
+                    AND PROC_SEQ = #{ProcSeq}
+                    AND SERL = #{Serl}
+    </update>
+
+</mapper>

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ProductionPerformanceDAO">
+
+    <!-- 생산실적현황 목록 조회    -->
+    <select id="selectProdPerfList"
+            parameterType="egovframework.let.production.performance.domain.model.ProductionPerformanceSearchDto"
+            resultType="egovframework.let.production.performance.domain.model.ProductionPerformanceRow">
+        SELECT
+            ISNULL(A.ORDER_NO, '') orderNo,
+            ISNULL(A.CUSTOMER_CODE, '') customerCode,
+            ISNULL(A1.CUSTOMER_NAME, '') customerName,
+            M.ITEM_LOT_NO lotNo,
+            X1.MATERIAL_CODE itemCode, X1.MATERIAL_NAME itemName, X1.MATERIAL_SPEC itemSpec,
+            ISNULL(A.ORDER_QTY, 0) orderQty, --수주량
+            X.WORK_CODE workCode, X3.WORK_NAME workName,
+            X2.MATERIAL_CODE prodItemCode, X2.MATERIAL_NAME prodItemName, X2.MATERIAL_SPEC prodItemSpec,
+            X.WORKDT_DATE workDtDate,
+            X.PROD_QTY workQty, --작업지시량
+            ISNULL(S.PRODQTY,0) prodQty,
+            ISNULL(S.GOODQTY,0) goodQty,
+            ISNULL(S.BADQTY,0) badQty,
+            X.PROD_QTY-ISNULL(S.PRODQTY,0) remainQty,
+            CASE
+                WHEN X.PROD_QTY = 0 THEN 0
+                ELSE ISNULL(S.PRODQTY,0) * 100.0 / X.PROD_QTY
+            END rate,
+            X.FACTORY_CODE,
+            X.PRODPLAN_DATE,
+            X.PRODPLAN_SEQ,
+            X.PRODWORK_SEQ,
+            X.WORK_SEQ,
+            X.TPR504ID tpr504Id
+        FROM TPR504 X
+
+        LEFT JOIN TPR301M M
+        ON X.FACTORY_CODE = M.FACTORY_CODE
+        AND X.PRODPLAN_DATE = M.PRODPLAN_DATE
+        AND X.PRODPLAN_SEQ = M.PRODPLAN_SEQ
+
+        LEFT JOIN TPR301R A
+        ON X.FACTORY_CODE = A.FACTORY_CODE
+        AND X.PRODPLAN_DATE = A.PRODPLAN_DATE
+        AND X.PRODPLAN_SEQ = A.PRODPLAN_SEQ
+        LEFT JOIN TCO601 A1 --거래처
+        ON A.FACTORY_CODE = A1.FACTORY_CODE
+        AND A.CUSTOMER_CODE = A1.CUSTOMER_CODE
+
+        LEFT JOIN TCO403 X1 --제품
+        ON X.ITEM_CODE = X1.MATERIAL_ID
+
+        LEFT JOIN TCO403 X2 --생산품
+        ON X.PROD_CODE = X2.MATERIAL_ID
+
+        LEFT JOIN TPR102 X3 --공정
+        ON X.FACTORY_CODE = X3.FACTORY_CODE
+        AND X.WORK_CODE = X3.WORK_CODE
+
+        LEFT JOIN TPR301 P --작업장
+        ON X.FACTORY_CODE = P.FACTORY_CODE
+        AND X.PRODPLAN_DATE = P.PRODPLAN_DATE
+        AND X.PRODPLAN_SEQ = P.PRODPLAN_SEQ
+        AND X.PRODWORK_SEQ = P.PRODWORK_SEQ
+
+        INNER JOIN (
+            SELECT
+                FACTORY_CODE,
+                PRODPLAN_DATE,
+                PRODPLAN_SEQ,
+                WORK_SEQ,
+                SUM(PROD_QTY) PRODQTY,
+                SUM(GOOD_QTY) GOODQTY,
+                SUM(BAD_QTY) BADQTY,
+                MAX(PROD_ETIME) MAX_PROD_ETIME
+            FROM TPR601
+            GROUP BY
+                FACTORY_CODE,
+                PRODPLAN_DATE,
+                PRODPLAN_SEQ,
+                WORK_SEQ
+        ) S
+        ON X.FACTORY_CODE = S.FACTORY_CODE
+        AND X.PRODPLAN_DATE = S.PRODPLAN_DATE
+        AND X.PRODPLAN_SEQ = S.PRODPLAN_SEQ
+        AND X.WORK_SEQ = S.WORK_SEQ
+
+        WHERE ISNULL(x.DELETE_FLAG,'') != '1'
+        <if test="dateFrom != null and dateFrom != ''">
+            AND X.WORKDT_DATE <![CDATA[>=]]> REPLACE(#{dateFrom}, '-', '')
+        </if>
+        <if test="dateTo != null and dateTo != ''">
+            AND X.WORKDT_DATE <![CDATA[<=]]> REPLACE(#{dateTo}, '-', '')
+        </if>
+        <if test="completeFrom != null and completeFrom != ''">
+            AND CONVERT(char(8), S.MAX_PROD_ETIME, 112) <![CDATA[>=]]> REPLACE(#{completeFrom}, '-', '')
+        </if>
+        <if test="completeTo != null and completeTo != ''">
+            AND CONVERT(char(8), S.MAX_PROD_ETIME, 112) <![CDATA[<=]]> REPLACE(#{completeTo}, '-', '')
+        </if>
+        <if test="workplace != null and workplace != ''">
+            AND P.WORKCENTER_CODE = #{workplace}
+        </if>
+        <if test="equipment != null and equipment != ''">
+            AND X.EQUIP_SYS_CD = #{equipment}
+        </if>
+        ORDER BY X.PRODPLAN_DATE, CAST(X.PRODPLAN_SEQ AS INT), CAST(X.WORK_SEQ AS INT)
+        OFFSET #{offset} ROWS
+        FETCH NEXT #{size} ROWS ONLY
+
+    </select>
+
+    <!-- 생산실적현황 목록 전체 건 수    -->
+    <select id="selectProdPerfListCnt"
+            parameterType="egovframework.let.production.performance.domain.model.ProductionPerformanceSearchDto"
+            resultType="int">
+        SELECT
+            count(*)
+        FROM TPR504 X
+        LEFT JOIN TPR301 P --작업장
+        ON X.FACTORY_CODE = P.FACTORY_CODE
+        AND X.PRODPLAN_DATE = P.PRODPLAN_DATE
+        AND X.PRODPLAN_SEQ = P.PRODPLAN_SEQ
+        AND X.PRODWORK_SEQ = P.PRODWORK_SEQ
+        LEFT JOIN (
+            SELECT
+                FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, WORK_SEQ,
+                MAX(PROD_ETIME) MAX_PROD_ETIME
+            FROM TPR601
+            GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, WORK_SEQ
+        ) S
+        ON X.FACTORY_CODE = S.FACTORY_CODE
+        AND X.PRODPLAN_DATE = S.PRODPLAN_DATE
+        AND X.PRODPLAN_SEQ = S.PRODPLAN_SEQ
+        AND X.WORK_SEQ = S.WORK_SEQ
+        WHERE ISNULL(x.DELETE_FLAG,'') != '1'
+        <if test="dateFrom != null and dateFrom != ''">
+            AND X.WORKDT_DATE <![CDATA[>=]]> REPLACE(#{dateFrom}, '-', '')
+        </if>
+        <if test="dateTo != null and dateTo != ''">
+            AND X.WORKDT_DATE <![CDATA[<=]]> REPLACE(#{dateTo}, '-', '')
+        </if>
+        <if test="completeFrom != null and completeFrom != ''">
+            AND CONVERT(char(8), S.MAX_PROD_ETIME, 112) <![CDATA[>=]]> REPLACE(#{completeFrom}, '-', '')
+        </if>
+        <if test="completeTo != null and completeTo != ''">
+            AND CONVERT(char(8), S.MAX_PROD_ETIME, 112) <![CDATA[<=]]> REPLACE(#{completeTo}, '-', '')
+        </if>
+        <if test="workplace != null and workplace != ''">
+            AND P.WORKCENTER_CODE = #{workplace}
+        </if>
+        <if test="equipment != null and equipment != ''">
+            AND X.EQUIP_SYS_CD = #{equipment}
+        </if>
+    </select>
+</mapper>

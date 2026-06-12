@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SchedulerHistoryDAO">
+
+    <!-- 스케쥴러 실행 이력 resultMap -->
+    <resultMap id="schedulerHistoryResultMap" type="egovframework.let.scheduler.domain.model.SchedulerHistory">
+        <result property="historyId" column="HISTORY_ID"/>
+        <result property="schedulerId" column="SCHEDULER_ID"/>
+        <result property="schedulerName" column="SCHEDULER_NAME"/>
+        <result property="startTime" column="START_TIME"/>
+        <result property="endTime" column="END_TIME"/>
+        <result property="status" column="STATUS"/>
+        <result property="errorMessage" column="ERROR_MESSAGE"/>
+        <result property="errorStackTrace" column="ERROR_STACK_TRACE"/>
+        <result property="executionTimeMs" column="EXECUTION_TIME_MS"/>
+        <result property="retryCount" column="RETRY_COUNT"/>
+        <result property="regDt" column="REG_DT"/>
+    </resultMap>
+
+    <resultMap id="schedulerHistoryVOResultMap" type="egovframework.let.scheduler.domain.model.SchedulerHistoryVO">
+        <result property="historyId" column="HISTORY_ID"/>
+        <result property="schedulerId" column="SCHEDULER_ID"/>
+        <result property="schedulerName" column="SCHEDULER_NAME"/>
+        <result property="startTime" column="START_TIME"/>
+        <result property="endTime" column="END_TIME"/>
+        <result property="status" column="STATUS"/>
+        <result property="errorMessage" column="ERROR_MESSAGE"/>
+        <result property="errorStackTrace" column="ERROR_STACK_TRACE"/>
+        <result property="executionTimeMs" column="EXECUTION_TIME_MS"/>
+        <result property="retryCount" column="RETRY_COUNT"/>
+        <result property="regDt" column="REG_DT"/>
+    </resultMap>
+
+    <!-- 스케쥴러 실행 이력 목록 조회 -->
+    <select id="SchedulerHistoryDAO.selectSchedulerHistoryList" resultMap="schedulerHistoryVOResultMap"
+            parameterType="egovframework.let.scheduler.domain.model.SchedulerHistoryVO">
+        SELECT
+        HISTORY_ID,
+        SCHEDULER_ID,
+        SCHEDULER_NAME,
+        START_TIME,
+        END_TIME,
+        STATUS,
+        ERROR_MESSAGE,
+        ERROR_STACK_TRACE,
+        EXECUTION_TIME_MS,
+        RETRY_COUNT,
+        REG_DT
+        FROM SCHEDULER_HISTORY
+        WHERE 1=1
+        <if test="schedulerId != null">
+            AND SCHEDULER_ID = #{schedulerId}
+        </if>
+        <if test="status != null and status != ''">
+            AND STATUS = #{status}
+        </if>
+        <if test="searchWrd != null and searchWrd != ''">
+            AND (SCHEDULER_NAME LIKE '%' + #{searchWrd} + '%'
+            OR ERROR_MESSAGE LIKE '%' + #{searchWrd} + '%')
+        </if>
+        ORDER BY HISTORY_ID DESC
+        <if test="firstIndex != null and recordCountPerPage != null">
+            OFFSET #{firstIndex} ROWS
+            FETCH NEXT #{recordCountPerPage} ROWS ONLY
+        </if>
+    </select>
+
+    <!-- 스케쥴러 실행 이력 총 개수 조회 -->
+    <select id="SchedulerHistoryDAO.selectSchedulerHistoryListCnt" resultType="int"
+            parameterType="egovframework.let.scheduler.domain.model.SchedulerHistoryVO">
+        SELECT COUNT(*)
+        FROM SCHEDULER_HISTORY
+        WHERE 1=1
+        <if test="schedulerId != null">
+            AND SCHEDULER_ID = #{schedulerId}
+        </if>
+        <if test="status != null and status != ''">
+            AND STATUS = #{status}
+        </if>
+        <if test="searchWrd != null and searchWrd != ''">
+            AND (SCHEDULER_NAME LIKE '%' + #{searchWrd} + '%'
+            OR ERROR_MESSAGE LIKE '%' + #{searchWrd} + '%')
+        </if>
+    </select>
+
+    <!-- 스케쥴러 실행 이력 상세 조회 -->
+    <select id="SchedulerHistoryDAO.selectSchedulerHistoryDetail" resultMap="schedulerHistoryResultMap" parameterType="long">
+        SELECT
+            HISTORY_ID,
+            SCHEDULER_ID,
+            SCHEDULER_NAME,
+            START_TIME,
+            END_TIME,
+            STATUS,
+            ERROR_MESSAGE,
+            ERROR_STACK_TRACE,
+            EXECUTION_TIME_MS,
+            RETRY_COUNT,
+            REG_DT
+        FROM SCHEDULER_HISTORY
+        WHERE HISTORY_ID = #{historyId}
+    </select>
+
+    <!-- 스케쥴러 실행 이력 등록 -->
+    <insert id="SchedulerHistoryDAO.insertSchedulerHistory" 
+            parameterType="egovframework.let.scheduler.domain.model.SchedulerHistory"
+            useGeneratedKeys="true" 
+            keyProperty="historyId" 
+            keyColumn="HISTORY_ID">
+        INSERT INTO SCHEDULER_HISTORY (
+            SCHEDULER_ID,
+            SCHEDULER_NAME,
+            START_TIME,
+            END_TIME,
+            STATUS,
+            ERROR_MESSAGE,
+            EXECUTION_TIME_MS,
+            REG_DT
+        ) VALUES (
+            #{schedulerId},
+            #{schedulerName},
+            #{startTime},
+            #{endTime},
+            #{status},
+            #{errorMessage},
+            #{executionTimeMs},
+            GETDATE()
+        )
+    </insert>
+
+    <!-- 스케쥴러 실행 이력 수정 -->
+    <update id="SchedulerHistoryDAO.updateSchedulerHistory" parameterType="egovframework.let.scheduler.domain.model.SchedulerHistory">
+        UPDATE SCHEDULER_HISTORY
+            SET END_TIME = #{endTime},
+                STATUS = #{status},
+                ERROR_MESSAGE = #{errorMessage},
+                ERROR_STACK_TRACE = #{errorStackTrace},
+                EXECUTION_TIME_MS = #{executionTimeMs},
+                RETRY_COUNT = #{retryCount}
+        WHERE HISTORY_ID = #{historyId}
+    </update>
+
+</mapper>

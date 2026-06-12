@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WorkplaceKpiDAO">
+
+    <!-- ============================================================
+         기간 내 기존 데이터 삭제
+         (같은 작업장 + dateFrom ~ dateTo 범위 덮어쓰기 지원)
+    ============================================================ -->
+    <delete id="deleteKpiByRange"
+            parameterType="egovframework.let.production.kpi.domain.model.WorkplaceKpiVO">
+        DELETE FROM TPR701
+        WHERE FACTORY_CODE     = #{factoryCode}
+          AND WORKCENTER_CODE  = #{workcenterCode}
+          AND WORK_DATE BETWEEN #{dateFrom} AND #{dateTo}
+    </delete>
+
+    <!-- ============================================================
+         단건 INSERT
+    ============================================================ -->
+    <insert id="insertKpi"
+            parameterType="egovframework.let.production.kpi.domain.model.WorkplaceKpiReqDTO">
+        INSERT INTO TPR701 (
+            FACTORY_CODE,
+            WORKCENTER_CODE,
+            PROCESS_TYPE,
+            WORK_DATE,
+            WORK_ORDER_NO,
+            ITEM_NAME,
+            ITEM_CODE,
+            PROD_QTY,
+            GOOD_QTY,
+            BAD_QTY,
+            BAD_RATE,
+            WORK_TIME,
+            QTY_PER_HOUR,
+            REG_DT,
+            REG_ID
+        ) VALUES (
+            #{factoryCode},
+            #{workcenterCode},
+            #{processType},
+            #{workDate},
+            #{workOrderNo},
+            #{itemName},
+            #{itemCode},
+            #{prodQty},
+            #{goodQty},
+            #{badQty},
+            #{badRate},
+            #{workTime},
+            #{qtyPerHour},
+            CONVERT(VARCHAR(20), GETDATE(), 120),
+            #{regId}
+        )
+    </insert>
+
+    <!-- ============================================================
+         로우 데이터 목록 조회 (페이징)
+    ============================================================ -->
+    <select id="selectKpiList"
+            parameterType="egovframework.let.production.kpi.domain.model.WorkplaceKpiVO"
+            resultType="egovframework.let.production.kpi.domain.model.WorkplaceKpiRow">
+        SELECT
+            KPI_SEQ         kpiSeq,
+            FACTORY_CODE    factoryCode,
+            WORKCENTER_CODE workcenterCode,
+            PROCESS_TYPE    processType,
+            WORK_DATE       workDate,
+            WORK_ORDER_NO   workOrderNo,
+            ITEM_NAME       itemName,
+            ITEM_CODE       itemCode,
+            PROD_QTY        prodQty,
+            GOOD_QTY        goodQty,
+            BAD_QTY         badQty,
+            BAD_RATE        badRate,
+            WORK_TIME       workTime,
+            QTY_PER_HOUR    qtyPerHour,
+            REG_DT          regDt,
+            REG_ID          regId
+        FROM TPR701
+        WHERE FACTORY_CODE = #{factoryCode}
+          AND WORK_DATE BETWEEN #{dateFrom} AND #{dateTo}
+          <if test="workcenterCode != null and workcenterCode != ''">
+          AND WORKCENTER_CODE = #{workcenterCode}
+          </if>
+        ORDER BY WORK_DATE ASC, WORKCENTER_CODE ASC, KPI_SEQ ASC
+        OFFSET #{offset} ROWS
+        FETCH NEXT #{size} ROWS ONLY
+    </select>
+
+    <!-- ============================================================
+         로우 데이터 총 건수
+    ============================================================ -->
+    <select id="selectKpiListCnt"
+            parameterType="egovframework.let.production.kpi.domain.model.WorkplaceKpiVO"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM TPR701
+        WHERE FACTORY_CODE = #{factoryCode}
+          AND WORK_DATE BETWEEN #{dateFrom} AND #{dateTo}
+          <if test="workcenterCode != null and workcenterCode != ''">
+          AND WORKCENTER_CODE = #{workcenterCode}
+          </if>
+    </select>
+
+    <!-- ============================================================
+         일별 집계 조회 (차트용)
+    ============================================================ -->
+    <select id="selectKpiSummary"
+            parameterType="egovframework.let.production.kpi.domain.model.WorkplaceKpiVO"
+            resultType="egovframework.let.production.kpi.domain.model.WorkplaceKpiSummaryRow">
+        SELECT
+            WORK_DATE           workDate,
+            WORKCENTER_CODE     workcenterCode,
+            PROCESS_TYPE        processType,
+            SUM(PROD_QTY)       totalProdQty,
+            SUM(GOOD_QTY)       totalGoodQty,
+            SUM(BAD_QTY)        totalBadQty,
+            CASE
+                WHEN SUM(PROD_QTY) = 0 THEN 0
+                ELSE SUM(BAD_QTY) * 100.0 / SUM(PROD_QTY)
+            END                 avgBadRate,
+            SUM(WORK_TIME)      totalWorkTime,
+            CASE
+                WHEN SUM(WORK_TIME) = 0 THEN 0
+                ELSE SUM(PROD_QTY) / SUM(WORK_TIME)
+            END                 avgQtyPerHour,
+            COUNT(1)            rowCount
+        FROM TPR701
+        WHERE FACTORY_CODE = #{factoryCode}
+          AND WORK_DATE BETWEEN #{dateFrom} AND #{dateTo}
+          <if test="workcenterCode != null and workcenterCode != ''">
+          AND WORKCENTER_CODE = #{workcenterCode}
+          </if>
+        GROUP BY WORK_DATE, WORKCENTER_CODE, PROCESS_TYPE
+        ORDER BY WORK_DATE ASC, WORKCENTER_CODE ASC
+    </select>
+
+</mapper>

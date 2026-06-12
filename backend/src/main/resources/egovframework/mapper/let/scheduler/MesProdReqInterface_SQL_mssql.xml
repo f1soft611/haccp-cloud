@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MesProdReqInterfaceDAO">
+
+    <!-- MES 생산 의뢰 테이블에 생산 의뢰 정보 존재 여부 확인 -->
+    <select id="selectMesProdReqCount" parameterType="egovframework.let.scheduler.domain.model.ErpProductionRequest" resultType="int">
+        SELECT COUNT(1) AS cnt
+        FROM TSA308
+        WHERE FACTORY_CODE = #{factoryCode}
+          AND ORDER_NO = #{prodReqNo}
+          AND ORDER_SEQNO = #{prodReqSeq}
+          AND ORDER_HISTNO = #{serl}
+          AND ITEM_CODE = <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiItemSeq}
+                </when>
+                <otherwise>
+                    #{itemSeq}
+                </otherwise>
+            </choose>
+    </select>
+
+    <!-- MES 생산 의뢰 테이블에 생산 의뢰 정보 삽입 -->
+    <insert id="insertMesProdReq" parameterType="egovframework.let.scheduler.domain.model.ErpProductionRequest">
+        INSERT INTO TSA308 (
+            FACTORY_CODE,
+            ORDER_NO,
+            ORDER_SEQNO,
+            ORDER_HISTNO,
+            ITEM_CODE,
+            ITEM_NO,
+            ITEM_NAME,
+            ITEM_SPEC,
+            ITEM_FLAG,
+            CUSTOMER_CODE,
+            EMPLYR_ID,
+            ORDER_QTY,
+            ORDER_PRICE,
+            ORDER_AMOUNT,
+            UNIT_CODE,
+            SHIP_ORDER_QTY,
+            CLOSING_FLAG,
+            DELIVERY_DATE,
+            VAT_FLAG,
+            PROD_PLAN_DATE,
+            END_DATE,
+            OPMAN_CODE,
+            OPTIME,
+            REQ_TYPE,
+            REQ_TYPE_NAME
+        ) VALUES (
+            #{factoryCode},
+            #{prodReqNo},
+            #{prodReqSeq},
+            #{serl},
+            <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiItemSeq},
+                </when>
+                <otherwise>
+                    #{itemSeq},
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiItemNo},
+                </when>
+                <otherwise>
+                    #{itemNo},
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiItemName},
+                </when>
+                <otherwise>
+                    #{itemName},
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiSpec},
+                </when>
+                <otherwise>
+                    #{spec},
+                </otherwise>
+            </choose>
+            <choose>
+                <when test="itemFlag != null">
+                    #{itemFlag},
+                </when>
+                <otherwise>
+                    '0',
+                </otherwise>
+            </choose>
+            #{custSeq},
+            #{empSeq},
+            #{qty},
+            0,
+            0,
+            #{unitSeq},
+            0,
+            '0',
+            #{delvDate},
+            '0',
+            #{reqDate},
+            #{endDate},
+            'INTERFACE',
+            GETDATE(),
+            #{reqType},
+            #{reqTypeName}
+        )
+    </insert>
+
+    <!-- MES 생산 의뢰 테이블의 생산 의뢰 정보 업데이트 -->
+    <update id="updateMesProdReq" parameterType="egovframework.let.scheduler.domain.model.ErpProductionRequest">
+        UPDATE TSA308
+        SET
+            ORDER_NO = #{prodReqNo},
+            ORDER_HISTNO = #{serl},
+            ITEM_CODE = <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiItemSeq},
+                </when>
+                <otherwise>
+                    #{itemSeq},
+                </otherwise>
+            </choose>
+            ITEM_NO = <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiItemNo},
+                </when>
+                <otherwise>
+                    #{itemNo},
+                </otherwise>
+            </choose>
+            ITEM_NAME = <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiItemName},
+                </when>
+                <otherwise>
+                    #{itemName},
+                </otherwise>
+            </choose>
+            ITEM_SPEC = <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiSpec},
+                </when>
+                <otherwise>
+                    #{spec},
+                </otherwise>
+            </choose>
+            ITEM_FLAG = <choose>
+                <when test="itemFlag != null">
+                    #{itemFlag},
+                </when>
+                <otherwise>
+                    '0',
+                </otherwise>
+            </choose>
+            CUSTOMER_CODE = #{custSeq},
+            EMPLYR_ID = #{empSeq},
+            ORDER_QTY = #{qty},
+            UNIT_CODE = #{unitSeq},
+            DELIVERY_DATE = #{delvDate},
+            PROD_PLAN_DATE = #{reqDate},
+            END_DATE = #{endDate},
+            OPMAN_CODE2 = 'INTERFACE',
+            OPTIME2 = GETDATE(),
+            REQ_TYPE = #{reqType},
+            REQ_TYPE_NAME = #{reqTypeName}
+        WHERE FACTORY_CODE = #{factoryCode}
+          AND ORDER_NO = #{prodReqNo}
+          AND ORDER_SEQNO = #{prodReqSeq}
+          AND ORDER_HISTNO = #{serl}
+          AND ITEM_CODE = <choose>
+                <when test="itemFlag != null and itemFlag == 4">
+                    #{semiItemSeq}
+                </when>
+                <otherwise>
+                    #{itemSeq}
+                </otherwise>
+            </choose>
+    </update>
+
+</mapper>

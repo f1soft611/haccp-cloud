@@ -1,0 +1,743 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DashboardDAO">
+
+    <resultMap id="productionProgressMap" type="egovframework.let.dashboard.domain.model.ProductionProgressDTO">
+        <result property="planNo" column="PLAN_NO"/>
+        <result property="planSeq" column="PLAN_SEQ"/>
+        <result property="planDate" column="PLAN_DATE"/>
+        <result property="itemCode" column="ITEM_CODE"/>
+        <result property="itemName" column="ITEM_NAME"/>
+        <result property="itemSpec" column="ITEM_SPEC"/>
+        <result property="customerCode" column="CUSTOMER_CODE"/>
+        <result property="customerName" column="CUSTOMER_NAME"/>
+        <result property="workplaceCode" column="WORKPLACE_CODE"/>
+        <result property="workplaceName" column="WORKPLACE_NAME"/>
+        <result property="equipmentCode" column="EQUIPMENT_CODE"/>
+        <result property="equipmentName" column="EQUIPMENT_NAME"/>
+        <result property="workerCode" column="WORKER_CODE"/>
+        <result property="workerName" column="WORKER_NAME"/>
+        <result property="shift" column="SHIFT"/>
+        <result property="plannedQty" column="PLANNED_QTY"/>
+        <result property="actualQty" column="ACTUAL_QTY"/>
+        <result property="goodQty" column="GOOD_QTY"/>
+        <result property="defectQty" column="DEFECT_QTY"/>
+        <result property="planStatus" column="PLAN_STATUS"/>
+        <result property="startTime" column="START_TIME"/>
+        <result property="endTime" column="END_TIME"/>
+        <result property="remark" column="REMARK"/>
+    </resultMap>
+
+    <!-- 생산계획별 진행 현황 조회 -->
+    <select id="selectProductionProgress" parameterType="map" resultMap="productionProgressMap">
+        SELECT
+            m.PRODPLAN_ID AS PLAN_NO,
+            m.PRODPLAN_SEQ AS PLAN_SEQ,
+            m.PRODPLAN_DATE AS PLAN_DATE,
+            MIN(p.ITEM_CODE) AS ITEM_CODE,
+            MIN(p.ITEM_NAME) AS ITEM_NAME,
+            ISNULL(ord.CUSTOMER_CODE, '') AS CUSTOMER_CODE,
+            ISNULL(c.CUSTOMER_NAME, '') AS CUSTOMER_NAME,
+            MIN(p.WORKCENTER_CODE) AS WORKPLACE_CODE,
+            MIN(wc.WORKCENTER_NAME) AS WORKPLACE_NAME,
+            MIN(p.EQUIP_SYS_CD) AS EQUIPMENT_CODE,
+            MIN(eq.EQUIPMENT_NAME) AS EQUIPMENT_NAME,
+            MIN(p.WORKER_CODE) AS WORKER_CODE,
+            MIN(p.WORKER_NAME) AS WORKER_NAME,
+            '' AS SHIFT,
+            SUM(p.PROD_QTY) AS PLANNED_QTY,
+            -- 실적수량: 최종공정의 양품+불량 수량 (화면 표시용)
+            ISNULL(rf.GOOD_QTY, 0) + ISNULL(rf.BAD_QTY, 0) AS ACTUAL_QTY,
+            -- 진행률 계산용: (완료공정수 × 계획량 + 최종공정실적) / 총공정수
+            CASE
+                WHEN ISNULL(rf.GOOD_QTY, 0) > 0 AND ISNULL(ps.TOTAL_PROCESS_CNT, 0) > 0 THEN 
+                    CAST((ps.COMPLETED_PROCESS_CNT * SUM(p.PROD_QTY) + rf.GOOD_QTY + ISNULL(rf.BAD_QTY, 0)) / ps.TOTAL_PROCESS_CNT AS INT)
+                WHEN ISNULL(ps.TOTAL_PROCESS_CNT, 0) > 0 THEN 
+                    CAST(SUM(p.PROD_QTY) * ISNULL(ps.COMPLETED_PROCESS_CNT, 0) / ps.TOTAL_PROCESS_CNT AS INT)
+                ELSE 0
+            END AS PROGRESS_QTY,
+            ISNULL(rf.GOOD_QTY, 0) AS GOOD_QTY,
+            ISNULL(rf.BAD_QTY, 0) AS DEFECT_QTY,
+            CASE
+                WHEN ISNULL(rf.GOOD_QTY, 0) >= SUM(p.PROD_QTY) THEN 'COMPLETED'
+                WHEN ISNULL(ra.ACTUAL_QTY, 0) > 0 THEN 'IN_PROGRESS'
+                WHEN m.ORDER_FLAG = 'O' THEN 'ORDERED'
+                ELSE 'PLANNED'
+            END AS PLAN_STATUS,
+            MIN(p.BIGO) AS REMARK
+        FROM TPR301M m WITH (NOLOCK)
+        INNER JOIN TPR301 p WITH (NOLOCK) ON m.FACTORY_CODE = p.FACTORY_CODE AND m.PRODPLAN_DATE = p.PRODPLAN_DATE AND m.PRODPLAN_SEQ = p.PRODPLAN_SEQ
+        LEFT JOIN TPR101 wc WITH (NOLOCK) ON p.WORKCENTER_CODE = wc.WORKCENTER_CODE
+        LEFT JOIN TPR151 eq WITH (NOLOCK) ON p.EQUIP_SYS_CD = eq.EQUIP_SYS_CD
+        LEFT JOIN (
+            -- 최종공정(MAX WORK_SEQ)의 실적만 집계
+            SELECT
+                T.FACTORY_CODE,
+                T.PRODPLAN_DATE,
+                T.PRODPLAN_SEQ,
+                SUM(ISNULL(T.GOOD_QTY, 0)) AS GOOD_QTY,
+                SUM(ISNULL(T.BAD_QTY, 0)) AS BAD_QTY
+            FROM TPR601 T WITH (NOLOCK)
+            INNER JOIN (
+                -- 각 생산계획별 최종 공정순번 조회
+                SELECT
+                    FACTORY_CODE,
+                    PRODPLAN_DATE,
+                    PRODPLAN_SEQ,
+                    MAX(WORK_SEQ) AS LAST_WORK_SEQ
+                FROM TPR504 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+            ) L ON T.FACTORY_CODE = L.FACTORY_CODE
+                AND T.PRODPLAN_DATE = L.PRODPLAN_DATE
+                AND T.PRODPLAN_SEQ = L.PRODPLAN_SEQ
+                AND T.WORK_SEQ = L.LAST_WORK_SEQ
+            GROUP BY T.FACTORY_CODE, T.PRODPLAN_DATE, T.PRODPLAN_SEQ
+        ) rf ON m.FACTORY_CODE = rf.FACTORY_CODE AND m.PRODPLAN_DATE = rf.PRODPLAN_DATE AND m.PRODPLAN_SEQ = rf.PRODPLAN_SEQ
+        LEFT JOIN (
+            -- 전체 공정 실적 집계 (진행 여부 확인용)
+            SELECT
+                FACTORY_CODE,
+                PRODPLAN_DATE,
+                PRODPLAN_SEQ,
+                SUM(ISNULL(GOOD_QTY, 0) + ISNULL(BAD_QTY, 0)) AS ACTUAL_QTY
+            FROM TPR601 WITH (NOLOCK)
+            GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+        ) ra ON m.FACTORY_CODE = ra.FACTORY_CODE AND m.PRODPLAN_DATE = ra.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ra.PRODPLAN_SEQ
+        LEFT JOIN (
+            -- 공정 진행 현황: 전체 공정 수 및 완료된 공정 수 계산
+            SELECT
+                w.FACTORY_CODE,
+                w.PRODPLAN_DATE,
+                w.PRODPLAN_SEQ,
+                COUNT(DISTINCT w.WORK_SEQ) AS TOTAL_PROCESS_CNT,
+                SUM(CASE 
+                    WHEN ISNULL(r.GOOD_QTY, 0) + ISNULL(r.BAD_QTY, 0) >= w.PROD_QTY THEN 1 
+                    ELSE 0 
+                END) AS COMPLETED_PROCESS_CNT
+            FROM TPR504 w WITH (NOLOCK)
+            LEFT JOIN (
+                SELECT
+                    FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, PRODWORK_SEQ, WORK_SEQ,
+                    SUM(ISNULL(GOOD_QTY, 0)) AS GOOD_QTY,
+                    SUM(ISNULL(BAD_QTY, 0)) AS BAD_QTY
+                FROM TPR601 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, PRODWORK_SEQ, WORK_SEQ
+            ) r ON w.FACTORY_CODE = r.FACTORY_CODE
+                AND w.PRODPLAN_DATE = r.PRODPLAN_DATE
+                AND w.PRODPLAN_SEQ = r.PRODPLAN_SEQ
+                AND w.PRODWORK_SEQ = r.PRODWORK_SEQ
+                AND w.WORK_SEQ = r.WORK_SEQ
+            GROUP BY w.FACTORY_CODE, w.PRODPLAN_DATE, w.PRODPLAN_SEQ
+        ) ps ON m.FACTORY_CODE = ps.FACTORY_CODE AND m.PRODPLAN_DATE = ps.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ps.PRODPLAN_SEQ
+        LEFT JOIN TPR301R ord WITH (NOLOCK) ON m.FACTORY_CODE = ord.FACTORY_CODE AND m.PRODPLAN_DATE = ord.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ord.PRODPLAN_SEQ
+        LEFT JOIN TCO601 c WITH (NOLOCK) ON ord.CUSTOMER_CODE = c.CUSTOMER_CODE AND m.FACTORY_CODE = c.FACTORY_CODE
+        WHERE m.FACTORY_CODE = #{factoryCode}
+          AND m.PRODPLAN_ID = #{planNo}
+        <if test="planSeq != null">
+          AND m.PRODPLAN_SEQ = #{planSeq}
+        </if>
+        GROUP BY m.PRODPLAN_ID, m.PRODPLAN_SEQ, m.PRODPLAN_DATE, m.ORDER_FLAG,
+                 ord.CUSTOMER_CODE, c.CUSTOMER_NAME, rf.GOOD_QTY, rf.BAD_QTY, ra.ACTUAL_QTY,
+                 ps.TOTAL_PROCESS_CNT, ps.COMPLETED_PROCESS_CNT
+    </select>
+
+    <!-- 진행 중인 생산계획 목록 조회 -->
+    <select id="selectActiveProductionList" parameterType="map" resultMap="productionProgressMap">
+        SELECT TOP 10
+            m.PRODPLAN_ID AS PLAN_NO,
+            m.PRODPLAN_SEQ AS PLAN_SEQ,
+            m.PRODPLAN_DATE AS PLAN_DATE,
+            MIN(p.ITEM_CODE) AS ITEM_CODE,
+            MIN(p.ITEM_NAME) AS ITEM_NAME,
+            ISNULL(ord.CUSTOMER_CODE, '') AS CUSTOMER_CODE,
+            ISNULL(c.CUSTOMER_NAME, '') AS CUSTOMER_NAME,
+            MIN(p.WORKCENTER_CODE) AS WORKPLACE_CODE,
+            MIN(wc.WORKCENTER_NAME) AS WORKPLACE_NAME,
+            MIN(p.EQUIP_SYS_CD) AS EQUIPMENT_CODE,
+            MIN(eq.EQUIPMENT_NAME) AS EQUIPMENT_NAME,
+            MIN(p.WORKER_CODE) AS WORKER_CODE,
+            MIN(p.WORKER_NAME) AS WORKER_NAME,
+            '' AS SHIFT,
+            SUM(p.PROD_QTY) AS PLANNED_QTY,
+            -- 실적수량: 최종공정의 양품+불량 수량 (화면 표시용)
+            ISNULL(rf.GOOD_QTY, 0) + ISNULL(rf.BAD_QTY, 0) AS ACTUAL_QTY,
+            -- 진행률 계산용: (완료공정수 × 계획량 + 최종공정실적) / 총공정수
+            CASE
+                WHEN ISNULL(rf.GOOD_QTY, 0) > 0 AND ISNULL(ps.TOTAL_PROCESS_CNT, 0) > 0 THEN 
+                    CAST((ps.COMPLETED_PROCESS_CNT * SUM(p.PROD_QTY) + rf.GOOD_QTY + ISNULL(rf.BAD_QTY, 0)) / ps.TOTAL_PROCESS_CNT AS INT)
+                WHEN ISNULL(ps.TOTAL_PROCESS_CNT, 0) > 0 THEN 
+                    CAST(SUM(p.PROD_QTY) * ISNULL(ps.COMPLETED_PROCESS_CNT, 0) / ps.TOTAL_PROCESS_CNT AS INT)
+                ELSE 0
+            END AS PROGRESS_QTY,
+            ISNULL(rf.GOOD_QTY, 0) AS GOOD_QTY,
+            ISNULL(rf.BAD_QTY, 0) AS DEFECT_QTY,
+            CASE
+                WHEN ISNULL(rf.GOOD_QTY, 0) >= SUM(p.PROD_QTY) THEN 'COMPLETED'
+                WHEN ISNULL(ra.ACTUAL_QTY, 0) > 0 THEN 'IN_PROGRESS'
+                WHEN m.ORDER_FLAG = 'O' THEN 'ORDERED'
+                ELSE 'PLANNED'
+            END AS PLAN_STATUS
+        FROM TPR301M m WITH (NOLOCK)
+        INNER JOIN TPR301 p WITH (NOLOCK) ON m.FACTORY_CODE = p.FACTORY_CODE AND m.PRODPLAN_DATE = p.PRODPLAN_DATE AND m.PRODPLAN_SEQ = p.PRODPLAN_SEQ
+        LEFT JOIN TPR101 wc WITH (NOLOCK) ON p.WORKCENTER_CODE = wc.WORKCENTER_CODE
+        LEFT JOIN TPR151 eq WITH (NOLOCK) ON p.EQUIP_SYS_CD = eq.EQUIP_SYS_CD
+        LEFT JOIN (
+            -- 최종공정(MAX WORK_SEQ)의 실적만 집계
+            SELECT
+                T.FACTORY_CODE,
+                T.PRODPLAN_DATE,
+                T.PRODPLAN_SEQ,
+                SUM(ISNULL(T.GOOD_QTY, 0)) AS GOOD_QTY,
+                SUM(ISNULL(T.BAD_QTY, 0)) AS BAD_QTY
+            FROM TPR601 T WITH (NOLOCK)
+            INNER JOIN (
+                -- 각 생산계획별 최종 공정순번 조회
+                SELECT
+                    FACTORY_CODE,
+                    PRODPLAN_DATE,
+                    PRODPLAN_SEQ,
+                    MAX(WORK_SEQ) AS LAST_WORK_SEQ
+                FROM TPR504 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+            ) L ON T.FACTORY_CODE = L.FACTORY_CODE
+                AND T.PRODPLAN_DATE = L.PRODPLAN_DATE
+                AND T.PRODPLAN_SEQ = L.PRODPLAN_SEQ
+                AND T.WORK_SEQ = L.LAST_WORK_SEQ
+            GROUP BY T.FACTORY_CODE, T.PRODPLAN_DATE, T.PRODPLAN_SEQ
+        ) rf ON m.FACTORY_CODE = rf.FACTORY_CODE AND m.PRODPLAN_DATE = rf.PRODPLAN_DATE AND m.PRODPLAN_SEQ = rf.PRODPLAN_SEQ
+        LEFT JOIN (
+            -- 전체 공정 실적 집계 (진행 여부 확인용)
+            SELECT
+                FACTORY_CODE,
+                PRODPLAN_DATE,
+                PRODPLAN_SEQ,
+                SUM(ISNULL(GOOD_QTY, 0) + ISNULL(BAD_QTY, 0)) AS ACTUAL_QTY
+            FROM TPR601 WITH (NOLOCK)
+            GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+        ) ra ON m.FACTORY_CODE = ra.FACTORY_CODE AND m.PRODPLAN_DATE = ra.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ra.PRODPLAN_SEQ
+        LEFT JOIN (
+            -- 공정 진행 현황: 전체 공정 수 및 완료된 공정 수 계산
+            SELECT
+                w.FACTORY_CODE,
+                w.PRODPLAN_DATE,
+                w.PRODPLAN_SEQ,
+                COUNT(DISTINCT w.WORK_SEQ) AS TOTAL_PROCESS_CNT,
+                SUM(CASE 
+                    WHEN ISNULL(r.GOOD_QTY, 0) + ISNULL(r.BAD_QTY, 0) >= w.PROD_QTY THEN 1 
+                    ELSE 0 
+                END) AS COMPLETED_PROCESS_CNT
+            FROM TPR504 w WITH (NOLOCK)
+            LEFT JOIN (
+                SELECT
+                    FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, PRODWORK_SEQ, WORK_SEQ,
+                    SUM(ISNULL(GOOD_QTY, 0)) AS GOOD_QTY,
+                    SUM(ISNULL(BAD_QTY, 0)) AS BAD_QTY
+                FROM TPR601 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, PRODWORK_SEQ, WORK_SEQ
+            ) r ON w.FACTORY_CODE = r.FACTORY_CODE
+                AND w.PRODPLAN_DATE = r.PRODPLAN_DATE
+                AND w.PRODPLAN_SEQ = r.PRODPLAN_SEQ
+                AND w.PRODWORK_SEQ = r.PRODWORK_SEQ
+                AND w.WORK_SEQ = r.WORK_SEQ
+            GROUP BY w.FACTORY_CODE, w.PRODPLAN_DATE, w.PRODPLAN_SEQ
+        ) ps ON m.FACTORY_CODE = ps.FACTORY_CODE AND m.PRODPLAN_DATE = ps.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ps.PRODPLAN_SEQ
+        LEFT JOIN TPR301R ord WITH (NOLOCK) ON m.FACTORY_CODE = ord.FACTORY_CODE AND m.PRODPLAN_DATE = ord.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ord.PRODPLAN_SEQ
+        LEFT JOIN TCO601 c WITH (NOLOCK) ON ord.CUSTOMER_CODE = c.CUSTOMER_CODE AND m.FACTORY_CODE = c.FACTORY_CODE
+        WHERE m.FACTORY_CODE = #{factoryCode}
+          AND m.PRODPLAN_DATE = CONVERT(VARCHAR(8), GETDATE(), 112)
+        <if test="workplaceCode != null and workplaceCode != ''">
+          AND p.WORKCENTER_CODE = #{workplaceCode}
+        </if>
+        GROUP BY m.PRODPLAN_ID, m.PRODPLAN_SEQ, m.PRODPLAN_DATE, m.ORDER_FLAG,
+                 ord.CUSTOMER_CODE, c.CUSTOMER_NAME, rf.GOOD_QTY, rf.BAD_QTY, ra.ACTUAL_QTY,
+                 ps.TOTAL_PROCESS_CNT, ps.COMPLETED_PROCESS_CNT
+        ORDER BY m.PRODPLAN_DATE DESC, m.PRODPLAN_ID, m.PRODPLAN_SEQ
+    </select>
+
+    <!-- 오늘의 생산계획 진행 현황 목록 -->
+    <select id="selectTodayProductionProgressList" parameterType="map" resultMap="productionProgressMap">
+        SELECT
+            m.PRODPLAN_ID AS PLAN_NO,
+            m.PRODPLAN_SEQ AS PLAN_SEQ,
+            m.PRODPLAN_DATE AS PLAN_DATE,
+            MIN(p.ITEM_CODE) AS ITEM_CODE,
+            MIN(p.ITEM_NAME) AS ITEM_NAME,
+            ISNULL(ord.CUSTOMER_CODE, '') AS CUSTOMER_CODE,
+            ISNULL(c.CUSTOMER_NAME, '') AS CUSTOMER_NAME,
+            MIN(p.WORKCENTER_CODE) AS WORKPLACE_CODE,
+            MIN(wc.WORKCENTER_NAME) AS WORKPLACE_NAME,
+            MIN(p.EQUIP_SYS_CD) AS EQUIPMENT_CODE,
+            MIN(eq.EQUIPMENT_NAME) AS EQUIPMENT_NAME,
+            MIN(p.WORKER_CODE) AS WORKER_CODE,
+            MIN(p.WORKER_NAME) AS WORKER_NAME,
+            '' AS SHIFT,
+            SUM(p.PROD_QTY) AS PLANNED_QTY,
+            -- 실적수량: 최종공정의 양품+불량 수량 (화면 표시용)
+            ISNULL(rf.GOOD_QTY, 0) + ISNULL(rf.BAD_QTY, 0) AS ACTUAL_QTY,
+            -- 진행률 계산용: (완료공정수 × 계획량 + 최종공정실적) / 총공정수
+            CASE
+                WHEN ISNULL(rf.GOOD_QTY, 0) > 0 AND ISNULL(ps.TOTAL_PROCESS_CNT, 0) > 0 THEN 
+                    CAST((ps.COMPLETED_PROCESS_CNT * SUM(p.PROD_QTY) + rf.GOOD_QTY + ISNULL(rf.BAD_QTY, 0)) / ps.TOTAL_PROCESS_CNT AS INT)
+                WHEN ISNULL(ps.TOTAL_PROCESS_CNT, 0) > 0 THEN 
+                    CAST(SUM(p.PROD_QTY) * ISNULL(ps.COMPLETED_PROCESS_CNT, 0) / ps.TOTAL_PROCESS_CNT AS INT)
+                ELSE 0
+            END AS PROGRESS_QTY,
+            ISNULL(rf.GOOD_QTY, 0) AS GOOD_QTY,
+            ISNULL(rf.BAD_QTY, 0) AS DEFECT_QTY,
+            CASE
+                WHEN ISNULL(rf.GOOD_QTY, 0) >= SUM(p.PROD_QTY) THEN 'COMPLETED'
+                WHEN ISNULL(ra.ACTUAL_QTY, 0) > 0 THEN 'IN_PROGRESS'
+                WHEN m.ORDER_FLAG = 'O' THEN 'ORDERED'
+                ELSE 'PLANNED'
+            END AS PLAN_STATUS
+        FROM TPR301M m WITH (NOLOCK)
+        INNER JOIN TPR301 p WITH (NOLOCK) ON m.FACTORY_CODE = p.FACTORY_CODE AND m.PRODPLAN_DATE = p.PRODPLAN_DATE AND m.PRODPLAN_SEQ = p.PRODPLAN_SEQ
+        LEFT JOIN TPR101 wc WITH (NOLOCK) ON p.WORKCENTER_CODE = wc.WORKCENTER_CODE
+        LEFT JOIN TPR151 eq WITH (NOLOCK) ON p.EQUIP_SYS_CD = eq.EQUIP_SYS_CD
+        LEFT JOIN (
+            -- 최종공정(MAX WORK_SEQ)의 실적만 집계
+            SELECT
+                T.FACTORY_CODE,
+                T.PRODPLAN_DATE,
+                T.PRODPLAN_SEQ,
+                SUM(ISNULL(T.GOOD_QTY, 0)) AS GOOD_QTY,
+                SUM(ISNULL(T.BAD_QTY, 0)) AS BAD_QTY
+            FROM TPR601 T WITH (NOLOCK)
+            INNER JOIN (
+                -- 각 생산계획별 최종 공정순번 조회
+                SELECT
+                    FACTORY_CODE,
+                    PRODPLAN_DATE,
+                    PRODPLAN_SEQ,
+                    MAX(WORK_SEQ) AS LAST_WORK_SEQ
+                FROM TPR504 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+            ) L ON T.FACTORY_CODE = L.FACTORY_CODE
+                AND T.PRODPLAN_DATE = L.PRODPLAN_DATE
+                AND T.PRODPLAN_SEQ = L.PRODPLAN_SEQ
+                AND T.WORK_SEQ = L.LAST_WORK_SEQ
+            GROUP BY T.FACTORY_CODE, T.PRODPLAN_DATE, T.PRODPLAN_SEQ
+        ) rf ON m.FACTORY_CODE = rf.FACTORY_CODE AND m.PRODPLAN_DATE = rf.PRODPLAN_DATE AND m.PRODPLAN_SEQ = rf.PRODPLAN_SEQ
+        LEFT JOIN (
+            -- 전체 공정 실적 집계 (진행 여부 확인용)
+            SELECT
+                FACTORY_CODE,
+                PRODPLAN_DATE,
+                PRODPLAN_SEQ,
+                SUM(ISNULL(GOOD_QTY, 0) + ISNULL(BAD_QTY, 0)) AS ACTUAL_QTY
+            FROM TPR601 WITH (NOLOCK)
+            GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+        ) ra ON m.FACTORY_CODE = ra.FACTORY_CODE AND m.PRODPLAN_DATE = ra.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ra.PRODPLAN_SEQ
+        LEFT JOIN (
+            -- 공정 진행 현황: 전체 공정 수 및 완료된 공정 수 계산
+            SELECT
+                w.FACTORY_CODE,
+                w.PRODPLAN_DATE,
+                w.PRODPLAN_SEQ,
+                COUNT(DISTINCT w.WORK_SEQ) AS TOTAL_PROCESS_CNT,
+                SUM(CASE 
+                    WHEN ISNULL(r.GOOD_QTY, 0) + ISNULL(r.BAD_QTY, 0) >= w.PROD_QTY THEN 1 
+                    ELSE 0 
+                END) AS COMPLETED_PROCESS_CNT
+            FROM TPR504 w WITH (NOLOCK)
+            LEFT JOIN (
+                SELECT
+                    FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, PRODWORK_SEQ, WORK_SEQ,
+                    SUM(ISNULL(GOOD_QTY, 0)) AS GOOD_QTY,
+                    SUM(ISNULL(BAD_QTY, 0)) AS BAD_QTY
+                FROM TPR601 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, PRODWORK_SEQ, WORK_SEQ
+            ) r ON w.FACTORY_CODE = r.FACTORY_CODE
+                AND w.PRODPLAN_DATE = r.PRODPLAN_DATE
+                AND w.PRODPLAN_SEQ = r.PRODPLAN_SEQ
+                AND w.PRODWORK_SEQ = r.PRODWORK_SEQ
+                AND w.WORK_SEQ = r.WORK_SEQ
+            GROUP BY w.FACTORY_CODE, w.PRODPLAN_DATE, w.PRODPLAN_SEQ
+        ) ps ON m.FACTORY_CODE = ps.FACTORY_CODE AND m.PRODPLAN_DATE = ps.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ps.PRODPLAN_SEQ
+        LEFT JOIN TPR301R ord WITH (NOLOCK) ON m.FACTORY_CODE = ord.FACTORY_CODE AND m.PRODPLAN_DATE = ord.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ord.PRODPLAN_SEQ
+        LEFT JOIN TCO601 c WITH (NOLOCK) ON ord.CUSTOMER_CODE = c.CUSTOMER_CODE AND m.FACTORY_CODE = c.FACTORY_CODE
+        WHERE m.FACTORY_CODE = #{factoryCode}
+          AND m.PRODPLAN_DATE = #{planDate}
+        <if test="workplaceCode != null and workplaceCode != ''">
+          AND p.WORKCENTER_CODE = #{workplaceCode}
+        </if>
+        GROUP BY m.PRODPLAN_ID, m.PRODPLAN_SEQ, m.PRODPLAN_DATE, m.ORDER_FLAG,
+                 ord.CUSTOMER_CODE, c.CUSTOMER_NAME, rf.GOOD_QTY, rf.BAD_QTY, ra.ACTUAL_QTY,
+                 ps.TOTAL_PROCESS_CNT, ps.COMPLETED_PROCESS_CNT
+        ORDER BY 
+            CASE
+                WHEN ISNULL(rf.GOOD_QTY, 0) >= SUM(p.PROD_QTY) THEN 3
+                WHEN ISNULL(ra.ACTUAL_QTY, 0) > 0 THEN 1
+                ELSE 2
+            END,
+            m.PRODPLAN_ID, m.PRODPLAN_SEQ
+    </select>
+
+    <!-- 작업장별 생산 진행 현황 -->
+    <select id="selectProductionProgressByWorkplace" parameterType="map" resultType="egovframework.let.dashboard.domain.model.WorkplaceProgressDTO">
+        SELECT
+            p.WORKCENTER_CODE AS WORKPLACE_CODE,
+            MIN(wc.WORKCENTER_NAME) AS WORKPLACE_NAME,
+            COUNT(DISTINCT m.PRODPLAN_ID) AS PLAN_COUNT,
+            SUM(p.PROD_QTY) AS PLANNED_QTY,
+            -- 실적수량: 최종공정의 양품+불량 합계
+            SUM(ISNULL(r.GOOD_QTY, 0) + ISNULL(r.BAD_QTY, 0)) AS ACTUAL_QTY,
+            -- 진행률 계산용: (완료공정수 × 계획량 + 최종공정실적) / 총공정수
+            SUM(CASE
+                WHEN ISNULL(r.GOOD_QTY, 0) > 0 AND ISNULL(ps.TOTAL_PROCESS_CNT, 0) > 0 THEN 
+                    CAST((ps.COMPLETED_PROCESS_CNT * p.PROD_QTY + r.GOOD_QTY + ISNULL(r.BAD_QTY, 0)) / ps.TOTAL_PROCESS_CNT AS INT)
+                WHEN ISNULL(ps.TOTAL_PROCESS_CNT, 0) > 0 THEN 
+                    CAST(p.PROD_QTY * ISNULL(ps.COMPLETED_PROCESS_CNT, 0) / ps.TOTAL_PROCESS_CNT AS INT)
+                ELSE 0
+            END) AS PROGRESS_QTY,
+            SUM(ISNULL(r.GOOD_QTY, 0)) AS GOOD_QTY,
+            SUM(ISNULL(r.BAD_QTY, 0)) AS DEFECT_QTY
+        FROM TPR301M m WITH (NOLOCK)
+        INNER JOIN TPR301 p WITH (NOLOCK) ON m.FACTORY_CODE = p.FACTORY_CODE AND m.PRODPLAN_DATE = p.PRODPLAN_DATE AND m.PRODPLAN_SEQ = p.PRODPLAN_SEQ
+        LEFT JOIN TPR101 wc WITH (NOLOCK) ON p.WORKCENTER_CODE = wc.WORKCENTER_CODE
+        LEFT JOIN (
+            -- 최종공정(MAX WORK_SEQ)의 실적만 집계
+            SELECT
+                T.FACTORY_CODE,
+                T.PRODPLAN_DATE,
+                T.PRODPLAN_SEQ,
+                SUM(ISNULL(T.GOOD_QTY, 0)) AS GOOD_QTY,
+                SUM(ISNULL(T.BAD_QTY, 0)) AS BAD_QTY
+            FROM TPR601 T WITH (NOLOCK)
+            INNER JOIN (
+                -- 각 생산계획별 최종 공정순번 조회
+                SELECT
+                    FACTORY_CODE,
+                    PRODPLAN_DATE,
+                    PRODPLAN_SEQ,
+                    MAX(WORK_SEQ) AS LAST_WORK_SEQ
+                FROM TPR504 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+            ) L ON T.FACTORY_CODE = L.FACTORY_CODE
+                AND T.PRODPLAN_DATE = L.PRODPLAN_DATE
+                AND T.PRODPLAN_SEQ = L.PRODPLAN_SEQ
+                AND T.WORK_SEQ = L.LAST_WORK_SEQ
+            WHERE T.FACTORY_CODE = #{factoryCode}
+            GROUP BY T.FACTORY_CODE, T.PRODPLAN_DATE, T.PRODPLAN_SEQ
+        ) r ON m.FACTORY_CODE = r.FACTORY_CODE AND m.PRODPLAN_DATE = r.PRODPLAN_DATE AND m.PRODPLAN_SEQ = r.PRODPLAN_SEQ
+        LEFT JOIN (
+            -- 공정 진행 현황: 전체 공정 수 및 완료된 공정 수 계산
+            SELECT
+                w.FACTORY_CODE,
+                w.PRODPLAN_DATE,
+                w.PRODPLAN_SEQ,
+                COUNT(DISTINCT w.WORK_SEQ) AS TOTAL_PROCESS_CNT,
+                SUM(CASE 
+                    WHEN ISNULL(res.GOOD_QTY, 0) + ISNULL(res.BAD_QTY, 0) >= w.PROD_QTY THEN 1 
+                    ELSE 0 
+                END) AS COMPLETED_PROCESS_CNT
+            FROM TPR504 w WITH (NOLOCK)
+            LEFT JOIN (
+                SELECT
+                    FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, PRODWORK_SEQ, WORK_SEQ,
+                    SUM(ISNULL(GOOD_QTY, 0)) AS GOOD_QTY,
+                    SUM(ISNULL(BAD_QTY, 0)) AS BAD_QTY
+                FROM TPR601 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, PRODWORK_SEQ, WORK_SEQ
+            ) res ON w.FACTORY_CODE = res.FACTORY_CODE
+                AND w.PRODPLAN_DATE = res.PRODPLAN_DATE
+                AND w.PRODPLAN_SEQ = res.PRODPLAN_SEQ
+                AND w.PRODWORK_SEQ = res.PRODWORK_SEQ
+                AND w.WORK_SEQ = res.WORK_SEQ
+            GROUP BY w.FACTORY_CODE, w.PRODPLAN_DATE, w.PRODPLAN_SEQ
+        ) ps ON m.FACTORY_CODE = ps.FACTORY_CODE AND m.PRODPLAN_DATE = ps.PRODPLAN_DATE AND m.PRODPLAN_SEQ = ps.PRODPLAN_SEQ
+        WHERE m.FACTORY_CODE = #{factoryCode}
+          AND m.PRODPLAN_DATE = #{planDate}
+        GROUP BY p.WORKCENTER_CODE
+        ORDER BY p.WORKCENTER_CODE
+    </select>
+
+    <!-- 공정별 진행 현황 조회 -->
+    <resultMap id="processProgressMap" type="egovframework.let.dashboard.domain.model.ProcessProgressDTO">
+        <result property="processSeq" column="PROCESS_SEQ"/>
+        <result property="processCode" column="PROCESS_CODE"/>
+        <result property="processName" column="PROCESS_NAME"/>
+        <result property="workplaceCode" column="WORKPLACE_CODE"/>
+        <result property="workplaceName" column="WORKPLACE_NAME"/>
+        <result property="equipmentCode" column="EQUIPMENT_CODE"/>
+        <result property="equipmentName" column="EQUIPMENT_NAME"/>
+        <result property="workerCode" column="WORKER_CODE"/>
+        <result property="workerName" column="WORKER_NAME"/>
+        <result property="plannedQty" column="PLANNED_QTY"/>
+        <result property="actualQty" column="ACTUAL_QTY"/>
+        <result property="goodQty" column="GOOD_QTY"/>
+        <result property="defectQty" column="DEFECT_QTY"/>
+        <result property="processStatus" column="PROCESS_STATUS"/>
+        <result property="isFinalProcess" column="IS_FINAL_PROCESS"/>
+        <result property="startTime" column="START_TIME"/>
+        <result property="endTime" column="END_TIME"/>
+        <result property="remark" column="REMARK"/>
+    </resultMap>
+
+    <select id="selectProcessProgressList" parameterType="map" resultMap="processProgressMap">
+        SELECT
+            CAST(A.WORK_SEQ AS INT) AS PROCESS_SEQ,
+            A.WORK_CODE AS PROCESS_CODE,
+            B.WORK_NAME AS PROCESS_NAME,
+            A1.WORKCENTER_CODE AS WORKPLACE_CODE,
+            A2.WORKCENTER_NAME AS WORKPLACE_NAME,
+            A.EQUIP_SYS_CD AS EQUIPMENT_CODE,
+            D.EQUIPMENT_NAME,
+            STUFF((
+                SELECT ',' + W.WORKER_CODE
+                FROM TPR601W W WITH (NOLOCK)
+                WHERE W.FACTORY_CODE = A.FACTORY_CODE
+                  AND W.PRODPLAN_DATE = A.PRODPLAN_DATE
+                  AND W.PRODPLAN_SEQ = A.PRODPLAN_SEQ
+                  AND W.PRODWORK_SEQ = A.PRODWORK_SEQ
+                  AND W.WORK_SEQ = CAST(A.WORK_SEQ AS INT)
+                FOR XML PATH(''), TYPE
+            ).value('.', 'varchar(max)'), 1, 1, '') AS WORKER_CODE,
+            NULL AS WORKER_NAME,
+            A.PROD_QTY AS PLANNED_QTY,
+            ISNULL(R.GOOD_QTY, 0) + ISNULL(R.BAD_QTY, 0) AS ACTUAL_QTY,
+            ISNULL(R.GOOD_QTY, 0) AS GOOD_QTY,
+            ISNULL(R.BAD_QTY, 0) AS DEFECT_QTY,
+            CASE
+                WHEN ISNULL(R.GOOD_QTY, 0) + ISNULL(R.BAD_QTY, 0) >= A.PROD_QTY THEN 'COMPLETED'
+                WHEN ISNULL(R.GOOD_QTY, 0) + ISNULL(R.BAD_QTY, 0) > 0 THEN 'IN_PROGRESS'
+                ELSE 'PLANNED'
+            END AS PROCESS_STATUS,
+            CASE 
+                WHEN CAST(A.WORK_SEQ AS INT) = L.LAST_WORK_SEQ THEN 'Y'
+                ELSE 'N'
+            END AS IS_FINAL_PROCESS,
+            R.PROD_STIME AS START_TIME,
+            R.PROD_ETIME AS END_TIME,
+            NULL AS REMARK
+        FROM TPR504 A WITH (NOLOCK)
+            LEFT JOIN TPR301 A1 WITH (NOLOCK)
+                ON A.FACTORY_CODE = A1.FACTORY_CODE
+                AND A.PRODPLAN_DATE = A1.PRODPLAN_DATE
+                AND A.PRODPLAN_SEQ = A1.PRODPLAN_SEQ
+            LEFT JOIN TPR101 A2 WITH (NOLOCK)
+                ON A1.WORKCENTER_CODE = A2.WORKCENTER_CODE
+            LEFT JOIN TPR102 B WITH (NOLOCK)
+                ON A.FACTORY_CODE = B.FACTORY_CODE
+                AND A.WORK_CODE = B.WORK_CODE
+            LEFT JOIN TPR151 D WITH (NOLOCK)
+                ON A.EQUIP_SYS_CD = D.EQUIP_SYS_CD
+            LEFT JOIN (
+                SELECT
+                    FACTORY_CODE,
+                    PRODPLAN_DATE,
+                    PRODPLAN_SEQ,
+                    PRODWORK_SEQ,
+                    WORK_SEQ,
+                    SUM(ISNULL(GOOD_QTY, 0)) AS GOOD_QTY,
+                    SUM(ISNULL(BAD_QTY, 0)) AS BAD_QTY,
+                    MIN(PROD_STIME) AS PROD_STIME,
+                    MAX(PROD_ETIME) AS PROD_ETIME
+                FROM TPR601 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ, PRODWORK_SEQ, WORK_SEQ
+            ) R ON A.FACTORY_CODE = R.FACTORY_CODE
+               AND A.PRODPLAN_DATE = R.PRODPLAN_DATE
+               AND A.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+               AND A.PRODWORK_SEQ = R.PRODWORK_SEQ
+               AND CAST(A.WORK_SEQ AS INT) = R.WORK_SEQ
+            LEFT JOIN (
+                -- 각 생산계획별 최종 공정순번 조회
+                SELECT
+                    FACTORY_CODE,
+                    PRODPLAN_DATE,
+                    PRODPLAN_SEQ,
+                    MAX(WORK_SEQ) AS LAST_WORK_SEQ
+                FROM TPR504 WITH (NOLOCK)
+                WHERE FACTORY_CODE = #{factoryCode}
+                  AND PRODPLAN_DATE = #{planDate}
+                  AND PRODPLAN_SEQ = #{planSeq}
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+            ) L ON A.FACTORY_CODE = L.FACTORY_CODE
+               AND A.PRODPLAN_DATE = L.PRODPLAN_DATE
+               AND A.PRODPLAN_SEQ = L.PRODPLAN_SEQ
+        WHERE A.FACTORY_CODE = #{factoryCode}
+          AND A.PRODPLAN_DATE = #{planDate}
+          AND A.PRODPLAN_SEQ = #{planSeq}
+        ORDER BY CAST(A.WORK_SEQ AS INT)
+    </select>
+
+    <!-- 금일 대시보드 KPI 통계 조회 -->
+    <resultMap id="dashboardKPIMap" type="egovframework.let.dashboard.domain.model.DashboardKPIDTO">
+        <result property="planDate" column="PLAN_DATE"/>
+        <result property="totalPlanCount" column="TOTAL_PLAN_COUNT"/>
+        <result property="totalPlannedQty" column="TOTAL_PLANNED_QTY"/>
+        <result property="completedPlanCount" column="COMPLETED_PLAN_COUNT"/>
+        <result property="completedQty" column="COMPLETED_QTY"/>
+        <result property="inProgressPlanCount" column="IN_PROGRESS_PLAN_COUNT"/>
+        <result property="inProgressQty" column="IN_PROGRESS_QTY"/>
+        <result property="totalActualQty" column="TOTAL_ACTUAL_QTY"/>
+        <result property="totalGoodQty" column="TOTAL_GOOD_QTY"/>
+        <result property="totalDefectQty" column="TOTAL_DEFECT_QTY"/>
+    </resultMap>
+
+    <select id="selectTodayKPI" parameterType="map" resultMap="dashboardKPIMap">
+        WITH PlanData AS (
+            SELECT 
+                m.PRODPLAN_DATE,
+                m.PRODPLAN_ID,
+                m.PRODPLAN_SEQ,
+                SUM(p.PROD_QTY) AS PLAN_QTY,
+                ISNULL(rf.GOOD_QTY, 0) AS GOOD_QTY,
+                ISNULL(rf.BAD_QTY, 0) AS BAD_QTY,
+                CASE
+                    WHEN ISNULL(rf.GOOD_QTY, 0) >= SUM(p.PROD_QTY) THEN 'COMPLETED'
+                    WHEN ISNULL(ra.ACTUAL_QTY, 0) > 0 THEN 'IN_PROGRESS'
+                    WHEN m.ORDER_FLAG = 'O' THEN 'ORDERED'
+                    ELSE 'PLANNED'
+                END AS ACTUAL_STATUS
+            FROM TPR301M m WITH (NOLOCK)
+            INNER JOIN TPR301 p WITH (NOLOCK) ON m.FACTORY_CODE = p.FACTORY_CODE 
+                AND m.PRODPLAN_DATE = p.PRODPLAN_DATE 
+                AND m.PRODPLAN_SEQ = p.PRODPLAN_SEQ
+            LEFT JOIN (
+                -- 최종공정(MAX WORK_SEQ)의 실적만 집계
+                SELECT
+                    T.FACTORY_CODE,
+                    T.PRODPLAN_DATE,
+                    T.PRODPLAN_SEQ,
+                    SUM(ISNULL(T.GOOD_QTY, 0)) AS GOOD_QTY,
+                    SUM(ISNULL(T.BAD_QTY, 0)) AS BAD_QTY
+                FROM TPR601 T WITH (NOLOCK)
+                INNER JOIN (
+                    -- 각 생산계획별 최종 공정순번 조회
+                    SELECT
+                        FACTORY_CODE,
+                        PRODPLAN_DATE,
+                        PRODPLAN_SEQ,
+                        MAX(WORK_SEQ) AS LAST_WORK_SEQ
+                    FROM TPR504 WITH (NOLOCK)
+                    GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+                ) L ON T.FACTORY_CODE = L.FACTORY_CODE
+                    AND T.PRODPLAN_DATE = L.PRODPLAN_DATE
+                    AND T.PRODPLAN_SEQ = L.PRODPLAN_SEQ
+                    AND T.WORK_SEQ = L.LAST_WORK_SEQ
+                GROUP BY T.FACTORY_CODE, T.PRODPLAN_DATE, T.PRODPLAN_SEQ
+            ) rf ON m.FACTORY_CODE = rf.FACTORY_CODE 
+               AND m.PRODPLAN_DATE = rf.PRODPLAN_DATE 
+               AND m.PRODPLAN_SEQ = rf.PRODPLAN_SEQ
+            LEFT JOIN (
+                -- 전체 공정 실적 집계 (진행 여부 확인용)
+                SELECT
+                    FACTORY_CODE,
+                    PRODPLAN_DATE,
+                    PRODPLAN_SEQ,
+                    SUM(ISNULL(GOOD_QTY, 0) + ISNULL(BAD_QTY, 0)) AS ACTUAL_QTY
+                FROM TPR601 WITH (NOLOCK)
+                GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+            ) ra ON m.FACTORY_CODE = ra.FACTORY_CODE 
+               AND m.PRODPLAN_DATE = ra.PRODPLAN_DATE 
+               AND m.PRODPLAN_SEQ = ra.PRODPLAN_SEQ
+            WHERE m.FACTORY_CODE = #{factoryCode}
+              AND m.PRODPLAN_DATE = #{planDate}
+            GROUP BY m.PRODPLAN_DATE, m.PRODPLAN_ID, m.PRODPLAN_SEQ, m.ORDER_FLAG, rf.GOOD_QTY, rf.BAD_QTY, ra.ACTUAL_QTY
+        )
+        SELECT
+            PRODPLAN_DATE AS PLAN_DATE,
+            COUNT(*) AS TOTAL_PLAN_COUNT,
+            SUM(PLAN_QTY) AS TOTAL_PLANNED_QTY,
+            SUM(CASE WHEN ACTUAL_STATUS = 'COMPLETED' THEN 1 ELSE 0 END) AS COMPLETED_PLAN_COUNT,
+            SUM(CASE WHEN ACTUAL_STATUS = 'COMPLETED' THEN PLAN_QTY ELSE 0 END) AS COMPLETED_QTY,
+            SUM(CASE WHEN ACTUAL_STATUS = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS IN_PROGRESS_PLAN_COUNT,
+            SUM(CASE WHEN ACTUAL_STATUS = 'IN_PROGRESS' THEN PLAN_QTY ELSE 0 END) AS IN_PROGRESS_QTY,
+            SUM(GOOD_QTY) AS TOTAL_ACTUAL_QTY,
+            SUM(GOOD_QTY) AS TOTAL_GOOD_QTY,
+            SUM(BAD_QTY) AS TOTAL_DEFECT_QTY
+        FROM PlanData
+        GROUP BY PRODPLAN_DATE
+    </select>
+
+    <!-- 실시간 알림/이슈 목록 조회 -->
+    <select id="selectRecentAlerts" resultType="egovframework.let.dashboard.domain.model.DashboardAlertDTO">
+        SELECT TOP 10
+            'ALERT_' + CAST(A.PRODPLAN_SEQ AS VARCHAR) + '_' + CAST(ROW_NUMBER() OVER (ORDER BY A.OPTIME) AS VARCHAR) AS ALERT_ID,
+            CASE
+                WHEN A.GOOD_QTY >= A.PLAN_QTY AND A.GOOD_QTY &lt; A.PLAN_QTY * 0.9 THEN 'QUALITY_ISSUE'
+                WHEN A.GOOD_QTY > 0 AND A.GOOD_QTY &lt; A.PLAN_QTY AND DATEDIFF(HOUR, A.OPTIME, GETDATE()) &gt; 24 THEN 'DELAY_WARNING'
+                WHEN ISNULL(A.GOOD_QTY, 0) = 0 AND DATEDIFF(HOUR, A.OPTIME, GETDATE()) &gt; 4 THEN 'EQUIPMENT_FAILURE'
+                ELSE 'MATERIAL_SHORTAGE'
+            END AS ALERT_TYPE,
+            CASE
+                WHEN A.GOOD_QTY >= A.PLAN_QTY AND A.GOOD_QTY &lt; A.PLAN_QTY * 0.9 THEN 'HIGH'
+                WHEN A.GOOD_QTY > 0 AND A.GOOD_QTY &lt; A.PLAN_QTY AND DATEDIFF(HOUR, A.OPTIME, GETDATE()) &gt; 24 THEN 'HIGH'
+                WHEN ISNULL(A.GOOD_QTY, 0) = 0 AND DATEDIFF(HOUR, A.OPTIME, GETDATE()) &gt; 4 THEN 'MEDIUM'
+                ELSE 'LOW'
+            END AS PRIORITY,
+            CASE
+                WHEN A.GOOD_QTY >= A.PLAN_QTY AND A.GOOD_QTY &lt; A.PLAN_QTY * 0.9 THEN '품질 이슈: 양품율 90% 미만'
+                WHEN A.GOOD_QTY > 0 AND A.GOOD_QTY &lt; A.PLAN_QTY AND DATEDIFF(HOUR, A.OPTIME, GETDATE()) &gt; 24 THEN '지연 경고: 계획 시작 후 24시간 경과'
+                WHEN ISNULL(A.GOOD_QTY, 0) = 0 AND DATEDIFF(HOUR, A.OPTIME, GETDATE()) &gt; 4 THEN '생산 중단: 실적 미입력 (4시간 경과)'
+                ELSE '자재 부족 가능성'
+            END AS MESSAGE,
+            CAST(A.PRODPLAN_SEQ AS VARCHAR) AS PLAN_SEQ,
+            A.ITEM_CODE,
+            A.ITEM_NAME,
+            A.WORKCENTER_CODE AS WORKPLACE_CODE,
+            A.WORKPLACE_NAME,
+            CONVERT(VARCHAR(19), A.OPTIME, 120) AS OCCURRED_AT,
+            CASE WHEN ISNULL(A.GOOD_QTY, 0) >= A.PLAN_QTY THEN 'Y' ELSE 'N' END AS IS_RESOLVED,
+            CASE WHEN ISNULL(A.GOOD_QTY, 0) >= A.PLAN_QTY THEN CONVERT(VARCHAR(19), A.OPTIME2, 120) ELSE NULL END AS RESOLVED_AT
+        FROM (
+            SELECT 
+                M.PRODPLAN_SEQ,
+                M.OPTIME,
+                M.OPTIME2,
+                MIN(D.ITEM_CODE) AS ITEM_CODE,
+                MIN(D.ITEM_NAME) AS ITEM_NAME,
+                MIN(D.WORKCENTER_CODE) AS WORKCENTER_CODE,
+                MIN(WC.WORKCENTER_NAME) AS WORKPLACE_NAME,
+                SUM(D.PROD_QTY) AS PLAN_QTY,
+                ISNULL(R.GOOD_QTY, 0) AS GOOD_QTY
+            FROM TPR301M M WITH (NOLOCK)
+            INNER JOIN TPR301 D WITH (NOLOCK) ON M.FACTORY_CODE = D.FACTORY_CODE 
+                AND M.PRODPLAN_DATE = D.PRODPLAN_DATE 
+                AND M.PRODPLAN_SEQ = D.PRODPLAN_SEQ
+            LEFT JOIN TPR101 WC WITH (NOLOCK) ON D.WORKCENTER_CODE = WC.WORKCENTER_CODE
+            LEFT JOIN (
+                -- 최종공정(MAX WORK_SEQ)의 실적만 집계
+                SELECT
+                    T.FACTORY_CODE,
+                    T.PRODPLAN_DATE,
+                    T.PRODPLAN_SEQ,
+                    SUM(ISNULL(T.GOOD_QTY, 0)) AS GOOD_QTY
+                FROM TPR601 T WITH (NOLOCK)
+                INNER JOIN (
+                    -- 각 생산계획별 최종 공정순번 조회
+                    SELECT
+                        FACTORY_CODE,
+                        PRODPLAN_DATE,
+                        PRODPLAN_SEQ,
+                        MAX(WORK_SEQ) AS LAST_WORK_SEQ
+                    FROM TPR504 WITH (NOLOCK)
+                    GROUP BY FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+                ) L ON T.FACTORY_CODE = L.FACTORY_CODE
+                    AND T.PRODPLAN_DATE = L.PRODPLAN_DATE
+                    AND T.PRODPLAN_SEQ = L.PRODPLAN_SEQ
+                    AND T.WORK_SEQ = L.LAST_WORK_SEQ
+                GROUP BY T.FACTORY_CODE, T.PRODPLAN_DATE, T.PRODPLAN_SEQ
+            ) R ON M.FACTORY_CODE = R.FACTORY_CODE 
+                AND M.PRODPLAN_DATE = R.PRODPLAN_DATE 
+                AND M.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+            WHERE M.PRODPLAN_DATE = #{planDate}
+            GROUP BY M.PRODPLAN_SEQ, M.OPTIME, M.OPTIME2, R.GOOD_QTY
+        ) A
+        WHERE (
+              (A.GOOD_QTY >= A.PLAN_QTY AND A.GOOD_QTY &lt; A.PLAN_QTY * 0.9)
+              OR (A.GOOD_QTY > 0 AND A.GOOD_QTY &lt; A.PLAN_QTY AND DATEDIFF(HOUR, A.OPTIME, GETDATE()) &gt; 24)
+              OR (ISNULL(A.GOOD_QTY, 0) = 0 AND DATEDIFF(HOUR, A.OPTIME, GETDATE()) &gt; 4)
+          )
+        ORDER BY 
+            CASE 
+                WHEN A.GOOD_QTY >= A.PLAN_QTY AND A.GOOD_QTY &lt; A.PLAN_QTY * 0.9 THEN 1
+                WHEN A.GOOD_QTY > 0 AND A.GOOD_QTY &lt; A.PLAN_QTY AND DATEDIFF(HOUR, A.OPTIME, GETDATE()) &gt; 24 THEN 2
+                ELSE 3
+            END,
+            A.OPTIME DESC
+    </select>
+
+</mapper>
+

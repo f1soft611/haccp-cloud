@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ProcessEquipmentDAO">
+
+	<resultMap id="processEquipmentResult" type="egovframework.let.basedata.process.domain.model.ProcessEquipment">
+		<result property="factoryCode" column="FACTORY_CODE"/>
+		<result property="processId" column="WORK_ID"/>
+		<result property="processCode" column="WORK_CODE"/>
+		<result property="processEquipmentId" column="EQUIPMENT_ID"/>
+		<result property="equipSysCd" column="EQUIP_SYS_CD"/>
+		<result property="equipCd" column="EQUIP_CD"/>
+		<result property="equipmentName" column="EQUIPMENT_NAME"/>
+		<result property="equipSpec" column="EQUIP_SPEC"/>
+		<result property="equipStruct" column="EQUIP_STRUCT"/>
+		<result property="location" column="LOCATION"/>
+		<result property="description" column="DESCRIPTION"/>
+		<result property="useYn" column="USE_YN"/>
+		<result property="regUserId" column="OPMAN_CODE"/>
+		<result property="regDt" column="OPTIME"/>
+		<result property="updUserId" column="OPMAN_CODE2"/>
+		<result property="updDt" column="OPTIME2"/>
+	</resultMap>
+
+	<select id="ProcessEquipmentDAO.selectProcessEquipmentList" parameterType="egovframework.let.basedata.process.domain.model.ProcessEquipmentVO" resultMap="processEquipmentResult">
+		SELECT
+		PE.FACTORY_CODE,
+		PE.WORK_ID,
+		PE.WORK_CODE,
+		PE.EQUIPMENT_ID,
+		PE.EQUIP_SYS_CD,
+		PE.EQUIP_CD,
+		PE.DESCRIPTION,
+		PE.USE_YN,
+		PE.OPMAN_CODE,
+		CONVERT(VARCHAR(19), PE.OPTIME, 120) AS OPTIME,
+		PE.OPMAN_CODE2,
+		CONVERT(VARCHAR(19), PE.OPTIME2, 120) AS OPTIME2,
+		E.EQUIPMENT_NAME,
+		E.EQUIP_SPEC,
+		E.LOCATION
+		FROM TPR104 PE
+		LEFT JOIN TPR151 E ON PE.EQUIP_SYS_CD = E.EQUIP_SYS_CD AND PE.EQUIP_CD = E.EQUIP_CD
+		WHERE 1=1
+		<if test="processId != null and processId != ''">
+			AND PE.WORK_ID = #{processId}
+		</if>
+		<if test="useYn != null and useYn != ''">
+			AND PE.USE_YN = #{useYn}
+		</if>
+		ORDER BY PE.WORK_CODE ASC, PE.EQUIP_SYS_CD ASC, PE.EQUIP_CD ASC
+	</select>
+
+	<insert id="ProcessEquipmentDAO.insertProcessEquipment" parameterType="egovframework.let.basedata.process.domain.model.ProcessEquipment">
+		INSERT INTO TPR104 (
+		    FACTORY_CODE,
+			WORK_ID,
+		    WORK_CODE,
+			EQUIPMENT_ID,
+			EQUIP_SYS_CD,
+			EQUIP_CD,
+			DESCRIPTION,
+			USE_YN,
+			OPMAN_CODE,
+			OPTIME
+		) VALUES (
+		          	 #{factoryCode},
+					 #{processId},
+					 #{processCode},
+					 #{processEquipmentId},
+					 #{equipSysCd},
+					 #{equipCd},
+					 #{description},
+					 ISNULL(#{useYn}, 'Y'),
+					 #{regUserId},
+					 GETDATE()
+				 )
+	</insert>
+
+	<update id="ProcessEquipmentDAO.updateProcessEquipment" parameterType="egovframework.let.basedata.process.domain.model.ProcessEquipment">
+		UPDATE TPR104
+		SET
+			EQUIP_SYS_CD = #{equipSysCd},
+			EQUIP_CD = #{equipCd},
+			DESCRIPTION = #{description},
+			USE_YN = #{useYn},
+			OPMAN_CODE2 = #{updUserId},
+			OPTIME2 = GETDATE()
+		WHERE EQUIPMENT_ID = #{processEquipmentId}
+	</update>
+
+	<delete id="ProcessEquipmentDAO.deleteProcessEquipment" parameterType="string">
+		DELETE FROM TPR104
+		WHERE EQUIPMENT_ID = #{processEquipmentId}
+	</delete>
+
+	<select id="ProcessEquipmentDAO.checkProcessEquipmentDuplicate" parameterType="egovframework.let.basedata.process.domain.model.ProcessEquipment" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM TPR104
+		WHERE FACTORY_CODE = #{factoryCode}
+		AND EQUIP_SYS_CD = #{equipSysCd}
+		<if test="processEquipmentId != null and processEquipmentId != ''">
+			AND EQUIPMENT_ID != #{processEquipmentId}
+		</if>
+	</select>
+
+</mapper>
