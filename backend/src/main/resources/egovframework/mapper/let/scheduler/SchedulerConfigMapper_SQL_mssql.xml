@@ -44,7 +44,7 @@
         REG_USER_ID,
         CONVERT(VARCHAR(19), UPD_DT, 120) AS UPD_DT,
         UPD_USER_ID
-        FROM SCHEDULER_CONFIG
+        FROM TB_SchedulerConfig
         WHERE 1=1
         <if test="searchWrd != null and searchWrd != ''">
             AND (SCHEDULER_NAME LIKE '%' + #{searchWrd} + '%'
@@ -64,7 +64,7 @@
     <select id="SchedulerConfigDAO.selectSchedulerListCnt" resultType="int"
             parameterType="egovframework.let.scheduler.domain.model.SchedulerConfigVO">
         SELECT COUNT(*)
-        FROM SCHEDULER_CONFIG
+        FROM TB_SchedulerConfig
         WHERE 1=1
         <if test="searchWrd != null and searchWrd != ''">
             AND (SCHEDULER_NAME LIKE '%' + #{searchWrd} + '%'
@@ -88,16 +88,16 @@
             REG_USER_ID,
             CONVERT(VARCHAR(19), UPD_DT, 120) AS UPD_DT,
             UPD_USER_ID
-        FROM SCHEDULER_CONFIG
+        FROM TB_SchedulerConfig
         WHERE SCHEDULER_ID = #{schedulerId}
     </select>
 
     <!-- 스케쥴러 등록 -->
     <insert id="SchedulerConfigDAO.insertScheduler" parameterType="egovframework.let.scheduler.domain.model.SchedulerConfig">
         <selectKey keyProperty="schedulerId" resultType="long" order="AFTER">
-            SELECT IDENT_CURRENT('SCHEDULER_CONFIG')
+            SELECT IDENT_CURRENT('TB_SchedulerConfig')
         </selectKey>
-        INSERT INTO SCHEDULER_CONFIG (
+        INSERT INTO TB_SchedulerConfig (
         SCHEDULER_NAME,
         SCHEDULER_DESCRIPTION,
         CRON_EXPRESSION,
@@ -118,7 +118,7 @@
 
     <!-- 스케쥴러 수정 -->
     <update id="SchedulerConfigDAO.updateScheduler" parameterType="egovframework.let.scheduler.domain.model.SchedulerConfig">
-        UPDATE SCHEDULER_CONFIG
+        UPDATE TB_SchedulerConfig
         SET SCHEDULER_NAME = #{schedulerName},
             SCHEDULER_DESCRIPTION = #{schedulerDescription},
             CRON_EXPRESSION = #{cronExpression},
@@ -131,7 +131,7 @@
 
     <!-- 스케쥴러 삭제 -->
     <delete id="SchedulerConfigDAO.deleteScheduler" parameterType="long">
-        DELETE FROM SCHEDULER_CONFIG
+        DELETE FROM TB_SchedulerConfig
         WHERE SCHEDULER_ID = #{schedulerId}
     </delete>
 
@@ -148,7 +148,7 @@
             REG_USER_ID,
             CONVERT(VARCHAR(19), UPD_DT, 120) AS UPD_DT,
             UPD_USER_ID
-        FROM SCHEDULER_CONFIG
+        FROM TB_SchedulerConfig
         WHERE IS_ENABLED = 'Y'
         ORDER BY SCHEDULER_ID
     </select>

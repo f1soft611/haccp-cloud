@@ -14,7 +14,7 @@
         SELECT
             code_id, code, code_nm, code_dc
         FROM
-            haccp_common_code
+            TB_CommonCode
         WHERE
             use_at = 'Y'
           AND code_id = #{codeId}
@@ -27,7 +27,7 @@
             orgnzt_nm AS code_nm,
             orgnzt_dc AS code_dc
         FROM
-            haccp_organization
+            TB_OrganizationInfo
         WHERE 1=1
         <if test="haveDetailCondition == 'Y'">
             AND orgnzt_id ILIKE '%' || #{detailConditionValue} || '%'
@@ -41,7 +41,7 @@
             group_nm || '(' || group_dc || ')' AS code_nm,
             group_dc AS code_dc
         FROM
-            haccp_departments
+            TB_DepartmentInfo
         WHERE 1=1
     </select>
 </mapper>

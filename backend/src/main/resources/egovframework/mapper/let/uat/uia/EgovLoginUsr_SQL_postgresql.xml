@@ -43,8 +43,8 @@
 			b.group_code       AS groupCode,
 			b.group_nm         AS groupNm
 		FROM
-			haccp_users a
-			LEFT JOIN haccp_departments b ON a.group_id = b.group_id
+			TB_UserInfo a
+			LEFT JOIN TB_DepartmentInfo b ON a.group_id = b.group_id
 		WHERE
 			a.emplyr_id = #{id}
 		  AND a.password = #{password}
@@ -55,7 +55,7 @@
 		SELECT
 			a.emplyr_id AS id
 		FROM
-			haccp_users a
+			TB_UserInfo a
 		WHERE
 			a.user_nm = #{name}
 		  AND a.email_adres = #{email}
@@ -66,7 +66,7 @@
 		SELECT
 			a.password AS password
 		FROM
-			haccp_users a
+			TB_UserInfo a
 		WHERE
 			a.emplyr_id = #{id}
 		  AND a.user_nm = #{name}
@@ -75,7 +75,7 @@
 	</select>
 
 	<update id="updatePassword">
-		UPDATE haccp_users
+		UPDATE TB_UserInfo
 		SET
 			password = #{password},
 			updated_at = now()
