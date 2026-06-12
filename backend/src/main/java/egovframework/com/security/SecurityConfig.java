@@ -74,10 +74,11 @@ public class SecurityConfig {
             "/swagger-ui/**",
 
     };
-    private static final String[] ORIGINS_WHITELIST = {
-            "http://localhost:3000",
+        private static final String[] ORIGIN_PATTERNS_WHITELIST = {
+            "http://localhost:*",
+            "http://127.0.0.1:*",
             "https://shmt-mes.vercel.app",
-    };
+        };
 
     @Bean
     public JwtAuthenticationFilter authenticationTokenFilterBean() throws Exception {
@@ -88,7 +89,7 @@ public class SecurityConfig {
     protected CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(Arrays.asList(ORIGINS_WHITELIST));
+        configuration.setAllowedOriginPatterns(Arrays.asList(ORIGIN_PATTERNS_WHITELIST));
         configuration.setAllowedMethods(Arrays.asList("HEAD", "POST", "GET", "DELETE", "PUT", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
