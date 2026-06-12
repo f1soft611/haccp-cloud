@@ -74,6 +74,22 @@ describe('App shell', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders dedicated platform admin login page at /login/platform', async () => {
+    renderAppRoutesAt('/login/platform');
+
+    expect(
+      await screen.findByRole('heading', {
+        name: '플랫폼 관리자 로그인',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: APP_LABELS.pageTitle.login }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText(APP_LABELS.field.tenantCode),
+    ).not.toBeInTheDocument();
+  });
+
   it('routes tenant admin login to tenant-first-setup when onboardingRequired=true', async () => {
     render(
       <AppProviders>

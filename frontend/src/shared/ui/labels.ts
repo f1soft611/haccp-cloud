@@ -21,6 +21,7 @@ export const APP_LABELS = {
   },
   pageTitle: {
     login: '로그인',
+    platformAdminLogin: '플랫폼 관리자 로그인',
     onboarding: '업체 온보딩',
     tenantFirstSetup: '업체 관리자 최초 설정',
     users: '사용자 관리',
@@ -54,6 +55,8 @@ export const APP_LABELS = {
   },
   action: {
     login: '로그인',
+    platformAdminLogin: '플랫폼 관리자 로그인',
+    tenantLogin: '일반 로그인으로 이동',
     createTenant: '업체 생성',
     issueTenantCode: '업체 코드 발급',
     retry: '다시 시도',
@@ -88,8 +91,11 @@ export const APP_LABELS = {
   },
   message: {
     loginHelp: '테스트 로그인: 업체 코드 + 사용자 ID',
+    platformAdminLoginHelp: '플랫폼 관리자 계정으로만 로그인할 수 있습니다.',
     loginFailed:
       '로그인 실패: 업체 코드, 사용자 ID 또는 비밀번호를 확인하세요.',
+    platformAdminLoginFailed:
+      '관리자 로그인 실패: 플랫폼 관리자 계정 정보를 확인하세요.',
     onboardingDescription:
       '플랫폼 관리자가 신규 업체 관리자 정보를 입력해 업체 코드를 발급합니다.',
     onboardingSuccess: '업체 코드 발급 및 안내 메일 발송이 완료되었습니다.',
