@@ -19,18 +19,26 @@
 		<result property="groupNm" column="groupNm"/>
 	</resultMap>
 
+	<resultMap id="id" type="egovframework.com.cmm.LoginVO">
+		<result property="id" column="id"/>
+	</resultMap>
+
+	<resultMap id="password" type="egovframework.com.cmm.LoginVO">
+		<result property="password" column="password"/>
+	</resultMap>
+
 	<!-- 일반 로그인 -->
 	<select id="actionLogin" resultMap="login">
 		SELECT
 		    '000001'		   AS factoryCode,
-			a.esntl_id         AS id,
+			a.emplyr_id        AS id,
 			a.user_nm          AS name,
 			a.password         AS password,
 			a.ihidnum          AS ihidNum,
 			a.email_adres      AS email,
 			'USR'              AS userSe,
 			a.orgnzt_id        AS orgnztId,
-			a.emplyr_id        AS uniqId,
+			a.esntl_id         AS uniqId,
 			b.group_id         AS groupId,
 			b.group_code       AS groupCode,
 			b.group_nm         AS groupNm
@@ -40,6 +48,39 @@
 		WHERE
 			a.emplyr_id = #{id}
 		  AND a.password = #{password}
+		  AND COALESCE(a.use_at, 'Y') = 'Y'
 	</select>
+
+	<select id="searchId" resultMap="id">
+		SELECT
+			a.emplyr_id AS id
+		FROM
+			haccp_users a
+		WHERE
+			a.user_nm = #{name}
+		  AND a.email_adres = #{email}
+		  AND COALESCE(a.use_at, 'Y') = 'Y'
+	</select>
+
+	<select id="searchPassword" resultMap="password">
+		SELECT
+			a.password AS password
+		FROM
+			haccp_users a
+		WHERE
+			a.emplyr_id = #{id}
+		  AND a.user_nm = #{name}
+		  AND a.email_adres = #{email}
+		  AND COALESCE(a.use_at, 'Y') = 'Y'
+	</select>
+
+	<update id="updatePassword">
+		UPDATE haccp_users
+		SET
+			password = #{password},
+			updated_at = now()
+		WHERE
+			emplyr_id = #{id}
+	</update>
 
 </mapper>

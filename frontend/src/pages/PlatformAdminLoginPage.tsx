@@ -31,6 +31,9 @@ export function PlatformAdminLoginPage() {
         tenantCode: result.tenantCode,
         userId: result.userId,
         role: result.role,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        loginHistoryId: result.loginHistoryId,
         onboardingRequired: result.onboardingRequired,
         onboardingStatus: result.onboardingStatus,
       });

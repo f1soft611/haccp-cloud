@@ -28,6 +28,7 @@ export const APP_LABELS = {
     departments: '부서 관리',
     documents: '문서 템플릿',
     history: '문서 변경 이력',
+    loginHistory: '로그인 이력',
     dashboard: 'HACCP 문서 포털',
     notFound: '페이지를 찾을 수 없음',
   },
@@ -73,6 +74,7 @@ export const APP_LABELS = {
     newTenantRegistration: '새 업체 등록',
     goToDashboard: '대시보드로',
     newIssueTenantCode: '신규 업체 코드 발급',
+    logout: '로그아웃',
   },
   table: {
     title: '제목',
@@ -177,6 +179,7 @@ export const APP_LABELS = {
       users: '사용자 관리',
       departments: '부서 관리',
       onboarding: '업체 온보딩',
+      loginHistory: '로그인 이력',
       documents: '문서 템플릿',
       history: '문서 변경 이력',
     },

@@ -11,6 +11,7 @@ import { DocumentHistoryPage } from '../../pages/DocumentHistoryPage';
 import { NotFoundPage } from '../../pages/NotFoundPage';
 import { TenantFirstLoginSetupPage } from '../../pages/TenantFirstLoginSetupPage';
 import { PlatformAdminLoginPage } from '../../pages/PlatformAdminLoginPage';
+import { LoginHistoryPage } from '../../pages/LoginHistoryPage';
 
 export function AppRoutes() {
   return (
@@ -55,6 +56,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
               <DepartmentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/login-history"
+          element={
+            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+              <LoginHistoryPage />
             </ProtectedRoute>
           }
         />

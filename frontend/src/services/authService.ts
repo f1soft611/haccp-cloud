@@ -17,21 +17,89 @@ export type LoginResponse = {
   userId: string;
   role: UserRole;
   accessToken: string;
+  refreshToken?: string;
+  loginHistoryId?: number;
   onboardingRequired?: boolean;
   onboardingStatus?: OnboardingStatus;
 };
 
+type BackendLoginVO = {
+  factoryCode?: string;
+  id?: string;
+  groupNm?: string;
+};
+
+type BackendLoginEnvelope = {
+  resultVO?: BackendLoginVO;
+  jToken?: string;
+  refreshToken?: string;
+  loginHistoryId?: number;
+  onboardingRequired?: boolean;
+  onboardingStatus?: OnboardingStatus;
+};
+
+function resolveRole(userId: string, groupNm?: string): UserRole {
+  if (groupNm === 'ROLE_ADMIN') {
+    return 'PLATFORM_ADMIN';
+  }
+
+  if (userId.trim().toLowerCase().includes('admin')) {
+    return 'TENANT_ADMIN';
+  }
+
+  return 'USER';
+}
+
+function normalizeLoginResponse(
+  data: LoginResponse | BackendLoginEnvelope,
+): LoginResponse {
+  if ('accessToken' in data && 'tenantCode' in data && 'userId' in data) {
+    return data;
+  }
+
+  const resultVO = data.resultVO ?? {};
+  const userId = resultVO.id ?? '';
+
+  return {
+    tenantCode: resultVO.factoryCode ?? '000001',
+    userId,
+    role: resolveRole(userId, resultVO.groupNm),
+    accessToken: data.jToken ?? '',
+    refreshToken: data.refreshToken,
+    loginHistoryId: data.loginHistoryId,
+    onboardingRequired: data.onboardingRequired ?? false,
+    onboardingStatus: data.onboardingStatus ?? 'COMPLETED',
+  };
+}
+
 export async function login(request: LoginRequest): Promise<LoginResponse> {
-  const { data } = await apiClient.post<LoginResponse>('/auth/login', request);
-  return data;
+  const { data } = await apiClient.post<LoginResponse | BackendLoginEnvelope>(
+    '/auth/login-jwt',
+    {
+      id: request.userId,
+      password: request.password,
+      factoryCode: request.tenantCode,
+      tenantCode: request.tenantCode,
+    },
+  );
+
+  const normalized = normalizeLoginResponse(data);
+  return {
+    ...normalized,
+    tenantCode: request.tenantCode,
+  };
 }
 
 export async function loginPlatformAdmin(
   request: PlatformAdminLoginRequest,
 ): Promise<LoginResponse> {
-  const { data } = await apiClient.post<LoginResponse>(
+  const { data } = await apiClient.post<LoginResponse | BackendLoginEnvelope>(
     '/auth/login-jwt/admin',
-    request,
+    {
+      id: request.userId,
+      password: request.password,
+    },
   );
-  return data;
+
+  return normalizeLoginResponse(data);
 }

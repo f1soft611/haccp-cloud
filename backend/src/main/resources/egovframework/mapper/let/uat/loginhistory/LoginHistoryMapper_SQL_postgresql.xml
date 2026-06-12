@@ -186,4 +186,52 @@
 		LIMIT 1
 	</select>
 
+	<!-- 정부 인터페이스 대상 최신 로그인 이력 1건 조회 (기간 + 익일 재시도) -->
+	<select id="selectLatestLoginHistoryForGovInterfaceByDateRange" parameterType="map" resultMap="loginHistoryResultMap">
+		SELECT
+			login_history_id,
+			factory_code,
+			user_id,
+			user_name,
+			to_char(login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
+			login_ip,
+			login_type,
+			user_agent,
+			login_result,
+			fail_reason,
+			to_char(logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
+			session_time,
+			gov_interface_yn,
+			to_char(gov_interface_dt, 'YYYY-MM-DD HH24:MI:SS') AS gov_interface_dt,
+			gov_recptn_rslt_cd,
+			gov_recptn_rslt,
+			gov_recptn_rslt_dtl,
+			gov_fail_reason,
+			gov_request_json,
+			gov_response_json
+		FROM mes_login_history
+		WHERE (
+			DATE(login_dt) >= #{fromDate}::date
+			AND DATE(login_dt) <![CDATA[<=]]> #{toDate}::date
+			AND gov_interface_dt IS NULL
+		)
+		ORDER BY login_dt DESC, login_history_id DESC
+		LIMIT 1
+	</select>
+
+	<!-- 정부 인터페이스 전송 결과 업데이트 -->
+	<update id="updateGovInterfaceResult" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
+		UPDATE mes_login_history
+		SET
+			gov_interface_yn = #{govInterfaceYn},
+			gov_interface_dt = now(),
+			gov_recptn_rslt_cd = #{govRecptnRsltCd},
+			gov_recptn_rslt = #{govRecptnRslt},
+			gov_recptn_rslt_dtl = #{govRecptnRsltDtl},
+			gov_fail_reason = #{govFailReason},
+			gov_request_json = #{govRequestJson},
+			gov_response_json = #{govResponseJson}
+		WHERE login_history_id = #{loginHistoryId}
+	</update>
+
 </mapper>

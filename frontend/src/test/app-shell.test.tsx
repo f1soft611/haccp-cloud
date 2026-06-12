@@ -148,17 +148,17 @@ describe('App shell', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     server.use(
-      http.post('/api/auth/login', async ({ request }) => {
+      http.post('/api/auth/login-jwt', async ({ request }) => {
         const payload = (await request.json()) as {
           tenantCode: string;
-          userId: string;
+          id: string;
         };
 
         return HttpResponse.json({
           tenantCode: payload.tenantCode,
-          userId: payload.userId,
+          userId: payload.id,
           role: 'TENANT_ADMIN',
-          accessToken: `token-${payload.tenantCode}-${payload.userId}`,
+          accessToken: `token-${payload.tenantCode}-${payload.id}`,
           onboardingStatus: 'NOT_STARTED',
         });
       }),
@@ -263,6 +263,37 @@ describe('App shell', () => {
     expect(
       screen.queryByRole('heading', { name: APP_LABELS.pageTitle.onboarding }),
     ).not.toBeInTheDocument();
+  });
+
+  it('allows PLATFORM_ADMIN to access login history page', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: '000001',
+      userId: 'platform_admin',
+      role: 'PLATFORM_ADMIN',
+    });
+
+    renderAppRoutesAt('/login-history');
+
+    expect(await screen.findByTestId('login-history-page')).toBeInTheDocument();
+  });
+
+  it('redirects TENANT_ADMIN from /login-history to /dashboard', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+      onboardingRequired: false,
+      onboardingStatus: 'COMPLETED',
+    });
+
+    renderAppRoutesAt('/login-history');
+
+    expect(
+      await screen.findByTestId('dashboard-admin-hub'),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('login-history-page')).not.toBeInTheDocument();
   });
 
   it('redirects TENANT_ADMIN with onboardingRequired=true from /dashboard to tenant first setup page', async () => {
