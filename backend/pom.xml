@@ -3,10 +3,10 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.egovframe.template</groupId>
-	<artifactId>shmtMes</artifactId>
+	<artifactId>haccp-cloud</artifactId>
 	<packaging>war</packaging>
 	<version>1.0.0</version>
-	<name>egovframework</name>
+	<name>HACCP Cloud Backend</name>
 	<url>example.egovframework.com</url>
 
 	<licenses>
@@ -379,7 +379,7 @@
 	<build>
 		<defaultGoal>install</defaultGoal>
 		<directory>${basedir}/target</directory>
-		<finalName>shmt-mes</finalName>
+		<finalName>haccp-cloud</finalName>
 		<pluginManagement>
 			<plugins>
                 <plugin>

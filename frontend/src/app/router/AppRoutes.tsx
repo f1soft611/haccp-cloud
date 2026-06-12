@@ -10,11 +10,13 @@ import { DocumentsPage } from '../../pages/DocumentsPage';
 import { DocumentHistoryPage } from '../../pages/DocumentHistoryPage';
 import { NotFoundPage } from '../../pages/NotFoundPage';
 import { TenantFirstLoginSetupPage } from '../../pages/TenantFirstLoginSetupPage';
+import { PlatformAdminLoginPage } from '../../pages/PlatformAdminLoginPage';
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/login/platform" element={<PlatformAdminLoginPage />} />
       <Route
         element={
           <ProtectedRoute>

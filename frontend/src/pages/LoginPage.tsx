@@ -74,6 +74,9 @@ export function LoginPage() {
             <Button variant="contained" onClick={handleLogin}>
               {APP_LABELS.action.login}
             </Button>
+            <Button variant="text" onClick={() => navigate('/login/platform')}>
+              {APP_LABELS.action.platformAdminLogin}
+            </Button>
           </Stack>
         </CardContent>
       </Card>

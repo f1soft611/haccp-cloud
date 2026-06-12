@@ -237,6 +237,76 @@ public class EgovLoginApiController {
 	}
 
 	@Operation(
+			summary = "플랫폼 관리자 JWT 로그인",
+			description = "플랫폼 관리자 계정만 로그인할 수 있는 JWT 로그인 처리",
+			tags = {"EgovLoginApiController"}
+	)
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "로그인 성공"),
+			@ApiResponse(responseCode = "300", description = "로그인 실패")
+	})
+	@PostMapping(value = "/auth/login-jwt/admin")
+	public HashMap<String, Object> actionLoginAdminJWT(@RequestBody LoginVO loginVO, HttpServletRequest request)
+			throws Exception {
+		HashMap<String, Object> resultMap = new HashMap<String, Object>();
+
+		String clientIp = getClientIp(request);
+		String userAgent = request.getHeader("User-Agent");
+
+		LoginVO loginResultVO = loginService.actionLogin(loginVO);
+
+		LoginHistory loginHistory = new LoginHistory();
+		loginHistory.setUserId(loginVO.getId());
+		loginHistory.setLoginIp(clientIp);
+		loginHistory.setLoginType("JWT_ADMIN");
+		loginHistory.setUserAgent(userAgent);
+
+		boolean isValidLogin = loginResultVO != null
+				&& loginResultVO.getId() != null
+				&& !"".equals(loginResultVO.getId());
+		boolean isPlatformAdmin = isValidLogin && "ROLE_ADMIN".equals(loginResultVO.getGroupNm());
+
+		if (isPlatformAdmin) {
+			loginResultVO.setUserSe("ADM");
+			request.getSession().setAttribute("LoginVO", loginResultVO);
+
+			String jwtToken = jwtTokenUtil.generateToken(loginResultVO);
+			String refreshToken = jwtTokenUtil.generateRefreshToken(loginResultVO);
+
+			loginHistory.setUserName(loginResultVO.getName());
+			loginHistory.setLoginResult("Y");
+
+			resultMap.put("resultVO", loginResultVO);
+			resultMap.put("jToken", jwtToken);
+			resultMap.put("refreshToken", refreshToken);
+			resultMap.put("resultCode", "200");
+			resultMap.put("resultMessage", "성공 !!!");
+		} else {
+			loginHistory.setLoginResult("N");
+			loginHistory.setFailReason("플랫폼 관리자 계정으로 로그인해야 합니다");
+
+			resultMap.put("resultVO", loginResultVO);
+			resultMap.put("resultCode", "300");
+			resultMap.put("resultMessage", egovMessageSource.getMessage("fail.common.login"));
+		}
+
+		try {
+			int result = loginHistoryService.insertLoginHistory(loginHistory);
+
+			if (loginHistory.getLoginHistoryId() != null) {
+				request.getSession().setAttribute("loginHistoryId", loginHistory.getLoginHistoryId());
+				resultMap.put("loginHistoryId", loginHistory.getLoginHistoryId());
+			}
+			log.info("관리자 로그인 이력 저장 완료 - userId: {}, result: {}, loginHistoryId: {}",
+					loginHistory.getUserId(), result, loginHistory.getLoginHistoryId());
+		} catch (Exception e) {
+			log.error("관리자 로그인 이력 저장 실패 - userId: {}", loginHistory.getUserId(), e);
+		}
+
+		return resultMap;
+	}
+
+	@Operation(
 			summary = "JWT 토큰 리프레쉬",
 			description = "리프레쉬 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다",
 			tags = {"EgovLoginApiController"}

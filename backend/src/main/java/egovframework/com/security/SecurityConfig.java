@@ -58,6 +58,7 @@ public class SecurityConfig {
             "/",
             "/login/**",
             "/auth/login-jwt", // JWT 로그인
+            "/auth/login-jwt/admin", // 플랫폼 관리자 JWT 로그인
             "/auth/login", // 일반 로그인
             "/auth/logout", // 로그아웃
             "/auth/refresh", // 토큰 갱신

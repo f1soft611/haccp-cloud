@@ -434,6 +434,57 @@ export const handlers = [
     });
   }),
 
+  http.post('/api/auth/login-jwt/admin', async ({ request }) => {
+    const payload = (await request.json()) as {
+      userId?: string;
+      password?: string;
+    };
+
+    if (!payload.userId || !payload.password) {
+      return HttpResponse.json(
+        { message: '입력값이 올바르지 않습니다.' },
+        { status: 400 },
+      );
+    }
+
+    if (payload.password !== 'Passw0rd!') {
+      return HttpResponse.json(
+        { message: '로그인 정보가 올바르지 않습니다.' },
+        { status: 401 },
+      );
+    }
+
+    const normalizedUserId = payload.userId.trim().toLowerCase();
+    const role = roleByUserId[normalizedUserId] ?? 'USER';
+
+    if (role !== 'PLATFORM_ADMIN') {
+      return HttpResponse.json(
+        { message: '플랫폼 관리자 계정만 로그인할 수 있습니다.' },
+        { status: 403 },
+      );
+    }
+
+    const platformTenantCode = '000001';
+    const userCount = tenantScoped(users, platformTenantCode).length;
+    const departmentCount = tenantScoped(
+      departments,
+      platformTenantCode,
+    ).length;
+    const onboardingStatus = resolveOnboardingStatus(
+      userCount,
+      departmentCount,
+    );
+
+    return HttpResponse.json({
+      tenantCode: platformTenantCode,
+      userId: payload.userId,
+      role,
+      accessToken: `admin-token-${platformTenantCode}-${payload.userId}`,
+      onboardingRequired: onboardingStatus !== 'COMPLETED',
+      onboardingStatus,
+    });
+  }),
+
   http.post('/api/tenants', async ({ request }) => {
     const payload = (await request.json()) as {
       tenantCode?: string;

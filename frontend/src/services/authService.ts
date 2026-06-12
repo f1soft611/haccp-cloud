@@ -7,6 +7,11 @@ export type LoginRequest = {
   password: string;
 };
 
+export type PlatformAdminLoginRequest = {
+  userId: string;
+  password: string;
+};
+
 export type LoginResponse = {
   tenantCode: string;
   userId: string;
@@ -18,5 +23,15 @@ export type LoginResponse = {
 
 export async function login(request: LoginRequest): Promise<LoginResponse> {
   const { data } = await apiClient.post<LoginResponse>('/auth/login', request);
+  return data;
+}
+
+export async function loginPlatformAdmin(
+  request: PlatformAdminLoginRequest,
+): Promise<LoginResponse> {
+  const { data } = await apiClient.post<LoginResponse>(
+    '/auth/login-jwt/admin',
+    request,
+  );
   return data;
 }
