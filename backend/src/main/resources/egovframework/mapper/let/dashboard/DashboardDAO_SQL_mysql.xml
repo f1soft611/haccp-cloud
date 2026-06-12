@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DashboardDAO">
+
+    <resultMap id="productionProgressMap" type="egovframework.let.dashboard.domain.model.ProductionProgressDTO">
+        <result property="planNo" column="PLAN_NO"/>
+        <result property="planSeq" column="PLAN_SEQ"/>
+        <result property="planDate" column="PLAN_DATE"/>
+        <result property="itemCode" column="ITEM_CODE"/>
+        <result property="itemName" column="ITEM_NAME"/>
+        <result property="itemSpec" column="ITEM_SPEC"/>
+        <result property="customerCode" column="CUSTOMER_CODE"/>
+        <result property="customerName" column="CUSTOMER_NAME"/>
+        <result property="workplaceCode" column="WORKPLACE_CODE"/>
+        <result property="workplaceName" column="WORKPLACE_NAME"/>
+        <result property="equipmentCode" column="EQUIPMENT_CODE"/>
+        <result property="equipmentName" column="EQUIPMENT_NAME"/>
+        <result property="workerCode" column="WORKER_CODE"/>
+        <result property="workerName" column="WORKER_NAME"/>
+        <result property="shift" column="SHIFT"/>
+        <result property="plannedQty" column="PLANNED_QTY"/>
+        <result property="actualQty" column="ACTUAL_QTY"/>
+        <result property="goodQty" column="GOOD_QTY"/>
+        <result property="defectQty" column="DEFECT_QTY"/>
+        <result property="planStatus" column="PLAN_STATUS"/>
+        <result property="startTime" column="START_TIME"/>
+        <result property="endTime" column="END_TIME"/>
+        <result property="remark" column="REMARK"/>
+    </resultMap>
+
+    <!-- 생산계획별 진행 현황 조회 -->
+    <select id="selectProductionProgress" parameterType="map" resultMap="productionProgressMap">
+        SELECT
+            p.PLAN_NO,
+            p.PLAN_SEQ,
+            p.PLAN_DATE,
+            p.ITEM_CODE,
+            p.ITEM_NAME,
+            p.CUSTOMER_CODE,
+            p.CUSTOMER_NAME,
+            m.WORKPLACE_CODE,
+            m.WORKPLACE_NAME,
+            p.EQUIPMENT_CODE,
+            p.EQUIPMENT_NAME,
+            p.WORKER_CODE,
+            p.WORKER_NAME,
+            p.SHIFT,
+            p.PLANNED_QTY,
+            COALESCE(p.ACTUAL_QTY, 0) AS ACTUAL_QTY,
+            COALESCE(r.GOOD_QTY, 0) AS GOOD_QTY,
+            COALESCE(r.DEFECT_QTY, 0) AS DEFECT_QTY,
+            m.PLAN_STATUS,
+            p.REMARK
+        FROM TPR301 p
+        INNER JOIN TPR301M m ON p.FACTORY_CODE = m.FACTORY_CODE AND p.PLAN_NO = m.PLAN_NO
+        LEFT JOIN (
+            SELECT
+                PLAN_NO,
+                PLAN_SEQ,
+                SUM(GOOD_QTY) AS GOOD_QTY,
+                SUM(DEFECT_QTY) AS DEFECT_QTY
+            FROM TPR601
+            WHERE FACTORY_CODE = #{factoryCode}
+            GROUP BY PLAN_NO, PLAN_SEQ
+        ) r ON p.PLAN_NO = r.PLAN_NO AND p.PLAN_SEQ = r.PLAN_SEQ
+        WHERE p.FACTORY_CODE = #{factoryCode}
+          AND p.PLAN_NO = #{planNo}
+        <if test="planSeq != null">
+          AND p.PLAN_SEQ = #{planSeq}
+        </if>
+          AND p.USE_YN = 'Y'
+    </select>
+
+    <!-- 진행 중인 생산계획 목록 조회 -->
+    <select id="selectActiveProductionList" parameterType="map" resultMap="productionProgressMap">
+        SELECT
+            p.PLAN_NO,
+            p.PLAN_SEQ,
+            p.PLAN_DATE,
+            p.ITEM_CODE,
+            p.ITEM_NAME,
+            p.CUSTOMER_CODE,
+            p.CUSTOMER_NAME,
+            m.WORKPLACE_CODE,
+            m.WORKPLACE_NAME,
+            p.EQUIPMENT_CODE,
+            p.EQUIPMENT_NAME,
+            p.WORKER_CODE,
+            p.WORKER_NAME,
+            p.SHIFT,
+            p.PLANNED_QTY,
+            COALESCE(p.ACTUAL_QTY, 0) AS ACTUAL_QTY,
+            COALESCE(r.GOOD_QTY, 0) AS GOOD_QTY,
+            COALESCE(r.DEFECT_QTY, 0) AS DEFECT_QTY,
+            m.PLAN_STATUS
+        FROM TPR301 p
+        INNER JOIN TPR301M m ON p.FACTORY_CODE = m.FACTORY_CODE AND p.PLAN_NO = m.PLAN_NO
+        LEFT JOIN (
+            SELECT
+                PLAN_NO,
+                PLAN_SEQ,
+                SUM(GOOD_QTY) AS GOOD_QTY,
+                SUM(DEFECT_QTY) AS DEFECT_QTY
+            FROM TPR601
+            WHERE FACTORY_CODE = #{factoryCode}
+            GROUP BY PLAN_NO, PLAN_SEQ
+        ) r ON p.PLAN_NO = r.PLAN_NO AND p.PLAN_SEQ = r.PLAN_SEQ
+        WHERE p.FACTORY_CODE = #{factoryCode}
+          AND m.PLAN_STATUS = 'IN_PROGRESS'
+        <if test="workplaceCode != null and workplaceCode != ''">
+          AND m.WORKPLACE_CODE = #{workplaceCode}
+        </if>
+          AND p.USE_YN = 'Y'
+        ORDER BY p.PLAN_DATE DESC, p.PLAN_NO, p.PLAN_SEQ
+        LIMIT 20
+    </select>
+
+    <!-- 오늘의 생산계획 진행 현황 목록 -->
+    <select id="selectTodayProductionProgressList" parameterType="map" resultMap="productionProgressMap">
+        SELECT
+            p.PLAN_NO,
+            p.PLAN_SEQ,
+            p.PLAN_DATE,
+            p.ITEM_CODE,
+            p.ITEM_NAME,
+            p.CUSTOMER_CODE,
+            p.CUSTOMER_NAME,
+            m.WORKPLACE_CODE,
+            m.WORKPLACE_NAME,
+            p.EQUIPMENT_CODE,
+            p.EQUIPMENT_NAME,
+            p.WORKER_CODE,
+            p.WORKER_NAME,
+            p.SHIFT,
+            p.PLANNED_QTY,
+            COALESCE(p.ACTUAL_QTY, 0) AS ACTUAL_QTY,
+            COALESCE(r.GOOD_QTY, 0) AS GOOD_QTY,
+            COALESCE(r.DEFECT_QTY, 0) AS DEFECT_QTY,
+            m.PLAN_STATUS
+        FROM TPR301 p
+        INNER JOIN TPR301M m ON p.FACTORY_CODE = m.FACTORY_CODE AND p.PLAN_NO = m.PLAN_NO
+        LEFT JOIN (
+            SELECT
+                PLAN_NO,
+                PLAN_SEQ,
+                SUM(GOOD_QTY) AS GOOD_QTY,
+                SUM(DEFECT_QTY) AS DEFECT_QTY
+            FROM TPR601
+            WHERE FACTORY_CODE = #{factoryCode}
+            GROUP BY PLAN_NO, PLAN_SEQ
+        ) r ON p.PLAN_NO = r.PLAN_NO AND p.PLAN_SEQ = r.PLAN_SEQ
+        WHERE p.FACTORY_CODE = #{factoryCode}
+          AND p.PLAN_DATE = #{planDate}
+        <if test="workplaceCode != null and workplaceCode != ''">
+          AND m.WORKPLACE_CODE = #{workplaceCode}
+        </if>
+          AND p.USE_YN = 'Y'
+        ORDER BY m.PLAN_STATUS DESC, p.PLAN_NO, p.PLAN_SEQ
+    </select>
+
+    <!-- 작업장별 생산 진행 현황 -->
+    <select id="selectProductionProgressByWorkplace" parameterType="map" resultMap="productionProgressMap">
+        SELECT
+            m.WORKPLACE_CODE,
+            m.WORKPLACE_NAME,
+            COUNT(DISTINCT p.PLAN_NO) AS PLAN_NO,
+            SUM(p.PLANNED_QTY) AS PLANNED_QTY,
+            SUM(COALESCE(p.ACTUAL_QTY, 0)) AS ACTUAL_QTY,
+            SUM(COALESCE(r.GOOD_QTY, 0)) AS GOOD_QTY,
+            SUM(COALESCE(r.DEFECT_QTY, 0)) AS DEFECT_QTY
+        FROM TPR301M m
+        INNER JOIN TPR301 p ON m.FACTORY_CODE = p.FACTORY_CODE AND m.PLAN_NO = p.PLAN_NO
+        LEFT JOIN (
+            SELECT
+                PLAN_NO,
+                PLAN_SEQ,
+                SUM(GOOD_QTY) AS GOOD_QTY,
+                SUM(DEFECT_QTY) AS DEFECT_QTY
+            FROM TPR601
+            WHERE FACTORY_CODE = #{factoryCode}
+            GROUP BY PLAN_NO, PLAN_SEQ
+        ) r ON p.PLAN_NO = r.PLAN_NO AND p.PLAN_SEQ = r.PLAN_SEQ
+        WHERE m.FACTORY_CODE = #{factoryCode}
+          AND m.PLAN_DATE = #{planDate}
+          AND p.USE_YN = 'Y'
+        GROUP BY m.WORKPLACE_CODE, m.WORKPLACE_NAME
+        ORDER BY m.WORKPLACE_CODE
+    </select>
+
+</mapper>

@@ -1,0 +1,1084 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ProductionPlanDAO">
+
+	<resultMap id="productionPlanMasterResult" type="egovframework.let.production.plan.domain.model.ProductionPlanMaster">
+		<result property="factoryCode" column="FACTORY_CODE"/>
+		<result property="prodPlanId" column="PRODPLAN_ID"/>
+		<result property="prodPlanDate" column="PRODPLAN_DATE"/>
+		<result property="prodPlanSeq" column="PRODPLAN_SEQ"/>
+		<result property="planDate" column="PLAN_DATE"/>
+		<result property="remark" column="BIGO"/>
+		<result property="createDays" column="CREATE_DAYS"/>
+		<result property="planGroupId" column="PLAN_GROUP_ID"/>
+		<result property="totalGroupCount" column="TOTAL_GROUP_COUNT"/>
+		<result property="opmanCode" column="OPMAN_CODE"/>
+		<result property="optime" column="OPTIME"/>
+		<result property="opmanCode2" column="OPMAN_CODE2"/>
+		<result property="optime2" column="OPTIME2"/>
+	</resultMap>
+
+	<resultMap id="productionPlanResult" type="egovframework.let.production.plan.domain.model.ProductionPlan">
+		<result property="factoryCode" column="FACTORY_CODE"/>
+		<result property="prodPlanId" column="PRODPLAN_ID"/>
+		<result property="prodPlanDate" column="PRODPLAN_DATE"/>
+		<result property="prodPlanSeq" column="PRODPLAN_SEQ"/>
+		<result property="planDate" column="PLAN_DATE"/>
+		<result property="plannedQty" column="PROD_QTY"/>
+		<result property="itemCode" column="ITEM_CODE"/>
+		<result property="itemName" column="ITEM_NAME"/>
+		<result property="workplaceCode" column="WORKCENTER_CODE"/>
+		<result property="processCode" column="WORK_CODE"/>
+		<result property="equipmentId" column="EQUIP_SYS_CD"/>
+		<result property="plannedQty" column="PLANNED_QTY"/>
+		<result property="workerType" column="WORKER_TYPE"/>
+		<result property="workerCode" column="WORKER_CODE"/>
+		<result property="workerName" column="WORKER_NAME"/>
+		<result property="deliveryDate" column="DELIVERY_DATE"/>
+		<result property="planGroupId" column="PLAN_GROUP_ID"/>
+		<result property="groupSeq" column="GROUP_SEQ"/>
+		<result property="createDays" column="CREATE_DAYS"/>
+		<result property="remark" column="BIGO"/>
+		<result property="opmanCode" column="OPMAN_CODE"/>
+		<result property="optime" column="OPTIME"/>
+		<result property="opmanCode2" column="OPMAN_CODE2"/>
+		<result property="optime2" column="OPTIME2"/>
+	</resultMap>
+
+	<!-- 생산계획 마스터 등록 -->
+	<insert id="ProductionPlanDAO.insertProductionPlanMaster" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanMaster">
+		<!-- INSERT 후 생성된 PRODPLAN_SEQ를 조회하여 파라미터 객체에 설정 -->
+		<selectKey keyProperty="prodPlanSeq" resultType="int" order="BEFORE">
+			SELECT ISNULL(MAX(PRODPLAN_SEQ), 0) + 1
+			FROM TPR301M
+			WHERE FACTORY_CODE = #{factoryCode}
+			  AND PRODPLAN_DATE = #{planDate}
+		</selectKey>
+
+		INSERT INTO TPR301M (
+			FACTORY_CODE,
+			PRODPLAN_DATE,
+			PRODPLAN_SEQ,
+		    PRODPLAN_ID,
+		    ORDER_FLAG,
+		    CREATE_DAYS,
+		    PLAN_GROUP_ID,
+		    TOTAL_GROUP_COUNT,
+			OPMAN_CODE,
+			OPTIME
+		)
+		VALUES (
+		   #{factoryCode},
+		   #{planDate},  -- 오늘 날짜 8자리(yyyyMMdd)
+		   #{prodPlanSeq},  -- selectKey로 미리 조회한 값 사용
+		   #{prodPlanId},
+		   'PLANNED',
+		   #{createDays},
+		   #{planGroupId},
+		   #{totalGroupCount},
+		   #{opmanCode},
+		   GETDATE()                               -- 현재시간
+	   	);
+	</insert>
+
+	<!-- 생산계획 상세 등록 -->
+	<insert id="ProductionPlanDAO.insertProductionPlan" parameterType="egovframework.let.production.plan.domain.model.ProductionPlan">
+		INSERT INTO TPR301 (
+			FACTORY_CODE,
+			PRODPLAN_DATE,
+			PRODPLAN_SEQ,
+			PRODWORK_SEQ,
+		    PRODPLAN_ID,
+		    PRODPLAN_DETAIL_ID,
+			PROD_DATE,
+		    PROD_QTY,
+			ITEM_CODE,
+			ITEM_NAME,
+		    WORKCENTER_CODE,
+		    WORK_CODE,
+			EQUIP_SYS_CD,
+		    WORKER_TYPE,
+			WORKER_CODE,
+			WORKER_NAME,
+			DELIVERY_DATE,
+		    PLAN_GROUP_ID,
+		    GROUP_SEQ,
+		    CREATE_DAYS,
+			ORDER_FLAG,
+			OPMAN_CODE,
+			OPTIME
+		) VALUES (
+			#{factoryCode},
+			#{prodPlanDate},
+			#{prodPlanSeq},
+			(
+				SELECT ISNULL(MAX(PRODWORK_SEQ), 0) + 1
+				FROM TPR301
+				WHERE FACTORY_CODE = #{factoryCode}
+				  AND PRODPLAN_DATE = #{prodPlanDate}
+				  AND PRODPLAN_SEQ = #{prodPlanSeq}
+			),                                      -- 오늘 날짜의 순번 +1
+			#{prodPlanId},
+			#{prodPlanDetailId},
+			#{planDate},
+			#{plannedQty},
+			#{itemCode},
+			#{itemName},
+			#{workplaceCode},
+			#{processCode},
+			#{equipmentId},
+			#{workerType},
+			#{workerCode},
+			#{workerName},
+			#{deliveryDate},
+			#{planGroupId},
+			#{groupSeq},
+			#{createDays},
+			'PLANNED',
+			#{opmanCode},
+			GETDATE()
+		)
+	</insert>
+
+	<!-- 생산계획 마스터 목록 조회 -->
+	<select id="ProductionPlanDAO.selectProductionPlanMasterList"
+			parameterType="egovframework.let.production.plan.domain.model.ProductionPlanVO"
+			resultMap="productionPlanMasterResult">
+		SELECT
+			FACTORY_CODE,
+			PRODPLAN_DATE,
+			PRODPLAN_SEQ,
+			PRODPLAN_DATE AS PLAN_DATE,
+			CREATE_DAYS,
+			PLAN_GROUP_ID,
+			TOTAL_GROUP_COUNT,
+			OPMAN_CODE,
+			CONVERT(VARCHAR(19), OPTIME, 120) AS OPTIME,
+			OPMAN_CODE2,
+			CONVERT(VARCHAR(19), OPTIME2, 120) AS OPTIME2
+		FROM TPR301M
+		WHERE FACTORY_CODE = #{factoryCode}
+		<if test="startDate != null and startDate != ''">
+			AND PRODPLAN_DATE &gt;= #{startDate}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			AND PRODPLAN_DATE &lt;= #{endDate}
+		</if>
+		ORDER BY PRODPLAN_DATE DESC, PRODPLAN_SEQ ASC
+	</select>
+
+	<!-- 생산계획 상세 목록 조회 -->
+	<select id="ProductionPlanDAO.selectProductionPlanList" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanVO" resultMap="productionPlanResult">
+		SELECT
+			FACTORY_CODE,
+			PLAN_NO,
+			PLAN_SEQ,
+			PLAN_DATE,
+			ITEM_CODE,
+			ITEM_NAME,
+			PLANNED_QTY,
+			ACTUAL_QTY,
+			EQUIPMENT_CODE,
+			EQUIPMENT_NAME,
+			SHIFT,
+			WORKER_CODE,
+			WORKER_NAME,
+			ORDER_NO,
+			ORDER_SEQNO,
+			ORDER_HISTNO,
+			LOT_NO,
+			CUSTOMER_CODE,
+			CUSTOMER_NAME,
+			DELIVERY_DATE,
+			PLAN_GROUP_ID,
+			GROUP_SEQ,
+			CREATE_DAYS,
+			BIGO,
+			USE_YN,
+			OPMAN_CODE,
+			CONVERT(VARCHAR(19), OPTIME, 120) AS OPTIME,
+			OPMAN_CODE2,
+			CONVERT(VARCHAR(19), OPTIME2, 120) AS OPTIME2
+		FROM TPR301
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND USE_YN = 'Y'
+		<if test="planNo != null and planNo != ''">
+			AND PLAN_NO = #{planNo}
+		</if>
+		<if test="startDate != null and startDate != ''">
+			AND PLAN_DATE &gt;= #{startDate}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			AND PLAN_DATE &lt;= #{endDate}
+		</if>
+		<if test="itemCode != null and itemCode != ''">
+			AND ITEM_CODE = #{itemCode}
+		</if>
+		<if test="equipmentCode != null and equipmentCode != ''">
+			AND EQUIPMENT_CODE = #{equipmentCode}
+		</if>
+		ORDER BY PLAN_DATE DESC, PLAN_NO DESC, PLAN_SEQ ASC
+	</select>
+
+	<!-- 생산계획 상세 조회 -->
+	<select id="ProductionPlanDAO.selectProductionPlan" parameterType="egovframework.let.production.plan.domain.model.ProductionPlan" resultMap="productionPlanResult">
+		SELECT
+			FACTORY_CODE,
+			PLAN_NO,
+			PLAN_SEQ,
+			PLAN_DATE,
+			ITEM_CODE,
+			ITEM_NAME,
+			PLANNED_QTY,
+			ACTUAL_QTY,
+			EQUIPMENT_CODE,
+			EQUIPMENT_NAME,
+			SHIFT,
+			WORKER_CODE,
+			WORKER_NAME,
+			ORDER_NO,
+			ORDER_SEQNO,
+			ORDER_HISTNO,
+			LOT_NO,
+			CUSTOMER_CODE,
+			CUSTOMER_NAME,
+			DELIVERY_DATE,
+			PLAN_GROUP_ID,
+			GROUP_SEQ,
+			CREATE_DAYS,
+			BIGO,
+			USE_YN,
+			OPMAN_CODE,
+			CONVERT(VARCHAR(19), OPTIME, 120) AS OPTIME,
+			OPMAN_CODE2,
+			CONVERT(VARCHAR(19), OPTIME2, 120) AS OPTIME2
+		FROM TPR301
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND PLAN_NO = #{planNo}
+		  AND PLAN_SEQ = #{planSeq}
+	</select>
+
+	<!-- 생산계획 마스터 총 건수 조회 -->
+	<select id="ProductionPlanDAO.selectProductionPlanMasterListTotCnt" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanVO" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM TPR301M
+		WHERE FACTORY_CODE = #{factoryCode}
+		<if test="startDate != null and startDate != ''">
+			AND PRODPLAN_DATE &gt;= #{startDate}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			AND PRODPLAN_DATE &lt;= #{endDate}
+		</if>
+	</select>
+
+	<!-- 계획번호(PRODPLAN_ID)로 생산계획 상세 목록 조회 -->
+	<select id="ProductionPlanDAO.selectProductionPlanByPlanNo" parameterType="string" resultMap="productionPlanResult">
+		SELECT
+			FACTORY_CODE,
+			PRODPLAN_ID,
+			PRODPLAN_DATE,
+			PRODPLAN_SEQ,
+			PRODWORK_SEQ,
+			PROD_DATE AS PLAN_DATE,
+			PROD_QTY,
+			ITEM_CODE,
+			ITEM_NAME,
+			WORKCENTER_CODE,
+			WORK_CODE,
+			EQUIP_SYS_CD,
+			WORKER_TYPE,
+			WORKER_CODE,
+			WORKER_NAME,
+			DELIVERY_DATE,
+			PLAN_GROUP_ID,
+			GROUP_SEQ,
+			CREATE_DAYS,
+			BIGO,
+			OPMAN_CODE,
+			CONVERT(VARCHAR(19), OPTIME, 120) AS OPTIME,
+			OPMAN_CODE2,
+			CONVERT(VARCHAR(19), OPTIME2, 120) AS OPTIME2
+		FROM TPR301
+		WHERE PRODPLAN_ID = #{planNo}
+		ORDER BY PRODWORK_SEQ ASC
+	</select>
+
+	<!-- 생산계획 마스터 수정 -->
+	<update id="ProductionPlanDAO.updateProductionPlanMaster" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanMaster">
+		UPDATE TPR301M
+		SET
+			OPMAN_CODE2 = #{opmanCode2},
+			OPTIME2 = GETDATE()
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND PRODPLAN_ID = #{prodPlanId}
+	</update>
+
+	<!-- 생산계획 상세 수정 -->
+	<update id="ProductionPlanDAO.updateProductionPlan" parameterType="egovframework.let.production.plan.domain.model.ProductionPlan">
+		UPDATE TPR301
+		SET
+			PROD_QTY = #{plannedQty},
+			WORK_CODE = #{processCode},
+			EQUIP_SYS_CD = #{equipmentId},
+			WORKER_TYPE = #{workerType},
+			WORKER_CODE = #{workerCode},
+			WORKER_NAME = #{workerName},
+			PROD_DATE = #{planDate},
+			DELIVERY_DATE = #{deliveryDate},
+			BIGO = #{remark},
+			OPMAN_CODE2 = #{opmanCode2},
+			OPTIME2 = GETDATE()
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND PRODPLAN_ID = #{prodPlanId}
+		  AND PRODWORK_SEQ = #{prodworkSeq}
+	</update>
+
+	<!-- 생산계획 지시상태 조회 (ORDERED 여부 확인) -->
+	<select id="ProductionPlanDAO.selectProductionPlanOrderFlag"
+			parameterType="egovframework.let.production.plan.domain.model.ProductionPlan"
+			resultType="string">
+		SELECT TOP 1 ISNULL(ORDER_FLAG, 'PLANNED')
+		FROM TPR301
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND PRODPLAN_ID = #{prodPlanId}
+	</select>
+
+	<!-- 생산계획 날짜 전용 수정 (지시 완료 상태에서 허용) -->
+	<update id="ProductionPlanDAO.updateProductionPlanDateOnly"
+			parameterType="egovframework.let.production.plan.domain.model.ProductionPlan">
+		UPDATE TPR301
+		SET
+			PROD_DATE = #{planDate},
+			DELIVERY_DATE = #{deliveryDate},
+			OPMAN_CODE2 = #{opmanCode2},
+			OPTIME2 = GETDATE()
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND PRODPLAN_ID = #{prodPlanId}
+		  AND PRODWORK_SEQ = #{prodworkSeq}
+	</update>
+
+	<!-- 생산계획 기준 생산지시일(WORKDT_DATE) 동기화 -->
+	<update id="ProductionPlanDAO.updateProductionOrderWorkDateByPlanId"
+			parameterType="egovframework.let.production.plan.domain.model.ProductionPlanMaster">
+		UPDATE TPR504
+		SET
+			WORKDT_DATE = #{planDate},
+			OPMAN_CODE2 = #{opmanCode2},
+			OPTIME2 = GETDATE()
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND PRODPLAN_ID = #{prodPlanId}
+		  AND ISNULL(DELETE_FLAG, '0') != 1
+	</update>
+
+	<!-- 생산계획 마스터 삭제 (물리적 삭제) -->
+	<update id="ProductionPlanDAO.deleteProductionPlanMaster" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanMaster">
+		DELETE FROM TPR301M
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND PRODPLAN_ID = #{prodPlanId}
+	</update>
+
+	<!-- 생산계획 상세 삭제 (물리적 삭제) -->
+	<update id="ProductionPlanDAO.deleteProductionPlan" parameterType="egovframework.let.production.plan.domain.model.ProductionPlan">
+		DELETE FROM TPR301
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND PRODPLAN_ID = #{prodPlanId}
+	</update>
+
+	<!-- 생산계획 참조(주문연결) 삭제 (물리적 삭제) -->
+	<delete id="ProductionPlanDAO.deleteProductionPlanReference" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanReference">
+		DELETE FROM TPR301R
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND PRODPLAN_DATE = #{prodplanDate}
+		  AND PRODPLAN_SEQ = #{prodplanSeq}
+	</delete>
+
+	<!-- 생산계획 참조(주문연결) 삭제 - planId 기준 (TPR301 연계) -->
+	<delete id="ProductionPlanDAO.deleteProductionPlanReferenceByPlanId" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanMaster">
+		DELETE R
+		FROM TPR301R R
+		JOIN TPR301 P
+		  ON P.FACTORY_CODE = R.FACTORY_CODE
+		 AND P.PRODPLAN_DATE = R.PRODPLAN_DATE
+		 AND P.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+		WHERE P.FACTORY_CODE = #{factoryCode}
+		  AND P.PRODPLAN_ID = #{prodPlanId}
+	</delete>
+
+	<!-- 생산계획 참조(주문연결) 수량 갱신 - planId 기준 (TPR301 연계) -->
+	<update id="ProductionPlanDAO.updateProductionPlanReferenceQtyByPlanId" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanMaster">
+		UPDATE R
+		SET R.ORDER_QTY = ISNULL(#{totalPlanQty}, 0)
+		FROM TPR301R R
+		JOIN TPR301 P
+		  ON P.FACTORY_CODE = R.FACTORY_CODE
+		 AND P.PRODPLAN_DATE = R.PRODPLAN_DATE
+		 AND P.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+		WHERE P.FACTORY_CODE = #{factoryCode}
+		  AND P.PRODPLAN_ID = #{prodPlanId}
+	</update>
+
+	<!-- 생산계획 참조(주문연결) 등록 -->
+	<insert id="ProductionPlanDAO.insertProductionPlanReference" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanReference">
+		INSERT INTO TPR301R (
+			FACTORY_CODE,
+			ORDER_NO,
+			ORDER_SEQNO,
+			ORDER_HISTNO,
+			CUSTOMER_CODE,
+			PRODPLAN_DATE,
+			PRODPLAN_SEQ,
+			ORDER_QTY,
+			WORKDT_QTY,
+			REPRESENT_ORDER,
+			OPMAN_CODE,
+			OPTIME
+		) VALUES (
+			#{factoryCode},
+			#{orderNo},
+			#{orderSeqno},
+			#{orderHistno},
+			#{customerCode},
+			#{prodplanDate},
+			#{prodplanSeq},
+			ISNULL(#{orderQty}, 0),
+			ISNULL(#{workdtQty}, 0),
+			ISNULL(#{representOrder}, 'N'),
+			#{opmanCode},
+			GETDATE()
+		)
+	</insert>
+
+	<!-- 작업장별 주간 생산계획 조회 (설비별 그룹화) -->
+	<!-- CTE로 TPR301 단일 스캔: ScopedPlans(계획 범위) + CustomerAgg(고객집계) 분리 -->
+	<select id="ProductionPlanDAO.selectWeeklyProductionPlansByWorkplace" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanVO" resultType="egovMap">
+		WITH ScopedPlans AS (
+			-- TPR301을 작업장+기간으로 1회만 읽어 이하 CTE에서 재사용
+			SELECT
+				FACTORY_CODE,
+				WORKCENTER_CODE,
+				WORK_CODE,
+				EQUIP_SYS_CD,
+				PRODPLAN_ID,
+				PRODPLAN_DATE,
+				PRODPLAN_SEQ,
+				PRODWORK_SEQ,
+				PROD_DATE,
+				ITEM_CODE,
+				ITEM_NAME,
+				PROD_QTY,
+				WORKER_TYPE,
+				WORKER_CODE,
+				WORKER_NAME,
+				DELIVERY_DATE,
+				PLAN_GROUP_ID,
+				GROUP_SEQ,
+				CREATE_DAYS,
+				ORDER_FLAG,
+				BIGO
+			FROM TPR301
+			WHERE WORKCENTER_CODE = #{workplaceCode}
+			<if test="startDate != null and startDate != ''">
+				AND PROD_DATE &gt;= #{startDate}
+			</if>
+			<if test="endDate != null and endDate != ''">
+				AND PROD_DATE &lt;= #{endDate}
+			</if>
+		),
+		CustomerAgg AS (
+			-- ScopedPlans 키 기준으로 고객 집계 (TPR301 재스캔 없음)
+			SELECT
+				R.FACTORY_CODE,
+				R.PRODPLAN_DATE,
+				R.PRODPLAN_SEQ,
+				COUNT(DISTINCT R.CUSTOMER_CODE) AS CUSTOMER_COUNT,
+				MIN(R.CUSTOMER_CODE) AS FIRST_CUSTOMER_CODE
+			FROM TPR301R R
+			INNER JOIN (
+				SELECT DISTINCT FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+				FROM ScopedPlans
+			) SK
+			ON SK.FACTORY_CODE = R.FACTORY_CODE
+			AND SK.PRODPLAN_DATE = R.PRODPLAN_DATE
+			AND SK.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+			WHERE R.CUSTOMER_CODE IS NOT NULL
+			AND R.CUSTOMER_CODE != ''
+			GROUP BY R.FACTORY_CODE, R.PRODPLAN_DATE, R.PRODPLAN_SEQ
+		),
+		RepresentativeOrder AS (
+			-- 계획별 대표 생산의뢰 1건 선택
+			SELECT
+				R.FACTORY_CODE,
+				R.PRODPLAN_DATE,
+				R.PRODPLAN_SEQ,
+				R.ORDER_NO,
+				R.ORDER_SEQNO,
+				R.ORDER_HISTNO,
+				ROW_NUMBER() OVER (
+					PARTITION BY R.FACTORY_CODE, R.PRODPLAN_DATE, R.PRODPLAN_SEQ
+					ORDER BY
+						CASE WHEN ISNULL(R.REPRESENT_ORDER, 'N') = 'Y' THEN 0 ELSE 1 END,
+						R.ORDER_NO,
+						R.ORDER_SEQNO,
+						R.ORDER_HISTNO
+				) AS RN
+			FROM TPR301R R
+			INNER JOIN (
+				SELECT DISTINCT FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+				FROM ScopedPlans
+			) SK
+			ON SK.FACTORY_CODE = R.FACTORY_CODE
+			AND SK.PRODPLAN_DATE = R.PRODPLAN_DATE
+			AND SK.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+		),
+		ResultExists AS (
+			-- 행(PRODWORK_SEQ) 단위 실적 존재 여부 (TPR601 스캔 1회)
+			SELECT DISTINCT R.FACTORY_CODE, R.PRODPLAN_DATE, R.PRODPLAN_SEQ, R.PRODWORK_SEQ
+			FROM TPR601 R
+			INNER JOIN (
+				SELECT DISTINCT FACTORY_CODE, PRODPLAN_DATE, PRODPLAN_SEQ
+				FROM ScopedPlans
+			) SK
+			ON SK.FACTORY_CODE = R.FACTORY_CODE
+			AND SK.PRODPLAN_DATE = R.PRODPLAN_DATE
+			AND SK.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+		)
+		SELECT
+		    E.FACTORY_CODE,
+		    E.WORKCENTER_CODE AS WORKPLACE_CODE,
+		    E.WORK_CODE AS PROCESS_CODE,
+		    E.PROCESS_NAME AS PROCESS_NAME,
+			E.EQUIP_SYS_CD AS EQUIPMENT_ID,
+			E.EQUIP_CD AS EQUIPMENT_CODE,
+			E.EQUIPMENT_NAME,
+			D.PRODPLAN_ID,
+			D.PRODPLAN_DATE,
+			D.PRODPLAN_SEQ,
+			D.PRODWORK_SEQ,
+			D.PROD_DATE AS PLAN_DATE,
+			D.ITEM_CODE,
+			COALESCE(I.MATERIAL_CODE, D.ITEM_CODE) AS ITEM_DISPLAY_CODE,
+			D.ITEM_NAME,
+			M.ITEM_LOT_NO AS LOT_NO,
+			D.PROD_QTY AS PLANNED_QTY,
+			0 AS ACTUAL_Qty,
+			D.WORKER_TYPE AS SHIFT,
+			RO.ORDER_NO AS orderNo,
+			RO.ORDER_SEQNO AS orderSeqno,
+			RO.ORDER_HISTNO AS orderHistno,
+			D.WORKER_CODE,
+			D.WORKER_NAME,
+			D.DELIVERY_DATE,
+			D.PLAN_GROUP_ID AS planGroupId,
+			D.GROUP_SEQ AS groupSeq,
+			D.CREATE_DAYS AS createDays,
+			M.TOTAL_GROUP_COUNT AS totalGroupCount,
+			D.ORDER_FLAG AS orderFlag,
+			COALESCE(C.FIRST_CUSTOMER_CODE, '') AS CUSTOMER_CODE,
+			CASE
+				WHEN C.CUSTOMER_COUNT > 1 THEN COALESCE(CU.CUSTOMER_NAME, '') + ' 외 ' + CAST(C.CUSTOMER_COUNT - 1 AS VARCHAR) + '건'
+				WHEN C.CUSTOMER_COUNT = 1 THEN COALESCE(CU.CUSTOMER_NAME, '')
+				ELSE ''
+			END AS CUSTOMER_NAME,
+			D.BIGO AS REMARK,
+			CASE WHEN RE.PRODWORK_SEQ IS NOT NULL THEN 1 ELSE 0 END AS HAS_RESULT
+		FROM (
+			-- 작업장 기준 공정별 설비연동 설비 목록 (중복 제거)
+			SELECT
+				E.FACTORY_CODE,
+				H.WORKCENTER_CODE,
+				D2.WORK_CODE,
+				P.WORK_NAME AS PROCESS_NAME,
+				E.EQUIP_SYS_CD,
+				E.EQUIP_CD,
+				E.EQUIPMENT_NAME
+			FROM TPR110 H
+				INNER JOIN TPR110D D2
+				ON H.FACTORY_CODE = D2.FACTORY_CODE
+				AND H.WORK_ORDER = D2.WORK_ORDER
+				INNER JOIN TPR102 P
+				ON D2.FACTORY_CODE = P.FACTORY_CODE
+				AND D2.WORK_CODE = P.WORK_CODE
+				INNER JOIN TPR104 PE
+				ON P.FACTORY_CODE = PE.FACTORY_CODE
+				AND P.WORK_CODE = PE.WORK_CODE
+				INNER JOIN TPR151 E
+				ON PE.FACTORY_CODE = E.FACTORY_CODE
+				AND PE.EQUIP_SYS_CD = E.EQUIP_SYS_CD
+			WHERE H.WORKCENTER_CODE = #{workplaceCode}
+			AND P.EQUIPMENT_INTEGRATION_YN = 'Y'
+			AND E.USE_FLAG = 'Y'
+			GROUP BY
+				E.FACTORY_CODE,
+				H.WORKCENTER_CODE,
+				D2.WORK_CODE,
+				P.WORK_NAME,
+				E.EQUIP_SYS_CD,
+				E.EQUIP_CD,
+				E.EQUIPMENT_NAME
+		) E
+			LEFT JOIN ScopedPlans D
+			ON D.FACTORY_CODE = E.FACTORY_CODE
+			AND D.WORKCENTER_CODE = E.WORKCENTER_CODE
+			AND D.WORK_CODE = E.WORK_CODE
+			AND D.EQUIP_SYS_CD = E.EQUIP_SYS_CD
+			LEFT JOIN TPR301M M
+			ON M.FACTORY_CODE = D.FACTORY_CODE
+			AND M.PRODPLAN_DATE = D.PRODPLAN_DATE
+			AND M.PRODPLAN_SEQ = D.PRODPLAN_SEQ
+			LEFT JOIN TCO403 I WITH(NOLOCK)
+			ON I.FACTORY_CODE = D.FACTORY_CODE
+			AND I.MATERIAL_ID = D.ITEM_CODE
+			LEFT JOIN CustomerAgg C
+			ON C.FACTORY_CODE = D.FACTORY_CODE
+			AND C.PRODPLAN_DATE = D.PRODPLAN_DATE
+			AND C.PRODPLAN_SEQ = D.PRODPLAN_SEQ
+			LEFT JOIN RepresentativeOrder RO
+			ON RO.FACTORY_CODE = D.FACTORY_CODE
+			AND RO.PRODPLAN_DATE = D.PRODPLAN_DATE
+			AND RO.PRODPLAN_SEQ = D.PRODPLAN_SEQ
+			AND RO.RN = 1
+			LEFT JOIN TCO601 CU
+			ON CU.FACTORY_CODE = C.FACTORY_CODE
+			AND CU.CUSTOMER_CODE = C.FIRST_CUSTOMER_CODE
+			LEFT JOIN ResultExists RE
+			ON RE.FACTORY_CODE = D.FACTORY_CODE
+			AND RE.PRODPLAN_DATE = D.PRODPLAN_DATE
+			AND RE.PRODPLAN_SEQ = D.PRODPLAN_SEQ
+			AND RE.PRODWORK_SEQ = D.PRODWORK_SEQ
+		ORDER BY E.EQUIP_CD, D.PROD_DATE, D.PRODPLAN_DATE, D.PRODPLAN_SEQ
+	</select>
+
+	<!-- 생산의뢰(TSA308) 목록 조회 -->
+	<select id="ProductionPlanDAO.selectProductionRequestList" parameterType="egovframework.let.production.plan.domain.model.ProductionRequestVO" resultType="egovframework.let.production.plan.domain.model.ProductionRequestDTO">
+		SELECT
+			T.FACTORY_CODE,
+			T.ORDER_NO,
+			T.ORDER_HISTNO,
+			T.ORDER_SEQNO,
+			T.ITEM_FLAG,
+			T.ORDER_QTY,
+			T.ORDER_PRICE,
+			T.ORDER_AMOUNT,
+			T.SHIP_ORDER_QTY,
+			T.CLOSING_FLAG,
+			T.DELIVERY_DATE,
+			T.OPMAN_CODE,
+			T.OPTIME,
+			T.ITEM_CODE,
+			T.ITEM_NO,
+			T.ITEM_NAME,
+			T.ITEM_SPEC AS SPECIFICATION,
+			T.UNIT_CODE AS UNIT_CODE,
+			ISNULL(CODE1.CODE_NM, '') AS UNIT_NAME,
+			T.CUSTOMER_CODE,
+			C.CUSTOMER_NAME,
+			ISNULL(T.BIGO, '') AS REMARK,
+			T.EMPLYR_ID AS REGISTRANT,
+			CONVERT(VARCHAR(10), T.OPTIME, 108) AS REGIST_TIME,
+			CONVERT(VARCHAR(8), T.OPTIME, 112) AS REGIST_DATE,
+			T.PROD_PLAN_DATE,
+			T.END_DATE,
+			-- 할당량: 이미 계획된 수량
+			ISNULL(
+				(
+					SELECT SUM(R.ORDER_QTY)
+					FROM TPR301R R
+					JOIN TPR301 P
+					  ON P.FACTORY_CODE = R.FACTORY_CODE
+					 AND P.PRODPLAN_DATE = R.PRODPLAN_DATE
+					 AND P.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+					WHERE R.FACTORY_CODE = T.FACTORY_CODE
+					  AND R.ORDER_NO = T.ORDER_NO
+					  AND R.ORDER_SEQNO = T.ORDER_SEQNO
+					  AND R.ORDER_HISTNO = T.ORDER_HISTNO
+					  AND P.ITEM_CODE = T.ITEM_CODE
+				), 0
+			) AS ALLOCATED_QTY,
+			-- 남은수량: 주문량 - 할당량
+			T.ORDER_QTY - ISNULL(
+				(
+					SELECT SUM(R.ORDER_QTY)
+					FROM TPR301R R
+					JOIN TPR301 P
+					  ON P.FACTORY_CODE = R.FACTORY_CODE
+					 AND P.PRODPLAN_DATE = R.PRODPLAN_DATE
+					 AND P.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+					WHERE R.FACTORY_CODE = T.FACTORY_CODE
+					  AND R.ORDER_NO = T.ORDER_NO
+					  AND R.ORDER_SEQNO = T.ORDER_SEQNO
+					  AND R.ORDER_HISTNO = T.ORDER_HISTNO
+					  AND P.ITEM_CODE = T.ITEM_CODE
+				), 0
+			) AS REMAINING_QTY,
+		-- 의뢰 구분 정보
+			ISNULL(T.REQ_TYPE, '') AS REQ_TYPE,
+			ISNULL(CODE_REQ.CODE_NM, ISNULL(T.REQ_TYPE_NAME, '')) AS REQ_TYPE_NAME
+		FROM TSA308 T
+			LEFT JOIN TCO601 C ON T.FACTORY_CODE = C.FACTORY_CODE AND T.CUSTOMER_CODE = C.CUSTOMER_CODE
+			LEFT JOIN MES_CCMMNDETAIL_CODE CODE1 ON CODE1.CODE_ID = 'COM007' AND CODE1.CODE = T.UNIT_CODE
+			LEFT JOIN MES_CCMMNDETAIL_CODE CODE_REQ ON CODE_REQ.CODE_ID = 'COM012' AND CODE_REQ.CODE = T.REQ_TYPE
+		WHERE 1=1
+		AND T.FACTORY_CODE = #{factoryCode}
+		<!-- 작업장 필터 (workplaceCode가 지정된 경우 - 해당 작업장의 공정흐름에 포함된 제품만 조회) -->
+		<if test="workplaceCode != null and workplaceCode != ''">
+			AND EXISTS (
+				SELECT 1
+				FROM TPR110 PF
+				JOIN TPR112 PFI
+				  ON PF.FACTORY_CODE = PFI.FACTORY_CODE
+				 AND PF.WORK_ORDER_ID = PFI.WORK_ORDER_ID
+				WHERE PF.FACTORY_CODE = T.FACTORY_CODE
+				  AND PF.WORKCENTER_CODE = #{workplaceCode}
+				  AND PFI.PROD_CODE_ID = T.ITEM_CODE
+				  AND ISNULL(PF.DELETE_FLAG, '') != '1'
+			)
+		</if>
+		<choose>
+			<when test="allocationStatus == 'UNPLANNED'">
+				AND T.ORDER_QTY > ISNULL(
+					(
+						SELECT SUM(R.ORDER_QTY)
+						FROM TPR301R R
+						JOIN TPR301 P
+						  ON P.FACTORY_CODE = R.FACTORY_CODE
+						 AND P.PRODPLAN_DATE = R.PRODPLAN_DATE
+						 AND P.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+						WHERE R.FACTORY_CODE = T.FACTORY_CODE
+						  AND R.ORDER_NO = T.ORDER_NO
+						  AND R.ORDER_SEQNO = T.ORDER_SEQNO
+						  AND R.ORDER_HISTNO = T.ORDER_HISTNO
+						  AND P.ITEM_CODE = T.ITEM_CODE
+					), 0)
+			</when>
+			<when test="allocationStatus == 'PLANNED'">
+				AND T.ORDER_QTY &lt;= ISNULL(
+					(
+						SELECT SUM(R.ORDER_QTY)
+						FROM TPR301R R
+						JOIN TPR301 P
+						  ON P.FACTORY_CODE = R.FACTORY_CODE
+						 AND P.PRODPLAN_DATE = R.PRODPLAN_DATE
+						 AND P.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+						WHERE R.FACTORY_CODE = T.FACTORY_CODE
+						  AND R.ORDER_NO = T.ORDER_NO
+						  AND R.ORDER_SEQNO = T.ORDER_SEQNO
+						  AND R.ORDER_HISTNO = T.ORDER_HISTNO
+						  AND P.ITEM_CODE = T.ITEM_CODE
+					), 0)
+			</when>
+		</choose>
+		<if test="searchCnd != null and searchCnd != '' and searchWrd != null and searchWrd != ''">
+			<choose>
+				<when test="searchCnd == '1' or searchCnd == 1">
+					<!-- 품목코드 -->
+					AND T.ITEM_CODE LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '2' or searchCnd == 2">
+					<!-- 품목명 -->
+					AND T.ITEM_NAME LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '3' or searchCnd == 3">
+					<!-- 생산의뢰번호 -->
+					AND T.ORDER_NO LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '4' or searchCnd == 4">
+					<!-- 품목번호 -->
+					AND T.ITEM_NO LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '5' or searchCnd == 5">
+					<!-- 거래처 -->
+					AND ISNULL(C.CUSTOMER_NAME, '') LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '6' or searchCnd == 6">
+					<!-- 비고 -->
+					AND ISNULL(T.BIGO, '') LIKE '%' + #{searchWrd} + '%'
+				</when>
+			</choose>
+		</if>
+		<!-- 검색 조건 2 (다중 조건) -->
+		<if test="searchCnd2 != null and searchCnd2 != '' and searchWrd2 != null and searchWrd2 != ''">
+			<choose>
+				<when test="searchCnd2 == '1' or searchCnd2 == 1">
+					<!-- 품목코드 -->
+					AND T.ITEM_CODE LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '2' or searchCnd2 == 2">
+					<!-- 품목명 -->
+					AND T.ITEM_NAME LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '3' or searchCnd2 == 3">
+					<!-- 생산의뢰번호 -->
+					AND T.ORDER_NO LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '4' or searchCnd2 == 4">
+					<!-- 품목번호 -->
+					AND T.ITEM_NO LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '5' or searchCnd2 == 5">
+					<!-- 거래처 -->
+					AND ISNULL(C.CUSTOMER_NAME, '') LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '6' or searchCnd2 == 6">
+					<!-- 비고 -->
+					AND ISNULL(T.BIGO, '') LIKE '%' + #{searchWrd2} + '%'
+				</when>
+			</choose>
+		</if>
+		<!-- 의뢰일(OPTIME) 기간 검색 (dateFrom/dateTo) -->
+		<if test="dateFrom != null and dateFrom != ''">
+			AND CONVERT(VARCHAR(8), T.PROD_PLAN_DATE, 112) &gt;= #{dateFrom}
+		</if>
+		<if test="dateTo != null and dateTo != ''">
+			AND CONVERT(VARCHAR(8), T.PROD_PLAN_DATE, 112) &lt;= #{dateTo}
+		</if>
+		<!-- 의뢰 구분 필터 (reqType) -->
+		<if test="reqType != null and reqType != ''">
+			AND T.REQ_TYPE = #{reqType}
+		</if>
+		<!-- 반제품 자동 제외: 동일 주문 그룹의 제품(ITEM_FLAG='2')이 이미 계획 할당된 경우 반제품(ITEM_FLAG='4') 제외 -->
+		AND NOT (
+			T.ITEM_FLAG = '4'
+			AND EXISTS (
+				SELECT 1
+				FROM TSA308 P
+				JOIN TPR301R R
+				  ON R.FACTORY_CODE = P.FACTORY_CODE
+				 AND R.ORDER_NO      = P.ORDER_NO
+				 AND R.ORDER_SEQNO   = P.ORDER_SEQNO
+				 AND R.ORDER_HISTNO  = P.ORDER_HISTNO
+				JOIN TPR301 PP
+				  ON PP.FACTORY_CODE  = R.FACTORY_CODE
+				 AND PP.PRODPLAN_DATE = R.PRODPLAN_DATE
+				 AND PP.PRODPLAN_SEQ  = R.PRODPLAN_SEQ
+				 AND PP.ITEM_CODE     = P.ITEM_CODE
+				WHERE P.FACTORY_CODE = T.FACTORY_CODE
+				  AND P.ORDER_NO     = T.ORDER_NO
+				  AND P.ORDER_SEQNO  = T.ORDER_SEQNO
+				  AND P.ORDER_HISTNO = T.ORDER_HISTNO
+				  AND P.ITEM_FLAG    = '2'
+			)
+		)
+		ORDER BY T.ORDER_NO DESC, T.ORDER_SEQNO, T.ORDER_HISTNO, T.ITEM_FLAG ASC
+		OFFSET #{firstIndex} ROWS
+		FETCH NEXT #{recordCountPerPage} ROWS ONLY
+	</select>
+
+	<!-- 생산의뢰(TSA308) 총 개수 조회 -->
+	<select id="ProductionPlanDAO.selectProductionRequestListCnt" parameterType="egovframework.let.production.plan.domain.model.ProductionRequestVO" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM TSA308 T
+		LEFT JOIN TCO601 C ON T.FACTORY_CODE = C.FACTORY_CODE AND T.CUSTOMER_CODE = C.CUSTOMER_CODE
+		WHERE 1=1
+		<if test="factoryCode != null and factoryCode != ''">
+			AND T.FACTORY_CODE = #{factoryCode}
+		</if>
+		<!-- 작업장 필터 (workplaceCode가 지정된 경우 - 해당 작업장의 공정흐름에 포함된 제품만 조회) -->
+		<if test="workplaceCode != null and workplaceCode != ''">
+			AND EXISTS (
+				SELECT 1
+				FROM TPR110 PF
+				JOIN TPR112 PFI
+				  ON PF.FACTORY_CODE = PFI.FACTORY_CODE
+				 AND PF.WORK_ORDER_ID = PFI.WORK_ORDER_ID
+				WHERE PF.FACTORY_CODE = T.FACTORY_CODE
+				  AND PF.WORKCENTER_CODE = #{workplaceCode}
+				  AND PFI.PROD_CODE_ID = T.ITEM_CODE
+				  AND ISNULL(PF.DELETE_FLAG, '') != '1'
+			)
+		</if>
+		<choose>
+			<when test="allocationStatus == 'UNPLANNED'">
+				AND T.ORDER_QTY > ISNULL(
+					(
+						SELECT SUM(R.ORDER_QTY)
+						FROM TPR301R R
+						JOIN TPR301 P
+						  ON P.FACTORY_CODE = R.FACTORY_CODE
+						 AND P.PRODPLAN_DATE = R.PRODPLAN_DATE
+						 AND P.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+						WHERE R.FACTORY_CODE = T.FACTORY_CODE
+						  AND R.ORDER_NO = T.ORDER_NO
+						  AND R.ORDER_SEQNO = T.ORDER_SEQNO
+						  AND R.ORDER_HISTNO = T.ORDER_HISTNO
+						  AND P.ITEM_CODE = T.ITEM_CODE
+					), 0)
+			</when>
+			<when test="allocationStatus == 'PLANNED'">
+				AND T.ORDER_QTY &lt;= ISNULL(
+					(
+						SELECT SUM(R.ORDER_QTY)
+						FROM TPR301R R
+						JOIN TPR301 P
+						  ON P.FACTORY_CODE = R.FACTORY_CODE
+						 AND P.PRODPLAN_DATE = R.PRODPLAN_DATE
+						 AND P.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+						WHERE R.FACTORY_CODE = T.FACTORY_CODE
+						  AND R.ORDER_NO = T.ORDER_NO
+						  AND R.ORDER_SEQNO = T.ORDER_SEQNO
+						  AND R.ORDER_HISTNO = T.ORDER_HISTNO
+						  AND P.ITEM_CODE = T.ITEM_CODE
+					), 0)
+			</when>
+		</choose>
+		<if test="searchCnd != null and searchCnd != '' and searchWrd != null and searchWrd != ''">
+			<choose>
+				<when test="searchCnd == '1' or searchCnd == 1">
+					<!-- 품목코드 -->
+					AND T.ITEM_CODE LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '2' or searchCnd == 2">
+					<!-- 품목명 -->
+					AND T.ITEM_NAME LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '3' or searchCnd == 3">
+					<!-- 생산의뢰번호 -->
+					AND T.ORDER_NO LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '4' or searchCnd == 4">
+					<!-- 품목번호 -->
+					AND T.ITEM_NO LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '5' or searchCnd == 5">
+					<!-- 거래처 -->
+					AND ISNULL(C.CUSTOMER_NAME, '') LIKE '%' + #{searchWrd} + '%'
+				</when>
+				<when test="searchCnd == '6' or searchCnd == 6">
+					<!-- 비고 -->
+					AND ISNULL(T.BIGO, '') LIKE '%' + #{searchWrd} + '%'
+				</when>
+			</choose>
+		</if>
+		<!-- 검색 조건 2 (다중 조건) -->
+		<if test="searchCnd2 != null and searchCnd2 != '' and searchWrd2 != null and searchWrd2 != ''">
+			<choose>
+				<when test="searchCnd2 == '1' or searchCnd2 == 1">
+					<!-- 품목코드 -->
+					AND T.ITEM_CODE LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '2' or searchCnd2 == 2">
+					<!-- 품목명 -->
+					AND T.ITEM_NAME LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '3' or searchCnd2 == 3">
+					<!-- 생산의뢰번호 -->
+					AND T.ORDER_NO LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '4' or searchCnd2 == 4">
+					<!-- 품목번호 -->
+					AND T.ITEM_NO LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '5' or searchCnd2 == 5">
+					<!-- 거래처 -->
+					AND ISNULL(C.CUSTOMER_NAME, '') LIKE '%' + #{searchWrd2} + '%'
+				</when>
+				<when test="searchCnd2 == '6' or searchCnd2 == 6">
+					<!-- 비고 -->
+					AND ISNULL(T.BIGO, '') LIKE '%' + #{searchWrd2} + '%'
+				</when>
+			</choose>
+		</if>
+		<!-- 의뢰일(OPTIME) 기간 검색 (dateFrom/dateTo) -->
+		<if test="dateFrom != null and dateFrom != ''">
+			AND CONVERT(VARCHAR(8), T.PROD_PLAN_DATE, 112) &gt;= #{dateFrom}
+		</if>
+		<if test="dateTo != null and dateTo != ''">
+			AND CONVERT(VARCHAR(8), T.PROD_PLAN_DATE, 112) &lt;= #{dateTo}
+		</if>
+		<!-- 의뢰 구분 필터 (reqType) -->
+		<if test="reqType != null and reqType != ''">
+			AND T.REQ_TYPE = #{reqType}
+		</if>
+		<!-- 반제품 자동 제외: 동일 주문 그룹의 제품(ITEM_FLAG='2')이 이미 계획 할당된 경우 반제품(ITEM_FLAG='4') 제외 -->
+		AND NOT (
+			T.ITEM_FLAG = '4'
+			AND EXISTS (
+				SELECT 1
+				FROM TSA308 P
+				JOIN TPR301R R
+				  ON R.FACTORY_CODE = P.FACTORY_CODE
+				 AND R.ORDER_NO      = P.ORDER_NO
+				 AND R.ORDER_SEQNO   = P.ORDER_SEQNO
+				 AND R.ORDER_HISTNO  = P.ORDER_HISTNO
+				JOIN TPR301 PP
+				  ON PP.FACTORY_CODE  = R.FACTORY_CODE
+				 AND PP.PRODPLAN_DATE = R.PRODPLAN_DATE
+				 AND PP.PRODPLAN_SEQ  = R.PRODPLAN_SEQ
+				 AND PP.ITEM_CODE     = P.ITEM_CODE
+				WHERE P.FACTORY_CODE = T.FACTORY_CODE
+				  AND P.ORDER_NO     = T.ORDER_NO
+				  AND P.ORDER_SEQNO  = T.ORDER_SEQNO
+				  AND P.ORDER_HISTNO = T.ORDER_HISTNO
+				  AND P.ITEM_FLAG    = '2'
+			)
+		)
+	</select>
+
+	<!-- 생산계획에 연결된 생산지시 개수 조회 -->
+	<select id="ProductionPlanDAO.selectProductionOrderCount" parameterType="egovframework.let.production.plan.domain.model.ProductionPlan" resultType="int">
+		SELECT COUNT(*)
+		FROM TPR504 O
+		WHERE O.FACTORY_CODE = #{factoryCode}
+		  AND O.PRODPLAN_ID = #{prodPlanId}
+		  AND ISNULL(O.DELETE_FLAG, '0') != 1
+	</select>
+
+	<!-- 생산계획에 등록된 생산실적 개수 조회 -->
+	<select id="ProductionPlanDAO.selectProductionResultCount" parameterType="egovframework.let.production.plan.domain.model.ProductionPlan" resultType="int">
+		SELECT COUNT(*)
+		FROM TPR601 R
+		WHERE R.FACTORY_CODE = #{factoryCode}
+		  AND R.PRODPLAN_DATE = #{prodPlanDate}
+		  AND R.PRODPLAN_SEQ = #{prodPlanSeq}
+	</select>
+
+	<!-- 행(PRODWORK_SEQ) 단위 생산실적 개수 조회 (그룹 계획 부분 실적 체크용) -->
+	<select id="ProductionPlanDAO.selectProductionResultCountByWork" parameterType="egovframework.let.production.plan.domain.model.ProductionPlan" resultType="int">
+		SELECT COUNT(*)
+		FROM TPR601 R
+		WHERE R.FACTORY_CODE = #{factoryCode}
+		  AND R.PRODPLAN_DATE = #{prodPlanDate}
+		  AND R.PRODPLAN_SEQ = #{prodPlanSeq}
+		  AND R.PRODWORK_SEQ = #{prodworkSeq}
+	</select>
+
+	<!-- 월별 생산계획/실적 일자별 집계 조회 -->
+	<select id="ProductionPlanDAO.selectMonthlyPlanDailyList" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanVO" resultType="egovframework.let.production.plan.domain.model.ProductionPlanMonthlyDailyRow">
+		SELECT
+			A.WORKCENTER_CODE AS workplaceCode,
+			W.WORKCENTER_NAME AS workplaceName,
+			A.PROD_DATE AS planDate,
+			SUM(ISNULL(A.PROD_QTY, 0)) AS planQty,
+			SUM(ISNULL(R.PROD_QTY, 0)) AS actualQty
+		FROM TPR301 A
+		LEFT JOIN TPR101 W
+			ON A.WORKCENTER_CODE = W.WORKCENTER_CODE
+		LEFT JOIN TPR601 R
+			ON A.FACTORY_CODE = R.FACTORY_CODE
+			AND A.PROD_DATE = R.PRODPLAN_DATE
+			AND A.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+			AND A.PRODWORK_SEQ = R.PRODWORK_SEQ
+		WHERE A.FACTORY_CODE = #{factoryCode}
+		  AND A.PROD_DATE &gt;= #{startDate}
+		  AND A.PROD_DATE &lt;= #{endDate}
+		GROUP BY A.WORKCENTER_CODE, W.WORKCENTER_NAME, A.PROD_DATE
+		ORDER BY A.WORKCENTER_CODE, A.PROD_DATE
+	</select>
+
+	<!-- 월별 수주/잔량 집계 조회 -->
+	<select id="ProductionPlanDAO.selectMonthlyOrderSummaryList" parameterType="egovframework.let.production.plan.domain.model.ProductionPlanVO" resultType="egovframework.let.production.plan.domain.model.ProductionPlanMonthlyOrderSummary">
+		SELECT
+			A.WORKCENTER_CODE AS workplaceCode,
+			SUM(ISNULL(R.ORDER_QTY, 0)) AS orderQty,
+			SUM(ISNULL(R.ORDER_QTY, 0) - ISNULL(R.WORKDT_QTY, 0)) AS backlogQty
+		FROM TPR301R R
+		JOIN TPR301 A
+			ON A.FACTORY_CODE = R.FACTORY_CODE
+			AND A.PRODPLAN_DATE = R.PRODPLAN_DATE
+			AND A.PRODPLAN_SEQ = R.PRODPLAN_SEQ
+		WHERE A.FACTORY_CODE = #{factoryCode}
+		  AND A.PRODPLAN_DATE &gt;= #{startDate}
+		  AND A.PRODPLAN_DATE &lt;= #{endDate}
+		GROUP BY A.WORKCENTER_CODE
+	</select>
+
+</mapper>

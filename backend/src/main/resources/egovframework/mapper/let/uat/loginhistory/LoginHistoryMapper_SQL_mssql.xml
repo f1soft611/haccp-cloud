@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="loginHistoryDAO">
+
+	<resultMap id="loginHistoryResultMap" type="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
+		<result property="loginHistoryId" column="LOGIN_HISTORY_ID"/>
+		<result property="factoryCode" column="FACTORY_CODE"/>
+		<result property="userId" column="USER_ID"/>
+		<result property="userName" column="USER_NAME"/>
+		<result property="loginDt" column="LOGIN_DT"/>
+		<result property="loginIp" column="LOGIN_IP"/>
+		<result property="loginType" column="LOGIN_TYPE"/>
+		<result property="userAgent" column="USER_AGENT"/>
+		<result property="loginResult" column="LOGIN_RESULT"/>
+		<result property="failReason" column="FAIL_REASON"/>
+		<result property="logoutDt" column="LOGOUT_DT"/>
+		<result property="sessionTime" column="SESSION_TIME"/>
+		<result property="govInterfaceYn" column="GOV_INTERFACE_YN"/>
+		<result property="govInterfaceDt" column="GOV_INTERFACE_DT"/>
+		<result property="govRecptnRsltCd" column="GOV_RECPTN_RSLT_CD"/>
+		<result property="govRecptnRslt" column="GOV_RECPTN_RSLT"/>
+		<result property="govRecptnRsltDtl" column="GOV_RECPTN_RSLT_DTL"/>
+		<result property="govFailReason" column="GOV_FAIL_REASON"/>
+		<result property="govRequestJson" column="GOV_REQUEST_JSON"/>
+		<result property="govResponseJson" column="GOV_RESPONSE_JSON"/>
+	</resultMap>
+
+	<!-- 로그인 이력 등록 -->
+	<insert id="insertLoginHistory" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory" useGeneratedKeys="true" keyProperty="loginHistoryId">
+		INSERT INTO HACCP_LOGIN_HISTORY (
+			FACTORY_CODE,
+			USER_ID,
+			USER_NAME,
+			LOGIN_DT,
+			LOGIN_IP,
+			LOGIN_TYPE,
+			USER_AGENT,
+			LOGIN_RESULT,
+			FAIL_REASON
+		) VALUES (
+			#{factoryCode},
+			#{userId},
+			#{userName},
+			GETDATE(),
+			#{loginIp},
+			#{loginType},
+			#{userAgent},
+			#{loginResult},
+			#{failReason}
+		)
+	</insert>
+
+	<!-- 로그인 이력 목록 조회 -->
+	<select id="selectLoginHistoryList" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO" resultMap="loginHistoryResultMap">
+		SELECT 
+			LOGIN_HISTORY_ID,
+			FACTORY_CODE,
+			USER_ID,
+			USER_NAME,
+			CONVERT(VARCHAR(19), LOGIN_DT, 120) AS LOGIN_DT,
+			LOGIN_IP,
+			LOGIN_TYPE,
+			USER_AGENT,
+			LOGIN_RESULT,
+			FAIL_REASON,
+			CONVERT(VARCHAR(19), LOGOUT_DT, 120) AS LOGOUT_DT,
+			SESSION_TIME,
+			GOV_INTERFACE_YN,
+			CONVERT(VARCHAR(23), GOV_INTERFACE_DT, 121) AS GOV_INTERFACE_DT,
+			GOV_RECPTN_RSLT_CD,
+			GOV_RECPTN_RSLT,
+			GOV_RECPTN_RSLT_DTL,
+			GOV_FAIL_REASON,
+			GOV_REQUEST_JSON,
+			GOV_RESPONSE_JSON
+		FROM (
+			SELECT 
+				*,
+				ROW_NUMBER() OVER (ORDER BY LOGIN_DT DESC) AS RNUM
+				FROM HACCP_LOGIN_HISTORY
+			WHERE FACTORY_CODE = #{factoryCode}
+			<if test="searchUserId != null and searchUserId != ''">
+				AND USER_ID LIKE '%' + #{searchUserId} + '%'
+			</if>
+			<if test="searchUserName != null and searchUserName != ''">
+				AND USER_NAME LIKE '%' + #{searchUserName} + '%'
+			</if>
+			<if test="searchLoginResult != null and searchLoginResult != ''">
+				AND LOGIN_RESULT = #{searchLoginResult}
+			</if>
+			<if test="searchStartDt != null and searchStartDt != ''">
+				AND LOGIN_DT &gt;= CONVERT(DATETIME, #{searchStartDt})
+			</if>
+			<if test="searchEndDt != null and searchEndDt != ''">
+				AND LOGIN_DT &lt;= CONVERT(DATETIME, #{searchEndDt} + ' 23:59:59')
+			</if>
+		) AS TEMP
+		WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+		ORDER BY LOGIN_DT DESC
+	</select>
+
+	<!-- 로그인 이력 전체 건수 조회 -->
+	<select id="selectLoginHistoryListTotCnt" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM HACCP_LOGIN_HISTORY
+		WHERE FACTORY_CODE = #{factoryCode}
+		<if test="searchUserId != null and searchUserId != ''">
+			AND USER_ID LIKE '%' + #{searchUserId} + '%'
+		</if>
+		<if test="searchUserName != null and searchUserName != ''">
+			AND USER_NAME LIKE '%' + #{searchUserName} + '%'
+		</if>
+		<if test="searchLoginResult != null and searchLoginResult != ''">
+			AND LOGIN_RESULT = #{searchLoginResult}
+		</if>
+		<if test="searchStartDt != null and searchStartDt != ''">
+			AND LOGIN_DT &gt;= CONVERT(DATETIME, #{searchStartDt})
+		</if>
+		<if test="searchEndDt != null and searchEndDt != ''">
+			AND LOGIN_DT &lt;= CONVERT(DATETIME, #{searchEndDt} + ' 23:59:59')
+		</if>
+	</select>
+
+	<!-- 로그인 이력 상세 조회 -->
+	<select id="selectLoginHistoryDetail" parameterType="Long" resultMap="loginHistoryResultMap">
+		SELECT 
+			LOGIN_HISTORY_ID,
+			FACTORY_CODE,
+			USER_ID,
+			USER_NAME,
+			CONVERT(VARCHAR(19), LOGIN_DT, 120) AS LOGIN_DT,
+			LOGIN_IP,
+			LOGIN_TYPE,
+			USER_AGENT,
+			LOGIN_RESULT,
+			FAIL_REASON,
+			CONVERT(VARCHAR(19), LOGOUT_DT, 120) AS LOGOUT_DT,
+			SESSION_TIME,
+			GOV_INTERFACE_YN,
+			CONVERT(VARCHAR(23), GOV_INTERFACE_DT, 121) AS GOV_INTERFACE_DT,
+			GOV_RECPTN_RSLT_CD,
+			GOV_RECPTN_RSLT,
+			GOV_RECPTN_RSLT_DTL,
+			GOV_FAIL_REASON,
+			GOV_REQUEST_JSON,
+			GOV_RESPONSE_JSON
+		FROM MES_LOGIN_HISTORY
+		WHERE LOGIN_HISTORY_ID = #{loginHistoryId}
+	</select>
+
+	<!-- 로그아웃 정보 업데이트 -->
+	<update id="updateLogoutInfo" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
+		UPDATE MES_LOGIN_HISTORY
+		SET 
+			LOGOUT_DT = GETDATE(),
+			SESSION_TIME = DATEDIFF(MINUTE, LOGIN_DT, GETDATE())
+		WHERE LOGIN_HISTORY_ID = #{loginHistoryId}
+	</update>
+
+	<!-- 정부 인터페이스 대상 최신 로그인 이력 1건 조회 -->
+	<select id="selectLatestLoginHistoryForGovInterface" resultMap="loginHistoryResultMap">
+		SELECT TOP 1
+			LOGIN_HISTORY_ID,
+			FACTORY_CODE,
+			USER_ID,
+			USER_NAME,
+			CONVERT(VARCHAR(19), LOGIN_DT, 120) AS LOGIN_DT,
+			LOGIN_IP,
+			LOGIN_TYPE,
+			USER_AGENT,
+			LOGIN_RESULT,
+			FAIL_REASON,
+			CONVERT(VARCHAR(19), LOGOUT_DT, 120) AS LOGOUT_DT,
+			SESSION_TIME,
+			GOV_INTERFACE_YN,
+			CONVERT(VARCHAR(23), GOV_INTERFACE_DT, 121) AS GOV_INTERFACE_DT,
+			GOV_RECPTN_RSLT_CD,
+			GOV_RECPTN_RSLT,
+			GOV_RECPTN_RSLT_DTL,
+			GOV_FAIL_REASON,
+			GOV_REQUEST_JSON,
+			GOV_RESPONSE_JSON
+		FROM MES_LOGIN_HISTORY
+		WHERE ISNULL(GOV_INTERFACE_YN, 'N') = 'N'
+		ORDER BY LOGIN_DT DESC, LOGIN_HISTORY_ID DESC
+	</select>
+
+	<!-- 정부 인터페이스 대상 최신 로그인 이력 1건 조회 (기간 + 당일 중복 전송 방지 + 익일 재시도) -->
+	<select id="selectLatestLoginHistoryForGovInterfaceByDateRange" parameterType="map" resultMap="loginHistoryResultMap">
+		SELECT TOP 1
+			LOGIN_HISTORY_ID,
+			FACTORY_CODE,
+			USER_ID,
+			USER_NAME,
+			CONVERT(VARCHAR(19), LOGIN_DT, 120) AS LOGIN_DT,
+			LOGIN_IP,
+			LOGIN_TYPE,
+			USER_AGENT,
+			LOGIN_RESULT,
+			FAIL_REASON,
+			CONVERT(VARCHAR(19), LOGOUT_DT, 120) AS LOGOUT_DT,
+			SESSION_TIME,
+			GOV_INTERFACE_YN,
+			CONVERT(VARCHAR(23), GOV_INTERFACE_DT, 121) AS GOV_INTERFACE_DT,
+			GOV_RECPTN_RSLT_CD,
+			GOV_RECPTN_RSLT,
+			GOV_RECPTN_RSLT_DTL,
+			GOV_FAIL_REASON,
+			GOV_REQUEST_JSON,
+			GOV_RESPONSE_JSON
+		FROM MES_LOGIN_HISTORY
+		WHERE
+			(
+				(
+					CONVERT(DATE, LOGIN_DT) &gt;= CONVERT(DATE, #{fromDate})
+					AND CONVERT(DATE, LOGIN_DT) &lt;= CONVERT(DATE, #{toDate})
+					AND GOV_INTERFACE_DT IS NULL
+				)
+			)
+		ORDER BY LOGIN_DT DESC, LOGIN_HISTORY_ID DESC
+	</select>
+
+	<!-- 정부 인터페이스 전송 결과 업데이트 -->
+	<update id="updateGovInterfaceResult" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
+		UPDATE MES_LOGIN_HISTORY
+		SET
+			GOV_INTERFACE_YN = #{govInterfaceYn},
+			GOV_INTERFACE_DT = GETDATE(),
+			GOV_RECPTN_RSLT_CD = #{govRecptnRsltCd},
+			GOV_RECPTN_RSLT = #{govRecptnRslt},
+			GOV_RECPTN_RSLT_DTL = #{govRecptnRsltDtl},
+			GOV_FAIL_REASON = #{govFailReason},
+			GOV_REQUEST_JSON = #{govRequestJson},
+			GOV_RESPONSE_JSON = #{govResponseJson}
+		WHERE LOGIN_HISTORY_ID = #{loginHistoryId}
+	</update>
+
+</mapper>

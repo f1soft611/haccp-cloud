@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ErpIFProdOrderDAO">
+
+    <insert id="insertErpIFProdOrder"
+            parameterType="egovframework.let.production.order.domain.model.ErpIFProdOrderDto">
+        INSERT INTO SHM_IF_TPDSFCWorkOrder(
+            WorkingTag,
+            RegEmpID,
+            RegDateTime,
+            ERPProcYn,
+            ERPProcDateTime,
+            Status,
+            Result,
+            MESIFKey,
+            WorkOrderSeq,
+            WorkOrderSerl,
+            FactUnit,
+            WorkOrderNo,
+            WorkOrderDate,
+            ProdPlanSeq,
+            WorkCenterSeq,
+            GoodItemSeq,
+            ProcSeq,
+            ProdUnitSeq,
+            OrderQty,
+            DeptSeq,
+            EmpSeq,
+            ProcRev,
+            Remark
+        )
+        VALUES (
+            #{workingTag},
+            #{regEmpId},
+            GETDATE(),
+            'N',
+            NULL,
+            NULL,
+            NULL,
+            #{mesIfKey},
+            #{workOrderSeq},
+            #{workOrderSerl},
+            ISNULL(#{factUnit}, 1),
+            #{workOrderNo},
+            #{workOrderDate},
+            #{prodPlanSeq},
+            #{workCenterSeq},
+            #{goodItemSeq},
+            #{procSeq},
+            #{prodUnitSeq},
+            #{orderQty},
+            #{deptSeq},
+            #{empSeq},
+            #{procRev},
+            #{remark}
+        )
+
+    </insert>
+
+    <insert id="insertErpIFProdOrderBatch" parameterType="java.util.List">
+        INSERT INTO SHM_IF_TPDSFCWorkOrder (
+            WorkingTag,
+            RegEmpID,
+            RegDateTime,
+            ERPProcYn,
+            ERPProcDateTime,
+            Status,
+            Result,
+            MESIFKey,
+            WorkOrderSeq,
+            WorkOrderSerl,
+            FactUnit,
+            WorkOrderNo,
+            WorkOrderDate,
+            ProdPlanSeq,
+            WorkCenterSeq,
+            GoodItemSeq,
+            ProcSeq,
+            ProdUnitSeq,
+            OrderQty,
+            DeptSeq,
+            EmpSeq,
+            ProcRev,
+            Remark
+        )
+        VALUES
+        <foreach collection="list" item="d" separator=",">
+        (
+            #{d.workingTag},
+            #{d.regEmpId},
+            GETDATE(),
+            'N',
+            NULL,
+            NULL,
+            NULL,
+            #{d.mesIfKey},
+            #{d.workOrderSeq},
+            #{d.workOrderSerl},
+            ISNULL(#{d.factUnit}, 1),
+            #{d.workOrderNo},
+            #{d.workOrderDate},
+            #{d.prodPlanSeq},
+            #{d.workCenterSeq},
+            #{d.goodItemSeq},
+            #{d.procSeq},
+            #{d.prodUnitSeq},
+            #{d.orderQty},
+            #{d.deptSeq},
+            #{d.empSeq},
+            #{d.procRev},
+            #{d.remark}
+        )
+        </foreach>
+    </insert>
+
+
+
+    <select id="selectExistingMesIfKeys"
+            parameterType="java.util.List"
+            resultType="string">
+        SELECT DISTINCT MESIFKey
+        FROM SHM_IF_TPDSFCWorkOrder
+        WHERE MESIFKey IN
+        <foreach collection="list" item="key" open="(" separator="," close=")">
+            #{key}
+        </foreach>
+    </select>
+
+</mapper>

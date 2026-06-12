@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MesCustInterfaceDAO">
+
+    <!-- MES 거래처 테이블에 거래처 정보 존재 여부 확인 -->
+    <select id="selectMesCustCount" parameterType="int" resultType="int">
+        SELECT COUNT(1) AS cnt
+        FROM TCO601
+        WHERE CUSTOMER_CODE = #{custSeq}
+    </select>
+
+    <!-- MES 거래처 테이블에 거래처 정보 삽입 -->
+    <insert id="insertMesCust" parameterType="egovframework.let.scheduler.domain.model.ErpCustomer">
+        INSERT INTO TCO601 (
+            FACTORY_CODE,
+            CUSTOMER_CODE,
+            CUSTOMER_NAME,
+            DELETE_FLAG,
+            BUSINESS_NO,
+            ADDRESS,
+            POST_CODE,
+            OPMAN_CODE,
+            OPTIME
+        ) VALUES (
+                     #{factoryCode},
+                     #{custSeq},
+                     #{custName},
+                     CASE WHEN #{smCustStatus} = '2004001' THEN '0' ELSE '1' END,
+                     #{bizNo},
+                     #{bizAddr},
+                     #{zipCode},
+                     'INTERFACE',
+                     GETDATE()
+                 )
+    </insert>
+
+    <!-- MES 거래처 테이블의 거래처 정보 업데이트 -->
+    <update id="updateMesCust" parameterType="egovframework.let.scheduler.domain.model.ErpCustomer">
+        UPDATE TCO601
+        SET
+            CUSTOMER_NAME = #{custName},
+            DELETE_FLAG = CASE WHEN #{smCustStatus} = '2004001' THEN '0' ELSE '1' END,
+            BUSINESS_NO = #{bizNo},
+            ADDRESS = #{bizAddr},
+            POST_CODE = #{zipCode},
+            OPMAN_CODE2 = 'INTERFACE',
+            OPTIME2 = GETDATE()
+        WHERE FACTORY_CODE = #{factoryCode}
+            AND CUSTOMER_CODE = #{custSeq}
+    </update>
+
+</mapper>

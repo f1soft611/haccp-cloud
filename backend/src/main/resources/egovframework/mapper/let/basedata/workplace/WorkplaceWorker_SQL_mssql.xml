@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WorkplaceWorkerDAO">
+
+	<resultMap id="workplaceWorkerResult" type="egovframework.let.basedata.workplace.domain.model.WorkplaceWorker">
+		<result property="factoryCode" column="FACTORY_CODE"/>
+		<result property="workplaceId" column="WORKCENTER_ID"/>
+		<result property="workplaceCode" column="WORKCENTER_CODE"/>
+		<result property="workerId" column="WORKER_ID"/>
+		<result property="workerCode" column="WORKER_CODE"/>
+		<result property="workerName" column="WORKER_NAME"/>
+		<result property="position" column="POSITION"/>
+		<result property="role" column="ROLE"/>
+		<result property="useYn" column="USE_YN"/>
+		<result property="regUserId" column="OPMAN_CODE"/>
+		<result property="regDt" column="OPTIME"/>
+		<result property="updUserId" column="OPMAN_CODE2"/>
+		<result property="updDt" column="OPTIME2"/>
+	</resultMap>
+
+	<select id="WorkplaceWorkerDAO.selectWorkplaceWorkerList" parameterType="string" resultMap="workplaceWorkerResult">
+		SELECT
+		    FACTORY_CODE,
+		    WORKCENTER_ID,
+		    WORKCENTER_CODE,
+			WORKER_ID,
+			WORKER_CODE,
+			WORKER_NAME,
+			POSITION,
+			ROLE,
+			USE_YN,
+			OPMAN_CODE,
+			CONVERT(VARCHAR(19), OPTIME, 120) AS OPTIME,
+			OPMAN_CODE2,
+			CONVERT(VARCHAR(19), OPTIME2, 120) AS OPTIME2
+		FROM TPR106
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND WORKCENTER_CODE = #{workplaceCode}
+		  AND USE_YN = 'Y'
+		ORDER BY
+			CASE WHEN ROLE = 'LEADER' THEN 1 ELSE 2 END,
+			OPTIME ASC
+	</select>
+
+	<select id="WorkplaceWorkerDAO.selectWorkplaceWorker" parameterType="string" resultMap="workplaceWorkerResult">
+		SELECT
+		    FACTORY_CODE,
+			WORKCENTER_ID,
+			WORKCENTER_CODE,
+			WORKER_ID,
+			WORKER_CODE,
+			WORKER_NAME,
+			POSITION,
+			ROLE,
+			USE_YN,
+			REG_USER_ID,
+			OPMAN_CODE,
+			CONVERT(VARCHAR(19), OPTIME, 120) AS OPTIME,
+			OPMAN_CODE2,
+			CONVERT(VARCHAR(19), OPTIME2, 120) AS OPTIME2
+		FROM TPR106
+		WHERE WORKER_CODE = #{workerCode}
+	</select>
+
+	<insert id="WorkplaceWorkerDAO.insertWorkplaceWorker" parameterType="egovframework.let.basedata.workplace.domain.model.WorkplaceWorker">
+		INSERT INTO TPR106 (
+		    FACTORY_CODE,
+			WORKCENTER_ID,
+			WORKCENTER_CODE,
+			WORKER_ID,
+			WORKER_CODE,
+			WORKER_NAME,
+			POSITION,
+			ROLE,
+			USE_YN,
+			OPMAN_CODE,
+			OPTIME
+		) VALUES (
+					 #{factoryCode},
+					 #{workplaceId},
+					 #{workplaceCode},
+					 #{workerId},
+					 #{workerCode},
+					 #{workerName},
+					 #{position},
+					 ISNULL(#{role}, 'MEMBER'),
+					 ISNULL(#{useYn}, 'Y'),
+					 #{regUserId},
+					 GETDATE()
+				 )
+	</insert>
+
+	<update id="WorkplaceWorkerDAO.updateWorkplaceWorker" parameterType="egovframework.let.basedata.workplace.domain.model.WorkplaceWorker">
+		UPDATE TPR106
+		SET
+			WORKER_NAME = #{workerName},
+			POSITION = #{position},
+			ROLE = #{role},
+			USE_YN = #{useYn},
+			OPMAN_CODE2 = #{updUserId},
+			OPTIME2 = GETDATE()
+		WHERE FACTORY_CODE = #{factoryCode}
+		    AND WORKCENTER_CODE = #{workplaceCode}
+			AND WORKER_CODE = #{workerCode}
+	</update>
+
+	<delete id="WorkplaceWorkerDAO.deleteWorkplaceWorker" parameterType="egovframework.let.basedata.workplace.domain.model.WorkplaceWorker">
+		DELETE FROM TPR106
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND WORKCENTER_CODE = #{workplaceCode}
+		  AND WORKER_CODE = #{workerCode}
+	</delete>
+
+	<!-- 작업장 삭제 시 모든 작업자 삭제 (물리적 삭제) -->
+	<delete id="WorkplaceWorkerDAO.deleteWorkplaceWorkersByWorkplaceId" parameterType="string">
+		DELETE FROM TPR106
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND WORKCENTER_CODE = #{workplaceCode}
+	</delete>
+
+	<!-- 논리적 삭제 (USE_YN = 'N'으로 변경) -->
+	<update id="WorkplaceWorkerDAO.deleteWorkplaceWorkerLogical" parameterType="map">
+		UPDATE TPR106
+		SET
+			USE_YN = 'N',
+			OPMAN_CODE2 = #{updUserId},
+			OPTIME2 = GETDATE()
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND WORKCENTER_CODE = #{workplaceCode}
+		  AND WORKER_CODE = #{workerCode}
+	</update>
+
+	<!-- 작업장별 작업자 중복 체크 -->
+	<select id="WorkplaceWorkerDAO.selectWorkplaceWorkerDuplicateCheck" parameterType="map" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM TPR106
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND WORKPLACE_CODE = #{workplaceId}
+		  AND WORKER_CODE = #{workerId}
+		  AND USE_YN = 'Y'
+	</select>
+
+	<!-- 작업장별 팀장 존재 여부 체크 -->
+	<select id="WorkplaceWorkerDAO.selectWorkplaceLeaderCheck" parameterType="string" resultType="int">
+		SELECT COUNT(*) AS CNT
+		FROM TPR106
+		WHERE FACTORY_CODE = #{factoryCode}
+		  AND WORKPLACE_CODE = #{workplaceId}
+		  AND ROLE = 'LEADER'
+		  AND USE_YN = 'Y'
+	</select>
+
+</mapper>

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SchedulerConfigDAO">
+
+    <!-- 스케쥴러 설정 resultMap -->
+    <resultMap id="schedulerConfigResultMap" type="egovframework.let.scheduler.domain.model.SchedulerConfig">
+        <result property="schedulerId" column="SCHEDULER_ID"/>
+        <result property="schedulerName" column="SCHEDULER_NAME"/>
+        <result property="schedulerDescription" column="SCHEDULER_DESCRIPTION"/>
+        <result property="cronExpression" column="CRON_EXPRESSION"/>
+        <result property="jobClassName" column="JOB_CLASS_NAME"/>
+        <result property="isEnabled" column="IS_ENABLED"/>
+        <result property="regDt" column="REG_DT"/>
+        <result property="regUserId" column="REG_USER_ID"/>
+        <result property="updDt" column="UPD_DT"/>
+        <result property="updUserId" column="UPD_USER_ID"/>
+    </resultMap>
+
+    <resultMap id="schedulerConfigVOResultMap" type="egovframework.let.scheduler.domain.model.SchedulerConfigVO">
+        <result property="schedulerId" column="SCHEDULER_ID"/>
+        <result property="schedulerName" column="SCHEDULER_NAME"/>
+        <result property="schedulerDescription" column="SCHEDULER_DESCRIPTION"/>
+        <result property="cronExpression" column="CRON_EXPRESSION"/>
+        <result property="jobClassName" column="JOB_CLASS_NAME"/>
+        <result property="isEnabled" column="IS_ENABLED"/>
+        <result property="regDt" column="REG_DT"/>
+        <result property="regUserId" column="REG_USER_ID"/>
+        <result property="updDt" column="UPD_DT"/>
+        <result property="updUserId" column="UPD_USER_ID"/>
+    </resultMap>
+
+    <!-- 스케쥴러 목록 조회 -->
+    <select id="SchedulerConfigDAO.selectSchedulerList" resultMap="schedulerConfigVOResultMap"
+            parameterType="egovframework.let.scheduler.domain.model.SchedulerConfigVO">
+        SELECT
+        SCHEDULER_ID,
+        SCHEDULER_NAME,
+        SCHEDULER_DESCRIPTION,
+        CRON_EXPRESSION,
+        JOB_CLASS_NAME,
+        IS_ENABLED,
+        CONVERT(VARCHAR(19), REG_DT, 120) AS REG_DT,
+        REG_USER_ID,
+        CONVERT(VARCHAR(19), UPD_DT, 120) AS UPD_DT,
+        UPD_USER_ID
+        FROM SCHEDULER_CONFIG
+        WHERE 1=1
+        <if test="searchWrd != null and searchWrd != ''">
+            AND (SCHEDULER_NAME LIKE '%' + #{searchWrd} + '%'
+            OR SCHEDULER_DESCRIPTION LIKE '%' + #{searchWrd} + '%')
+        </if>
+        <if test="isEnabled != null and isEnabled != ''">
+            AND IS_ENABLED = #{isEnabled}
+        </if>
+        ORDER BY SCHEDULER_ID DESC
+        <if test="firstIndex != null and recordCountPerPage != null">
+            OFFSET #{firstIndex} ROWS
+            FETCH NEXT #{recordCountPerPage} ROWS ONLY
+        </if>
+    </select>
+
+    <!-- 스케쥴러 총 개수 조회 -->
+    <select id="SchedulerConfigDAO.selectSchedulerListCnt" resultType="int"
+            parameterType="egovframework.let.scheduler.domain.model.SchedulerConfigVO">
+        SELECT COUNT(*)
+        FROM SCHEDULER_CONFIG
+        WHERE 1=1
+        <if test="searchWrd != null and searchWrd != ''">
+            AND (SCHEDULER_NAME LIKE '%' + #{searchWrd} + '%'
+            OR SCHEDULER_DESCRIPTION LIKE '%' + #{searchWrd} + '%')
+        </if>
+        <if test="isEnabled != null and isEnabled != ''">
+            AND IS_ENABLED = #{isEnabled}
+        </if>
+    </select>
+
+    <!-- 스케쥴러 상세 조회 -->
+    <select id="SchedulerConfigDAO.selectSchedulerDetail" resultMap="schedulerConfigResultMap" parameterType="long">
+        SELECT
+            SCHEDULER_ID,
+            SCHEDULER_NAME,
+            SCHEDULER_DESCRIPTION,
+            CRON_EXPRESSION,
+            JOB_CLASS_NAME,
+            IS_ENABLED,
+            CONVERT(VARCHAR(19), REG_DT, 120) AS REG_DT,
+            REG_USER_ID,
+            CONVERT(VARCHAR(19), UPD_DT, 120) AS UPD_DT,
+            UPD_USER_ID
+        FROM SCHEDULER_CONFIG
+        WHERE SCHEDULER_ID = #{schedulerId}
+    </select>
+
+    <!-- 스케쥴러 등록 -->
+    <insert id="SchedulerConfigDAO.insertScheduler" parameterType="egovframework.let.scheduler.domain.model.SchedulerConfig">
+        <selectKey keyProperty="schedulerId" resultType="long" order="AFTER">
+            SELECT IDENT_CURRENT('SCHEDULER_CONFIG')
+        </selectKey>
+        INSERT INTO SCHEDULER_CONFIG (
+        SCHEDULER_NAME,
+        SCHEDULER_DESCRIPTION,
+        CRON_EXPRESSION,
+        JOB_CLASS_NAME,
+        IS_ENABLED,
+        REG_DT,
+        REG_USER_ID
+        ) VALUES (
+        #{schedulerName},
+        #{schedulerDescription},
+        #{cronExpression},
+        #{jobClassName},
+        #{isEnabled},
+        GETDATE(),
+        #{regUserId}
+        )
+    </insert>
+
+    <!-- 스케쥴러 수정 -->
+    <update id="SchedulerConfigDAO.updateScheduler" parameterType="egovframework.let.scheduler.domain.model.SchedulerConfig">
+        UPDATE SCHEDULER_CONFIG
+        SET SCHEDULER_NAME = #{schedulerName},
+            SCHEDULER_DESCRIPTION = #{schedulerDescription},
+            CRON_EXPRESSION = #{cronExpression},
+            JOB_CLASS_NAME = #{jobClassName},
+            IS_ENABLED = #{isEnabled},
+            UPD_DT = GETDATE(),
+            UPD_USER_ID = #{updUserId}
+        WHERE SCHEDULER_ID = #{schedulerId}
+    </update>
+
+    <!-- 스케쥴러 삭제 -->
+    <delete id="SchedulerConfigDAO.deleteScheduler" parameterType="long">
+        DELETE FROM SCHEDULER_CONFIG
+        WHERE SCHEDULER_ID = #{schedulerId}
+    </delete>
+
+    <!-- 활성화된 스케쥴러 목록 조회 -->
+    <select id="SchedulerConfigDAO.selectEnabledSchedulers" resultMap="schedulerConfigResultMap">
+        SELECT
+            SCHEDULER_ID,
+            SCHEDULER_NAME,
+            SCHEDULER_DESCRIPTION,
+            CRON_EXPRESSION,
+            JOB_CLASS_NAME,
+            IS_ENABLED,
+            CONVERT(VARCHAR(19), REG_DT, 120) AS REG_DT,
+            REG_USER_ID,
+            CONVERT(VARCHAR(19), UPD_DT, 120) AS UPD_DT,
+            UPD_USER_ID
+        FROM SCHEDULER_CONFIG
+        WHERE IS_ENABLED = 'Y'
+        ORDER BY SCHEDULER_ID
+    </select>
+
+</mapper>

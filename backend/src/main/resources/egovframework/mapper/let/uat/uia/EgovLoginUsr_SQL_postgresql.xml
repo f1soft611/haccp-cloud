@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="loginDAO">
+
+	<!-- 로그인 처리를 위한 resultMap -->
+	<resultMap id="login" type="egovframework.com.cmm.LoginVO">
+		<result property="factoryCode" column="factoryCode"/>
+		<result property="id" column="id"/>
+		<result property="name" column="name"/>
+		<result property="ihidNum" column="ihidNum"/>
+		<result property="email" column="email"/>
+		<result property="password" column="password"/>
+		<result property="userSe" column="userSe"/>
+		<result property="orgnztId" column="orgnztId"/>
+		<result property="uniqId" column="uniqId"/>
+		<!-- 누락된 필드 추가 -->
+		<result property="groupId" column="groupId"/>
+		<result property="groupNm" column="groupNm"/>
+	</resultMap>
+
+	<!-- 일반 로그인 -->
+	<select id="actionLogin" resultMap="login">
+		SELECT
+		    '000001'		   AS factoryCode,
+			a.esntl_id         AS id,
+			a.user_nm          AS name,
+			a.password         AS password,
+			a.ihidnum          AS ihidNum,
+			a.email_adres      AS email,
+			'USR'              AS userSe,
+			a.orgnzt_id        AS orgnztId,
+			a.emplyr_id        AS uniqId,
+			b.group_id         AS groupId,
+			b.group_code       AS groupCode,
+			b.group_nm         AS groupNm
+		FROM
+			haccp_users a
+			LEFT JOIN haccp_departments b ON a.group_id = b.group_id
+		WHERE
+			a.emplyr_id = #{id}
+		  AND a.password = #{password}
+	</select>
+
+</mapper>
