@@ -1,7 +1,26 @@
-import { Box, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { logout as logoutApi } from '../../services/logoutService';
+import { useAuthStore } from '../store/authStore';
 import { APP_LABELS } from '../ui/labels';
 
 export function TopGovBar() {
+  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const loginHistoryId = useAuthStore((state) => state.loginHistoryId);
+  const clearAuth = useAuthStore((state) => state.logout);
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi(loginHistoryId);
+    } catch {
+      // Force local logout even if backend call fails.
+    } finally {
+      clearAuth();
+      navigate('/login', { replace: true });
+    }
+  };
+
   return (
     <Box
       data-testid="top-gov-bar"
@@ -39,6 +58,18 @@ export function TopGovBar() {
             '& .MuiOutlinedInput-root': { borderRadius: 999 },
           }}
         />
+        {isAuthenticated ? (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              void handleLogout();
+            }}
+            sx={{ minWidth: 96, fontWeight: 700 }}
+          >
+            {APP_LABELS.action.logout}
+          </Button>
+        ) : null}
       </Stack>
     </Box>
   );

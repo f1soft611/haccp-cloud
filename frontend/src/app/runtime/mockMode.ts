@@ -9,11 +9,19 @@ export function shouldEnableMocking({
   explicitMockFlag,
   apiBaseUrl,
 }: MockModeOptions): boolean {
-  if (isDev) {
+  if (explicitMockFlag === 'true') {
     return true;
   }
 
-  if (explicitMockFlag === 'true') {
+  if (explicitMockFlag === 'false') {
+    return false;
+  }
+
+  if (apiBaseUrl) {
+    return false;
+  }
+
+  if (isDev) {
     return true;
   }
 

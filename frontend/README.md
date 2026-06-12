@@ -15,3 +15,20 @@ The app can run with mock APIs powered by MSW.
 - Production fallback: if `VITE_API_BASE_URL` is not provided, MSW is enabled automatically so login and onboarding can still be tested before backend integration.
 
 With `VITE_ENABLE_MSW=true`, login and dashboard data are served from `src/mocks/handlers.ts` instead of a real backend.
+
+## Login with backend (direct mode)
+
+Use `VITE_API_BASE_URL` to bypass local mock handlers and call Spring directly.
+
+1. Create `frontend/.env.local`.
+2. Add `VITE_API_BASE_URL=http://localhost:8080`.
+3. Run `npm run dev`.
+
+In this mode, login requests are sent to `http://localhost:8080/auth/login-jwt`.
+
+### Mocking precedence
+
+- `VITE_ENABLE_MSW=true`: always use MSW.
+- `VITE_ENABLE_MSW=false`: always disable MSW.
+- no explicit `VITE_ENABLE_MSW` and `VITE_API_BASE_URL` is set: disable MSW and call backend directly.
+- no explicit `VITE_ENABLE_MSW` and no `VITE_API_BASE_URL`: enable MSW.

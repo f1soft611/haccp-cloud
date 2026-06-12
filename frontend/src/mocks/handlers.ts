@@ -434,13 +434,15 @@ export const handlers = [
     });
   }),
 
-  http.post('/api/auth/login-jwt/admin', async ({ request }) => {
+  http.post('/api/auth/login-jwt', async ({ request }) => {
     const payload = (await request.json()) as {
-      userId?: string;
+      id?: string;
       password?: string;
+      tenantCode?: string;
+      factoryCode?: string;
     };
 
-    if (!payload.userId || !payload.password) {
+    if (!payload.id || !payload.password) {
       return HttpResponse.json(
         { message: '입력값이 올바르지 않습니다.' },
         { status: 400 },
@@ -454,7 +456,52 @@ export const handlers = [
       );
     }
 
-    const normalizedUserId = payload.userId.trim().toLowerCase();
+    const normalizedUserId = payload.id.trim().toLowerCase();
+    const role = roleByUserId[normalizedUserId] ?? 'USER';
+    const tenantCode = payload.tenantCode || payload.factoryCode || 'TENANT-A';
+    const userCount = tenantScoped(users, tenantCode).length;
+    const departmentCount = tenantScoped(departments, tenantCode).length;
+    const onboardingStatus = resolveOnboardingStatus(
+      userCount,
+      departmentCount,
+    );
+
+    return HttpResponse.json({
+      resultCode: '200',
+      jToken: `token-000001-${payload.id}`,
+      refreshToken: `refresh-000001-${payload.id}`,
+      loginHistoryId: Date.now(),
+      onboardingRequired: onboardingStatus !== 'COMPLETED',
+      onboardingStatus,
+      resultVO: {
+        factoryCode: '000001',
+        id: payload.id,
+        groupNm: role === 'PLATFORM_ADMIN' ? 'ROLE_ADMIN' : 'ROLE_USER',
+      },
+    });
+  }),
+
+  http.post('/api/auth/login-jwt/admin', async ({ request }) => {
+    const payload = (await request.json()) as {
+      id?: string;
+      password?: string;
+    };
+
+    if (!payload.id || !payload.password) {
+      return HttpResponse.json(
+        { message: '입력값이 올바르지 않습니다.' },
+        { status: 400 },
+      );
+    }
+
+    if (payload.password !== 'Passw0rd!') {
+      return HttpResponse.json(
+        { message: '로그인 정보가 올바르지 않습니다.' },
+        { status: 401 },
+      );
+    }
+
+    const normalizedUserId = payload.id.trim().toLowerCase();
     const role = roleByUserId[normalizedUserId] ?? 'USER';
 
     if (role !== 'PLATFORM_ADMIN') {
@@ -464,24 +511,107 @@ export const handlers = [
       );
     }
 
-    const platformTenantCode = '000001';
-    const userCount = tenantScoped(users, platformTenantCode).length;
-    const departmentCount = tenantScoped(
-      departments,
-      platformTenantCode,
-    ).length;
-    const onboardingStatus = resolveOnboardingStatus(
-      userCount,
-      departmentCount,
-    );
+    return HttpResponse.json({
+      resultCode: '200',
+      jToken: `admin-token-000001-${payload.id}`,
+      refreshToken: `admin-refresh-000001-${payload.id}`,
+      loginHistoryId: Date.now(),
+      resultVO: {
+        factoryCode: '000001',
+        id: payload.id,
+        groupNm: 'ROLE_ADMIN',
+      },
+    });
+  }),
+
+  http.post('/api/auth/refresh', async ({ request }) => {
+    const payload = (await request.json()) as {
+      refreshToken?: string;
+    };
+
+    if (!payload.refreshToken) {
+      return HttpResponse.json(
+        { resultCode: '401', resultMessage: '리프레쉬 토큰이 없습니다.' },
+        { status: 401 },
+      );
+    }
 
     return HttpResponse.json({
-      tenantCode: platformTenantCode,
-      userId: payload.userId,
-      role,
-      accessToken: `admin-token-${platformTenantCode}-${payload.userId}`,
-      onboardingRequired: onboardingStatus !== 'COMPLETED',
-      onboardingStatus,
+      resultCode: '200',
+      jToken: `refreshed-${payload.refreshToken}`,
+    });
+  }),
+
+  http.post('/api/auth/logout', async () => {
+    return HttpResponse.json({
+      resultCode: '200',
+      resultMessage: '성공',
+    });
+  }),
+
+  http.get('/api/loginHistory/list', ({ request }) => {
+    const url = new URL(request.url);
+    const pageIndex = Number(url.searchParams.get('pageIndex') ?? '1');
+    const pageSize = Number(url.searchParams.get('pageSize') ?? '10');
+    const searchUserId =
+      url.searchParams.get('searchUserId')?.toLowerCase() ?? '';
+    const searchLoginResult = url.searchParams.get('searchLoginResult') ?? '';
+
+    const base = [
+      {
+        loginHistoryId: 120,
+        userId: 'platform_admin',
+        userName: '플랫폼관리자',
+        loginDt: '2026-06-12 09:40:00',
+        loginIp: '127.0.0.1',
+        loginType: 'JWT_ADMIN',
+        loginResult: 'Y',
+        logoutDt: '2026-06-12 10:15:00',
+      },
+      {
+        loginHistoryId: 119,
+        userId: 'tenant_admin',
+        userName: '업체관리자',
+        loginDt: '2026-06-12 09:05:00',
+        loginIp: '127.0.0.1',
+        loginType: 'JWT',
+        loginResult: 'Y',
+        logoutDt: '',
+      },
+      {
+        loginHistoryId: 118,
+        userId: 'tenant_admin',
+        userName: '업체관리자',
+        loginDt: '2026-06-12 08:59:00',
+        loginIp: '127.0.0.1',
+        loginType: 'JWT',
+        loginResult: 'N',
+        failReason: '아이디 또는 비밀번호가 일치하지 않습니다',
+        logoutDt: '',
+      },
+    ];
+
+    const filtered = base.filter((row) => {
+      const userMatches = searchUserId
+        ? row.userId.toLowerCase().includes(searchUserId)
+        : true;
+      const resultMatches = searchLoginResult
+        ? row.loginResult === searchLoginResult
+        : true;
+
+      return userMatches && resultMatches;
+    });
+
+    const offset = Math.max(0, (pageIndex - 1) * pageSize);
+    const loginHistoryList = filtered.slice(offset, offset + pageSize);
+
+    return HttpResponse.json({
+      resultCode: 0,
+      resultMessage: 'OK',
+      result: {
+        loginHistoryList,
+        totalCount: filtered.length,
+      },
     });
   }),
 
