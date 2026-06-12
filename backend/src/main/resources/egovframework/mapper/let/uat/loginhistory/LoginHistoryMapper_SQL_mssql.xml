@@ -27,7 +27,7 @@
 
 	<!-- 로그인 이력 등록 -->
 	<insert id="insertLoginHistory" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory" useGeneratedKeys="true" keyProperty="loginHistoryId">
-		INSERT INTO HACCP_LOGIN_HISTORY (
+		INSERT INTO TB_LoginHistory (
 			FACTORY_CODE,
 			USER_ID,
 			USER_NAME,
@@ -77,7 +77,7 @@
 			SELECT 
 				*,
 				ROW_NUMBER() OVER (ORDER BY LOGIN_DT DESC) AS RNUM
-				FROM HACCP_LOGIN_HISTORY
+				FROM TB_LoginHistory
 			WHERE FACTORY_CODE = #{factoryCode}
 			<if test="searchUserId != null and searchUserId != ''">
 				AND USER_ID LIKE '%' + #{searchUserId} + '%'
@@ -102,7 +102,7 @@
 	<!-- 로그인 이력 전체 건수 조회 -->
 	<select id="selectLoginHistoryListTotCnt" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO" resultType="int">
 		SELECT COUNT(*) AS CNT
-		FROM HACCP_LOGIN_HISTORY
+		FROM TB_LoginHistory
 		WHERE FACTORY_CODE = #{factoryCode}
 		<if test="searchUserId != null and searchUserId != ''">
 			AND USER_ID LIKE '%' + #{searchUserId} + '%'
@@ -144,13 +144,13 @@
 			GOV_FAIL_REASON,
 			GOV_REQUEST_JSON,
 			GOV_RESPONSE_JSON
-		FROM MES_LOGIN_HISTORY
+		FROM TB_LoginHistory
 		WHERE LOGIN_HISTORY_ID = #{loginHistoryId}
 	</select>
 
 	<!-- 로그아웃 정보 업데이트 -->
 	<update id="updateLogoutInfo" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
-		UPDATE MES_LOGIN_HISTORY
+		UPDATE TB_LoginHistory
 		SET 
 			LOGOUT_DT = GETDATE(),
 			SESSION_TIME = DATEDIFF(MINUTE, LOGIN_DT, GETDATE())
@@ -180,7 +180,7 @@
 			GOV_FAIL_REASON,
 			GOV_REQUEST_JSON,
 			GOV_RESPONSE_JSON
-		FROM MES_LOGIN_HISTORY
+		FROM TB_LoginHistory
 		WHERE ISNULL(GOV_INTERFACE_YN, 'N') = 'N'
 		ORDER BY LOGIN_DT DESC, LOGIN_HISTORY_ID DESC
 	</select>
@@ -208,7 +208,7 @@
 			GOV_FAIL_REASON,
 			GOV_REQUEST_JSON,
 			GOV_RESPONSE_JSON
-		FROM MES_LOGIN_HISTORY
+		FROM TB_LoginHistory
 		WHERE
 			(
 				(
@@ -222,7 +222,7 @@
 
 	<!-- 정부 인터페이스 전송 결과 업데이트 -->
 	<update id="updateGovInterfaceResult" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
-		UPDATE MES_LOGIN_HISTORY
+		UPDATE TB_LoginHistory
 		SET
 			GOV_INTERFACE_YN = #{govInterfaceYn},
 			GOV_INTERFACE_DT = GETDATE(),

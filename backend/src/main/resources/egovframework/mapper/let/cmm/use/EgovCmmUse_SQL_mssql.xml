@@ -14,7 +14,7 @@
         SELECT
             CODE_ID, CODE, CODE_NM, CODE_DC
         FROM
-            HACCP_COMMON_CODE
+            TB_CommonCode
         WHERE
             USE_AT = 'Y'
           AND CODE_ID = #{codeId}
@@ -27,7 +27,7 @@
         ORGNZT_NM AS CODE_NM,
         ORGNZT_DC AS CODE_DC
         FROM
-        HACCP_ORGANIZATION
+        TB_OrganizationInfo
         WHERE 1=1
         <if test="haveDetailCondition == 'Y'">
             AND ORGNZT_ID LIKE #{detailConditionValue}
@@ -41,7 +41,7 @@
         GROUP_NM + '(' + GROUP_DC + ')' AS CODE_NM,
         GROUP_DC AS CODE_DC
         FROM
-        HACCP_DEPARTMENTS
+        TB_DepartmentInfo
         WHERE 1=1
 <!--        <if test="haveDetailCondition == 'Y'">-->
 <!--            AND GROUP_CODE LIKE #{detailConditionValue}-->

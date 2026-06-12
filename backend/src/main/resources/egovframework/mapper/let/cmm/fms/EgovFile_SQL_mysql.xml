@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="FileManageDAO">
@@ -34,7 +34,7 @@
 				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
 				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT
 			FROM
-				LETTNFILE a, LETTNFILEDETAIL b
+				TB_File a, TB_FileDETAIL b
 			WHERE
 				a.ATCH_FILE_ID = #{atchFileId}
 			AND 
@@ -47,7 +47,7 @@
  	
 	<insert id="FileManageDAO.insertFileMaster" parameterType="FileVO">
 		
-			INSERT INTO LETTNFILE
+			INSERT INTO TB_File
 			(ATCH_FILE_ID, CREAT_DT, USE_AT)
 			VALUES
 			( #{atchFileId}, SYSDATE(), 'Y')			
@@ -56,7 +56,7 @@
 	
 	<insert id="FileManageDAO.insertFileDetail" parameterType="FileVO">
 		
-			INSERT INTO LETTNFILEDETAIL
+			INSERT INTO TB_FileDETAIL
 			( ATCH_FILE_ID, FILE_SN, FILE_STRE_COURS, STRE_FILE_NM, 
 			  ORIGNL_FILE_NM, FILE_EXTSN, FILE_SIZE, FILE_CN )
 			VALUES
@@ -67,7 +67,7 @@
 	
 	<delete id="FileManageDAO.deleteFileDetail" parameterType="FileVO">
 		
-			DELETE FROM LETTNFILEDETAIL
+			DELETE FROM TB_FileDETAIL
 			WHERE
 				ATCH_FILE_ID = #{atchFileId}
 			AND	
@@ -78,7 +78,7 @@
 	<select id="FileManageDAO.getMaxFileSN" parameterType="FileVO" resultType="java.lang.Integer">
 		
 			SELECT IFNULL(MAX(FILE_SN),0)+1 AS FILE_SN
-			FROM LETTNFILEDETAIL
+			FROM TB_FileDETAIL
 			WHERE ATCH_FILE_ID =  #{atchFileId}		
 		
 	</select>
@@ -89,7 +89,7 @@
 				ATCH_FILE_ID, FILE_CN, FILE_SN, FILE_STRE_COURS, STRE_FILE_NM,
 				FILE_EXTSN, ORIGNL_FILE_NM, FILE_SIZE
 			FROM
-				LETTNFILEDETAIL
+				TB_FileDETAIL
 			WHERE
 				ATCH_FILE_ID = #{atchFileId}
 			AND 
@@ -99,7 +99,7 @@
 
 	<update id="FileManageDAO.deleteCOMTNFILE" parameterType="FileVO">
 		
-			UPDATE LETTNFILE
+			UPDATE TB_File
 			SET USE_AT = 'N'
 			WHERE ATCH_FILE_ID = #{atchFileId}
 		
@@ -111,7 +111,7 @@
 				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
 				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT
 			FROM
-				LETTNFILE a, LETTNFILEDETAIL b
+				TB_File a, TB_FileDETAIL b
 			WHERE
 				a.ATCH_FILE_ID = b.ATCH_FILE_ID
 			AND 
@@ -134,7 +134,7 @@
 			SELECT 
 				COUNT(a.ATCH_FILE_ID)
 			FROM
-				LETTNFILE a, LETTNFILEDETAIL b
+				TB_File a, TB_FileDETAIL b
 			WHERE
 				a.ATCH_FILE_ID = b.ATCH_FILE_ID
 			AND 
@@ -154,7 +154,7 @@
 				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
 				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT
 			FROM
-				LETTNFILE a, LETTNFILEDETAIL b
+				TB_File a, TB_FileDETAIL b
 			WHERE
 				a.ATCH_FILE_ID = #{atchFileId}
 			AND 

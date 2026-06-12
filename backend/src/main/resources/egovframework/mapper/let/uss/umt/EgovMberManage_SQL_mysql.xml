@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="mberManageDAO">
@@ -7,7 +7,7 @@
         <result property="useStplatCn"         column="USE_STPLAT_CN" />
         <result property="infoProvdAgeCn"      column="INFO_PROVD_AGRE_CN" />
     </resultMap>
-	<!-- Hsql과 호환때문에 아래 resultMap 추가: KIK -->
+	<!-- Hsql怨??명솚?뚮Ц???꾨옒 resultMap 異붽?: KIK -->
 	<resultMap id="userList" type="egovframework.let.uss.umt.service.MberManageVO">
 			<result property="uniqId" column="uniqId" />
 			<result property="orgnztId" column="orgnztId" />
@@ -41,7 +41,7 @@
 		        GROUP_ID              groupId,
 		        EMPLYR_STTUS_CODE     sttus,
 		        DATE_FORMAT(SBSCRB_DE, '%Y-%m-%d %H:%i:%s') as sbscrbDe
-		    FROM    LETTNEMPLYRINFO
+		    FROM    TB_UserInfo
 		) A
 	    WHERE 1=1
 	    <if test="sbscrbSttus != 0">AND
@@ -74,7 +74,7 @@
 	            GROUP_ID              groupId,
 	            EMPLYR_STTUS_CODE            sttus,
 	            SBSCRB_DE             sbscrbDe
-	        FROM    LETTNEMPLYRINFO
+	        FROM    TB_UserInfo
 	    ) A
         WHERE 1=1
         <if test="sbscrbSttus != 0">AND
@@ -89,7 +89,7 @@
     </select>
     
     <insert id="insertMber_S">
-        INSERT INTO LETTNEMPLYRINFO 
+        INSERT INTO TB_UserInfo 
             (   
                 ESNTL_ID          ,
                 ORGNZT_ID		  ,
@@ -137,7 +137,7 @@
     </insert>
     
     <delete id="deleteMber_S">
-            DELETE FROM LETTNEMPLYRINFO 
+            DELETE FROM TB_UserInfo 
             WHERE ESNTL_ID=#{delId}
     </delete>
     
@@ -165,12 +165,12 @@
             EMAIL_ADRES mberEmailAdres,
             HOUSE_MIDDLE_TELNO     middleTelno,
             SBSCRB_DE        sbscrbDe
-        FROM LETTNEMPLYRINFO
+        FROM TB_UserInfo
         WHERE ESNTL_ID=#{uniqId}
     </select>
     
     <update id="updateMber_S">
-        UPDATE LETTNEMPLYRINFO 
+        UPDATE TB_UserInfo 
          SET EMPLYR_ID          = #{mberId},
              USER_NM          = #{mberNm},
              <if test="password != null and !password.equals('')">
@@ -199,12 +199,12 @@
             USE_STPLAT_ID           ,
             USE_STPLAT_CN           ,
             INFO_PROVD_AGRE_CN      
-        FROM LETTNSTPLATINFO
+        FROM TB_TermsInfo
         WHERE USE_STPLAT_ID=#{stplatId}
     </select>
     
     <update id="updatePassword_S">
-        UPDATE LETTNEMPLYRINFO 
+        UPDATE TB_UserInfo 
         SET 
                PASSWORD   =  #{password}
         WHERE  EMPLYR_ID  = #{mberId}
@@ -213,7 +213,7 @@
     <select id="selectPassword_S" resultType="mberVO">
         SELECT
                 PASSWORD          password 
-        FROM    LETTNEMPLYRINFO
+        FROM    TB_UserInfo
         WHERE   ESNTL_ID=#{uniqId}
     </select>
     
@@ -222,15 +222,15 @@
              FROM(
              SELECT
                  EMPLYR_ID             userId
-             FROM    LETTNEMPLYRINFO
+             FROM    TB_UserInfo
              UNION ALL
              SELECT
                  ENTRPRS_MBER_ID        userId
-             FROM    LETTNENTRPRSMBER
+             FROM    TB_EnterpriseMember
              UNION ALL
              SELECT
                  MBER_ID               userId
-             FROM    LETTNGNRLMBER
+             FROM    TB_GeneralMember
              ) A
          WHERE userId = #{checkId}
     </select>

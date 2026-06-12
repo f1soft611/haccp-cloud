@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="IndvdlSchdulManage">
@@ -28,7 +28,7 @@
 		<result property="lastUpdusrId" column="LAST_UPDUSR_ID"/>				
 	</resultMap>
 	
-	<!-- 메인페이지/일정관리조회 -->  
+	<!-- 硫붿씤?섏씠吏/?쇱젙愿由ъ“??-->  
 	<select id="selectIndvdlSchdulManageMainList" parameterType="java.util.Map" resultType="egovMap">
 		SELECT 
 			DATE_FORMAT(sysdate(),'%Y-%m-%d') TO_DAY, 
@@ -49,7 +49,7 @@
 			DATE_FORMAT(A.LAST_UPDT_PNTTM,'%Y-%m-%d') LAST_UPDT_PNTTM,
 			A.LAST_UPDUSR_ID,
 			A.REPTIT_SE_CODE 
-		FROM LETTNSCHDULINFO A
+		FROM TB_ScheduleInfo A
 		WHERE 1=1 
 		AND A.SCHDUL_KND_CODE = '2'  
 		AND (A.SCHDUL_CHARGER_ID = #{uniqId} OR A.FRST_REGISTER_ID = #{uniqId})  
@@ -66,7 +66,7 @@
 		LIMIT 0, 4 
 	</select>
 	
-	<!-- 개인일정정보::목록조회 -->
+	<!-- 媛쒖씤?쇱젙?뺣낫::紐⑸줉議고쉶 -->
 	<select id="selectIndvdlSchdulManageRetrieve" parameterType="java.util.Map" resultType="egovMap">
 	 
 		SELECT 
@@ -87,8 +87,8 @@
 			DATE_FORMAT(A.LAST_UPDT_PNTTM,'%Y-%m-%d') LAST_UPDT_PNTTM,
 			A.LAST_UPDUSR_ID,
 			A.REPTIT_SE_CODE,
-			(SELECT USER_NM FROM LETTNEMPLYRINFO WHERE ESNTL_ID = A.SCHDUL_CHARGER_ID) USER_NM 
-		FROM LETTNSCHDULINFO A
+			(SELECT USER_NM FROM TB_UserInfo WHERE ESNTL_ID = A.SCHDUL_CHARGER_ID) USER_NM 
+		FROM TB_ScheduleInfo A
 		WHERE 1=1 
 		AND A.SCHDUL_KND_CODE = '2' 
 	 
@@ -127,13 +127,13 @@
 
 	</select>
 	
-	<!-- 개인일정정보::상세보기 -->
+	<!-- 媛쒖씤?쇱젙?뺣낫::?곸꽭蹂닿린 -->
 	<select id="selectIndvdlSchdulManageDetailVO" resultMap="IndvdlSchdulManage">
 		SELECT 
 			A.SCHDUL_ID,
 			A.SCHDUL_SE,
 			A.SCHDUL_DEPT_ID,
-			(SELECT ORGNZT_NM FROM LETTNORGNZTINFO WHERE ORGNZT_ID = A.SCHDUL_DEPT_ID) SCHDUL_DEPT_NAME,
+			(SELECT ORGNZT_NM FROM TB_OrganizationInfo WHERE ORGNZT_ID = A.SCHDUL_DEPT_ID) SCHDUL_DEPT_NAME,
 			A.SCHDUL_KND_CODE,
 			DATE_FORMAT(A.SCHDUL_BEGINDE, '%Y%m%d%H%i%s')SCHDUL_BEGINDE,
             DATE_FORMAT(A.SCHDUL_ENDDE, '%Y%m%d%H%i%s')SCHDUL_ENDDE,
@@ -142,19 +142,19 @@
 			A.SCHDUL_PLACE,
 			A.SCHDUL_IPCR_CODE,
 			A.SCHDUL_CHARGER_ID,
-			(SELECT USER_NM FROM LETTNEMPLYRINFO WHERE ESNTL_ID = A.SCHDUL_CHARGER_ID) SCHDUL_CHARGER_NAME,	
+			(SELECT USER_NM FROM TB_UserInfo WHERE ESNTL_ID = A.SCHDUL_CHARGER_ID) SCHDUL_CHARGER_NAME,	
 			A.ATCH_FILE_ID,
 			A.REPTIT_SE_CODE,
 			DATE_FORMAT(A.FRST_REGIST_PNTTM,'%Y-%m-%d') FRST_REGIST_PNTTM,
 			A.FRST_REGISTER_ID,
 			DATE_FORMAT(A.LAST_UPDT_PNTTM,'%Y-%m-%d') LAST_UPDT_PNTTM,
 			A.LAST_UPDUSR_ID 
-		FROM LETTNSCHDULINFO A
+		FROM TB_ScheduleInfo A
 		WHERE 1=1 
 		AND SCHDUL_ID = #{schdulId}
 	</select>
 	
-	<!-- 개인일정정보::목록조회_게시물정보 -->
+	<!-- 媛쒖씤?쇱젙?뺣낫::紐⑸줉議고쉶_寃뚯떆臾쇱젙蹂?-->
 	<select id="selectIndvdlSchdulManage" parameterType="comDefaultVO" resultType="egovMap">
 	 
 		SELECT 
@@ -175,7 +175,7 @@
 			DATE_FORMAT(A.LAST_UPDT_PNTTM,'%Y-%m-%d') LAST_UPDT_PNTTM,
 			A.LAST_UPDUSR_ID,
 			A.REPTIT_SE_CODE 
-		FROM LETTNSCHDULINFO A
+		FROM TB_ScheduleInfo A
 		WHERE 1=1 
 	 
 	 <if test="searchKeyword != null and searchKeyword != ''">
@@ -191,11 +191,11 @@
 	
 	</select>
 	
-	<!-- 개인일정정보::목록조회_게시물 총갯수  -->
+	<!-- 媛쒖씤?쇱젙?뺣낫::紐⑸줉議고쉶_寃뚯떆臾?珥앷갗?? -->
 	<select id="selectIndvdlSchdulManageCnt" parameterType="comDefaultVO" resultType="int">
 		SELECT 
 		COUNT(*) totcnt
-		FROM LETTNSCHDULINFO
+		FROM TB_ScheduleInfo
 		WHERE 1=1 
 	 <if test="searchKeyword != null and searchKeyword != ''">
 	 	
@@ -207,19 +207,19 @@
 	</select>
 
 	
-	<!-- 개인일정정보::삭제  -->
+	<!-- 媛쒖씤?쇱젙?뺣낫::??젣  -->
 	<delete id="deleteDiaryManage">
-			DELETE FROM LETTNDIARYINFO WHERE SCHDUL_ID = #{schdulId};
+			DELETE FROM TB_DiaryInfo WHERE SCHDUL_ID = #{schdulId};
 	</delete>
 	<delete id="deleteIndvdlSchdulManage">
 		
-			DELETE FROM LETTNSCHDULINFO WHERE SCHDUL_ID = #{schdulId}; 
+			DELETE FROM TB_ScheduleInfo WHERE SCHDUL_ID = #{schdulId}; 
 		
 	</delete>
 
-	<!-- 개인일정정보::수정  -->
+	<!-- 媛쒖씤?쇱젙?뺣낫::?섏젙  -->
 	<update id="updateIndvdlSchdulManage"> 
-		UPDATE LETTNSCHDULINFO 
+		UPDATE TB_ScheduleInfo 
 		SET  
 			SCHDUL_SE=#{schdulSe},
 			SCHDUL_DEPT_ID=#{schdulDeptId},
@@ -237,13 +237,13 @@
 		WHERE SCHDUL_ID = #{schdulId}
 	</update>
 	
-	<!-- 개인일정정보::상세보기 -->
+	<!-- 媛쒖씤?쇱젙?뺣낫::?곸꽭蹂닿린 -->
 	<select id="selectIndvdlSchdulManageDetail" resultType="egovMap">
 		SELECT 
 			A.SCHDUL_ID,
 			A.SCHDUL_SE,
 			A.SCHDUL_DEPT_ID,
-			(SELECT ORGNZT_NM FROM LETTNORGNZTINFO WHERE ORGNZT_ID = A.SCHDUL_DEPT_ID) SCHDUL_DEPT_NAME,
+			(SELECT ORGNZT_NM FROM TB_OrganizationInfo WHERE ORGNZT_ID = A.SCHDUL_DEPT_ID) SCHDUL_DEPT_NAME,
 			A.SCHDUL_KND_CODE,
 			DATE_FORMAT(A.SCHDUL_BEGINDE, '%Y%m%d%H%i')SCHDUL_BGNDE,
             DATE_FORMAT(A.SCHDUL_ENDDE, '%Y%m%d%H%i')SCHDUL_ENDDE,
@@ -252,23 +252,23 @@
 			A.SCHDUL_PLACE,
 			A.SCHDUL_IPCR_CODE,
 			A.SCHDUL_CHARGER_ID,
-			(SELECT USER_NM FROM LETTNEMPLYRINFO WHERE ESNTL_ID = A.SCHDUL_CHARGER_ID) SCHDUL_CHARGER_NAME,	
+			(SELECT USER_NM FROM TB_UserInfo WHERE ESNTL_ID = A.SCHDUL_CHARGER_ID) SCHDUL_CHARGER_NAME,	
 			A.ATCH_FILE_ID,
 			DATE_FORMAT(A.FRST_REGIST_PNTTM,'%Y-%m-%d') FRST_REGIST_PNTTM,
 			A.FRST_REGISTER_ID,
 			DATE_FORMAT(A.LAST_UPDT_PNTTM,'%Y-%m-%d') LAST_UPDT_PNTTM,
 			A.LAST_UPDUSR_ID,
 			A.REPTIT_SE_CODE
-		FROM LETTNSCHDULINFO A
+		FROM TB_ScheduleInfo A
 		WHERE 1=1
 		AND SCHDUL_ID = #{schdulId}
 	</select>
 	
-	<!-- 개인일정정보::입력  -->
+	<!-- 媛쒖씤?쇱젙?뺣낫::?낅젰  -->
 	<insert id="insertIndvdlSchdulManage">
 	 
 	 
-		INSERT INTO LETTNSCHDULINFO ( 
+		INSERT INTO TB_ScheduleInfo ( 
 			SCHDUL_ID,
 			SCHDUL_SE,
 			SCHDUL_DEPT_ID,

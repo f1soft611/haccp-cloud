@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="mberManageDAO">
@@ -202,7 +202,7 @@
             USE_STPLAT_ID,
             USE_STPLAT_CN,
             INFO_PROVD_AGRE_CN
-        FROM LETTNSTPLATINFO
+        FROM TB_TermsInfo
         WHERE USE_STPLAT_ID=#{stplatId}
     </select>
 
@@ -229,11 +229,11 @@
                 UNION ALL
                 SELECT
                     ENTRPRS_MBER_ID AS userId
-                FROM    LETTNENTRPRSMBER
+                FROM    TB_EnterpriseMember
                 UNION ALL
                 SELECT
                     MBER_ID AS userId
-                FROM    LETTNGNRLMBER
+                FROM    TB_GeneralMember
             ) A
         WHERE userId = #{checkId}
     </select>

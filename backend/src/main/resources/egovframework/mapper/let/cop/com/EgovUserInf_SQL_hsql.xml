@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="EgovUserInfManageDAO">
@@ -34,7 +34,7 @@
 			SELECT 
 				ESNTL_ID, USER_ID, USER_NM, USER_ZIP, USER_ADRES, USER_EMAIL
 			FROM 
-				LETTNEMPLYRINFO
+				TB_UserInfo
 			WHERE 1=1 
  		
 			<if test="searchCnd == 0">AND
@@ -51,7 +51,7 @@
 			SELECT 
 				COUNT(ESNTL_ID)
 			FROM 
-				LETTNEMPLYRINFO
+				TB_UserInfo
 			WHERE 1=1 
 		
 			<if test="searchCnd == 0">AND
@@ -63,9 +63,9 @@
  		
 			SELECT 
 				a.ESNTL_ID, a.USER_ID, a.USER_NM, a.USER_ZIP, a.USER_ADRES, a.USER_EMAIL, b.USE_AT,
-				(SELECT USE_AT from LETTNCMMNTY WHERE CMMNTY_ID = #{trgetId}) AS DELETED_AT
+				(SELECT USE_AT from TB_Community WHERE CMMNTY_ID = #{trgetId}) AS DELETED_AT
 			FROM 
-				LETTNEMPLYRINFO a, LETTNCMMNTYUSER b
+				TB_UserInfo a, TB_CommunityUSER b
 			WHERE 
 				a.ESNTL_ID = b.EMPLYR_ID 
 			AND
@@ -85,7 +85,7 @@
 			SELECT 
 				COUNT(a.ESNTL_ID)
 			FROM 
-				LETTNEMPLYRINFO a, LETTNCMMNTYUSER b
+				TB_UserInfo a, TB_CommunityUSER b
 			WHERE 
 				a.ESNTL_ID = b.EMPLYR_ID
 			AND
@@ -101,9 +101,9 @@
  		
 			SELECT 
 				a.ESNTL_ID, a.USER_ID, a.USER_NM, a.USER_ZIP, a.USER_ADRES, a.USER_EMAIL, b.USE_AT, 
-				(SELECT USE_AT from LETTNCMMNTY WHERE CMMNTY_ID = #{trgetId}) AS DELETED_AT
+				(SELECT USE_AT from TB_Community WHERE CMMNTY_ID = #{trgetId}) AS DELETED_AT
 			FROM 
-				LETTNEMPLYRINFO a, LETTNCMMNTYUSER b
+				TB_UserInfo a, TB_CommunityUSER b
 			WHERE 
 				a.ESNTL_ID = b.EMPLYR_ID 
 			AND
@@ -125,7 +125,7 @@
 			SELECT 
 				COUNT(a.ESNTL_ID)
 			FROM 
-				LETTNEMPLYRINFO a, LETTNCMMNTYUSER b
+				TB_UserInfo a, TB_CommunityUSER b
 			WHERE 
 				a.ESNTL_ID = b.EMPLYR_ID 
 			AND
@@ -143,9 +143,9 @@
  		
 			SELECT 
 				a.ESNTL_ID, a.USER_ID, a.USER_NM, a.USER_ZIP, a.USER_ADRES, a.USER_EMAIL, b.USE_AT,
-				(SELECT USE_AT from LETTNCLUB WHERE CLB_ID = #{trgetId}) AS DELETED_AT
+				(SELECT USE_AT from TB_Club WHERE CLB_ID = #{trgetId}) AS DELETED_AT
 			FROM 
-				LETTNEMPLYRINFO a, LETTNCLUBUSER b
+				TB_UserInfo a, TB_ClubUSER b
 			WHERE 
 				a.ESNTL_ID = b.EMPLYR_ID 
 			AND
@@ -165,7 +165,7 @@
 			SELECT 
 				COUNT(a.ESNTL_ID)
 			FROM 
-				LETTNEMPLYRINFO a, LETTNCLUBUSER b
+				TB_UserInfo a, TB_ClubUSER b
 			WHERE 
 				a.ESNTL_ID = b.EMPLYR_ID 
 			AND
@@ -180,9 +180,9 @@
  		
 			SELECT 
 				a.ESNTL_ID, a.USER_ID, a.USER_NM, a.USER_ZIP, a.USER_ADRES, a.USER_EMAIL, b.USE_AT,
-				(SELECT USE_AT from LETTNCLUB WHERE CLB_ID = #{trgetId}) AS DELETED_AT
+				(SELECT USE_AT from TB_Club WHERE CLB_ID = #{trgetId}) AS DELETED_AT
 			FROM 
-				LETTNEMPLYRINFO a, LETTNCLUBUSER b
+				TB_UserInfo a, TB_ClubUSER b
 			WHERE 
 				a.ESNTL_ID = b.EMPLYR_ID 
 			AND
@@ -204,7 +204,7 @@
 			SELECT 
 				COUNT(a.ESNTL_ID)
 			FROM 
-				LETTNEMPLYRINFO a, LETTNCLUBUSER b
+				TB_UserInfo a, TB_ClubUSER b
 			WHERE 
 				a.ESNTL_ID = b.EMPLYR_ID 
 			AND
@@ -220,7 +220,7 @@
 	<select id="selectAllClubUser" parameterType="egovframework.let.cop.com.service.UserInfVO" resultMap="AllUserInfList">
 		
 			SELECT EMPLYR_ID as ESNTL_ID, CLB_ID as TRGET_ID 
-			FROM LETTNCLUBUSER WHERE USE_AT = 'Y'
+			FROM TB_ClubUSER WHERE USE_AT = 'Y'
 			AND CLB_ID = #{trgetId}			
 		
 	</select>
@@ -228,7 +228,7 @@
 	<select id="selectAllCmmntyUser" parameterType="egovframework.let.cop.com.service.UserInfVO" resultMap="AllUserInfList">
 		
 			SELECT EMPLYR_ID as ESNTL_ID, CMMNTY_ID as TRGET_ID 
-			FROM LETTNCMMNTYUSER WHERE USE_AT = 'Y'
+			FROM TB_CommunityUSER WHERE USE_AT = 'Y'
 			AND CMMNTY_ID =  #{trgetId}	
 		
 	</select>	

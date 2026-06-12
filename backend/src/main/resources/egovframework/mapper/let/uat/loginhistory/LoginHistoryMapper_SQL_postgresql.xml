@@ -27,7 +27,7 @@
 
 	<!-- 로그인 이력 등록 -->
 	<insert id="insertLoginHistory" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory" useGeneratedKeys="true" keyProperty="loginHistoryId">
-		INSERT INTO haccp_login_history (
+		INSERT INTO TB_LoginHistory (
 			factory_code,
 			user_id,
 			user_name,
@@ -77,7 +77,7 @@
 			SELECT 
 				*,
 				ROW_NUMBER() OVER (ORDER BY login_dt DESC) AS rnum
-			FROM mes_login_history
+			FROM TB_LoginHistory
 			WHERE factory_code = #{factoryCode}
 			<if test="searchUserId != null and searchUserId != ''">
 				AND user_id ILIKE '%' || #{searchUserId} || '%'
@@ -102,7 +102,7 @@
 	<!-- 로그인 이력 전체 건수 조회 -->
 	<select id="selectLoginHistoryListTotCnt" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO" resultType="int">
 		SELECT COUNT(*) AS cnt
-		FROM mes_login_history
+		FROM TB_LoginHistory
 		WHERE factory_code = #{factoryCode}
 		<if test="searchUserId != null and searchUserId != ''">
 			AND user_id ILIKE '%' || #{searchUserId} || '%'
@@ -144,13 +144,13 @@
 			gov_fail_reason,
 			gov_request_json,
 			gov_response_json
-		FROM mes_login_history
+		FROM TB_LoginHistory
 		WHERE login_history_id = #{loginHistoryId}
 	</select>
 
 	<!-- 로그아웃 정보 업데이트 -->
 	<update id="updateLogoutInfo" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
-		UPDATE mes_login_history
+		UPDATE TB_LoginHistory
 		SET 
 			logout_dt = now(),
 			session_time = EXTRACT(EPOCH FROM (now() - login_dt))::integer / 60
@@ -180,7 +180,7 @@
 			gov_fail_reason,
 			gov_request_json,
 			gov_response_json
-		FROM mes_login_history
+		FROM TB_LoginHistory
 		WHERE COALESCE(gov_interface_yn, 'N') = 'N'
 		ORDER BY login_dt DESC, login_history_id DESC
 		LIMIT 1
@@ -209,7 +209,7 @@
 			gov_fail_reason,
 			gov_request_json,
 			gov_response_json
-		FROM mes_login_history
+		FROM TB_LoginHistory
 		WHERE (
 			DATE(login_dt) >= #{fromDate}::date
 			AND DATE(login_dt) <![CDATA[<=]]> #{toDate}::date
@@ -221,7 +221,7 @@
 
 	<!-- 정부 인터페이스 전송 결과 업데이트 -->
 	<update id="updateGovInterfaceResult" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
-		UPDATE mes_login_history
+		UPDATE TB_LoginHistory
 		SET
 			gov_interface_yn = #{govInterfaceYn},
 			gov_interface_dt = now(),

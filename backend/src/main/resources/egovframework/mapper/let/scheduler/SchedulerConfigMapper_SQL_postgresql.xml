@@ -43,7 +43,7 @@
             REG_USER_ID,
             TO_CHAR(UPD_DT, 'YYYY-MM-DD HH24:MI:SS') AS UPD_DT,
             UPD_USER_ID
-        FROM SCHEDULER_CONFIG
+        FROM TB_SchedulerConfig
         WHERE 1=1
         <if test="searchWrd != null and searchWrd != ''">
             AND (SCHEDULER_NAME LIKE '%' || #{searchWrd} || '%'
@@ -62,7 +62,7 @@
     <select id="SchedulerConfigDAO.selectSchedulerListCnt" resultType="int"
             parameterType="egovframework.let.scheduler.domain.model.SchedulerConfigVO">
         SELECT COUNT(*)
-        FROM SCHEDULER_CONFIG
+        FROM TB_SchedulerConfig
         WHERE 1=1
         <if test="searchWrd != null and searchWrd != ''">
             AND (SCHEDULER_NAME LIKE '%' || #{searchWrd} || '%'
@@ -86,7 +86,7 @@
             REG_USER_ID,
             TO_CHAR(UPD_DT, 'YYYY-MM-DD HH24:MI:SS') AS UPD_DT,
             UPD_USER_ID
-        FROM SCHEDULER_CONFIG
+        FROM TB_SchedulerConfig
         WHERE SCHEDULER_ID = #{schedulerId}
     </select>
 
@@ -95,7 +95,7 @@
         <selectKey keyProperty="schedulerId" resultType="long" order="AFTER">
             SELECT LASTVAL()
         </selectKey>
-        INSERT INTO SCHEDULER_CONFIG (
+        INSERT INTO TB_SchedulerConfig (
             SCHEDULER_NAME,
             SCHEDULER_DESCRIPTION,
             CRON_EXPRESSION,
@@ -116,7 +116,7 @@
 
     <!-- 스케줄러 수정 -->
     <update id="SchedulerConfigDAO.updateScheduler" parameterType="egovframework.let.scheduler.domain.model.SchedulerConfig">
-        UPDATE SCHEDULER_CONFIG
+        UPDATE TB_SchedulerConfig
         SET SCHEDULER_NAME = #{schedulerName},
             SCHEDULER_DESCRIPTION = #{schedulerDescription},
             CRON_EXPRESSION = #{cronExpression},
@@ -129,7 +129,7 @@
 
     <!-- 스케줄러 삭제 -->
     <delete id="SchedulerConfigDAO.deleteScheduler" parameterType="long">
-        DELETE FROM SCHEDULER_CONFIG
+        DELETE FROM TB_SchedulerConfig
         WHERE SCHEDULER_ID = #{schedulerId}
     </delete>
 
@@ -146,7 +146,7 @@
             REG_USER_ID,
             TO_CHAR(UPD_DT, 'YYYY-MM-DD HH24:MI:SS') AS UPD_DT,
             UPD_USER_ID
-        FROM SCHEDULER_CONFIG
+        FROM TB_SchedulerConfig
         WHERE IS_ENABLED = 'Y'
         ORDER BY SCHEDULER_ID
     </select>
