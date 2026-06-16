@@ -1,4 +1,4 @@
-import { Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { logout as logoutApi } from '../../services/logoutService';
 import { useAuthStore } from '../store/authStore';
@@ -7,6 +7,7 @@ import { APP_LABELS } from '../ui/labels';
 export function TopGovBar() {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const role = useAuthStore((state) => state.role);
   const loginHistoryId = useAuthStore((state) => state.loginHistoryId);
   const clearAuth = useAuthStore((state) => state.logout);
 
@@ -25,52 +26,58 @@ export function TopGovBar() {
     <Box
       data-testid="top-gov-bar"
       sx={{
-        bgcolor: 'primary.main',
-        color: 'common.white',
-        borderBottom: '1px solid rgba(255,255,255,0.2)',
+        bgcolor: 'common.white',
+        color: 'text.primary',
+        borderBottom: '1px solid',
+        borderColor: 'divider',
       }}
     >
-      <Box sx={{ px: { xs: 2, md: 3 }, py: 0.75, bgcolor: 'rgba(0,0,0,0.12)' }}>
-        <Typography variant="caption">{APP_LABELS.header.govNotice}</Typography>
-      </Box>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1.25}
-        alignItems={{ xs: 'stretch', md: 'center' }}
-        sx={{ px: { xs: 2, md: 3 }, py: 1.2 }}
+      <Box
+        sx={{
+          bgcolor: '#EEF4FB',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
       >
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: 0.2 }}>
-            {APP_LABELS.appTitle}
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.92 }}>
-            {APP_LABELS.appSubtitle}
-          </Typography>
-        </Stack>
-        <TextField
-          size="small"
-          placeholder={APP_LABELS.header.searchPlaceholder}
-          sx={{
-            ml: { md: 'auto' },
-            minWidth: { xs: '100%', md: 280 },
-            bgcolor: 'common.white',
-            borderRadius: 999,
-            '& .MuiOutlinedInput-root': { borderRadius: 999 },
-          }}
-        />
-        {isAuthenticated ? (
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => {
-              void handleLogout();
-            }}
-            sx={{ minWidth: 96, fontWeight: 700 }}
+        <Container sx={{ py: 0.75 }}>
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', textAlign: 'left' }}
           >
-            {APP_LABELS.action.logout}
-          </Button>
-        ) : null}
-      </Stack>
+            {APP_LABELS.header.govNotice}
+          </Typography>
+        </Container>
+      </Box>
+
+      <Container>
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ py: 1.4 }}
+        >
+          <Typography
+            variant="h6"
+            fontWeight={800}
+            sx={{ letterSpacing: 0.2, textAlign: 'left' }}
+          >
+            {APP_LABELS.appTitle} {APP_LABELS.appSubtitle}
+          </Typography>
+
+          {isAuthenticated && role !== 'PLATFORM_ADMIN' ? (
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => {
+                void handleLogout();
+              }}
+              sx={{ minWidth: 96, fontWeight: 700 }}
+            >
+              {APP_LABELS.action.logout}
+            </Button>
+          ) : null}
+        </Stack>
+      </Container>
     </Box>
   );
 }

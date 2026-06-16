@@ -12,6 +12,9 @@ import { NotFoundPage } from '../../pages/NotFoundPage';
 import { TenantFirstLoginSetupPage } from '../../pages/TenantFirstLoginSetupPage';
 import { PlatformAdminLoginPage } from '../../pages/PlatformAdminLoginPage';
 import { LoginHistoryPage } from '../../pages/LoginHistoryPage';
+import { PlatformMenuManagementPage } from '../../pages/PlatformMenuManagementPage';
+import { PlatformRoleManagementPage } from '../../pages/PlatformRoleManagementPage';
+import { PlatformRoleMenuManagementPage } from '../../pages/PlatformRoleMenuManagementPage';
 
 export function AppRoutes() {
   return (
@@ -64,6 +67,30 @@ export function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
               <LoginHistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/menus"
+          element={
+            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+              <PlatformMenuManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/roles"
+          element={
+            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+              <PlatformRoleManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/role-menus"
+          element={
+            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+              <PlatformRoleMenuManagementPage />
             </ProtectedRoute>
           }
         />

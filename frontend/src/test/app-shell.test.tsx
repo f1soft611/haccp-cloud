@@ -213,8 +213,107 @@ describe('App shell', () => {
     );
 
     expect(screen.getByTestId('top-gov-bar')).toBeInTheDocument();
-    expect(screen.queryByTestId('work-menu-bar')).not.toBeInTheDocument();
+    expect(screen.getByTestId('work-menu-bar')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: APP_LABELS.menu.dashboard }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: APP_LABELS.menu.users }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', {
+        name: APP_LABELS.menu.platformMenuManagement,
+      }),
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId('portal-footer')).toBeInTheDocument();
+  });
+
+  it('shows hierarchical platform admin menu and hides extra items', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: '000001',
+      userId: 'platform_admin',
+      role: 'PLATFORM_ADMIN',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<div>dashboard</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole('button', { name: APP_LABELS.menu.dashboardGroup }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+    );
+
+    expect(
+      await screen.findByRole('link', {
+        name: APP_LABELS.menu.platformMenuManagement,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: APP_LABELS.menu.platformRoleManagement,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: APP_LABELS.menu.platformRoleMenuManagement,
+      }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole('link', { name: APP_LABELS.menu.onboarding }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: APP_LABELS.menu.loginHistory }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('allows PLATFORM_ADMIN to access platform menu management route', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: '000001',
+      userId: 'platform_admin',
+      role: 'PLATFORM_ADMIN',
+    });
+
+    renderAppRoutesAt('/platform/menus');
+
+    expect(
+      await screen.findByTestId('platform-menu-management-page'),
+    ).toBeInTheDocument();
+  });
+
+  it('redirects TENANT_ADMIN from platform menu management route to /dashboard', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+      onboardingRequired: false,
+      onboardingStatus: 'COMPLETED',
+    });
+
+    renderAppRoutesAt('/platform/menus');
+
+    expect(
+      await screen.findByTestId('dashboard-admin-hub'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('platform-menu-management-page'),
+    ).not.toBeInTheDocument();
   });
 
   it('redirects USER from /users to /dashboard', async () => {

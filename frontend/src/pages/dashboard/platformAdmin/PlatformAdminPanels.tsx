@@ -20,7 +20,8 @@ import type {
   PlatformAdminTenantList,
   TenantCodeIssuanceSummary,
 } from '../../../services/dashboardService';
-import { APP_LABELS } from '../../../shared/ui/labels';
+import type { UserRole } from '../../../shared/store/authStore';
+import { APP_LABELS, getRoleLabel } from '../../../shared/ui/labels';
 
 const MAX_ROWS = 5;
 
@@ -34,6 +35,9 @@ type PlatformAdminPanelsProps = {
   onRetryTenantList: () => void;
   onRetryCcpDocuments: () => void;
   onNavigateToOnboarding: () => void;
+  loginUserId: string;
+  loginRole: UserRole;
+  onLogout: () => void;
 };
 
 type KpiCardProps = {
@@ -139,6 +143,9 @@ export function PlatformAdminPanels({
   onRetryTenantList,
   onRetryCcpDocuments,
   onNavigateToOnboarding,
+  loginUserId,
+  loginRole,
+  onLogout,
 }: PlatformAdminPanelsProps) {
   const hasKpiError = kpis.hasError === true;
   const hasTenantCodeIssuanceError = tenantCodeIssuance.hasError === true;
@@ -148,23 +155,54 @@ export function PlatformAdminPanels({
   return (
     <Stack spacing={2.5}>
       {/* 헤더 */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
         <Typography variant="h5" fontWeight={700}>
           {APP_LABELS.dashboard.platformAdmin.title}
         </Typography>
-        <Button
-          variant="contained"
-          size="medium"
-          onClick={onNavigateToOnboarding}
+
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: { xs: 'stretch', md: 'center' },
+            justifyContent: 'space-between',
+            gap: 1,
+            flexDirection: { xs: 'column', md: 'row' },
+          }}
         >
-          {APP_LABELS.dashboard.platformAdmin.cta}
-        </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={onNavigateToOnboarding}
+            sx={{ alignSelf: { xs: 'stretch', md: 'flex-start' } }}
+          >
+            {APP_LABELS.dashboard.platformAdmin.topbar.quickLink}
+          </Button>
+
+          <Stack
+            spacing={0.5}
+            sx={{
+              p: 1.2,
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              minWidth: { xs: '100%', md: 280 },
+              bgcolor: 'common.white',
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              {APP_LABELS.dashboard.platformAdmin.topbar.loginInfoLabel}
+            </Typography>
+            <Typography variant="body2" fontWeight={700}>
+              {`${APP_LABELS.field.userId}: ${loginUserId}`}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {getRoleLabel(loginRole)}
+            </Typography>
+            <Button variant="outlined" size="small" onClick={onLogout}>
+              {APP_LABELS.action.logout}
+            </Button>
+          </Stack>
+        </Box>
       </Box>
 
       {/* KPI 카드 */}

@@ -160,6 +160,22 @@ describe('Dashboard page', () => {
     ).toBeInTheDocument();
 
     expect(
+      screen.getByRole('button', {
+        name: APP_LABELS.dashboard.platformAdmin.topbar.quickLink,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        APP_LABELS.dashboard.platformAdmin.topbar.loginInfoLabel,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: APP_LABELS.action.logout,
+      }),
+    ).toBeInTheDocument();
+
+    expect(
       screen.getByRole('heading', {
         name: APP_LABELS.dashboard.platformAdmin.sections.tenantList,
       }),
@@ -170,6 +186,23 @@ describe('Dashboard page', () => {
         name: APP_LABELS.dashboard.platformAdmin.sections.ccpDocuments,
       }),
     ).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole('button', {
+        name: APP_LABELS.dashboard.platformAdmin.quickActions.menuManagement,
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: APP_LABELS.dashboard.platformAdmin.quickActions.roleManagement,
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: APP_LABELS.dashboard.platformAdmin.quickActions
+          .roleMenuManagement,
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it('hides legacy haccp operations blocks for PLATFORM_ADMIN', async () => {

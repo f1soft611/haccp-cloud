@@ -11,8 +11,14 @@ export const APP_LABELS = {
     searchPlaceholder: '문서, 담당자, 작업을 검색하세요',
   },
   menu: {
+    dashboardGroup: '대시보드 관리',
+    systemGroup: '시스템 관리',
     dashboard: '대시보드',
+    platformMenuManagement: '메뉴 등록',
+    platformRoleManagement: '권한 등록',
+    platformRoleMenuManagement: '권한별 메뉴 등록',
     onboarding: '업체등록',
+    loginHistory: '로그인이력',
     users: '사용자',
     departments: '부서',
     documents: '문서',
@@ -30,6 +36,9 @@ export const APP_LABELS = {
     history: '문서 변경 이력',
     loginHistory: '로그인 이력',
     dashboard: 'HACCP 문서 포털',
+    platformMenuManagement: '플랫폼 메뉴 등록',
+    platformRoleManagement: '플랫폼 권한 등록',
+    platformRoleMenuManagement: '권한별 메뉴 등록',
     notFound: '페이지를 찾을 수 없음',
   },
   field: {
@@ -75,6 +84,7 @@ export const APP_LABELS = {
     goToDashboard: '대시보드로',
     newIssueTenantCode: '신규 업체 코드 발급',
     logout: '로그아웃',
+    save: '저장',
   },
   table: {
     title: '제목',
@@ -221,6 +231,15 @@ export const APP_LABELS = {
         completionRate: '작성률',
       },
       cta: '신규 업체 코드 발급',
+      quickActions: {
+        menuManagement: '메뉴 등록 관리',
+        roleManagement: '권한 등록 관리',
+        roleMenuManagement: '권한별 메뉴 관리',
+      },
+      topbar: {
+        quickLink: '바로가기 > 신규 업체 코드 등록',
+        loginInfoLabel: '로그인 정보',
+      },
       statusLabel: {
         ACTIVE: '활성',
         INACTIVE: '비활성',
