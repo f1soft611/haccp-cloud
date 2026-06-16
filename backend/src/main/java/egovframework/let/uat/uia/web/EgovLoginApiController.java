@@ -32,6 +32,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Objects;
+import org.springframework.util.StringUtils;
+
 /**
  * 일반 로그인을 처리하는 컨트롤러 클래스
  * @author 공통서비스 개발팀 박지욱
@@ -108,13 +111,15 @@ public class EgovLoginApiController {
 
 		// 로그인 이력 엔티티 생성
 		LoginHistory loginHistory = new LoginHistory();
+		loginHistory.setFactoryCode(loginVO.getFactoryCode());
 		loginHistory.setUserId(loginVO.getId());
 		loginHistory.setLoginIp(clientIp);
 		loginHistory.setLoginType("SESSION");
 		loginHistory.setUserAgent(userAgent);
 
 		if (loginResultVO != null && loginResultVO.getId() != null && !"".equals(loginResultVO.getId())) {
-			if ("ROLE_ADMIN".equals(loginResultVO.getGroupNm())) {
+			loginHistory.setFactoryCode(loginResultVO.getFactoryCode());
+			if (Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN")) {
 				loginResultVO.setUserSe("ADM");
 			}
 
@@ -175,13 +180,15 @@ public class EgovLoginApiController {
 
 		// 2. 로그인 이력 저장
 		LoginHistory loginHistory = new LoginHistory();
+		loginHistory.setFactoryCode(loginVO.getFactoryCode());
 		loginHistory.setUserId(loginVO.getId());
 		loginHistory.setLoginIp(clientIp);
 		loginHistory.setLoginType("JWT");
 		loginHistory.setUserAgent(userAgent);
 		
 		if (loginResultVO != null && loginResultVO.getId() != null && !loginResultVO.getId().equals("")) {
-			if(loginResultVO.getGroupNm().equals("ROLE_ADMIN")) {//로그인 결과에서 스프링시큐리티용 그룹명값에 따른 권한부여
+			loginHistory.setFactoryCode(loginResultVO.getFactoryCode());
+			if(Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN")) {//로그인 결과에서 역할코드값에 따른 권한부여
 				loginResultVO.setUserSe("ADM");
 	        }
 			log.debug("===>>> loginResultVO.getUserSe() = "+loginResultVO.getUserSe());
@@ -194,8 +201,8 @@ public class EgovLoginApiController {
 			
 			String username = jwtTokenUtil.getUserSeFromToken(jwtToken);
 	    	log.debug("Dec jwtToken username = "+username);
-	    	String groupnm = jwtTokenUtil.getInfoFromToken("groupNm", jwtToken);
-	    	log.debug("Dec jwtToken groupnm = "+groupnm);//생성한 토큰에서 스프링시큐리티용 그룹명값 출력
+	    	String roleCode = jwtTokenUtil.getRoleCodeFromToken(jwtToken);
+	    	log.debug("Dec jwtToken roleCode = "+roleCode);//생성한 토큰에서 역할코드값 출력
 	    	//서버사이드 권한 체크 통과를 위해 삽입
 	    	//EgovUserDetailsHelper.isAuthenticated() 가 그 역할 수행. DB에 정보가 없으면 403을 돌려 줌. 로그인으로 튕기는 건 프론트 쪽에서 처리
 	    	request.getSession().setAttribute("LoginVO", loginResultVO);
@@ -250,12 +257,17 @@ public class EgovLoginApiController {
 			throws Exception {
 		HashMap<String, Object> resultMap = new HashMap<String, Object>();
 
+		// 플랫폼 관리자 전용 로그인은 클라이언트의 회사코드 입력 없이 서버가 PLATFORM 컨텍스트로 처리한다.
+		loginVO.setFactoryCode("PLATFORM");
+		loginVO.setRoleCode("PLATFORM_ADMIN");
+
 		String clientIp = getClientIp(request);
 		String userAgent = request.getHeader("User-Agent");
 
 		LoginVO loginResultVO = loginService.actionLogin(loginVO);
 
 		LoginHistory loginHistory = new LoginHistory();
+		loginHistory.setFactoryCode(loginVO.getFactoryCode());
 		loginHistory.setUserId(loginVO.getId());
 		loginHistory.setLoginIp(clientIp);
 		loginHistory.setLoginType("JWT_ADMIN");
@@ -264,9 +276,12 @@ public class EgovLoginApiController {
 		boolean isValidLogin = loginResultVO != null
 				&& loginResultVO.getId() != null
 				&& !"".equals(loginResultVO.getId());
-		boolean isPlatformAdmin = isValidLogin && "ROLE_ADMIN".equals(loginResultVO.getGroupNm());
+		boolean isPlatformAdmin = isValidLogin && Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN");
 
 		if (isPlatformAdmin) {
+			if (StringUtils.hasText(loginResultVO.getFactoryCode())) {
+				loginHistory.setFactoryCode(loginResultVO.getFactoryCode());
+			}
 			loginResultVO.setUserSe("ADM");
 			request.getSession().setAttribute("LoginVO", loginResultVO);
 

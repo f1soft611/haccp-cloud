@@ -39,6 +39,10 @@ public class EgovJwtTokenUtil implements Serializable{
 		return getInfoFromToken("userSe", token);
 	}
 
+	public String getRoleCodeFromToken(String token) {
+		return getInfoFromToken("roleCode", token);
+	}
+
 	public String getInfoFromToken(String type, String token) {
 		Claims claims = getClaimFromToken(token);
 	    Object info = claims.get(type);
@@ -82,6 +86,8 @@ public class EgovJwtTokenUtil implements Serializable{
         claims.put("uniqId", loginVO.getUniqId() );
         claims.put("type", subject);
         claims.put("groupNm", loginVO.getGroupNm());//권한그룹으로 시프링시큐리티 사용
+        claims.put("roleCode", loginVO.getRoleCode());//역할코드로 3역할 구분
+        claims.put("factoryCode", loginVO.getFactoryCode());//업체코드로 테넌트 구분
 
     	log.debug("===>>> secret = "+SECRET_KEY);
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
@@ -100,6 +106,8 @@ public class EgovJwtTokenUtil implements Serializable{
         claims.put("uniqId", loginVO.getUniqId() );
         claims.put("type", subject);
         claims.put("groupNm", loginVO.getGroupNm());//권한그룹으로 시프링시큐리티 사용
+        claims.put("roleCode", loginVO.getRoleCode());//역할코드로 3역할 구분
+        claims.put("factoryCode", loginVO.getFactoryCode());//업체코드로 테넌트 구분
 
     	log.debug("===>>> refresh token secret = "+SECRET_KEY);
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
@@ -117,6 +125,8 @@ public class EgovJwtTokenUtil implements Serializable{
 			loginVO.setOrgnztId(getInfoFromToken("orgnztId", token));
 			loginVO.setUniqId(getInfoFromToken("uniqId", token));
             loginVO.setGroupNm(getInfoFromToken("groupNm", token));
+            loginVO.setRoleCode(getRoleCodeFromToken(token));
+            loginVO.setFactoryCode(getInfoFromToken("factoryCode", token));
 
             if(loginVO.getId() == null) throw new InvalidJwtException("Missing id in token");
         } catch (IllegalArgumentException | ExpiredJwtException |

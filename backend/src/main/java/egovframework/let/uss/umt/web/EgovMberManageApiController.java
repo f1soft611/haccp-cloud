@@ -24,7 +24,6 @@ import egovframework.com.cmm.service.EgovCmmUseService;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.com.jwt.EgovJwtTokenUtil;
-import egovframework.let.cop.bbs.dto.request.BbsSearchRequestDTO;
 import egovframework.let.uss.umt.service.EgovMberManageService;
 import egovframework.let.uss.umt.service.MberManageVO;
 import egovframework.let.uss.umt.service.UserDefaultVO;
@@ -84,16 +83,18 @@ public class EgovMberManageApiController {
 	})
 	@GetMapping(value = "/members")
 	public ResultVO selectMberList(
-			@ModelAttribute BbsSearchRequestDTO boardMasterSearchVO,
+			@RequestParam(value = "pageIndex", required = false, defaultValue = "1") Integer pageIndex,
+			@RequestParam(value = "searchCnd", required = false) String searchCnd,
+			@RequestParam(value = "searchWrd", required = false) String searchWrd,
 			@RequestParam(value = "pageUnit", required = false) Integer pageUnit,
 			@Parameter(hidden = true) @AuthenticationPrincipal LoginVO user)
 			throws Exception {
 
 		MberManageVO userSearchVO = new MberManageVO();
 
-		userSearchVO.setPageIndex(boardMasterSearchVO.getPageIndex());
-		userSearchVO.setSearchCondition(boardMasterSearchVO.getSearchCnd());
-		userSearchVO.setSearchKeyword(boardMasterSearchVO.getSearchWrd());
+		userSearchVO.setPageIndex(pageIndex);
+		userSearchVO.setSearchCondition(searchCnd);
+		userSearchVO.setSearchKeyword(searchWrd);
 
 		/** EgovPropertyService */
 		userSearchVO.setPageUnit(

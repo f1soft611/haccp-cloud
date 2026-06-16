@@ -17,6 +17,7 @@
 		<!-- 누락된 필드 추가 -->
 		<result property="groupId" column="groupId"/>
 		<result property="groupNm" column="groupNm"/>
+		<result property="roleCode" column="roleCode"/>
 	</resultMap>
 
 	<resultMap id="id" type="egovframework.com.cmm.LoginVO">
@@ -30,57 +31,95 @@
 	<!-- 일반 로그인 -->
 	<select id="actionLogin" resultMap="login">
 		SELECT
-		    '000001'		   AS factoryCode,
-			a.emplyr_id        AS id,
-			a.user_nm          AS name,
-			a.password         AS password,
-			a.ihidnum          AS ihidNum,
-			a.email_adres      AS email,
-			'USR'              AS userSe,
-			a.orgnzt_id        AS orgnztId,
-			a.esntl_id         AS uniqId,
-			b.group_id         AS groupId,
-			b.group_code       AS groupCode,
-			b.group_nm         AS groupNm
+			li.factory_code    AS factoryCode,
+			li.login_id        AS id,
+			ui.user_nm         AS name,
+			li.password_hash   AS password,
+			NULL               AS ihidNum,
+			ui.email_adres     AS email,
+			CASE
+				WHEN li.authority_code = 'PLATFORM_ADMIN' THEN 'ADM'
+				ELSE 'USR'
+			END                AS userSe,
+			ui.department_id   AS orgnztId,
+			ui.esntl_id        AS uniqId,
+			ui.department_id   AS groupId,
+			di.department_code AS groupCode,
+			CASE
+				WHEN li.authority_code = 'PLATFORM_ADMIN' THEN 'ROLE_ADMIN'
+				WHEN li.authority_code = 'TENANT_ADMIN' THEN 'ROLE_TENANT_ADMIN'
+				ELSE 'ROLE_USER'
+			END                AS groupNm,
+			li.authority_code  AS roleCode
 		FROM
-			TB_UserInfo a
-			LEFT JOIN TB_DepartmentInfo b ON a.group_id = b.group_id
+			TB_LoginInfo li
+			JOIN TB_UserInfo ui
+			  ON ui.user_id = li.user_id
+			 AND ui.factory_code = li.factory_code
+			LEFT JOIN TB_DepartmentInfo di
+			  ON di.department_id = ui.department_id
+			 AND di.factory_code = ui.factory_code
 		WHERE
-			a.emplyr_id = #{id}
-		  AND a.password = #{password}
-		  AND COALESCE(a.use_at, 'Y') = 'Y'
+			li.login_id = #{id}
+		  AND li.password_hash = #{password}
+		  AND li.factory_code = #{factoryCode}
+		  <if test="roleCode != null and roleCode != ''">
+		  AND li.authority_code = #{roleCode}
+		  </if>
+		  AND COALESCE(li.use_at, 'Y') = 'Y'
+		  AND COALESCE(ui.use_at, 'Y') = 'Y'
+		  AND COALESCE(di.use_at, 'Y') = 'Y'
 	</select>
 
 	<select id="searchId" resultMap="id">
 		SELECT
-			a.emplyr_id AS id
+			li.login_id AS id
 		FROM
-			TB_UserInfo a
+			TB_LoginInfo li
+			JOIN TB_UserInfo ui
+			  ON ui.user_id = li.user_id
+			 AND ui.factory_code = li.factory_code
 		WHERE
-			a.user_nm = #{name}
-		  AND a.email_adres = #{email}
-		  AND COALESCE(a.use_at, 'Y') = 'Y'
+			ui.user_nm = #{name}
+		  AND ui.email_adres = #{email}
+		  <if test="factoryCode != null and factoryCode != ''">
+		  AND li.factory_code = #{factoryCode}
+		  </if>
+		  AND COALESCE(li.use_at, 'Y') = 'Y'
+		  AND COALESCE(ui.use_at, 'Y') = 'Y'
+		ORDER BY li.created_at DESC
+		LIMIT 1
 	</select>
 
 	<select id="searchPassword" resultMap="password">
 		SELECT
-			a.password AS password
+			li.password_hash AS password
 		FROM
-			TB_UserInfo a
+			TB_LoginInfo li
+			JOIN TB_UserInfo ui
+			  ON ui.user_id = li.user_id
+			 AND ui.factory_code = li.factory_code
 		WHERE
-			a.emplyr_id = #{id}
-		  AND a.user_nm = #{name}
-		  AND a.email_adres = #{email}
-		  AND COALESCE(a.use_at, 'Y') = 'Y'
+			li.login_id = #{id}
+		  AND ui.user_nm = #{name}
+		  AND ui.email_adres = #{email}
+		  <if test="factoryCode != null and factoryCode != ''">
+		  AND li.factory_code = #{factoryCode}
+		  </if>
+		  AND COALESCE(li.use_at, 'Y') = 'Y'
+		  AND COALESCE(ui.use_at, 'Y') = 'Y'
 	</select>
 
 	<update id="updatePassword">
-		UPDATE TB_UserInfo
+		UPDATE TB_LoginInfo
 		SET
-			password = #{password},
+			password_hash = #{password},
 			updated_at = now()
 		WHERE
-			emplyr_id = #{id}
+			login_id = #{id}
+		  <if test="factoryCode != null and factoryCode != ''">
+		  AND factory_code = #{factoryCode}
+		  </if>
 	</update>
 
 </mapper>

@@ -1,5 +1,7 @@
 # PostgreSQL Local Start (Windows)
 
+플랫폼 관리자 기준의 PostgreSQL 초기화 문서다. 현재 기준은 `backend/DATABASE/login_postgresql_schema.sql` 이며, 공통코드와 레거시 HACCP 테이블은 제외한다.
+
 ## 1) 개발 프로필 DB 타입
 
 아래 설정이 PostgreSQL인지 확인합니다.
@@ -19,7 +21,7 @@ Set-Location backend/DATABASE
 기본값:
 
 - PostgreSQL bin 경로: `C:\Program Files\PostgreSQL\18\bin`
-- DB 이름: `haccp_cloud`
+- DB 이름: 로컬 개발 DB
 - 스키마 파일: `login_postgresql_schema.sql`
 
 설치 경로가 다르면 파라미터로 지정합니다.
@@ -49,6 +51,7 @@ Maven PATH가 없으면 Maven 설치 경로의 `bin`을 PATH에 추가한 뒤 �
 
 ## 5) 빠른 점검
 
-- DB 점검: `haccp_departments`, `haccp_users`, `haccp_login_history` 테이블 존재
+- DB 점검: `tb_factoryinfo`, `tb_authorityinfo`, `tb_departmentinfo`, `tb_userinfo`, `tb_logininfo`, `tb_login_history`, `tb_permission_type`, `tb_menu_info`, `tb_role_menu_permission` 테이블 존재
+- 초기 로그인 점검: `platform_admin / Passw0rd!` 로 로그인 가능
 - 로그 점검: PostgreSQL Driver/URL 관련 예외 없음
 - 기능 점검: 로그인 API 1건 호출 성공

@@ -14,7 +14,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * fileName       : JwtAuthenticationFilter
@@ -63,10 +63,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             logger.debug("jwtToken validated");
             logger.debug("===>>> loginVO.getUserSe() = "+loginVO.getUserSe());
 
-            String role = isAdmin(loginVO) ? "ROLE_ADMIN" : "ROLE_USER";
+            String role = mapRoleCode(loginVO);
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    loginVO, null, Arrays.asList(new SimpleGrantedAuthority(role))
+                    loginVO, null, Collections.singletonList(new SimpleGrantedAuthority(role))
             );
 
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
@@ -81,7 +81,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 
-    private boolean isAdmin(LoginVO loginVO) {
-        return "ROLE_ADMIN".equals(loginVO.getGroupNm());
+    private String mapRoleCode(LoginVO loginVO) {
+        String roleCode = loginVO.getRoleCode();
+        
+        // roleCode 기반 3역할 매핑
+        if (roleCode != null && !roleCode.isEmpty()) {
+            switch (roleCode) {
+                case "PLATFORM_ADMIN":
+                    return "ROLE_ADMIN";
+                case "TENANT_ADMIN":
+                    return "ROLE_TENANT_ADMIN";
+                case "TENANT_USER":
+                    return "ROLE_USER";
+                default:
+                    return "ROLE_USER";
+            }
+        }
+        
+        // 레거시 호환성: groupNm으로 폴백
+        return "ROLE_ADMIN".equals(loginVO.getGroupNm()) ? "ROLE_ADMIN" : "ROLE_USER";
     }
 }
