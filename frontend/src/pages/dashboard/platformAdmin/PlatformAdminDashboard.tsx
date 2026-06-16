@@ -7,11 +7,29 @@ import {
   listPlatformAdminTenantCodeIssuance,
   listPlatformAdminTenants,
 } from '../../../services/dashboardService';
+import { logout as logoutApi } from '../../../services/logoutService';
+import { useAuthStore } from '../../../shared/store/authStore';
 import { APP_LABELS } from '../../../shared/ui/labels';
 import { PlatformAdminPanels } from './PlatformAdminPanels';
 
 export function PlatformAdminDashboard() {
   const navigate = useNavigate();
+  const role = useAuthStore((state) => state.role);
+  const userId = useAuthStore((state) => state.userId);
+  const loginHistoryId = useAuthStore((state) => state.loginHistoryId);
+  const clearAuth = useAuthStore((state) => state.logout);
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi(loginHistoryId);
+    } catch {
+      // Force local logout even if backend call fails.
+    } finally {
+      clearAuth();
+      navigate('/login', { replace: true });
+    }
+  };
+
   const [
     kpisQuery,
     tenantCodeIssuanceQuery,
@@ -112,6 +130,11 @@ export function PlatformAdminDashboard() {
           void ccpDocumentsQuery.refetch();
         }}
         onNavigateToOnboarding={() => navigate('/onboarding')}
+        loginUserId={userId}
+        loginRole={role}
+        onLogout={() => {
+          void handleLogout();
+        }}
       />
     </Stack>
   );

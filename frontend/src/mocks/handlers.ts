@@ -23,6 +23,27 @@ type SampleTenantItem = {
 
 type OnboardingStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
+type PlatformMenuItem = {
+  id: string;
+  name: string;
+  path: string;
+  sortOrder: number;
+  active: boolean;
+  roles: UserRole[];
+  updatedBy: string;
+  updatedAt: string;
+};
+
+type PlatformRoleItem = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  active: boolean;
+  updatedBy: string;
+  updatedAt: string;
+};
+
 const roleByUserId: Record<string, UserRole> = {
   platform_admin: 'PLATFORM_ADMIN',
   tenant_admin: 'TENANT_ADMIN',
@@ -60,6 +81,85 @@ const sampleTenants: SampleTenantItem[] = [
 ];
 
 let issuedTenantSequence = 101;
+
+let platformMenus: PlatformMenuItem[] = [
+  {
+    id: 'PM-1',
+    name: '대시보드',
+    path: '/dashboard',
+    sortOrder: 1,
+    active: true,
+    roles: ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'USER'],
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T10:00:00.000Z',
+  },
+  {
+    id: 'PM-2',
+    name: '메뉴 등록',
+    path: '/platform/menus',
+    sortOrder: 10,
+    active: true,
+    roles: ['PLATFORM_ADMIN'],
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T10:05:00.000Z',
+  },
+  {
+    id: 'PM-3',
+    name: '권한 등록',
+    path: '/platform/roles',
+    sortOrder: 20,
+    active: true,
+    roles: ['PLATFORM_ADMIN'],
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T10:10:00.000Z',
+  },
+  {
+    id: 'PM-4',
+    name: '권한별 메뉴 등록',
+    path: '/platform/role-menus',
+    sortOrder: 30,
+    active: true,
+    roles: ['PLATFORM_ADMIN'],
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T10:12:00.000Z',
+  },
+  {
+    id: 'PM-5',
+    name: '업체등록',
+    path: '/onboarding',
+    sortOrder: 40,
+    active: true,
+    roles: ['PLATFORM_ADMIN'],
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T10:15:00.000Z',
+  },
+];
+
+let platformRoles: PlatformRoleItem[] = [
+  {
+    id: 'PR-1',
+    code: 'ROLE_PLATFORM_ADMIN',
+    name: '플랫폼 관리자',
+    description: '플랫폼 설정 및 운영 관리 권한',
+    active: true,
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T09:00:00.000Z',
+  },
+  {
+    id: 'PR-2',
+    code: 'ROLE_PLATFORM_AUDITOR',
+    name: '플랫폼 감사 담당',
+    description: '조회 및 감사 이력 확인 권한',
+    active: true,
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T09:30:00.000Z',
+  },
+];
+
+const roleMenuMappings: Record<string, string[]> = {
+  ROLE_PLATFORM_ADMIN: ['PM-1', 'PM-2', 'PM-3', 'PM-4', 'PM-5'],
+  ROLE_PLATFORM_AUDITOR: ['PM-1'],
+};
 
 let users: UserItem[] = [
   {
@@ -1072,6 +1172,137 @@ export const handlers = [
       items,
     });
   }),
+
+  http.get('/api/platform-admin/menus', () => {
+    return HttpResponse.json(
+      [...platformMenus].sort((a, b) => a.sortOrder - b.sortOrder),
+    );
+  }),
+
+  http.post('/api/platform-admin/menus', async ({ request }) => {
+    const payload = (await request.json()) as {
+      name?: string;
+      path?: string;
+      sortOrder?: number;
+      active?: boolean;
+      roles?: UserRole[];
+    };
+
+    if (!payload.name || !payload.path || !payload.roles?.length) {
+      return HttpResponse.json({ message: 'Invalid input' }, { status: 400 });
+    }
+
+    const created: PlatformMenuItem = {
+      id: `PM-${platformMenus.length + 1}`,
+      name: payload.name,
+      path: payload.path,
+      sortOrder: payload.sortOrder ?? 0,
+      active: payload.active ?? true,
+      roles: payload.roles,
+      updatedBy: 'platform_admin',
+      updatedAt: new Date().toISOString(),
+    };
+
+    platformMenus = [created, ...platformMenus];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.patch('/api/platform-admin/menus/:id', async ({ params, request }) => {
+    const payload = (await request.json()) as { active?: boolean };
+
+    const target = platformMenus.find((item) => item.id === params.id);
+    if (!target) {
+      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    target.active = payload.active ?? target.active;
+    target.updatedAt = new Date().toISOString();
+    return HttpResponse.json(target);
+  }),
+
+  http.get('/api/platform-admin/roles', () => {
+    return HttpResponse.json([...platformRoles]);
+  }),
+
+  http.post('/api/platform-admin/roles', async ({ request }) => {
+    const payload = (await request.json()) as {
+      code?: string;
+      name?: string;
+      description?: string;
+      active?: boolean;
+    };
+
+    if (!payload.code || !payload.name) {
+      return HttpResponse.json({ message: 'Invalid input' }, { status: 400 });
+    }
+
+    const isDuplicate = platformRoles.some(
+      (item) => item.code.toUpperCase() === payload.code?.toUpperCase(),
+    );
+    if (isDuplicate) {
+      return HttpResponse.json(
+        { message: 'Duplicate role code' },
+        { status: 409 },
+      );
+    }
+
+    const created: PlatformRoleItem = {
+      id: `PR-${platformRoles.length + 1}`,
+      code: payload.code.toUpperCase(),
+      name: payload.name,
+      description: payload.description ?? '',
+      active: payload.active ?? true,
+      updatedBy: 'platform_admin',
+      updatedAt: new Date().toISOString(),
+    };
+
+    platformRoles = [created, ...platformRoles];
+    roleMenuMappings[created.code] = [];
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.patch('/api/platform-admin/roles/:id', async ({ params, request }) => {
+    const payload = (await request.json()) as { active?: boolean };
+
+    const target = platformRoles.find((item) => item.id === params.id);
+    if (!target) {
+      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    target.active = payload.active ?? target.active;
+    target.updatedAt = new Date().toISOString();
+    return HttpResponse.json(target);
+  }),
+
+  http.get('/api/platform-admin/role-menus', ({ request }) => {
+    const requestUrl = new URL(request.url);
+    const roleCode = requestUrl.searchParams.get('roleCode')?.toUpperCase();
+    if (!roleCode) {
+      return HttpResponse.json(
+        { message: 'roleCode required' },
+        { status: 400 },
+      );
+    }
+
+    return HttpResponse.json({
+      roleCode,
+      menuIds: roleMenuMappings[roleCode] ?? [],
+    });
+  }),
+
+  http.put(
+    '/api/platform-admin/role-menus/:roleCode',
+    async ({ params, request }) => {
+      const payload = (await request.json()) as { menuIds?: string[] };
+      const roleCode = String(params.roleCode).toUpperCase();
+      roleMenuMappings[roleCode] = payload.menuIds ?? [];
+
+      return HttpResponse.json({
+        roleCode,
+        menuIds: roleMenuMappings[roleCode],
+      });
+    },
+  ),
 
   http.get('/api/dashboard', ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
