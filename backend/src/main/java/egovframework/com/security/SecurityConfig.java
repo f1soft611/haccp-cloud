@@ -44,12 +44,6 @@ public class SecurityConfig {
     // Http Methpd : Get 인증예외 List
     private String[] AUTH_GET_WHITELIST = {
             "/mainPage", // 메인 화면 리스트 조회
-            "/board", // 게시판 목록조회
-            "/board/{bbsId}/{nttId}", // 게시물 상세조회
-            "/boardFileAtch/{bbsId}", // 게시판 파일 첨부가능 여부 조회
-            "/schedule/daily", // 일별 일정 조회
-            "/schedule/week", // 주간 일정 조회
-            "/schedule/{schdulId}", // 일정 상세조회
             "/image", // 갤러리 이미지보기
     };
 
@@ -135,6 +129,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                     .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight 요청 허용
                         .antMatchers("/admin/**").hasRole("ADMIN") // 관리자 페이지는 ADMIN만 접근
+                        .antMatchers("/api/admin/**").hasRole("ADMIN") // 관리자 API는 ADMIN만 접근
                         .antMatchers(HttpMethod.PATCH, "/members/password").hasAnyRole("ADMIN", "USER") // 비밀번호 변경은 모든 인증된 사용자 접근 가능
                         .antMatchers("/members/**").hasRole("ADMIN") // 회원 관리는 ADMIN만 접근
                         .antMatchers("/mypage/**").hasAnyRole("ADMIN", "USER") // 마이페이지는 ADMIN, USER 모두 접근

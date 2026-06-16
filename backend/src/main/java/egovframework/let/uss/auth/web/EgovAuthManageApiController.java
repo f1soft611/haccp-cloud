@@ -20,8 +20,11 @@ import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.uss.auth.service.EgovAuthManageService;
+import egovframework.let.uss.auth.service.FactoryRegistrationRequestVO;
+import egovframework.let.uss.auth.service.FactoryRegistrationResultVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.PermissionTypeVO;
+import egovframework.let.uss.auth.service.PlatformFactoryService;
 import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,6 +48,9 @@ public class EgovAuthManageApiController {
 
     @Resource(name = "authManageService")
     private EgovAuthManageService authManageService;
+
+    @Resource(name = "platformFactoryService")
+    private PlatformFactoryService platformFactoryService;
 
     @Resource(name = "resultVoHelper")
     private ResultVoHelper resultVoHelper;
@@ -218,11 +224,11 @@ public class EgovAuthManageApiController {
     )
     @GetMapping("/role-permissions")
     public ResultVO selectRoleMenuPermissionList(
-        @Parameter(description = "그룹ID") @RequestParam(required = false) String groupId,
+        @Parameter(description = "권한코드") @RequestParam(required = false) String authorityCode,
         @Parameter(description = "메뉴ID") @RequestParam(required = false) String menuId) throws Exception {
         
         RoleMenuPermissionVO roleMenuPermissionVO = new RoleMenuPermissionVO();
-        roleMenuPermissionVO.setGroupId(groupId);
+        roleMenuPermissionVO.setAuthorityCode(authorityCode);
         roleMenuPermissionVO.setMenuId(menuId);
         
         List<RoleMenuPermissionVO> resultList = authManageService.selectRoleMenuPermissionList(roleMenuPermissionVO);
@@ -263,12 +269,12 @@ public class EgovAuthManageApiController {
     )
     @DeleteMapping("/role-permissions")
     public ResultVO deleteRoleMenuPermission(
-        @Parameter(description = "그룹ID") @RequestParam String groupId,
+        @Parameter(description = "권한코드") @RequestParam String authorityCode,
         @Parameter(description = "메뉴ID") @RequestParam String menuId,
         @Parameter(description = "권한ID") @RequestParam(required = false) String permissionId) throws Exception {
         
         RoleMenuPermissionVO roleMenuPermissionVO = new RoleMenuPermissionVO();
-        roleMenuPermissionVO.setGroupId(groupId);
+        roleMenuPermissionVO.setAuthorityCode(authorityCode);
         roleMenuPermissionVO.setMenuId(menuId);
         roleMenuPermissionVO.setPermissionId(permissionId);
         
@@ -288,10 +294,10 @@ public class EgovAuthManageApiController {
         description = "사용자별 접근 가능한 메뉴 목록을 조회한다.",
         security = {@SecurityRequirement(name = "Authorization")}
     )
-    @GetMapping("/user-menus/{groupId}")
-    public ResultVO selectUserAccessibleMenus(@PathVariable String groupId) throws Exception {
+    @GetMapping("/user-menus/{authorityCode}")
+    public ResultVO selectUserAccessibleMenus(@PathVariable String authorityCode) throws Exception {
         
-        List<MenuInfoVO> resultList = authManageService.selectUserAccessibleMenus(groupId);
+        List<MenuInfoVO> resultList = authManageService.selectUserAccessibleMenus(authorityCode);
         
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("menuList", resultList);
@@ -308,17 +314,36 @@ public class EgovAuthManageApiController {
         description = "특정 메뉴에 대한 사용자 권한을 확인한다.",
         security = {@SecurityRequirement(name = "Authorization")}
     )
-    @GetMapping("/user-permissions/{groupId}")
+    @GetMapping("/user-permissions/{authorityCode}")
     public ResultVO checkUserMenuPermission(
-        @PathVariable String groupId,
+        @PathVariable String authorityCode,
         @Parameter(description = "메뉴URL") @RequestParam String menuUrl) throws Exception {
         
-        String permission = authManageService.checkUserMenuPermission(groupId, menuUrl);
+        String permission = authManageService.checkUserMenuPermission(authorityCode, menuUrl);
         
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("permission", permission);
         resultMap.put("resultMsg", "success.common.select");
         
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    /**
+     * 플랫폼 관리자가 업체를 등록하고 6자리 업체코드를 발급한다.
+     */
+    @Operation(
+        summary = "업체 등록 및 코드 부여",
+        description = "TB_FactoryInfo에 업체를 등록하고 6자리 FACTORY_CODE를 발급한다.",
+        security = {@SecurityRequirement(name = "Authorization")}
+    )
+    @PostMapping("/factories")
+    public ResultVO registerFactory(@RequestBody FactoryRegistrationRequestVO requestVO) {
+        FactoryRegistrationResultVO resultVO = platformFactoryService.registerFactory(requestVO);
+
+        Map<String, Object> resultMap = new HashMap<>();
+        resultMap.put("factory", resultVO);
+        resultMap.put("resultMsg", "success.common.insert");
+
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 }

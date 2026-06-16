@@ -116,17 +116,17 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
      * 사용자별 접근 가능한 메뉴 목록을 조회한다.
      */
     @Override
-    public List<MenuInfoVO> selectUserAccessibleMenus(String groupId) throws Exception {
-        return authManageDAO.selectUserAccessibleMenus(groupId);
+    public List<MenuInfoVO> selectUserAccessibleMenus(String authorityCode) throws Exception {
+        return authManageDAO.selectUserAccessibleMenus(authorityCode);
     }
 
     /**
      * 특정 메뉴에 대한 사용자 권한을 확인한다.
      */
     @Override
-    public String checkUserMenuPermission(String groupId, String menuUrl) throws Exception {
+    public String checkUserMenuPermission(String authorityCode, String menuUrl) throws Exception {
         Map<String, Object> params = new HashMap<>();
-        params.put("groupId", groupId);
+        params.put("authorityCode", authorityCode);
         params.put("menuUrl", menuUrl);
         
         String permission = authManageDAO.checkUserMenuPermission(params);

@@ -16,6 +16,7 @@ import javax.servlet.FilterChain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +48,8 @@ public class JwtAuthenticationFilterTest {
 
         LoginVO loginVO = new LoginVO();
         loginVO.setId("admin");
-        loginVO.setGroupNm("ROLE_ADMIN");
+        loginVO.setRoleCode("PLATFORM_ADMIN");
+        loginVO.setFactoryCode("PLATFORM");
 
         request.addHeader("Authorization", fakeToken);
         when(jwtTokenUtil.getLoginVOFromToken(fakeToken)).thenReturn(loginVO);
@@ -56,6 +58,28 @@ public class JwtAuthenticationFilterTest {
 
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEquals("admin", ((LoginVO) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId());
+        assertTrue(SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
+    }
+
+    @DisplayName("업체 관리자 roleCode는 ROLE_TENANT_ADMIN 권한으로 매핑된다")
+    @Test
+    public void testTenantAdminRoleMapped() throws Exception {
+        String fakeToken = "tenant.admin.jwt";
+
+        LoginVO loginVO = new LoginVO();
+        loginVO.setId("tenant-admin-1");
+        loginVO.setRoleCode("TENANT_ADMIN");
+        loginVO.setFactoryCode("FAC001");
+
+        request.addHeader("Authorization", fakeToken);
+        when(jwtTokenUtil.getLoginVOFromToken(fakeToken)).thenReturn(loginVO);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
+        assertTrue(SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> "ROLE_TENANT_ADMIN".equals(a.getAuthority())));
     }
 
     @DisplayName("유효하지 않은 토큰이 주어지면 인증 객체가 설정되지 않는다")

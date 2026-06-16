@@ -26,6 +26,8 @@ class EgovJwtTokenUtilTest {
         loginVO.setOrgnztId("testOrg");
         loginVO.setUniqId("testUniqId");
         loginVO.setGroupNm("ROLE_USER");
+        loginVO.setRoleCode("TENANT_USER");
+        loginVO.setFactoryCode("FAC001");
 
         String token = jwtTokenUtil.generateToken(loginVO);
 
@@ -40,6 +42,8 @@ class EgovJwtTokenUtilTest {
         assertEquals("testOrg", result.getOrgnztId());
         assertEquals("testUniqId", result.getUniqId());
         assertEquals("ROLE_USER", result.getGroupNm());
+        assertEquals("TENANT_USER", result.getRoleCode());
+        assertEquals("FAC001", result.getFactoryCode());
     }
 
     @DisplayName("잘못된 토큰을 입력했을 때, InvalidJwtException 예외가 발생한다.")

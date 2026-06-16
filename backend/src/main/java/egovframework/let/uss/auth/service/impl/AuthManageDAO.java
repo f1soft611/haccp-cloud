@@ -120,17 +120,17 @@ public class AuthManageDAO extends EgovAbstractMapper {
 
     /**
      * 사용자별 접근 가능한 메뉴 목록을 조회한다.
-     * @param groupId 그룹ID
+     * @param authorityCode 권한코드
      * @return List<MenuInfoVO> 접근가능메뉴목록
      * @throws Exception
      */
-    public List<MenuInfoVO> selectUserAccessibleMenus(String groupId) throws Exception {
-        return selectList("authManageDAO.selectUserAccessibleMenus", groupId);
+    public List<MenuInfoVO> selectUserAccessibleMenus(String authorityCode) throws Exception {
+        return selectList("authManageDAO.selectUserAccessibleMenus", authorityCode);
     }
 
     /**
      * 특정 메뉴에 대한 사용자 권한을 확인한다.
-     * @param params 파라미터 (groupId, menuUrl)
+    * @param params 파라미터 (authorityCode, menuUrl)
      * @return String 권한레벨
      * @throws Exception
      */

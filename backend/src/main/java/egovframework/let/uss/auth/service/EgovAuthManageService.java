@@ -92,18 +92,18 @@ public interface EgovAuthManageService {
 
     /**
      * 사용자별 접근 가능한 메뉴 목록을 조회한다.
-     * @param groupId 그룹ID
+    * @param authorityCode 권한코드
      * @return List<MenuInfoVO> 접근가능메뉴목록
      * @throws Exception
      */
-    List<MenuInfoVO> selectUserAccessibleMenus(String groupId) throws Exception;
+    List<MenuInfoVO> selectUserAccessibleMenus(String authorityCode) throws Exception;
 
     /**
      * 특정 메뉴에 대한 사용자 권한을 확인한다.
-     * @param groupId 그룹ID
+     * @param authorityCode 권한코드
      * @param menuUrl 메뉴URL
      * @return String 권한레벨 (read/write/none)
      * @throws Exception
      */
-    String checkUserMenuPermission(String groupId, String menuUrl) throws Exception;
+    String checkUserMenuPermission(String authorityCode, String menuUrl) throws Exception;
 }
