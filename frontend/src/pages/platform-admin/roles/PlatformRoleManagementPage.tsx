@@ -9,11 +9,11 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { APP_LABELS, getActiveLabel } from '../../../shared/constants/labels';
+import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import {
   createPlatformRole,
   listPlatformRoles,
@@ -75,9 +75,11 @@ export function PlatformRoleManagementPage() {
 
   return (
     <Stack spacing={2} data-testid="platform-role-management-page">
-      <Typography variant="h4">
-        {APP_LABELS.pageTitle.platformRoleManagement}
-      </Typography>
+      <PageHeader
+        groupLabel={APP_LABELS.menu.systemGroup}
+        title={APP_LABELS.pageTitle.platformRoleManagement}
+        description="권한 코드를 등록하고 활성 상태를 관리합니다."
+      />
 
       {createMutation.isError ? (
         <Alert severity="warning">권한 등록 처리에 실패했습니다.</Alert>

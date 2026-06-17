@@ -8,10 +8,10 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useAuthStore } from '../../../shared/store/authStore';
 import {
   createUser,
@@ -74,7 +74,11 @@ export function UsersPage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h4">{APP_LABELS.pageTitle.users}</Typography>
+      <PageHeader
+        groupLabel={APP_LABELS.menu.dashboardGroup}
+        title={APP_LABELS.pageTitle.users}
+        description="사용자 계정과 권한을 관리합니다."
+      />
       <Paper sx={{ p: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
           <TextField

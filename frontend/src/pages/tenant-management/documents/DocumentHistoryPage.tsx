@@ -5,10 +5,10 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { listDocumentHistory } from '../../../services/common/documentsService';
+import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { APP_LABELS } from '../../../shared/constants/labels';
 
@@ -22,7 +22,11 @@ export function DocumentHistoryPage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h4">{APP_LABELS.pageTitle.history}</Typography>
+      <PageHeader
+        groupLabel={APP_LABELS.menu.dashboardGroup}
+        title={APP_LABELS.pageTitle.history}
+        description="문서 변경 이력을 확인합니다."
+      />
       <Table size="small">
         <TableHead>
           <TableRow>

@@ -15,20 +15,33 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
   Typography,
 } from '@mui/material';
-import {
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
-} from '@mui/icons-material';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import ExpandLessOutlinedIcon from '@mui/icons-material/ExpandLessOutlined';
+import ExpandMoreOutlinedIcon from '@mui/icons-material/ExpandMoreOutlined';
+import FactoryOutlinedIcon from '@mui/icons-material/FactoryOutlined';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
+import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { APP_LABELS } from '../../../shared/constants/labels';
+import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
+import { PageHeader } from '../../../shared/components/layout/PageHeader';
+import { useFeedback } from '../../../shared/hooks/useFeedback';
 import {
   createPlatformMenu,
   deletePlatformMenu,
@@ -51,22 +64,49 @@ const ICON_OPTIONS = [
   'Category',
 ];
 
+const ICON_COMPONENTS: Record<string, typeof DashboardOutlinedIcon> = {
+  Dashboard: DashboardOutlinedIcon,
+  Settings: SettingsOutlinedIcon,
+  Menu: MenuOutlinedIcon,
+  Factory: FactoryOutlinedIcon,
+  AdminPanelSettings: AdminPanelSettingsOutlinedIcon,
+  Business: BusinessOutlinedIcon,
+  People: PeopleOutlineOutlinedIcon,
+  Assignment: AssignmentOutlinedIcon,
+  Inventory: Inventory2OutlinedIcon,
+  Build: BuildOutlinedIcon,
+  Category: CategoryOutlinedIcon,
+};
+
+function normalizeParentMenuId(
+  parentMenuId: string | null | undefined,
+): string | null {
+  if (parentMenuId == null) {
+    return null;
+  }
+
+  const trimmed = parentMenuId.trim();
+  return trimmed === '' ? null : trimmed;
+}
+
 export function PlatformMenuManagementPage() {
   const queryClient = useQueryClient();
+  const { showError, showSuccess } = useFeedback();
 
-  // 검색 및 필터 상태
   const [searchField, setSearchField] = useState('menuNm');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [filterActive, setFilterActive] = useState('all'); // 'all' | 'Y' | 'N'
-
-  // 확장/축소 상태
+  const [filterActive, setFilterActive] = useState('all');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-
-  // 모달 상태
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<PlatformMenuItem | null>(null);
-
-  // 폼 상태
+  const [confirmState, setConfirmState] = useState<{
+    type: 'save' | 'delete';
+    title: string;
+    description: string;
+    confirmText: string;
+    confirmColor: 'primary' | 'error';
+    targetMenuId?: string;
+  } | null>(null);
   const [formData, setFormData] = useState<{
     menuNm: string;
     menuDc: string;
@@ -85,64 +125,77 @@ export function PlatformMenuManagementPage() {
     useAt: 'Y',
   });
 
-  // 데이터 조회
   const menusQuery = useQuery({
     queryKey: ['platform-admin', 'menus'],
     queryFn: listPlatformMenus,
   });
 
-  // 생성 뮤테이션
   const createMutation = useMutation({
     mutationFn: createPlatformMenu,
     onSuccess: () => {
       resetForm();
       setModalOpen(false);
+      setConfirmState(null);
+      showSuccess('메뉴가 등록되었습니다.');
       void queryClient.invalidateQueries({
         queryKey: ['platform-admin', 'menus'],
       });
     },
+    onError: () => {
+      showError('메뉴 등록에 실패했습니다.');
+    },
   });
 
-  // 수정 뮤테이션
   const updateMutation = useMutation({
     mutationFn: updatePlatformMenu,
     onSuccess: () => {
       resetForm();
       setModalOpen(false);
+      setConfirmState(null);
+      showSuccess('메뉴가 수정되었습니다.');
       void queryClient.invalidateQueries({
         queryKey: ['platform-admin', 'menus'],
       });
     },
+    onError: () => {
+      showError('메뉴 수정에 실패했습니다.');
+    },
   });
 
-  // 삭제 뮤테이션
   const deleteMutation = useMutation({
     mutationFn: deletePlatformMenu,
     onSuccess: () => {
+      setConfirmState(null);
+      showSuccess('메뉴가 삭제되었습니다.');
       void queryClient.invalidateQueries({
         queryKey: ['platform-admin', 'menus'],
       });
     },
+    onError: () => {
+      showError('메뉴 삭제에 실패했습니다.');
+    },
   });
 
-  // 필터링된 메뉴 계산
   const filteredMenus = useMemo(() => {
-    const items = menusQuery.data ?? [];
+    const items = (menusQuery.data ?? []).map((menu) => ({
+      ...menu,
+      parentMenuId: normalizeParentMenuId(menu.parentMenuId),
+    }));
 
     return items.filter((menu) => {
-      // 사용여부 필터
       if (filterActive !== 'all' && menu.useAt !== filterActive) {
         return false;
       }
 
-      // 검색어 필터
       if (searchKeyword.trim()) {
         const keyword = searchKeyword.toLowerCase();
         if (searchField === 'menuNm') {
           return menu.menuNm.toLowerCase().includes(keyword);
-        } else if (searchField === 'menuDc') {
+        }
+        if (searchField === 'menuDc') {
           return menu.menuDc.toLowerCase().includes(keyword);
-        } else if (searchField === 'menuUrl') {
+        }
+        if (searchField === 'menuUrl') {
           return menu.menuUrl.toLowerCase().includes(keyword);
         }
       }
@@ -151,17 +204,20 @@ export function PlatformMenuManagementPage() {
     });
   }, [menusQuery.data, searchKeyword, searchField, filterActive]);
 
-  // 루트 메뉴 및 자식 메뉴 구분
   const rootMenus = useMemo(
-    () => filteredMenus.filter((menu) => menu.parentMenuId === null),
+    () =>
+      filteredMenus.filter(
+        (menu) => normalizeParentMenuId(menu.parentMenuId) === null,
+      ),
     [filteredMenus],
   );
 
   const getChildMenus = (parentId: string): PlatformMenuItem[] => {
-    return filteredMenus.filter((menu) => menu.parentMenuId === parentId);
+    return filteredMenus.filter(
+      (menu) => normalizeParentMenuId(menu.parentMenuId) === parentId,
+    );
   };
 
-  // 폼 초기화
   const resetForm = () => {
     setFormData({
       menuNm: '',
@@ -175,20 +231,18 @@ export function PlatformMenuManagementPage() {
     setEditTarget(null);
   };
 
-  // 추가 모달 열기
   const handleOpenAddModal = () => {
     resetForm();
     setModalOpen(true);
   };
 
-  // 수정 모달 열기
   const handleOpenEditModal = (menu: PlatformMenuItem) => {
     setEditTarget(menu);
     setFormData({
       menuNm: menu.menuNm,
       menuDc: menu.menuDc,
       menuUrl: menu.menuUrl,
-      parentMenuId: menu.parentMenuId,
+      parentMenuId: normalizeParentMenuId(menu.parentMenuId),
       menuOrdr: menu.menuOrdr,
       iconNm: menu.iconNm,
       useAt: menu.useAt,
@@ -196,48 +250,81 @@ export function PlatformMenuManagementPage() {
     setModalOpen(true);
   };
 
-  // 저장
   const handleSave = () => {
     if (!formData.menuNm.trim() || !formData.menuUrl.trim()) {
       return;
     }
 
+    setConfirmState({
+      type: 'save',
+      title: editTarget ? '메뉴 수정 확인' : '메뉴 등록 확인',
+      description: editTarget
+        ? '수정한 메뉴 정보를 저장하시겠습니까?'
+        : '입력한 메뉴 정보를 등록하시겠습니까?',
+      confirmText: editTarget ? '저장' : '등록',
+      confirmColor: 'primary',
+    });
+  };
+
+  const executeSave = () => {
     if (editTarget) {
       updateMutation.mutate({
         menuId: editTarget.menuId,
         ...formData,
       });
-    } else {
-      createMutation.mutate(formData);
+      return;
     }
+
+    createMutation.mutate(formData);
   };
 
-  // 삭제
   const handleDelete = (menu: PlatformMenuItem) => {
-    if (confirm(`'${menu.menuNm}'를 삭제하시겠습니까?`)) {
-      deleteMutation.mutate(menu.menuId);
-    }
+    setConfirmState({
+      type: 'delete',
+      title: '메뉴 삭제 확인',
+      description: `'${menu.menuNm}' 메뉴를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.`,
+      confirmText: '삭제',
+      confirmColor: 'error',
+      targetMenuId: menu.menuId,
+    });
   };
 
-  // 확장/축소 토글
-  const toggleExpanded = (menuId: string) => {
-    const newExpanded = new Set(expandedIds);
-    if (newExpanded.has(menuId)) {
-      newExpanded.delete(menuId);
-    } else {
-      newExpanded.add(menuId);
+  const handleConfirmAction = () => {
+    if (!confirmState) {
+      return;
     }
-    setExpandedIds(newExpanded);
+
+    if (confirmState.type === 'delete' && confirmState.targetMenuId) {
+      deleteMutation.mutate(confirmState.targetMenuId);
+      return;
+    }
+
+    executeSave();
+  };
+
+  const toggleExpanded = (menuId: string) => {
+    const nextExpanded = new Set(expandedIds);
+    if (nextExpanded.has(menuId)) {
+      nextExpanded.delete(menuId);
+    } else {
+      nextExpanded.add(menuId);
+    }
+    setExpandedIds(nextExpanded);
   };
 
   const isLoading = menusQuery.isLoading;
   const isError = menusQuery.isError;
+  const dialogDescription = editTarget
+    ? '메뉴 정보를 수정하고 저장하면 즉시 목록에 반영됩니다.'
+    : '새 메뉴를 등록해 플랫폼 화면과 권한 설정에 연결할 수 있습니다.';
 
   return (
     <Stack spacing={2} data-testid="platform-menu-management-page">
-      <Typography variant="h4">
-        {APP_LABELS.pageTitle.platformMenuManagement}
-      </Typography>
+      <PageHeader
+        groupLabel={APP_LABELS.menu.systemGroup}
+        title={APP_LABELS.pageTitle.platformMenuManagement}
+        description={dialogDescription}
+      />
 
       {createMutation.isError ||
       updateMutation.isError ||
@@ -249,7 +336,6 @@ export function PlatformMenuManagementPage() {
         <Alert severity="error">메뉴 목록을 불러올 수 없습니다.</Alert>
       ) : null}
 
-      {/* 검색 필터 */}
       <Paper sx={{ p: 2 }}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
@@ -306,132 +392,305 @@ export function PlatformMenuManagementPage() {
         </Stack>
       </Paper>
 
-      {/* 메뉴 테이블 */}
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell width="30">확장</TableCell>
-            <TableCell>메뉴명</TableCell>
-            <TableCell>설명</TableCell>
-            <TableCell>URL</TableCell>
-            <TableCell width="80">순서</TableCell>
-            <TableCell width="80">아이콘</TableCell>
-            <TableCell width="80">사용여부</TableCell>
-            <TableCell width="100" align="right">
-              작업
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {isLoading ? (
+      <TableContainer
+        component={Paper}
+        sx={{
+          border: '1px solid rgba(31, 79, 143, 0.22)',
+          borderRadius: 2,
+          boxShadow: '0 10px 28px rgba(17, 43, 74, 0.1)',
+          overflow: 'auto',
+          bgcolor: '#fff',
+          maxHeight: 620,
+        }}
+      >
+        <Table
+          size="small"
+          stickyHeader
+          aria-label="메뉴 목록"
+          sx={{
+            '& .MuiTableCell-head': {
+              bgcolor: '#1f4f8f',
+              color: '#ffffff',
+              fontWeight: 700,
+              borderBottom: '1px solid rgba(255, 255, 255, 0.25)',
+            },
+            '& .MuiTableCell-root': {
+              borderBottom: '1px solid rgba(31, 79, 143, 0.12)',
+            },
+          }}
+        >
+          <TableHead>
             <TableRow>
-              <TableCell colSpan={8} align="center">
-                로딩 중...
+              <TableCell width="30">확장</TableCell>
+              <TableCell>메뉴명</TableCell>
+              <TableCell>설명</TableCell>
+              <TableCell>URL</TableCell>
+              <TableCell width="80">순서</TableCell>
+              <TableCell width="80">아이콘</TableCell>
+              <TableCell width="80">사용여부</TableCell>
+              <TableCell width="100" align="right">
+                작업
               </TableCell>
             </TableRow>
-          ) : rootMenus.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={8} align="center">
-                메뉴가 없습니다.
-              </TableCell>
-            </TableRow>
-          ) : (
-            rootMenus.map((rootMenu) => (
-              <Box component={TableRow} key={rootMenu.menuId}>
-                <TableCell align="center">
-                  {(getChildMenus(rootMenu.menuId).length ?? 0) > 0 ? (
+          </TableHead>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  로딩 중...
+                </TableCell>
+              </TableRow>
+            ) : rootMenus.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  메뉴가 없습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              rootMenus.map((rootMenu) => (
+                <TableRow
+                  key={rootMenu.menuId}
+                  sx={{
+                    '& .MuiTableCell-root': { backgroundColor: '#ffffff' },
+                    '&:nth-of-type(even) .MuiTableCell-root': {
+                      backgroundColor: '#fbfdff',
+                    },
+                    '&:hover .MuiTableCell-root': {
+                      backgroundColor: '#f2f7ff',
+                    },
+                  }}
+                >
+                  <TableCell align="center">
+                    {getChildMenus(rootMenu.menuId).length > 0 ? (
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleExpanded(rootMenu.menuId)}
+                      >
+                        {expandedIds.has(rootMenu.menuId) ? (
+                          <ExpandLessOutlinedIcon fontSize="small" />
+                        ) : (
+                          <ExpandMoreOutlinedIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                    ) : null}
+                  </TableCell>
+                  <TableCell>{rootMenu.menuNm}</TableCell>
+                  <TableCell>{rootMenu.menuDc}</TableCell>
+                  <TableCell>
+                    <Box
+                      component="span"
+                      sx={{
+                        display: 'inline-block',
+                        px: 1,
+                        py: 0.25,
+                        borderRadius: 1,
+                        bgcolor: 'rgba(31, 79, 143, 0.08)',
+                        color: '#184173',
+                        fontFamily: 'monospace',
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      {rootMenu.menuUrl}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">{rootMenu.menuOrdr}</TableCell>
+                  <TableCell align="center">
+                    <Box
+                      component="span"
+                      title={rootMenu.iconNm}
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 30,
+                        height: 30,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(31, 79, 143, 0.10)',
+                        color: '#1f4f8f',
+                        fontSize: '0.95rem',
+                        fontWeight: 800,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {(() => {
+                        const IconComponent = ICON_COMPONENTS[rootMenu.iconNm];
+                        return IconComponent ? (
+                          <IconComponent fontSize="small" />
+                        ) : (
+                          <MenuOutlinedIcon fontSize="small" />
+                        );
+                      })()}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      label={rootMenu.useAt === 'Y' ? '사용' : '미사용'}
+                      size="small"
+                      color={rootMenu.useAt === 'Y' ? 'success' : 'default'}
+                      variant="filled"
+                    />
+                  </TableCell>
+                  <TableCell align="right">
                     <IconButton
                       size="small"
-                      onClick={() => toggleExpanded(rootMenu.menuId)}
+                      onClick={() => handleOpenEditModal(rootMenu)}
+                      sx={{
+                        mr: 0.25,
+                        color: '#1f4f8f',
+                        bgcolor: 'rgba(31, 79, 143, 0.08)',
+                        '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
+                      }}
                     >
-                      {expandedIds.has(rootMenu.menuId) ? (
-                        <ExpandLessIcon fontSize="small" />
-                      ) : (
-                        <ExpandMoreIcon fontSize="small" />
-                      )}
+                      <EditOutlinedIcon fontSize="small" />
                     </IconButton>
-                  ) : null}
-                </TableCell>
-                <TableCell>{rootMenu.menuNm}</TableCell>
-                <TableCell>{rootMenu.menuDc}</TableCell>
-                <TableCell sx={{ fontSize: '0.875rem' }}>
-                  {rootMenu.menuUrl}
-                </TableCell>
-                <TableCell align="center">{rootMenu.menuOrdr}</TableCell>
-                <TableCell align="center">{rootMenu.iconNm}</TableCell>
-                <TableCell align="center">
-                  <Chip
-                    label={rootMenu.useAt === 'Y' ? '사용' : '미사용'}
-                    size="small"
-                    color={rootMenu.useAt === 'Y' ? 'success' : 'default'}
-                    variant="filled"
-                  />
-                </TableCell>
-                <TableCell align="right">
-                  <IconButton
-                    size="small"
-                    onClick={() => handleOpenEditModal(rootMenu)}
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDelete(rootMenu)}
-                    disabled={
-                      (getChildMenus(rootMenu.menuId).length ?? 0) > 0 ||
-                      deleteMutation.isPending
-                    }
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </TableCell>
-              </Box>
-            ))
-          )}
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(rootMenu)}
+                      disabled={
+                        getChildMenus(rootMenu.menuId).length > 0 ||
+                        deleteMutation.isPending
+                      }
+                      sx={{
+                        color: '#c53b3b',
+                        bgcolor: 'rgba(197, 59, 59, 0.08)',
+                        '&:hover': { bgcolor: 'rgba(197, 59, 59, 0.16)' },
+                      }}
+                    >
+                      <DeleteOutlineOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
 
-          {/* 자식 메뉴 렌더링 */}
-          {rootMenus.map((rootMenu) =>
-            expandedIds.has(rootMenu.menuId)
-              ? getChildMenus(rootMenu.menuId).map((childMenu) => (
-                  <TableRow key={childMenu.menuId} sx={{ bgcolor: '#f5f5f5' }}>
-                    <TableCell></TableCell>
-                    <TableCell sx={{ pl: 4 }}>├ {childMenu.menuNm}</TableCell>
-                    <TableCell>{childMenu.menuDc}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>
-                      {childMenu.menuUrl}
-                    </TableCell>
-                    <TableCell align="center">{childMenu.menuOrdr}</TableCell>
-                    <TableCell align="center">{childMenu.iconNm}</TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        label={childMenu.useAt === 'Y' ? '사용' : '미사용'}
-                        size="small"
-                        color={childMenu.useAt === 'Y' ? 'success' : 'default'}
-                        variant="filled"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenEditModal(childMenu)}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDelete(childMenu)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              : null,
-          )}
-        </TableBody>
-      </Table>
+            {rootMenus.map((rootMenu) =>
+              expandedIds.has(rootMenu.menuId)
+                ? getChildMenus(rootMenu.menuId).map((childMenu) => (
+                    <TableRow
+                      key={childMenu.menuId}
+                      sx={{
+                        '& .MuiTableCell-root': { backgroundColor: '#f8fbff' },
+                        '& .MuiTableCell-root:first-of-type': {
+                          borderLeft: '4px solid #1f4f8f',
+                        },
+                        '&:hover .MuiTableCell-root': {
+                          backgroundColor: '#edf4ff',
+                        },
+                      }}
+                    >
+                      <TableCell />
+                      <TableCell sx={{ pl: 4 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.75,
+                          }}
+                        >
+                          <Box
+                            component="span"
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              bgcolor: '#1f4f8f',
+                              flexShrink: 0,
+                            }}
+                          />
+                          {childMenu.menuNm}
+                        </Box>
+                      </TableCell>
+                      <TableCell>{childMenu.menuDc}</TableCell>
+                      <TableCell>
+                        <Box
+                          component="span"
+                          sx={{
+                            display: 'inline-block',
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: 1,
+                            bgcolor: 'rgba(31, 79, 143, 0.08)',
+                            color: '#184173',
+                            fontFamily: 'monospace',
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          {childMenu.menuUrl}
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center">{childMenu.menuOrdr}</TableCell>
+                      <TableCell align="center">
+                        <Box
+                          component="span"
+                          title={childMenu.iconNm}
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 30,
+                            height: 30,
+                            borderRadius: '50%',
+                            bgcolor: 'rgba(31, 79, 143, 0.10)',
+                            color: '#1f4f8f',
+                            fontSize: '0.95rem',
+                            fontWeight: 800,
+                            lineHeight: 1,
+                          }}
+                        >
+                          {(() => {
+                            const IconComponent =
+                              ICON_COMPONENTS[childMenu.iconNm];
+                            return IconComponent ? (
+                              <IconComponent fontSize="small" />
+                            ) : (
+                              <MenuOutlinedIcon fontSize="small" />
+                            );
+                          })()}
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          label={childMenu.useAt === 'Y' ? '사용' : '미사용'}
+                          size="small"
+                          color={
+                            childMenu.useAt === 'Y' ? 'success' : 'default'
+                          }
+                          variant="filled"
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenEditModal(childMenu)}
+                          sx={{
+                            mr: 0.25,
+                            color: '#1f4f8f',
+                            bgcolor: 'rgba(31, 79, 143, 0.08)',
+                            '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
+                          }}
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDelete(childMenu)}
+                          sx={{
+                            color: '#c53b3b',
+                            bgcolor: 'rgba(197, 59, 59, 0.08)',
+                            '&:hover': { bgcolor: 'rgba(197, 59, 59, 0.16)' },
+                          }}
+                        >
+                          <DeleteOutlineOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                : null,
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      {/* 추가/수정 모달 */}
       <Dialog
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -450,7 +709,6 @@ export function PlatformMenuManagementPage() {
               fullWidth
               required
             />
-
             <TextField
               label="메뉴 설명"
               value={formData.menuDc}
@@ -461,7 +719,6 @@ export function PlatformMenuManagementPage() {
               multiline
               rows={2}
             />
-
             <Box>
               <Typography variant="body2" sx={{ mb: 0.5 }}>
                 상위 메뉴
@@ -480,9 +737,9 @@ export function PlatformMenuManagementPage() {
                 <MenuItem value="none">없음 (루트)</MenuItem>
                 {(menusQuery.data ?? [])
                   .filter(
-                    (m) =>
-                      m.parentMenuId === null &&
-                      (!editTarget || m.menuId !== editTarget.menuId),
+                    (menu) =>
+                      normalizeParentMenuId(menu.parentMenuId) === null &&
+                      (!editTarget || menu.menuId !== editTarget.menuId),
                   )
                   .map((menu) => (
                     <MenuItem key={menu.menuId} value={menu.menuId}>
@@ -491,7 +748,6 @@ export function PlatformMenuManagementPage() {
                   ))}
               </Select>
             </Box>
-
             <TextField
               label="메뉴 URL *"
               value={formData.menuUrl}
@@ -502,7 +758,6 @@ export function PlatformMenuManagementPage() {
               required
               placeholder="/platform/menus"
             />
-
             <TextField
               label="순서"
               type="number"
@@ -515,7 +770,6 @@ export function PlatformMenuManagementPage() {
               }
               fullWidth
             />
-
             <Box>
               <Typography variant="body2" sx={{ mb: 0.5 }}>
                 아이콘
@@ -534,7 +788,6 @@ export function PlatformMenuManagementPage() {
                 ))}
               </Select>
             </Box>
-
             <Box>
               <Typography variant="body2" sx={{ mb: 0.5 }}>
                 사용여부
@@ -571,6 +824,21 @@ export function PlatformMenuManagementPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmState !== null}
+        title={confirmState?.title ?? ''}
+        description={confirmState?.description ?? ''}
+        confirmText={confirmState?.confirmText ?? '확인'}
+        confirmColor={confirmState?.confirmColor ?? 'primary'}
+        loading={
+          createMutation.isPending ||
+          updateMutation.isPending ||
+          deleteMutation.isPending
+        }
+        onConfirm={handleConfirmAction}
+        onClose={() => setConfirmState(null)}
+      />
     </Stack>
   );
 }
