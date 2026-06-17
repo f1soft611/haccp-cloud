@@ -1,20 +1,20 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AppLayout } from '../../shared/layout/AppLayout';
-import { LoginPage } from '../../pages/LoginPage';
+import { AppLayout } from '../../shared/components/layout/AppLayout';
+import { LoginPage } from '../../pages/auth/LoginPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardPage } from '../../pages/DashboardPage';
-import { OnboardingPage } from '../../pages/OnboardingPage';
-import { UsersPage } from '../../pages/UsersPage';
-import { DepartmentsPage } from '../../pages/DepartmentsPage';
-import { DocumentsPage } from '../../pages/DocumentsPage';
-import { DocumentHistoryPage } from '../../pages/DocumentHistoryPage';
+import { OnboardingPage } from '../../pages/tenant-management/onboarding/OnboardingPage';
+import { UsersPage } from '../../pages/tenant-management/users/UsersPage';
+import { DepartmentsPage } from '../../pages/tenant-management/departments/DepartmentsPage';
+import { DocumentsPage } from '../../pages/tenant-management/documents/DocumentsPage';
+import { DocumentHistoryPage } from '../../pages/tenant-management/documents/DocumentHistoryPage';
 import { NotFoundPage } from '../../pages/NotFoundPage';
-import { TenantFirstLoginSetupPage } from '../../pages/TenantFirstLoginSetupPage';
-import { PlatformAdminLoginPage } from '../../pages/PlatformAdminLoginPage';
-import { LoginHistoryPage } from '../../pages/LoginHistoryPage';
-import { PlatformMenuManagementPage } from '../../pages/PlatformMenuManagementPage';
-import { PlatformRoleManagementPage } from '../../pages/PlatformRoleManagementPage';
-import { PlatformRoleMenuManagementPage } from '../../pages/PlatformRoleMenuManagementPage';
+import { TenantFirstLoginSetupPage } from '../../pages/tenant-management/onboarding/TenantFirstLoginSetupPage';
+import { PlatformAdminLoginPage } from '../../pages/auth/PlatformAdminLoginPage';
+import { LoginHistoryPage } from '../../pages/admin/LoginHistoryPage';
+import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
+import { PlatformRoleManagementPage } from '../../pages/platform-admin/roles/PlatformRoleManagementPage';
+import { PlatformRoleMenuManagementPage } from '../../pages/platform-admin/menus/PlatformRoleMenuManagementPage';
 
 export function AppRoutes() {
   return (

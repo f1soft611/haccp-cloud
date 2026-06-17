@@ -3,10 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
-import { OnboardingPage } from '../pages/OnboardingPage';
+import { OnboardingPage } from '../pages/tenant-management/onboarding/OnboardingPage';
 import { appTheme } from '../app/theme';
 import { server } from '../mocks/server';
-import { APP_LABELS } from '../shared/ui/labels';
+import { APP_LABELS } from '../shared/constants/labels';
 
 function renderPage() {
   const queryClient = new QueryClient({

@@ -1,11 +1,11 @@
 import { http, HttpResponse } from 'msw';
 import type { UserRole } from '../shared/store/authStore';
-import type { DepartmentItem } from '../services/departmentsService';
+import type { DepartmentItem } from '../services/common/departmentsService';
 import type {
   DocumentHistoryItem,
   DocumentTemplate,
-} from '../services/documentsService';
-import type { UserItem } from '../services/usersService';
+} from '../services/common/documentsService';
+import type { UserItem } from '../services/common/usersService';
 
 type TenantItem = {
   tenantCode: string;
@@ -24,14 +24,20 @@ type SampleTenantItem = {
 type OnboardingStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
 type PlatformMenuItem = {
-  id: string;
-  name: string;
-  path: string;
-  sortOrder: number;
-  active: boolean;
-  roles: UserRole[];
-  updatedBy: string;
-  updatedAt: string;
+  menuId: string;
+  menuNm: string;
+  menuDc: string;
+  parentMenuId: string | null;
+  menuOrdr: number;
+  menuUrl: string;
+  iconNm: string;
+  useAt: 'Y' | 'N';
+  frstRegistPnttm: string;
+  frstRegisterId: string;
+  lastUpdtPnttm: string;
+  lastUpdusrId: string;
+  parentMenuNm?: string;
+  hasChildren?: boolean;
 };
 
 type PlatformRoleItem = {
@@ -84,54 +90,154 @@ let issuedTenantSequence = 101;
 
 let platformMenus: PlatformMenuItem[] = [
   {
-    id: 'PM-1',
-    name: '대시보드',
-    path: '/dashboard',
-    sortOrder: 1,
-    active: true,
-    roles: ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'USER'],
-    updatedBy: 'platform_admin',
-    updatedAt: '2026-06-15T10:00:00.000Z',
+    menuId: 'PM-1',
+    menuNm: '종합 대시보드',
+    menuDc: 'HACCP 통합 대시보드',
+    parentMenuId: null,
+    menuOrdr: 1,
+    menuUrl: '/dashboard',
+    iconNm: 'Dashboard',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:00:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:00:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    hasChildren: false,
   },
   {
-    id: 'PM-2',
-    name: '메뉴 등록',
-    path: '/platform/menus',
-    sortOrder: 10,
-    active: true,
-    roles: ['PLATFORM_ADMIN'],
-    updatedBy: 'platform_admin',
-    updatedAt: '2026-06-15T10:05:00.000Z',
+    menuId: 'PM-2',
+    menuNm: '기준정보',
+    menuDc: '기준 정보 관리',
+    parentMenuId: null,
+    menuOrdr: 2,
+    menuUrl: '/base',
+    iconNm: 'Settings',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:05:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:05:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    hasChildren: true,
   },
   {
-    id: 'PM-3',
-    name: '권한 등록',
-    path: '/platform/roles',
-    sortOrder: 20,
-    active: true,
-    roles: ['PLATFORM_ADMIN'],
-    updatedBy: 'platform_admin',
-    updatedAt: '2026-06-15T10:10:00.000Z',
+    menuId: 'PM-2-1',
+    menuNm: '공통코드 관리',
+    menuDc: '공통코드 관리 페이지',
+    parentMenuId: 'PM-2',
+    menuOrdr: 1,
+    menuUrl: '/base/common-code',
+    iconNm: 'Menu',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:06:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:06:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    parentMenuNm: '기준정보',
   },
   {
-    id: 'PM-4',
-    name: '권한별 메뉴 등록',
-    path: '/platform/role-menus',
-    sortOrder: 30,
-    active: true,
-    roles: ['PLATFORM_ADMIN'],
-    updatedBy: 'platform_admin',
-    updatedAt: '2026-06-15T10:12:00.000Z',
+    menuId: 'PM-2-2',
+    menuNm: '품목 관리',
+    menuDc: '품목 정보 관리',
+    parentMenuId: 'PM-2',
+    menuOrdr: 2,
+    menuUrl: '/base/item',
+    iconNm: 'Inventory',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:07:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:07:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    parentMenuNm: '기준정보',
   },
   {
-    id: 'PM-5',
-    name: '업체등록',
-    path: '/onboarding',
-    sortOrder: 40,
-    active: true,
-    roles: ['PLATFORM_ADMIN'],
-    updatedBy: 'platform_admin',
-    updatedAt: '2026-06-15T10:15:00.000Z',
+    menuId: 'PM-2-3',
+    menuNm: '설비 관리',
+    menuDc: '설비 정보 관리',
+    parentMenuId: 'PM-2',
+    menuOrdr: 3,
+    menuUrl: '/base/equipment',
+    iconNm: 'Build',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:08:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:08:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    parentMenuNm: '기준정보',
+  },
+  {
+    menuId: 'PM-3',
+    menuNm: '생산기초관리',
+    menuDc: '생산 기초 정보 관리',
+    parentMenuId: null,
+    menuOrdr: 3,
+    menuUrl: '/prod',
+    iconNm: 'Factory',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:09:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:09:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    hasChildren: true,
+  },
+  {
+    menuId: 'PM-3-1',
+    menuNm: '공정 관리',
+    menuDc: '공정 관리 페이지',
+    parentMenuId: 'PM-3',
+    menuOrdr: 1,
+    menuUrl: '/base/process',
+    iconNm: 'Category',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:10:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:10:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    parentMenuNm: '생산기초관리',
+  },
+  {
+    menuId: 'PM-4',
+    menuNm: '생산관리',
+    menuDc: '생산 공정 관리',
+    parentMenuId: null,
+    menuOrdr: 4,
+    menuUrl: '/prod-mgmt',
+    iconNm: 'Business',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:11:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:11:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    hasChildren: false,
+  },
+  {
+    menuId: 'PM-5',
+    menuNm: '시스템 관리',
+    menuDc: '시스템 관리 메뉴',
+    parentMenuId: null,
+    menuOrdr: 5,
+    menuUrl: '/admin',
+    iconNm: 'AdminPanelSettings',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:12:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:12:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    hasChildren: true,
+  },
+  {
+    menuId: 'PM-5-1',
+    menuNm: '메뉴 관리',
+    menuDc: '메뉴 관리 페이지',
+    parentMenuId: 'PM-5',
+    menuOrdr: 1,
+    menuUrl: '/platform/menus',
+    iconNm: 'Menu',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:13:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:13:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    parentMenuNm: '시스템 관리',
   },
 ];
 
@@ -1175,32 +1281,38 @@ export const handlers = [
 
   http.get('/api/platform-admin/menus', () => {
     return HttpResponse.json(
-      [...platformMenus].sort((a, b) => a.sortOrder - b.sortOrder),
+      [...platformMenus].sort((a, b) => a.menuOrdr - b.menuOrdr),
     );
   }),
 
   http.post('/api/platform-admin/menus', async ({ request }) => {
     const payload = (await request.json()) as {
-      name?: string;
-      path?: string;
-      sortOrder?: number;
-      active?: boolean;
-      roles?: UserRole[];
+      menuNm?: string;
+      menuDc?: string;
+      menuUrl?: string;
+      parentMenuId?: string | null;
+      menuOrdr?: number;
+      iconNm?: string;
+      useAt?: 'Y' | 'N';
     };
 
-    if (!payload.name || !payload.path || !payload.roles?.length) {
+    if (!payload.menuNm || !payload.menuUrl) {
       return HttpResponse.json({ message: 'Invalid input' }, { status: 400 });
     }
 
     const created: PlatformMenuItem = {
-      id: `PM-${platformMenus.length + 1}`,
-      name: payload.name,
-      path: payload.path,
-      sortOrder: payload.sortOrder ?? 0,
-      active: payload.active ?? true,
-      roles: payload.roles,
-      updatedBy: 'platform_admin',
-      updatedAt: new Date().toISOString(),
+      menuId: `PM-${Date.now()}`,
+      menuNm: payload.menuNm,
+      menuDc: payload.menuDc ?? '',
+      menuUrl: payload.menuUrl,
+      parentMenuId: payload.parentMenuId ?? null,
+      menuOrdr: payload.menuOrdr ?? 0,
+      iconNm: payload.iconNm ?? 'Menu',
+      useAt: payload.useAt ?? 'Y',
+      frstRegistPnttm: new Date().toISOString(),
+      frstRegisterId: 'platform_admin',
+      lastUpdtPnttm: new Date().toISOString(),
+      lastUpdusrId: 'platform_admin',
     };
 
     platformMenus = [created, ...platformMenus];
@@ -1208,16 +1320,64 @@ export const handlers = [
   }),
 
   http.patch('/api/platform-admin/menus/:id', async ({ params, request }) => {
-    const payload = (await request.json()) as { active?: boolean };
+    const payload = (await request.json()) as {
+      menuNm?: string;
+      menuDc?: string;
+      menuUrl?: string;
+      parentMenuId?: string | null;
+      menuOrdr?: number;
+      iconNm?: string;
+      useAt?: 'Y' | 'N';
+    };
 
-    const target = platformMenus.find((item) => item.id === params.id);
+    const target = platformMenus.find((item) => item.menuId === params.id);
     if (!target) {
       return HttpResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
-    target.active = payload.active ?? target.active;
-    target.updatedAt = new Date().toISOString();
+    // Check if menu has children
+    const hasChildren = platformMenus.some(
+      (item) => item.parentMenuId === params.id,
+    );
+    if (hasChildren && payload.parentMenuId !== target.parentMenuId) {
+      return HttpResponse.json(
+        { message: 'Cannot change parent menu when menu has children' },
+        { status: 400 },
+      );
+    }
+
+    target.menuNm = payload.menuNm ?? target.menuNm;
+    target.menuDc = payload.menuDc ?? target.menuDc;
+    target.menuUrl = payload.menuUrl ?? target.menuUrl;
+    target.parentMenuId = payload.parentMenuId ?? target.parentMenuId;
+    target.menuOrdr = payload.menuOrdr ?? target.menuOrdr;
+    target.iconNm = payload.iconNm ?? target.iconNm;
+    target.useAt = payload.useAt ?? target.useAt;
+    target.lastUpdtPnttm = new Date().toISOString();
+    target.lastUpdusrId = 'platform_admin';
+
     return HttpResponse.json(target);
+  }),
+
+  http.delete('/api/platform-admin/menus/:id', async ({ params }) => {
+    const target = platformMenus.find((item) => item.menuId === params.id);
+    if (!target) {
+      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    // Check if menu has children
+    const hasChildren = platformMenus.some(
+      (item) => item.parentMenuId === params.id,
+    );
+    if (hasChildren) {
+      return HttpResponse.json(
+        { message: 'Cannot delete menu that has children' },
+        { status: 400 },
+      );
+    }
+
+    platformMenus = platformMenus.filter((item) => item.menuId !== params.id);
+    return HttpResponse.json({ message: 'Deleted' });
   }),
 
   http.get('/api/platform-admin/roles', () => {

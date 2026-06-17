@@ -5,7 +5,7 @@ import { AppProviders } from '../app/providers/AppProviders';
 import { server } from '../mocks/server';
 import { DashboardPage } from '../pages/DashboardPage';
 import { useAuthStore } from '../shared/store/authStore';
-import { APP_LABELS } from '../shared/ui/labels';
+import { APP_LABELS } from '../shared/constants/labels';
 
 describe('Dashboard page', () => {
   beforeEach(() => {

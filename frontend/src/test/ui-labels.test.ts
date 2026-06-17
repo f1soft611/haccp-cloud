@@ -3,7 +3,7 @@ import {
   getActiveLabel,
   getDocumentStatusLabel,
   type DocumentStatusCode,
-} from '../shared/ui/labels';
+} from '../shared/constants/labels';
 
 describe('UI labels', () => {
   it('maps document status code to korean label', () => {

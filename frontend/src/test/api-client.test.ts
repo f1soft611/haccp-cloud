@@ -2,8 +2,8 @@ import { act } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { expect } from 'vitest';
 import { server } from '../mocks/server';
-import { getDashboardMetrics } from '../services/dashboardService';
-import { apiClient } from '../services/apiClient';
+import { getDashboardMetrics } from '../services/common/dashboardService';
+import { apiClient } from '../services/api/apiClient';
 import { useAuthStore } from '../shared/store/authStore';
 
 describe('apiClient', () => {

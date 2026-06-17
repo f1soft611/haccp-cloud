@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { login, loginPlatformAdmin } from '../services/authService';
-import { apiClient } from '../services/apiClient';
+import { login, loginPlatformAdmin } from '../services/auth/authService';
+import { apiClient } from '../services/api/apiClient';
 
 vi.mock('../services/apiClient', () => ({
   apiClient: {

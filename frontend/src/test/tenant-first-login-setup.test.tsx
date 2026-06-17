@@ -4,9 +4,9 @@ import { ThemeProvider } from '@mui/material';
 import { http, HttpResponse } from 'msw';
 import { appTheme } from '../app/theme';
 import { server } from '../mocks/server';
-import { TenantFirstLoginSetupPage } from '../pages/TenantFirstLoginSetupPage';
+import { TenantFirstLoginSetupPage } from '../pages/tenant-management/onboarding/TenantFirstLoginSetupPage';
 import { useAuthStore } from '../shared/store/authStore';
-import { APP_LABELS } from '../shared/ui/labels';
+import { APP_LABELS } from '../shared/constants/labels';
 
 describe('Tenant first login setup page', () => {
   beforeEach(() => {

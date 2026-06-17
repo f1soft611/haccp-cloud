@@ -1,5 +1,5 @@
 import { Typography } from '@mui/material';
-import { APP_LABELS } from '../shared/ui/labels';
+import { APP_LABELS } from '../shared/constants/labels';
 
 export function NotFoundPage() {
   return (
