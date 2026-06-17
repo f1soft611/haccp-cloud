@@ -213,6 +213,12 @@ describe('App shell', () => {
     );
 
     expect(screen.getByTestId('top-gov-bar')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: APP_LABELS.header.searchAction }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: APP_LABELS.header.fontSizeAction }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId('work-menu-bar')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: APP_LABELS.menu.dashboard }),
@@ -545,6 +551,8 @@ describe('App shell', () => {
     renderAppRoutesAt('/platform/menus');
 
     expect(await screen.findByTestId('dashboard-user-hub')).toBeInTheDocument();
-    expect(screen.queryByTestId('platform-menu-management-page')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('platform-menu-management-page'),
+    ).not.toBeInTheDocument();
   });
 });

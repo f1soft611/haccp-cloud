@@ -9,6 +9,9 @@ export const APP_LABELS = {
   header: {
     govNotice: '이 서비스는 HACCP 클라우드 시스템 입니다.',
     searchPlaceholder: '문서, 담당자, 작업을 검색하세요',
+    searchAction: '통합검색',
+    fontSizeAction: '화면크기',
+    fontSizeResetAction: '초기화',
   },
   menu: {
     dashboardGroup: '대시보드 관리',
