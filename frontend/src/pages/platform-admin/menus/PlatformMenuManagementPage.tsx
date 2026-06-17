@@ -3,10 +3,6 @@ import {
   Box,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   IconButton,
   MenuItem,
   Paper,
@@ -40,6 +36,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
+import { FormDialog } from '../../../shared/components/forms/FormDialog';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import {
@@ -691,139 +688,138 @@ export function PlatformMenuManagementPage() {
         </Table>
       </TableContainer>
 
-      <Dialog
+      <FormDialog
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        maxWidth="sm"
-        fullWidth
+        title={editTarget ? '메뉴 수정' : '메뉴 추가'}
+        description={dialogDescription}
+        actions={
+          <>
+            <Button
+              onClick={handleSave}
+              variant="contained"
+              disabled={
+                !formData.menuNm.trim() ||
+                !formData.menuUrl.trim() ||
+                createMutation.isPending ||
+                updateMutation.isPending
+              }
+            >
+              {editTarget ? '저장' : '추가'}
+            </Button>
+            <Button onClick={() => setModalOpen(false)}>취소</Button>
+          </>
+        }
       >
-        <DialogTitle>{editTarget ? '메뉴 수정' : '메뉴 추가'}</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Stack spacing={2}>
-            <TextField
-              label="메뉴명 *"
-              value={formData.menuNm}
-              onChange={(e) =>
-                setFormData({ ...formData, menuNm: e.target.value })
-              }
-              fullWidth
-              required
-            />
-            <TextField
-              label="메뉴 설명"
-              value={formData.menuDc}
-              onChange={(e) =>
-                setFormData({ ...formData, menuDc: e.target.value })
-              }
-              fullWidth
-              multiline
-              rows={2}
-            />
-            <Box>
-              <Typography variant="body2" sx={{ mb: 0.5 }}>
-                상위 메뉴
-              </Typography>
-              <Select
-                value={formData.parentMenuId ?? 'none'}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    parentMenuId:
-                      e.target.value === 'none' ? null : e.target.value,
-                  })
-                }
-                fullWidth
-              >
-                <MenuItem value="none">없음 (루트)</MenuItem>
-                {(menusQuery.data ?? [])
-                  .filter(
-                    (menu) =>
-                      normalizeParentMenuId(menu.parentMenuId) === null &&
-                      (!editTarget || menu.menuId !== editTarget.menuId),
-                  )
-                  .map((menu) => (
-                    <MenuItem key={menu.menuId} value={menu.menuId}>
-                      {menu.menuNm}
-                    </MenuItem>
-                  ))}
-              </Select>
-            </Box>
-            <TextField
-              label="메뉴 URL *"
-              value={formData.menuUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, menuUrl: e.target.value })
-              }
-              fullWidth
-              required
-              placeholder="/platform/menus"
-            />
-            <TextField
-              label="순서"
-              type="number"
-              value={formData.menuOrdr}
+        <Stack spacing={2}>
+          <TextField
+            label="메뉴명 *"
+            value={formData.menuNm}
+            onChange={(e) =>
+              setFormData({ ...formData, menuNm: e.target.value })
+            }
+            fullWidth
+            required
+          />
+          <TextField
+            label="메뉴 설명"
+            value={formData.menuDc}
+            onChange={(e) =>
+              setFormData({ ...formData, menuDc: e.target.value })
+            }
+            fullWidth
+            multiline
+            rows={2}
+          />
+          <Box>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
+              상위 메뉴
+            </Typography>
+            <Select
+              value={formData.parentMenuId ?? 'none'}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  menuOrdr: Number(e.target.value) || 0,
+                  parentMenuId:
+                    e.target.value === 'none' ? null : e.target.value,
                 })
               }
               fullWidth
-            />
-            <Box>
-              <Typography variant="body2" sx={{ mb: 0.5 }}>
-                아이콘
-              </Typography>
-              <Select
-                value={formData.iconNm}
-                onChange={(e) =>
-                  setFormData({ ...formData, iconNm: e.target.value })
-                }
-                fullWidth
-              >
-                {ICON_OPTIONS.map((icon) => (
-                  <MenuItem key={icon} value={icon}>
-                    {icon}
+            >
+              <MenuItem value="none">없음 (루트)</MenuItem>
+              {(menusQuery.data ?? [])
+                .filter(
+                  (menu) =>
+                    normalizeParentMenuId(menu.parentMenuId) === null &&
+                    (!editTarget || menu.menuId !== editTarget.menuId),
+                )
+                .map((menu) => (
+                  <MenuItem key={menu.menuId} value={menu.menuId}>
+                    {menu.menuNm}
                   </MenuItem>
                 ))}
-              </Select>
-            </Box>
-            <Box>
-              <Typography variant="body2" sx={{ mb: 0.5 }}>
-                사용여부
-              </Typography>
-              <Select
-                value={formData.useAt}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    useAt: e.target.value as 'Y' | 'N',
-                  })
-                }
-                fullWidth
-              >
-                <MenuItem value="Y">사용</MenuItem>
-                <MenuItem value="N">미사용</MenuItem>
-              </Select>
-            </Box>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setModalOpen(false)}>취소</Button>
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            disabled={
-              !formData.menuNm.trim() ||
-              !formData.menuUrl.trim() ||
-              createMutation.isPending ||
-              updateMutation.isPending
+            </Select>
+          </Box>
+          <TextField
+            label="메뉴 URL *"
+            value={formData.menuUrl}
+            onChange={(e) =>
+              setFormData({ ...formData, menuUrl: e.target.value })
             }
-          >
-            {editTarget ? '저장' : '추가'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            fullWidth
+            required
+            placeholder="/platform/menus"
+          />
+          <TextField
+            label="순서"
+            type="number"
+            value={formData.menuOrdr}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                menuOrdr: Number(e.target.value) || 0,
+              })
+            }
+            fullWidth
+          />
+          <Box>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
+              아이콘
+            </Typography>
+            <Select
+              value={formData.iconNm}
+              onChange={(e) =>
+                setFormData({ ...formData, iconNm: e.target.value })
+              }
+              fullWidth
+            >
+              {ICON_OPTIONS.map((icon) => (
+                <MenuItem key={icon} value={icon}>
+                  {icon}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+          <Box>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
+              사용여부
+            </Typography>
+            <Select
+              value={formData.useAt}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  useAt: e.target.value as 'Y' | 'N',
+                })
+              }
+              fullWidth
+            >
+              <MenuItem value="Y">사용</MenuItem>
+              <MenuItem value="N">미사용</MenuItem>
+            </Select>
+          </Box>
+        </Stack>
+      </FormDialog>
 
       <ConfirmDialog
         open={confirmState !== null}

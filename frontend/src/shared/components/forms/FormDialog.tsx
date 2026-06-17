@@ -132,8 +132,11 @@ export function FormDialog({
         sx={{
           px: 3,
           py: 2,
-          borderTop: '1px solid rgba(31, 79, 143, 0.14)',
-          bgcolor: 'rgba(244, 248, 251, 0.86)',
+          borderTop: '1px solid rgba(31, 79, 143, 0.2)',
+          bgcolor: 'rgba(245, 249, 255, 0.9)',
+          backgroundImage:
+            'linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(238,245,255,0.92) 100%)',
+          boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.72)',
           justifyContent: 'flex-end',
           gap: 1,
         }}

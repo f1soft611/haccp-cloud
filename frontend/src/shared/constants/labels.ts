@@ -12,10 +12,10 @@ export const APP_LABELS = {
   },
   menu: {
     dashboardGroup: '대시보드 관리',
-    systemGroup: '시스템 관리',
+    systemGroup: '플랫폼 관리',
     dashboard: '대시보드',
     platformMenuManagement: '메뉴 관리',
-    platformRoleManagement: '권한 등록',
+    platformRoleManagement: '권한 관리',
     platformRoleMenuManagement: '권한별 메뉴 등록',
     onboarding: '업체등록',
     loginHistory: '로그인이력',

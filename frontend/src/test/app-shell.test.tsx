@@ -531,4 +531,20 @@ describe('App shell', () => {
       await screen.findByRole('heading', { name: APP_LABELS.pageTitle.login }),
     ).toBeInTheDocument();
   });
+
+  it('redirects USER from /platform/menus to /dashboard', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'user01',
+      role: 'USER',
+      onboardingRequired: false,
+      onboardingStatus: 'COMPLETED',
+    });
+
+    renderAppRoutesAt('/platform/menus');
+
+    expect(await screen.findByTestId('dashboard-user-hub')).toBeInTheDocument();
+    expect(screen.queryByTestId('platform-menu-management-page')).not.toBeInTheDocument();
+  });
 });

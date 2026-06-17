@@ -96,7 +96,7 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
       sx={{
         py: 0,
         borderBottom: '1px solid',
-        borderColor: 'divider',
+        borderColor: isSelectedGroupExpanded ? 'transparent' : 'divider',
         bgcolor: 'common.white',
         position: 'relative',
         zIndex: 20,
@@ -113,7 +113,8 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
               position: 'relative',
               zIndex: 2,
               py: 1,
-              overflowX: 'auto',
+              overflowX: { xs: 'auto', md: 'visible' },
+              overflowY: 'visible',
             }}
           >
             {visibleGroups.map((group) => {
@@ -127,22 +128,37 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                   onClick={() => handleGroupClick(group.key)}
                   aria-pressed={isSelected}
                   sx={{
-                    minHeight: 36,
+                    minHeight: 42,
                     fontWeight: isSelected ? 700 : 500,
-                    borderRadius: 1.5,
-                    px: 2,
-                    py: 0.75,
+                    borderRadius: 0,
+                    px: 2.5,
+                    py: 1,
                     fontSize: '0.875rem',
                     whiteSpace: 'nowrap',
-                    color: isSelected ? 'primary.main' : 'text.secondary',
-                    bgcolor: isSelected ? 'rgba(31,79,143,0.09)' : 'transparent',
-                    border: '1px solid',
-                    borderColor: isSelected ? 'rgba(31,79,143,0.28)' : 'transparent',
+                    position: 'relative',
+                    zIndex: isSelected && isSelectedGroupExpanded ? 35 : 2,
+                    color: isSelected ? '#0f2942' : 'text.secondary',
+                    bgcolor: isSelected ? '#e7edf5' : 'transparent',
+                    border: '1px solid transparent',
                     transition:
                       'background-color 150ms ease, color 150ms ease, border-color 150ms ease',
+                    ...(isSelected && isSelectedGroupExpanded
+                      ? {
+                          '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            bottom: -10,
+                            height: 10,
+                            bgcolor: '#f8fafd',
+                          },
+                        }
+                      : {}),
                     '&:hover': {
-                      bgcolor: 'rgba(31,79,143,0.07)',
-                      borderColor: 'rgba(31,79,143,0.18)',
+                      bgcolor: isSelected
+                        ? '#e7edf5'
+                        : 'rgba(15,23,42,0.05)',
                     },
                   }}
                 >
@@ -164,7 +180,8 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              bgcolor: 'rgba(15,23,42,0.08)',
+              bgcolor: 'rgba(15,23,42,0.22)',
+              backdropFilter: 'blur(6px)',
               zIndex: 24,
             }}
           />
@@ -172,7 +189,7 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
           <Box
             sx={{
               position: 'absolute',
-              top: '100%',
+              top: 'calc(100% - 1px)',
               left: 0,
               right: 0,
               zIndex: 30,
@@ -181,10 +198,10 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
             <Box
               sx={{
                 width: '100%',
-                bgcolor: 'common.white',
+                bgcolor: '#f8fafd',
                 borderBottom: '1px solid',
-                borderColor: 'divider',
-                boxShadow: '0 8px 24px rgba(15,23,42,0.09)',
+                borderColor: 'rgba(15,23,42,0.14)',
+                boxShadow: '0 10px 24px rgba(15,23,42,0.10)',
               }}
             >
               <Container>
@@ -193,8 +210,9 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                     display: 'grid',
                     gridTemplateColumns: {
                       xs: '1fr',
-                      md: 'repeat(4, minmax(0, 1fr))',
+                      md: 'repeat(3, minmax(0, 1fr))',
                     },
+                    py: 1,
                   }}
                 >
                   {(selectedGroup?.items ?? []).map((item) => {
@@ -209,63 +227,64 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                         color="primary"
                         variant="text"
                         sx={{
-                          px: 2,
-                          py: 2,
+                          px: 2.25,
+                          py: 2.1,
                           borderRadius: 0,
                           color: 'text.primary',
                           borderRight: { xs: 'none', md: '1px solid' },
-                          borderBottom: '1px solid',
-                          borderColor: 'rgba(15,23,42,0.10)',
+                          borderColor: 'rgba(15,23,42,0.16)',
                           justifyContent: 'flex-start',
                           textAlign: 'left',
                           alignItems: 'flex-start',
                           transition:
                             'background-color 150ms ease, color 150ms ease',
                           '&.active': {
-                            bgcolor: '#EEF4FB',
-                            color: 'primary.main',
+                            bgcolor: 'rgba(31,79,143,0.08)',
+                            color: '#0f2942',
                           },
                           '&:hover': {
-                            bgcolor: '#EEF4FB',
+                            bgcolor: 'rgba(15,23,42,0.05)',
                           },
                         }}
                       >
                         <Stack
-                          spacing={0.75}
-                          direction="row"
+                          spacing={1}
                           sx={{ alignItems: 'flex-start', width: '100%' }}
                         >
-                          {glyph ? (
-                            <Box
-                              sx={{
-                                width: 30,
-                                height: 30,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: '999px',
-                                bgcolor: 'rgba(31,79,143,0.10)',
-                                color: 'primary.main',
-                                flexShrink: 0,
-                                mt: 0.1,
-                              }}
-                            >
-                              <Typography variant="caption" fontWeight={800}>
-                                {glyph}
-                              </Typography>
-                            </Box>
-                          ) : null}
-                          <Stack
-                            spacing={0.7}
-                            sx={{ alignItems: 'flex-start' }}
-                          >
-                            <Typography variant="subtitle1" fontWeight={700}>
+                          <Stack spacing={0.8} sx={{ alignItems: 'flex-start' }}>
+                            <Stack direction="row" spacing={0.8} alignItems="center">
+                              {glyph ? (
+                                <Typography
+                                  variant="caption"
+                                  fontWeight={700}
+                                  sx={{
+                                    color: '#35618f',
+                                    bgcolor: 'rgba(31,79,143,0.08)',
+                                    borderRadius: '999px',
+                                    px: 0.8,
+                                    py: 0.15,
+                                  }}
+                                >
+                                  {glyph}
+                                </Typography>
+                              ) : null}
+                              <Typography
+                                variant="subtitle1"
+                                fontWeight={700}
+                                sx={{
+                                  pb: 0.4,
+                                  borderBottom: '1px solid rgba(15,23,42,0.20)',
+                                  minWidth: { xs: '70%', md: '80%' },
+                                }}
+                              >
                               {item.label}
-                            </Typography>
+                              </Typography>
+                            </Stack>
                             {item.description ? (
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
+                                sx={{ lineHeight: 1.5 }}
                               >
                                 {item.description}
                               </Typography>
