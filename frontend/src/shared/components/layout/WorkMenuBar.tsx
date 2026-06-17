@@ -110,9 +110,10 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
             sx={{
               justifyContent: 'flex-start',
               flexWrap: 'wrap',
+              alignItems: 'stretch',
               position: 'relative',
               zIndex: 2,
-              py: 1,
+              py: 0,
               overflowX: { xs: 'auto', md: 'visible' },
               overflowY: 'visible',
             }}
@@ -128,11 +129,11 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                   onClick={() => handleGroupClick(group.key)}
                   aria-pressed={isSelected}
                   sx={{
-                    minHeight: 42,
+                    minHeight: 52,
                     fontWeight: isSelected ? 700 : 500,
                     borderRadius: 0,
                     px: 2.5,
-                    py: 1,
+                    py: 0,
                     fontSize: '0.875rem',
                     whiteSpace: 'nowrap',
                     position: 'relative',
@@ -180,8 +181,9 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              bgcolor: 'rgba(15,23,42,0.22)',
-              backdropFilter: 'blur(6px)',
+              bgcolor: 'rgba(15,23,42,0.12)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
               zIndex: 24,
             }}
           />
