@@ -2,13 +2,24 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { UserRole } from '../../store/authStore';
-import type { MenuGroup } from './workMenuConfig';
+import type { MenuGroup, MenuIconName } from './workMenuConfig';
 
-export type MenuItem = {
-  label: string;
-  description?: string;
-  path: string;
-  roles: UserRole[];
+const MENU_GLYPH_MAP: Record<MenuIconName, string> = {
+  Dashboard: 'D',
+  Settings: 'S',
+  Menu: 'M',
+  Factory: 'F',
+  AdminPanelSettings: 'P',
+  Business: 'B',
+  People: 'U',
+  Assignment: 'A',
+  Inventory: 'I',
+  Build: 'W',
+  Category: 'C',
+  Security: 'S',
+  Link: '↗',
+  History: 'H',
+  AccessTime: 'T',
 };
 
 type WorkMenuBarProps = {
@@ -112,19 +123,22 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                   color="primary"
                   onClick={() => handleGroupClick(group.key)}
                   sx={{
-                    fontWeight: 800,
+                    minHeight: 56,
+                    fontWeight: isSelected ? 800 : 600,
                     borderRadius: 0,
                     px: 2.5,
-                    py: 1.5,
-                    color: isSelected ? 'primary.dark' : 'text.primary',
-                    bgcolor: isSelected ? '#D7E2EF' : 'transparent',
-                    borderLeft: '1px solid',
-                    borderRight: '1px solid',
-                    borderColor: isSelected
-                      ? 'rgba(15,23,42,0.12)'
+                    py: 1.75,
+                    color: isSelected ? 'primary.main' : 'text.secondary',
+                    bgcolor: isSelected ? 'common.white' : 'transparent',
+                    borderBottom: '3px solid',
+                    borderBottomColor: isSelected
+                      ? 'primary.main'
                       : 'transparent',
+                    transition:
+                      'background-color 180ms ease, color 180ms ease, border-color 180ms ease',
                     '&:hover': {
-                      bgcolor: isSelected ? '#D7E2EF' : '#EEF4FB',
+                      bgcolor: '#F0F7FF',
+                      borderBottomColor: 'primary.light',
                     },
                   }}
                 >
@@ -171,6 +185,13 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                 boxShadow: '0 14px 26px rgba(15,23,42,0.16)',
               }}
             >
+              <Box
+                sx={{
+                  height: 4,
+                  background:
+                    'linear-gradient(90deg, rgba(31,79,143,0.95) 0%, rgba(44,110,187,0.95) 100%)',
+                }}
+              />
               <Container>
                 <Box
                   sx={{
@@ -181,43 +202,89 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                     },
                   }}
                 >
-                  {(selectedGroup?.items ?? []).map((item) => (
-                    <Button
-                      key={item.path}
-                      component={NavLink}
-                      to={item.path}
-                      aria-label={item.label}
-                      color="primary"
-                      variant="text"
-                      sx={{
-                        px: 1,
-                        py: 2.8,
-                        borderRadius: 0,
-                        color: 'text.primary',
-                        borderRight: { xs: 'none', md: '1px solid' },
-                        borderBottom: '1px solid',
-                        borderColor: 'rgba(15,23,42,0.14)',
-                        justifyContent: 'flex-start',
-                        textAlign: 'left',
-                        alignItems: 'flex-start',
-                        '&.active': {
-                          bgcolor: '#EEF4FB',
-                          color: 'primary.dark',
-                        },
-                      }}
-                    >
-                      <Stack spacing={0.7} sx={{ alignItems: 'flex-start' }}>
-                        <Typography variant="subtitle1" fontWeight={800}>
-                          {item.label}
-                        </Typography>
-                        {item.description ? (
-                          <Typography variant="body2" color="text.secondary">
-                            {item.description}
-                          </Typography>
-                        ) : null}
-                      </Stack>
-                    </Button>
-                  ))}
+                  {(selectedGroup?.items ?? []).map((item) => {
+                    const glyph = item.icon ? MENU_GLYPH_MAP[item.icon] : null;
+
+                    return (
+                      <Button
+                        key={item.path}
+                        component={NavLink}
+                        to={item.path}
+                        aria-label={item.label}
+                        color="primary"
+                        variant="text"
+                        sx={{
+                          px: 2,
+                          py: 2.5,
+                          borderRadius: 0,
+                          color: 'text.primary',
+                          borderRight: { xs: 'none', md: '1px solid' },
+                          borderBottom: '1px solid',
+                          borderColor: 'rgba(15,23,42,0.14)',
+                          justifyContent: 'flex-start',
+                          textAlign: 'left',
+                          alignItems: 'flex-start',
+                          borderLeft: '3px solid',
+                          borderLeftColor: 'transparent',
+                          transition:
+                            'transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, color 180ms ease, border-color 180ms ease',
+                          '&.active': {
+                            bgcolor: '#EEF4FB',
+                            color: 'primary.main',
+                            borderLeftColor: 'primary.main',
+                          },
+                          '&:hover': {
+                            bgcolor: '#EEF4FB',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 8px 20px rgba(15,23,42,0.10)',
+                          },
+                        }}
+                      >
+                        <Stack
+                          spacing={0.75}
+                          direction="row"
+                          sx={{ alignItems: 'flex-start', width: '100%' }}
+                        >
+                          {glyph ? (
+                            <Box
+                              sx={{
+                                width: 30,
+                                height: 30,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '999px',
+                                bgcolor: 'rgba(31,79,143,0.10)',
+                                color: 'primary.main',
+                                flexShrink: 0,
+                                mt: 0.1,
+                              }}
+                            >
+                              <Typography variant="caption" fontWeight={800}>
+                                {glyph}
+                              </Typography>
+                            </Box>
+                          ) : null}
+                          <Stack
+                            spacing={0.7}
+                            sx={{ alignItems: 'flex-start' }}
+                          >
+                            <Typography variant="subtitle1" fontWeight={800}>
+                              {item.label}
+                            </Typography>
+                            {item.description ? (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {item.description}
+                              </Typography>
+                            ) : null}
+                          </Stack>
+                        </Stack>
+                      </Button>
+                    );
+                  })}
                 </Box>
               </Container>
             </Box>

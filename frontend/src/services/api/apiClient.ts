@@ -1,17 +1,41 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../../shared/store/authStore';
 
+function resolveApiBaseUrl(): string {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  if (!configuredBaseUrl) {
+    return import.meta.env.MODE === 'test'
+      ? 'http://localhost:3000/api'
+      : '/api';
+  }
+
+  const trimmed = configuredBaseUrl.replace(/\/+$/, '');
+  if (trimmed.endsWith('/api')) {
+    return trimmed;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.pathname === '' || parsed.pathname === '/') {
+      return `${trimmed}/api`;
+    }
+  } catch {
+    // Keep the configured value when it is a relative path or non-URL string.
+  }
+
+  return trimmed;
+}
+
+const resolvedApiBaseUrl = resolveApiBaseUrl();
+
 export const apiClient = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_BASE_URL ||
-    (import.meta.env.MODE === 'test' ? 'http://localhost:3000/api' : '/api'),
+  baseURL: resolvedApiBaseUrl,
   timeout: 15000,
 });
 
 const refreshClient = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_BASE_URL ||
-    (import.meta.env.MODE === 'test' ? 'http://localhost:3000/api' : '/api'),
+  baseURL: resolvedApiBaseUrl,
   timeout: 15000,
 });
 

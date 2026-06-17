@@ -50,4 +50,45 @@ export const appTheme = createTheme({
       'sans-serif',
     ].join(','),
   },
+  components: {
+    MuiTable: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#ffffff',
+          borderCollapse: 'separate',
+          borderSpacing: 0,
+        },
+      },
+    },
+    MuiTableHead: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#eef4fb',
+        },
+      },
+    },
+    MuiTableRow: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#ffffff',
+          '&:hover': {
+            backgroundColor: '#f7fbff',
+          },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        head: {
+          borderBottom: '1px solid rgba(31, 79, 143, 0.24)',
+          fontWeight: 700,
+          color: '#17385f',
+          backgroundColor: '#eef4fb',
+        },
+        body: {
+          borderBottom: '1px solid rgba(31, 79, 143, 0.12)',
+        },
+      },
+    },
+  },
 });

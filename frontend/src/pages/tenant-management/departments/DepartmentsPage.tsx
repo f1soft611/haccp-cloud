@@ -8,10 +8,10 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useAuthStore } from '../../../shared/store/authStore';
 import {
   createDepartment,
@@ -51,7 +51,11 @@ export function DepartmentsPage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h4">{APP_LABELS.pageTitle.departments}</Typography>
+      <PageHeader
+        groupLabel={APP_LABELS.menu.dashboardGroup}
+        title={APP_LABELS.pageTitle.departments}
+        description="부서 정보를 등록하고 수정합니다."
+      />
       <Paper sx={{ p: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
           <TextField

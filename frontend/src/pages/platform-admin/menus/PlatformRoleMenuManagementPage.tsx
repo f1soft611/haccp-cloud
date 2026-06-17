@@ -5,11 +5,11 @@ import {
   FormControlLabel,
   Paper,
   Stack,
-  Typography,
 } from '@mui/material';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { APP_LABELS } from '../../../shared/constants/labels';
+import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { listPlatformMenus } from '../../../services/platform/platformMenuService';
 import { listPlatformRoles } from '../../../services/platform/platformRoleService';
 import {
@@ -68,9 +68,11 @@ export function PlatformRoleMenuManagementPage() {
 
   return (
     <Stack spacing={2} data-testid="platform-role-menu-management-page">
-      <Typography variant="h4">
-        {APP_LABELS.pageTitle.platformRoleMenuManagement}
-      </Typography>
+      <PageHeader
+        groupLabel={APP_LABELS.menu.systemGroup}
+        title={APP_LABELS.pageTitle.platformRoleMenuManagement}
+        description="권한별 메뉴 노출 관계를 설정합니다."
+      />
 
       {saveMutation.isSuccess ? (
         <Alert severity="success">권한별 메뉴 매핑이 저장되었습니다.</Alert>

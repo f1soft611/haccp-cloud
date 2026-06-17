@@ -3,6 +3,7 @@ package egovframework.let.uss.auth.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.annotation.Resource;
 
@@ -137,7 +138,7 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
      * 메뉴 ID 생성
      */
     private String generateMenuId() {
-        return "MENU" + String.format("%03d", System.currentTimeMillis() % 1000);
+        return "MENU_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
     }
 
     /**

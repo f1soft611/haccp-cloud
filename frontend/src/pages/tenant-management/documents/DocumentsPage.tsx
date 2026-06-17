@@ -9,10 +9,10 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import {
   createDocument,
   listDocuments,
@@ -60,7 +60,11 @@ export function DocumentsPage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h4">{APP_LABELS.pageTitle.documents}</Typography>
+      <PageHeader
+        groupLabel={APP_LABELS.menu.dashboardGroup}
+        title={APP_LABELS.pageTitle.documents}
+        description="문서 템플릿을 조회하고 관리합니다."
+      />
       <Paper sx={{ p: 2 }}>
         <Stack spacing={1}>
           <TextField
