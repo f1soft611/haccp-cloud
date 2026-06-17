@@ -92,6 +92,7 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
     <Box
       ref={rootRef}
       data-testid="work-menu-bar"
+      data-nav-variant="segmented"
       sx={{
         py: 0,
         borderBottom: '1px solid',
@@ -105,12 +106,14 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
         {visibleGroups.length > 0 ? (
           <Stack
             direction="row"
-            spacing={0}
+            spacing={0.75}
             sx={{
               justifyContent: 'flex-start',
               flexWrap: 'wrap',
               position: 'relative',
               zIndex: 2,
+              py: 1,
+              overflowX: 'auto',
             }}
           >
             {visibleGroups.map((group) => {
@@ -122,23 +125,24 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                   variant="text"
                   color="primary"
                   onClick={() => handleGroupClick(group.key)}
+                  aria-pressed={isSelected}
                   sx={{
-                    minHeight: 56,
-                    fontWeight: isSelected ? 800 : 600,
-                    borderRadius: 0,
-                    px: 2.5,
-                    py: 1.75,
+                    minHeight: 36,
+                    fontWeight: isSelected ? 700 : 500,
+                    borderRadius: 1.5,
+                    px: 2,
+                    py: 0.75,
+                    fontSize: '0.875rem',
+                    whiteSpace: 'nowrap',
                     color: isSelected ? 'primary.main' : 'text.secondary',
-                    bgcolor: isSelected ? 'common.white' : 'transparent',
-                    borderBottom: '3px solid',
-                    borderBottomColor: isSelected
-                      ? 'primary.main'
-                      : 'transparent',
+                    bgcolor: isSelected ? 'rgba(31,79,143,0.09)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: isSelected ? 'rgba(31,79,143,0.28)' : 'transparent',
                     transition:
-                      'background-color 180ms ease, color 180ms ease, border-color 180ms ease',
+                      'background-color 150ms ease, color 150ms ease, border-color 150ms ease',
                     '&:hover': {
-                      bgcolor: '#F0F7FF',
-                      borderBottomColor: 'primary.light',
+                      bgcolor: 'rgba(31,79,143,0.07)',
+                      borderColor: 'rgba(31,79,143,0.18)',
                     },
                   }}
                 >
@@ -160,8 +164,7 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              bgcolor: 'rgba(15,23,42,0.18)',
-              backdropFilter: 'blur(2px)',
+              bgcolor: 'rgba(15,23,42,0.08)',
               zIndex: 24,
             }}
           />
@@ -179,19 +182,11 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
               sx={{
                 width: '100%',
                 bgcolor: 'common.white',
-                borderTop: '1px solid',
                 borderBottom: '1px solid',
                 borderColor: 'divider',
-                boxShadow: '0 14px 26px rgba(15,23,42,0.16)',
+                boxShadow: '0 8px 24px rgba(15,23,42,0.09)',
               }}
             >
-              <Box
-                sx={{
-                  height: 4,
-                  background:
-                    'linear-gradient(90deg, rgba(31,79,143,0.95) 0%, rgba(44,110,187,0.95) 100%)',
-                }}
-              />
               <Container>
                 <Box
                   sx={{
@@ -215,28 +210,23 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                         variant="text"
                         sx={{
                           px: 2,
-                          py: 2.5,
+                          py: 2,
                           borderRadius: 0,
                           color: 'text.primary',
                           borderRight: { xs: 'none', md: '1px solid' },
                           borderBottom: '1px solid',
-                          borderColor: 'rgba(15,23,42,0.14)',
+                          borderColor: 'rgba(15,23,42,0.10)',
                           justifyContent: 'flex-start',
                           textAlign: 'left',
                           alignItems: 'flex-start',
-                          borderLeft: '3px solid',
-                          borderLeftColor: 'transparent',
                           transition:
-                            'transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, color 180ms ease, border-color 180ms ease',
+                            'background-color 150ms ease, color 150ms ease',
                           '&.active': {
                             bgcolor: '#EEF4FB',
                             color: 'primary.main',
-                            borderLeftColor: 'primary.main',
                           },
                           '&:hover': {
                             bgcolor: '#EEF4FB',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 8px 20px rgba(15,23,42,0.10)',
                           },
                         }}
                       >
@@ -269,7 +259,7 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                             spacing={0.7}
                             sx={{ alignItems: 'flex-start' }}
                           >
-                            <Typography variant="subtitle1" fontWeight={800}>
+                            <Typography variant="subtitle1" fontWeight={700}>
                               {item.label}
                             </Typography>
                             {item.description ? (
