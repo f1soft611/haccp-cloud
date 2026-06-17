@@ -25,7 +25,7 @@ describe('FormDialog', () => {
     renderDialog();
 
     expect(
-      screen.getByRole('heading', { name: '메뉴 수정' }),
+      screen.getByRole('heading', { name: /메뉴 수정/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByText('등록과 수정에서 함께 쓰는 공통 모달'),

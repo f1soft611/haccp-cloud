@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { apiClient } from '../api/apiClient';
 import type { OnboardingStatus, UserRole } from '../../shared/store/authStore';
 
@@ -38,6 +39,30 @@ type BackendLoginEnvelope = {
   onboardingStatus?: OnboardingStatus;
 };
 
+function resolveAuthUrl(path: string): string {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  if (!configuredBaseUrl) {
+    return path;
+  }
+
+  const trimmedBaseUrl = configuredBaseUrl.replace(/\/+$/, '');
+
+  try {
+    return new URL(path, `${trimmedBaseUrl}/`).toString();
+  } catch {
+    return path;
+  }
+}
+
+async function postAuth<T>(path: string, body: unknown) {
+  if (import.meta.env.MODE === 'test' || !import.meta.env.VITE_API_BASE_URL) {
+    return apiClient.post<T>(path, body);
+  }
+
+  return axios.post<T>(resolveAuthUrl(path), body);
+}
+
 function resolveRole(userId: string, groupNm?: string): UserRole {
   if (groupNm === 'ROLE_ADMIN') {
     return 'PLATFORM_ADMIN';
@@ -73,7 +98,7 @@ function normalizeLoginResponse(
 }
 
 export async function login(request: LoginRequest): Promise<LoginResponse> {
-  const { data } = await apiClient.post<LoginResponse | BackendLoginEnvelope>(
+  const { data } = await postAuth<LoginResponse | BackendLoginEnvelope>(
     '/auth/login-jwt',
     {
       id: request.userId,
@@ -93,7 +118,7 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
 export async function loginPlatformAdmin(
   request: PlatformAdminLoginRequest,
 ): Promise<LoginResponse> {
-  const { data } = await apiClient.post<LoginResponse | BackendLoginEnvelope>(
+  const { data } = await postAuth<LoginResponse | BackendLoginEnvelope>(
     '/auth/login-jwt/admin',
     {
       id: request.userId,

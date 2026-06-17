@@ -27,11 +27,21 @@
 it('shows only PLATFORM_ADMIN groups and hides unauthorized menu links', async () => {
   renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
-  expect(screen.getByRole('button', { name: APP_LABELS.menu.systemGroup })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }));
+  expect(
+    screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+  ).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+  );
 
-  expect(await screen.findByRole('link', { name: APP_LABELS.menu.platformMenuManagement })).toBeInTheDocument();
-  expect(screen.queryByRole('link', { name: APP_LABELS.menu.users })).not.toBeInTheDocument();
+  expect(
+    await screen.findByRole('link', {
+      name: APP_LABELS.menu.platformMenuManagement,
+    }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole('link', { name: APP_LABELS.menu.users }),
+  ).not.toBeInTheDocument();
 });
 ```
 
@@ -86,8 +96,13 @@ git commit -m "test: lock role-based menu visibility behavior"
 세그먼트 네비 컨테이너와 접근성 속성(선택 상태)을 검증하는 테스트를 추가한다.
 
 ```tsx
-expect(screen.getByTestId('work-menu-bar')).toHaveAttribute('data-nav-variant', 'segmented');
-expect(screen.getByRole('button', { name: APP_LABELS.menu.systemGroup })).toHaveAttribute('aria-pressed', 'false');
+expect(screen.getByTestId('work-menu-bar')).toHaveAttribute(
+  'data-nav-variant',
+  'segmented',
+);
+expect(
+  screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+).toHaveAttribute('aria-pressed', 'false');
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -151,7 +166,9 @@ it('keeps keyboard navigation on group buttons with visible focus semantics', as
   renderLayoutWithRole('TENANT_ADMIN', '/dashboard');
 
   await userEvent.tab();
-  expect(screen.getByRole('button', { name: APP_LABELS.menu.dashboard })).toHaveFocus();
+  expect(
+    screen.getByRole('button', { name: APP_LABELS.menu.dashboard }),
+  ).toHaveFocus();
 });
 ```
 
@@ -166,7 +183,9 @@ Expected: FAIL before focus semantics and path correction are implemented.
 
 ```tsx
 const allowedPaths = menuGroups.flatMap((group) =>
-  group.items.filter((item) => item.roles.includes(role)).map((item) => item.path),
+  group.items
+    .filter((item) => item.roles.includes(role))
+    .map((item) => item.path),
 );
 
 useEffect(() => {
@@ -174,7 +193,9 @@ useEffect(() => {
     return;
   }
 
-  const isAllowed = allowedPaths.some((path) => location.pathname.startsWith(path));
+  const isAllowed = allowedPaths.some((path) =>
+    location.pathname.startsWith(path),
+  );
   if (!isAllowed) {
     navigate(allowedPaths[0], { replace: true });
   }
@@ -230,11 +251,19 @@ Expected: FAIL if new hierarchy assertions are not yet reflected.
 ```tsx
 <Box sx={{ pl: 1.5, borderLeft: '3px solid', borderColor: 'primary.main' }}>
   <Stack direction="row" spacing={0.5} sx={{ mb: 0.5 }}>
-    <Typography variant="caption" color="text.secondary">{groupLabel}</Typography>
-    <Typography variant="caption" color="text.disabled">/</Typography>
-    <Typography variant="caption" color="text.secondary">{title}</Typography>
+    <Typography variant="caption" color="text.secondary">
+      {groupLabel}
+    </Typography>
+    <Typography variant="caption" color="text.disabled">
+      /
+    </Typography>
+    <Typography variant="caption" color="text.secondary">
+      {title}
+    </Typography>
   </Stack>
-  <Typography component="h1" variant="h5" fontWeight={700}>{title}</Typography>
+  <Typography component="h1" variant="h5" fontWeight={700}>
+    {title}
+  </Typography>
 </Box>
 ```
 

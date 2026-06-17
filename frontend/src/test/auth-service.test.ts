@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { login, loginPlatformAdmin } from '../services/auth/authService';
 import { apiClient } from '../services/api/apiClient';
 
-vi.mock('../services/apiClient', () => ({
+vi.mock('../services/api/apiClient', () => ({
   apiClient: {
     post: vi.fn(),
   },
