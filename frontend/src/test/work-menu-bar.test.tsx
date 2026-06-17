@@ -136,4 +136,22 @@ describe('WorkMenuBar role-based visibility', () => {
       }),
     ).not.toBeInTheDocument();
   });
+
+  it('work-menu-bar has segmented nav variant marker', () => {
+    renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
+
+    expect(screen.getByTestId('work-menu-bar')).toHaveAttribute(
+      'data-nav-variant',
+      'segmented',
+    );
+  });
+
+  it('group buttons expose aria-pressed state', () => {
+    renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
+
+    const systemBtn = screen.getByRole('button', {
+      name: APP_LABELS.menu.systemGroup,
+    });
+    expect(systemBtn).toHaveAttribute('aria-pressed');
+  });
 });
