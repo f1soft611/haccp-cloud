@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiClient } from '../services/apiClient';
+import { apiClient } from '../services/api/apiClient';
 import {
   getDashboardMetrics,
   getPlatformAdminDashboardKpis,
@@ -12,9 +12,9 @@ import {
   type PlatformAdminCcpDocuments,
   type PlatformAdminTenantList,
   type TenantCodeIssuanceSummary,
-} from '../services/dashboardService';
+} from '../services/common/dashboardService';
 
-vi.mock('../services/apiClient', () => ({
+vi.mock('../services/api/apiClient', () => ({
   apiClient: {
     get: vi.fn(),
   },

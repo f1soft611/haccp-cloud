@@ -19,9 +19,9 @@ import type {
   PlatformAdminDashboardKpis,
   PlatformAdminTenantList,
   TenantCodeIssuanceSummary,
-} from '../../../services/dashboardService';
+} from '../../../services/common/dashboardService';
 import type { UserRole } from '../../../shared/store/authStore';
-import { APP_LABELS, getRoleLabel } from '../../../shared/ui/labels';
+import { APP_LABELS, getRoleLabel } from '../../../shared/constants/labels';
 
 const MAX_ROWS = 5;
 

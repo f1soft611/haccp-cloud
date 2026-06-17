@@ -17,12 +17,12 @@ import { NavLink } from 'react-router-dom';
 import {
   listDocuments,
   type DocumentTemplate,
-} from '../services/documentsService';
+} from '../services/common/documentsService';
 import { getDashboardConfigByRole } from './dashboard/roleDashboardConfig';
 import { PlatformAdminDashboard } from './dashboard/platformAdmin/PlatformAdminDashboard';
 import { useAuthStore } from '../shared/store/authStore';
-import { getDashboardMetrics } from '../services/dashboardService';
-import { APP_LABELS, getRoleLabel } from '../shared/ui/labels';
+import { getDashboardMetrics } from '../services/common/dashboardService';
+import { APP_LABELS, getRoleLabel } from '../shared/constants/labels';
 
 type PortalSectionKey = 'selected' | 'ha' | 'others';
 
