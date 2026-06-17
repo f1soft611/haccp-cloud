@@ -14,8 +14,8 @@ export function PageHeader({
   return (
     <Box
       sx={{
-        pl: 2,
-        borderLeft: '4px solid',
+        pl: 1.5,
+        borderLeft: '3px solid',
         borderColor: 'primary.main',
       }}
     >
@@ -23,14 +23,14 @@ export function PageHeader({
         <Stack
           direction="row"
           alignItems="center"
-          spacing={0.4}
-          sx={{ mb: 0.35 }}
+          spacing={0.5}
+          sx={{ mb: 0.4 }}
         >
           <Typography variant="caption" color="text.secondary">
             {groupLabel}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            ›
+          <Typography variant="caption" color="text.disabled">
+            /
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {title}
@@ -42,7 +42,7 @@ export function PageHeader({
         component="h1"
         variant="h5"
         fontWeight={700}
-        sx={{ lineHeight: 1.15 }}
+        sx={{ lineHeight: 1.2 }}
       >
         {title}
       </Typography>
