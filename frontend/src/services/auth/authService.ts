@@ -66,11 +66,17 @@ async function postAuth<T>(path: string, body: unknown) {
 function resolveRole(userId: string, groupNm?: string): UserRole {
   const normalizedGroup = (groupNm ?? '').trim().toUpperCase();
 
-  if (normalizedGroup === 'ROLE_ADMIN' || normalizedGroup === 'PLATFORM_ADMIN') {
+  if (
+    normalizedGroup === 'ROLE_ADMIN' ||
+    normalizedGroup === 'PLATFORM_ADMIN'
+  ) {
     return 'PLATFORM_ADMIN';
   }
 
-  if (normalizedGroup === 'TENANT_ADMIN' || normalizedGroup === 'ROLE_TENANT_ADMIN') {
+  if (
+    normalizedGroup === 'TENANT_ADMIN' ||
+    normalizedGroup === 'ROLE_TENANT_ADMIN'
+  ) {
     return 'TENANT_ADMIN';
   }
 

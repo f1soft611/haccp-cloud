@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material';
@@ -8,9 +14,8 @@ import { AppLayout } from '../shared/components/layout/AppLayout';
 import { useAuthStore, type UserRole } from '../shared/store/authStore';
 import { APP_LABELS } from '../shared/constants/labels';
 
-const mockListAccessibleMenuPaths = vi.fn<
-  (authorityCode: string) => Promise<string[]>
->();
+const mockListAccessibleMenuPaths =
+  vi.fn<(authorityCode: string) => Promise<string[]>>();
 
 vi.mock('../services/platform/platformUserMenuService', () => ({
   listAccessibleMenuPaths: (authorityCode: string) =>
@@ -23,7 +28,13 @@ const renderLayoutWithRole = (
   accessiblePaths?: string[],
 ) => {
   const defaultPathsByRole: Record<UserRole, string[]> = {
-    PLATFORM_ADMIN: ['/dashboard', '/platform/menus', '/platform/roles'],
+    PLATFORM_ADMIN: [
+      '/dashboard',
+      '/onboarding',
+      '/platform/menus',
+      '/platform/roles',
+      '/platform/role-menus',
+    ],
     TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
     USER: ['/dashboard', '/documents'],
   };
@@ -139,12 +150,12 @@ describe('WorkMenuBar role-based visibility', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', {
-        name: APP_LABELS.menu.platformRoleManagement,
+        name: APP_LABELS.menu.platformFactoryManagement,
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', {
-        name: APP_LABELS.menu.platformRoleMenuManagement,
+        name: APP_LABELS.menu.platformRoleManagement,
       }),
     ).toBeInTheDocument();
     expect(
@@ -166,7 +177,7 @@ describe('WorkMenuBar role-based visibility', () => {
   });
 
   it('filters platform system menus when accessible menu paths do not include platform pages', async () => {
-    renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard', ['/dashboard']);
+    renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard', ['/users']);
 
     await waitFor(() => {
       expect(

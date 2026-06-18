@@ -7,8 +7,8 @@ vi.mock('../services/platform/platformMenuService', () => ({
   listPlatformMenus: vi.fn(async () => [
     {
       menuId: 'PM-1',
-      menuNm: '테스트 메뉴',
-      menuDc: '테스트 설명',
+      menuNm: '메뉴 관리',
+      menuDc: '플랫폼 메뉴 관리',
       menuUrl: '/test',
       parentMenuId: null,
       menuOrdr: 1,
@@ -33,7 +33,7 @@ describe('PlatformMenuManagementPage', () => {
   it('uses shared FormDialog for menu edit modal', async () => {
     renderPage();
 
-    await screen.findByText('테스트 메뉴');
+    await screen.findByRole('heading', { name: '메뉴 관리' });
 
     const editIcons = await screen.findAllByTestId('EditOutlinedIcon');
     const firstEditButton = editIcons[0]?.closest('button');
@@ -42,7 +42,9 @@ describe('PlatformMenuManagementPage', () => {
 
     fireEvent.click(firstEditButton as HTMLButtonElement);
 
-    expect(await screen.findByTestId('form-dialog-actions')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('form-dialog-actions'),
+    ).toBeInTheDocument();
   });
 
   it('renders add modal actions in order: 추가 then 취소', async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { login, loginPlatformAdmin } from '../services/auth/authService';
 import { apiClient } from '../services/api/apiClient';
+import { toAuthorityCode } from '../shared/auth/authorityCode';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {
@@ -91,5 +92,11 @@ describe('authService', () => {
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
     });
+  });
+
+  it('maps app roles to authority codes for runtime menu lookup', () => {
+    expect(toAuthorityCode('PLATFORM_ADMIN')).toBe('PLATFORM_ADMIN');
+    expect(toAuthorityCode('TENANT_ADMIN')).toBe('TENANT_ADMIN');
+    expect(toAuthorityCode('USER')).toBe('TENANT_USER');
   });
 });

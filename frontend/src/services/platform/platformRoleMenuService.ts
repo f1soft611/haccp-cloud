@@ -11,7 +11,11 @@ function normalizeRoleCode(roleCode: string): string {
 
 function normalizeMenuIds(menuIds: string[]): string[] {
   return Array.from(
-    new Set(menuIds.map((menuId) => menuId.trim()).filter((menuId) => menuId.length > 0)),
+    new Set(
+      menuIds
+        .map((menuId) => menuId.trim())
+        .filter((menuId) => menuId.length > 0),
+    ),
   );
 }
 

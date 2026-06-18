@@ -104,12 +104,16 @@ describe('PlatformAuthorityManagementPage', () => {
     expect(
       await screen.findByRole('checkbox', { name: '대시보드 (/dashboard)' }),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: '저장' }).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole('button', { name: '저장' }).length,
+    ).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: '업체 관리자' }));
 
     await waitFor(() => {
-      expect(getPlatformRoleMenuMappingMock).toHaveBeenCalledWith('TENANT_ADMIN');
+      expect(getPlatformRoleMenuMappingMock).toHaveBeenCalledWith(
+        'TENANT_ADMIN',
+      );
     });
 
     const loginHistoryCheckbox = screen.getByRole('checkbox', {

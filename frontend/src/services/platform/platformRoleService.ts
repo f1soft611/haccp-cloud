@@ -38,7 +38,9 @@ export type UpdatePlatformRoleRequest = {
   active: boolean;
 };
 
-function normalizePlatformRoleItem(item: PlatformRoleApiItem): PlatformRoleItem {
+function normalizePlatformRoleItem(
+  item: PlatformRoleApiItem,
+): PlatformRoleItem {
   const code = item.code ?? item.authorityCode ?? '';
   return {
     id: item.id ?? code,
@@ -52,22 +54,27 @@ function normalizePlatformRoleItem(item: PlatformRoleApiItem): PlatformRoleItem 
 }
 
 export async function listPlatformRoles(): Promise<PlatformRoleItem[]> {
-  const { data } = await apiClient.get<PlatformRoleApiItem[]>('/platform-admin/roles');
+  const { data } = await apiClient.get<PlatformRoleApiItem[]>(
+    '/platform-admin/roles',
+  );
   return data.map(normalizePlatformRoleItem);
 }
 
 export async function createPlatformRole(
   payload: CreatePlatformRoleRequest,
 ): Promise<PlatformRoleItem> {
-  const { data } = await apiClient.post<PlatformRoleApiItem>('/platform-admin/roles', {
-    code: payload.code,
-    name: payload.name,
-    description: payload.description,
-    active: payload.active,
-    authorityCode: payload.code,
-    authorityNm: payload.name,
-    useAt: payload.active ? 'Y' : 'N',
-  });
+  const { data } = await apiClient.post<PlatformRoleApiItem>(
+    '/platform-admin/roles',
+    {
+      code: payload.code,
+      name: payload.name,
+      description: payload.description,
+      active: payload.active,
+      authorityCode: payload.code,
+      authorityNm: payload.name,
+      useAt: payload.active ? 'Y' : 'N',
+    },
+  );
   return normalizePlatformRoleItem(data);
 }
 

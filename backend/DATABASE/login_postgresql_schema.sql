@@ -210,7 +210,8 @@ INSERT INTO tb_authorityinfo (authority_code, authority_nm, authority_level, ten
 VALUES
   ('PLATFORM_ADMIN', 'Platform administrator', 1, 'N'),
   ('TENANT_ADMIN', 'Tenant administrator', 50, 'Y'),
-  ('TENANT_USER', 'Tenant user', 100, 'Y');
+  ('TENANT_USER', 'Tenant user', 100, 'Y')
+ON CONFLICT (authority_code) DO NOTHING;
 
 INSERT INTO tb_permission_type (permission_id, permission_nm, permission_dc, permission_level, sort_ordr, crt_id, upd_id)
 VALUES
@@ -220,15 +221,16 @@ ON CONFLICT (permission_id) DO NOTHING;
 
 INSERT INTO tb_menu_info (menu_id, menu_nm, menu_dc, parent_menu_id, menu_ordr, menu_url, icon_nm, crt_id, upd_id)
 VALUES
+  ('MENU_DASHBOARD', '대시보드', '플랫폼 운영 대시보드', NULL, 0, '/dashboard', 'dashboard', 'SYSTEM', 'SYSTEM'),
   ('MENU_PLATFORM_ROOT', '플랫폼 관리', '플랫폼 초기설정 루트', NULL, 1, '/platform', 'settings', 'SYSTEM', 'SYSTEM'),
-  ('MENU_FACTORY', '업체등록', '업체 등록 및 코드 부여', 'MENU_PLATFORM_ROOT', 10, '/platform/factories', 'factory', 'SYSTEM', 'SYSTEM'),
-  ('MENU_MENU', '메뉴 등록', '플랫폼 메뉴 관리', 'MENU_PLATFORM_ROOT', 20, '/platform/menus', 'menu', 'SYSTEM', 'SYSTEM'),
-  ('MENU_PERMISSION', '권한 등록', '권한 마스터 관리', 'MENU_PLATFORM_ROOT', 30, '/platform/permissions', 'shield', 'SYSTEM', 'SYSTEM'),
-  ('MENU_ROLE_MENU', '권한별 메뉴 등록', '권한별 메뉴 매핑', 'MENU_PLATFORM_ROOT', 40, '/platform/role-menus', 'link', 'SYSTEM', 'SYSTEM')
+  ('MENU_FACTORY', '업체 관리', '업체 등록 및 코드 부여', 'MENU_PLATFORM_ROOT', 10, '/onboarding', 'factory', 'SYSTEM', 'SYSTEM'),
+  ('MENU_MENU', '메뉴 관리', '플랫폼 메뉴 관리', 'MENU_PLATFORM_ROOT', 20, '/platform/menus', 'menu', 'SYSTEM', 'SYSTEM'),
+  ('MENU_PERMISSION', '권한 관리', '권한 마스터 관리', 'MENU_PLATFORM_ROOT', 30, '/platform/roles', 'shield', 'SYSTEM', 'SYSTEM')
 ON CONFLICT (menu_id) DO NOTHING;
 
 INSERT INTO tb_role_menu_permission (authority_code, menu_id, permission_id, crt_id, upd_id)
 VALUES
+  ('PLATFORM_ADMIN', 'MENU_DASHBOARD', 'PERM_WRITE', 'SYSTEM', 'SYSTEM'),
   ('PLATFORM_ADMIN', 'MENU_PLATFORM_ROOT', 'PERM_WRITE', 'SYSTEM', 'SYSTEM'),
   ('PLATFORM_ADMIN', 'MENU_FACTORY', 'PERM_WRITE', 'SYSTEM', 'SYSTEM'),
   ('PLATFORM_ADMIN', 'MENU_MENU', 'PERM_WRITE', 'SYSTEM', 'SYSTEM'),
