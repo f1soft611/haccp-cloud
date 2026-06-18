@@ -14,6 +14,14 @@ import { PlatformAdminLoginPage } from '../../pages/auth/PlatformAdminLoginPage'
 import { LoginHistoryPage } from '../../pages/admin/LoginHistoryPage';
 import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
 import { PlatformAuthorityManagementPage } from '../../pages/platform-admin/authorities/PlatformAuthorityManagementPage';
+import { useAuthStore } from '../../shared/store/authStore';
+
+function DefaultHomeRoute() {
+  const role = useAuthStore((state) => state.role);
+  const defaultPath = role === 'PLATFORM_ADMIN' ? '/platform' : '/dashboard';
+
+  return <Navigate to={defaultPath} replace />;
+}
 
 export function AppRoutes() {
   return (
@@ -27,15 +35,20 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route index element={<DefaultHomeRoute />} />
+        <Route path="/platform" element={<DashboardPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route
-          path="/onboarding"
+          path="/platform/onboarding"
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
               <OnboardingPage />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/onboarding"
+          element={<Navigate to="/platform/onboarding" replace />}
         />
         <Route
           path="/users"

@@ -129,7 +129,7 @@ export function PlatformAdminDashboard() {
         onRetryCcpDocuments={() => {
           void ccpDocumentsQuery.refetch();
         }}
-        onNavigateToOnboarding={() => navigate('/onboarding')}
+        onNavigateToOnboarding={() => navigate('/platform/onboarding')}
         loginUserId={userId}
         loginRole={role}
         onLogout={() => {

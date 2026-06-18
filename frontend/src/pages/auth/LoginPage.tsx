@@ -37,7 +37,9 @@ export function LoginPage() {
         onboardingRequired: result.onboardingRequired,
         onboardingStatus: result.onboardingStatus,
       });
-      navigate('/dashboard', { replace: true });
+      navigate(result.role === 'PLATFORM_ADMIN' ? '/platform' : '/dashboard', {
+        replace: true,
+      });
     } catch {
       setError(APP_LABELS.message.loginFailed);
     }

@@ -281,6 +281,23 @@ describe('App shell', () => {
     expect(screen.queryByTestId('dashboard-user-hub')).not.toBeInTheDocument();
   });
 
+  it('allows PLATFORM_ADMIN to access /platform and renders platform admin dashboard', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'PLATFORM_ADMIN',
+      role: 'PLATFORM_ADMIN',
+      onboardingRequired: false,
+      onboardingStatus: 'COMPLETED',
+    });
+
+    renderAppRoutesAt('/platform');
+
+    expect(
+      await screen.findByTestId('platform-admin-dashboard'),
+    ).toBeInTheDocument();
+  });
+
   it('falls back to onboardingStatus when onboardingRequired is missing', async () => {
     setAuthStoreState({
       isAuthenticated: true,
