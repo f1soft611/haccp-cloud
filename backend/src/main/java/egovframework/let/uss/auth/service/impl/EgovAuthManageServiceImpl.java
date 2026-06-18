@@ -10,6 +10,7 @@ import javax.annotation.Resource;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
 
+import egovframework.let.uss.auth.service.AuthorityInfoVO;
 import egovframework.let.uss.auth.service.EgovAuthManageService;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.PermissionTypeVO;
@@ -85,6 +86,31 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
         String permissionId = generatePermissionId();
         permissionTypeVO.setPermissionId(permissionId);
         return authManageDAO.insertPermissionType(permissionTypeVO);
+    }
+
+    /**
+     * 권한 목록을 조회한다.
+     */
+    @Override
+    public List<AuthorityInfoVO> selectAuthorityList() throws Exception {
+        return authManageDAO.selectAuthorityList();
+    }
+
+    /**
+     * 권한을 등록한다.
+     */
+    @Override
+    public int insertAuthority(AuthorityInfoVO authorityInfoVO) throws Exception {
+        return authManageDAO.insertAuthority(authorityInfoVO);
+    }
+
+    /**
+     * 권한 사용여부를 수정한다.
+     */
+    @Override
+    public int updateAuthorityUseAt(AuthorityInfoVO authorityInfoVO) throws Exception {
+        AuthorityInfoVO.validateUpdatePolicy(authorityInfoVO);
+        return authManageDAO.updateAuthorityUseAt(authorityInfoVO);
     }
 
     /**

@@ -155,6 +155,53 @@
         )
     </insert>
 
+    <select id="selectAuthorityList" resultType="egovframework.let.uss.auth.service.AuthorityInfoVO">
+        SELECT
+            AUTHORITY_CODE as authorityCode,
+            AUTHORITY_NM as authorityNm,
+            AUTHORITY_LEVEL as authorityLevel,
+            TENANT_SCOPED as tenantScoped,
+            USE_AT as useAt,
+            CRT_DT as frstRegistPnttm,
+            CRT_ID as frstRegisterId,
+            UPD_DT as lastUpdtPnttm,
+            UPD_ID as lastUpdusrId
+        FROM tb_authorityinfo
+        ORDER BY AUTHORITY_LEVEL, AUTHORITY_CODE
+    </select>
+
+    <insert id="insertAuthority" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
+        INSERT INTO tb_authorityinfo (
+            AUTHORITY_CODE,
+            AUTHORITY_NM,
+            AUTHORITY_LEVEL,
+            TENANT_SCOPED,
+            USE_AT,
+            CRT_DT,
+            CRT_ID,
+            UPD_DT,
+            UPD_ID
+        ) VALUES (
+            #{authorityCode},
+            #{authorityNm},
+            #{authorityLevel},
+            #{tenantScoped},
+            #{useAt},
+            GETDATE(),
+            #{frstRegisterId},
+            GETDATE(),
+            #{lastUpdusrId}
+        )
+    </insert>
+
+    <update id="updateAuthorityUseAt" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
+        UPDATE tb_authorityinfo SET
+            USE_AT = #{useAt},
+            UPD_DT = GETDATE(),
+            UPD_ID = #{lastUpdusrId}
+        WHERE AUTHORITY_CODE = #{authorityCode}
+    </update>
+
     <!-- ??���?메뉴 권한 목록 조회 -->
     <select id="selectRoleMenuPermissionList" parameterType="egovframework.let.uss.auth.service.RoleMenuPermissionVO" resultType="egovframework.let.uss.auth.service.RoleMenuPermissionVO">
         WITH MenuTree AS (

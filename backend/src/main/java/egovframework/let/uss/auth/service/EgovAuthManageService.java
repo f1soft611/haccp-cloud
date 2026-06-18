@@ -67,6 +67,29 @@ public interface EgovAuthManageService {
     int insertPermissionType(PermissionTypeVO permissionTypeVO) throws Exception;
 
     /**
+     * 권한 목록을 조회한다.
+     * @return List<AuthorityInfoVO> 권한목록
+     * @throws Exception
+     */
+    List<AuthorityInfoVO> selectAuthorityList() throws Exception;
+
+    /**
+     * 권한을 등록한다.
+     * @param authorityInfoVO 권한정보
+     * @return int 등록결과
+     * @throws Exception
+     */
+    int insertAuthority(AuthorityInfoVO authorityInfoVO) throws Exception;
+
+    /**
+     * 권한 사용여부를 수정한다.
+     * @param authorityInfoVO 권한정보
+     * @return int 수정결과
+     * @throws Exception
+     */
+    int updateAuthorityUseAt(AuthorityInfoVO authorityInfoVO) throws Exception;
+
+    /**
      * 역할별 메뉴 권한 목록을 조회한다.
      * @param roleMenuPermissionVO 검색조건
      * @return List<RoleMenuPermissionVO> 역할메뉴권한목록
