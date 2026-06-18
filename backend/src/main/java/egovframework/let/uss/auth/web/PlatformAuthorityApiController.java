@@ -83,6 +83,25 @@ public class PlatformAuthorityApiController {
         return payload;
     }
 
+    @PutMapping("/roles/{code}")
+    public AuthorityInfoVO updateRole(@PathVariable String code, @RequestBody AuthorityInfoVO payload) throws Exception {
+        if (payload == null || !hasText(payload.getAuthorityNm())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "authorityNm 값은 필수입니다.");
+        }
+
+        payload.setAuthorityCode(toUpper(code));
+        payload.setAuthorityNm(payload.getAuthorityNm().trim());
+        payload.setUseAt(hasText(payload.getUseAt()) ? toUpper(payload.getUseAt()) : "Y");
+
+        if (!hasText(payload.getLastUpdusrId())) {
+            payload.setLastUpdusrId(SYSTEM_USER_ID);
+        }
+
+        AuthorityInfoVO.validateUpdatePolicy(payload);
+        authManageService.updateAuthority(payload);
+        return payload;
+    }
+
     @GetMapping("/role-menus")
     public Map<String, Object> getRoleMenus(@RequestParam String roleCode) throws Exception {
         String normalizedRoleCode = toUpper(roleCode);

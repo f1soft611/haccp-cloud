@@ -154,10 +154,10 @@
             authority_level AS authorityLevel,
             tenant_scoped AS tenantScoped,
             use_at AS useAt,
-            crt_dt AS frstRegistPnttm,
-            crt_id AS frstRegisterId,
-            upd_dt AS lastUpdtPnttm,
-            upd_id AS lastUpdusrId
+            created_at AS frstRegistPnttm,
+            'SYSTEM' AS frstRegisterId,
+            updated_at AS lastUpdtPnttm,
+            'SYSTEM' AS lastUpdusrId
         FROM tb_authorityinfo
         ORDER BY authority_level, authority_code
     </select>
@@ -169,10 +169,8 @@
             authority_level,
             tenant_scoped,
             use_at,
-            crt_dt,
-            crt_id,
-            upd_dt,
-            upd_id
+            created_at,
+            updated_at
         ) VALUES (
             #{authorityCode},
             #{authorityNm},
@@ -180,17 +178,22 @@
             #{tenantScoped},
             #{useAt},
             now(),
-            #{frstRegisterId},
-            now(),
-            #{lastUpdusrId}
+            now()
         )
     </insert>
+
+    <update id="updateAuthority" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
+        UPDATE tb_authorityinfo
+        SET authority_nm = #{authorityNm},
+            use_at = #{useAt},
+            updated_at = now()
+        WHERE authority_code = #{authorityCode}
+    </update>
 
     <update id="updateAuthorityUseAt" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
         UPDATE tb_authorityinfo
         SET use_at = #{useAt},
-            upd_dt = now(),
-            upd_id = #{lastUpdusrId}
+            updated_at = now()
         WHERE authority_code = #{authorityCode}
     </update>
 
@@ -283,6 +286,11 @@
         <delete id="deleteRoleMenuPermissionsByAuthority" parameterType="string">
                 DELETE FROM tb_role_menu_permission
                 WHERE authority_code = #{value}
+        </delete>
+
+        <delete id="deleteRoleMenuPermissionsByMenuId" parameterType="string">
+            DELETE FROM tb_role_menu_permission
+            WHERE menu_id = #{value}
         </delete>
 
     <select id="selectUserAccessibleMenus" parameterType="string" resultType="egovframework.let.uss.auth.service.MenuInfoVO">

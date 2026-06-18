@@ -109,6 +109,16 @@ public class AuthManageDAO extends EgovAbstractMapper {
     }
 
     /**
+     * 권한 정보를 수정한다.
+     * @param authorityInfoVO 권한정보
+     * @return int 수정결과
+     * @throws Exception
+     */
+    public int updateAuthority(AuthorityInfoVO authorityInfoVO) throws Exception {
+        return update("authManageDAO.updateAuthority", authorityInfoVO);
+    }
+
+    /**
      * 권한 사용여부를 수정한다.
      * @param authorityInfoVO 권한정보
      * @return int 수정결과
@@ -156,6 +166,16 @@ public class AuthManageDAO extends EgovAbstractMapper {
      */
     public int deleteRoleMenuPermissionsByAuthority(String authorityCode) throws Exception {
         return delete("authManageDAO.deleteRoleMenuPermissionsByAuthority", authorityCode);
+    }
+
+    /**
+     * 메뉴 ID 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
+     * @param menuId 메뉴ID
+     * @return int 삭제결과
+     * @throws Exception
+     */
+    public int deleteRoleMenuPermissionsByMenuId(String menuId) throws Exception {
+        return delete("authManageDAO.deleteRoleMenuPermissionsByMenuId", menuId);
     }
 
     /**

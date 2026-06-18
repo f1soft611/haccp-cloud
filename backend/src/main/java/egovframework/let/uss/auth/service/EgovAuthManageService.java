@@ -82,6 +82,14 @@ public interface EgovAuthManageService {
     int insertAuthority(AuthorityInfoVO authorityInfoVO) throws Exception;
 
     /**
+     * 권한 정보를 수정한다.
+     * @param authorityInfoVO 권한정보
+     * @return int 수정결과
+     * @throws Exception
+     */
+    int updateAuthority(AuthorityInfoVO authorityInfoVO) throws Exception;
+
+    /**
      * 권한 사용여부를 수정한다.
      * @param authorityInfoVO 권한정보
      * @return int 수정결과
@@ -120,6 +128,14 @@ public interface EgovAuthManageService {
      * @throws Exception
      */
     int deleteRoleMenuPermissionsByAuthority(String authorityCode) throws Exception;
+
+    /**
+     * 메뉴 ID 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
+     * @param menuId 메뉴ID
+     * @return int 삭제결과
+     * @throws Exception
+     */
+    int deleteRoleMenuPermissionsByMenuId(String menuId) throws Exception;
 
     /**
      * 사용자별 접근 가능한 메뉴 목록을 조회한다.

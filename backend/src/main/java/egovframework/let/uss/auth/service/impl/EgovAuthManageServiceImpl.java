@@ -67,6 +67,7 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
      */
     @Override
     public int deleteMenu(MenuInfoVO menuInfoVO) throws Exception {
+        deleteRoleMenuPermissionsByMenuId(menuInfoVO.getMenuId());
         return authManageDAO.deleteMenu(menuInfoVO);
     }
 
@@ -102,6 +103,15 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
     @Override
     public int insertAuthority(AuthorityInfoVO authorityInfoVO) throws Exception {
         return authManageDAO.insertAuthority(authorityInfoVO);
+    }
+
+    /**
+     * 권한 정보를 수정한다.
+     */
+    @Override
+    public int updateAuthority(AuthorityInfoVO authorityInfoVO) throws Exception {
+        AuthorityInfoVO.validateUpdatePolicy(authorityInfoVO);
+        return authManageDAO.updateAuthority(authorityInfoVO);
     }
 
     /**
@@ -145,6 +155,14 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
     @Override
     public int deleteRoleMenuPermissionsByAuthority(String authorityCode) throws Exception {
         return authManageDAO.deleteRoleMenuPermissionsByAuthority(authorityCode);
+    }
+
+    /**
+     * 메뉴 ID 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
+     */
+    @Override
+    public int deleteRoleMenuPermissionsByMenuId(String menuId) throws Exception {
+        return authManageDAO.deleteRoleMenuPermissionsByMenuId(menuId);
     }
 
     /**
