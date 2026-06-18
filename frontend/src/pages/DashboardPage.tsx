@@ -11,6 +11,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
@@ -23,6 +24,7 @@ import { PlatformAdminDashboard } from './dashboard/platformAdmin/PlatformAdminD
 import { useAuthStore } from '../shared/store/authStore';
 import { getDashboardMetrics } from '../services/common/dashboardService';
 import { APP_LABELS, getRoleLabel } from '../shared/constants/labels';
+import { dashboardThemeTokens } from '../app/theme';
 
 type PortalSectionKey = 'selected' | 'ha' | 'others';
 
@@ -33,18 +35,18 @@ const PORTAL_SECTIONS: Array<{
 }> = [
   {
     key: 'selected',
-    headerBg: 'linear-gradient(120deg, #0f4f90, #1e69b0)',
-    panelBg: '#f3f8ff',
+    headerBg: `linear-gradient(120deg, ${dashboardThemeTokens.sectionHeaderFrom}, ${dashboardThemeTokens.sectionHeaderTo})`,
+    panelBg: '#f0fdfa',
   },
   {
     key: 'ha',
-    headerBg: 'linear-gradient(120deg, #0d3f78, #16589b)',
-    panelBg: '#f2f7ff',
+    headerBg: 'linear-gradient(120deg, #0f5f59, #0f9a8b)',
+    panelBg: '#ecfeff',
   },
   {
     key: 'others',
-    headerBg: 'linear-gradient(120deg, #2d6aac, #3f8bd4)',
-    panelBg: '#f5f9ff',
+    headerBg: 'linear-gradient(120deg, #14b8a6, #5eead4)',
+    panelBg: '#f0fdfa',
   },
 ];
 
@@ -127,6 +129,7 @@ function KpiCard({
 }
 
 export function DashboardPage() {
+  const theme = useTheme();
   const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
   const userId = useAuthStore((state) => state.userId || '-');
   const role = useAuthStore((state) => state.role);
@@ -388,7 +391,7 @@ export function DashboardPage() {
                         px: 1.25,
                         py: 1,
                         borderRadius: 2,
-                        bgcolor: 'rgba(31,79,143,0.03)',
+                        bgcolor: 'rgba(20,184,166,0.08)',
                         fontWeight: 600,
                       }}
                     >
@@ -406,8 +409,8 @@ export function DashboardPage() {
               p: 2,
               borderRadius: 2.5,
               border: '1px solid',
-              borderColor: 'rgba(31,79,143,0.2)',
-              bgcolor: '#f7fbff',
+              borderColor: 'rgba(20,184,166,0.24)',
+              bgcolor: '#f0fdfa',
             }}
           >
             <Stack
@@ -437,7 +440,7 @@ export function DashboardPage() {
               sx={{
                 mt: 1.4,
                 pt: 1.2,
-                borderTop: '1px solid rgba(31,79,143,0.18)',
+                borderTop: '1px solid rgba(20,184,166,0.18)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -477,7 +480,7 @@ export function DashboardPage() {
                 <Paper
                   sx={{
                     borderRadius: 2.5,
-                    border: '1px solid #d7e4f4',
+                    border: '1px solid rgba(20,184,166,0.18)',
                     overflow: 'hidden',
                     bgcolor: section.panelBg,
                   }}
@@ -527,6 +530,9 @@ export function DashboardPage() {
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           bgcolor: '#fff',
+                          '& fieldset': {
+                            borderColor: 'rgba(20,184,166,0.22)',
+                          },
                         },
                       }}
                     />
@@ -539,8 +545,8 @@ export function DashboardPage() {
                         gridTemplateColumns: '0.7fr 2.2fr 0.9fr 1fr',
                         px: 0.75,
                         py: 0.7,
-                        borderBottom: '1px solid #cbd9ea',
-                        color: 'primary.dark',
+                        borderBottom: '1px solid rgba(20,184,166,0.22)',
+                        color: theme.palette.primary.dark,
                         fontWeight: 700,
                         fontSize: 12,
                       }}
@@ -583,7 +589,7 @@ export function DashboardPage() {
                             <Typography
                               variant="body2"
                               fontWeight={700}
-                              color="primary.dark"
+                              color={theme.palette.primary.dark}
                             >
                               {String(index + 1).padStart(2, '0')}
                             </Typography>
@@ -641,7 +647,7 @@ export function DashboardPage() {
               <Paper
                 key={item.id}
                 variant="outlined"
-                sx={{ px: 1.5, py: 1.25, bgcolor: 'rgba(31,79,143,0.03)' }}
+                sx={{ px: 1.5, py: 1.25, bgcolor: 'rgba(20,184,166,0.08)' }}
               >
                 <Stack
                   direction={{ xs: 'column', sm: 'row' }}

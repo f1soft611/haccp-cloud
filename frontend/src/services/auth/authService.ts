@@ -146,5 +146,11 @@ export async function loginPlatformAdmin(
     },
   );
 
-  return normalizeLoginResponse(data);
+  const normalized = normalizeLoginResponse(data);
+
+  if (normalized.role !== 'PLATFORM_ADMIN') {
+    throw new Error('플랫폼 관리자 계정만 로그인할 수 있습니다.');
+  }
+
+  return normalized;
 }

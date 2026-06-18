@@ -175,10 +175,6 @@ export function filterWorkMenuGroupsByPaths(
   menuGroups: MenuGroup[],
   accessiblePaths: string[],
 ): MenuGroup[] {
-  if (accessiblePaths.length === 0) {
-    return menuGroups;
-  }
-
   const allowedPathSet = new Set(accessiblePaths);
 
   return menuGroups

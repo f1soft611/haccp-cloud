@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { UserRole } from '../../store/authStore';
 import type { MenuGroup, MenuIconName } from './workMenuConfig';
@@ -28,6 +29,8 @@ type WorkMenuBarProps = {
 };
 
 export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
   const [expandedGroupKey, setExpandedGroupKey] = useState<string | null>(null);
   const [overlayTop, setOverlayTop] = useState<number>(0);
@@ -96,8 +99,12 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
       sx={{
         py: 0,
         borderBottom: '1px solid',
-        borderColor: isSelectedGroupExpanded ? 'transparent' : 'divider',
-        bgcolor: 'common.white',
+        borderColor: isSelectedGroupExpanded
+          ? 'transparent'
+          : isDarkMode
+            ? 'rgba(251,191,36,0.22)'
+            : 'divider',
+        bgcolor: isDarkMode ? '#111827' : 'common.white',
         position: 'relative',
         zIndex: 20,
       }}
@@ -138,8 +145,19 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                     whiteSpace: 'nowrap',
                     position: 'relative',
                     zIndex: isSelected && isSelectedGroupExpanded ? 35 : 2,
-                    color: isSelected ? '#0f2942' : 'text.secondary',
-                    bgcolor: isSelected ? '#e7edf5' : 'transparent',
+                    color:
+                      isSelected && isDarkMode
+                        ? '#fef3c7'
+                        : isSelected
+                          ? '#0f5f59'
+                          : isDarkMode
+                            ? 'rgba(248,250,252,0.76)'
+                            : 'text.secondary',
+                    bgcolor: isSelected
+                      ? isDarkMode
+                        ? 'rgba(251,191,36,0.14)'
+                        : '#e7edf5'
+                      : 'transparent',
                     border: '1px solid transparent',
                     transition:
                       'background-color 150ms ease, color 150ms ease, border-color 150ms ease',
@@ -152,14 +170,18 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                             right: 0,
                             bottom: -10,
                             height: 10,
-                            bgcolor: '#f8fafd',
+                            bgcolor: isDarkMode ? '#0f172a' : '#f8fafd',
                           },
                         }
                       : {}),
                     '&:hover': {
                       bgcolor: isSelected
-                        ? '#e7edf5'
-                        : 'rgba(15,23,42,0.05)',
+                        ? isDarkMode
+                          ? 'rgba(251,191,36,0.14)'
+                          : '#ddfbf5'
+                        : isDarkMode
+                          ? 'rgba(251,191,36,0.08)'
+                          : 'rgba(15,23,42,0.05)',
                     },
                   }}
                 >
@@ -181,7 +203,7 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              bgcolor: 'rgba(15,23,42,0.12)',
+              bgcolor: isDarkMode ? 'rgba(2,6,23,0.48)' : 'rgba(15,23,42,0.12)',
               backdropFilter: 'blur(4px)',
               WebkitBackdropFilter: 'blur(4px)',
               zIndex: 24,
@@ -200,10 +222,14 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
             <Box
               sx={{
                 width: '100%',
-                bgcolor: '#f8fafd',
+                bgcolor: isDarkMode ? '#0f172a' : '#f8fafd',
                 borderBottom: '1px solid',
-                borderColor: 'rgba(15,23,42,0.14)',
-                boxShadow: '0 10px 24px rgba(15,23,42,0.10)',
+                borderColor: isDarkMode
+                  ? 'rgba(251,191,36,0.2)'
+                  : 'rgba(15,23,42,0.14)',
+                boxShadow: isDarkMode
+                  ? '0 14px 30px rgba(2,6,23,0.52)'
+                  : '0 10px 24px rgba(15,23,42,0.10)',
               }}
             >
               <Container>
@@ -232,20 +258,26 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                           px: 2.25,
                           py: 2.1,
                           borderRadius: 0,
-                          color: 'text.primary',
+                          color: isDarkMode ? '#f8fafc' : 'text.primary',
                           borderRight: { xs: 'none', md: '1px solid' },
-                          borderColor: 'rgba(15,23,42,0.16)',
+                          borderColor: isDarkMode
+                            ? 'rgba(251,191,36,0.16)'
+                            : 'rgba(15,23,42,0.16)',
                           justifyContent: 'flex-start',
                           textAlign: 'left',
                           alignItems: 'flex-start',
                           transition:
                             'background-color 150ms ease, color 150ms ease',
                           '&.active': {
-                            bgcolor: 'rgba(31,79,143,0.08)',
-                            color: '#0f2942',
+                            bgcolor: isDarkMode
+                              ? 'rgba(251,191,36,0.14)'
+                              : 'rgba(31,79,143,0.08)',
+                            color: isDarkMode ? '#fef3c7' : '#0f5f59',
                           },
                           '&:hover': {
-                            bgcolor: 'rgba(15,23,42,0.05)',
+                            bgcolor: isDarkMode
+                              ? 'rgba(251,191,36,0.08)'
+                              : 'rgba(20,184,166,0.12)',
                           },
                         }}
                       >
@@ -253,15 +285,24 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                           spacing={1}
                           sx={{ alignItems: 'flex-start', width: '100%' }}
                         >
-                          <Stack spacing={0.8} sx={{ alignItems: 'flex-start' }}>
-                            <Stack direction="row" spacing={0.8} alignItems="center">
+                          <Stack
+                            spacing={0.8}
+                            sx={{ alignItems: 'flex-start' }}
+                          >
+                            <Stack
+                              direction="row"
+                              spacing={0.8}
+                              alignItems="center"
+                            >
                               {glyph ? (
                                 <Typography
                                   variant="caption"
                                   fontWeight={700}
                                   sx={{
-                                    color: '#35618f',
-                                    bgcolor: 'rgba(31,79,143,0.08)',
+                                    color: isDarkMode ? '#fbbf24' : '#0f766e',
+                                    bgcolor: isDarkMode
+                                      ? 'rgba(251,191,36,0.12)'
+                                      : 'rgba(20,184,166,0.12)',
                                     borderRadius: '999px',
                                     px: 0.8,
                                     py: 0.15,
@@ -275,11 +316,13 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                                 fontWeight={700}
                                 sx={{
                                   pb: 0.4,
-                                  borderBottom: '1px solid rgba(15,23,42,0.20)',
+                                  borderBottom: isDarkMode
+                                    ? '1px solid rgba(251,191,36,0.24)'
+                                    : '1px solid rgba(15,23,42,0.20)',
                                   minWidth: { xs: '70%', md: '80%' },
                                 }}
                               >
-                              {item.label}
+                                {item.label}
                               </Typography>
                             </Stack>
                             {item.description ? (

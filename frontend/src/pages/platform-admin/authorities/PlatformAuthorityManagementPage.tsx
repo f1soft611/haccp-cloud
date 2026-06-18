@@ -7,6 +7,7 @@ import {
   IconButton,
   MenuItem,
   Paper,
+  Skeleton,
   Select,
   Stack,
   TableBody,
@@ -20,6 +21,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTheme } from '@mui/material/styles';
 import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
 import { FormDialog } from '../../../shared/components/forms/FormDialog';
@@ -42,6 +44,8 @@ import {
 } from '../../../services/platform/platformRoleMenuService';
 
 export function PlatformAuthorityManagementPage() {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useFeedback();
 
@@ -419,11 +423,37 @@ export function PlatformAuthorityManagementPage() {
         </TableHead>
         <TableBody>
           {rolesQuery.isLoading ? (
-            <TableRow>
-              <TableCell colSpan={5} align="center">
-                로딩 중...
-              </TableCell>
-            </TableRow>
+            Array.from({ length: 5 }).map((_, index) => (
+              <TableRow
+                key={`platform-authority-grid-skeleton-${index}`}
+                data-testid={`platform-authority-grid-skeleton-row-${index}`}
+              >
+                <TableCell>
+                  <Skeleton variant="text" width="65%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="70%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="90%" />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={52}
+                    height={24}
+                    sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Skeleton variant="circular" width={26} height={26} />
+                    <Skeleton variant="circular" width={26} height={26} />
+                    <Skeleton variant="circular" width={26} height={26} />
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ))
           ) : filteredRoles.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} align="center">
@@ -436,12 +466,14 @@ export function PlatformAuthorityManagementPage() {
                 key={item.code}
                 hover
                 sx={{
-                  '& .MuiTableCell-root': { backgroundColor: '#ffffff' },
+                  '& .MuiTableCell-root': {
+                    backgroundColor: isDarkMode ? '#111827' : '#ffffff',
+                  },
                   '&:nth-of-type(even) .MuiTableCell-root': {
-                    backgroundColor: '#fbfdff',
+                    backgroundColor: isDarkMode ? '#162032' : '#fbfdff',
                   },
                   '&:hover .MuiTableCell-root': {
-                    backgroundColor: '#f2f7ff',
+                    backgroundColor: isDarkMode ? '#1b2535' : '#f2f7ff',
                   },
                 }}
               >
@@ -462,9 +494,15 @@ export function PlatformAuthorityManagementPage() {
                     onClick={() => handleOpenEditModal(item)}
                     sx={{
                       mr: 0.5,
-                      color: '#1f4f8f',
-                      bgcolor: 'rgba(31, 79, 143, 0.08)',
-                      '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
+                      color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+                      bgcolor: isDarkMode
+                        ? 'rgba(251, 191, 36, 0.12)'
+                        : 'rgba(31, 79, 143, 0.08)',
+                      '&:hover': {
+                        bgcolor: isDarkMode
+                          ? 'rgba(251, 191, 36, 0.2)'
+                          : 'rgba(31, 79, 143, 0.16)',
+                      },
                     }}
                   >
                     <EditOutlinedIcon fontSize="small" />
@@ -475,9 +513,15 @@ export function PlatformAuthorityManagementPage() {
                     onClick={() => handleOpenMappingModal(item)}
                     sx={{
                       mr: 0.5,
-                      color: '#1f4f8f',
-                      bgcolor: 'rgba(31, 79, 143, 0.08)',
-                      '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
+                      color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+                      bgcolor: isDarkMode
+                        ? 'rgba(251, 191, 36, 0.12)'
+                        : 'rgba(31, 79, 143, 0.08)',
+                      '&:hover': {
+                        bgcolor: isDarkMode
+                          ? 'rgba(251, 191, 36, 0.2)'
+                          : 'rgba(31, 79, 143, 0.16)',
+                      },
                     }}
                   >
                     <LinkOutlinedIcon fontSize="small" />
@@ -492,14 +536,28 @@ export function PlatformAuthorityManagementPage() {
                     onClick={() => handleToggleActive(item)}
                     disabled={statusMutation.isPending}
                     sx={{
-                      color: item.active ? '#c53b3b' : '#2e7d32',
+                      color: item.active
+                        ? isDarkMode
+                          ? '#f87171'
+                          : '#c53b3b'
+                        : isDarkMode
+                          ? '#86efac'
+                          : '#2e7d32',
                       bgcolor: item.active
-                        ? 'rgba(197, 59, 59, 0.08)'
-                        : 'rgba(46, 125, 50, 0.08)',
+                        ? isDarkMode
+                          ? 'rgba(248, 113, 113, 0.12)'
+                          : 'rgba(197, 59, 59, 0.08)'
+                        : isDarkMode
+                          ? 'rgba(134, 239, 172, 0.12)'
+                          : 'rgba(46, 125, 50, 0.08)',
                       '&:hover': {
                         bgcolor: item.active
-                          ? 'rgba(197, 59, 59, 0.16)'
-                          : 'rgba(46, 125, 50, 0.16)',
+                          ? isDarkMode
+                            ? 'rgba(248, 113, 113, 0.2)'
+                            : 'rgba(197, 59, 59, 0.16)'
+                          : isDarkMode
+                            ? 'rgba(134, 239, 172, 0.2)'
+                            : 'rgba(46, 125, 50, 0.16)',
                       },
                     }}
                   >
@@ -694,11 +752,38 @@ export function PlatformAuthorityManagementPage() {
           </TableHead>
           <TableBody>
             {menusQuery.isLoading || mappingQuery.isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} align="center">
-                  로딩 중...
-                </TableCell>
-              </TableRow>
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow
+                  key={`platform-role-menu-grid-skeleton-${index}`}
+                  data-testid={`platform-role-menu-grid-skeleton-row-${index}`}
+                >
+                  <TableCell align="center">
+                    <Skeleton
+                      variant="rounded"
+                      width={20}
+                      height={20}
+                      sx={{ mx: 'auto' }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="68%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="88%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="rounded" width="92%" height={24} />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Skeleton
+                      variant="rounded"
+                      width={48}
+                      height={24}
+                      sx={{ mx: 'auto' }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
             ) : (menusQuery.data ?? []).length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} align="center">
@@ -729,8 +814,10 @@ export function PlatformAuthorityManagementPage() {
                           px: 1,
                           py: 0.25,
                           borderRadius: 1,
-                          bgcolor: 'rgba(31, 79, 143, 0.08)',
-                          color: '#184173',
+                          bgcolor: isDarkMode
+                            ? 'rgba(251, 191, 36, 0.14)'
+                            : 'rgba(31, 79, 143, 0.08)',
+                          color: isDarkMode ? '#fef3c7' : '#184173',
                           fontFamily: 'monospace',
                           fontSize: '0.8rem',
                         }}
