@@ -94,6 +94,28 @@ describe('authService', () => {
     });
   });
 
+  it('rejects platform admin login when backend role is not PLATFORM_ADMIN', async () => {
+    const mockedPost = vi.mocked(apiClient.post);
+    mockedPost.mockResolvedValue({
+      data: {
+        resultCode: '200',
+        jToken: 'jwt-token',
+        resultVO: {
+          factoryCode: '000001',
+          id: 'tenant_user',
+          groupNm: 'ROLE_USER',
+        },
+      },
+    });
+
+    await expect(
+      loginPlatformAdmin({
+        userId: 'tenant_user',
+        password: 'Passw0rd!',
+      }),
+    ).rejects.toThrow('플랫폼 관리자 계정만 로그인할 수 있습니다.');
+  });
+
   it('maps app roles to authority codes for runtime menu lookup', () => {
     expect(toAuthorityCode('PLATFORM_ADMIN')).toBe('PLATFORM_ADMIN');
     expect(toAuthorityCode('TENANT_ADMIN')).toBe('TENANT_ADMIN');

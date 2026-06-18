@@ -61,14 +61,17 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const status = error.response?.status;
+    const requestUrl = error.config?.url ?? '';
+    const isAuthEndpoint =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/refresh');
     const originalRequest = error.config as RetryableRequestConfig | undefined;
 
-    if (status === 401 && originalRequest && !originalRequest._retry) {
-      const requestUrl = originalRequest.url ?? '';
-      const isAuthEndpoint =
-        requestUrl.includes('/auth/login') ||
-        requestUrl.includes('/auth/refresh');
+    if (status === 401 && isAuthEndpoint) {
+      return Promise.reject(error);
+    }
 
+    if (status === 401 && originalRequest && !originalRequest._retry) {
       if (!isAuthEndpoint) {
         originalRequest._retry = true;
 
@@ -95,8 +98,6 @@ apiClient.interceptors.response.use(
         } else {
           useAuthStore.getState().logout();
         }
-      } else {
-        useAuthStore.getState().logout();
       }
     } else if (status === 401) {
       useAuthStore.getState().logout();

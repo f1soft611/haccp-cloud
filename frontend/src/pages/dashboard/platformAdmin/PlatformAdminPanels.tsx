@@ -6,6 +6,7 @@ import {
   Grid,
   LinearProgress,
   Paper,
+  Skeleton,
   Stack,
   Table,
   TableBody,
@@ -14,6 +15,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import type {
   PlatformAdminCcpDocuments,
   PlatformAdminDashboardKpis,
@@ -38,6 +40,7 @@ type PlatformAdminPanelsProps = {
   loginUserId: string;
   loginRole: UserRole;
   onLogout: () => void;
+  isLoading?: boolean;
 };
 
 type KpiCardProps = {
@@ -146,7 +149,10 @@ export function PlatformAdminPanels({
   loginUserId,
   loginRole,
   onLogout,
+  isLoading = false,
 }: PlatformAdminPanelsProps) {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const hasKpiError = kpis.hasError === true;
   const hasTenantCodeIssuanceError = tenantCodeIssuance.hasError === true;
   const hasTenantListError = tenantList.hasError === true;
@@ -184,9 +190,10 @@ export function PlatformAdminPanels({
               p: 1.2,
               borderRadius: 2,
               border: '1px solid',
-              borderColor: 'divider',
+              borderColor: isDarkMode ? 'rgba(251, 191, 36, 0.32)' : 'divider',
               minWidth: { xs: '100%', md: 280 },
-              bgcolor: 'common.white',
+              bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.68)' : 'common.white',
+              color: isDarkMode ? '#f8fafc' : 'text.primary',
             }}
           >
             <Typography variant="caption" color="text.secondary">
@@ -205,261 +212,312 @@ export function PlatformAdminPanels({
         </Box>
       </Box>
 
-      {/* KPI 카드 */}
-      {hasKpiError ? (
-        <Alert
-          severity="warning"
-          action={
-            <Button color="inherit" size="small" onClick={onRetryKpis}>
-              {APP_LABELS.action.retry}
-            </Button>
-          }
-        >
-          핵심 지표 데이터를 불러오지 못했습니다.
-        </Alert>
+      {/* 데이터 영역: 로딩 중이면 스켈레톤, 완료 후 실제 데이터 */}
+      {isLoading ? (
+        <Stack spacing={1.5} data-testid="platform-admin-dashboard-skeleton">
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton
+                key={`platform-admin-kpi-skeleton-${index}`}
+                variant="rounded"
+                height={100}
+                sx={{ flex: 1 }}
+              />
+            ))}
+          </Stack>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton
+                key={`platform-admin-section-skeleton-${index}`}
+                variant="rounded"
+                height={220}
+                sx={{ flex: 1 }}
+              />
+            ))}
+          </Stack>
+        </Stack>
       ) : (
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-            <KpiCard
-              title={APP_LABELS.dashboard.platformAdmin.kpi.activeTenants}
-              value={String(kpis.activeTenants)}
-              secondary={`${APP_LABELS.dashboard.platformAdmin.kpi.newTenantsLast7Days}: ${kpis.newTenantsLast7Days}`}
-              accentColor="#1976d2"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-            <KpiCard
-              title={APP_LABELS.dashboard.platformAdmin.kpi.newTenantsLast7Days}
-              value={String(kpis.newTenantsLast7Days)}
-              secondary={`${APP_LABELS.dashboard.platformAdmin.summary.totalTenants}: ${tenantList.summary.total}`}
-              accentColor="#2e7d32"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-            <KpiCard
-              title={
-                APP_LABELS.dashboard.platformAdmin.kpi.ccpDocCompletionRate
+        <>
+          {/* KPI 카드 */}
+          {hasKpiError ? (
+            <Alert
+              severity="warning"
+              action={
+                <Button color="inherit" size="small" onClick={onRetryKpis}>
+                  {APP_LABELS.action.retry}
+                </Button>
               }
-              value={`${kpis.ccpDocCompletionRate}%`}
-              secondary={`${APP_LABELS.dashboard.platformAdmin.kpi.tenantsWithoutCcpDocs}: ${kpis.tenantsWithoutCcpDocs}`}
-              accentColor="#ed6c02"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-            <KpiCard
-              title={
-                APP_LABELS.dashboard.platformAdmin.kpi.tenantsWithoutCcpDocs
-              }
-              value={String(kpis.tenantsWithoutCcpDocs)}
-              secondary={`${APP_LABELS.dashboard.platformAdmin.summary.completionRate}: ${kpis.ccpDocCompletionRate}%`}
-              accentColor={
-                kpis.tenantsWithoutCcpDocs > 0 ? '#d32f2f' : '#757575'
-              }
-            />
-          </Grid>
-        </Grid>
-      )}
+            >
+              핵심 지표 데이터를 불러오지 못했습니다.
+            </Alert>
+          ) : (
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                <KpiCard
+                  title={APP_LABELS.dashboard.platformAdmin.kpi.activeTenants}
+                  value={String(kpis.activeTenants)}
+                  secondary={`${APP_LABELS.dashboard.platformAdmin.kpi.newTenantsLast7Days}: ${kpis.newTenantsLast7Days}`}
+                  accentColor="#1976d2"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                <KpiCard
+                  title={
+                    APP_LABELS.dashboard.platformAdmin.kpi.newTenantsLast7Days
+                  }
+                  value={String(kpis.newTenantsLast7Days)}
+                  secondary={`${APP_LABELS.dashboard.platformAdmin.summary.totalTenants}: ${tenantList.summary.total}`}
+                  accentColor="#2e7d32"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                <KpiCard
+                  title={
+                    APP_LABELS.dashboard.platformAdmin.kpi.ccpDocCompletionRate
+                  }
+                  value={`${kpis.ccpDocCompletionRate}%`}
+                  secondary={`${APP_LABELS.dashboard.platformAdmin.kpi.tenantsWithoutCcpDocs}: ${kpis.tenantsWithoutCcpDocs}`}
+                  accentColor="#ed6c02"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+                <KpiCard
+                  title={
+                    APP_LABELS.dashboard.platformAdmin.kpi.tenantsWithoutCcpDocs
+                  }
+                  value={String(kpis.tenantsWithoutCcpDocs)}
+                  secondary={`${APP_LABELS.dashboard.platformAdmin.summary.completionRate}: ${kpis.ccpDocCompletionRate}%`}
+                  accentColor={
+                    kpis.tenantsWithoutCcpDocs > 0 ? '#d32f2f' : '#757575'
+                  }
+                />
+              </Grid>
+            </Grid>
+          )}
 
-      {/* 섹션 3열 */}
-      <Grid container spacing={2} alignItems="stretch">
-        {/* 업체 코드 발급 현황 */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <SectionCard
-            title={
-              APP_LABELS.dashboard.platformAdmin.sections.tenantCodeIssuance
-            }
-            isError={hasTenantCodeIssuanceError}
-            errorMessage="업체 코드 발급 현황 데이터를 불러오지 못했습니다."
-            onRetry={onRetryTenantCodeIssuance}
-          >
-            <Stack spacing={1}>
-              <Box sx={{ display: 'flex', gap: 3 }}>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {APP_LABELS.dashboard.platformAdmin.summary.totalIssued}
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700}>
-                    {tenantCodeIssuance.totalIssued}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {APP_LABELS.dashboard.platformAdmin.summary.issuedThisWeek}
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700}>
-                    {tenantCodeIssuance.issuedThisWeek}
-                  </Typography>
-                </Box>
-              </Box>
-              {tenantCodeIssuance.recentIssues.length > 0 && (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>
-                        {APP_LABELS.dashboard.platformAdmin.table.tenantCode}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>
-                        {APP_LABELS.dashboard.platformAdmin.table.companyName}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>
-                        {APP_LABELS.dashboard.platformAdmin.table.status}
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {tenantCodeIssuance.recentIssues
-                      .slice(0, MAX_ROWS)
-                      .map((item) => (
-                        <TableRow key={item.tenantCode} hover>
-                          <TableCell
-                            sx={{
-                              fontFamily: 'monospace',
-                              fontSize: '0.75rem',
-                            }}
-                          >
-                            {item.tenantCode}
+          {/* 섹션 3열 */}
+          <Grid container spacing={2} alignItems="stretch">
+            {/* 업체 코드 발급 현황 */}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <SectionCard
+                title={
+                  APP_LABELS.dashboard.platformAdmin.sections.tenantCodeIssuance
+                }
+                isError={hasTenantCodeIssuanceError}
+                errorMessage="업체 코드 발급 현황 데이터를 불러오지 못했습니다."
+                onRetry={onRetryTenantCodeIssuance}
+              >
+                <Stack spacing={1}>
+                  <Box sx={{ display: 'flex', gap: 3 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {APP_LABELS.dashboard.platformAdmin.summary.totalIssued}
+                      </Typography>
+                      <Typography variant="h6" fontWeight={700}>
+                        {tenantCodeIssuance.totalIssued}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {
+                          APP_LABELS.dashboard.platformAdmin.summary
+                            .issuedThisWeek
+                        }
+                      </Typography>
+                      <Typography variant="h6" fontWeight={700}>
+                        {tenantCodeIssuance.issuedThisWeek}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {tenantCodeIssuance.recentIssues.length > 0 && (
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>
+                            {
+                              APP_LABELS.dashboard.platformAdmin.table
+                                .tenantCode
+                            }
                           </TableCell>
-                          <TableCell>{item.companyName}</TableCell>
-                          <TableCell>
-                            <StatusChip status={item.status} />
+                          <TableCell sx={{ fontWeight: 700 }}>
+                            {
+                              APP_LABELS.dashboard.platformAdmin.table
+                                .companyName
+                            }
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>
+                            {APP_LABELS.dashboard.platformAdmin.table.status}
                           </TableCell>
                         </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              )}
-            </Stack>
-          </SectionCard>
-        </Grid>
-
-        {/* 업체 목록 */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <SectionCard
-            title={APP_LABELS.dashboard.platformAdmin.sections.tenantList}
-            isError={hasTenantListError}
-            errorMessage="업체 목록 데이터를 불러오지 못했습니다."
-            onRetry={onRetryTenantList}
-          >
-            <Stack spacing={1}>
-              <Box sx={{ display: 'flex', gap: 3 }}>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {APP_LABELS.dashboard.platformAdmin.summary.totalTenants}
-                  </Typography>
-                  <Typography variant="h6" fontWeight={700}>
-                    {tenantList.summary.total}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {APP_LABELS.dashboard.platformAdmin.summary.activeTenants}
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    fontWeight={700}
-                    color="success.main"
-                  >
-                    {tenantList.summary.active}
-                  </Typography>
-                </Box>
-              </Box>
-              {tenantList.items.length > 0 && (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>
-                        {APP_LABELS.dashboard.platformAdmin.table.companyName}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>
-                        {APP_LABELS.dashboard.platformAdmin.table.adminName}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>
-                        {APP_LABELS.dashboard.platformAdmin.table.status}
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {tenantList.items.slice(0, MAX_ROWS).map((item) => (
-                      <TableRow key={item.tenantCode} hover>
-                        <TableCell>{item.companyName}</TableCell>
-                        <TableCell>{item.adminName}</TableCell>
-                        <TableCell>
-                          <StatusChip status={item.status} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </Stack>
-          </SectionCard>
-        </Grid>
-
-        {/* CCP 문서 현황 */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <SectionCard
-            title={APP_LABELS.dashboard.platformAdmin.sections.ccpDocuments}
-            isError={hasCcpDocumentsError}
-            errorMessage="CCP 문서 현황 데이터를 불러오지 못했습니다."
-            onRetry={onRetryCcpDocuments}
-          >
-            <Stack spacing={1}>
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  {APP_LABELS.dashboard.platformAdmin.summary.completionRate}
-                </Typography>
-                <Typography variant="h6" fontWeight={700}>
-                  {ccpDocuments.overall.completionRate}%
-                </Typography>
-              </Box>
-              {ccpDocuments.items.length > 0 && (
-                <Stack spacing={1.5}>
-                  {ccpDocuments.items.slice(0, MAX_ROWS).map((item) => (
-                    <Box key={item.tenantCode}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          mb: 0.5,
-                        }}
-                      >
-                        <Typography variant="body2">
-                          {item.companyName}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          fontWeight={700}
-                          color={
-                            item.completionRate === 100
-                              ? 'success.main'
-                              : item.completionRate >= 50
-                                ? 'warning.main'
-                                : 'error.main'
-                          }
-                        >
-                          {item.completionRate}%
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={item.completionRate}
-                        color={
-                          item.completionRate === 100
-                            ? 'success'
-                            : item.completionRate >= 50
-                              ? 'warning'
-                              : 'error'
-                        }
-                        sx={{ borderRadius: 1 }}
-                      />
-                    </Box>
-                  ))}
+                      </TableHead>
+                      <TableBody>
+                        {tenantCodeIssuance.recentIssues
+                          .slice(0, MAX_ROWS)
+                          .map((item) => (
+                            <TableRow key={item.tenantCode} hover>
+                              <TableCell
+                                sx={{
+                                  fontFamily: 'monospace',
+                                  fontSize: '0.75rem',
+                                }}
+                              >
+                                {item.tenantCode}
+                              </TableCell>
+                              <TableCell>{item.companyName}</TableCell>
+                              <TableCell>
+                                <StatusChip status={item.status} />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  )}
                 </Stack>
-              )}
-            </Stack>
-          </SectionCard>
-        </Grid>
-      </Grid>
+              </SectionCard>
+            </Grid>
+
+            {/* 업체 목록 */}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <SectionCard
+                title={APP_LABELS.dashboard.platformAdmin.sections.tenantList}
+                isError={hasTenantListError}
+                errorMessage="업체 목록 데이터를 불러오지 못했습니다."
+                onRetry={onRetryTenantList}
+              >
+                <Stack spacing={1}>
+                  <Box sx={{ display: 'flex', gap: 3 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {
+                          APP_LABELS.dashboard.platformAdmin.summary
+                            .totalTenants
+                        }
+                      </Typography>
+                      <Typography variant="h6" fontWeight={700}>
+                        {tenantList.summary.total}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {
+                          APP_LABELS.dashboard.platformAdmin.summary
+                            .activeTenants
+                        }
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        fontWeight={700}
+                        color="success.main"
+                      >
+                        {tenantList.summary.active}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {tenantList.items.length > 0 && (
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>
+                            {
+                              APP_LABELS.dashboard.platformAdmin.table
+                                .companyName
+                            }
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>
+                            {APP_LABELS.dashboard.platformAdmin.table.adminName}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>
+                            {APP_LABELS.dashboard.platformAdmin.table.status}
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {tenantList.items.slice(0, MAX_ROWS).map((item) => (
+                          <TableRow key={item.tenantCode} hover>
+                            <TableCell>{item.companyName}</TableCell>
+                            <TableCell>{item.adminName}</TableCell>
+                            <TableCell>
+                              <StatusChip status={item.status} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </Stack>
+              </SectionCard>
+            </Grid>
+
+            {/* CCP 문서 현황 */}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              <SectionCard
+                title={APP_LABELS.dashboard.platformAdmin.sections.ccpDocuments}
+                isError={hasCcpDocumentsError}
+                errorMessage="CCP 문서 현황 데이터를 불러오지 못했습니다."
+                onRetry={onRetryCcpDocuments}
+              >
+                <Stack spacing={1}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {
+                        APP_LABELS.dashboard.platformAdmin.summary
+                          .completionRate
+                      }
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {ccpDocuments.overall.completionRate}%
+                    </Typography>
+                  </Box>
+                  {ccpDocuments.items.length > 0 && (
+                    <Stack spacing={1.5}>
+                      {ccpDocuments.items.slice(0, MAX_ROWS).map((item) => (
+                        <Box key={item.tenantCode}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              mb: 0.5,
+                            }}
+                          >
+                            <Typography variant="body2">
+                              {item.companyName}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              fontWeight={700}
+                              color={
+                                item.completionRate === 100
+                                  ? 'success.main'
+                                  : item.completionRate >= 50
+                                    ? 'warning.main'
+                                    : 'error.main'
+                              }
+                            >
+                              {item.completionRate}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={item.completionRate}
+                            color={
+                              item.completionRate === 100
+                                ? 'success'
+                                : item.completionRate >= 50
+                                  ? 'warning'
+                                  : 'error'
+                            }
+                            sx={{ borderRadius: 1 }}
+                          />
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+                </Stack>
+              </SectionCard>
+            </Grid>
+          </Grid>
+        </>
+      )}
     </Stack>
   );
 }

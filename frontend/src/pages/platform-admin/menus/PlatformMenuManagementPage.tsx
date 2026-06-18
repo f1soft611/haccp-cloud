@@ -6,6 +6,7 @@ import {
   IconButton,
   MenuItem,
   Paper,
+  Skeleton,
   Select,
   Stack,
   TableBody,
@@ -31,6 +32,7 @@ import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
 import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTheme } from '@mui/material/styles';
 import { useMemo, useState } from 'react';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
@@ -86,6 +88,8 @@ function normalizeParentMenuId(
 }
 
 export function PlatformMenuManagementPage() {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useFeedback();
 
@@ -405,11 +409,50 @@ export function PlatformMenuManagementPage() {
         </TableHead>
         <TableBody>
           {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={8} align="center">
-                로딩 중...
-              </TableCell>
-            </TableRow>
+            Array.from({ length: 5 }).map((_, index) => (
+              <TableRow
+                key={`platform-menu-grid-skeleton-${index}`}
+                data-testid={`platform-menu-grid-skeleton-row-${index}`}
+              >
+                <TableCell align="center">
+                  <Skeleton variant="circular" width={24} height={24} />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="70%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="85%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="rounded" width="90%" height={24} />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton variant="text" width={24} sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="circular"
+                    width={24}
+                    height={24}
+                    sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={48}
+                    height={24}
+                    sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Skeleton variant="circular" width={26} height={26} />
+                    <Skeleton variant="circular" width={26} height={26} />
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ))
           ) : rootMenus.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} align="center">
@@ -421,12 +464,14 @@ export function PlatformMenuManagementPage() {
               <TableRow
                 key={rootMenu.menuId}
                 sx={{
-                  '& .MuiTableCell-root': { backgroundColor: '#ffffff' },
+                  '& .MuiTableCell-root': {
+                    backgroundColor: isDarkMode ? '#111827' : '#ffffff',
+                  },
                   '&:nth-of-type(even) .MuiTableCell-root': {
-                    backgroundColor: '#fbfdff',
+                    backgroundColor: isDarkMode ? '#162032' : '#fbfdff',
                   },
                   '&:hover .MuiTableCell-root': {
-                    backgroundColor: '#f2f7ff',
+                    backgroundColor: isDarkMode ? '#1b2535' : '#f2f7ff',
                   },
                 }}
               >
@@ -454,8 +499,10 @@ export function PlatformMenuManagementPage() {
                       px: 1,
                       py: 0.25,
                       borderRadius: 1,
-                      bgcolor: 'rgba(31, 79, 143, 0.08)',
-                      color: '#184173',
+                      bgcolor: isDarkMode
+                        ? 'rgba(251, 191, 36, 0.14)'
+                        : 'rgba(31, 79, 143, 0.08)',
+                      color: isDarkMode ? '#fef3c7' : '#184173',
                       fontFamily: 'monospace',
                       fontSize: '0.8rem',
                     }}
@@ -475,8 +522,10 @@ export function PlatformMenuManagementPage() {
                       width: 30,
                       height: 30,
                       borderRadius: '50%',
-                      bgcolor: 'rgba(31, 79, 143, 0.10)',
-                      color: '#1f4f8f',
+                      bgcolor: isDarkMode
+                        ? 'rgba(251, 191, 36, 0.14)'
+                        : 'rgba(31, 79, 143, 0.10)',
+                      color: isDarkMode ? '#fbbf24' : '#1f4f8f',
                       fontSize: '0.95rem',
                       fontWeight: 800,
                       lineHeight: 1,
@@ -506,9 +555,15 @@ export function PlatformMenuManagementPage() {
                     onClick={() => handleOpenEditModal(rootMenu)}
                     sx={{
                       mr: 0.25,
-                      color: '#1f4f8f',
-                      bgcolor: 'rgba(31, 79, 143, 0.08)',
-                      '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
+                      color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+                      bgcolor: isDarkMode
+                        ? 'rgba(251, 191, 36, 0.12)'
+                        : 'rgba(31, 79, 143, 0.08)',
+                      '&:hover': {
+                        bgcolor: isDarkMode
+                          ? 'rgba(251, 191, 36, 0.2)'
+                          : 'rgba(31, 79, 143, 0.16)',
+                      },
                     }}
                   >
                     <EditOutlinedIcon fontSize="small" />
@@ -521,9 +576,15 @@ export function PlatformMenuManagementPage() {
                       deleteMutation.isPending
                     }
                     sx={{
-                      color: '#c53b3b',
-                      bgcolor: 'rgba(197, 59, 59, 0.08)',
-                      '&:hover': { bgcolor: 'rgba(197, 59, 59, 0.16)' },
+                      color: isDarkMode ? '#f87171' : '#c53b3b',
+                      bgcolor: isDarkMode
+                        ? 'rgba(248, 113, 113, 0.12)'
+                        : 'rgba(197, 59, 59, 0.08)',
+                      '&:hover': {
+                        bgcolor: isDarkMode
+                          ? 'rgba(248, 113, 113, 0.2)'
+                          : 'rgba(197, 59, 59, 0.16)',
+                      },
                     }}
                   >
                     <DeleteOutlineOutlinedIcon fontSize="small" />
@@ -539,12 +600,16 @@ export function PlatformMenuManagementPage() {
                   <TableRow
                     key={childMenu.menuId}
                     sx={{
-                      '& .MuiTableCell-root': { backgroundColor: '#f8fbff' },
+                      '& .MuiTableCell-root': {
+                        backgroundColor: isDarkMode ? '#0f172a' : '#f8fbff',
+                      },
                       '& .MuiTableCell-root:first-of-type': {
-                        borderLeft: '4px solid #1f4f8f',
+                        borderLeft: isDarkMode
+                          ? '4px solid #fbbf24'
+                          : '4px solid #1f4f8f',
                       },
                       '&:hover .MuiTableCell-root': {
-                        backgroundColor: '#edf4ff',
+                        backgroundColor: isDarkMode ? '#162032' : '#edf4ff',
                       },
                     }}
                   >
@@ -563,7 +628,7 @@ export function PlatformMenuManagementPage() {
                             width: 8,
                             height: 8,
                             borderRadius: '50%',
-                            bgcolor: '#1f4f8f',
+                            bgcolor: isDarkMode ? '#fbbf24' : '#1f4f8f',
                             flexShrink: 0,
                           }}
                         />
@@ -579,8 +644,10 @@ export function PlatformMenuManagementPage() {
                           px: 1,
                           py: 0.25,
                           borderRadius: 1,
-                          bgcolor: 'rgba(31, 79, 143, 0.08)',
-                          color: '#184173',
+                          bgcolor: isDarkMode
+                            ? 'rgba(251, 191, 36, 0.14)'
+                            : 'rgba(31, 79, 143, 0.08)',
+                          color: isDarkMode ? '#fef3c7' : '#184173',
                           fontFamily: 'monospace',
                           fontSize: '0.8rem',
                         }}
@@ -600,8 +667,10 @@ export function PlatformMenuManagementPage() {
                           width: 30,
                           height: 30,
                           borderRadius: '50%',
-                          bgcolor: 'rgba(31, 79, 143, 0.10)',
-                          color: '#1f4f8f',
+                          bgcolor: isDarkMode
+                            ? 'rgba(251, 191, 36, 0.14)'
+                            : 'rgba(31, 79, 143, 0.10)',
+                          color: isDarkMode ? '#fbbf24' : '#1f4f8f',
                           fontSize: '0.95rem',
                           fontWeight: 800,
                           lineHeight: 1,

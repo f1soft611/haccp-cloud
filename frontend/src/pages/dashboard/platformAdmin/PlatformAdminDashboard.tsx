@@ -1,4 +1,4 @@
-import { Alert, CircularProgress, Stack } from '@mui/material';
+import { Alert, Stack } from '@mui/material';
 import { useQueries } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -102,11 +102,7 @@ export function PlatformAdminDashboard() {
 
   return (
     <Stack spacing={2} data-testid="platform-admin-dashboard">
-      {isLoading ? (
-        <CircularProgress size={20} sx={{ alignSelf: 'flex-end' }} />
-      ) : null}
-
-      {isError ? (
+      {isError && !isLoading ? (
         <Alert severity="warning">
           {APP_LABELS.dashboard.platformAdmin.errorMessage}
         </Alert>
@@ -117,6 +113,7 @@ export function PlatformAdminDashboard() {
         tenantCodeIssuance={tenantCodeIssuance}
         tenantList={tenantList}
         ccpDocuments={ccpDocuments}
+        isLoading={isLoading}
         onRetryKpis={() => {
           void kpisQuery.refetch();
         }}

@@ -1,7 +1,7 @@
 import { Button, ThemeProvider } from '@mui/material';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { appTheme } from '../app/theme';
+import { appTheme, darkTheme } from '../app/theme';
 import { ConfirmDialog } from '../shared/components/feedback/ConfirmDialog';
 import { FeedbackProvider } from '../shared/providers/FeedbackProvider';
 import { useFeedback } from '../shared/hooks/useFeedback';
@@ -33,7 +33,7 @@ describe('feedback ui', () => {
     );
 
     expect(
-      screen.getByRole('heading', { name: '삭제 확인' }),
+      screen.getByRole('heading', { name: /삭제 확인/ }),
     ).toBeInTheDocument();
     expect(
       screen.getByText('삭제 후에는 되돌릴 수 없습니다.'),
@@ -58,5 +58,26 @@ describe('feedback ui', () => {
     expect(
       await screen.findByText('저장이 완료되었습니다.'),
     ).toBeInTheDocument();
+  });
+
+  it('renders confirm dialog with dark surface styles in dark theme', () => {
+    render(
+      <ThemeProvider theme={darkTheme}>
+        <ConfirmDialog
+          open
+          title="삭제 확인"
+          description="삭제 후에는 되돌릴 수 없습니다."
+          confirmText="삭제"
+          cancelText="취소"
+          onConfirm={() => {}}
+          onClose={() => {}}
+        />
+      </ThemeProvider>,
+    );
+
+    const dialogPaper = screen.getByRole('dialog');
+    expect(window.getComputedStyle(dialogPaper).backgroundImage).toContain(
+      'rgba(17, 24, 39, 0.98)',
+    );
   });
 });

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import { AppProviders } from '../app/providers/AppProviders';
 import { server } from '../mocks/server';
 import { DashboardPage } from '../pages/DashboardPage';
@@ -259,6 +259,69 @@ describe('Dashboard page', () => {
     expect(
       screen.queryByText(APP_LABELS.dashboard.platformAdmin.errorMessage),
     ).not.toBeInTheDocument();
+  });
+
+  it('shows loading skeleton while platform admin dashboard data is pending', async () => {
+    server.use(
+      http.get('/api/platform-admin/dashboard/kpis', async () => {
+        await delay(300);
+        return HttpResponse.json({
+          activeTenants: 0,
+          newTenantsLast7Days: 0,
+          ccpDocCompletionRate: 0,
+          tenantsWithoutCcpDocs: 0,
+        });
+      }),
+      http.get(
+        '/api/platform-admin/dashboard/tenant-code-issuance',
+        async () => {
+          await delay(300);
+          return HttpResponse.json({
+            totalIssued: 0,
+            issuedThisMonth: 0,
+            issuedThisWeek: 0,
+            recentIssues: [],
+          });
+        },
+      ),
+      http.get('/api/platform-admin/dashboard/tenants', async () => {
+        await delay(300);
+        return HttpResponse.json({
+          summary: {
+            total: 0,
+            active: 0,
+            inactive: 0,
+          },
+          items: [],
+        });
+      }),
+      http.get('/api/platform-admin/dashboard/ccp-documents', async () => {
+        await delay(300);
+        return HttpResponse.json({
+          overall: {
+            completionRate: 0,
+            completedTenants: 0,
+            totalTenants: 0,
+          },
+          items: [],
+        });
+      }),
+    );
+
+    useAuthStore.setState({
+      role: 'PLATFORM_ADMIN',
+      userId: 'platform_admin',
+    });
+
+    render(
+      <AppProviders>
+        <DashboardPage />
+      </AppProviders>,
+    );
+
+    expect(
+      await screen.findByTestId('platform-admin-dashboard-skeleton'),
+    ).toBeInTheDocument();
   });
 
   it('shows section retry button and recovers tenant list after retry', async () => {

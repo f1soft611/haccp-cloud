@@ -41,21 +41,7 @@ export function AppLayout() {
     );
   }, [accessibleMenuQuery.data, isInitialMenuLoading, role]);
 
-  const fallbackAllowedPaths = useMemo(() => {
-    return menuGroups.flatMap((group) =>
-      group.items
-        .filter((item) => item.roles.includes(role))
-        .map((item) => item.path),
-    );
-  }, [menuGroups, role]);
-
-  const allowedPaths = useMemo(
-    () =>
-      accessibleMenuQuery.data && accessibleMenuQuery.data.length > 0
-        ? accessibleMenuQuery.data
-        : fallbackAllowedPaths,
-    [accessibleMenuQuery.data, fallbackAllowedPaths],
-  );
+  const allowedPaths = accessibleMenuQuery.data ?? [];
 
   const fallbackRedirectPath = useMemo(() => {
     if (

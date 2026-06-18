@@ -9,6 +9,7 @@ import {
   Typography,
   type DialogProps,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 export type ConfirmDialogProps = {
   open: boolean;
@@ -35,6 +36,9 @@ export function ConfirmDialog({
   onClose,
   maxWidth = 'xs',
 }: ConfirmDialogProps) {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+
   return (
     <Dialog
       open={open}
@@ -46,7 +50,12 @@ export function ConfirmDialog({
           sx: {
             overflow: 'hidden',
             borderRadius: 3,
-            boxShadow: '0 20px 70px rgba(15, 36, 64, 0.28)',
+            boxShadow: isDarkMode
+              ? '0 20px 70px rgba(2, 6, 23, 0.6)'
+              : '0 20px 70px rgba(15, 36, 64, 0.28)',
+            background: isDarkMode
+              ? 'linear-gradient(180deg, rgba(17,24,39,0.98) 0%, rgba(15,23,42,0.98) 100%)'
+              : 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(240,253,250,0.98) 100%)',
           },
         },
       }}
@@ -60,8 +69,10 @@ export function ConfirmDialog({
               width: 42,
               height: 42,
               borderRadius: '50%',
-              bgcolor: 'rgba(229, 122, 34, 0.12)',
-              color: '#c76b1f',
+              bgcolor: isDarkMode
+                ? 'rgba(251, 191, 36, 0.16)'
+                : 'rgba(229, 122, 34, 0.12)',
+              color: isDarkMode ? '#fbbf24' : '#c76b1f',
               flexShrink: 0,
             }}
           >
@@ -72,7 +83,10 @@ export function ConfirmDialog({
           <Typography
             component="span"
             variant="h6"
-            sx={{ fontWeight: 700, color: '#183b67' }}
+            sx={{
+              fontWeight: 700,
+              color: isDarkMode ? '#f8fafc' : '#115e59',
+            }}
           >
             {title}
           </Typography>
@@ -80,7 +94,14 @@ export function ConfirmDialog({
       </DialogTitle>
 
       <DialogContent sx={{ px: 3, pb: 3 }}>
-        <Typography sx={{ color: 'rgba(24, 59, 103, 0.8)', lineHeight: 1.7 }}>
+        <Typography
+          sx={{
+            color: isDarkMode
+              ? 'rgba(248, 250, 252, 0.8)'
+              : 'rgba(17, 94, 89, 0.8)',
+            lineHeight: 1.7,
+          }}
+        >
           {description}
         </Typography>
       </DialogContent>
@@ -90,8 +111,12 @@ export function ConfirmDialog({
         sx={{
           px: 3,
           py: 2,
-          borderTop: '1px solid rgba(31, 79, 143, 0.14)',
-          bgcolor: 'rgba(244, 248, 251, 0.86)',
+          borderTop: isDarkMode
+            ? '1px solid rgba(251, 191, 36, 0.18)'
+            : '1px solid rgba(20, 184, 166, 0.18)',
+          bgcolor: isDarkMode
+            ? 'rgba(15, 23, 42, 0.92)'
+            : 'rgba(236, 253, 245, 0.9)',
           justifyContent: 'flex-end',
           gap: 1,
         }}

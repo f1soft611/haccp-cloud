@@ -1,12 +1,12 @@
 import { Button, TextField, ThemeProvider } from '@mui/material';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { appTheme } from '../app/theme';
+import { appTheme, darkTheme } from '../app/theme';
 import { FormDialog } from '../shared/components/forms/FormDialog';
 
-function renderDialog() {
+function renderDialog(theme = appTheme) {
   render(
-    <ThemeProvider theme={appTheme}>
+    <ThemeProvider theme={theme}>
       <FormDialog
         open
         title="메뉴 수정"
@@ -40,5 +40,17 @@ describe('FormDialog', () => {
     const footer = screen.getByTestId('form-dialog-actions');
     expect(footer).toBeInTheDocument();
     expect(footer).toHaveStyle({ borderTopStyle: 'solid' });
+  });
+
+  it('uses dark surface styles in dark theme', () => {
+    renderDialog(darkTheme);
+
+    const title = screen.getByRole('heading', { name: /메뉴 수정/ });
+    const footer = screen.getByTestId('form-dialog-actions');
+
+    expect(title).toHaveStyle({ color: 'rgb(248, 250, 252)' });
+    expect(footer).not.toHaveStyle({
+      backgroundColor: 'rgba(244, 248, 251, 0.86)',
+    });
   });
 });

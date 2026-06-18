@@ -1,13 +1,15 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
   waitFor,
   within,
 } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { PlatformAuthorityManagementPage } from '../pages/platform-admin/authorities/PlatformAuthorityManagementPage';
+import { useAuthStore } from '../shared/store/authStore';
 
 const {
   createPlatformRoleMock,
@@ -139,6 +141,126 @@ function renderPage() {
 }
 
 describe('PlatformAuthorityManagementPage', () => {
+  beforeEach(() => {
+    act(() => {
+      useAuthStore.setState({
+        isAuthenticated: false,
+        tenantCode: '',
+        userId: '',
+        role: 'USER',
+        accessToken: '',
+        refreshToken: '',
+        loginHistoryId: undefined,
+        onboardingRequired: false,
+        onboardingStatus: 'COMPLETED',
+      });
+    });
+
+    createPlatformRoleMock.mockClear();
+    updatePlatformRoleMock.mockClear();
+    updatePlatformRoleStatusMock.mockClear();
+    savePlatformRoleMenuMappingMock.mockClear();
+
+    listPlatformRolesMock.mockReset();
+    listPlatformRolesMock.mockImplementation(async () => [
+      {
+        id: 'PR-1',
+        code: 'PLATFORM_ADMIN',
+        name: '플랫폼 관리자',
+        description: '플랫폼 운영 권한',
+        active: true,
+        updatedBy: 'platform_admin',
+        updatedAt: '2026-06-18T09:00:00.000Z',
+      },
+      {
+        id: 'PR-2',
+        code: 'TENANT_ADMIN',
+        name: '업체 관리자',
+        description: '업체 운영 권한',
+        active: true,
+        updatedBy: 'platform_admin',
+        updatedAt: '2026-06-18T09:00:00.000Z',
+      },
+    ]);
+
+    getPlatformRoleMenuMappingMock.mockReset();
+    getPlatformRoleMenuMappingMock.mockImplementation(
+      async (roleCode: string) => ({
+        roleCode,
+        menuIds: roleCode === 'TENANT_ADMIN' ? ['PM-2'] : ['PM-1'],
+      }),
+    );
+  });
+
+  it('uses dark row background for platform admin theme', async () => {
+    act(() => {
+      useAuthStore.setState({
+        isAuthenticated: true,
+        tenantCode: '000001',
+        userId: 'platform_admin',
+        role: 'PLATFORM_ADMIN',
+        accessToken: 'token',
+        refreshToken: 'refresh',
+        loginHistoryId: 1,
+        onboardingRequired: false,
+        onboardingStatus: 'COMPLETED',
+      });
+    });
+
+    renderPage();
+
+    const roleCodeCell = await screen.findByText('PLATFORM_ADMIN');
+    expect(window.getComputedStyle(roleCodeCell).backgroundColor).not.toBe(
+      'rgb(255, 255, 255)',
+    );
+  });
+
+  it('shows authority grid skeleton rows while roles query is loading', async () => {
+    listPlatformRolesMock.mockImplementationOnce(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      return [
+        {
+          id: 'PR-1',
+          code: 'PLATFORM_ADMIN',
+          name: '플랫폼 관리자',
+          description: '플랫폼 운영 권한',
+          active: true,
+          updatedBy: 'platform_admin',
+          updatedAt: '2026-06-18T09:00:00.000Z',
+        },
+      ];
+    });
+
+    renderPage();
+
+    expect(
+      await screen.findByTestId('platform-authority-grid-skeleton-row-0'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows menu mapping skeleton rows while mapping query is loading', async () => {
+    getPlatformRoleMenuMappingMock.mockImplementationOnce(
+      async (roleCode: string) => {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        return {
+          roleCode,
+          menuIds: ['PM-1'],
+        };
+      },
+    );
+
+    renderPage();
+
+    const mappingButtons = await screen.findAllByRole('button', {
+      name: '메뉴 매핑',
+    });
+    fireEvent.click(mappingButtons[0]);
+
+    expect(
+      await screen.findByTestId('platform-role-menu-grid-skeleton-row-0'),
+    ).toBeInTheDocument();
+  });
+
   it('shows backend error message when authority list query fails', async () => {
     listPlatformRolesMock.mockRejectedValue({
       isAxiosError: true,
