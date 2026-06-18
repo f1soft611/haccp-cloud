@@ -238,7 +238,7 @@
             LEFT JOIN tb_permission_type p ON rmp.permission_id = p.permission_id
         WHERE rmp.use_at = 'Y'
         <if test="authorityCode != null and authorityCode != ''">
-            AND rmp.authority_code = #{value}
+            AND rmp.authority_code = #{authorityCode}
         </if>
         <if test="menuId != null and menuId != ''">
             AND rmp.menu_id = #{menuId}
@@ -279,6 +279,11 @@
           AND permission_id = #{permissionId}
         </if>
     </delete>
+
+        <delete id="deleteRoleMenuPermissionsByAuthority" parameterType="string">
+                DELETE FROM tb_role_menu_permission
+                WHERE authority_code = #{value}
+        </delete>
 
     <select id="selectUserAccessibleMenus" parameterType="string" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
         SELECT DISTINCT

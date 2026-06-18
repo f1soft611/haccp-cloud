@@ -291,6 +291,11 @@
         </if>
     </delete>
 
+    <delete id="deleteRoleMenuPermissionsByAuthority" parameterType="string">
+        DELETE FROM tb_role_menu_permission
+        WHERE AUTHORITY_CODE = #{value}
+    </delete>
+
     <!-- ?�용?�별 ?�근 가?�한 메뉴 목록 조회 -->
     <select id="selectUserAccessibleMenus" parameterType="string" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
         SELECT DISTINCT
