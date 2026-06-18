@@ -1,12 +1,37 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material';
+import { vi } from 'vitest';
 import { appTheme } from '../app/theme';
 import { AppLayout } from '../shared/components/layout/AppLayout';
 import { useAuthStore, type UserRole } from '../shared/store/authStore';
 import { APP_LABELS } from '../shared/constants/labels';
 
-const renderLayoutWithRole = (role: UserRole, path: string) => {
+const mockListAccessibleMenuPaths = vi.fn<
+  (authorityCode: string) => Promise<string[]>
+>();
+
+vi.mock('../services/platform/platformUserMenuService', () => ({
+  listAccessibleMenuPaths: (authorityCode: string) =>
+    mockListAccessibleMenuPaths(authorityCode),
+}));
+
+const renderLayoutWithRole = (
+  role: UserRole,
+  path: string,
+  accessiblePaths?: string[],
+) => {
+  const defaultPathsByRole: Record<UserRole, string[]> = {
+    PLATFORM_ADMIN: ['/dashboard', '/platform/menus', '/platform/roles'],
+    TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
+    USER: ['/dashboard', '/documents'],
+  };
+
+  const menuPaths = accessiblePaths ?? defaultPathsByRole[role];
+
+  mockListAccessibleMenuPaths.mockResolvedValue(menuPaths);
+
   act(() => {
     useAuthStore.setState({
       isAuthenticated: true,
@@ -24,44 +49,46 @@ const renderLayoutWithRole = (role: UserRole, path: string) => {
   });
 
   render(
-    <ThemeProvider theme={appTheme}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route
-              path="/dashboard"
-              element={<div data-testid="dashboard-stub">dashboard</div>}
-            />
-            <Route
-              path="/platform/menus"
-              element={
-                <div data-testid="platform-menus-stub">platform menus</div>
-              }
-            />
-            <Route
-              path="/platform/roles"
-              element={
-                <div data-testid="platform-roles-stub">platform roles</div>
-              }
-            />
-            <Route
-              path="/platform/role-menus"
-              element={
-                <div data-testid="platform-role-menus-stub">role menus</div>
-              }
-            />
-            <Route
-              path="/users"
-              element={<div data-testid="users-stub">users</div>}
-            />
-            <Route
-              path="/documents"
-              element={<div data-testid="documents-stub">documents</div>}
-            />
-          </Route>
-        </Routes>
-      </MemoryRouter>
-    </ThemeProvider>,
+    <QueryClientProvider client={new QueryClient()}>
+      <ThemeProvider theme={appTheme}>
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route
+                path="/dashboard"
+                element={<div data-testid="dashboard-stub">dashboard</div>}
+              />
+              <Route
+                path="/platform/menus"
+                element={
+                  <div data-testid="platform-menus-stub">platform menus</div>
+                }
+              />
+              <Route
+                path="/platform/roles"
+                element={
+                  <div data-testid="platform-roles-stub">platform roles</div>
+                }
+              />
+              <Route
+                path="/platform/role-menus"
+                element={
+                  <div data-testid="platform-role-menus-stub">role menus</div>
+                }
+              />
+              <Route
+                path="/users"
+                element={<div data-testid="users-stub">users</div>}
+              />
+              <Route
+                path="/documents"
+                element={<div data-testid="documents-stub">documents</div>}
+              />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </ThemeProvider>
+    </QueryClientProvider>,
   );
 };
 
@@ -80,6 +107,7 @@ const resetAuthStore = () => {
 
 describe('WorkMenuBar role-based visibility', () => {
   afterEach(() => {
+    mockListAccessibleMenuPaths.mockReset();
     resetAuthStore();
   });
 
@@ -135,6 +163,16 @@ describe('WorkMenuBar role-based visibility', () => {
         name: APP_LABELS.menu.platformMenuManagement,
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it('filters platform system menus when accessible menu paths do not include platform pages', async () => {
+    renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard', ['/dashboard']);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('button', { name: APP_LABELS.menu.systemGroup }),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it('work-menu-bar has segmented nav variant marker', () => {

@@ -3,6 +3,22 @@ import { create } from 'zustand';
 export type UserRole = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'USER';
 export type OnboardingStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
+const USER_ROLES = ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'USER'] as const;
+
+function isUserRole(value: unknown): value is UserRole {
+  return (
+    typeof value === 'string' &&
+    USER_ROLES.includes(value as (typeof USER_ROLES)[number])
+  );
+}
+
+function normalizeUserRole(value: unknown): UserRole {
+  if (isUserRole(value)) {
+    return value;
+  }
+  return 'USER';
+}
+
 type AuthState = {
   isAuthenticated: boolean;
   tenantCode: string;
@@ -41,7 +57,12 @@ function loadPersistedState(): Partial<AuthState> {
       return {};
     }
 
-    return JSON.parse(raw) as Partial<AuthState>;
+    const parsed = JSON.parse(raw) as Partial<AuthState>;
+
+    return {
+      ...parsed,
+      role: normalizeUserRole(parsed.role),
+    };
   } catch {
     return {};
   }
@@ -109,7 +130,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       isAuthenticated: true,
       tenantCode,
       userId,
-      role,
+      role: normalizeUserRole(role),
       accessToken: accessToken ?? '',
       refreshToken: refreshToken ?? '',
       loginHistoryId,

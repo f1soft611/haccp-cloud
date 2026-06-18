@@ -157,6 +157,24 @@ export function getWorkMenuGroups(role: UserRole): MenuGroup[] {
   return WORK_MENU_GROUPS_BY_ROLE[role] ?? USER_MENU_GROUPS;
 }
 
+export function filterWorkMenuGroupsByPaths(
+  menuGroups: MenuGroup[],
+  accessiblePaths: string[],
+): MenuGroup[] {
+  if (accessiblePaths.length === 0) {
+    return menuGroups;
+  }
+
+  const allowedPathSet = new Set(accessiblePaths);
+
+  return menuGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => allowedPathSet.has(item.path)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
 export const WORK_MENU_ITEMS: MenuItem[] = [
   {
     label: APP_LABELS.menu.dashboard,

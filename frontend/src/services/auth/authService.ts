@@ -64,8 +64,22 @@ async function postAuth<T>(path: string, body: unknown) {
 }
 
 function resolveRole(userId: string, groupNm?: string): UserRole {
-  if (groupNm === 'ROLE_ADMIN') {
+  const normalizedGroup = (groupNm ?? '').trim().toUpperCase();
+
+  if (normalizedGroup === 'ROLE_ADMIN' || normalizedGroup === 'PLATFORM_ADMIN') {
     return 'PLATFORM_ADMIN';
+  }
+
+  if (normalizedGroup === 'TENANT_ADMIN' || normalizedGroup === 'ROLE_TENANT_ADMIN') {
+    return 'TENANT_ADMIN';
+  }
+
+  if (
+    normalizedGroup === 'TENANT_USER' ||
+    normalizedGroup === 'ROLE_USER' ||
+    normalizedGroup === 'USER'
+  ) {
+    return 'USER';
   }
 
   if (userId.trim().toLowerCase().includes('admin')) {
