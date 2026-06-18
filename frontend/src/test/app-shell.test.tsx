@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  configure,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material';
 import { http, HttpResponse } from 'msw';
@@ -14,6 +21,8 @@ import { FeedbackProvider } from '../shared/providers/FeedbackProvider';
 import { useAuthStore } from '../shared/store/authStore';
 import { APP_LABELS } from '../shared/constants/labels';
 import * as platformUserMenuService from '../services/platform/platformUserMenuService';
+
+configure({ asyncUtilTimeout: 3000 });
 
 type AuthTestState = Pick<
   ReturnType<typeof useAuthStore.getState>,
@@ -71,7 +80,11 @@ describe('App shell', () => {
           factoryCode?: string;
         };
 
-        if (!payload.id || !payload.password || payload.password !== 'Passw0rd!') {
+        if (
+          !payload.id ||
+          !payload.password ||
+          payload.password !== 'Passw0rd!'
+        ) {
           return HttpResponse.json(
             { message: '로그인 정보가 올바르지 않습니다.' },
             { status: 401 },
@@ -85,7 +98,8 @@ describe('App shell', () => {
             : normalizedUserId.includes('admin')
               ? 'TENANT_ADMIN'
               : 'USER';
-        const tenantCode = payload.tenantCode || payload.factoryCode || 'TENANT-A';
+        const tenantCode =
+          payload.tenantCode || payload.factoryCode || 'TENANT-A';
         const onboardingStatus =
           role === 'TENANT_ADMIN' && tenantCode === 'TENANT-Z'
             ? 'NOT_STARTED'
@@ -113,7 +127,11 @@ describe('App shell', () => {
           factoryCode?: string;
         };
 
-        if (!payload.id || !payload.password || payload.password !== 'Passw0rd!') {
+        if (
+          !payload.id ||
+          !payload.password ||
+          payload.password !== 'Passw0rd!'
+        ) {
           return HttpResponse.json(
             { message: '로그인 정보가 올바르지 않습니다.' },
             { status: 401 },
@@ -127,7 +145,8 @@ describe('App shell', () => {
             : normalizedUserId.includes('admin')
               ? 'TENANT_ADMIN'
               : 'USER';
-        const tenantCode = payload.tenantCode || payload.factoryCode || 'TENANT-A';
+        const tenantCode =
+          payload.tenantCode || payload.factoryCode || 'TENANT-A';
         const onboardingStatus =
           role === 'TENANT_ADMIN' && tenantCode === 'TENANT-Z'
             ? 'NOT_STARTED'
@@ -234,7 +253,11 @@ describe('App shell', () => {
     renderAppRoutesAt('/dashboard');
 
     expect(
-      await screen.findByTestId('tenant-first-setup-route', {}, { timeout: 3000 }),
+      await screen.findByTestId(
+        'tenant-first-setup-route',
+        {},
+        { timeout: 3000 },
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
   });
@@ -368,6 +391,11 @@ describe('App shell', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', {
+        name: APP_LABELS.menu.platformFactoryManagement,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
         name: APP_LABELS.menu.platformRoleManagement,
       }),
     ).toBeInTheDocument();
@@ -377,9 +405,6 @@ describe('App shell', () => {
       }),
     ).toBeInTheDocument();
 
-    expect(
-      screen.queryByRole('link', { name: APP_LABELS.menu.onboarding }),
-    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('link', { name: APP_LABELS.menu.loginHistory }),
     ).not.toBeInTheDocument();

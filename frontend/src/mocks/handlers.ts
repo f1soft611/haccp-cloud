@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw';
+import type { AuthorityCode } from '../shared/auth/authorityCode';
 import type { UserRole } from '../shared/store/authStore';
 import type { DepartmentItem } from '../services/common/departmentsService';
 import type {
@@ -241,32 +242,6 @@ let platformMenus: PlatformMenuItem[] = [
   },
 ];
 
-let platformRoles: PlatformRoleItem[] = [
-  {
-    id: 'PR-1',
-    code: 'ROLE_PLATFORM_ADMIN',
-    name: '플랫폼 관리자',
-    description: '플랫폼 설정 및 운영 관리 권한',
-    active: true,
-    updatedBy: 'platform_admin',
-    updatedAt: '2026-06-15T09:00:00.000Z',
-  },
-  {
-    id: 'PR-2',
-    code: 'ROLE_PLATFORM_AUDITOR',
-    name: '플랫폼 감사 담당',
-    description: '조회 및 감사 이력 확인 권한',
-    active: true,
-    updatedBy: 'platform_admin',
-    updatedAt: '2026-06-15T09:30:00.000Z',
-  },
-];
-
-const roleMenuMappings: Record<string, string[]> = {
-  ROLE_PLATFORM_ADMIN: ['PM-1', 'PM-2', 'PM-3', 'PM-4', 'PM-5'],
-  ROLE_PLATFORM_AUDITOR: ['PM-1'],
-};
-
 let users: UserItem[] = [
   {
     id: 'U-1',
@@ -296,6 +271,80 @@ let users: UserItem[] = [
     active: true,
   },
 ];
+
+const accessibleMenuPathsByAuthorityCode: Record<AuthorityCode, string[]> = {
+  PLATFORM_ADMIN: [
+    '/dashboard',
+    '/onboarding',
+    '/platform/menus',
+    '/platform/roles',
+    '/platform/role-menus',
+    '/login-history',
+  ],
+  TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
+  TENANT_USER: ['/dashboard', '/documents'],
+};
+
+let platformRoles: PlatformRoleItem[] = [
+  {
+    id: 'PR-1',
+    code: 'PLATFORM_ADMIN',
+    name: '플랫폼 관리자',
+    description: '플랫폼 설정 및 운영 관리 권한',
+    active: true,
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T09:00:00.000Z',
+  },
+  {
+    id: 'PR-2',
+    code: 'TENANT_ADMIN',
+    name: '업체 관리자',
+    description: '업체 운영 및 사용자 관리 권한',
+    active: true,
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T09:20:00.000Z',
+  },
+  {
+    id: 'PR-3',
+    code: 'TENANT_USER',
+    name: '업체 사용자',
+    description: '일반 업무 처리 권한',
+    active: true,
+    updatedBy: 'platform_admin',
+    updatedAt: '2026-06-15T09:30:00.000Z',
+  },
+];
+
+const roleMenuMappings: Record<AuthorityCode, string[]> = {
+  PLATFORM_ADMIN: [
+    'PM-1',
+    'PM-2',
+    'PM-2-1',
+    'PM-2-2',
+    'PM-2-3',
+    'PM-3',
+    'PM-3-1',
+    'PM-4',
+    'PM-5',
+    'PM-5-1',
+  ],
+  TENANT_ADMIN: ['PM-1', 'PM-2', 'PM-2-1', 'PM-2-2', 'PM-2-3', 'PM-3'],
+  TENANT_USER: ['PM-1', 'PM-3'],
+};
+
+function normalizeAuthorityCode(authorityCode: string): AuthorityCode {
+  const normalized = authorityCode.trim().toUpperCase();
+
+  if (normalized === 'PLATFORM_ADMIN') {
+    return 'PLATFORM_ADMIN';
+  }
+
+  if (normalized === 'TENANT_ADMIN') {
+    return 'TENANT_ADMIN';
+  }
+
+  return 'TENANT_USER';
+}
 
 let departments: DepartmentItem[] = [
   { id: 'D-1', tenantCode: 'TENANT-A', name: '품질관리팀', active: true },
@@ -1417,7 +1466,7 @@ export const handlers = [
     };
 
     platformRoles = [created, ...platformRoles];
-    roleMenuMappings[created.code] = [];
+    roleMenuMappings[normalizeAuthorityCode(created.code)] = [];
     return HttpResponse.json(created, { status: 201 });
   }),
 
@@ -1436,7 +1485,9 @@ export const handlers = [
 
   http.get('/api/platform-admin/role-menus', ({ request }) => {
     const requestUrl = new URL(request.url);
-    const roleCode = requestUrl.searchParams.get('roleCode')?.toUpperCase();
+    const roleCode = normalizeAuthorityCode(
+      requestUrl.searchParams.get('roleCode') ?? '',
+    );
     if (!roleCode) {
       return HttpResponse.json(
         { message: 'roleCode required' },
@@ -1454,7 +1505,7 @@ export const handlers = [
     '/api/platform-admin/role-menus/:roleCode',
     async ({ params, request }) => {
       const payload = (await request.json()) as { menuIds?: string[] };
-      const roleCode = String(params.roleCode).toUpperCase();
+      const roleCode = normalizeAuthorityCode(String(params.roleCode));
       roleMenuMappings[roleCode] = payload.menuIds ?? [];
 
       return HttpResponse.json({
@@ -1463,6 +1514,15 @@ export const handlers = [
       });
     },
   ),
+
+  http.get('/api/admin/user-menus/:authorityCode', ({ params }) => {
+    const authorityCode = normalizeAuthorityCode(String(params.authorityCode));
+    const menuList = accessibleMenuPathsByAuthorityCode[authorityCode].map(
+      (menuUrl) => ({ menuUrl }),
+    );
+
+    return HttpResponse.json({ result: { menuList } });
+  }),
 
   http.get('/api/dashboard', ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);

@@ -36,16 +36,13 @@ export function AppLayout() {
     [accessibleMenuQuery.data, role],
   );
 
-  const fallbackAllowedPaths = useMemo(
-    () => {
-      return menuGroups.flatMap((group) =>
-        group.items
-          .filter((item) => item.roles.includes(role))
-          .map((item) => item.path),
-      );
-    },
-    [menuGroups, role],
-  );
+  const fallbackAllowedPaths = useMemo(() => {
+    return menuGroups.flatMap((group) =>
+      group.items
+        .filter((item) => item.roles.includes(role))
+        .map((item) => item.path),
+    );
+  }, [menuGroups, role]);
 
   const allowedPaths = useMemo(
     () =>
@@ -69,7 +66,12 @@ export function AppLayout() {
     if (!isAllowed) {
       navigate(allowedPaths[0], { replace: true });
     }
-  }, [accessibleMenuQuery.isPending, allowedPaths, location.pathname, navigate]);
+  }, [
+    accessibleMenuQuery.isPending,
+    allowedPaths,
+    location.pathname,
+    navigate,
+  ]);
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

@@ -54,6 +54,13 @@ const PLATFORM_ADMIN_MENU_GROUPS: MenuGroup[] = [
     roles: ['PLATFORM_ADMIN'],
     items: [
       {
+        label: APP_LABELS.menu.platformFactoryManagement,
+        description: '업체 코드 발급과 플랫폼 관리 대상을 운영합니다.',
+        path: '/onboarding',
+        roles: ['PLATFORM_ADMIN'],
+        icon: 'Business',
+      },
+      {
         label: APP_LABELS.menu.platformMenuManagement,
         description: '시스템 메뉴를 등록하고 정렬 순서를 관리합니다.',
         path: '/platform/menus',
@@ -62,10 +69,17 @@ const PLATFORM_ADMIN_MENU_GROUPS: MenuGroup[] = [
       },
       {
         label: APP_LABELS.menu.platformRoleManagement,
-        description: '권한 등록, 상태 관리, 권한별 메뉴 매핑을 통합 관리합니다.',
+        description: '권한 등록과 상태 관리를 통합 관리합니다.',
         path: '/platform/roles',
         roles: ['PLATFORM_ADMIN'],
         icon: 'Security',
+      },
+      {
+        label: APP_LABELS.menu.platformRoleMenuManagement,
+        description: '권한별 메뉴 매핑을 관리합니다.',
+        path: '/platform/role-menus',
+        roles: ['PLATFORM_ADMIN'],
+        icon: 'Link',
       },
     ],
   },

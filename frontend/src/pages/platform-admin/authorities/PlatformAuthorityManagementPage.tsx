@@ -46,7 +46,8 @@ export function PlatformAuthorityManagementPage() {
     queryFn: listPlatformMenus,
   });
 
-  const effectiveRoleCode = selectedRoleCode || rolesQuery.data?.[0]?.code || '';
+  const effectiveRoleCode =
+    selectedRoleCode || rolesQuery.data?.[0]?.code || '';
 
   const mappingQuery = useQuery({
     queryKey: ['platform-admin', 'role-menus', effectiveRoleCode],
@@ -210,7 +211,9 @@ export function PlatformAuthorityManagementPage() {
           {(rolesQuery.data ?? []).map((role) => (
             <Button
               key={role.code}
-              variant={effectiveRoleCode === role.code ? 'contained' : 'outlined'}
+              variant={
+                effectiveRoleCode === role.code ? 'contained' : 'outlined'
+              }
               size="small"
               onClick={() => {
                 setSelectedRoleCode(role.code);

@@ -101,9 +101,10 @@ public class PlatformAuthorityApiController {
             }
         }
 
-        return Map.of(
-                "roleCode", normalizedRoleCode,
-                "menuIds", new ArrayList<>(menuIdSet));
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("roleCode", normalizedRoleCode);
+        response.put("menuIds", new ArrayList<>(menuIdSet));
+        return response;
     }
 
     @PutMapping("/role-menus/{roleCode}")
@@ -133,9 +134,10 @@ public class PlatformAuthorityApiController {
             authManageService.insertRoleMenuPermission(item);
         }
 
-        return Map.of(
-                "roleCode", payload.getRoleCode(),
-                "menuIds", payload.getMenuIds());
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("roleCode", payload.getRoleCode());
+        response.put("menuIds", payload.getMenuIds());
+        return response;
     }
 
     private String toUpper(String value) {
