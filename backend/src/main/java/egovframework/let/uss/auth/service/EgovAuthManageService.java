@@ -114,6 +114,14 @@ public interface EgovAuthManageService {
     int deleteRoleMenuPermission(RoleMenuPermissionVO roleMenuPermissionVO) throws Exception;
 
     /**
+     * 권한 코드 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
+     * @param authorityCode 권한코드
+     * @return int 삭제결과
+     * @throws Exception
+     */
+    int deleteRoleMenuPermissionsByAuthority(String authorityCode) throws Exception;
+
+    /**
      * 사용자별 접근 가능한 메뉴 목록을 조회한다.
     * @param authorityCode 권한코드
      * @return List<MenuInfoVO> 접근가능메뉴목록

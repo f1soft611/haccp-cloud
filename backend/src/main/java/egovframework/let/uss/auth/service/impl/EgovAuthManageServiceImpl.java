@@ -140,6 +140,14 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
     }
 
     /**
+     * 권한 코드 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
+     */
+    @Override
+    public int deleteRoleMenuPermissionsByAuthority(String authorityCode) throws Exception {
+        return authManageDAO.deleteRoleMenuPermissionsByAuthority(authorityCode);
+    }
+
+    /**
      * 사용자별 접근 가능한 메뉴 목록을 조회한다.
      */
     @Override
