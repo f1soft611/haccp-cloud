@@ -27,14 +27,19 @@ export function AppLayout() {
     retry: false,
   });
 
-  const menuGroups = useMemo(
-    () =>
-      filterWorkMenuGroupsByPaths(
-        getWorkMenuGroups(role),
-        accessibleMenuQuery.data ?? [],
-      ),
-    [accessibleMenuQuery.data, role],
-  );
+  const isInitialMenuLoading =
+    accessibleMenuQuery.isPending && accessibleMenuQuery.data === undefined;
+
+  const menuGroups = useMemo(() => {
+    if (isInitialMenuLoading) {
+      return [];
+    }
+
+    return filterWorkMenuGroupsByPaths(
+      getWorkMenuGroups(role),
+      accessibleMenuQuery.data ?? [],
+    );
+  }, [accessibleMenuQuery.data, isInitialMenuLoading, role]);
 
   const fallbackAllowedPaths = useMemo(() => {
     return menuGroups.flatMap((group) =>
@@ -52,6 +57,17 @@ export function AppLayout() {
     [accessibleMenuQuery.data, fallbackAllowedPaths],
   );
 
+  const fallbackRedirectPath = useMemo(() => {
+    if (
+      role === 'PLATFORM_ADMIN' &&
+      allowedPaths.some((path) => path.startsWith('/platform'))
+    ) {
+      return '/platform';
+    }
+
+    return allowedPaths[0];
+  }, [allowedPaths, role]);
+
   useEffect(() => {
     if (accessibleMenuQuery.isPending) {
       return;
@@ -64,11 +80,12 @@ export function AppLayout() {
       location.pathname.startsWith(path),
     );
     if (!isAllowed) {
-      navigate(allowedPaths[0], { replace: true });
+      navigate(fallbackRedirectPath, { replace: true });
     }
   }, [
     accessibleMenuQuery.isPending,
     allowedPaths,
+    fallbackRedirectPath,
     location.pathname,
     navigate,
   ]);

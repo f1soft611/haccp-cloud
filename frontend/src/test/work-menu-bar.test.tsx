@@ -30,7 +30,7 @@ const renderLayoutWithRole = (
   const defaultPathsByRole: Record<UserRole, string[]> = {
     PLATFORM_ADMIN: [
       '/dashboard',
-      '/onboarding',
+      '/platform/onboarding',
       '/platform/menus',
       '/platform/roles',
       '/platform/role-menus',
@@ -117,16 +117,22 @@ const resetAuthStore = () => {
 };
 
 describe('WorkMenuBar role-based visibility', () => {
-  afterEach(() => {
-    mockListAccessibleMenuPaths.mockReset();
-    resetAuthStore();
+  beforeEach(() => {
+    mockListAccessibleMenuPaths.mockImplementation(async () => []);
   });
 
-  it('PLATFORM_ADMIN sees dashboardGroup and systemGroup buttons but not a users link', () => {
+  afterEach(() => {
+    resetAuthStore();
+    mockListAccessibleMenuPaths.mockReset();
+  });
+
+  it('PLATFORM_ADMIN sees dashboardGroup and systemGroup buttons but not a users link', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
     expect(
-      screen.getByRole('button', { name: APP_LABELS.menu.dashboardGroup }),
+      await screen.findByRole('button', {
+        name: APP_LABELS.menu.dashboardGroup,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
@@ -139,8 +145,12 @@ describe('WorkMenuBar role-based visibility', () => {
   it('clicking systemGroup button reveals platform management links but not users link', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
+    const systemGroupButton = await screen.findByRole('button', {
+      name: APP_LABELS.menu.systemGroup,
+    });
+
     fireEvent.click(
-      screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+      systemGroupButton,
     );
 
     expect(
@@ -153,6 +163,11 @@ describe('WorkMenuBar role-based visibility', () => {
         name: APP_LABELS.menu.platformFactoryManagement,
       }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: APP_LABELS.menu.platformFactoryManagement,
+      }),
+    ).toHaveAttribute('href', '/platform/onboarding');
     expect(
       screen.getByRole('link', {
         name: APP_LABELS.menu.platformRoleManagement,
@@ -186,8 +201,10 @@ describe('WorkMenuBar role-based visibility', () => {
     });
   });
 
-  it('work-menu-bar has segmented nav variant marker', () => {
+  it('work-menu-bar has segmented nav variant marker', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
+
+    await screen.findByRole('button', { name: APP_LABELS.menu.dashboardGroup });
 
     expect(screen.getByTestId('work-menu-bar')).toHaveAttribute(
       'data-nav-variant',
@@ -195,10 +212,62 @@ describe('WorkMenuBar role-based visibility', () => {
     );
   });
 
-  it('group buttons expose aria-pressed state', () => {
+  it('does not show placeholder menu groups before accessible menu paths are resolved', async () => {
+    let resolveMenuPaths: ((paths: string[]) => void) | null = null;
+    const pendingMenuPaths = new Promise<string[]>((resolve) => {
+      resolveMenuPaths = resolve;
+    });
+
+    mockListAccessibleMenuPaths.mockReturnValue(pendingMenuPaths);
+
+    act(() => {
+      useAuthStore.setState({
+        isAuthenticated: true,
+        tenantCode: '000001',
+        userId: 'platform_admin',
+        role: 'PLATFORM_ADMIN',
+        onboardingRequired: false,
+        onboardingStatus: 'COMPLETED',
+      });
+    });
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ThemeProvider theme={appTheme}>
+          <MemoryRouter initialEntries={['/dashboard']}>
+            <Routes>
+              <Route element={<AppLayout />}>
+                <Route
+                  path="/dashboard"
+                  element={<div data-testid="dashboard-stub">dashboard</div>}
+                />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </ThemeProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: APP_LABELS.menu.dashboardGroup }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: APP_LABELS.menu.systemGroup }),
+    ).not.toBeInTheDocument();
+
+    resolveMenuPaths?.(['/platform/onboarding', '/platform/menus']);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('group buttons expose aria-pressed state', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
-    const systemBtn = screen.getByRole('button', {
+    const systemBtn = await screen.findByRole('button', {
       name: APP_LABELS.menu.systemGroup,
     });
     expect(systemBtn).toHaveAttribute('aria-pressed');

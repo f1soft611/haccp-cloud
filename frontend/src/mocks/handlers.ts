@@ -275,7 +275,7 @@ let users: UserItem[] = [
 const accessibleMenuPathsByAuthorityCode: Record<AuthorityCode, string[]> = {
   PLATFORM_ADMIN: [
     '/dashboard',
-    '/onboarding',
+    '/platform/onboarding',
     '/platform/menus',
     '/platform/roles',
     '/platform/role-menus',

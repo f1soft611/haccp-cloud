@@ -37,7 +37,7 @@ export function PlatformAdminLoginPage() {
         onboardingRequired: result.onboardingRequired,
         onboardingStatus: result.onboardingStatus,
       });
-      navigate('/dashboard', { replace: true });
+      navigate('/platform', { replace: true });
     } catch {
       setError(APP_LABELS.message.platformAdminLoginFailed);
     }

@@ -17,7 +17,15 @@ function normalizeMenuPath(menuUrl: string): string {
   if (trimmed.length === 0 || trimmed === '/') {
     return trimmed;
   }
-  return trimmed.replace(/\/+$/, '');
+
+  const normalizedPath = trimmed.replace(/\/+$/, '');
+
+  // Keep backward compatibility while platform onboarding moves to the new route.
+  if (normalizedPath === '/onboarding') {
+    return '/platform/onboarding';
+  }
+
+  return normalizedPath;
 }
 
 function normalizeAuthorityCode(authorityCode: string): AuthorityCode {

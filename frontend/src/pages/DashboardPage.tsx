@@ -333,7 +333,7 @@ export function DashboardPage() {
                       {isPlatformAdmin ? (
                         <Button
                           component={NavLink}
-                          to="/onboarding"
+                          to="/platform/onboarding"
                           size="small"
                         >
                           {APP_LABELS.dashboard.hubs.onboarding}
