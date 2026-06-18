@@ -51,9 +51,9 @@ export function FormDialog({
           sx: {
             overflow: 'hidden',
             borderRadius: 3,
-                        maxHeight: 'calc(100vh - 64px)',
-                        display: 'flex',
-                        flexDirection: 'column',
+            maxHeight: 'calc(100vh - 64px)',
+            display: 'flex',
+            flexDirection: 'column',
             boxShadow: isDarkMode
               ? '0 24px 80px rgba(2, 6, 23, 0.6)'
               : '0 24px 80px rgba(15, 36, 64, 0.28)',
