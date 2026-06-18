@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "ms-ossdata.vscode-postgresql",
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg"
+  ]
+}
