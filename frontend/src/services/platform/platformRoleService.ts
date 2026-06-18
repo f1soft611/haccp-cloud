@@ -35,6 +35,14 @@ export type CreatePlatformRoleRequest = {
 export type UpdatePlatformRoleRequest = {
   id?: string;
   code?: string;
+  name: string;
+  description?: string;
+  active: boolean;
+};
+
+export type UpdatePlatformRoleStatusRequest = {
+  id?: string;
+  code?: string;
   active: boolean;
 };
 
@@ -79,7 +87,7 @@ export async function createPlatformRole(
 }
 
 export async function updatePlatformRoleStatus(
-  payload: UpdatePlatformRoleRequest,
+  payload: UpdatePlatformRoleStatusRequest,
 ): Promise<PlatformRoleItem> {
   const roleIdentifier = payload.code ?? payload.id;
   if (!roleIdentifier) {
@@ -90,6 +98,29 @@ export async function updatePlatformRoleStatus(
     `/platform-admin/roles/${roleIdentifier}`,
     {
       active: payload.active,
+      useAt: payload.active ? 'Y' : 'N',
+    },
+  );
+  return normalizePlatformRoleItem(data);
+}
+
+export async function updatePlatformRole(
+  payload: UpdatePlatformRoleRequest,
+): Promise<PlatformRoleItem> {
+  const roleIdentifier = payload.code ?? payload.id;
+  if (!roleIdentifier) {
+    throw new Error('role code or id is required');
+  }
+
+  const { data } = await apiClient.put<PlatformRoleApiItem>(
+    `/platform-admin/roles/${roleIdentifier}`,
+    {
+      code: payload.code,
+      name: payload.name,
+      description: payload.description,
+      active: payload.active,
+      authorityCode: payload.code,
+      authorityNm: payload.name,
       useAt: payload.active ? 'Y' : 'N',
     },
   );

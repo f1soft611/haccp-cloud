@@ -8,10 +8,8 @@ import {
   Paper,
   Select,
   Stack,
-  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -37,6 +35,7 @@ import { useMemo, useState } from 'react';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
 import { FormDialog } from '../../../shared/components/forms/FormDialog';
+import { AdminGrid } from '../../../shared/components/data/AdminGrid';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import {
@@ -389,304 +388,275 @@ export function PlatformMenuManagementPage() {
         </Stack>
       </Paper>
 
-      <TableContainer
-        component={Paper}
-        sx={{
-          border: '1px solid rgba(31, 79, 143, 0.22)',
-          borderRadius: 2,
-          boxShadow: '0 10px 28px rgba(17, 43, 74, 0.1)',
-          overflow: 'auto',
-          bgcolor: '#fff',
-          maxHeight: 620,
-        }}
-      >
-        <Table
-          size="small"
-          stickyHeader
-          aria-label="메뉴 목록"
-          sx={{
-            '& .MuiTableCell-head': {
-              bgcolor: '#1f4f8f',
-              color: '#ffffff',
-              fontWeight: 700,
-              borderBottom: '1px solid rgba(255, 255, 255, 0.25)',
-            },
-            '& .MuiTableCell-root': {
-              borderBottom: '1px solid rgba(31, 79, 143, 0.12)',
-            },
-          }}
-        >
-          <TableHead>
+      <AdminGrid ariaLabel="메뉴 목록">
+        <TableHead>
+          <TableRow>
+            <TableCell width="30">확장</TableCell>
+            <TableCell>메뉴명</TableCell>
+            <TableCell>설명</TableCell>
+            <TableCell>URL</TableCell>
+            <TableCell width="80">순서</TableCell>
+            <TableCell width="80">아이콘</TableCell>
+            <TableCell width="80">사용여부</TableCell>
+            <TableCell width="100" align="center">
+              작업
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {isLoading ? (
             <TableRow>
-              <TableCell width="30">확장</TableCell>
-              <TableCell>메뉴명</TableCell>
-              <TableCell>설명</TableCell>
-              <TableCell>URL</TableCell>
-              <TableCell width="80">순서</TableCell>
-              <TableCell width="80">아이콘</TableCell>
-              <TableCell width="80">사용여부</TableCell>
-              <TableCell width="100" align="right">
-                작업
+              <TableCell colSpan={8} align="center">
+                로딩 중...
               </TableCell>
             </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  로딩 중...
+          ) : rootMenus.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} align="center">
+                메뉴가 없습니다.
+              </TableCell>
+            </TableRow>
+          ) : (
+            rootMenus.map((rootMenu) => (
+              <TableRow
+                key={rootMenu.menuId}
+                sx={{
+                  '& .MuiTableCell-root': { backgroundColor: '#ffffff' },
+                  '&:nth-of-type(even) .MuiTableCell-root': {
+                    backgroundColor: '#fbfdff',
+                  },
+                  '&:hover .MuiTableCell-root': {
+                    backgroundColor: '#f2f7ff',
+                  },
+                }}
+              >
+                <TableCell align="center">
+                  {getChildMenus(rootMenu.menuId).length > 0 ? (
+                    <IconButton
+                      size="small"
+                      onClick={() => toggleExpanded(rootMenu.menuId)}
+                    >
+                      {expandedIds.has(rootMenu.menuId) ? (
+                        <ExpandLessOutlinedIcon fontSize="small" />
+                      ) : (
+                        <ExpandMoreOutlinedIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  ) : null}
+                </TableCell>
+                <TableCell>{rootMenu.menuNm}</TableCell>
+                <TableCell>{rootMenu.menuDc}</TableCell>
+                <TableCell>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-block',
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 1,
+                      bgcolor: 'rgba(31, 79, 143, 0.08)',
+                      color: '#184173',
+                      fontFamily: 'monospace',
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    {rootMenu.menuUrl}
+                  </Box>
+                </TableCell>
+                <TableCell align="center">{rootMenu.menuOrdr}</TableCell>
+                <TableCell align="center">
+                  <Box
+                    component="span"
+                    title={rootMenu.iconNm}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 30,
+                      height: 30,
+                      borderRadius: '50%',
+                      bgcolor: 'rgba(31, 79, 143, 0.10)',
+                      color: '#1f4f8f',
+                      fontSize: '0.95rem',
+                      fontWeight: 800,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {(() => {
+                      const IconComponent = ICON_COMPONENTS[rootMenu.iconNm];
+                      return IconComponent ? (
+                        <IconComponent fontSize="small" />
+                      ) : (
+                        <MenuOutlinedIcon fontSize="small" />
+                      );
+                    })()}
+                  </Box>
+                </TableCell>
+                <TableCell align="center">
+                  <Chip
+                    label={rootMenu.useAt === 'Y' ? '사용' : '미사용'}
+                    size="small"
+                    color={rootMenu.useAt === 'Y' ? 'success' : 'default'}
+                    variant="filled"
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleOpenEditModal(rootMenu)}
+                    sx={{
+                      mr: 0.25,
+                      color: '#1f4f8f',
+                      bgcolor: 'rgba(31, 79, 143, 0.08)',
+                      '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
+                    }}
+                  >
+                    <EditOutlinedIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDelete(rootMenu)}
+                    disabled={
+                      getChildMenus(rootMenu.menuId).length > 0 ||
+                      deleteMutation.isPending
+                    }
+                    sx={{
+                      color: '#c53b3b',
+                      bgcolor: 'rgba(197, 59, 59, 0.08)',
+                      '&:hover': { bgcolor: 'rgba(197, 59, 59, 0.16)' },
+                    }}
+                  >
+                    <DeleteOutlineOutlinedIcon fontSize="small" />
+                  </IconButton>
                 </TableCell>
               </TableRow>
-            ) : rootMenus.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  메뉴가 없습니다.
-                </TableCell>
-              </TableRow>
-            ) : (
-              rootMenus.map((rootMenu) => (
-                <TableRow
-                  key={rootMenu.menuId}
-                  sx={{
-                    '& .MuiTableCell-root': { backgroundColor: '#ffffff' },
-                    '&:nth-of-type(even) .MuiTableCell-root': {
-                      backgroundColor: '#fbfdff',
-                    },
-                    '&:hover .MuiTableCell-root': {
-                      backgroundColor: '#f2f7ff',
-                    },
-                  }}
-                >
-                  <TableCell align="center">
-                    {getChildMenus(rootMenu.menuId).length > 0 ? (
+            ))
+          )}
+
+          {rootMenus.map((rootMenu) =>
+            expandedIds.has(rootMenu.menuId)
+              ? getChildMenus(rootMenu.menuId).map((childMenu) => (
+                  <TableRow
+                    key={childMenu.menuId}
+                    sx={{
+                      '& .MuiTableCell-root': { backgroundColor: '#f8fbff' },
+                      '& .MuiTableCell-root:first-of-type': {
+                        borderLeft: '4px solid #1f4f8f',
+                      },
+                      '&:hover .MuiTableCell-root': {
+                        backgroundColor: '#edf4ff',
+                      },
+                    }}
+                  >
+                    <TableCell />
+                    <TableCell sx={{ pl: 4 }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.75,
+                        }}
+                      >
+                        <Box
+                          component="span"
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            bgcolor: '#1f4f8f',
+                            flexShrink: 0,
+                          }}
+                        />
+                        {childMenu.menuNm}
+                      </Box>
+                    </TableCell>
+                    <TableCell>{childMenu.menuDc}</TableCell>
+                    <TableCell>
+                      <Box
+                        component="span"
+                        sx={{
+                          display: 'inline-block',
+                          px: 1,
+                          py: 0.25,
+                          borderRadius: 1,
+                          bgcolor: 'rgba(31, 79, 143, 0.08)',
+                          color: '#184173',
+                          fontFamily: 'monospace',
+                          fontSize: '0.8rem',
+                        }}
+                      >
+                        {childMenu.menuUrl}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="center">{childMenu.menuOrdr}</TableCell>
+                    <TableCell align="center">
+                      <Box
+                        component="span"
+                        title={childMenu.iconNm}
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 30,
+                          height: 30,
+                          borderRadius: '50%',
+                          bgcolor: 'rgba(31, 79, 143, 0.10)',
+                          color: '#1f4f8f',
+                          fontSize: '0.95rem',
+                          fontWeight: 800,
+                          lineHeight: 1,
+                        }}
+                      >
+                        {(() => {
+                          const IconComponent =
+                            ICON_COMPONENTS[childMenu.iconNm];
+                          return IconComponent ? (
+                            <IconComponent fontSize="small" />
+                          ) : (
+                            <MenuOutlinedIcon fontSize="small" />
+                          );
+                        })()}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Chip
+                        label={childMenu.useAt === 'Y' ? '사용' : '미사용'}
+                        size="small"
+                        color={childMenu.useAt === 'Y' ? 'success' : 'default'}
+                        variant="filled"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
                       <IconButton
                         size="small"
-                        onClick={() => toggleExpanded(rootMenu.menuId)}
+                        onClick={() => handleOpenEditModal(childMenu)}
+                        sx={{
+                          mr: 0.25,
+                          color: '#1f4f8f',
+                          bgcolor: 'rgba(31, 79, 143, 0.08)',
+                          '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
+                        }}
                       >
-                        {expandedIds.has(rootMenu.menuId) ? (
-                          <ExpandLessOutlinedIcon fontSize="small" />
-                        ) : (
-                          <ExpandMoreOutlinedIcon fontSize="small" />
-                        )}
+                        <EditOutlinedIcon fontSize="small" />
                       </IconButton>
-                    ) : null}
-                  </TableCell>
-                  <TableCell>{rootMenu.menuNm}</TableCell>
-                  <TableCell>{rootMenu.menuDc}</TableCell>
-                  <TableCell>
-                    <Box
-                      component="span"
-                      sx={{
-                        display: 'inline-block',
-                        px: 1,
-                        py: 0.25,
-                        borderRadius: 1,
-                        bgcolor: 'rgba(31, 79, 143, 0.08)',
-                        color: '#184173',
-                        fontFamily: 'monospace',
-                        fontSize: '0.8rem',
-                      }}
-                    >
-                      {rootMenu.menuUrl}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center">{rootMenu.menuOrdr}</TableCell>
-                  <TableCell align="center">
-                    <Box
-                      component="span"
-                      title={rootMenu.iconNm}
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 30,
-                        height: 30,
-                        borderRadius: '50%',
-                        bgcolor: 'rgba(31, 79, 143, 0.10)',
-                        color: '#1f4f8f',
-                        fontSize: '0.95rem',
-                        fontWeight: 800,
-                        lineHeight: 1,
-                      }}
-                    >
-                      {(() => {
-                        const IconComponent = ICON_COMPONENTS[rootMenu.iconNm];
-                        return IconComponent ? (
-                          <IconComponent fontSize="small" />
-                        ) : (
-                          <MenuOutlinedIcon fontSize="small" />
-                        );
-                      })()}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={rootMenu.useAt === 'Y' ? '사용' : '미사용'}
-                      size="small"
-                      color={rootMenu.useAt === 'Y' ? 'success' : 'default'}
-                      variant="filled"
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenEditModal(rootMenu)}
-                      sx={{
-                        mr: 0.25,
-                        color: '#1f4f8f',
-                        bgcolor: 'rgba(31, 79, 143, 0.08)',
-                        '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
-                      }}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDelete(rootMenu)}
-                      disabled={
-                        getChildMenus(rootMenu.menuId).length > 0 ||
-                        deleteMutation.isPending
-                      }
-                      sx={{
-                        color: '#c53b3b',
-                        bgcolor: 'rgba(197, 59, 59, 0.08)',
-                        '&:hover': { bgcolor: 'rgba(197, 59, 59, 0.16)' },
-                      }}
-                    >
-                      <DeleteOutlineOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-
-            {rootMenus.map((rootMenu) =>
-              expandedIds.has(rootMenu.menuId)
-                ? getChildMenus(rootMenu.menuId).map((childMenu) => (
-                    <TableRow
-                      key={childMenu.menuId}
-                      sx={{
-                        '& .MuiTableCell-root': { backgroundColor: '#f8fbff' },
-                        '& .MuiTableCell-root:first-of-type': {
-                          borderLeft: '4px solid #1f4f8f',
-                        },
-                        '&:hover .MuiTableCell-root': {
-                          backgroundColor: '#edf4ff',
-                        },
-                      }}
-                    >
-                      <TableCell />
-                      <TableCell sx={{ pl: 4 }}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.75,
-                          }}
-                        >
-                          <Box
-                            component="span"
-                            sx={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: '50%',
-                              bgcolor: '#1f4f8f',
-                              flexShrink: 0,
-                            }}
-                          />
-                          {childMenu.menuNm}
-                        </Box>
-                      </TableCell>
-                      <TableCell>{childMenu.menuDc}</TableCell>
-                      <TableCell>
-                        <Box
-                          component="span"
-                          sx={{
-                            display: 'inline-block',
-                            px: 1,
-                            py: 0.25,
-                            borderRadius: 1,
-                            bgcolor: 'rgba(31, 79, 143, 0.08)',
-                            color: '#184173',
-                            fontFamily: 'monospace',
-                            fontSize: '0.8rem',
-                          }}
-                        >
-                          {childMenu.menuUrl}
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center">{childMenu.menuOrdr}</TableCell>
-                      <TableCell align="center">
-                        <Box
-                          component="span"
-                          title={childMenu.iconNm}
-                          sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 30,
-                            height: 30,
-                            borderRadius: '50%',
-                            bgcolor: 'rgba(31, 79, 143, 0.10)',
-                            color: '#1f4f8f',
-                            fontSize: '0.95rem',
-                            fontWeight: 800,
-                            lineHeight: 1,
-                          }}
-                        >
-                          {(() => {
-                            const IconComponent =
-                              ICON_COMPONENTS[childMenu.iconNm];
-                            return IconComponent ? (
-                              <IconComponent fontSize="small" />
-                            ) : (
-                              <MenuOutlinedIcon fontSize="small" />
-                            );
-                          })()}
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={childMenu.useAt === 'Y' ? '사용' : '미사용'}
-                          size="small"
-                          color={
-                            childMenu.useAt === 'Y' ? 'success' : 'default'
-                          }
-                          variant="filled"
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenEditModal(childMenu)}
-                          sx={{
-                            mr: 0.25,
-                            color: '#1f4f8f',
-                            bgcolor: 'rgba(31, 79, 143, 0.08)',
-                            '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
-                          }}
-                        >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDelete(childMenu)}
-                          sx={{
-                            color: '#c53b3b',
-                            bgcolor: 'rgba(197, 59, 59, 0.08)',
-                            '&:hover': { bgcolor: 'rgba(197, 59, 59, 0.16)' },
-                          }}
-                        >
-                          <DeleteOutlineOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : null,
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDelete(childMenu)}
+                        sx={{
+                          color: '#c53b3b',
+                          bgcolor: 'rgba(197, 59, 59, 0.08)',
+                          '&:hover': { bgcolor: 'rgba(197, 59, 59, 0.16)' },
+                        }}
+                      >
+                        <DeleteOutlineOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : null,
+          )}
+        </TableBody>
+      </AdminGrid>
 
       <FormDialog
         open={modalOpen}

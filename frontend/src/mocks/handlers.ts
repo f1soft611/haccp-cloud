@@ -1473,11 +1473,42 @@ export const handlers = [
   http.patch('/api/platform-admin/roles/:id', async ({ params, request }) => {
     const payload = (await request.json()) as { active?: boolean };
 
-    const target = platformRoles.find((item) => item.id === params.id);
+    const targetId = String(params.id ?? '');
+    const normalizedTargetCode = normalizeAuthorityCode(targetId);
+    const target = platformRoles.find(
+      (item) =>
+        item.id === targetId ||
+        normalizeAuthorityCode(item.code) === normalizedTargetCode,
+    );
     if (!target) {
       return HttpResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
+    target.active = payload.active ?? target.active;
+    target.updatedAt = new Date().toISOString();
+    return HttpResponse.json(target);
+  }),
+
+  http.put('/api/platform-admin/roles/:id', async ({ params, request }) => {
+    const payload = (await request.json()) as {
+      name?: string;
+      description?: string;
+      active?: boolean;
+    };
+
+    const targetId = String(params.id ?? '');
+    const normalizedTargetCode = normalizeAuthorityCode(targetId);
+    const target = platformRoles.find(
+      (item) =>
+        item.id === targetId ||
+        normalizeAuthorityCode(item.code) === normalizedTargetCode,
+    );
+    if (!target) {
+      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    target.name = payload.name ?? target.name;
+    target.description = payload.description ?? target.description;
     target.active = payload.active ?? target.active;
     target.updatedAt = new Date().toISOString();
     return HttpResponse.json(target);
