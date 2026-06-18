@@ -147,6 +147,53 @@
         )
     </insert>
 
+    <select id="selectAuthorityList" resultType="egovframework.let.uss.auth.service.AuthorityInfoVO">
+        SELECT
+            authority_code AS authorityCode,
+            authority_nm AS authorityNm,
+            authority_level AS authorityLevel,
+            tenant_scoped AS tenantScoped,
+            use_at AS useAt,
+            crt_dt AS frstRegistPnttm,
+            crt_id AS frstRegisterId,
+            upd_dt AS lastUpdtPnttm,
+            upd_id AS lastUpdusrId
+        FROM tb_authorityinfo
+        ORDER BY authority_level, authority_code
+    </select>
+
+    <insert id="insertAuthority" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
+        INSERT INTO tb_authorityinfo (
+            authority_code,
+            authority_nm,
+            authority_level,
+            tenant_scoped,
+            use_at,
+            crt_dt,
+            crt_id,
+            upd_dt,
+            upd_id
+        ) VALUES (
+            #{authorityCode},
+            #{authorityNm},
+            #{authorityLevel},
+            #{tenantScoped},
+            #{useAt},
+            now(),
+            #{frstRegisterId},
+            now(),
+            #{lastUpdusrId}
+        )
+    </insert>
+
+    <update id="updateAuthorityUseAt" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
+        UPDATE tb_authorityinfo
+        SET use_at = #{useAt},
+            upd_dt = now(),
+            upd_id = #{lastUpdusrId}
+        WHERE authority_code = #{authorityCode}
+    </update>
+
     <select id="selectRoleMenuPermissionList" parameterType="egovframework.let.uss.auth.service.RoleMenuPermissionVO" resultType="egovframework.let.uss.auth.service.RoleMenuPermissionVO">
         WITH RECURSIVE menu_tree AS (
             SELECT

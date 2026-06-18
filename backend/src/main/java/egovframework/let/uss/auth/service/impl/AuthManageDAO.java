@@ -5,6 +5,7 @@ import java.util.List;
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 import org.springframework.stereotype.Repository;
 
+import egovframework.let.uss.auth.service.AuthorityInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.PermissionTypeVO;
 import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
@@ -86,6 +87,35 @@ public class AuthManageDAO extends EgovAbstractMapper {
      */
     public int insertPermissionType(PermissionTypeVO permissionTypeVO) throws Exception {
         return insert("authManageDAO.insertPermissionType", permissionTypeVO);
+    }
+
+    /**
+     * 권한 목록을 조회한다.
+     * @return List<AuthorityInfoVO> 권한목록
+     * @throws Exception
+     */
+    public List<AuthorityInfoVO> selectAuthorityList() throws Exception {
+        return selectList("authManageDAO.selectAuthorityList");
+    }
+
+    /**
+     * 권한을 등록한다.
+     * @param authorityInfoVO 권한정보
+     * @return int 등록결과
+     * @throws Exception
+     */
+    public int insertAuthority(AuthorityInfoVO authorityInfoVO) throws Exception {
+        return insert("authManageDAO.insertAuthority", authorityInfoVO);
+    }
+
+    /**
+     * 권한 사용여부를 수정한다.
+     * @param authorityInfoVO 권한정보
+     * @return int 수정결과
+     * @throws Exception
+     */
+    public int updateAuthorityUseAt(AuthorityInfoVO authorityInfoVO) throws Exception {
+        return update("authManageDAO.updateAuthorityUseAt", authorityInfoVO);
     }
 
     /**
