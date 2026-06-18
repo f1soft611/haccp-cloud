@@ -149,9 +149,7 @@ describe('WorkMenuBar role-based visibility', () => {
       name: APP_LABELS.menu.systemGroup,
     });
 
-    fireEvent.click(
-      systemGroupButton,
-    );
+    fireEvent.click(systemGroupButton);
 
     expect(
       await screen.findByRole('link', {
@@ -213,9 +211,13 @@ describe('WorkMenuBar role-based visibility', () => {
   });
 
   it('does not show placeholder menu groups before accessible menu paths are resolved', async () => {
-    let resolveMenuPaths: ((paths: string[]) => void) | null = null;
+    const menuPathDeferred: { resolve: (paths: string[]) => void } = {
+      resolve: () => {
+        throw new Error('menu path resolver is not initialized');
+      },
+    };
     const pendingMenuPaths = new Promise<string[]>((resolve) => {
-      resolveMenuPaths = resolve;
+      menuPathDeferred.resolve = resolve;
     });
 
     mockListAccessibleMenuPaths.mockReturnValue(pendingMenuPaths);
@@ -255,7 +257,7 @@ describe('WorkMenuBar role-based visibility', () => {
       screen.queryByRole('button', { name: APP_LABELS.menu.systemGroup }),
     ).not.toBeInTheDocument();
 
-    resolveMenuPaths?.(['/platform/onboarding', '/platform/menus']);
+    menuPathDeferred.resolve(['/platform/onboarding', '/platform/menus']);
 
     await waitFor(() => {
       expect(
