@@ -62,17 +62,10 @@ const PLATFORM_ADMIN_MENU_GROUPS: MenuGroup[] = [
       },
       {
         label: APP_LABELS.menu.platformRoleManagement,
-        description: '권한 코드를 등록하고 활성 상태를 관리합니다.',
+        description: '권한 등록, 상태 관리, 권한별 메뉴 매핑을 통합 관리합니다.',
         path: '/platform/roles',
         roles: ['PLATFORM_ADMIN'],
         icon: 'Security',
-      },
-      {
-        label: APP_LABELS.menu.platformRoleMenuManagement,
-        description: '권한별 메뉴 노출 매핑을 설정합니다.',
-        path: '/platform/role-menus',
-        roles: ['PLATFORM_ADMIN'],
-        icon: 'Link',
       },
     ],
   },
@@ -182,12 +175,6 @@ export const WORK_MENU_ITEMS: MenuItem[] = [
     path: '/platform/roles',
     roles: ['PLATFORM_ADMIN'],
     icon: 'Security',
-  },
-  {
-    label: APP_LABELS.menu.platformRoleMenuManagement,
-    path: '/platform/role-menus',
-    roles: ['PLATFORM_ADMIN'],
-    icon: 'Link',
   },
   {
     label: APP_LABELS.menu.onboarding,

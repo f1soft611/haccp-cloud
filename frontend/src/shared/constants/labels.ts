@@ -18,8 +18,8 @@ export const APP_LABELS = {
     systemGroup: '플랫폼 관리',
     dashboard: '대시보드',
     platformMenuManagement: '메뉴 관리',
-    platformRoleManagement: '권한 관리',
-    platformRoleMenuManagement: '권한별 메뉴 등록',
+    platformRoleManagement: '권한/메뉴 관리',
+    platformRoleMenuManagement: '권한/메뉴 관리',
     onboarding: '업체등록',
     loginHistory: '로그인이력',
     users: '사용자',
@@ -40,8 +40,8 @@ export const APP_LABELS = {
     loginHistory: '로그인 이력',
     dashboard: 'HACCP 문서 포털',
     platformMenuManagement: '메뉴 관리',
-    platformRoleManagement: '플랫폼 권한 등록',
-    platformRoleMenuManagement: '권한별 메뉴 등록',
+    platformRoleManagement: '플랫폼 권한/메뉴 관리',
+    platformRoleMenuManagement: '플랫폼 권한/메뉴 관리',
     notFound: '페이지를 찾을 수 없음',
   },
   field: {
@@ -236,8 +236,8 @@ export const APP_LABELS = {
       cta: '신규 업체 코드 발급',
       quickActions: {
         menuManagement: '메뉴 관리',
-        roleManagement: '권한 등록 관리',
-        roleMenuManagement: '권한별 메뉴 관리',
+        roleManagement: '권한/메뉴 관리',
+        roleMenuManagement: '권한/메뉴 관리',
       },
       topbar: {
         quickLink: '바로가기 > 신규 업체 코드 등록',

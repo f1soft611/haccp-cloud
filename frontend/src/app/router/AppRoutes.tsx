@@ -13,8 +13,7 @@ import { TenantFirstLoginSetupPage } from '../../pages/tenant-management/onboard
 import { PlatformAdminLoginPage } from '../../pages/auth/PlatformAdminLoginPage';
 import { LoginHistoryPage } from '../../pages/admin/LoginHistoryPage';
 import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
-import { PlatformRoleManagementPage } from '../../pages/platform-admin/roles/PlatformRoleManagementPage';
-import { PlatformRoleMenuManagementPage } from '../../pages/platform-admin/menus/PlatformRoleMenuManagementPage';
+import { PlatformAuthorityManagementPage } from '../../pages/platform-admin/authorities/PlatformAuthorityManagementPage';
 
 export function AppRoutes() {
   return (
@@ -82,7 +81,7 @@ export function AppRoutes() {
           path="/platform/roles"
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
-              <PlatformRoleManagementPage />
+              <PlatformAuthorityManagementPage />
             </ProtectedRoute>
           }
         />
@@ -90,7 +89,7 @@ export function AppRoutes() {
           path="/platform/role-menus"
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
-              <PlatformRoleMenuManagementPage />
+              <Navigate to="/platform/roles" replace />
             </ProtectedRoute>
           }
         />
