@@ -1,0 +1,17 @@
+BEGIN TRY
+    BEGIN TRANSACTION;
+
+    IF COL_LENGTH('dbo.tb_authorityinfo', 'AUTHORITY_DC') IS NULL
+    BEGIN
+        ALTER TABLE dbo.tb_authorityinfo
+            ADD AUTHORITY_DC NVARCHAR(500) NULL;
+    END;
+
+    COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0
+        ROLLBACK TRANSACTION;
+
+    THROW;
+END CATCH;

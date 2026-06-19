@@ -116,7 +116,7 @@ vi.mock('../services/platform/platformMenuService', () => ({
       menuDc: '로그인 이력 메뉴',
       parentMenuId: null,
       menuOrdr: 2,
-      menuUrl: '/login-history',
+      menuUrl: '/platform/login-history',
       iconNm: 'AccessTime',
       useAt: 'Y',
       frstRegistPnttm: '',
@@ -312,6 +312,11 @@ describe('PlatformAuthorityManagementPage', () => {
         name: '권한/메뉴 관리 커스텀 타이틀',
       }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('columnheader', {
+        name: '설명',
+      }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '+ 권한 추가' }));
 
@@ -354,6 +359,12 @@ describe('PlatformAuthorityManagementPage', () => {
         target: { value: '플랫폼 총괄 관리자' },
       },
     );
+    fireEvent.change(
+      within(editDialog).getByRole('textbox', { name: /설명/ }),
+      {
+        target: { value: '플랫폼 운영 총괄 권한' },
+      },
+    );
 
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     fireEvent.click(screen.getAllByRole('button', { name: '저장' }).at(-1)!);
@@ -364,6 +375,7 @@ describe('PlatformAuthorityManagementPage', () => {
         expect.objectContaining({
           code: 'PLATFORM_ADMIN',
           name: '플랫폼 총괄 관리자',
+          description: '플랫폼 운영 총괄 권한',
           active: true,
         }),
       );
@@ -381,7 +393,7 @@ describe('PlatformAuthorityManagementPage', () => {
     expect(await screen.findByText('권한별 메뉴 매핑')).toBeInTheDocument();
     expect(
       await screen.findByRole('checkbox', {
-        name: '로그인 이력 (/login-history)',
+        name: '로그인 이력 (/platform/login-history)',
       }),
     ).toBeInTheDocument();
 
@@ -392,7 +404,7 @@ describe('PlatformAuthorityManagementPage', () => {
     });
 
     const loginHistoryCheckbox = screen.getByRole('checkbox', {
-      name: '로그인 이력 (/login-history)',
+      name: '로그인 이력 (/platform/login-history)',
     });
     fireEvent.click(loginHistoryCheckbox);
 

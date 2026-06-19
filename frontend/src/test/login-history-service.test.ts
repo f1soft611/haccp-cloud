@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../services/api/apiClient';
 import { getLoginHistoryList } from '../services/auth/loginHistoryService';
 
-vi.mock('../services/apiClient', () => ({
+vi.mock('../services/api/apiClient', () => ({
   apiClient: {
     get: vi.fn(),
   },
@@ -26,18 +26,23 @@ describe('loginHistoryService', () => {
     await getLoginHistoryList({
       pageIndex: 2,
       pageSize: 20,
+      factoryCode: 'TENANT-A',
       searchUserId: 'platform_admin',
       searchLoginResult: 'Y',
     });
 
-    expect(apiClient.get).toHaveBeenCalledWith('/loginHistory/list', {
-      params: {
-        pageIndex: 2,
-        pageSize: 20,
-        searchUserId: 'platform_admin',
-        searchLoginResult: 'Y',
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/platform-admin/login-history/list',
+      {
+        params: {
+          pageIndex: 2,
+          pageSize: 20,
+          factoryCode: 'TENANT-A',
+          searchUserId: 'platform_admin',
+          searchLoginResult: 'Y',
+        },
       },
-    });
+    );
   });
 
   it('normalizes login history list from ResultVO wrapper', async () => {
@@ -69,5 +74,37 @@ describe('loginHistoryService', () => {
       userId: 'platform_admin',
       loginResult: 'Y',
     });
+  });
+
+  it('falls back to legacy endpoint when namespaced endpoint is not found', async () => {
+    vi.mocked(apiClient.get)
+      .mockRejectedValueOnce({ response: { status: 404 } })
+      .mockRejectedValueOnce({ response: { status: 404 } })
+      .mockResolvedValueOnce({
+        data: {
+          result: {
+            loginHistoryList: [],
+            totalCount: 0,
+          },
+        },
+      });
+
+    await getLoginHistoryList({ pageIndex: 1, pageSize: 10 });
+
+    expect(apiClient.get).toHaveBeenNthCalledWith(
+      1,
+      '/platform-admin/login-history/list',
+      expect.anything(),
+    );
+    expect(apiClient.get).toHaveBeenNthCalledWith(
+      2,
+      '/platform-admin/login-history',
+      expect.anything(),
+    );
+    expect(apiClient.get).toHaveBeenNthCalledWith(
+      3,
+      '/loginHistory/list',
+      expect.anything(),
+    );
   });
 });

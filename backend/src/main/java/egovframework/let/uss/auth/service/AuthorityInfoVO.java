@@ -26,6 +26,9 @@ public class AuthorityInfoVO implements Serializable {
     @Schema(description = "권한명")
     private String authorityNm = "";
 
+    @Schema(description = "권한 설명")
+    private String authorityDc = "";
+
     @Schema(description = "권한 레벨")
     private Integer authorityLevel;
 

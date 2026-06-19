@@ -151,6 +151,7 @@
         SELECT
             authority_code AS authorityCode,
             authority_nm AS authorityNm,
+            authority_dc AS authorityDc,
             authority_level AS authorityLevel,
             tenant_scoped AS tenantScoped,
             use_at AS useAt,
@@ -166,6 +167,7 @@
         INSERT INTO tb_authorityinfo (
             authority_code,
             authority_nm,
+            authority_dc,
             authority_level,
             tenant_scoped,
             use_at,
@@ -174,6 +176,7 @@
         ) VALUES (
             #{authorityCode},
             #{authorityNm},
+            #{authorityDc},
             #{authorityLevel},
             #{tenantScoped},
             #{useAt},
@@ -185,6 +188,7 @@
     <update id="updateAuthority" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
         UPDATE tb_authorityinfo
         SET authority_nm = #{authorityNm},
+            authority_dc = #{authorityDc},
             use_at = #{useAt},
             updated_at = now()
         WHERE authority_code = #{authorityCode}

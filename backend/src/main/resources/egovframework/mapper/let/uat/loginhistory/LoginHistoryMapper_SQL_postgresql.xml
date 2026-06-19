@@ -78,7 +78,10 @@
 				*,
 				ROW_NUMBER() OVER (ORDER BY login_dt DESC) AS rnum
 			FROM TB_LoginHistory
-			WHERE factory_code = #{factoryCode}
+			WHERE 1 = 1
+			<if test="factoryCode != null and factoryCode != ''">
+				AND factory_code = #{factoryCode}
+			</if>
 			<if test="searchUserId != null and searchUserId != ''">
 				AND user_id ILIKE '%' || #{searchUserId} || '%'
 			</if>
@@ -103,7 +106,10 @@
 	<select id="selectLoginHistoryListTotCnt" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO" resultType="int">
 		SELECT COUNT(*) AS cnt
 		FROM TB_LoginHistory
-		WHERE factory_code = #{factoryCode}
+		WHERE 1 = 1
+		<if test="factoryCode != null and factoryCode != ''">
+			AND factory_code = #{factoryCode}
+		</if>
 		<if test="searchUserId != null and searchUserId != ''">
 			AND user_id ILIKE '%' || #{searchUserId} || '%'
 		</if>

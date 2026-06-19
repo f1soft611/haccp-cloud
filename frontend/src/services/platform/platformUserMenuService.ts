@@ -25,6 +25,10 @@ function normalizeMenuPath(menuUrl: string): string {
     return '/platform/onboarding';
   }
 
+  if (normalizedPath === '/login-history') {
+    return '/platform/login-history';
+  }
+
   return normalizedPath;
 }
 
