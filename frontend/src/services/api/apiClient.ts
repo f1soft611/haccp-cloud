@@ -1,6 +1,23 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../../shared/store/authStore';
 
+function resolveBrowserSafeBaseUrl(baseUrl: string): string {
+  if (!import.meta.env.PROD || typeof window === 'undefined') {
+    return baseUrl;
+  }
+
+  if (window.location.protocol !== 'https:' || !baseUrl.startsWith('http://')) {
+    return baseUrl;
+  }
+
+  try {
+    const pathname = new URL(baseUrl).pathname.replace(/\/+$/, '');
+    return pathname || '/';
+  } catch {
+    return baseUrl;
+  }
+}
+
 export function resolveApiBaseUrl(): string {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -11,11 +28,13 @@ export function resolveApiBaseUrl(): string {
   }
 
   const trimmed = configuredBaseUrl.replace(/\/+$/, '');
-  if (trimmed.endsWith('/api')) {
-    return trimmed;
+  const browserSafeBaseUrl = resolveBrowserSafeBaseUrl(trimmed);
+
+  if (browserSafeBaseUrl.endsWith('/api')) {
+    return browserSafeBaseUrl;
   }
 
-  return `${trimmed}/api`;
+  return `${browserSafeBaseUrl}/api`;
 }
 
 const resolvedApiBaseUrl = resolveApiBaseUrl();

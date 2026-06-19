@@ -26,6 +26,15 @@ Use `VITE_API_BASE_URL` to bypass local mock handlers and call Spring directly.
 
 In this mode, login requests are sent to `http://localhost:8080/auth/login-jwt`.
 
+## Vercel deployment with backend
+
+When the frontend is served over HTTPS (Vercel), do not use an absolute `http://...` API base URL in production.
+
+- Recommended `VITE_API_BASE_URL` on Vercel: `/haccp-cloud`
+- Keep proxy rules in `vercel.json` so Vercel forwards `/haccp-cloud/*` to the backend origin
+
+This prevents browser mixed-content blocking and keeps requests on same-origin HTTPS from the browser perspective.
+
 ### Mocking precedence
 
 - `VITE_ENABLE_MSW=true`: always use MSW.

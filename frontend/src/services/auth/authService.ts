@@ -41,6 +41,32 @@ type BackendLoginEnvelope = {
   onboardingStatus?: OnboardingStatus;
 };
 
+function resolveBrowserSafeBaseUrl(baseUrl: string): string {
+  if (!import.meta.env.PROD || typeof window === 'undefined') {
+    return baseUrl;
+  }
+
+  if (window.location.protocol !== 'https:' || !baseUrl.startsWith('http://')) {
+    return baseUrl;
+  }
+
+  try {
+    const pathname = new URL(baseUrl).pathname.replace(/\/+$/, '');
+    return pathname || '/';
+  } catch {
+    return baseUrl;
+  }
+}
+
+function joinPath(baseUrl: string, normalizedPath: string): string {
+  const normalizedBase = baseUrl.replace(/\/+$/, '');
+  if (!normalizedBase) {
+    return `/${normalizedPath}`;
+  }
+
+  return `${normalizedBase}/${normalizedPath}`;
+}
+
 export function resolveAuthUrl(path: string): string {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -48,17 +74,19 @@ export function resolveAuthUrl(path: string): string {
     return path;
   }
 
-  const trimmedBaseUrl = configuredBaseUrl.replace(/\/+$/, '');
+  const trimmedBaseUrl = resolveBrowserSafeBaseUrl(
+    configuredBaseUrl.replace(/\/+$/, ''),
+  );
   const normalizedPath = path.replace(/^\/+/, '');
 
   if (trimmedBaseUrl.startsWith('/')) {
-    return `${trimmedBaseUrl}/${normalizedPath}`;
+    return joinPath(trimmedBaseUrl, normalizedPath);
   }
 
   try {
     return new URL(normalizedPath, `${trimmedBaseUrl}/`).toString();
   } catch {
-    return `${trimmedBaseUrl}/${normalizedPath}`;
+    return joinPath(trimmedBaseUrl, normalizedPath);
   }
 }
 
