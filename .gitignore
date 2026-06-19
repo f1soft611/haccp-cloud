@@ -41,3 +41,4 @@ Thumbs.db
 *.war
 *.ear
 *.nar
+frontend/.env.production
