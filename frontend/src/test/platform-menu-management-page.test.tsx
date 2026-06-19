@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { PlatformMenuManagementPage } from '../pages/platform-admin/menus/PlatformMenuManagementPage';
@@ -19,6 +19,10 @@ const { listPlatformMenusMock } = vi.hoisted(() => ({
   ]),
 }));
 
+const { listPlatformMenusPagedMock } = vi.hoisted(() => ({
+  listPlatformMenusPagedMock: vi.fn(),
+}));
+
 const DEFAULT_MENUS = [
   {
     menuId: 'PM-1',
@@ -34,6 +38,7 @@ const DEFAULT_MENUS = [
 
 vi.mock('../services/platform/platformMenuService', () => ({
   listPlatformMenus: listPlatformMenusMock,
+  listPlatformMenusPaged: listPlatformMenusPagedMock,
   createPlatformMenu: vi.fn(),
   updatePlatformMenu: vi.fn(),
   deletePlatformMenu: vi.fn(),
@@ -65,6 +70,11 @@ describe('PlatformMenuManagementPage', () => {
 
     listPlatformMenusMock.mockReset();
     listPlatformMenusMock.mockImplementation(async () => DEFAULT_MENUS);
+    listPlatformMenusPagedMock.mockReset();
+    listPlatformMenusPagedMock.mockImplementation(async () => ({
+      items: DEFAULT_MENUS,
+      totalCount: 1,
+    }));
   });
 
   it('uses dark row background for platform admin theme', async () => {
@@ -93,17 +103,19 @@ describe('PlatformMenuManagementPage', () => {
     );
   });
 
-  it('shows grid skeleton rows while menu query is loading', async () => {
-    listPlatformMenusMock.mockImplementationOnce(async () => {
+  it('requests paged menu list on initial render', async () => {
+    listPlatformMenusPagedMock.mockImplementationOnce(async () => {
       await new Promise((resolve) => setTimeout(resolve, 200));
-      return DEFAULT_MENUS;
+      return {
+        items: DEFAULT_MENUS,
+        totalCount: 1,
+      };
     });
 
     renderPage();
 
-    expect(
-      await screen.findByTestId('platform-menu-grid-skeleton-row-0'),
-    ).toBeInTheDocument();
+    await screen.findByRole('heading', { name: '메뉴 관리' });
+    expect(listPlatformMenusPagedMock).toHaveBeenCalled();
   });
 
   it('uses shared FormDialog for menu edit modal', async () => {
@@ -133,5 +145,86 @@ describe('PlatformMenuManagementPage', () => {
 
     const buttonPosition = addButton.compareDocumentPosition(cancelButton);
     expect(buttonPosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('applies search and page size to paged API params', async () => {
+    renderPage();
+
+    await screen.findByRole('heading', { name: '메뉴 관리' });
+
+    fireEvent.change(screen.getByLabelText('검색어'), {
+      target: { value: '관리' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+
+    fireEvent.mouseDown(
+      screen.getByRole('combobox', { name: '페이지 크기 선택' }),
+    );
+    fireEvent.click(screen.getByRole('option', { name: '20개' }));
+
+    expect(listPlatformMenusPagedMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pageIndex: 1,
+        pageSize: 20,
+        searchKeyword: '관리',
+      }),
+    );
+  });
+
+  it('renders child-only page rows without showing empty message', async () => {
+    listPlatformMenusPagedMock.mockImplementationOnce(async () => ({
+      items: [
+        {
+          menuId: 'PM-2',
+          menuNm: '로그인 이력',
+          menuDc: '자식 메뉴',
+          menuUrl: '/platform/login-history',
+          parentMenuId: 'PM-1',
+          menuOrdr: 2,
+          iconNm: 'Menu',
+          useAt: 'Y',
+          hasChildren: false,
+        },
+      ],
+      totalCount: 1,
+    }));
+
+    renderPage();
+
+    expect(await screen.findByText('로그인 이력')).toBeInTheDocument();
+    expect(screen.getByText('상위 메뉴: 메뉴 관리')).toBeInTheDocument();
+    expect(screen.queryByText('메뉴가 없습니다.')).not.toBeInTheDocument();
+  });
+
+  it('disables delete when hasChildren is true even if child row is not on current page', async () => {
+    listPlatformMenusPagedMock.mockImplementationOnce(async () => ({
+      items: [
+        {
+          menuId: 'PM-1',
+          menuNm: '상위 메뉴',
+          menuDc: '부모 메뉴',
+          menuUrl: '/platform/root',
+          parentMenuId: null,
+          menuOrdr: 1,
+          iconNm: 'Menu',
+          useAt: 'Y',
+          hasChildren: true,
+        },
+      ],
+      totalCount: 1,
+    }));
+
+    renderPage();
+
+    const rowCell = await screen.findByText('상위 메뉴');
+    const row = rowCell.closest('tr');
+    expect(row).not.toBeNull();
+
+    const deleteIcon = within(row as HTMLTableRowElement).getByTestId(
+      'DeleteOutlineOutlinedIcon',
+    );
+    const deleteButton = deleteIcon.closest('button');
+    expect(deleteButton).not.toBeNull();
+    expect(deleteButton).toBeDisabled();
   });
 });

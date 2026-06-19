@@ -38,11 +38,14 @@ import { APP_LABELS } from '../../../shared/constants/labels';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
 import { FormDialog } from '../../../shared/components/forms/FormDialog';
 import { AdminGrid } from '../../../shared/components/data/AdminGrid';
+import { GridPaginationBar } from '../../../shared/components/data/GridPaginationBar';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
+import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import {
   createPlatformMenu,
   deletePlatformMenu,
+  listPlatformMenusPaged,
   listPlatformMenus,
   updatePlatformMenu,
   type PlatformMenuItem,
@@ -92,10 +95,17 @@ export function PlatformMenuManagementPage() {
   const isDarkMode = theme.palette.mode === 'dark';
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useFeedback();
+  const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } =
+    useGridPagination();
 
   const [searchField, setSearchField] = useState('menuNm');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [filterActive, setFilterActive] = useState('all');
+  const [appliedFilters, setAppliedFilters] = useState({
+    searchField: 'menuNm',
+    searchKeyword: '',
+    useAt: 'all',
+  });
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<PlatformMenuItem | null>(null);
@@ -125,9 +135,32 @@ export function PlatformMenuManagementPage() {
     useAt: 'Y',
   });
 
-  const menusQuery = useQuery({
+  const fullMenusQuery = useQuery({
     queryKey: ['platform-admin', 'menus'],
     queryFn: listPlatformMenus,
+  });
+
+  const menusQuery = useQuery({
+    queryKey: [
+      'platform-admin',
+      'menus-paged',
+      pageIndex,
+      pageSize,
+      appliedFilters.searchField,
+      appliedFilters.searchKeyword,
+      appliedFilters.useAt,
+    ],
+    queryFn: () =>
+      listPlatformMenusPaged({
+        pageIndex,
+        pageSize,
+        searchField: appliedFilters.searchField as
+          | 'menuNm'
+          | 'menuDc'
+          | 'menuUrl',
+        searchKeyword: appliedFilters.searchKeyword || undefined,
+        useAt: appliedFilters.useAt as 'Y' | 'N' | 'all',
+      }),
   });
 
   const createMutation = useMutation({
@@ -139,6 +172,9 @@ export function PlatformMenuManagementPage() {
       showSuccess('메뉴가 등록되었습니다.');
       void queryClient.invalidateQueries({
         queryKey: ['platform-admin', 'menus'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['platform-admin', 'menus-paged'],
       });
     },
     onError: () => {
@@ -156,6 +192,9 @@ export function PlatformMenuManagementPage() {
       void queryClient.invalidateQueries({
         queryKey: ['platform-admin', 'menus'],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ['platform-admin', 'menus-paged'],
+      });
     },
     onError: () => {
       showError('메뉴 수정에 실패했습니다.');
@@ -170,52 +209,76 @@ export function PlatformMenuManagementPage() {
       void queryClient.invalidateQueries({
         queryKey: ['platform-admin', 'menus'],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ['platform-admin', 'menus-paged'],
+      });
     },
     onError: () => {
       showError('메뉴 삭제에 실패했습니다.');
     },
   });
 
-  const filteredMenus = useMemo(() => {
-    const items = (menusQuery.data ?? []).map((menu) => ({
+  const pageMenus = useMemo(() => {
+    const items = (menusQuery.data?.items ?? []).map((menu) => ({
       ...menu,
       parentMenuId: normalizeParentMenuId(menu.parentMenuId),
     }));
+    return items;
+  }, [menusQuery.data?.items]);
 
-    return items.filter((menu) => {
-      if (filterActive !== 'all' && menu.useAt !== filterActive) {
-        return false;
-      }
+  const pageMenuIdSet = useMemo(
+    () => new Set(pageMenus.map((menu) => menu.menuId)),
+    [pageMenus],
+  );
 
-      if (searchKeyword.trim()) {
-        const keyword = searchKeyword.toLowerCase();
-        if (searchField === 'menuNm') {
-          return menu.menuNm.toLowerCase().includes(keyword);
-        }
-        if (searchField === 'menuDc') {
-          return menu.menuDc.toLowerCase().includes(keyword);
-        }
-        if (searchField === 'menuUrl') {
-          return menu.menuUrl.toLowerCase().includes(keyword);
-        }
-      }
-
-      return true;
-    });
-  }, [menusQuery.data, searchKeyword, searchField, filterActive]);
+  const fullMenuNameById = useMemo(
+    () =>
+      new Map(
+        (fullMenusQuery.data ?? []).map((menu) => [menu.menuId, menu.menuNm]),
+      ),
+    [fullMenusQuery.data],
+  );
 
   const rootMenus = useMemo(
     () =>
-      filteredMenus.filter(
+      pageMenus.filter(
         (menu) => normalizeParentMenuId(menu.parentMenuId) === null,
       ),
-    [filteredMenus],
+    [pageMenus],
   );
 
+  const visibleMenus = useMemo(() => {
+    if (rootMenus.length === 0) {
+      return pageMenus;
+    }
+
+    const orphanChildren = pageMenus.filter(
+      (menu) =>
+        normalizeParentMenuId(menu.parentMenuId) !== null &&
+        !pageMenuIdSet.has(normalizeParentMenuId(menu.parentMenuId) ?? ''),
+    );
+
+    return [...rootMenus, ...orphanChildren];
+  }, [rootMenus, pageMenus, pageMenuIdSet]);
+
+  const isOrphanChildOnPage = (menu: PlatformMenuItem): boolean => {
+    const parentId = normalizeParentMenuId(menu.parentMenuId);
+    return parentId !== null && !pageMenuIdSet.has(parentId);
+  };
+
   const getChildMenus = (parentId: string): PlatformMenuItem[] => {
-    return filteredMenus.filter(
+    return pageMenus.filter(
       (menu) => normalizeParentMenuId(menu.parentMenuId) === parentId,
     );
+  };
+
+  const handleSearch = () => {
+    resetPage();
+    setAppliedFilters({
+      searchField,
+      searchKeyword: searchKeyword.trim(),
+      useAt: filterActive,
+    });
   };
 
   const resetForm = () => {
@@ -364,6 +427,11 @@ export function PlatformMenuManagementPage() {
             onChange={(e) => setSearchKeyword(e.target.value)}
             size="small"
             sx={{ flex: 1, minWidth: 200 }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                handleSearch();
+              }
+            }}
           />
 
           <Box sx={{ minWidth: 120 }}>
@@ -381,6 +449,14 @@ export function PlatformMenuManagementPage() {
               <MenuItem value="N">미사용</MenuItem>
             </Select>
           </Box>
+
+          <Button
+            variant="contained"
+            onClick={handleSearch}
+            disabled={isLoading}
+          >
+            조회
+          </Button>
 
           <Button
             variant="contained"
@@ -453,14 +529,14 @@ export function PlatformMenuManagementPage() {
                 </TableCell>
               </TableRow>
             ))
-          ) : rootMenus.length === 0 ? (
+          ) : pageMenus.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} align="center">
                 메뉴가 없습니다.
               </TableCell>
             </TableRow>
           ) : (
-            rootMenus.map((rootMenu) => (
+            visibleMenus.map((rootMenu) => (
               <TableRow
                 key={rootMenu.menuId}
                 sx={{
@@ -489,7 +565,21 @@ export function PlatformMenuManagementPage() {
                     </IconButton>
                   ) : null}
                 </TableCell>
-                <TableCell>{rootMenu.menuNm}</TableCell>
+                <TableCell>
+                  <Box>
+                    <Typography variant="body2">{rootMenu.menuNm}</Typography>
+                    {isOrphanChildOnPage(rootMenu) ? (
+                      <Typography variant="caption" color="text.secondary">
+                        상위 메뉴:{' '}
+                        {normalizeParentMenuId(rootMenu.parentMenuId)
+                          ? (fullMenuNameById.get(
+                              normalizeParentMenuId(rootMenu.parentMenuId)!,
+                            ) ?? normalizeParentMenuId(rootMenu.parentMenuId))
+                          : '-'}
+                      </Typography>
+                    ) : null}
+                  </Box>
+                </TableCell>
                 <TableCell>{rootMenu.menuDc}</TableCell>
                 <TableCell>
                   <Box
@@ -572,8 +662,7 @@ export function PlatformMenuManagementPage() {
                     size="small"
                     onClick={() => handleDelete(rootMenu)}
                     disabled={
-                      getChildMenus(rootMenu.menuId).length > 0 ||
-                      deleteMutation.isPending
+                      Boolean(rootMenu.hasChildren) || deleteMutation.isPending
                     }
                     sx={{
                       color: isDarkMode ? '#f87171' : '#c53b3b',
@@ -594,7 +683,7 @@ export function PlatformMenuManagementPage() {
             ))
           )}
 
-          {rootMenus.map((rootMenu) =>
+          {visibleMenus.map((rootMenu) =>
             expandedIds.has(rootMenu.menuId)
               ? getChildMenus(rootMenu.menuId).map((childMenu) => (
                   <TableRow
@@ -711,6 +800,10 @@ export function PlatformMenuManagementPage() {
                       <IconButton
                         size="small"
                         onClick={() => handleDelete(childMenu)}
+                        disabled={
+                          Boolean(childMenu.hasChildren) ||
+                          deleteMutation.isPending
+                        }
                         sx={{
                           color: '#c53b3b',
                           bgcolor: 'rgba(197, 59, 59, 0.08)',
@@ -726,6 +819,14 @@ export function PlatformMenuManagementPage() {
           )}
         </TableBody>
       </AdminGrid>
+
+      <GridPaginationBar
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        totalCount={menusQuery.data?.totalCount ?? 0}
+        onPageChange={setPageIndex}
+        onPageSizeChange={setPageSize}
+      />
 
       <FormDialog
         open={modalOpen}
@@ -786,7 +887,7 @@ export function PlatformMenuManagementPage() {
               fullWidth
             >
               <MenuItem value="none">없음 (루트)</MenuItem>
-              {(menusQuery.data ?? [])
+              {(fullMenusQuery.data ?? [])
                 .filter(
                   (menu) =>
                     normalizeParentMenuId(menu.parentMenuId) === null &&

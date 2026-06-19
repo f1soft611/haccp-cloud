@@ -68,4 +68,25 @@ public class MenuInfoVO implements Serializable {
 
     @Schema(description = "접근 가능 여부")
     private boolean accessible = false;
+
+    @Schema(description = "검색 필드")
+    private String searchField = "";
+
+    @Schema(description = "검색어")
+    private String searchKeyword = "";
+
+    @Schema(description = "페이지 인덱스")
+    private int pageIndex = 1;
+
+    @Schema(description = "페이지 크기")
+    private int pageSize = 10;
+
+    @Schema(description = "첫 레코드 인덱스")
+    private int firstIndex = 0;
+
+    @Schema(description = "마지막 레코드 인덱스")
+    private int lastIndex = 0;
+
+    @Schema(description = "레코드 개수")
+    private int recordCountPerPage = 10;
 }

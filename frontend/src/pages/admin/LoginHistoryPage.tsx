@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   MenuItem,
-  Pagination,
   Paper,
   Select,
   Stack,
@@ -14,18 +13,20 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getLoginHistoryList } from '../../services/auth/loginHistoryService';
 import { APP_LABELS } from '../../shared/constants/labels';
 import { AdminGrid } from '../../shared/components/data/AdminGrid';
+import { GridPaginationBar } from '../../shared/components/data/GridPaginationBar';
 import { PageHeader } from '../../shared/components/layout/PageHeader';
+import { useGridPagination } from '../../shared/hooks/useGridPagination';
 
-const PAGE_SIZE = 10;
 type SearchField = 'userId' | 'userName';
 
 export function LoginHistoryPage() {
-  const [pageIndex, setPageIndex] = useState(1);
+  const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } =
+    useGridPagination();
   const [searchField, setSearchField] = useState<SearchField>('userId');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [filterLoginResult, setFilterLoginResult] = useState<'Y' | 'N' | ''>(
@@ -57,6 +58,7 @@ export function LoginHistoryPage() {
     queryKey: [
       'login-history',
       pageIndex,
+      pageSize,
       appliedFilters.factoryCode,
       appliedFilters.searchField,
       appliedFilters.searchKeyword,
@@ -67,7 +69,7 @@ export function LoginHistoryPage() {
     queryFn: () =>
       getLoginHistoryList({
         pageIndex,
-        pageSize: PAGE_SIZE,
+        pageSize,
         factoryCode: appliedFilters.factoryCode || undefined,
         searchUserId: effectiveSearchUserId,
         searchUserName: effectiveSearchUserName,
@@ -77,16 +79,8 @@ export function LoginHistoryPage() {
       }),
   });
 
-  const totalPages = useMemo(() => {
-    if (!query.data?.totalCount) {
-      return 1;
-    }
-
-    return Math.max(1, Math.ceil(query.data.totalCount / PAGE_SIZE));
-  }, [query.data?.totalCount]);
-
   const handleSearch = () => {
-    setPageIndex(1);
+    resetPage();
     setAppliedFilters({
       factoryCode: filterFactoryCode.trim(),
       searchField,
@@ -235,13 +229,13 @@ export function LoginHistoryPage() {
         </TableBody>
       </AdminGrid>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Pagination
-          page={pageIndex}
-          count={totalPages}
-          onChange={(_, value) => setPageIndex(value)}
-          shape="rounded"
-          color="primary"
+      <Box>
+        <GridPaginationBar
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={query.data?.totalCount ?? 0}
+          onPageChange={setPageIndex}
+          onPageSizeChange={setPageSize}
         />
       </Box>
     </Stack>

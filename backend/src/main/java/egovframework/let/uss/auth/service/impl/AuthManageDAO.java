@@ -29,6 +29,15 @@ public class AuthManageDAO extends EgovAbstractMapper {
         return selectList("authManageDAO.selectMenuList", menuInfoVO);
     }
 
+    public List<MenuInfoVO> selectMenuPagedList(MenuInfoVO menuInfoVO) throws Exception {
+        return selectList("authManageDAO.selectMenuPagedList", menuInfoVO);
+    }
+
+    public int selectMenuPagedCount(MenuInfoVO menuInfoVO) throws Exception {
+        Integer count = selectOne("authManageDAO.selectMenuPagedCount", menuInfoVO);
+        return count == null ? 0 : count;
+    }
+
     /**
      * 메뉴 상세정보를 조회한다.
      * @param menuInfoVO 메뉴정보
@@ -96,6 +105,15 @@ public class AuthManageDAO extends EgovAbstractMapper {
      */
     public List<AuthorityInfoVO> selectAuthorityList() throws Exception {
         return selectList("authManageDAO.selectAuthorityList");
+    }
+
+    public List<AuthorityInfoVO> selectAuthorityPagedList(AuthorityInfoVO authorityInfoVO) throws Exception {
+        return selectList("authManageDAO.selectAuthorityPagedList", authorityInfoVO);
+    }
+
+    public int selectAuthorityPagedCount(AuthorityInfoVO authorityInfoVO) throws Exception {
+        Integer count = selectOne("authManageDAO.selectAuthorityPagedCount", authorityInfoVO);
+        return count == null ? 0 : count;
     }
 
     /**

@@ -1,14 +1,18 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { LoginHistoryPage } from '../pages/admin/LoginHistoryPage';
 import { APP_LABELS } from '../shared/constants/labels';
 
-vi.mock('../services/auth/loginHistoryService', () => ({
-  getLoginHistoryList: vi.fn(async () => ({
+const { getLoginHistoryListMock } = vi.hoisted(() => ({
+  getLoginHistoryListMock: vi.fn(async () => ({
     items: [],
     totalCount: 0,
   })),
+}));
+
+vi.mock('../services/auth/loginHistoryService', () => ({
+  getLoginHistoryList: getLoginHistoryListMock,
 }));
 
 describe('LoginHistoryPage', () => {
@@ -30,5 +34,28 @@ describe('LoginHistoryPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(APP_LABELS.menu.systemGroup)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '조회' })).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(getLoginHistoryListMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pageSize: 10,
+          pageIndex: 1,
+        }),
+      );
+    });
+
+    fireEvent.mouseDown(
+      screen.getByRole('combobox', { name: '페이지 크기 선택' }),
+    );
+    fireEvent.click(screen.getByRole('option', { name: '20개' }));
+
+    await waitFor(() => {
+      expect(getLoginHistoryListMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pageSize: 20,
+          pageIndex: 1,
+        }),
+      );
+    });
   });
 });

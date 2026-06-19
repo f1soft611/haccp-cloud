@@ -36,6 +36,16 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
         return authManageDAO.selectMenuList(menuInfoVO);
     }
 
+    @Override
+    public List<MenuInfoVO> selectMenuPagedList(MenuInfoVO menuInfoVO) throws Exception {
+        return authManageDAO.selectMenuPagedList(menuInfoVO);
+    }
+
+    @Override
+    public int selectMenuPagedCount(MenuInfoVO menuInfoVO) throws Exception {
+        return authManageDAO.selectMenuPagedCount(menuInfoVO);
+    }
+
     /**
      * 메뉴 상세정보를 조회한다.
      */
@@ -95,6 +105,16 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
     @Override
     public List<AuthorityInfoVO> selectAuthorityList() throws Exception {
         return authManageDAO.selectAuthorityList();
+    }
+
+    @Override
+    public List<AuthorityInfoVO> selectAuthorityPagedList(AuthorityInfoVO authorityInfoVO) throws Exception {
+        return authManageDAO.selectAuthorityPagedList(authorityInfoVO);
+    }
+
+    @Override
+    public int selectAuthorityPagedCount(AuthorityInfoVO authorityInfoVO) throws Exception {
+        return authManageDAO.selectAuthorityPagedCount(authorityInfoVO);
     }
 
     /**

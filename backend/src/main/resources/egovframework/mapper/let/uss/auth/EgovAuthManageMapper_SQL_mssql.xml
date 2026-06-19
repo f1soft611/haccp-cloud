@@ -31,6 +31,67 @@
         ORDER BY m.PARENT_MENU_ID, m.MENU_ORDR, m.MENU_ID
     </select>
 
+    <select id="selectMenuPagedList" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
+        SELECT
+            m.MENU_ID as menuId,
+            m.MENU_NM as menuNm,
+            m.MENU_DC as menuDc,
+            m.PARENT_MENU_ID as parentMenuId,
+            m.MENU_ORDR as menuOrdr,
+            m.MENU_URL as menuUrl,
+            m.ICON_NM as iconNm,
+            m.USE_AT as useAt,
+            m.CRT_DT as frstRegistPnttm,
+            m.CRT_ID as frstRegisterId,
+            m.UPD_DT as lastUpdtPnttm,
+            m.UPD_ID as lastUpdusrId,
+            p.MENU_NM as parentMenuNm,
+            CASE WHEN EXISTS (SELECT 1 FROM tb_menu_info c WHERE c.PARENT_MENU_ID = m.MENU_ID) THEN 1 ELSE 0 END as hasChildren
+        FROM tb_menu_info m
+        LEFT JOIN tb_menu_info p ON m.PARENT_MENU_ID = p.MENU_ID
+        WHERE 1=1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND m.USE_AT = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'menuNm'">
+                    AND m.MENU_NM LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+                <when test="searchField == 'menuDc'">
+                    AND m.MENU_DC LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+                <when test="searchField == 'menuUrl'">
+                    AND m.MENU_URL LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+            </choose>
+        </if>
+        ORDER BY m.PARENT_MENU_ID, m.MENU_ORDR, m.MENU_ID
+        OFFSET #{firstIndex} ROWS FETCH NEXT #{recordCountPerPage} ROWS ONLY
+    </select>
+
+    <select id="selectMenuPagedCount" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="int">
+        SELECT COUNT(1)
+        FROM tb_menu_info m
+        WHERE 1=1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND m.USE_AT = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'menuNm'">
+                    AND m.MENU_NM LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+                <when test="searchField == 'menuDc'">
+                    AND m.MENU_DC LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+                <when test="searchField == 'menuUrl'">
+                    AND m.MENU_URL LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+            </choose>
+        </if>
+    </select>
+
     <!-- 메뉴 ?�세 조회 -->
     <select id="selectMenuDetail" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
         SELECT 
@@ -169,6 +230,62 @@
             UPD_ID as lastUpdusrId
         FROM tb_authorityinfo
         ORDER BY AUTHORITY_LEVEL, AUTHORITY_CODE
+    </select>
+
+    <select id="selectAuthorityPagedList" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO" resultType="egovframework.let.uss.auth.service.AuthorityInfoVO">
+        SELECT
+            AUTHORITY_CODE as authorityCode,
+            AUTHORITY_NM as authorityNm,
+            AUTHORITY_DC as authorityDc,
+            AUTHORITY_LEVEL as authorityLevel,
+            TENANT_SCOPED as tenantScoped,
+            USE_AT as useAt,
+            CRT_DT as frstRegistPnttm,
+            CRT_ID as frstRegisterId,
+            UPD_DT as lastUpdtPnttm,
+            UPD_ID as lastUpdusrId
+        FROM tb_authorityinfo
+        WHERE 1=1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND USE_AT = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'code'">
+                    AND AUTHORITY_CODE LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+                <when test="searchField == 'name'">
+                    AND AUTHORITY_NM LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+                <when test="searchField == 'description'">
+                    AND AUTHORITY_DC LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+            </choose>
+        </if>
+        ORDER BY AUTHORITY_LEVEL, AUTHORITY_CODE
+        OFFSET #{firstIndex} ROWS FETCH NEXT #{recordCountPerPage} ROWS ONLY
+    </select>
+
+    <select id="selectAuthorityPagedCount" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO" resultType="int">
+        SELECT COUNT(1)
+        FROM tb_authorityinfo
+        WHERE 1=1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND USE_AT = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'code'">
+                    AND AUTHORITY_CODE LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+                <when test="searchField == 'name'">
+                    AND AUTHORITY_NM LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+                <when test="searchField == 'description'">
+                    AND AUTHORITY_DC LIKE CONCAT('%', #{searchKeyword}, '%')
+                </when>
+            </choose>
+        </if>
     </select>
 
     <insert id="insertAuthority" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">

@@ -26,14 +26,16 @@ import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
 import { FormDialog } from '../../../shared/components/forms/FormDialog';
 import { AdminGrid } from '../../../shared/components/data/AdminGrid';
+import { GridPaginationBar } from '../../../shared/components/data/GridPaginationBar';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS, getActiveLabel } from '../../../shared/constants/labels';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
+import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import { listPlatformMenus } from '../../../services/platform/platformMenuService';
 import {
   createPlatformRole,
-  listPlatformRoles,
+  listPlatformRolesPaged,
   updatePlatformRole,
   updatePlatformRoleStatus,
   type PlatformRoleItem,
@@ -48,10 +50,17 @@ export function PlatformAuthorityManagementPage() {
   const isDarkMode = theme.palette.mode === 'dark';
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useFeedback();
+  const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } =
+    useGridPagination();
 
   const [searchField, setSearchField] = useState('name');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [filterActive, setFilterActive] = useState('all');
+  const [appliedFilters, setAppliedFilters] = useState({
+    searchField: 'name',
+    searchKeyword: '',
+    useAt: 'all',
+  });
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [mappingModalOpen, setMappingModalOpen] = useState(false);
@@ -83,8 +92,26 @@ export function PlatformAuthorityManagementPage() {
   } | null>(null);
 
   const rolesQuery = useQuery({
-    queryKey: ['platform-admin', 'roles'],
-    queryFn: listPlatformRoles,
+    queryKey: [
+      'platform-admin',
+      'roles-paged',
+      pageIndex,
+      pageSize,
+      appliedFilters.searchField,
+      appliedFilters.searchKeyword,
+      appliedFilters.useAt,
+    ],
+    queryFn: () =>
+      listPlatformRolesPaged({
+        pageIndex,
+        pageSize,
+        searchField: appliedFilters.searchField as
+          | 'code'
+          | 'name'
+          | 'description',
+        searchKeyword: appliedFilters.searchKeyword || undefined,
+        useAt: appliedFilters.useAt as 'Y' | 'N' | 'all',
+      }),
     retry: false,
   });
 
@@ -118,30 +145,10 @@ export function PlatformAuthorityManagementPage() {
     currentPageMenu?.menuDc ||
     '권한 등록, 상태 관리, 권한별 메뉴 매핑을 한 화면에서 처리합니다.';
 
-  const filteredRoles = useMemo(() => {
-    const keyword = searchKeyword.trim().toLowerCase();
-
-    return (rolesQuery.data ?? []).filter((role) => {
-      if (filterActive !== 'all') {
-        const roleUseAt = role.active ? 'Y' : 'N';
-        if (roleUseAt !== filterActive) {
-          return false;
-        }
-      }
-
-      if (!keyword) {
-        return true;
-      }
-
-      if (searchField === 'code') {
-        return role.code.toLowerCase().includes(keyword);
-      }
-      if (searchField === 'name') {
-        return role.name.toLowerCase().includes(keyword);
-      }
-      return role.description.toLowerCase().includes(keyword);
-    });
-  }, [rolesQuery.data, searchField, searchKeyword, filterActive]);
+  const filteredRoles = useMemo(
+    () => rolesQuery.data?.items ?? [],
+    [rolesQuery.data?.items],
+  );
 
   const createMutation = useMutation({
     mutationFn: createPlatformRole,
@@ -152,6 +159,9 @@ export function PlatformAuthorityManagementPage() {
       showSuccess('권한이 등록되었습니다.');
       void queryClient.invalidateQueries({
         queryKey: ['platform-admin', 'roles'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['platform-admin', 'roles-paged'],
       });
     },
     onError: () => {
@@ -166,6 +176,9 @@ export function PlatformAuthorityManagementPage() {
       showSuccess('권한 상태가 변경되었습니다.');
       void queryClient.invalidateQueries({
         queryKey: ['platform-admin', 'roles'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['platform-admin', 'roles-paged'],
       });
     },
     onError: () => {
@@ -182,6 +195,9 @@ export function PlatformAuthorityManagementPage() {
       showSuccess('권한이 수정되었습니다.');
       void queryClient.invalidateQueries({
         queryKey: ['platform-admin', 'roles'],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['platform-admin', 'roles-paged'],
       });
     },
     onError: () => {
@@ -227,6 +243,15 @@ export function PlatformAuthorityManagementPage() {
           active: formData.useAt === 'Y',
         });
       },
+    });
+  };
+
+  const handleSearch = () => {
+    resetPage();
+    setAppliedFilters({
+      searchField,
+      searchKeyword: searchKeyword.trim(),
+      useAt: filterActive,
     });
   };
 
@@ -379,6 +404,11 @@ export function PlatformAuthorityManagementPage() {
             onChange={(event) => setSearchKeyword(event.target.value)}
             size="small"
             sx={{ flex: 1, minWidth: 200 }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                handleSearch();
+              }
+            }}
           />
 
           <Box sx={{ minWidth: 120 }}>
@@ -396,6 +426,14 @@ export function PlatformAuthorityManagementPage() {
               <MenuItem value="N">비활성</MenuItem>
             </Select>
           </Box>
+
+          <Button
+            variant="contained"
+            onClick={handleSearch}
+            disabled={rolesQuery.isLoading}
+          >
+            조회
+          </Button>
 
           <Button
             variant="contained"
@@ -569,6 +607,14 @@ export function PlatformAuthorityManagementPage() {
           )}
         </TableBody>
       </AdminGrid>
+
+      <GridPaginationBar
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        totalCount={rolesQuery.data?.totalCount ?? 0}
+        onPageChange={setPageIndex}
+        onPageSizeChange={setPageSize}
+      />
 
       <FormDialog
         open={createModalOpen}

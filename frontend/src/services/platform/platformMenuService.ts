@@ -38,6 +38,26 @@ export type UpdatePlatformMenuRequest = {
   useAt: 'Y' | 'N';
 };
 
+export type ListPlatformMenusPagedParams = {
+  pageIndex: number;
+  pageSize: number;
+  searchField?: 'menuNm' | 'menuDc' | 'menuUrl';
+  searchKeyword?: string;
+  useAt?: 'Y' | 'N' | 'all';
+};
+
+type MenuPagedApiResponse = {
+  result?: {
+    menuList?: PlatformMenuItem[];
+    totalCount?: number;
+    paginationInfo?: {
+      currentPageNo?: number;
+      recordCountPerPage?: number;
+      totalRecordCount?: number;
+    };
+  };
+};
+
 type MenuListApiResponse =
   | PlatformMenuItem[]
   | {
@@ -87,6 +107,29 @@ export async function listPlatformMenus(): Promise<PlatformMenuItem[]> {
     '/platform-admin/menus',
   );
   return extractMenuList(data).map(normalizeMenuItem);
+}
+
+export async function listPlatformMenusPaged(
+  params: ListPlatformMenusPagedParams,
+): Promise<{
+  items: PlatformMenuItem[];
+  totalCount: number;
+  paginationInfo?: {
+    currentPageNo?: number;
+    recordCountPerPage?: number;
+    totalRecordCount?: number;
+  };
+}> {
+  const { data } = await apiClient.get<MenuPagedApiResponse>(
+    '/platform-admin/menus/paged',
+    { params },
+  );
+
+  return {
+    items: (data.result?.menuList ?? []).map(normalizeMenuItem),
+    totalCount: data.result?.totalCount ?? 0,
+    paginationInfo: data.result?.paginationInfo,
+  };
 }
 
 export async function createPlatformMenu(
