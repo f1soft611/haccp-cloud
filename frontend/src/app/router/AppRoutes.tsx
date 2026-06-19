@@ -14,6 +14,7 @@ import { PlatformAdminLoginPage } from '../../pages/auth/PlatformAdminLoginPage'
 import { LoginHistoryPage } from '../../pages/admin/LoginHistoryPage';
 import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
 import { PlatformAuthorityManagementPage } from '../../pages/platform-admin/authorities/PlatformAuthorityManagementPage';
+import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
 import { useAuthStore } from '../../shared/store/authStore';
 
 function DefaultHomeRoute() {
@@ -108,6 +109,7 @@ export function AppRoutes() {
         />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/document-history" element={<DocumentHistoryPage />} />
+        <Route path="/account/password" element={<AccountPasswordPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

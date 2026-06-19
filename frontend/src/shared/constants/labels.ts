@@ -48,6 +48,7 @@ export const APP_LABELS = {
   field: {
     tenantCode: '업체 코드',
     userId: '사용자 ID',
+    user: '사용자',
     password: '비밀번호',
     companyName: '업체명',
     businessRegistrationNumber: '사업자번호',
@@ -88,6 +89,7 @@ export const APP_LABELS = {
     goToDashboard: '대시보드로',
     newIssueTenantCode: '신규 업체 코드 발급',
     logout: '로그아웃',
+    changePassword: '비밀번호 변경',
     save: '저장',
   },
   table: {
@@ -242,6 +244,7 @@ export const APP_LABELS = {
       },
       topbar: {
         quickLink: '바로가기 > 신규 업체 코드 등록',
+        quickMenuLabel: '자주 찾는 메뉴',
         loginInfoLabel: '로그인 정보',
       },
       statusLabel: {

@@ -1,1 +1,3 @@
 backend/backend-dev
+backend/DATABASE
+backend/src/main/resources/application-dev.properties

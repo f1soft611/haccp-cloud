@@ -15,7 +15,7 @@ import { PlatformAdminPanels } from './PlatformAdminPanels';
 export function PlatformAdminDashboard() {
   const navigate = useNavigate();
   const role = useAuthStore((state) => state.role);
-  const userId = useAuthStore((state) => state.userId);
+  const displayName = useAuthStore((state) => state.displayName);
   const loginHistoryId = useAuthStore((state) => state.loginHistoryId);
   const clearAuth = useAuthStore((state) => state.logout);
 
@@ -126,9 +126,8 @@ export function PlatformAdminDashboard() {
         onRetryCcpDocuments={() => {
           void ccpDocumentsQuery.refetch();
         }}
-        onNavigateToOnboarding={() => navigate('/platform/onboarding')}
-        loginUserId={userId}
         loginRole={role}
+        displayName={displayName}
         onLogout={() => {
           void handleLogout();
         }}

@@ -23,6 +23,7 @@ type AuthState = {
   isAuthenticated: boolean;
   tenantCode: string;
   userId: string;
+  displayName: string;
   role: UserRole;
   accessToken: string;
   refreshToken: string;
@@ -32,6 +33,7 @@ type AuthState = {
   login: (payload: {
     tenantCode: string;
     userId: string;
+    displayName?: string;
     role: UserRole;
     accessToken?: string;
     refreshToken?: string;
@@ -88,6 +90,7 @@ const initialState = {
   isAuthenticated: false,
   tenantCode: '',
   userId: '',
+  displayName: '',
   role: 'USER' as UserRole,
   accessToken: '',
   refreshToken: '',
@@ -113,6 +116,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: ({
     tenantCode,
     userId,
+    displayName,
     role,
     accessToken,
     refreshToken,
@@ -130,6 +134,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       isAuthenticated: true,
       tenantCode,
       userId,
+      displayName: (displayName ?? '').trim(),
       role: normalizeUserRole(role),
       accessToken: accessToken ?? '',
       refreshToken: refreshToken ?? '',

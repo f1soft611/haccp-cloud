@@ -159,15 +159,16 @@ describe('Dashboard page', () => {
       }),
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByRole('button', {
-        name: APP_LABELS.dashboard.platformAdmin.topbar.quickLink,
-      }),
-    ).toBeInTheDocument();
+    expect(screen.getByText('자주 찾는 메뉴')).toBeInTheDocument();
     expect(
       screen.getByText(
         APP_LABELS.dashboard.platformAdmin.topbar.loginInfoLabel,
       ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: APP_LABELS.action.changePassword,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', {
@@ -203,6 +204,39 @@ describe('Dashboard page', () => {
           .roleMenuManagement,
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders redesigned platform admin top section without title and without userId exposure', async () => {
+    useAuthStore.setState({
+      role: 'PLATFORM_ADMIN',
+      userId: 'platform_admin',
+      displayName: '플랫폼관리자',
+    });
+
+    render(
+      <AppProviders>
+        <DashboardPage />
+      </AppProviders>,
+    );
+
+    await screen.findByTestId('platform-admin-dashboard');
+
+    expect(
+      screen.queryByText(APP_LABELS.dashboard.platformAdmin.title),
+    ).not.toBeInTheDocument();
+
+    expect(screen.getByText('자주 찾는 메뉴')).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('button', { name: '비밀번호 변경' }),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('heading', { name: '플랫폼관리자' }),
+    ).toBeInTheDocument();
+
+    expect(screen.queryByText(/사용자 ID/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('platform_admin')).not.toBeInTheDocument();
   });
 
   it('hides legacy haccp operations blocks for PLATFORM_ADMIN', async () => {

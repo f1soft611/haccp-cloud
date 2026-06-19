@@ -16,6 +16,7 @@ export type PlatformAdminLoginRequest = {
 export type LoginResponse = {
   tenantCode: string;
   userId: string;
+  displayName?: string;
   role: UserRole;
   accessToken: string;
   refreshToken?: string;
@@ -27,6 +28,7 @@ export type LoginResponse = {
 type BackendLoginVO = {
   factoryCode?: string;
   id?: string;
+  name?: string;
   groupNm?: string;
 };
 
@@ -108,6 +110,7 @@ function normalizeLoginResponse(
   return {
     tenantCode: resultVO.factoryCode ?? '000001',
     userId,
+    displayName: resultVO.name?.trim() || undefined,
     role: resolveRole(userId, resultVO.groupNm),
     accessToken: data.jToken ?? '',
     refreshToken: data.refreshToken,
