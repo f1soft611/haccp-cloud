@@ -30,6 +30,68 @@
         ORDER BY m.parent_menu_id, m.menu_ordr, m.menu_id
     </select>
 
+    <select id="selectMenuPagedList" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
+        SELECT
+            m.menu_id AS menuId,
+            m.menu_nm AS menuNm,
+            m.menu_dc AS menuDc,
+            m.parent_menu_id AS parentMenuId,
+            m.menu_ordr AS menuOrdr,
+            m.menu_url AS menuUrl,
+            m.icon_nm AS iconNm,
+            m.use_at AS useAt,
+            m.crt_dt AS frstRegistPnttm,
+            m.crt_id AS frstRegisterId,
+            m.upd_dt AS lastUpdtPnttm,
+            m.upd_id AS lastUpdusrId,
+            p.menu_nm AS parentMenuNm,
+            CASE WHEN EXISTS (SELECT 1 FROM tb_menu_info c WHERE c.parent_menu_id = m.menu_id) THEN 1 ELSE 0 END AS hasChildren
+        FROM tb_menu_info m
+            LEFT JOIN tb_menu_info p ON m.parent_menu_id = p.menu_id
+        WHERE 1 = 1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND m.use_at = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'menuNm'">
+                    AND m.menu_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'menuDc'">
+                    AND m.menu_dc ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'menuUrl'">
+                    AND m.menu_url ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+            </choose>
+        </if>
+        ORDER BY m.parent_menu_id, m.menu_ordr, m.menu_id
+        OFFSET #{firstIndex}
+        LIMIT #{recordCountPerPage}
+    </select>
+
+    <select id="selectMenuPagedCount" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="int">
+        SELECT COUNT(1)
+        FROM tb_menu_info m
+        WHERE 1 = 1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND m.use_at = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'menuNm'">
+                    AND m.menu_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'menuDc'">
+                    AND m.menu_dc ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'menuUrl'">
+                    AND m.menu_url ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+            </choose>
+        </if>
+    </select>
+
     <select id="selectMenuDetail" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
         SELECT
             m.menu_id AS menuId,
@@ -161,6 +223,63 @@
             'SYSTEM' AS lastUpdusrId
         FROM tb_authorityinfo
         ORDER BY authority_level, authority_code
+    </select>
+
+    <select id="selectAuthorityPagedList" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO" resultType="egovframework.let.uss.auth.service.AuthorityInfoVO">
+        SELECT
+            authority_code AS authorityCode,
+            authority_nm AS authorityNm,
+            authority_dc AS authorityDc,
+            authority_level AS authorityLevel,
+            tenant_scoped AS tenantScoped,
+            use_at AS useAt,
+            created_at AS frstRegistPnttm,
+            'SYSTEM' AS frstRegisterId,
+            updated_at AS lastUpdtPnttm,
+            'SYSTEM' AS lastUpdusrId
+        FROM tb_authorityinfo
+        WHERE 1 = 1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND use_at = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'code'">
+                    AND authority_code ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'name'">
+                    AND authority_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'description'">
+                    AND authority_dc ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+            </choose>
+        </if>
+        ORDER BY authority_level, authority_code
+        OFFSET #{firstIndex}
+        LIMIT #{recordCountPerPage}
+    </select>
+
+    <select id="selectAuthorityPagedCount" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO" resultType="int">
+        SELECT COUNT(1)
+        FROM tb_authorityinfo
+        WHERE 1 = 1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND use_at = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'code'">
+                    AND authority_code ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'name'">
+                    AND authority_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'description'">
+                    AND authority_dc ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+            </choose>
+        </if>
     </select>
 
     <insert id="insertAuthority" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">

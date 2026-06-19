@@ -19,6 +19,22 @@ public interface EgovAuthManageService {
     List<MenuInfoVO> selectMenuList(MenuInfoVO menuInfoVO) throws Exception;
 
     /**
+     * 메뉴 페이징 목록을 조회한다.
+     * @param menuInfoVO 검색조건
+     * @return List<MenuInfoVO> 메뉴목록
+     * @throws Exception
+     */
+    List<MenuInfoVO> selectMenuPagedList(MenuInfoVO menuInfoVO) throws Exception;
+
+    /**
+     * 메뉴 페이징 총 건수를 조회한다.
+     * @param menuInfoVO 검색조건
+     * @return int 총 건수
+     * @throws Exception
+     */
+    int selectMenuPagedCount(MenuInfoVO menuInfoVO) throws Exception;
+
+    /**
      * 메뉴 상세정보를 조회한다.
      * @param menuInfoVO 메뉴정보
      * @return MenuInfoVO 메뉴상세정보
@@ -72,6 +88,22 @@ public interface EgovAuthManageService {
      * @throws Exception
      */
     List<AuthorityInfoVO> selectAuthorityList() throws Exception;
+
+    /**
+     * 권한 페이징 목록을 조회한다.
+     * @param authorityInfoVO 검색조건
+     * @return List<AuthorityInfoVO> 권한목록
+     * @throws Exception
+     */
+    List<AuthorityInfoVO> selectAuthorityPagedList(AuthorityInfoVO authorityInfoVO) throws Exception;
+
+    /**
+     * 권한 페이징 총 건수를 조회한다.
+     * @param authorityInfoVO 검색조건
+     * @return int 총 건수
+     * @throws Exception
+     */
+    int selectAuthorityPagedCount(AuthorityInfoVO authorityInfoVO) throws Exception;
 
     /**
      * 권한을 등록한다.

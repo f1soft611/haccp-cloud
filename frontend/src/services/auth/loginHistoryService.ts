@@ -29,6 +29,11 @@ type LoginHistoryListResponse = {
   result?: {
     loginHistoryList?: LoginHistoryItem[];
     totalCount?: number;
+    paginationInfo?: {
+      currentPageNo?: number;
+      recordCountPerPage?: number;
+      totalRecordCount?: number;
+    };
   };
 };
 
@@ -40,7 +45,15 @@ const LOGIN_HISTORY_LIST_ENDPOINTS = [
 
 export async function getLoginHistoryList(
   params: LoginHistoryListParams,
-): Promise<{ items: LoginHistoryItem[]; totalCount: number }> {
+): Promise<{
+  items: LoginHistoryItem[];
+  totalCount: number;
+  paginationInfo?: {
+    currentPageNo?: number;
+    recordCountPerPage?: number;
+    totalRecordCount?: number;
+  };
+}> {
   for (const endpoint of LOGIN_HISTORY_LIST_ENDPOINTS) {
     try {
       const { data } = await apiClient.get<LoginHistoryListResponse>(endpoint, {
@@ -50,6 +63,7 @@ export async function getLoginHistoryList(
       return {
         items: data.result?.loginHistoryList ?? [],
         totalCount: data.result?.totalCount ?? 0,
+        paginationInfo: data.result?.paginationInfo,
       };
     } catch (error) {
       const status =

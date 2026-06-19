@@ -47,6 +47,26 @@ export type UpdatePlatformRoleStatusRequest = {
   active: boolean;
 };
 
+export type ListPlatformRolesPagedParams = {
+  pageIndex: number;
+  pageSize: number;
+  searchField?: 'code' | 'name' | 'description';
+  searchKeyword?: string;
+  useAt?: 'Y' | 'N' | 'all';
+};
+
+type PlatformRolesPagedResponse = {
+  result?: {
+    roleList?: PlatformRoleApiItem[];
+    totalCount?: number;
+    paginationInfo?: {
+      currentPageNo?: number;
+      recordCountPerPage?: number;
+      totalRecordCount?: number;
+    };
+  };
+};
+
 function normalizePlatformRoleItem(
   item: PlatformRoleApiItem,
 ): PlatformRoleItem {
@@ -67,6 +87,29 @@ export async function listPlatformRoles(): Promise<PlatformRoleItem[]> {
     '/platform-admin/roles',
   );
   return data.map(normalizePlatformRoleItem);
+}
+
+export async function listPlatformRolesPaged(
+  params: ListPlatformRolesPagedParams,
+): Promise<{
+  items: PlatformRoleItem[];
+  totalCount: number;
+  paginationInfo?: {
+    currentPageNo?: number;
+    recordCountPerPage?: number;
+    totalRecordCount?: number;
+  };
+}> {
+  const { data } = await apiClient.get<PlatformRolesPagedResponse>(
+    '/platform-admin/roles/paged',
+    { params },
+  );
+
+  return {
+    items: (data.result?.roleList ?? []).map(normalizePlatformRoleItem),
+    totalCount: data.result?.totalCount ?? 0,
+    paginationInfo: data.result?.paginationInfo,
+  };
 }
 
 export async function createPlatformRole(

@@ -44,11 +44,13 @@
 ### 4.2 API 계약
 
 #### 로그인 이력
+
 - 유지: GET /api/platform-admin/login-history, GET /api/platform-admin/login-history/list
 - 요청: 기존 검색 파라미터 + pageIndex + pageSize
 - 응답: result.loginHistoryList, result.totalCount, result.paginationInfo
 
 #### 메뉴 관리
+
 - 신규: GET /api/platform-admin/menus/paged
 - 요청:
   - pageIndex
@@ -62,6 +64,7 @@
   - result.paginationInfo
 
 #### 권한 관리
+
 - 신규: GET /api/platform-admin/roles/paged
 - 요청:
   - pageIndex
@@ -77,23 +80,28 @@
 ### 4.3 계층별 변경 포인트
 
 1. Controller
+
 - 메뉴/권한 paged 엔드포인트 추가
 - 입력 검증 및 PaginationInfo 계산
 - ResultVO result 맵 구성
 
 2. Service
+
 - 메뉴/권한 페이징 목록 조회 메서드 추가
 - 메뉴/권한 전체 건수 조회 메서드 추가
 
 3. DAO
+
 - 메뉴/권한 페이징 목록 조회 쿼리 호출 추가
 - 메뉴/권한 건수 조회 쿼리 호출 추가
 
 4. Mapper
+
 - PostgreSQL/MSSQL 각각에 paged list, count 쿼리 추가
 - 기존 정렬 기준 유지
 
 5. VO
+
 - 메뉴/권한 VO에 pageIndex, pageSize, firstIndex, lastIndex, recordCountPerPage 필드 추가
 
 ## 5. 프론트 설계
@@ -103,15 +111,18 @@
 이름: useGridPagination
 
 1. 상태
+
 - pageIndex 기본값 1
 - pageSize 기본값 10
 
 2. 동작
+
 - page 이동
 - pageSize 변경 시 pageIndex를 1로 리셋
 - 검색/필터 적용 시 resetPage 제공
 
 3. 옵션
+
 - pageSizeOptions: [10, 20, 50]
 
 ### 5.2 공통 UI 컴포넌트
@@ -119,6 +130,7 @@
 이름: GridPaginationBar
 
 1. 입력
+
 - pageIndex
 - pageSize
 - totalCount
@@ -126,20 +138,24 @@
 - onPageSizeChange
 
 2. 출력 UI
+
 - 총 건수 표시
 - 페이지 크기 선택 Select
 - 페이지네이션 컴포넌트
 
 3. 계산
+
 - totalPages = max(1, ceil(totalCount / pageSize))
 
 ### 5.3 화면별 적용
 
 1. 로그인 이력
+
 - 기존 로직 유지
 - 하단 페이지네이션 UI만 공통 컴포넌트로 교체
 
 2. 메뉴 관리
+
 - 신규 paged API 사용
 - 클라이언트 전체 필터링 제거
 - 조회 버튼 클릭 시 appliedFilters 반영 후 1페이지로 리셋
@@ -147,6 +163,7 @@
 - 페이지 경계에서 부모와 자식이 분리될 수 있으며, 이는 1차 릴리즈에서 허용한다.
 
 3. 권한 관리
+
 - 신규 paged API 사용
 - 클라이언트 전체 필터링 제거
 - 조회 버튼 클릭 시 appliedFilters 반영 후 1페이지로 리셋
@@ -174,11 +191,13 @@
 ### 8.1 백엔드
 
 1. 메뉴 paged API
+
 - pageIndex/pageSize 검증
 - 검색 필터 반영
 - totalCount 일치 여부
 
 2. 권한 paged API
+
 - pageIndex/pageSize 검증
 - 검색 필터 반영
 - totalCount 일치 여부
@@ -186,11 +205,13 @@
 ### 8.2 프론트
 
 1. useGridPagination 단위 테스트
+
 - 초기 상태
 - pageSize 변경 시 1페이지 리셋
 - resetPage 동작
 
 2. 페이지 통합 테스트
+
 - 로그인 이력: pageSize 변경 파라미터 반영
 - 메뉴 관리: 조회/페이지 이동/pageSize 반영
 - 권한 관리: 조회/페이지 이동/pageSize 반영

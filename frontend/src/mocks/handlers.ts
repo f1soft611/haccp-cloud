@@ -816,6 +816,7 @@ export const handlers = [
     const base = [
       {
         loginHistoryId: 120,
+        factoryCode: 'PLATFORM',
         userId: 'platform_admin',
         userName: '플랫폼관리자',
         loginDt: '2026-06-12 09:40:00',
@@ -826,6 +827,7 @@ export const handlers = [
       },
       {
         loginHistoryId: 119,
+        factoryCode: 'TENANT-A',
         userId: 'tenant_admin',
         userName: '업체관리자',
         loginDt: '2026-06-12 09:05:00',
@@ -836,6 +838,7 @@ export const handlers = [
       },
       {
         loginHistoryId: 118,
+        factoryCode: 'TENANT-A',
         userId: 'tenant_admin',
         userName: '업체관리자',
         loginDt: '2026-06-12 08:59:00',
