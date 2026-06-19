@@ -142,6 +142,41 @@ describe('authService', () => {
     ).rejects.toThrow('플랫폼 관리자 계정만 로그인할 수 있습니다.');
   });
 
+  it('surfaces backend failure message for platform admin login', async () => {
+    const mockedPost = vi.mocked(apiClient.post);
+    mockedPost.mockResolvedValue({
+      data: {
+        resultCode: 'FAIL',
+        message: "개체 이름 'TB_UserInfo'이(가) 잘못되었습니다.",
+      },
+    });
+
+    await expect(
+      loginPlatformAdmin({
+        userId: 'platform_admin',
+        password: 'Passw0rd!',
+      }),
+    ).rejects.toThrow("개체 이름 'TB_UserInfo'이(가) 잘못되었습니다.");
+  });
+
+  it('surfaces backend failure message for tenant login', async () => {
+    const mockedPost = vi.mocked(apiClient.post);
+    mockedPost.mockResolvedValue({
+      data: {
+        resultCode: 'FAIL',
+        resultMessage: '로그인 처리 중 오류가 발생했습니다.',
+      },
+    });
+
+    await expect(
+      login({
+        tenantCode: 'TENANT-A',
+        userId: 'tenant_admin',
+        password: 'Passw0rd!',
+      }),
+    ).rejects.toThrow('로그인 처리 중 오류가 발생했습니다.');
+  });
+
   it('maps app roles to authority codes for runtime menu lookup', () => {
     expect(toAuthorityCode('PLATFORM_ADMIN')).toBe('PLATFORM_ADMIN');
     expect(toAuthorityCode('TENANT_ADMIN')).toBe('TENANT_ADMIN');

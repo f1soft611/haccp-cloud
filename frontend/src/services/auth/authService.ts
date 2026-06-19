@@ -33,6 +33,9 @@ type BackendLoginVO = {
 };
 
 type BackendLoginEnvelope = {
+  resultCode?: string;
+  message?: string;
+  resultMessage?: string;
   resultVO?: BackendLoginVO;
   jToken?: string;
   refreshToken?: string;
@@ -40,6 +43,28 @@ type BackendLoginEnvelope = {
   onboardingRequired?: boolean;
   onboardingStatus?: OnboardingStatus;
 };
+
+function resolveBackendLoginErrorMessage(
+  data: LoginResponse | BackendLoginEnvelope,
+): string | null {
+  if ('accessToken' in data) {
+    return null;
+  }
+
+  const resultCode = data.resultCode?.trim().toUpperCase();
+  const isSuccessCode = resultCode === '200' || resultCode === 'SUCCESS';
+  const backendMessage = data.resultMessage?.trim() || data.message?.trim();
+
+  if (resultCode && !isSuccessCode) {
+    return backendMessage || '로그인에 실패했습니다.';
+  }
+
+  if (!data.jToken) {
+    return backendMessage || '로그인에 실패했습니다.';
+  }
+
+  return null;
+}
 
 function resolveBrowserSafeBaseUrl(baseUrl: string): string {
   if (!import.meta.env.PROD || typeof window === 'undefined') {
@@ -164,6 +189,11 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
     },
   );
 
+  const backendErrorMessage = resolveBackendLoginErrorMessage(data);
+  if (backendErrorMessage) {
+    throw new Error(backendErrorMessage);
+  }
+
   const normalized = normalizeLoginResponse(data);
   return {
     ...normalized,
@@ -181,6 +211,11 @@ export async function loginPlatformAdmin(
       password: request.password,
     },
   );
+
+  const backendErrorMessage = resolveBackendLoginErrorMessage(data);
+  if (backendErrorMessage) {
+    throw new Error(backendErrorMessage);
+  }
 
   const normalized = normalizeLoginResponse(data);
 

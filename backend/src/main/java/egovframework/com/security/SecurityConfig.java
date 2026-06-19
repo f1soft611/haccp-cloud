@@ -72,6 +72,7 @@ public class SecurityConfig {
             "http://localhost:*",
             "http://127.0.0.1:*",
             "https://shmt-mes.vercel.app",
+            "https://haccp-cloud.vercel.app",
         };
 
     @Bean
