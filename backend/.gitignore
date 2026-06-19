@@ -1,14 +1,8 @@
 # M2_REPO factorypath
 .factorypath
 
-# Compiled class file
-*.class
-
 # files
 files/
-# Log file
-backend
-*.log
 
 # BlueJ files
 *.ctxt
@@ -33,13 +27,6 @@ backend
 
 .git/
 .svn/
-
-# Build #
-target/
-bin/
-
-# OS
-.DS_Store
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
