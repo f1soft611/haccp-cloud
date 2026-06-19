@@ -2,25 +2,43 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { NavLink, useLocation } from 'react-router-dom';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
+import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
+import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
+import PrecisionManufacturingRoundedIcon from '@mui/icons-material/PrecisionManufacturingRounded';
+import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
+import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
+import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
+import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import BuildRoundedIcon from '@mui/icons-material/BuildRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
+import LinkRoundedIcon from '@mui/icons-material/LinkRounded';
+import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import type { UserRole } from '../../store/authStore';
 import type { MenuGroup, MenuIconName } from './workMenuConfig';
 
-const MENU_GLYPH_MAP: Record<MenuIconName, string> = {
-  Dashboard: 'D',
-  Settings: 'S',
-  Menu: 'M',
-  Factory: 'F',
-  AdminPanelSettings: 'P',
-  Business: 'B',
-  People: 'U',
-  Assignment: 'A',
-  Inventory: 'I',
-  Build: 'W',
-  Category: 'C',
-  Security: 'S',
-  Link: '↗',
-  History: 'H',
-  AccessTime: 'T',
+type MenuIconComponent = (props: SvgIconProps) => JSX.Element;
+
+const MENU_ICON_MAP: Record<MenuIconName, MenuIconComponent> = {
+  Dashboard: DashboardRoundedIcon,
+  Settings: SettingsRoundedIcon,
+  Menu: MenuRoundedIcon,
+  Factory: PrecisionManufacturingRoundedIcon,
+  AdminPanelSettings: AdminPanelSettingsRoundedIcon,
+  Business: BusinessRoundedIcon,
+  People: PeopleRoundedIcon,
+  Assignment: AssignmentRoundedIcon,
+  Inventory: Inventory2RoundedIcon,
+  Build: BuildRoundedIcon,
+  Category: CategoryRoundedIcon,
+  Security: SecurityRoundedIcon,
+  Link: LinkRoundedIcon,
+  History: HistoryRoundedIcon,
+  AccessTime: AccessTimeRoundedIcon,
 };
 
 type WorkMenuBarProps = {
@@ -244,7 +262,9 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                   }}
                 >
                   {(selectedGroup?.items ?? []).map((item) => {
-                    const glyph = item.icon ? MENU_GLYPH_MAP[item.icon] : null;
+                    const IconComponent = item.icon
+                      ? MENU_ICON_MAP[item.icon]
+                      : null;
 
                     return (
                       <Button
@@ -294,22 +314,19 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                               spacing={0.8}
                               alignItems="center"
                             >
-                              {glyph ? (
-                                <Typography
-                                  variant="caption"
-                                  fontWeight={700}
+                              {IconComponent ? (
+                                <IconComponent
+                                  fontSize="small"
                                   sx={{
                                     color: isDarkMode ? '#fbbf24' : '#0f766e',
                                     bgcolor: isDarkMode
                                       ? 'rgba(251,191,36,0.12)'
                                       : 'rgba(20,184,166,0.12)',
                                     borderRadius: '999px',
-                                    px: 0.8,
-                                    py: 0.15,
+                                    p: 0.4,
+                                    boxSizing: 'content-box',
                                   }}
-                                >
-                                  {glyph}
-                                </Typography>
+                                />
                               ) : null}
                               <Typography
                                 variant="subtitle1"

@@ -1,4 +1,7 @@
 import { Box, Stack, Typography } from '@mui/material';
+import { useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useUserMenuMetadata } from './userMenuMetadataContext';
 
 export type PageHeaderProps = {
   title: string;
@@ -11,6 +14,25 @@ export function PageHeader({
   groupLabel,
   description,
 }: PageHeaderProps) {
+  const location = useLocation();
+  const menuMetadataByPath = useUserMenuMetadata();
+
+  const currentMetadata = useMemo(() => {
+    const matches = Object.keys(menuMetadataByPath).filter((path) =>
+      location.pathname.startsWith(path),
+    );
+
+    if (matches.length === 0) {
+      return undefined;
+    }
+
+    const bestPath = matches.sort((a, b) => b.length - a.length)[0];
+    return menuMetadataByPath[bestPath];
+  }, [location.pathname, menuMetadataByPath]);
+
+  const resolvedTitle = currentMetadata?.menuNm || title;
+  const resolvedDescription = currentMetadata?.menuDc || description;
+
   return (
     <Box
       sx={{
@@ -33,7 +55,7 @@ export function PageHeader({
             /
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {title}
+            {resolvedTitle}
           </Typography>
         </Stack>
       ) : null}
@@ -44,12 +66,12 @@ export function PageHeader({
         fontWeight={700}
         sx={{ lineHeight: 1.2 }}
       >
-        {title}
+        {resolvedTitle}
       </Typography>
 
-      {description ? (
+      {resolvedDescription ? (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          {description}
+          {resolvedDescription}
         </Typography>
       ) : null}
     </Box>

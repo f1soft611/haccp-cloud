@@ -3,13 +3,25 @@ import type { AuthorityCode } from '../../shared/auth/authorityCode';
 
 type UserMenuEntry = {
   menuUrl?: string | null;
+  menuNm?: string | null;
+  menuDc?: string | null;
+  iconNm?: string | null;
 };
+
+type UserMenuListEntry = UserMenuEntry | string;
 
 type UserMenuEnvelope = {
   result?: {
-    menuList?: UserMenuEntry[];
+    menuList?: UserMenuListEntry[];
   };
-  menuList?: UserMenuEntry[];
+  menuList?: UserMenuListEntry[];
+};
+
+export type AccessibleMenuMeta = {
+  path: string;
+  menuNm?: string;
+  menuDc?: string;
+  iconNm?: string;
 };
 
 function normalizeMenuPath(menuUrl: string): string {
@@ -57,9 +69,64 @@ export async function listAccessibleMenuPaths(
 
   const menuList = data.result?.menuList ?? data.menuList ?? [];
   const menuPaths = menuList
-    .map((item) => item.menuUrl ?? '')
+    .map((item) => (typeof item === 'string' ? item : (item.menuUrl ?? '')))
     .map((menuUrl) => normalizeMenuPath(menuUrl))
     .filter((menuUrl) => menuUrl.length > 0);
 
   return Array.from(new Set(menuPaths));
+}
+
+export async function listAccessibleMenus(
+  authorityCode: string,
+): Promise<AccessibleMenuMeta[]> {
+  const normalizedAuthorityCode = normalizeAuthorityCode(authorityCode);
+
+  const { data } = await apiClient.get<UserMenuEnvelope>(
+    `/admin/user-menus/${normalizedAuthorityCode}`,
+  );
+
+  const menuList = data.result?.menuList ?? data.menuList ?? [];
+  const normalizedMenus = menuList
+    .map((item) => {
+      if (typeof item === 'string') {
+        return {
+          path: normalizeMenuPath(item),
+          menuNm: undefined,
+          menuDc: undefined,
+          iconNm: undefined,
+        };
+      }
+
+      return {
+        path: normalizeMenuPath(item.menuUrl ?? ''),
+        menuNm: item.menuNm?.trim(),
+        menuDc: item.menuDc?.trim(),
+        iconNm: item.iconNm?.trim(),
+      };
+    })
+    .filter((item) => item.path.length > 0);
+
+  const uniqueByPath = new Map<string, AccessibleMenuMeta>();
+  normalizedMenus.forEach((item) => {
+    if (!uniqueByPath.has(item.path)) {
+      uniqueByPath.set(item.path, item);
+      return;
+    }
+
+    const current = uniqueByPath.get(item.path);
+    if (!current) {
+      uniqueByPath.set(item.path, item);
+      return;
+    }
+
+    // Keep the first non-empty menu label/description for each path.
+    uniqueByPath.set(item.path, {
+      path: item.path,
+      menuNm: current.menuNm || item.menuNm,
+      menuDc: current.menuDc || item.menuDc,
+      iconNm: current.iconNm || item.iconNm,
+    });
+  });
+
+  return Array.from(uniqueByPath.values());
 }
