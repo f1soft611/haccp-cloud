@@ -1,9 +1,9 @@
 import { act } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { expect } from 'vitest';
+import { expect, vi } from 'vitest';
 import { server } from '../mocks/server';
 import { getDashboardMetrics } from '../services/common/dashboardService';
-import { apiClient } from '../services/api/apiClient';
+import { apiClient, resolveApiBaseUrl } from '../services/api/apiClient';
 import { useAuthStore } from '../shared/store/authStore';
 
 describe('apiClient', () => {
@@ -21,6 +21,8 @@ describe('apiClient', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
+
     act(() => {
       useAuthStore.setState({
         isAuthenticated: false,
@@ -31,6 +33,18 @@ describe('apiClient', () => {
         onboardingStatus: 'COMPLETED',
       });
     });
+  });
+
+  it('appends /api for an absolute backend subpath', () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'http://218.155.74.34/haccp-cloud');
+
+    expect(resolveApiBaseUrl()).toBe('http://218.155.74.34/haccp-cloud/api');
+  });
+
+  it('appends /api for a relative backend subpath', () => {
+    vi.stubEnv('VITE_API_BASE_URL', '/haccp-cloud');
+
+    expect(resolveApiBaseUrl()).toBe('/haccp-cloud/api');
   });
 
   it('clears auth state when API returns 401', async () => {

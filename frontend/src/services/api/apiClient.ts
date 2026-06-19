@@ -1,7 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../../shared/store/authStore';
 
-function resolveApiBaseUrl(): string {
+export function resolveApiBaseUrl(): string {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
   if (!configuredBaseUrl) {
@@ -15,16 +15,7 @@ function resolveApiBaseUrl(): string {
     return trimmed;
   }
 
-  try {
-    const parsed = new URL(trimmed);
-    if (parsed.pathname === '' || parsed.pathname === '/') {
-      return `${trimmed}/api`;
-    }
-  } catch {
-    // Keep the configured value when it is a relative path or non-URL string.
-  }
-
-  return trimmed;
+  return `${trimmed}/api`;
 }
 
 const resolvedApiBaseUrl = resolveApiBaseUrl();

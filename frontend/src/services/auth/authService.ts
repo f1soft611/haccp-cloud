@@ -41,7 +41,7 @@ type BackendLoginEnvelope = {
   onboardingStatus?: OnboardingStatus;
 };
 
-function resolveAuthUrl(path: string): string {
+export function resolveAuthUrl(path: string): string {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
   if (!configuredBaseUrl) {
@@ -49,11 +49,16 @@ function resolveAuthUrl(path: string): string {
   }
 
   const trimmedBaseUrl = configuredBaseUrl.replace(/\/+$/, '');
+  const normalizedPath = path.replace(/^\/+/, '');
+
+  if (trimmedBaseUrl.startsWith('/')) {
+    return `${trimmedBaseUrl}/${normalizedPath}`;
+  }
 
   try {
-    return new URL(path, `${trimmedBaseUrl}/`).toString();
+    return new URL(normalizedPath, `${trimmedBaseUrl}/`).toString();
   } catch {
-    return path;
+    return `${trimmedBaseUrl}/${normalizedPath}`;
   }
 }
 
