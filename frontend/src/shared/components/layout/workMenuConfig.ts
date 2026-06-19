@@ -33,6 +33,39 @@ export type MenuGroup = {
   items: MenuItem[];
 };
 
+const MENU_ICON_NAMES: MenuIconName[] = [
+  'Dashboard',
+  'Settings',
+  'Menu',
+  'Factory',
+  'AdminPanelSettings',
+  'Business',
+  'People',
+  'Assignment',
+  'Inventory',
+  'Build',
+  'Category',
+  'Security',
+  'Link',
+  'History',
+  'AccessTime',
+];
+
+const MENU_ICON_NAME_SET = new Set<MenuIconName>(MENU_ICON_NAMES);
+
+export function toMenuIconName(iconName?: string): MenuIconName | undefined {
+  if (!iconName) {
+    return undefined;
+  }
+
+  const normalized = iconName.trim();
+  if (MENU_ICON_NAME_SET.has(normalized as MenuIconName)) {
+    return normalized as MenuIconName;
+  }
+
+  return undefined;
+}
+
 const PLATFORM_ADMIN_MENU_GROUPS: MenuGroup[] = [
   {
     key: 'dashboard-management',
