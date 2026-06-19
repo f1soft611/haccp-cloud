@@ -4,12 +4,10 @@ import egovframework.com.cmm.LoginVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.servlet.FilterChain;
 
@@ -20,13 +18,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
 public class JwtAuthenticationFilterTest {
 
-    @Autowired
     private JwtAuthenticationFilter filter;
 
-    @MockBean
     private EgovJwtTokenUtil jwtTokenUtil;
 
     private MockHttpServletRequest request;
@@ -35,6 +30,9 @@ public class JwtAuthenticationFilterTest {
 
     @BeforeEach
     public void setUp() {
+        jwtTokenUtil = mock(EgovJwtTokenUtil.class);
+        filter = new JwtAuthenticationFilter();
+        ReflectionTestUtils.setField(filter, "jwtTokenUtil", jwtTokenUtil);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
         filterChain = mock(FilterChain.class);

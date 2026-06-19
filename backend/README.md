@@ -71,3 +71,29 @@ mvn spring-boot:run
 ```bash
 java -jar <jar파일명> --spring.profiles.active=<profile명>
 ```
+
+## 운영 설정 분리 (권장)
+
+운영 민감값(DB 계정/비밀번호, JWT, 암호화 키)은 깃에 커밋하지 않고 외부 파일에서 로딩한다.
+
+1. 예시 파일 복사
+
+```bash
+cp backend/config/application-prod.properties.example backend/config/application-prod.properties
+```
+
+2. 실제 운영값 입력
+
+- `backend/config/application-prod.properties`에 운영 DB/시크릿 값을 채운다.
+- 이 파일은 `.gitignore`로 커밋 제외된다.
+
+3. Tomcat에서 외부 파일 로딩
+
+Windows `setenv.bat` 예시:
+
+```bat
+set "CATALINA_OPTS=%CATALINA_OPTS% -Dspring.profiles.active=prod"
+set "CATALINA_OPTS=%CATALINA_OPTS% -Dspring.config.additional-location=file:/C:/haccp-cloud/config/"
+```
+
+위 경로에 `application-prod.properties`를 두면 WAR 내부 기본 설정을 외부 파일 값으로 덮어쓴다.

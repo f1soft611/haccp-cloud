@@ -7,6 +7,8 @@ backend/DATABASE/backup_postgresql.ps1
 backend/DATABASE/migrate_local_to_dev_postgresql.ps1
 backend/DATABASE/restore_postgresql_dump.ps1
 backend/src/main/resources/application-dev.properties
+backend/src/main/resources/application-prod.local.properties
+backend/config/application-prod.properties
 
 # Frontend build outputs and local dependencies
 frontend/node_modules/

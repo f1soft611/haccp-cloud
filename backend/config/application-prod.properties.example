@@ -1,0 +1,17 @@
+# Copy to application-prod.properties and fill real values.
+# This example file can be committed safely.
+
+Globals.DbType=postgresql
+
+# PostgreSQL (prod)
+Globals.postgresql.DriverClassName=net.sf.log4jdbc.DriverSpy
+Globals.postgresql.Url=jdbc:log4jdbc:postgresql://YOUR_POSTGRES_HOST:5432/YOUR_POSTGRES_DB
+Globals.postgresql.UserName=YOUR_POSTGRES_USERNAME
+Globals.postgresql.Password=YOUR_POSTGRES_PASSWORD
+
+# Security secrets
+Globals.crypto.algoritm=YOUR_CRYPTO_KEY
+Globals.jwt.secret=YOUR_JWT_SECRET_KEY
+
+# Government log api
+gov.log.api.crtfcKey=YOUR_GOV_LOG_CERT_KEY
