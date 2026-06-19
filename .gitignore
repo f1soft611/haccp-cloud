@@ -1,3 +1,43 @@
+# Local backend runtime/config
 backend/backend-dev
-backend/DATABASE
+backend/backend-prod
+backend/DATABASE/backups/
+backend/DATABASE/*.dump
+backend/DATABASE/backup_postgresql.ps1
+backend/DATABASE/migrate_local_to_dev_postgresql.ps1
+backend/DATABASE/restore_postgresql_dump.ps1
 backend/src/main/resources/application-dev.properties
+
+# Frontend build outputs and local dependencies
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+frontend/coverage/
+frontend/*.local
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Common OS and editor artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+*.swp
+*.swo
+
+# Common Java build outputs
+**/target/
+**/build/
+**/out/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
