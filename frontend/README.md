@@ -31,7 +31,10 @@ In this mode, login requests are sent to `http://localhost:8080/auth/login-jwt`.
 When the frontend is served over HTTPS (Vercel), do not use an absolute `http://...` API base URL in production.
 
 - Recommended `VITE_API_BASE_URL` on Vercel: `/haccp-cloud`
-- Keep proxy rules in `vercel.json` so Vercel forwards `/haccp-cloud/*` to the backend origin
+- Keep proxy rules in `vercel.json` so `/haccp-cloud/*` is handled by the Vercel serverless proxy
+- Configure Vercel Environment Variables:
+  - `BACKEND_ORIGIN=http://218.155.74.34`
+  - `BACKEND_BASE_PATH=/haccp-cloud` (optional, default is `/haccp-cloud`)
 
 This prevents browser mixed-content blocking and keeps requests on same-origin HTTPS from the browser perspective.
 
