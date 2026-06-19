@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { NavLink, useLocation } from 'react-router-dom';
-import type { SvgIconProps } from '@mui/material/SvgIcon';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
@@ -21,7 +20,7 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import type { UserRole } from '../../store/authStore';
 import type { MenuGroup, MenuIconName } from './workMenuConfig';
 
-type MenuIconComponent = (props: SvgIconProps) => JSX.Element;
+type MenuIconComponent = typeof DashboardRoundedIcon;
 
 const MENU_ICON_MAP: Record<MenuIconName, MenuIconComponent> = {
   Dashboard: DashboardRoundedIcon,

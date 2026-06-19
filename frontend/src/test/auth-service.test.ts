@@ -1,5 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { login, loginPlatformAdmin } from '../services/auth/authService';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import {
+  login,
+  loginPlatformAdmin,
+  resolveAuthUrl,
+} from '../services/auth/authService';
 import { apiClient } from '../services/api/apiClient';
 import { toAuthorityCode } from '../shared/auth/authorityCode';
 
@@ -12,6 +16,26 @@ vi.mock('../services/api/apiClient', () => ({
 describe('authService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('preserves configured backend subpath for auth URLs', () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'http://218.155.74.34/haccp-cloud');
+
+    expect(resolveAuthUrl('/auth/login-jwt')).toBe(
+      'http://218.155.74.34/haccp-cloud/auth/login-jwt',
+    );
+  });
+
+  it('supports relative backend subpath for auth URLs', () => {
+    vi.stubEnv('VITE_API_BASE_URL', '/haccp-cloud');
+
+    expect(resolveAuthUrl('/auth/login-jwt')).toBe(
+      '/haccp-cloud/auth/login-jwt',
+    );
   });
 
   it('calls platform admin login endpoint', async () => {
