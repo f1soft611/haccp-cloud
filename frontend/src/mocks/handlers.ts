@@ -731,6 +731,7 @@ export const handlers = [
       resultVO: {
         factoryCode: '000001',
         id: payload.id,
+        name: normalizedUserId === 'platform_admin' ? '플랫폼관리자' : '홍길동',
         groupNm: role === 'PLATFORM_ADMIN' ? 'ROLE_ADMIN' : 'ROLE_USER',
       },
     });
@@ -774,6 +775,7 @@ export const handlers = [
       resultVO: {
         factoryCode: '000001',
         id: payload.id,
+        name: '플랫폼관리자',
         groupNm: 'ROLE_ADMIN',
       },
     });

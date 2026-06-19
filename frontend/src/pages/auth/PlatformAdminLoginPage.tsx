@@ -34,6 +34,7 @@ export function PlatformAdminLoginPage() {
       setAuth({
         tenantCode: result.tenantCode,
         userId: result.userId,
+        displayName: result.displayName,
         role: result.role,
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,

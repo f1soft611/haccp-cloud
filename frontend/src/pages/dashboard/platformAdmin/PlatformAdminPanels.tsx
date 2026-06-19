@@ -15,7 +15,6 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import type {
   PlatformAdminCcpDocuments,
   PlatformAdminDashboardKpis,
@@ -23,7 +22,8 @@ import type {
   TenantCodeIssuanceSummary,
 } from '../../../services/common/dashboardService';
 import type { UserRole } from '../../../shared/store/authStore';
-import { APP_LABELS, getRoleLabel } from '../../../shared/constants/labels';
+import { APP_LABELS } from '../../../shared/constants/labels';
+import { PlatformAdminDashboardTopSection } from './PlatformAdminDashboardTopSection';
 
 const MAX_ROWS = 5;
 
@@ -36,9 +36,8 @@ type PlatformAdminPanelsProps = {
   onRetryTenantCodeIssuance: () => void;
   onRetryTenantList: () => void;
   onRetryCcpDocuments: () => void;
-  onNavigateToOnboarding: () => void;
-  loginUserId: string;
   loginRole: UserRole;
+  displayName?: string;
   onLogout: () => void;
   isLoading?: boolean;
 };
@@ -145,14 +144,11 @@ export function PlatformAdminPanels({
   onRetryTenantCodeIssuance,
   onRetryTenantList,
   onRetryCcpDocuments,
-  onNavigateToOnboarding,
-  loginUserId,
   loginRole,
+  displayName,
   onLogout,
   isLoading = false,
 }: PlatformAdminPanelsProps) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
   const hasKpiError = kpis.hasError === true;
   const hasTenantCodeIssuanceError = tenantCodeIssuance.hasError === true;
   const hasTenantListError = tenantList.hasError === true;
@@ -160,57 +156,11 @@ export function PlatformAdminPanels({
 
   return (
     <Stack spacing={2.5}>
-      {/* 헤더 */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-        <Typography variant="h5" fontWeight={700}>
-          {APP_LABELS.dashboard.platformAdmin.title}
-        </Typography>
-
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: { xs: 'stretch', md: 'center' },
-            justifyContent: 'space-between',
-            gap: 1,
-            flexDirection: { xs: 'column', md: 'row' },
-          }}
-        >
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={onNavigateToOnboarding}
-            sx={{ alignSelf: { xs: 'stretch', md: 'flex-start' } }}
-          >
-            {APP_LABELS.dashboard.platformAdmin.topbar.quickLink}
-          </Button>
-
-          <Stack
-            spacing={0.5}
-            sx={{
-              p: 1.2,
-              borderRadius: 2,
-              border: '1px solid',
-              borderColor: isDarkMode ? 'rgba(251, 191, 36, 0.32)' : 'divider',
-              minWidth: { xs: '100%', md: 280 },
-              bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.68)' : 'common.white',
-              color: isDarkMode ? '#f8fafc' : 'text.primary',
-            }}
-          >
-            <Typography variant="caption" color="text.secondary">
-              {APP_LABELS.dashboard.platformAdmin.topbar.loginInfoLabel}
-            </Typography>
-            <Typography variant="body2" fontWeight={700}>
-              {`${APP_LABELS.field.userId}: ${loginUserId}`}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {getRoleLabel(loginRole)}
-            </Typography>
-            <Button variant="outlined" size="small" onClick={onLogout}>
-              {APP_LABELS.action.logout}
-            </Button>
-          </Stack>
-        </Box>
-      </Box>
+      <PlatformAdminDashboardTopSection
+        loginRole={loginRole}
+        displayName={displayName}
+        onLogout={onLogout}
+      />
 
       {/* 데이터 영역: 로딩 중이면 스켈레톤, 완료 후 실제 데이터 */}
       {isLoading ? (

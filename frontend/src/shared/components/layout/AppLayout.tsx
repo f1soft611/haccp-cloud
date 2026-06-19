@@ -17,6 +17,8 @@ import { toAuthorityCode } from '../../auth/authorityCode';
 import { useAuthStore } from '../../store/authStore';
 import { UserMenuMetadataProvider } from './userMenuMetadataContext';
 
+const ALWAYS_ALLOWED_PATHS = ['/account/password'];
+
 export function AppLayout() {
   const role = useAuthStore((state) => state.role);
   const location = useLocation();
@@ -139,6 +141,12 @@ export function AppLayout() {
 
   useEffect(() => {
     if (accessibleMenuQuery.isPending) {
+      return;
+    }
+
+    if (
+      ALWAYS_ALLOWED_PATHS.some((path) => location.pathname.startsWith(path))
+    ) {
       return;
     }
 

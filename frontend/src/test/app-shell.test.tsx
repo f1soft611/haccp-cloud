@@ -240,6 +240,51 @@ describe('App shell', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('allows authenticated user to open /account/password', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+    });
+
+    renderAppRoutesAt('/account/password');
+
+    expect(
+      await screen.findByRole('heading', { name: '비밀번호 변경' }),
+    ).toBeInTheDocument();
+  });
+
+  it('navigates to /account/password when clicking change-password button on platform dashboard', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'platform_admin',
+      role: 'PLATFORM_ADMIN',
+    });
+
+    renderAppRoutesAt('/platform');
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: APP_LABELS.action.changePassword,
+      }),
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: '비밀번호 변경' }),
+    ).toBeInTheDocument();
+  });
+
+  it('redirects unauthenticated user from /account/password to /login', async () => {
+    resetAuthStore();
+    renderAppRoutesAt('/account/password');
+
+    expect(
+      await screen.findByRole('heading', { name: APP_LABELS.pageTitle.login }),
+    ).toBeInTheDocument();
+  });
+
   it('routes tenant admin to tenant-first-setup when onboarding is required', async () => {
     setAuthStoreState({
       isAuthenticated: true,

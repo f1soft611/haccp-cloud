@@ -72,6 +72,7 @@ describe('authService', () => {
         resultVO: {
           factoryCode: '000001',
           id: 'platform_admin',
+          name: '플랫폼관리자',
           groupNm: 'ROLE_ADMIN',
         },
       },
@@ -85,6 +86,7 @@ describe('authService', () => {
     expect(result).toEqual({
       tenantCode: '000001',
       userId: 'platform_admin',
+      displayName: '플랫폼관리자',
       role: 'PLATFORM_ADMIN',
       accessToken: 'jwt-token',
       refreshToken: 'refresh-token',
