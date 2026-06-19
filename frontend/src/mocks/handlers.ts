@@ -279,7 +279,7 @@ const accessibleMenuPathsByAuthorityCode: Record<AuthorityCode, string[]> = {
     '/platform/menus',
     '/platform/roles',
     '/platform/role-menus',
-    '/login-history',
+    '/platform/login-history',
   ],
   TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
   TENANT_USER: ['/dashboard', '/documents'],
@@ -804,10 +804,11 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/loginHistory/list', ({ request }) => {
+  http.get('/api/platform-admin/login-history', ({ request }) => {
     const url = new URL(request.url);
     const pageIndex = Number(url.searchParams.get('pageIndex') ?? '1');
     const pageSize = Number(url.searchParams.get('pageSize') ?? '10');
+    const factoryCode = url.searchParams.get('factoryCode') ?? '';
     const searchUserId =
       url.searchParams.get('searchUserId')?.toLowerCase() ?? '';
     const searchLoginResult = url.searchParams.get('searchLoginResult') ?? '';
@@ -847,6 +848,9 @@ export const handlers = [
     ];
 
     const filtered = base.filter((row) => {
+      const factoryMatches = factoryCode
+        ? row.factoryCode === factoryCode
+        : true;
       const userMatches = searchUserId
         ? row.userId.toLowerCase().includes(searchUserId)
         : true;
@@ -854,7 +858,80 @@ export const handlers = [
         ? row.loginResult === searchLoginResult
         : true;
 
-      return userMatches && resultMatches;
+      return factoryMatches && userMatches && resultMatches;
+    });
+
+    const offset = Math.max(0, (pageIndex - 1) * pageSize);
+    const loginHistoryList = filtered.slice(offset, offset + pageSize);
+
+    return HttpResponse.json({
+      resultCode: 0,
+      resultMessage: 'OK',
+      result: {
+        loginHistoryList,
+        totalCount: filtered.length,
+      },
+    });
+  }),
+
+  http.get('/api/platform-admin/login-history/list', ({ request }) => {
+    const url = new URL(request.url);
+    const pageIndex = Number(url.searchParams.get('pageIndex') ?? '1');
+    const pageSize = Number(url.searchParams.get('pageSize') ?? '10');
+    const factoryCode = url.searchParams.get('factoryCode') ?? '';
+    const searchUserId =
+      url.searchParams.get('searchUserId')?.toLowerCase() ?? '';
+    const searchLoginResult = url.searchParams.get('searchLoginResult') ?? '';
+
+    const base = [
+      {
+        loginHistoryId: 120,
+        factoryCode: 'PLATFORM',
+        userId: 'platform_admin',
+        userName: '플랫폼관리자',
+        loginDt: '2026-06-12 09:40:00',
+        loginIp: '127.0.0.1',
+        loginType: 'JWT_ADMIN',
+        loginResult: 'Y',
+        logoutDt: '2026-06-12 10:15:00',
+      },
+      {
+        loginHistoryId: 119,
+        factoryCode: 'TENANT-A',
+        userId: 'tenant_admin',
+        userName: '업체관리자',
+        loginDt: '2026-06-12 09:05:00',
+        loginIp: '127.0.0.1',
+        loginType: 'JWT',
+        loginResult: 'Y',
+        logoutDt: '',
+      },
+      {
+        loginHistoryId: 118,
+        factoryCode: 'TENANT-B',
+        userId: 'tenant_admin',
+        userName: '업체관리자',
+        loginDt: '2026-06-12 08:59:00',
+        loginIp: '127.0.0.1',
+        loginType: 'JWT',
+        loginResult: 'N',
+        failReason: '아이디 또는 비밀번호가 일치하지 않습니다',
+        logoutDt: '',
+      },
+    ];
+
+    const filtered = base.filter((row) => {
+      const factoryMatches = factoryCode
+        ? row.factoryCode === factoryCode
+        : true;
+      const userMatches = searchUserId
+        ? row.userId.toLowerCase().includes(searchUserId)
+        : true;
+      const resultMatches = searchLoginResult
+        ? row.loginResult === searchLoginResult
+        : true;
+
+      return factoryMatches && userMatches && resultMatches;
     });
 
     const offset = Math.max(0, (pageIndex - 1) * pageSize);

@@ -174,7 +174,7 @@ describe('App shell', () => {
             '/dashboard',
             '/platform/menus',
             '/platform/roles',
-            '/login-history',
+            '/platform/login-history',
           ],
           TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
           TENANT_USER: ['/dashboard', '/documents'],
@@ -194,7 +194,7 @@ describe('App shell', () => {
             '/dashboard',
             '/platform/menus',
             '/platform/roles',
-            '/login-history',
+            '/platform/login-history',
           ],
           TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
           TENANT_USER: ['/dashboard', '/documents'],
@@ -423,8 +423,8 @@ describe('App shell', () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.queryByRole('link', { name: APP_LABELS.menu.loginHistory }),
-    ).not.toBeInTheDocument();
+      screen.getByRole('link', { name: APP_LABELS.menu.loginHistory }),
+    ).toBeInTheDocument();
   });
 
   it('allows PLATFORM_ADMIN to access platform menu management route', async () => {
@@ -547,12 +547,12 @@ describe('App shell', () => {
       role: 'PLATFORM_ADMIN',
     });
 
-    renderAppRoutesAt('/login-history');
+    renderAppRoutesAt('/platform/login-history');
 
     expect(await screen.findByTestId('login-history-page')).toBeInTheDocument();
   });
 
-  it('redirects TENANT_ADMIN from /login-history to /dashboard', async () => {
+  it('redirects TENANT_ADMIN from /platform/login-history to /dashboard', async () => {
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -562,7 +562,7 @@ describe('App shell', () => {
       onboardingStatus: 'COMPLETED',
     });
 
-    renderAppRoutesAt('/login-history');
+    renderAppRoutesAt('/platform/login-history');
 
     expect(
       await screen.findByTestId('dashboard-admin-hub'),

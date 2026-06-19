@@ -75,7 +75,7 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="/login-history"
+          path="/platform/login-history"
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
               <LoginHistoryPage />

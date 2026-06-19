@@ -34,6 +34,7 @@ const renderLayoutWithRole = (
       '/platform/menus',
       '/platform/roles',
       '/platform/role-menus',
+      '/platform/login-history',
     ],
     TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
     USER: ['/dashboard', '/documents'],
@@ -85,6 +86,14 @@ const renderLayoutWithRole = (
                 path="/platform/role-menus"
                 element={
                   <div data-testid="platform-role-menus-stub">role menus</div>
+                }
+              />
+              <Route
+                path="/platform/login-history"
+                element={
+                  <div data-testid="platform-login-history-stub">
+                    login history
+                  </div>
                 }
               />
               <Route
@@ -171,6 +180,11 @@ describe('WorkMenuBar role-based visibility', () => {
         name: APP_LABELS.menu.platformRoleManagement,
       }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: APP_LABELS.menu.loginHistory,
+      }),
+    ).toHaveAttribute('href', '/platform/login-history');
     expect(
       screen.queryByRole('link', { name: APP_LABELS.menu.users }),
     ).not.toBeInTheDocument();

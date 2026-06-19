@@ -345,7 +345,7 @@ export function DashboardPage() {
                       {isPlatformAdmin ? (
                         <Button
                           component={NavLink}
-                          to="/login-history"
+                          to="/platform/login-history"
                           size="small"
                         >
                           {APP_LABELS.dashboard.hubs.loginHistory}

@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -31,7 +32,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/loginHistory")
+@RequestMapping({"/api/loginHistory", "/api/platform-admin/login-history"})
 @Tag(name = "LoginHistoryApiController", description = "로그인 이력 관리")
 public class LoginHistoryApiController {
 
@@ -50,7 +51,7 @@ public class LoginHistoryApiController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "조회 성공")
 	})
-	@GetMapping("/list")
+	@GetMapping({"", "/list"})
 	public ResultVO selectLoginHistoryList(
 			@ModelAttribute LoginHistoryVO loginHistoryVO,
 			@Parameter(hidden = true) @AuthenticationPrincipal LoginVO user) throws Exception {
@@ -58,6 +59,27 @@ public class LoginHistoryApiController {
 		ResultVO resultVO = new ResultVO();
 
 		try {
+			boolean isPlatformAdmin = user != null
+					&& StringUtils.hasText(user.getRoleCode())
+					&& "PLATFORM_ADMIN".equalsIgnoreCase(user.getRoleCode());
+
+			if (!isPlatformAdmin
+					&& !StringUtils.hasText(loginHistoryVO.getFactoryCode())
+					&& user != null
+					&& StringUtils.hasText(user.getFactoryCode())) {
+				loginHistoryVO.setFactoryCode(user.getFactoryCode());
+			}
+
+			log.debug(
+					"로그인 이력 조회 조건 - roleCode: {}, factoryCode: {}, searchUserId: {}, searchUserName: {}, searchLoginResult: {}, searchStartDt: {}, searchEndDt: {}",
+					user != null ? user.getRoleCode() : null,
+					loginHistoryVO.getFactoryCode(),
+					loginHistoryVO.getSearchUserId(),
+					loginHistoryVO.getSearchUserName(),
+					loginHistoryVO.getSearchLoginResult(),
+					loginHistoryVO.getSearchStartDt(),
+					loginHistoryVO.getSearchEndDt());
+
 			// 페이징 설정
 			PaginationInfo paginationInfo = new PaginationInfo();
 			paginationInfo.setCurrentPageNo(loginHistoryVO.getPageIndex());
@@ -71,6 +93,8 @@ public class LoginHistoryApiController {
 			// 목록 조회
 			List<LoginHistoryVO> loginHistoryList = loginHistoryService.selectLoginHistoryList(loginHistoryVO);
 			int totalCount = loginHistoryService.selectLoginHistoryListTotCnt(loginHistoryVO);
+
+			log.debug("로그인 이력 조회 결과 건수 - totalCount: {}", totalCount);
 
 			paginationInfo.setTotalRecordCount(totalCount);
 

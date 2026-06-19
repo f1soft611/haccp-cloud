@@ -37,7 +37,7 @@ public class LoginHistory implements Serializable {
 	private Long loginHistoryId;
 
 	@Schema(description = "회사 코드")
-	private String factoryCode = "000001";
+	private String factoryCode;
 
 	@Schema(description = "사용자 ID")
 	private String userId;

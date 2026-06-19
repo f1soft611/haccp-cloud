@@ -81,6 +81,13 @@ const PLATFORM_ADMIN_MENU_GROUPS: MenuGroup[] = [
         roles: ['PLATFORM_ADMIN'],
         icon: 'Link',
       },
+      {
+        label: APP_LABELS.menu.loginHistory,
+        description: '관리자 및 사용자 로그인 이력을 조회합니다.',
+        path: '/platform/login-history',
+        roles: ['PLATFORM_ADMIN'],
+        icon: 'AccessTime',
+      },
     ],
   },
 ];
@@ -212,7 +219,7 @@ export const WORK_MENU_ITEMS: MenuItem[] = [
   },
   {
     label: APP_LABELS.menu.loginHistory,
-    path: '/login-history',
+    path: '/platform/login-history',
     roles: ['PLATFORM_ADMIN'],
     icon: 'AccessTime',
   },

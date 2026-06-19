@@ -5,6 +5,7 @@ type PlatformRoleApiItem = {
   code?: string;
   name?: string;
   description?: string;
+  authorityDc?: string;
   active?: boolean;
   updatedBy?: string;
   updatedAt?: string;
@@ -54,7 +55,7 @@ function normalizePlatformRoleItem(
     id: item.id ?? code,
     code,
     name: item.name ?? item.authorityNm ?? code,
-    description: item.description ?? '',
+    description: item.description ?? item.authorityDc ?? '',
     active: item.active ?? item.useAt !== 'N',
     updatedBy: item.updatedBy ?? item.lastUpdusrId ?? '',
     updatedAt: item.updatedAt ?? item.lastUpdtPnttm ?? '',
@@ -77,6 +78,7 @@ export async function createPlatformRole(
       code: payload.code,
       name: payload.name,
       description: payload.description,
+      authorityDc: payload.description,
       active: payload.active,
       authorityCode: payload.code,
       authorityNm: payload.name,
@@ -118,6 +120,7 @@ export async function updatePlatformRole(
       code: payload.code,
       name: payload.name,
       description: payload.description,
+      authorityDc: payload.description,
       active: payload.active,
       authorityCode: payload.code,
       authorityNm: payload.name,

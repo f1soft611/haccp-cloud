@@ -412,7 +412,7 @@ export function PlatformAuthorityManagementPage() {
           <TableRow>
             <TableCell>권한 코드</TableCell>
             <TableCell>권한명</TableCell>
-            <TableCell>{APP_LABELS.field.content}</TableCell>
+            <TableCell>설명</TableCell>
             <TableCell width="100" align="center">
               {APP_LABELS.table.status}
             </TableCell>

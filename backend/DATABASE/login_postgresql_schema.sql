@@ -31,6 +31,7 @@ CREATE INDEX ix_tb_factoryinfo_use_at
 CREATE TABLE tb_authorityinfo (
   authority_code VARCHAR(50) PRIMARY KEY,
   authority_nm VARCHAR(100) NOT NULL,
+  authority_dc VARCHAR(500),
   authority_level SMALLINT NOT NULL,
   tenant_scoped CHAR(1) NOT NULL DEFAULT 'Y' CHECK (tenant_scoped IN ('Y', 'N')),
   use_at CHAR(1) NOT NULL DEFAULT 'Y' CHECK (use_at IN ('Y', 'N')),
