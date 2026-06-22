@@ -10,6 +10,7 @@
         <result property="adminName" column="admin_name"/>
         <result property="adminEmail" column="admin_email"/>
         <result property="status" column="status"/>
+        <result property="onboardingStatus" column="onboarding_status"/>
         <result property="createdAt" column="created_at"/>
         <result property="corporateNumber" column="corporate_number"/>
         <result property="businessType" column="business_type"/>
@@ -26,11 +27,12 @@
         <result property="issuedAt" column="issued_at"/>
     </resultMap>
 
-    <!-- 최대 테넌트코드 조회 -->
-    <select id="TenantInfoDAO.selectMaxTenantCode" resultType="string">
-        SELECT COALESCE(MAX(tenant_code), '000000')
+    <!-- 일자별 최대 테넌트코드 조회(yyMMddNNNN) -->
+    <select id="TenantInfoDAO.selectMaxTenantCodeByDatePrefix" parameterType="string" resultType="string">
+        SELECT MAX(tenant_code)
         FROM tb_tenant
-        WHERE tenant_code ~ '^[0-9]{6}$'
+        WHERE tenant_code LIKE #{value} || '%'
+          AND tenant_code ~ '^[0-9]{10}$'
     </select>
 
     <!-- 테넌트 등록 -->
@@ -41,14 +43,16 @@
             admin_email,
             corporate_number,
             business_type,
-            business_category
+            business_category,
+            onboarding_status
         ) VALUES (
             #{tenantSerialCode},
             #{tenantNm},
             #{adminEmail},
             #{corporateNumber},
             #{businessType},
-            #{businessCategory}
+            #{businessCategory},
+            'EMAIL_QUEUED'
         )
     </insert>
 
@@ -57,6 +61,13 @@
         FROM tb_tenant
         WHERE tenant_code = #{value}
     </select>
+
+    <update id="TenantInfoDAO.updateOnboardingStatusByTenantCode" parameterType="map">
+        UPDATE tb_tenant
+        SET onboarding_status = #{onboardingStatus},
+            updated_at = now()
+        WHERE tenant_code = #{tenantCode}
+    </update>
 
     <!-- 조건별 테넌트 건수 조회 -->
     <select id="TenantInfoDAO.selectTenantCount" parameterType="map" resultType="int">
@@ -82,6 +93,9 @@
         <if test="status != null and status != '' and status == 'INACTIVE'">
             AND use_at = 'N'
         </if>
+        <if test="onboardingStatus != null and onboardingStatus != '' and onboardingStatus != 'ALL' and onboardingStatus != 'all'">
+            AND COALESCE(NULLIF(TRIM(onboarding_status), ''), 'EMAIL_QUEUED') = #{onboardingStatus}
+        </if>
         <if test="useAtOnly != null and useAtOnly != ''">
             AND use_at = #{useAtOnly}
         </if>
@@ -96,6 +110,7 @@
             '-' AS admin_name,
             COALESCE(NULLIF(TRIM(admin_email), ''), '-') AS admin_email,
             CASE WHEN use_at = 'Y' THEN 'ACTIVE' ELSE 'INACTIVE' END AS status,
+            COALESCE(NULLIF(TRIM(onboarding_status), ''), 'EMAIL_QUEUED') AS onboarding_status,
             TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
             corporate_number,
             business_type,
@@ -120,6 +135,9 @@
         </if>
         <if test="status != null and status != '' and status == 'INACTIVE'">
             AND use_at = 'N'
+        </if>
+        <if test="onboardingStatus != null and onboardingStatus != '' and onboardingStatus != 'ALL' and onboardingStatus != 'all'">
+            AND COALESCE(NULLIF(TRIM(onboarding_status), ''), 'EMAIL_QUEUED') = #{onboardingStatus}
         </if>
         ORDER BY created_at DESC
         LIMIT #{pageSize}

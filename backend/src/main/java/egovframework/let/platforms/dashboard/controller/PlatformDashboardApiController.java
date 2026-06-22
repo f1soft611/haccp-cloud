@@ -37,13 +37,15 @@ public class PlatformDashboardApiController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String searchField,
             @RequestParam(required = false) String searchKeyword,
-            @RequestParam(required = false, defaultValue = "all") String status) {
+            @RequestParam(required = false, defaultValue = "all") String status,
+            @RequestParam(required = false, defaultValue = "all") String onboardingStatus) {
         PlatformTenantDashboardQueryVO queryVO = new PlatformTenantDashboardQueryVO();
         queryVO.setPageIndex(pageIndex);
         queryVO.setPageSize(pageSize);
         queryVO.setSearchField(searchField);
         queryVO.setSearchKeyword(searchKeyword);
         queryVO.setStatus(status);
+        queryVO.setOnboardingStatus(onboardingStatus);
         return platformDashboardService.listDashboardTenants(queryVO);
     }
 

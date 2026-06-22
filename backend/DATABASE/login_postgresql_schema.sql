@@ -22,6 +22,7 @@ CREATE TABLE tb_tenant (
   corporate_number VARCHAR(50),
   business_type VARCHAR(100),
   business_category VARCHAR(100),
+  onboarding_status VARCHAR(50) NOT NULL DEFAULT 'EMAIL_QUEUED',
   use_at CHAR(1) NOT NULL DEFAULT 'Y' CHECK (use_at IN ('Y', 'N')),
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now()

@@ -27,6 +27,13 @@ import { listPlatformTenants } from '../../../services/platform/platformTenantMa
 
 type SearchField = 'tenantCode' | 'companyName' | 'adminName';
 type StatusFilter = 'all' | 'ACTIVE' | 'INACTIVE';
+type OnboardingStatusFilter =
+  | 'all'
+  | 'EMAIL_QUEUED'
+  | 'EMAIL_SENT'
+  | 'EMAIL_VERIFIED'
+  | 'FIRST_SETUP_COMPLETED'
+  | 'ACTIVE';
 
 export function PlatformTenantManagementPage() {
   const navigate = useNavigate();
@@ -36,10 +43,13 @@ export function PlatformTenantManagementPage() {
   const [searchField, setSearchField] = useState<SearchField>('companyName');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [onboardingStatusFilter, setOnboardingStatusFilter] =
+    useState<OnboardingStatusFilter>('all');
   const [appliedFilter, setAppliedFilter] = useState({
     searchField: 'companyName' as SearchField,
     searchKeyword: '',
     status: 'all' as StatusFilter,
+    onboardingStatus: 'all' as OnboardingStatusFilter,
   });
 
   const tenantQuery = useQuery({
@@ -51,6 +61,7 @@ export function PlatformTenantManagementPage() {
       appliedFilter.searchField,
       appliedFilter.searchKeyword,
       appliedFilter.status,
+      appliedFilter.onboardingStatus,
     ],
     queryFn: () =>
       listPlatformTenants({
@@ -59,6 +70,7 @@ export function PlatformTenantManagementPage() {
         searchField: appliedFilter.searchField,
         searchKeyword: appliedFilter.searchKeyword,
         status: appliedFilter.status,
+        onboardingStatus: appliedFilter.onboardingStatus,
       }),
     retry: false,
   });
@@ -71,6 +83,7 @@ export function PlatformTenantManagementPage() {
       searchField,
       searchKeyword: searchKeyword.trim(),
       status: statusFilter,
+      onboardingStatus: onboardingStatusFilter,
     });
   };
 
@@ -142,6 +155,29 @@ export function PlatformTenantManagementPage() {
             </Select>
           </Box>
 
+          <Box sx={{ minWidth: 170 }}>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
+              온보딩 상태
+            </Typography>
+            <Select
+              value={onboardingStatusFilter}
+              size="small"
+              fullWidth
+              onChange={(event) =>
+                setOnboardingStatusFilter(
+                  event.target.value as OnboardingStatusFilter,
+                )
+              }
+            >
+              <MenuItem value="all">전체</MenuItem>
+              <MenuItem value="EMAIL_QUEUED">메일 발송 대기</MenuItem>
+              <MenuItem value="EMAIL_SENT">메일 발송 완료</MenuItem>
+              <MenuItem value="EMAIL_VERIFIED">메일 인증 완료</MenuItem>
+              <MenuItem value="FIRST_SETUP_COMPLETED">초기 설정 완료</MenuItem>
+              <MenuItem value="ACTIVE">온보딩 완료</MenuItem>
+            </Select>
+          </Box>
+
           <Button
             variant="contained"
             onClick={handleSearch}
@@ -167,8 +203,9 @@ export function PlatformTenantManagementPage() {
             <TableCell>업체명</TableCell>
             <TableCell>관리자명</TableCell>
             <TableCell>관리자이메일</TableCell>
-            <TableCell>상태</TableCell>
-            <TableCell>생성일</TableCell>
+            <TableCell align="center">사용유무</TableCell>
+            <TableCell align="center">온보딩 상태</TableCell>
+            <TableCell align="center">생성일</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -198,7 +235,15 @@ export function PlatformTenantManagementPage() {
                       sx={{ mx: 'auto' }}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell align="center">
+                    <Skeleton
+                      variant="rounded"
+                      width={96}
+                      height={24}
+                      sx={{ mx: 'auto' }}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
                     <Skeleton variant="text" width="65%" />
                   </TableCell>
                 </TableRow>
@@ -207,7 +252,7 @@ export function PlatformTenantManagementPage() {
 
           {!tenantQuery.isPending && rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} align="center">
+              <TableCell colSpan={7} align="center">
                 조회 결과가 없습니다.
               </TableCell>
             </TableRow>
@@ -220,7 +265,7 @@ export function PlatformTenantManagementPage() {
                   <TableCell>{row.companyName}</TableCell>
                   <TableCell>{row.adminName}</TableCell>
                   <TableCell>{row.adminEmail}</TableCell>
-                  <TableCell>
+                  <TableCell align="center">
                     <Chip
                       label={row.status === 'ACTIVE' ? '활성' : '비활성'}
                       size="small"
@@ -228,7 +273,36 @@ export function PlatformTenantManagementPage() {
                       variant={row.status === 'ACTIVE' ? 'filled' : 'outlined'}
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      label={
+                        row.onboardingStatus === 'ACTIVE'
+                          ? '온보딩 완료'
+                          : row.onboardingStatus === 'FIRST_SETUP_COMPLETED'
+                            ? '초기 설정 완료'
+                            : row.onboardingStatus === 'EMAIL_VERIFIED'
+                              ? '메일 인증 완료'
+                              : row.onboardingStatus === 'EMAIL_SENT'
+                                ? '메일 발송 완료'
+                                : '메일 발송 대기'
+                      }
+                      size="small"
+                      color={
+                        row.onboardingStatus === 'ACTIVE'
+                          ? 'success'
+                          : row.onboardingStatus === 'EMAIL_VERIFIED' ||
+                              row.onboardingStatus === 'FIRST_SETUP_COMPLETED'
+                            ? 'info'
+                            : 'warning'
+                      }
+                      variant={
+                        row.onboardingStatus === 'ACTIVE'
+                          ? 'filled'
+                          : 'outlined'
+                      }
+                    />
+                  </TableCell>
+                  <TableCell align="center">
                     {row.createdAt ? row.createdAt.slice(0, 10) : '-'}
                   </TableCell>
                 </TableRow>

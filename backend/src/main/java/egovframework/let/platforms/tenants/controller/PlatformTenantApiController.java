@@ -9,6 +9,7 @@ import javax.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -59,14 +60,12 @@ public class PlatformTenantApiController {
         TenantRegistrationRequestVO serviceRequest = new TenantRegistrationRequestVO();
         serviceRequest.setTenantNm(requestVO.getCompanyName());
         serviceRequest.setAdminEmail(requestVO.getAdminEmail());
-        serviceRequest.setCorporateNumber(firstNonBlank(
-                requestVO.getCorporateNumber(),
-                requestVO.getBusinessRegistrationNumber()
-        ));
+        serviceRequest.setCorporateNumber(requestVO.getCorporateNumber());
         serviceRequest.setBusinessType(requestVO.getBusinessType());
         serviceRequest.setBusinessCategory(requestVO.getBusinessCategory());
 
         TenantRegistrationResultVO created = platformTenantService.registerTenant(serviceRequest);
+        platformTenantService.updateOnboardingStatusByTenantCode(created.getTenantCode(), "EMAIL_SENT");
 
         TenantIssueCodeResponseVO response = new TenantIssueCodeResponseVO();
         response.setTenantCode(created.getTenantCode());
@@ -75,23 +74,50 @@ public class PlatformTenantApiController {
         response.setCorporateNumber(created.getCorporateNumber());
         response.setAdminEmail(created.getAdminEmail());
         response.setCreatedAt(created.getCreatedAt());
-        response.setMailDispatchStatus("MOCK_SENT");
+        response.setMailDispatchStatus("SENT");
         return response;
+    }
+
+    @PostMapping("/tenants/onboarding/email-verified")
+    public Map<String, Object> markEmailVerified(@RequestBody Map<String, String> requestBody) {
+        String tenantCode = requestBody == null ? null : requestBody.get("tenantCode");
+        platformTenantService.updateOnboardingStatusByTenantCode(tenantCode, "EMAIL_VERIFIED");
+
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("tenantCode", tenantCode);
+        result.put("onboardingStatus", "EMAIL_VERIFIED");
+        result.put("updated", true);
+        return result;
+    }
+
+    @PostMapping("/tenants/onboarding/mail-sent")
+    public Map<String, Object> markMailSent(@RequestBody Map<String, String> requestBody) {
+        String tenantCode = requestBody == null ? null : requestBody.get("tenantCode");
+        platformTenantService.updateOnboardingStatusByTenantCode(tenantCode, "EMAIL_SENT");
+
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("tenantCode", tenantCode);
+        result.put("onboardingStatus", "EMAIL_SENT");
+        result.put("updated", true);
+        return result;
+    }
+
+    @PostMapping("/first-login-setup/complete")
+    public Map<String, Object> completeFirstLoginSetup(
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantCode) {
+        platformTenantService.updateOnboardingStatusByTenantCode(tenantCode, "FIRST_SETUP_COMPLETED");
+
+        Map<String, Object> result = new HashMap<String, Object>();
+        result.put("tenantCode", tenantCode);
+        result.put("completed", true);
+        result.put("onboardingRequired", false);
+        result.put("onboardingStatus", "COMPLETED");
+        return result;
     }
 
     @GetMapping("/tenants/samples")
     public List<SampleTenantVO> listSampleTenants() {
         return platformTenantService.listRecentTenants(5);
-    }
-
-    private String firstNonBlank(String first, String second) {
-        if (first != null && !first.trim().isEmpty()) {
-            return first.trim();
-        }
-        if (second != null && !second.trim().isEmpty()) {
-            return second.trim();
-        }
-        return null;
     }
 
     private String trimToEmpty(String value) {

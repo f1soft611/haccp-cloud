@@ -11,11 +11,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+
 import egovframework.let.platforms.tenants.domain.model.TenantRegistrationRequestVO;
 import egovframework.let.platforms.tenants.domain.model.TenantRegistrationResultVO;
 import egovframework.let.platforms.tenants.domain.repository.TenantInfoDAO;
 
 class PlatformTenantServiceImplTest {
+
+    private static final DateTimeFormatter TENANT_CODE_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyMMdd");
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
 
     @DisplayName("업체 등록 시 법인번호/업종/업태 컬럼까지 저장한다")
     @Test
@@ -24,16 +31,20 @@ class PlatformTenantServiceImplTest {
         PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
         ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
 
-        when(tenantInfoDAO.selectMaxTenantCode()).thenReturn("000123");
+        String datePrefix = TENANT_CODE_DATE_FORMATTER.format(LocalDate.now(BUSINESS_ZONE));
+        String previousCode = datePrefix + "0007";
+        String nextCode = datePrefix + "0008";
+
+        when(tenantInfoDAO.selectMaxTenantCodeByDatePrefix(datePrefix)).thenReturn(previousCode);
         when(tenantInfoDAO.insertTenant(
-                eq("000124"),
+                eq(nextCode),
                 eq("테스트업체"),
                 eq("admin@test.com"),
                 eq("CORP-001"),
                 eq("식품제조"),
                 eq("즉석조리식품")))
             .thenReturn(1);
-        when(tenantInfoDAO.selectTenantIdByCode("TENANT_000124")).thenReturn(124L);
+        when(tenantInfoDAO.selectTenantIdByCode(nextCode)).thenReturn(124L);
 
         TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
         requestVO.setTenantNm("테스트업체");
@@ -45,13 +56,13 @@ class PlatformTenantServiceImplTest {
         TenantRegistrationResultVO result = service.registerTenant(requestVO);
 
         assertEquals(124L, result.getTenantId());
-        assertEquals("TENANT_000124", result.getTenantCode());
+        assertEquals("TENANT_" + nextCode, result.getTenantCode());
         assertEquals("CORP-001", result.getCorporateNumber());
         assertEquals("식품제조", result.getBusinessType());
         assertEquals("즉석조리식품", result.getBusinessCategory());
 
         verify(tenantInfoDAO).insertTenant(
-                eq("000124"),
+            eq(nextCode),
                 eq("테스트업체"),
                 eq("admin@test.com"),
                 eq("CORP-001"),

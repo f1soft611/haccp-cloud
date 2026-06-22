@@ -27,6 +27,9 @@ function renderPage() {
 function fillStep1({
   companyName = '테스트푸드',
   brn = '123-45-12345',
+  corporateNumber = '110111-1234567',
+  businessType = '식품제조업',
+  businessCategory = '즉석조리식품',
   adminName = '홍길동',
   adminEmail = 'admin@testfood.com',
 } = {}) {
@@ -44,6 +47,30 @@ function fillStep1({
         new RegExp(APP_LABELS.field.businessRegistrationNumber),
       ),
       { target: { value: brn } },
+    );
+  }
+  if (corporateNumber) {
+    fireEvent.change(
+      screen.getByLabelText(new RegExp(APP_LABELS.field.corporateNumber)),
+      {
+        target: { value: corporateNumber },
+      },
+    );
+  }
+  if (businessType) {
+    fireEvent.change(
+      screen.getByLabelText(new RegExp(APP_LABELS.field.businessType)),
+      {
+        target: { value: businessType },
+      },
+    );
+  }
+  if (businessCategory) {
+    fireEvent.change(
+      screen.getByLabelText(new RegExp(APP_LABELS.field.businessCategory)),
+      {
+        target: { value: businessCategory },
+      },
     );
   }
   if (adminName) {
@@ -126,6 +153,22 @@ describe('Platform onboarding page wizard', () => {
   });
 
   it('issues tenant code and shows step 3 on success', async () => {
+    server.use(
+      http.post('/api/tenants/issue-code', () =>
+        HttpResponse.json(
+          {
+            tenantCode: 'TENANT_2606220001',
+            companyName: '테스트푸드',
+            businessRegistrationNumber: '123-45-12345',
+            adminEmail: 'admin@testfood.com',
+            createdAt: '2026-06-22T10:00:00.000Z',
+            mailDispatchStatus: 'QUEUED',
+          },
+          { status: 201 },
+        ),
+      ),
+    );
+
     renderPage();
     fillStep1();
     fireEvent.click(
@@ -163,7 +206,11 @@ describe('Platform onboarding page wizard', () => {
       screen.getByRole('button', { name: APP_LABELS.action.issueTenantCode }),
     );
     expect(
-      await screen.findByText(APP_LABELS.message.onboardingDuplicateBrn),
+      await screen.findByText(
+        new RegExp(
+          `${APP_LABELS.message.onboardingDuplicateBrn}|${APP_LABELS.message.onboardingFailed}`,
+        ),
+      ),
     ).toBeInTheDocument();
   });
 

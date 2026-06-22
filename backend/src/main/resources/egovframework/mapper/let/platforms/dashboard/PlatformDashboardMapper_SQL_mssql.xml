@@ -13,7 +13,7 @@
     <!-- 대시보드 테넌트 조건별 건수 조회 -->
     <select id="PlatformDashboardDAO.selectDashboardTenantCount" parameterType="egovframework.let.platforms.dashboard.domain.model.PlatformDashboardSearchConditionVO" resultType="int">
         SELECT COUNT(*)
-        FROM tb_factoryinfo
+        FROM tb_tenant
         WHERE 1=1
         <if test="searchKeyword != null and searchKeyword != ''">
             <choose>
@@ -24,7 +24,7 @@
                     AND ISNULL(admin_email, '') LIKE '%' + #{searchKeyword} + '%'
                 </when>
                 <otherwise>
-                    AND factory_nm LIKE '%' + #{searchKeyword} + '%'
+                    AND tenant_nm LIKE '%' + #{searchKeyword} + '%'
                 </otherwise>
             </choose>
         </if>
@@ -39,28 +39,28 @@
     <!-- 활성 테넌트 건수 조회 -->
     <select id="PlatformDashboardDAO.selectActiveTenantCount" resultType="int">
         SELECT COUNT(*)
-        FROM tb_factoryinfo
+        FROM tb_tenant
         WHERE use_at = 'Y'
     </select>
 
     <!-- 최근 7일 신규 테넌트 건수 조회 -->
     <select id="PlatformDashboardDAO.selectNewTenantsLast7DaysCount" resultType="int">
         SELECT COUNT(*)
-        FROM tb_factoryinfo
+        FROM tb_tenant
         WHERE created_at >= DATEADD(DAY, -7, GETDATE())
     </select>
 
     <!-- 이번 달 발급 건수 조회 -->
     <select id="PlatformDashboardDAO.selectIssuedThisMonthCount" resultType="int">
         SELECT COUNT(*)
-        FROM tb_factoryinfo
+        FROM tb_tenant
         WHERE created_at >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
     </select>
 
     <!-- 이번 주 발급 건수 조회 -->
     <select id="PlatformDashboardDAO.selectIssuedThisWeekCount" resultType="int">
         SELECT COUNT(*)
-        FROM tb_factoryinfo
+        FROM tb_tenant
         WHERE created_at >= DATEADD(WEEK, DATEDIFF(WEEK, 0, GETDATE()), 0)
     </select>
 
@@ -68,10 +68,10 @@
     <select id="PlatformDashboardDAO.selectRecentIssues" parameterType="map" resultMap="recentIssueResultMap">
         SELECT TOP (#{limit})
             tenant_code,
-            factory_nm AS company_name,
+            tenant_nm AS company_name,
             CONVERT(VARCHAR(19), created_at, 126) + 'Z' AS issued_at,
             CASE WHEN use_at = 'Y' THEN 'ACTIVE' ELSE 'INACTIVE' END AS status
-        FROM tb_factoryinfo
+        FROM tb_tenant
         ORDER BY created_at DESC
     </select>
 </mapper>

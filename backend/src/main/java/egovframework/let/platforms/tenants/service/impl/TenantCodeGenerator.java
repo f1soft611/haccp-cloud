@@ -5,22 +5,35 @@ package egovframework.let.platforms.tenants.service.impl;
  */
 final class TenantCodeGenerator {
 
+    private static final int DATE_PREFIX_LENGTH = 6;
+    private static final int SEQUENCE_LENGTH = 4;
+
     private TenantCodeGenerator() {
     }
 
-    static String nextTenantCode(String maxTenantCode) {
-        int current = 0;
-        String normalized = maxTenantCode == null ? null : maxTenantCode.trim();
-
-        if (normalized != null && !normalized.isEmpty()) {
-            current = Integer.parseInt(normalized);
+    static String nextTenantCode(String datePrefix, String maxCodeForDate) {
+        if (datePrefix == null || datePrefix.trim().length() != DATE_PREFIX_LENGTH) {
+            throw new IllegalArgumentException("datePrefix must be 6 digits (yyMMdd)");
         }
 
-        int next = current + 1;
-        if (next > 999999) {
-            throw new IllegalStateException("tenant_code exhausted (max: 999999)");
+        String normalizedPrefix = datePrefix.trim();
+        int currentSeq = 0;
+        String normalizedMax = maxCodeForDate == null ? null : maxCodeForDate.trim();
+
+        if (normalizedMax != null && !normalizedMax.isEmpty()) {
+            if (normalizedMax.length() != DATE_PREFIX_LENGTH + SEQUENCE_LENGTH
+                    || !normalizedMax.startsWith(normalizedPrefix)) {
+                throw new IllegalArgumentException("maxCodeForDate must match yyMMddNNNN format");
+            }
+            String seqPart = normalizedMax.substring(DATE_PREFIX_LENGTH);
+            currentSeq = Integer.parseInt(seqPart);
         }
 
-        return String.format("%06d", next);
+        int nextSeq = currentSeq + 1;
+        if (nextSeq > 9999) {
+            throw new IllegalStateException("daily tenant_code sequence exhausted (max: 9999)");
+        }
+
+        return normalizedPrefix + String.format("%04d", nextSeq);
     }
 }

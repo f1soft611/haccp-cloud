@@ -89,6 +89,16 @@ const sampleTenants: SampleTenantItem[] = [
 
 let issuedTenantSequence = 101;
 
+function buildMockIssuedTenantCode() {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const seq = String(issuedTenantSequence).padStart(4, '0');
+  issuedTenantSequence += 1;
+  return `TENANT_${yy}${mm}${dd}${seq}`;
+}
+
 let platformMenus: PlatformMenuItem[] = [
   {
     menuId: 'PM-1',
@@ -991,8 +1001,10 @@ export const handlers = [
     const payload = (await request.json()) as {
       companyName?: string;
       businessRegistrationNumber?: string;
+      corporateNumber?: string;
       representativeName?: string;
       businessType?: string;
+      businessCategory?: string;
       address?: string;
       phoneNumber?: string;
       registrationDate?: string;
@@ -1003,12 +1015,18 @@ export const handlers = [
     const companyName = payload.companyName?.trim() ?? '';
     const businessRegistrationNumber =
       payload.businessRegistrationNumber?.trim() ?? '';
+    const corporateNumber = payload.corporateNumber?.trim() ?? '';
+    const businessType = payload.businessType?.trim() ?? '';
+    const businessCategory = payload.businessCategory?.trim() ?? '';
     const adminName = payload.adminName?.trim() ?? '';
     const adminEmail = payload.adminEmail?.trim() ?? '';
 
     if (
       !companyName ||
       !businessRegistrationNumber ||
+      !corporateNumber ||
+      !businessType ||
+      !businessCategory ||
       !adminName ||
       !adminEmail
     ) {
@@ -1031,8 +1049,7 @@ export const handlers = [
       );
     }
 
-    const tenantCode = `TENANT-${issuedTenantSequence}`;
-    issuedTenantSequence += 1;
+    const tenantCode = buildMockIssuedTenantCode();
 
     const created: TenantItem = {
       tenantCode,
@@ -1047,7 +1064,7 @@ export const handlers = [
       {
         ...created,
         adminEmail,
-        mailDispatchStatus: 'MOCK_SENT',
+        mailDispatchStatus: 'QUEUED',
       },
       { status: 201 },
     );
@@ -1348,6 +1365,7 @@ export const handlers = [
         adminName: tenantAdmin?.name ?? '-',
         adminEmail: tenantAdmin?.email ?? '-',
         status: 'ACTIVE' as const,
+        onboardingStatus: 'ACTIVE' as const,
         createdAt: tenant.createdAt,
       };
     });

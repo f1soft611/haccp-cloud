@@ -11,7 +11,7 @@ import egovframework.let.platforms.tenants.domain.model.SampleTenantVO;
  */
 public interface TenantInfoDAO {
 
-    String selectMaxTenantCode();
+    String selectMaxTenantCodeByDatePrefix(String datePrefix);
 
     int insertTenant(
             String tenantSerialCode,
@@ -22,6 +22,8 @@ public interface TenantInfoDAO {
             String businessCategory);
 
     Long selectTenantIdByCode(String tenantCode);
+
+    int updateOnboardingStatusByTenantCode(String tenantCode, String onboardingStatus);
 
     int selectTenantCount(PlatformTenantDashboardQueryVO queryVO, String useAtOnly);
 

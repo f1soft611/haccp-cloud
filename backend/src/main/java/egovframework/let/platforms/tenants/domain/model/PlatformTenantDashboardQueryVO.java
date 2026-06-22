@@ -18,4 +18,5 @@ public class PlatformTenantDashboardQueryVO {
     private String searchField;
     private String searchKeyword;
     private String status = "all";
+    private String onboardingStatus = "all";
 }

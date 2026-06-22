@@ -15,8 +15,8 @@ import egovframework.let.platforms.tenants.domain.model.SampleTenantVO;
 public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoDAO {
 
     @Override
-    public String selectMaxTenantCode() {
-        return selectOne("TenantInfoDAO.selectMaxTenantCode");
+    public String selectMaxTenantCodeByDatePrefix(String datePrefix) {
+        return selectOne("TenantInfoDAO.selectMaxTenantCodeByDatePrefix", datePrefix);
     }
 
     @Override
@@ -43,11 +43,20 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
     }
 
     @Override
+    public int updateOnboardingStatusByTenantCode(String tenantCode, String onboardingStatus) {
+        Map<String, Object> param = new HashMap<String, Object>();
+        param.put("tenantCode", tenantCode);
+        param.put("onboardingStatus", onboardingStatus);
+        return update("TenantInfoDAO.updateOnboardingStatusByTenantCode", param);
+    }
+
+    @Override
     public int selectTenantCount(PlatformTenantDashboardQueryVO queryVO, String useAtOnly) {
         Map<String, Object> param = new HashMap<String, Object>();
         param.put("searchField", queryVO.getSearchField());
         param.put("searchKeyword", queryVO.getSearchKeyword());
         param.put("status", queryVO.getStatus());
+        param.put("onboardingStatus", queryVO.getOnboardingStatus());
         param.put("useAtOnly", useAtOnly);
 
         Integer count = selectOne("TenantInfoDAO.selectTenantCount", param);
@@ -62,6 +71,7 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
         param.put("searchField", queryVO.getSearchField());
         param.put("searchKeyword", queryVO.getSearchKeyword());
         param.put("status", queryVO.getStatus());
+        param.put("onboardingStatus", queryVO.getOnboardingStatus());
         return selectList("TenantInfoDAO.selectDashboardTenantItems", param);
     }
 

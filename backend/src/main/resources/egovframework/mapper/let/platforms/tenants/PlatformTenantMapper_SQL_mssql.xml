@@ -9,6 +9,7 @@
         <result property="adminName" column="admin_name"/>
         <result property="adminEmail" column="admin_email"/>
         <result property="status" column="status"/>
+        <result property="onboardingStatus" column="onboarding_status"/>
         <result property="createdAt" column="created_at"/>
         <result property="corporateNumber" column="corporate_number"/>
         <result property="businessType" column="business_type"/>
@@ -24,38 +25,53 @@
         <result property="issuedAt" column="issued_at"/>
     </resultMap>
 
-    <!-- 최대 업체코드 조회 -->
-    <select id="TenantInfoDAO.selectMaxTenantCode" resultType="string">
-        SELECT ISNULL(MAX(factory_code), '000000')
-        FROM tb_factoryinfo
-        WHERE factory_code LIKE '[0-9][0-9][0-9][0-9][0-9][0-9]'
+    <!-- 일자별 최대 테넌트코드 조회(yyMMddNNNN) -->
+    <select id="TenantInfoDAO.selectMaxTenantCodeByDatePrefix" parameterType="string" resultType="string">
+        SELECT MAX(tenant_code)
+        FROM tb_tenant
+        WHERE tenant_code LIKE #{value} + '%'
+          AND LEN(tenant_code) = 10
+          AND tenant_code NOT LIKE '%[^0-9]%'
     </select>
 
-    <!-- 업체 등록 -->
+    <!-- 테넌트 등록 -->
     <insert id="TenantInfoDAO.insertTenant" parameterType="map">
-        INSERT INTO tb_factoryinfo (
-            factory_code,
-            factory_nm,
+        INSERT INTO tb_tenant (
             tenant_code,
+            tenant_nm,
             admin_email,
             corporate_number,
             business_type,
-            business_category
+            business_category,
+            onboarding_status
         ) VALUES (
             #{tenantSerialCode},
             #{tenantNm},
-            #{tenantCode},
             #{adminEmail},
             #{corporateNumber},
             #{businessType},
-            #{businessCategory}
+            #{businessCategory},
+            'EMAIL_QUEUED'
         )
     </insert>
+
+    <update id="TenantInfoDAO.updateOnboardingStatusByTenantCode" parameterType="map">
+        UPDATE tb_tenant
+        SET onboarding_status = #{onboardingStatus},
+            updated_at = GETDATE()
+        WHERE tenant_code = #{tenantCode}
+    </update>
+
+    <select id="TenantInfoDAO.selectTenantIdByCode" parameterType="string" resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+    </select>
 
     <!-- 조건별 테넌트 건수 조회 -->
     <select id="TenantInfoDAO.selectTenantCount" parameterType="map" resultType="int">
         SELECT COUNT(*)
-        FROM tb_factoryinfo
+        FROM tb_tenant
         WHERE 1=1
         <if test="searchKeyword != null and searchKeyword != ''">
             <choose>
@@ -66,7 +82,7 @@
                     AND ISNULL(admin_email, '') LIKE '%' + #{searchKeyword} + '%'
                 </when>
                 <otherwise>
-                    AND factory_nm LIKE '%' + #{searchKeyword} + '%'
+                    AND tenant_nm LIKE '%' + #{searchKeyword} + '%'
                 </otherwise>
             </choose>
         </if>
@@ -75,6 +91,9 @@
         </if>
         <if test="status != null and status != '' and status == 'INACTIVE'">
             AND use_at = 'N'
+        </if>
+        <if test="onboardingStatus != null and onboardingStatus != '' and onboardingStatus != 'ALL' and onboardingStatus != 'all'">
+            AND ISNULL(NULLIF(LTRIM(RTRIM(onboarding_status)), ''), 'EMAIL_QUEUED') = #{onboardingStatus}
         </if>
         <if test="useAtOnly != null and useAtOnly != ''">
             AND use_at = #{useAtOnly}
@@ -85,15 +104,16 @@
     <select id="TenantInfoDAO.selectDashboardTenantItems" parameterType="map" resultMap="platformTenantDashboardItemResultMap">
         SELECT
             tenant_code,
-            factory_nm AS company_name,
+            tenant_nm AS company_name,
             '-' AS admin_name,
             ISNULL(NULLIF(LTRIM(RTRIM(admin_email)), ''), '-') AS admin_email,
             CASE WHEN use_at = 'Y' THEN 'ACTIVE' ELSE 'INACTIVE' END AS status,
+            ISNULL(NULLIF(LTRIM(RTRIM(onboarding_status)), ''), 'EMAIL_QUEUED') AS onboarding_status,
             CONVERT(VARCHAR(19), created_at, 126) + 'Z' AS created_at,
             corporate_number,
             business_type,
             business_category
-        FROM tb_factoryinfo
+        FROM tb_tenant
         WHERE 1=1
         <if test="searchKeyword != null and searchKeyword != ''">
             <choose>
@@ -104,7 +124,7 @@
                     AND ISNULL(admin_email, '') LIKE '%' + #{searchKeyword} + '%'
                 </when>
                 <otherwise>
-                    AND factory_nm LIKE '%' + #{searchKeyword} + '%'
+                    AND tenant_nm LIKE '%' + #{searchKeyword} + '%'
                 </otherwise>
             </choose>
         </if>
@@ -113,6 +133,9 @@
         </if>
         <if test="status != null and status != '' and status == 'INACTIVE'">
             AND use_at = 'N'
+        </if>
+        <if test="onboardingStatus != null and onboardingStatus != '' and onboardingStatus != 'ALL' and onboardingStatus != 'all'">
+            AND ISNULL(NULLIF(LTRIM(RTRIM(onboarding_status)), ''), 'EMAIL_QUEUED') = #{onboardingStatus}
         </if>
         ORDER BY created_at DESC
         OFFSET (#{pageIndex} * #{pageSize}) ROWS
@@ -123,11 +146,11 @@
     <select id="TenantInfoDAO.selectRecentTenants" parameterType="map" resultMap="sampleTenantResultMap">
         SELECT TOP (#{limit})
             tenant_code,
-            factory_nm AS company_name,
+            tenant_nm AS company_name,
             corporate_number AS business_registration_number,
             ISNULL(NULLIF(LTRIM(RTRIM(admin_email)), ''), '-') AS admin_email,
             CONVERT(VARCHAR(19), created_at, 126) + 'Z' AS issued_at
-        FROM tb_factoryinfo
+        FROM tb_tenant
         ORDER BY created_at DESC
     </select>
 </mapper>

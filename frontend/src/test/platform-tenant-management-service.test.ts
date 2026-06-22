@@ -27,6 +27,7 @@ describe('platformTenantManagementService', () => {
             adminName: '홍길동',
             adminEmail: 'admin@test.com',
             status: 'ACTIVE',
+            onboardingStatus: 'ACTIVE',
             createdAt: '2026-06-21T10:30:00.000Z',
           },
         ],
@@ -34,7 +35,7 @@ describe('platformTenantManagementService', () => {
     });
 
     const result = await listPlatformTenants({
-      pageIndex: 0,
+      pageIndex: 1,
       pageSize: 10,
       searchField: 'companyName',
       searchKeyword: '',

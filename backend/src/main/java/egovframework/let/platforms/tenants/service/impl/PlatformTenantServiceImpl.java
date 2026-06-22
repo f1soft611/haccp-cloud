@@ -1,7 +1,11 @@
 package egovframework.let.platforms.tenants.service.impl;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.annotation.Resource;
 
@@ -25,6 +29,11 @@ import egovframework.let.platforms.tenants.service.PlatformTenantService;
 @Service("platformTenantService")
 public class PlatformTenantServiceImpl implements PlatformTenantService {
 
+    private static final DateTimeFormatter TENANT_CODE_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyMMdd");
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
     @Resource(name = "tenantInfoDAO")
     private TenantInfoDAO tenantInfoDAO;
 
@@ -40,9 +49,10 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         String businessCategory = emptyToNull(requestVO.getBusinessCategory());
 
         for (int attempt = 0; attempt < 5; attempt++) {
-            String maxCode = tenantInfoDAO.selectMaxTenantCode();
+            String datePrefix = TENANT_CODE_DATE_FORMATTER.format(LocalDate.now(BUSINESS_ZONE));
+            String maxCodeForDate = tenantInfoDAO.selectMaxTenantCodeByDatePrefix(datePrefix);
 
-            String tenantSerialCode = TenantCodeGenerator.nextTenantCode(maxCode);
+            String tenantSerialCode = TenantCodeGenerator.nextTenantCode(datePrefix, maxCodeForDate);
             String tenantCode = "TENANT_" + tenantSerialCode;
 
             try {
@@ -56,7 +66,7 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
                 );
 
                 TenantRegistrationResultVO resultVO = new TenantRegistrationResultVO();
-                resultVO.setTenantId(tenantInfoDAO.selectTenantIdByCode(tenantCode));
+                resultVO.setTenantId(tenantInfoDAO.selectTenantIdByCode(tenantSerialCode));
                 resultVO.setTenantCode(tenantCode);
                 resultVO.setTenantNm(tenantNm);
                 resultVO.setAdminEmail(adminEmail);
@@ -71,6 +81,14 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         }
 
         throw new IllegalStateException("Unable to generate unique tenant code");
+    }
+
+    @Override
+    @Transactional
+    public void updateOnboardingStatusByTenantCode(String tenantCode, String onboardingStatus) {
+        String normalizedTenantCode = normalizeStorageTenantCode(tenantCode);
+        String normalizedOnboardingStatus = normalizeOnboardingTransitionStatus(onboardingStatus);
+        tenantInfoDAO.updateOnboardingStatusByTenantCode(normalizedTenantCode, normalizedOnboardingStatus);
     }
 
     @Override
@@ -116,13 +134,94 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         normalized.setPageSize(pageSize);
         normalized.setSearchField(emptyToNull(queryVO.getSearchField()));
         normalized.setSearchKeyword(emptyToNull(queryVO.getSearchKeyword()));
-        normalized.setStatus(emptyToNull(queryVO.getStatus()) == null ? "all" : queryVO.getStatus().trim());
+        normalized.setStatus(normalizeUseStatus(queryVO.getStatus()));
+        normalized.setOnboardingStatus(normalizeOnboardingStatus(queryVO.getOnboardingStatus()));
+        return normalized;
+    }
+
+    private String normalizeUseStatus(String status) {
+        String normalized = emptyToNull(status);
+        if (normalized == null) {
+            return "all";
+        }
+
+        String upper = normalized.toUpperCase();
+        if ("ACTIVE".equals(upper)
+                || "INACTIVE".equals(upper)
+                || "ALL".equals(upper)) {
+            return upper;
+        }
+
+        return "all";
+    }
+
+    private String normalizeOnboardingStatus(String onboardingStatus) {
+        String normalized = emptyToNull(onboardingStatus);
+        if (normalized == null) {
+            return "all";
+        }
+
+        String upper = normalized.toUpperCase();
+        if ("EMAIL_QUEUED".equals(upper)
+                || "EMAIL_SENT".equals(upper)
+                || "EMAIL_VERIFIED".equals(upper)
+                || "FIRST_SETUP_COMPLETED".equals(upper)
+                || "ACTIVE".equals(upper)
+                || "ALL".equals(upper)) {
+            return upper;
+        }
+
+        return "all";
+    }
+
+    private String normalizeOnboardingTransitionStatus(String onboardingStatus) {
+        String normalized = emptyToNull(onboardingStatus);
+        if (normalized == null) {
+            throw new IllegalArgumentException("onboardingStatus is required");
+        }
+
+        String upper = normalized.toUpperCase();
+        if ("EMAIL_QUEUED".equals(upper)
+                || "EMAIL_SENT".equals(upper)
+                || "EMAIL_VERIFIED".equals(upper)
+                || "FIRST_SETUP_COMPLETED".equals(upper)
+                || "ACTIVE".equals(upper)) {
+            return upper;
+        }
+
+        throw new IllegalArgumentException("unsupported onboardingStatus");
+    }
+
+    private String normalizeStorageTenantCode(String tenantCode) {
+        String normalized = emptyToNull(tenantCode);
+        if (normalized == null) {
+            throw new IllegalArgumentException("tenantCode is required");
+        }
+        if (normalized.startsWith("TENANT_")) {
+            return normalized.substring("TENANT_".length());
+        }
         return normalized;
     }
 
     private void validateRequest(TenantRegistrationRequestVO requestVO) {
         if (requestVO == null || requestVO.getTenantNm() == null || requestVO.getTenantNm().trim().isEmpty()) {
             throw new IllegalArgumentException("tenantNm is required");
+        }
+        if (requestVO.getCorporateNumber() == null || requestVO.getCorporateNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("corporateNumber is required");
+        }
+        if (requestVO.getBusinessType() == null || requestVO.getBusinessType().trim().isEmpty()) {
+            throw new IllegalArgumentException("businessType is required");
+        }
+        if (requestVO.getBusinessCategory() == null || requestVO.getBusinessCategory().trim().isEmpty()) {
+            throw new IllegalArgumentException("businessCategory is required");
+        }
+        String adminEmail = requestVO.getAdminEmail();
+        if (adminEmail == null || adminEmail.trim().isEmpty()) {
+            throw new IllegalArgumentException("adminEmail is required");
+        }
+        if (!EMAIL_PATTERN.matcher(adminEmail.trim()).matches()) {
+            throw new IllegalArgumentException("adminEmail format is invalid");
         }
     }
 

@@ -19,6 +19,7 @@ public class PlatformTenantDashboardItemVO {
     private String adminName;
     private String adminEmail;
     private String status;
+    private String onboardingStatus;
     private String createdAt;
     private String corporateNumber;
     private String businessType;

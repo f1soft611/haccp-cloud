@@ -3,8 +3,10 @@ import { apiClient } from '../api/apiClient';
 export type IssueTenantCodeRequest = {
   companyName: string;
   businessRegistrationNumber: string;
+  corporateNumber: string;
   representativeName: string;
   businessType: string;
+  businessCategory: string;
   address: string;
   phoneNumber: string;
   registrationDate: string;

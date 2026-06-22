@@ -15,6 +15,8 @@ public interface PlatformTenantService {
 
     TenantRegistrationResultVO registerTenant(TenantRegistrationRequestVO requestVO);
 
+    void updateOnboardingStatusByTenantCode(String tenantCode, String onboardingStatus);
+
     PlatformTenantDashboardResultVO listDashboardTenants(PlatformTenantDashboardQueryVO queryVO);
 
     List<SampleTenantVO> listRecentTenants(int limit);
