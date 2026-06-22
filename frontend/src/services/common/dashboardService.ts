@@ -77,7 +77,13 @@ export async function getPlatformAdminDashboardKpis(): Promise<PlatformAdminDash
     const { data } = await apiClient.get<PlatformAdminDashboardKpis>(
       '/platform-admin/dashboard/kpis',
     );
-    return data;
+    return {
+      activeTenants: data?.activeTenants ?? 0,
+      newTenantsLast7Days: data?.newTenantsLast7Days ?? 0,
+      ccpDocCompletionRate: data?.ccpDocCompletionRate ?? 0,
+      tenantsWithoutCcpDocs: data?.tenantsWithoutCcpDocs ?? 0,
+      hasError: data?.hasError,
+    };
   } catch {
     return {
       activeTenants: 0,
@@ -94,7 +100,13 @@ export async function listPlatformAdminTenantCodeIssuanceSummary(): Promise<Tena
     const { data } = await apiClient.get<TenantCodeIssuanceSummary>(
       '/platform-admin/dashboard/tenant-code-issuance',
     );
-    return data;
+    return {
+      totalIssued: data?.totalIssued ?? 0,
+      issuedThisMonth: data?.issuedThisMonth ?? 0,
+      issuedThisWeek: data?.issuedThisWeek ?? 0,
+      hasError: data?.hasError,
+      recentIssues: data?.recentIssues ?? [],
+    };
   } catch {
     return {
       totalIssued: 0,
@@ -114,7 +126,15 @@ export async function listPlatformAdminTenants(): Promise<PlatformAdminTenantLis
     const { data } = await apiClient.get<PlatformAdminTenantList>(
       '/platform-admin/dashboard/tenants',
     );
-    return data;
+    return {
+      hasError: data?.hasError,
+      summary: {
+        total: data?.summary?.total ?? 0,
+        active: data?.summary?.active ?? 0,
+        inactive: data?.summary?.inactive ?? 0,
+      },
+      items: data?.items ?? [],
+    };
   } catch {
     return {
       hasError: true,
@@ -133,7 +153,15 @@ export async function listPlatformAdminCcpDocuments(): Promise<PlatformAdminCcpD
     const { data } = await apiClient.get<PlatformAdminCcpDocuments>(
       '/platform-admin/dashboard/ccp-documents',
     );
-    return data;
+    return {
+      hasError: data?.hasError,
+      overall: {
+        completionRate: data?.overall?.completionRate ?? 0,
+        completedTenants: data?.overall?.completedTenants ?? 0,
+        totalTenants: data?.overall?.totalTenants ?? 0,
+      },
+      items: data?.items ?? [],
+    };
   } catch {
     return {
       hasError: true,

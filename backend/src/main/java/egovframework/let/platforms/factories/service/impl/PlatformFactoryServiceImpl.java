@@ -1,32 +1,35 @@
 package egovframework.let.platforms.factories.service.impl;
 
-import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Resource;
+
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import egovframework.let.platforms.factories.service.FactoryRegistrationRequestVO;
-import egovframework.let.platforms.factories.service.FactoryRegistrationResultVO;
+import egovframework.let.platforms.factories.domain.model.FactoryRegistrationRequestVO;
+import egovframework.let.platforms.factories.domain.model.FactoryRegistrationResultVO;
+import egovframework.let.platforms.factories.domain.model.PlatformTenantDashboardItemVO;
+import egovframework.let.platforms.factories.domain.model.PlatformTenantDashboardQueryVO;
+import egovframework.let.platforms.factories.domain.model.PlatformTenantDashboardResultVO;
+import egovframework.let.platforms.factories.domain.model.PlatformTenantDashboardSummaryVO;
+import egovframework.let.platforms.factories.domain.model.SampleTenantVO;
+import egovframework.let.platforms.factories.domain.repository.FactoryInfoDAO;
 import egovframework.let.platforms.factories.service.PlatformFactoryService;
-import egovframework.let.platforms.factories.service.PlatformTenantDashboardItemVO;
-import egovframework.let.platforms.factories.service.PlatformTenantDashboardQueryVO;
-import egovframework.let.platforms.factories.service.PlatformTenantDashboardResultVO;
-import egovframework.let.platforms.factories.service.PlatformTenantDashboardSummaryVO;
-import egovframework.let.platforms.factories.service.SampleTenantVO;
 
+/**
+ * 플랫폼 공장 서비스 구현체
+ * @author AI Assistant
+ * @since 2026.06.22
+ * @version 1.0
+ */
 @Service("platformFactoryService")
 public class PlatformFactoryServiceImpl implements PlatformFactoryService {
 
-    private final JdbcTemplate jdbcTemplate;
-
-    public PlatformFactoryServiceImpl(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    @Resource(name = "factoryInfoDAO")
+    private FactoryInfoDAO factoryInfoDAO;
 
     @Override
     @Transactional
@@ -41,17 +44,13 @@ public class PlatformFactoryServiceImpl implements PlatformFactoryService {
 
         // concurrent 등록 시 중복코드 충돌을 피하기 위해 제한된 횟수로 재시도한다.
         for (int attempt = 0; attempt < 5; attempt++) {
-            String maxCode = jdbcTemplate.queryForObject(
-                    "SELECT COALESCE(MAX(factory_code), '000000') FROM tb_factoryinfo WHERE factory_code ~ '^[0-9]{6}$'",
-                    String.class
-            );
+            String maxCode = factoryInfoDAO.selectMaxFactoryCode();
 
             String factoryCode = FactoryCodeGenerator.nextFactoryCode(maxCode);
             String tenantCode = "TENANT_" + factoryCode;
 
             try {
-                jdbcTemplate.update(
-                        "INSERT INTO tb_factoryinfo (factory_code, factory_nm, tenant_code, admin_email, corporate_number, business_type, business_category) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                factoryInfoDAO.insertFactory(
                         factoryCode,
                         factoryNm,
                         tenantCode,
@@ -84,40 +83,10 @@ public class PlatformFactoryServiceImpl implements PlatformFactoryService {
             PlatformTenantDashboardQueryVO queryVO) {
         PlatformTenantDashboardQueryVO condition = normalizeQuery(queryVO);
 
-        List<Object> whereParams = new ArrayList<Object>();
-        String whereClause = buildWhereClause(condition, whereParams);
-
-        int total = queryForCount(whereClause, whereParams, null);
-        int active = queryForCount(whereClause, whereParams, "Y");
-        int inactive = queryForCount(whereClause, whereParams, "N");
-
-        List<Object> itemParams = new ArrayList<Object>(whereParams);
-        itemParams.add(condition.getPageSize());
-        itemParams.add(condition.getPageIndex() * condition.getPageSize());
-
-        List<PlatformTenantDashboardItemVO> items = jdbcTemplate.query(
-                "SELECT tenant_code, factory_nm, admin_email, use_at, created_at, corporate_number, business_type, business_category "
-                        + "FROM tb_factoryinfo "
-                        + whereClause
-                        + " ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                itemParams.toArray(),
-                (rs, rowNum) -> {
-                    PlatformTenantDashboardItemVO item = new PlatformTenantDashboardItemVO();
-                    item.setTenantCode(rs.getString("tenant_code"));
-                    item.setCompanyName(rs.getString("factory_nm"));
-                    item.setAdminName("-");
-                    item.setAdminEmail(defaultDash(rs.getString("admin_email")));
-                    item.setStatus("Y".equalsIgnoreCase(rs.getString("use_at")) ? "ACTIVE" : "INACTIVE");
-
-                    Timestamp createdAt = rs.getTimestamp("created_at");
-                    item.setCreatedAt(createdAt == null ? null : createdAt.toInstant().toString());
-
-                    item.setCorporateNumber(rs.getString("corporate_number"));
-                    item.setBusinessType(rs.getString("business_type"));
-                    item.setBusinessCategory(rs.getString("business_category"));
-                    return item;
-                }
-        );
+        int total = factoryInfoDAO.selectTenantCount(condition, null);
+        int active = factoryInfoDAO.selectTenantCount(condition, "Y");
+        int inactive = factoryInfoDAO.selectTenantCount(condition, "N");
+        List<PlatformTenantDashboardItemVO> items = factoryInfoDAO.selectDashboardTenantItems(condition);
 
         PlatformTenantDashboardSummaryVO summary = new PlatformTenantDashboardSummaryVO();
         summary.setTotal(total);
@@ -132,43 +101,7 @@ public class PlatformFactoryServiceImpl implements PlatformFactoryService {
 
     @Override
     public List<SampleTenantVO> listRecentTenants(int limit) {
-        int safeLimit = limit <= 0 ? 5 : Math.min(limit, 50);
-
-        return jdbcTemplate.query(
-                "SELECT tenant_code, factory_nm, corporate_number, admin_email, created_at "
-                        + "FROM tb_factoryinfo ORDER BY created_at DESC LIMIT ?",
-                new Object[] { safeLimit },
-                (rs, rowNum) -> {
-                    SampleTenantVO item = new SampleTenantVO();
-                    item.setTenantCode(rs.getString("tenant_code"));
-                    item.setCompanyName(rs.getString("factory_nm"));
-                    item.setBusinessRegistrationNumber(rs.getString("corporate_number"));
-                    item.setAdminEmail(defaultDash(rs.getString("admin_email")));
-
-                    Timestamp createdAt = rs.getTimestamp("created_at");
-                    item.setIssuedAt(createdAt == null ? null : createdAt.toInstant().toString());
-                    return item;
-                }
-        );
-    }
-
-    private int queryForCount(String whereClause, List<Object> whereParams, String useAtOnly) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM tb_factoryinfo ");
-        List<Object> params = new ArrayList<Object>(whereParams);
-
-        if (whereClause == null || whereClause.isEmpty()) {
-            sql.append("WHERE 1=1");
-        } else {
-            sql.append(whereClause);
-        }
-
-        if (useAtOnly != null) {
-            sql.append(" AND use_at = ?");
-            params.add(useAtOnly);
-        }
-
-        Integer count = jdbcTemplate.queryForObject(sql.toString(), params.toArray(), Integer.class);
-        return count == null ? 0 : count.intValue();
+        return factoryInfoDAO.selectRecentTenants(limit);
     }
 
     private PlatformTenantDashboardQueryVO normalizeQuery(PlatformTenantDashboardQueryVO queryVO) {
@@ -192,34 +125,6 @@ public class PlatformFactoryServiceImpl implements PlatformFactoryService {
         return normalized;
     }
 
-    private String buildWhereClause(PlatformTenantDashboardQueryVO queryVO, List<Object> params) {
-        StringBuilder where = new StringBuilder("WHERE 1=1");
-
-        if (queryVO.getSearchKeyword() != null) {
-            String keyword = "%" + queryVO.getSearchKeyword().trim() + "%";
-            String searchField = queryVO.getSearchField();
-
-            if ("tenantCode".equals(searchField)) {
-                where.append(" AND tenant_code ILIKE ?");
-                params.add(keyword);
-            } else if ("adminName".equals(searchField)) {
-                where.append(" AND COALESCE(admin_email, '') ILIKE ?");
-                params.add(keyword);
-            } else {
-                where.append(" AND factory_nm ILIKE ?");
-                params.add(keyword);
-            }
-        }
-
-        if ("ACTIVE".equalsIgnoreCase(queryVO.getStatus())) {
-            where.append(" AND use_at = 'Y'");
-        } else if ("INACTIVE".equalsIgnoreCase(queryVO.getStatus())) {
-            where.append(" AND use_at = 'N'");
-        }
-
-        return where.toString();
-    }
-
     private void validateRequest(FactoryRegistrationRequestVO requestVO) {
         if (requestVO == null || requestVO.getFactoryNm() == null || requestVO.getFactoryNm().trim().isEmpty()) {
             throw new IllegalArgumentException("factoryNm is required");
@@ -234,10 +139,4 @@ public class PlatformFactoryServiceImpl implements PlatformFactoryService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private String defaultDash(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return "-";
-        }
-        return value;
-    }
 }

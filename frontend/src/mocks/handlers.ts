@@ -1628,7 +1628,7 @@ export const handlers = [
     },
   ),
 
-  http.get('/api/admin/user-menus/:authorityCode', ({ params }) => {
+  http.get('/api/platform-admin/user-menus/:authorityCode', ({ params }) => {
     const authorityCode = normalizeAuthorityCode(String(params.authorityCode));
     const menuList = accessibleMenuPathsByAuthorityCode[authorityCode].map(
       (menuUrl) => ({ menuUrl }),

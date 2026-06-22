@@ -13,22 +13,28 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
+import egovframework.let.platforms.menus.domain.repository.PlatformMenuDAO;
 import egovframework.let.platforms.menus.service.PlatformMenuService;
-import egovframework.let.uss.auth.service.EgovAuthManageService;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 
+/**
+ * 플랫폼 메뉴 서비스 구현체
+ * @author AI Assistant
+ * @since 2026.06.22
+ * @version 1.0
+ */
 @Service("platformMenuService")
 public class PlatformMenuServiceImpl implements PlatformMenuService {
 
-    @Resource(name = "authManageService")
-    private EgovAuthManageService authManageService;
+    @Resource(name = "platformMenuDAO")
+    private PlatformMenuDAO platformMenuDAO;
 
     @Override
     public List<MenuInfoVO> listMenus(String menuNm, String parentMenuId) throws Exception {
         MenuInfoVO condition = new MenuInfoVO();
         condition.setMenuNm(menuNm);
         condition.setParentMenuId(parentMenuId);
-        return authManageService.selectMenuList(condition);
+        return platformMenuDAO.selectMenuList(condition);
     }
 
     @Override
@@ -54,8 +60,8 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
         condition.setLastIndex(paginationInfo.getLastRecordIndex());
         condition.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-        List<MenuInfoVO> menuList = authManageService.selectMenuPagedList(condition);
-        int totalCount = authManageService.selectMenuPagedCount(condition);
+        List<MenuInfoVO> menuList = platformMenuDAO.selectMenuPagedList(condition);
+        int totalCount = platformMenuDAO.selectMenuPagedCount(condition);
         paginationInfo.setTotalRecordCount(totalCount);
 
         Map<String, Object> resultMap = buildPagedResultMap(menuList, totalCount, paginationInfo);
@@ -69,11 +75,11 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
 
     @Override
     public MenuInfoVO createMenu(MenuInfoVO menuInfoVO) throws Exception {
-        authManageService.insertMenu(menuInfoVO);
+        platformMenuDAO.insertMenu(menuInfoVO);
 
         MenuInfoVO detailCondition = new MenuInfoVO();
         detailCondition.setMenuId(menuInfoVO.getMenuId());
-        MenuInfoVO created = authManageService.selectMenuDetail(detailCondition);
+        MenuInfoVO created = platformMenuDAO.selectMenuDetail(detailCondition);
         if (created == null) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "메뉴 등록 결과를 조회할 수 없습니다.");
         }
@@ -85,16 +91,16 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
     public MenuInfoVO updateMenu(String menuId, MenuInfoVO menuInfoVO) throws Exception {
         MenuInfoVO beforeCondition = new MenuInfoVO();
         beforeCondition.setMenuId(menuId);
-        MenuInfoVO before = authManageService.selectMenuDetail(beforeCondition);
+        MenuInfoVO before = platformMenuDAO.selectMenuDetail(beforeCondition);
         if (before == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "수정할 메뉴가 존재하지 않습니다.");
         }
 
-        authManageService.updateMenu(menuInfoVO);
+        platformMenuDAO.updateMenu(menuInfoVO);
 
         MenuInfoVO afterCondition = new MenuInfoVO();
         afterCondition.setMenuId(menuId);
-        MenuInfoVO updated = authManageService.selectMenuDetail(afterCondition);
+        MenuInfoVO updated = platformMenuDAO.selectMenuDetail(afterCondition);
         if (updated == null) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "메뉴 수정 결과를 조회할 수 없습니다.");
         }
@@ -111,21 +117,21 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
 
         MenuInfoVO childCondition = new MenuInfoVO();
         childCondition.setParentMenuId(menuId);
-        List<MenuInfoVO> children = authManageService.selectMenuList(childCondition);
+        List<MenuInfoVO> children = platformMenuDAO.selectMenuList(childCondition);
         if (children != null && !children.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "하위 메뉴가 있는 메뉴는 삭제할 수 없습니다.");
         }
 
         MenuInfoVO deleteCondition = new MenuInfoVO();
         deleteCondition.setMenuId(menuId);
-        authManageService.deleteMenu(deleteCondition);
+        platformMenuDAO.deleteMenu(deleteCondition);
     }
 
     @Override
     public MenuInfoVO getMenuDetail(String menuId) throws Exception {
         MenuInfoVO condition = new MenuInfoVO();
         condition.setMenuId(menuId);
-        return authManageService.selectMenuDetail(condition);
+        return platformMenuDAO.selectMenuDetail(condition);
     }
 
     @Override

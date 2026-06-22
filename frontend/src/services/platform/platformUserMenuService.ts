@@ -67,7 +67,7 @@ export async function listAccessibleMenuPaths(
   const normalizedAuthorityCode = normalizeAuthorityCode(authorityCode);
 
   const { data } = await apiClient.get<UserMenuEnvelope>(
-    `/admin/user-menus/${normalizedAuthorityCode}`,
+    `/platform-admin/user-menus/${normalizedAuthorityCode}`,
   );
 
   const menuList = data.result?.menuList ?? data.menuList ?? [];
@@ -85,7 +85,7 @@ export async function listAccessibleMenus(
   const normalizedAuthorityCode = normalizeAuthorityCode(authorityCode);
 
   const { data } = await apiClient.get<UserMenuEnvelope>(
-    `/admin/user-menus/${normalizedAuthorityCode}`,
+    `/platform-admin/user-menus/${normalizedAuthorityCode}`,
   );
 
   const menuList = data.result?.menuList ?? data.menuList ?? [];

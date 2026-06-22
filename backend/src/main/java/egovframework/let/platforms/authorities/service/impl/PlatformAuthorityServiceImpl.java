@@ -16,24 +16,31 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
+import egovframework.let.platforms.authorities.domain.repository.PlatformAuthorityDAO;
 import egovframework.let.platforms.authorities.service.PlatformAuthorityService;
-import egovframework.let.platforms.authorities.vo.PlatformRoleMenuSaveRequestVO;
+import egovframework.let.platforms.authorities.domain.model.PlatformRoleMenuSaveRequestVO;
 import egovframework.let.uss.auth.service.AuthorityInfoVO;
-import egovframework.let.uss.auth.service.EgovAuthManageService;
+import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
 
+/**
+ * 플랫폼 권한 서비스 구현체
+ * @author AI Assistant
+ * @since 2026.06.22
+ * @version 1.0
+ */
 @Service("platformAuthorityService")
 public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
 
     private static final String DEFAULT_PERMISSION_ID = "PERM_WRITE";
     private static final String SYSTEM_USER_ID = "system";
 
-    @Resource(name = "authManageService")
-    private EgovAuthManageService authManageService;
+    @Resource(name = "platformAuthorityDAO")
+    private PlatformAuthorityDAO platformAuthorityDAO;
 
     @Override
     public List<AuthorityInfoVO> listRoles() throws Exception {
-        return authManageService.selectAuthorityList();
+        return platformAuthorityDAO.selectAuthorityList();
     }
 
     @Override
@@ -59,8 +66,8 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
         condition.setLastIndex(paginationInfo.getLastRecordIndex());
         condition.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-        List<AuthorityInfoVO> roleList = authManageService.selectAuthorityPagedList(condition);
-        int totalCount = authManageService.selectAuthorityPagedCount(condition);
+        List<AuthorityInfoVO> roleList = platformAuthorityDAO.selectAuthorityPagedList(condition);
+        int totalCount = platformAuthorityDAO.selectAuthorityPagedCount(condition);
         paginationInfo.setTotalRecordCount(totalCount);
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
@@ -91,7 +98,7 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
             payload.setLastUpdusrId(SYSTEM_USER_ID);
         }
 
-        authManageService.insertAuthority(payload);
+        platformAuthorityDAO.insertAuthority(payload);
         return payload;
     }
 
@@ -109,7 +116,7 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
         }
 
         AuthorityInfoVO.validateUpdatePolicy(payload);
-        authManageService.updateAuthorityUseAt(payload);
+        platformAuthorityDAO.updateAuthorityUseAt(payload);
         return payload;
     }
 
@@ -128,7 +135,7 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
         }
 
         AuthorityInfoVO.validateUpdatePolicy(payload);
-        authManageService.updateAuthority(payload);
+        platformAuthorityDAO.updateAuthority(payload);
         return payload;
     }
 
@@ -141,7 +148,7 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
 
         RoleMenuPermissionVO condition = new RoleMenuPermissionVO();
         condition.setAuthorityCode(normalizedRoleCode);
-        List<RoleMenuPermissionVO> permissions = authManageService.selectRoleMenuPermissionList(condition);
+        List<RoleMenuPermissionVO> permissions = platformAuthorityDAO.selectRoleMenuPermissionList(condition);
 
         Set<String> menuIdSet = new LinkedHashSet<String>();
         for (RoleMenuPermissionVO permission : permissions) {
@@ -169,7 +176,7 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleCode는 필수입니다.");
         }
 
-        authManageService.deleteRoleMenuPermissionsByAuthority(payload.getRoleCode());
+        platformAuthorityDAO.deleteRoleMenuPermissionsByAuthority(payload.getRoleCode());
 
         for (String menuId : payload.getMenuIds()) {
             RoleMenuPermissionVO item = new RoleMenuPermissionVO();
@@ -179,7 +186,7 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
             item.setUseAt("Y");
             item.setFrstRegisterId(SYSTEM_USER_ID);
             item.setLastUpdusrId(SYSTEM_USER_ID);
-            authManageService.insertRoleMenuPermission(item);
+            platformAuthorityDAO.insertRoleMenuPermission(item);
         }
 
         Map<String, Object> response = new HashMap<String, Object>();
@@ -193,6 +200,11 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
             return "";
         }
         return value.trim().toUpperCase();
+    }
+
+    @Override
+    public List<MenuInfoVO> listUserMenus(String authorityCode) throws Exception {
+        return platformAuthorityDAO.selectUserAccessibleMenus(authorityCode);
     }
 
     private boolean hasText(String value) {

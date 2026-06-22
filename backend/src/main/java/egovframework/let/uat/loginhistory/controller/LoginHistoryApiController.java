@@ -32,7 +32,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping({"/api/loginHistory", "/api/platform-admin/login-history"})
+@RequestMapping("/api/platform-admin/login-history")
 @Tag(name = "LoginHistoryApiController", description = "로그인 이력 관리")
 public class LoginHistoryApiController {
 

@@ -19,8 +19,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.let.platforms.authorities.service.PlatformAuthorityService;
-import egovframework.let.platforms.authorities.vo.PlatformRoleMenuSaveRequestVO;
+import egovframework.let.platforms.authorities.domain.model.PlatformRoleMenuSaveRequestVO;
 import egovframework.let.uss.auth.service.AuthorityInfoVO;
+import egovframework.let.uss.auth.service.MenuInfoVO;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -103,6 +104,11 @@ public class PlatformAuthorityApiController {
         }
 
         return platformAuthorityService.replaceRoleMenus(roleCode, payload);
+    }
+
+    @GetMapping("/user-menus/{authorityCode}")
+    public List<MenuInfoVO> listUserMenus(@PathVariable String authorityCode) throws Exception {
+        return platformAuthorityService.listUserMenus(authorityCode.trim().toUpperCase());
     }
 
     private String toUpper(String value) {

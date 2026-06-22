@@ -166,28 +166,33 @@ describe('App shell', () => {
           },
         });
       }),
-      http.get('/api/admin/user-menus/:authorityCode', ({ params }) => {
-        const authorityCode = String(params.authorityCode ?? '').toUpperCase();
+      http.get(
+        '/api/platform-admin/user-menus/:authorityCode',
+        ({ params }) => {
+          const authorityCode = String(
+            params.authorityCode ?? '',
+          ).toUpperCase();
 
-        const menuPathsByAuthority: Record<string, string[]> = {
-          PLATFORM_ADMIN: [
-            '/dashboard',
-            '/platform/tenants',
-            '/platform/menus',
-            '/platform/roles',
-            '/platform/login-history',
-          ],
-          TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
-          TENANT_USER: ['/dashboard', '/documents'],
-        };
+          const menuPathsByAuthority: Record<string, string[]> = {
+            PLATFORM_ADMIN: [
+              '/dashboard',
+              '/platform/tenants',
+              '/platform/menus',
+              '/platform/roles',
+              '/platform/login-history',
+            ],
+            TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
+            TENANT_USER: ['/dashboard', '/documents'],
+          };
 
-        const menuList = (menuPathsByAuthority[authorityCode] ?? []).map(
-          (menuUrl) => ({ menuUrl }),
-        );
+          const menuList = (menuPathsByAuthority[authorityCode] ?? []).map(
+            (menuUrl) => ({ menuUrl }),
+          );
 
-        return HttpResponse.json({ result: { menuList } });
-      }),
-      http.get('/admin/user-menus/:authorityCode', ({ params }) => {
+          return HttpResponse.json({ result: { menuList } });
+        },
+      ),
+      http.get('/platform-admin/user-menus/:authorityCode', ({ params }) => {
         const authorityCode = String(params.authorityCode ?? '').toUpperCase();
 
         const menuPathsByAuthority: Record<string, string[]> = {

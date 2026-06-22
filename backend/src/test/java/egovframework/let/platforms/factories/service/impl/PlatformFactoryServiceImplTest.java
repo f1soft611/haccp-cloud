@@ -2,7 +2,6 @@ package egovframework.let.platforms.factories.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -10,21 +9,23 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import egovframework.let.platforms.factories.service.FactoryRegistrationRequestVO;
-import egovframework.let.platforms.factories.service.FactoryRegistrationResultVO;
+import egovframework.let.platforms.factories.domain.model.FactoryRegistrationRequestVO;
+import egovframework.let.platforms.factories.domain.model.FactoryRegistrationResultVO;
+import egovframework.let.platforms.factories.domain.repository.FactoryInfoDAO;
 
 class PlatformFactoryServiceImplTest {
 
     @DisplayName("업체 등록 시 법인번호/업종/업태 컬럼까지 저장한다")
     @Test
     void registerFactory_savesExtendedFields() {
-        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        PlatformFactoryServiceImpl service = new PlatformFactoryServiceImpl(jdbcTemplate);
+        FactoryInfoDAO factoryInfoDAO = mock(FactoryInfoDAO.class);
+        PlatformFactoryServiceImpl service = new PlatformFactoryServiceImpl();
+        ReflectionTestUtils.setField(service, "factoryInfoDAO", factoryInfoDAO);
 
-        when(jdbcTemplate.queryForObject(anyString(), eq(String.class))).thenReturn("000123");
-        when(jdbcTemplate.update(anyString(),
+        when(factoryInfoDAO.selectMaxFactoryCode()).thenReturn("000123");
+        when(factoryInfoDAO.insertFactory(
                 eq("000124"),
                 eq("테스트업체"),
                 eq("TENANT_000124"),
@@ -49,7 +50,7 @@ class PlatformFactoryServiceImplTest {
         assertEquals("식품제조", result.getBusinessType());
         assertEquals("즉석조리식품", result.getBusinessCategory());
 
-        verify(jdbcTemplate).update(anyString(),
+        verify(factoryInfoDAO).insertFactory(
                 eq("000124"),
                 eq("테스트업체"),
                 eq("TENANT_000124"),
@@ -62,8 +63,9 @@ class PlatformFactoryServiceImplTest {
     @DisplayName("업체명 없으면 등록에 실패한다")
     @Test
     void registerFactory_requiresFactoryName() {
-        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        PlatformFactoryServiceImpl service = new PlatformFactoryServiceImpl(jdbcTemplate);
+        FactoryInfoDAO factoryInfoDAO = mock(FactoryInfoDAO.class);
+        PlatformFactoryServiceImpl service = new PlatformFactoryServiceImpl();
+        ReflectionTestUtils.setField(service, "factoryInfoDAO", factoryInfoDAO);
 
         FactoryRegistrationRequestVO requestVO = new FactoryRegistrationRequestVO();
         requestVO.setFactoryNm("  ");
