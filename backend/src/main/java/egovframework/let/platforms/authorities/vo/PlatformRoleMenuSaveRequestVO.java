@@ -1,4 +1,4 @@
-package egovframework.let.uss.auth.service;
+package egovframework.let.platforms.authorities.vo;
 
 import java.io.Serializable;
 import java.util.ArrayList;

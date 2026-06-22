@@ -1,4 +1,4 @@
-package egovframework.let.uss.auth.service;
+package egovframework.let.platforms.authorities.vo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

@@ -1,8 +1,6 @@
-package egovframework.let.uss.auth.web;
+package egovframework.let.platforms.menus.controller;
 
 import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.annotation.Resource;
 
@@ -17,11 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 
-import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.uss.auth.service.EgovAuthManageService;
+import egovframework.let.platforms.menus.service.PlatformMenuService;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import lombok.RequiredArgsConstructor;
 
@@ -35,17 +31,14 @@ public class PlatformMenuApiController {
 
     private static final int[] ALLOWED_PAGE_SIZES = {10, 20, 50};
 
-    @Resource(name = "authManageService")
-    private EgovAuthManageService authManageService;
+    @Resource(name = "platformMenuService")
+    private PlatformMenuService platformMenuService;
 
     @GetMapping
     public List<MenuInfoVO> listMenus(
             @RequestParam(required = false) String menuNm,
             @RequestParam(required = false) String parentMenuId) throws Exception {
-        MenuInfoVO condition = new MenuInfoVO();
-        condition.setMenuNm(menuNm);
-        condition.setParentMenuId(normalizeNullable(parentMenuId));
-        return authManageService.selectMenuList(condition);
+        return platformMenuService.listMenus(menuNm, normalizeNullable(parentMenuId));
     }
 
     @GetMapping("/paged")
@@ -59,53 +52,20 @@ public class PlatformMenuApiController {
         validateSearchField(searchField);
         validateUseAt(useAt);
 
-        MenuInfoVO condition = new MenuInfoVO();
-        condition.setPageIndex(pageIndex);
-        condition.setPageSize(pageSize);
-        condition.setSearchField(normalizeNullable(searchField));
-        condition.setSearchKeyword(normalizeNullable(searchKeyword));
-        condition.setUseAt(hasText(useAt) ? useAt.trim().toUpperCase() : "all");
-
-        PaginationInfo paginationInfo = new PaginationInfo();
-        paginationInfo.setCurrentPageNo(condition.getPageIndex());
-        paginationInfo.setRecordCountPerPage(condition.getPageSize());
-        paginationInfo.setPageSize(condition.getPageSize());
-
-        condition.setFirstIndex(paginationInfo.getFirstRecordIndex());
-        condition.setLastIndex(paginationInfo.getLastRecordIndex());
-        condition.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
-
-        List<MenuInfoVO> menuList = authManageService.selectMenuPagedList(condition);
-        int totalCount = authManageService.selectMenuPagedCount(condition);
-        paginationInfo.setTotalRecordCount(totalCount);
-
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("menuList", menuList);
-        resultMap.put("totalCount", totalCount);
-        resultMap.put("paginationInfo", paginationInfo);
-
-        ResultVO resultVO = new ResultVO();
-        resultVO.setResult(resultMap);
-        resultVO.setResultCode(ResponseCode.SUCCESS.getCode());
-        resultVO.setResultMessage(ResponseCode.SUCCESS.getMessage());
-        return resultVO;
+        return platformMenuService.listMenusPaged(
+                pageIndex,
+                pageSize,
+                normalizeNullable(searchField),
+                normalizeNullable(searchKeyword),
+                hasText(useAt) ? useAt.trim().toUpperCase() : "all"
+        );
     }
 
     @PostMapping
     public MenuInfoVO createMenu(@RequestBody MenuInfoVO menuInfoVO) throws Exception {
         normalizePayload(menuInfoVO);
         validateForCreateOrUpdate(menuInfoVO, null);
-
-        authManageService.insertMenu(menuInfoVO);
-
-        MenuInfoVO detailCondition = new MenuInfoVO();
-        detailCondition.setMenuId(menuInfoVO.getMenuId());
-        MenuInfoVO created = authManageService.selectMenuDetail(detailCondition);
-        if (created == null) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "메뉴 등록 결과를 조회할 수 없습니다.");
-        }
-
-        return created;
+        return platformMenuService.createMenu(menuInfoVO);
     }
 
     @PatchMapping("/{menuId}")
@@ -113,45 +73,12 @@ public class PlatformMenuApiController {
         menuInfoVO.setMenuId(menuId);
         normalizePayload(menuInfoVO);
         validateForCreateOrUpdate(menuInfoVO, menuId);
-
-        MenuInfoVO beforeCondition = new MenuInfoVO();
-        beforeCondition.setMenuId(menuId);
-        MenuInfoVO before = authManageService.selectMenuDetail(beforeCondition);
-        if (before == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "수정할 메뉴가 존재하지 않습니다.");
-        }
-
-        authManageService.updateMenu(menuInfoVO);
-
-        MenuInfoVO afterCondition = new MenuInfoVO();
-        afterCondition.setMenuId(menuId);
-        MenuInfoVO updated = authManageService.selectMenuDetail(afterCondition);
-        if (updated == null) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "메뉴 수정 결과를 조회할 수 없습니다.");
-        }
-
-        return updated;
+        return platformMenuService.updateMenu(menuId, menuInfoVO);
     }
 
     @DeleteMapping("/{menuId}")
     public void deleteMenu(@PathVariable String menuId) throws Exception {
-        MenuInfoVO detailCondition = new MenuInfoVO();
-        detailCondition.setMenuId(menuId);
-        MenuInfoVO existing = authManageService.selectMenuDetail(detailCondition);
-        if (existing == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "삭제할 메뉴가 존재하지 않습니다.");
-        }
-
-        MenuInfoVO childCondition = new MenuInfoVO();
-        childCondition.setParentMenuId(menuId);
-        List<MenuInfoVO> children = authManageService.selectMenuList(childCondition);
-        if (children != null && !children.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "하위 메뉴가 있는 메뉴는 삭제할 수 없습니다.");
-        }
-
-        MenuInfoVO deleteCondition = new MenuInfoVO();
-        deleteCondition.setMenuId(menuId);
-        authManageService.deleteMenu(deleteCondition);
+        platformMenuService.deleteMenu(menuId);
     }
 
     private void validateForCreateOrUpdate(MenuInfoVO menuInfoVO, String selfMenuId) throws Exception {
@@ -174,9 +101,7 @@ public class PlatformMenuApiController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "상위 메뉴는 자기 자신으로 지정할 수 없습니다.");
         }
 
-        MenuInfoVO parentCondition = new MenuInfoVO();
-        parentCondition.setMenuId(parentMenuId);
-        MenuInfoVO parent = authManageService.selectMenuDetail(parentCondition);
+        MenuInfoVO parent = platformMenuService.getMenuDetail(parentMenuId);
         if (parent == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "상위 메뉴가 존재하지 않습니다.");
         }

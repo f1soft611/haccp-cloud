@@ -1,6 +1,5 @@
-package egovframework.let.uss.auth.web;
+package egovframework.let.platforms.menus.controller;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,19 +14,19 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import egovframework.let.uss.auth.service.EgovAuthManageService;
-import egovframework.let.uss.auth.service.MenuInfoVO;
+import egovframework.com.cmm.service.ResultVO;
+import egovframework.let.platforms.menus.service.PlatformMenuService;
 
 class PlatformMenuApiControllerPagingTest {
 
     private MockMvc mockMvc;
-    private EgovAuthManageService authManageService;
+    private PlatformMenuService platformMenuService;
 
     @BeforeEach
     void setUp() {
         PlatformMenuApiController controller = new PlatformMenuApiController();
-        authManageService = mock(EgovAuthManageService.class);
-        ReflectionTestUtils.setField(controller, "authManageService", authManageService);
+        platformMenuService = mock(PlatformMenuService.class);
+        ReflectionTestUtils.setField(controller, "platformMenuService", platformMenuService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -41,10 +40,12 @@ class PlatformMenuApiControllerPagingTest {
 
     @Test
     void listMenusPaged_returnsPagedResponse() throws Exception {
-        MenuInfoVO item = new MenuInfoVO();
-        item.setMenuId("MENU_1");
-        when(authManageService.selectMenuPagedList(any(MenuInfoVO.class))).thenReturn(Collections.singletonList(item));
-        when(authManageService.selectMenuPagedCount(any(MenuInfoVO.class))).thenReturn(23);
+        ResultVO result = new ResultVO();
+        java.util.Map<String, Object> payload = new java.util.HashMap<String, Object>();
+        payload.put("totalCount", 23);
+        payload.put("paginationInfo", java.util.Collections.singletonMap("currentPageNo", 2));
+        result.setResult(payload);
+        when(platformMenuService.listMenusPaged(2, 10, "menuNm", "관리", "Y")).thenReturn(result);
 
         mockMvc.perform(get("/api/platform-admin/menus/paged")
                 .param("pageIndex", "2")
