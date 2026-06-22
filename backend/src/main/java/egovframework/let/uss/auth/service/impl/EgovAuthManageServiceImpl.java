@@ -60,7 +60,7 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
     @Override
     public int insertMenu(MenuInfoVO menuInfoVO) throws Exception {
         String menuId = generateMenuId();
-        menuInfoVO.setMenuId(menuId);
+        menuInfoVO.setMenuCode(menuId);
         return authManageDAO.insertMenu(menuInfoVO);
     }
 
@@ -77,7 +77,7 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
      */
     @Override
     public int deleteMenu(MenuInfoVO menuInfoVO) throws Exception {
-        deleteRoleMenuPermissionsByMenuId(menuInfoVO.getMenuId());
+        deleteRoleMenuPermissionsByMenuId(menuInfoVO.getMenuCode());
         return authManageDAO.deleteMenu(menuInfoVO);
     }
 
@@ -95,7 +95,7 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
     @Override
     public int insertPermissionType(PermissionTypeVO permissionTypeVO) throws Exception {
         String permissionId = generatePermissionId();
-        permissionTypeVO.setPermissionId(permissionId);
+        permissionTypeVO.setPermissionCode(permissionId);
         return authManageDAO.insertPermissionType(permissionTypeVO);
     }
 
@@ -156,8 +156,7 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
      */
     @Override
     public int insertRoleMenuPermission(RoleMenuPermissionVO roleMenuPermissionVO) throws Exception {
-        String roleMenuId = generateRoleMenuId();
-        roleMenuPermissionVO.setRoleMenuId(roleMenuId);
+        // roleMenuPermissionId는 DB에서 BIGSERIAL로 자동 생성됨
         return authManageDAO.insertRoleMenuPermission(roleMenuPermissionVO);
     }
 

@@ -2,8 +2,10 @@ package egovframework.com.cmm;
 
 import egovframework.com.cmm.exception.BizException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,6 +54,19 @@ public class GlobalExceptionHandler {
         res.put("message", e.getMessage());
         res.put("resultMessage", e.getMessage());
         return res;
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException e) {
+        String reason = e.getReason() == null || e.getReason().trim().isEmpty()
+                ? "요청을 처리할 수 없습니다."
+                : e.getReason();
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("resultCode", "FAIL");
+        res.put("message", reason);
+        res.put("resultMessage", reason);
+        return ResponseEntity.status(e.getStatus()).body(res);
     }
 
     @ExceptionHandler(Exception.class)

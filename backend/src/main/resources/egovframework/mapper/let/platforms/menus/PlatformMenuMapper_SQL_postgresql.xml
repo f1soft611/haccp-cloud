@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PlatformMenuDAO">
+
+    <!-- 메뉴 목록 조회 -->
+    <select id="PlatformMenuDAO.selectMenuList" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
+        SELECT
+            m.menu_id AS menuId,
+            m.menu_code AS menuCode,
+            m.menu_nm AS menuNm,
+            m.menu_dc AS menuDc,
+            m.parent_menu_id AS parentMenuId,
+            p.menu_code AS parentMenuCode,
+            m.menu_ordr AS menuOrdr,
+            m.menu_url AS menuUrl,
+            m.icon_nm AS iconNm,
+            m.use_at AS useAt,
+            m.crt_dt AS frstRegistPnttm,
+            m.crt_id AS frstRegisterId,
+            m.upd_dt AS lastUpdtPnttm,
+            m.upd_id AS lastUpdusrId,
+            p.menu_nm AS parentMenuNm,
+            CASE WHEN EXISTS (SELECT 1 FROM tb_menu c WHERE c.parent_menu_id = m.menu_id) THEN 1 ELSE 0 END AS hasChildren
+        FROM tb_menu m
+            LEFT JOIN tb_menu p ON m.parent_menu_id = p.menu_id
+        WHERE 1 = 1
+        <if test="menuNm != null and menuNm != ''">
+            AND m.menu_nm ILIKE '%' || #{menuNm} || '%'
+        </if>
+        <if test="parentMenuId != null">
+            AND m.parent_menu_id = #{parentMenuId}
+        </if>
+        ORDER BY m.parent_menu_id, m.menu_ordr, m.menu_id
+    </select>
+
+    <!-- 메뉴 페이징 목록 조회 -->
+    <select id="PlatformMenuDAO.selectMenuPagedList" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
+        SELECT
+            m.menu_id AS menuId,
+            m.menu_code AS menuCode,
+            m.menu_nm AS menuNm,
+            m.menu_dc AS menuDc,
+            m.parent_menu_id AS parentMenuId,
+            p.menu_code AS parentMenuCode,
+            m.menu_ordr AS menuOrdr,
+            m.menu_url AS menuUrl,
+            m.icon_nm AS iconNm,
+            m.use_at AS useAt,
+            m.crt_dt AS frstRegistPnttm,
+            m.crt_id AS frstRegisterId,
+            m.upd_dt AS lastUpdtPnttm,
+            m.upd_id AS lastUpdusrId,
+            p.menu_nm AS parentMenuNm,
+            CASE WHEN EXISTS (SELECT 1 FROM tb_menu c WHERE c.parent_menu_id = m.menu_id) THEN 1 ELSE 0 END AS hasChildren
+        FROM tb_menu m
+            LEFT JOIN tb_menu p ON m.parent_menu_id = p.menu_id
+        WHERE 1 = 1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND m.use_at = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'menuNm'">
+                    AND m.menu_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'menuDc'">
+                    AND m.menu_dc ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'menuUrl'">
+                    AND m.menu_url ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+            </choose>
+        </if>
+        ORDER BY m.parent_menu_id, m.menu_ordr, m.menu_id
+        OFFSET #{firstIndex}
+        LIMIT #{recordCountPerPage}
+    </select>
+
+    <!-- 메뉴 페이징 개수 조회 -->
+    <select id="PlatformMenuDAO.selectMenuPagedCount" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="int">
+        SELECT COUNT(1)
+        FROM tb_menu m
+        WHERE 1 = 1
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND m.use_at = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'menuNm'">
+                    AND m.menu_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'menuDc'">
+                    AND m.menu_dc ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'menuUrl'">
+                    AND m.menu_url ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+            </choose>
+        </if>
+    </select>
+
+    <!-- 메뉴 상세 조회 -->
+    <select id="PlatformMenuDAO.selectMenuDetail" parameterType="egovframework.let.uss.auth.service.MenuInfoVO" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
+        SELECT
+            m.menu_id AS menuId,
+            m.menu_code AS menuCode,
+            m.menu_nm AS menuNm,
+            m.menu_dc AS menuDc,
+            m.parent_menu_id AS parentMenuId,
+            p.menu_code AS parentMenuCode,
+            m.menu_ordr AS menuOrdr,
+            m.menu_url AS menuUrl,
+            m.icon_nm AS iconNm,
+            m.use_at AS useAt,
+            m.crt_dt AS frstRegistPnttm,
+            m.crt_id AS frstRegisterId,
+            m.upd_dt AS lastUpdtPnttm,
+            m.upd_id AS lastUpdusrId,
+            p.menu_nm AS parentMenuNm
+        FROM tb_menu m
+            LEFT JOIN tb_menu p ON m.parent_menu_id = p.menu_id
+        WHERE m.menu_id = #{menuId}
+    </select>
+
+    <!-- 메뉴 등록 -->
+    <insert id="PlatformMenuDAO.insertMenu" parameterType="egovframework.let.uss.auth.service.MenuInfoVO">
+        INSERT INTO tb_menu (
+            menu_code,
+            menu_nm,
+            menu_dc,
+            parent_menu_id,
+            menu_ordr,
+            menu_url,
+            icon_nm,
+            use_at,
+            crt_dt,
+            crt_id,
+            upd_dt,
+            upd_id
+        ) VALUES (
+            #{menuCode},
+            #{menuNm},
+            #{menuDc},
+            #{parentMenuId},
+            #{menuOrdr},
+            #{menuUrl},
+            #{iconNm},
+            #{useAt},
+            now(),
+            #{frstRegisterId},
+            now(),
+            #{lastUpdusrId}
+        )
+    </insert>
+
+    <!-- 메뉴 수정 -->
+    <update id="PlatformMenuDAO.updateMenu" parameterType="egovframework.let.uss.auth.service.MenuInfoVO">
+        UPDATE tb_menu
+        SET menu_nm = #{menuNm},
+            menu_dc = #{menuDc},
+            parent_menu_id = #{parentMenuId},
+            menu_ordr = #{menuOrdr},
+            menu_url = #{menuUrl},
+            icon_nm = #{iconNm},
+            use_at = #{useAt},
+            upd_dt = now(),
+            upd_id = #{lastUpdusrId}
+        WHERE menu_id = #{menuId}
+    </update>
+
+    <!-- 메뉴 삭제 -->
+    <delete id="PlatformMenuDAO.deleteMenu" parameterType="egovframework.let.uss.auth.service.MenuInfoVO">
+        DELETE FROM tb_menu
+        WHERE menu_id = #{menuId}
+    </delete>
+
+    <!-- 메뉴에 연결된 권한-메뉴 매핑 삭제 -->
+    <delete id="PlatformMenuDAO.deleteRoleMenuPermissionsByMenuId" parameterType="long">
+        DELETE FROM tb_role_menu_permission
+        WHERE menu_id = #{value}
+    </delete>
+</mapper>

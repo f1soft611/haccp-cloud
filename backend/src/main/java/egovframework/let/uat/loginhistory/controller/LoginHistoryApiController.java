@@ -32,7 +32,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping({"/api/loginHistory", "/api/platform-admin/login-history"})
+@RequestMapping("/api/platform-admin/login-history")
 @Tag(name = "LoginHistoryApiController", description = "로그인 이력 관리")
 public class LoginHistoryApiController {
 
@@ -64,16 +64,16 @@ public class LoginHistoryApiController {
 					&& "PLATFORM_ADMIN".equalsIgnoreCase(user.getRoleCode());
 
 			if (!isPlatformAdmin
-					&& !StringUtils.hasText(loginHistoryVO.getFactoryCode())
+					&& !StringUtils.hasText(loginHistoryVO.getTenantCode())
 					&& user != null
-					&& StringUtils.hasText(user.getFactoryCode())) {
-				loginHistoryVO.setFactoryCode(user.getFactoryCode());
+					&& StringUtils.hasText(user.getTenantCode())) {
+				loginHistoryVO.setTenantCode(user.getTenantCode());
 			}
 
 			log.debug(
-					"로그인 이력 조회 조건 - roleCode: {}, factoryCode: {}, searchUserId: {}, searchUserName: {}, searchLoginResult: {}, searchStartDt: {}, searchEndDt: {}",
+					"로그인 이력 조회 조건 - roleCode: {}, tenantCode: {}, searchUserId: {}, searchUserName: {}, searchLoginResult: {}, searchStartDt: {}, searchEndDt: {}",
 					user != null ? user.getRoleCode() : null,
-					loginHistoryVO.getFactoryCode(),
+					loginHistoryVO.getTenantCode(),
 					loginHistoryVO.getSearchUserId(),
 					loginHistoryVO.getSearchUserName(),
 					loginHistoryVO.getSearchLoginResult(),

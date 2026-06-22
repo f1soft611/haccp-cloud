@@ -1,7 +1,8 @@
 import { apiClient } from '../api/apiClient';
 
 type PlatformRoleApiItem = {
-  id?: string;
+  id?: string | number;
+  authorityId?: string | number;
   code?: string;
   name?: string;
   description?: string;
@@ -71,8 +72,9 @@ function normalizePlatformRoleItem(
   item: PlatformRoleApiItem,
 ): PlatformRoleItem {
   const code = item.code ?? item.authorityCode ?? '';
+  const normalizedId = item.id ?? item.authorityId;
   return {
-    id: item.id ?? code,
+    id: normalizedId == null ? code : String(normalizedId),
     code,
     name: item.name ?? item.authorityNm ?? code,
     description: item.description ?? item.authorityDc ?? '',
@@ -134,7 +136,7 @@ export async function createPlatformRole(
 export async function updatePlatformRoleStatus(
   payload: UpdatePlatformRoleStatusRequest,
 ): Promise<PlatformRoleItem> {
-  const roleIdentifier = payload.code ?? payload.id;
+  const roleIdentifier = payload.id ?? payload.code;
   if (!roleIdentifier) {
     throw new Error('role code or id is required');
   }
@@ -152,7 +154,7 @@ export async function updatePlatformRoleStatus(
 export async function updatePlatformRole(
   payload: UpdatePlatformRoleRequest,
 ): Promise<PlatformRoleItem> {
-  const roleIdentifier = payload.code ?? payload.id;
+  const roleIdentifier = payload.id ?? payload.code;
   if (!roleIdentifier) {
     throw new Error('role code or id is required');
   }

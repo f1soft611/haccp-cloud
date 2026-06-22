@@ -89,7 +89,7 @@ const PLATFORM_ADMIN_MENU_GROUPS: MenuGroup[] = [
       {
         label: APP_LABELS.menu.platformFactoryManagement,
         description: '업체 코드 발급과 플랫폼 관리 대상을 운영합니다.',
-        path: '/platform/onboarding',
+        path: '/platform/tenants',
         roles: ['PLATFORM_ADMIN'],
         icon: 'Business',
       },

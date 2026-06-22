@@ -87,7 +87,7 @@ public class EgovJwtTokenUtil implements Serializable{
         claims.put("type", subject);
         claims.put("groupNm", loginVO.getGroupNm());//권한그룹으로 시프링시큐리티 사용
         claims.put("roleCode", loginVO.getRoleCode());//역할코드로 3역할 구분
-        claims.put("factoryCode", loginVO.getFactoryCode());//업체코드로 테넌트 구분
+		claims.put("tenantCode", loginVO.getTenantCode());//테넌트 코드
 
     	log.debug("===>>> secret = "+SECRET_KEY);
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
@@ -107,7 +107,7 @@ public class EgovJwtTokenUtil implements Serializable{
         claims.put("type", subject);
         claims.put("groupNm", loginVO.getGroupNm());//권한그룹으로 시프링시큐리티 사용
         claims.put("roleCode", loginVO.getRoleCode());//역할코드로 3역할 구분
-        claims.put("factoryCode", loginVO.getFactoryCode());//업체코드로 테넌트 구분
+		claims.put("tenantCode", loginVO.getTenantCode());//테넌트 코드
 
     	log.debug("===>>> refresh token secret = "+SECRET_KEY);
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
@@ -126,7 +126,11 @@ public class EgovJwtTokenUtil implements Serializable{
 			loginVO.setUniqId(getInfoFromToken("uniqId", token));
             loginVO.setGroupNm(getInfoFromToken("groupNm", token));
             loginVO.setRoleCode(getRoleCodeFromToken(token));
-            loginVO.setFactoryCode(getInfoFromToken("factoryCode", token));
+			String tenantCode = getInfoFromToken("tenantCode", token);
+			if (tenantCode == null) {
+				tenantCode = getInfoFromToken("factoryCode", token);
+			}
+			loginVO.setTenantCode(tenantCode);
 
             if(loginVO.getId() == null) throw new InvalidJwtException("Missing id in token");
         } catch (IllegalArgumentException | ExpiredJwtException |

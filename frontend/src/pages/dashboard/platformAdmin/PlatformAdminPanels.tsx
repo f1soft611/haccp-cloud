@@ -149,6 +149,20 @@ export function PlatformAdminPanels({
   onLogout,
   isLoading = false,
 }: PlatformAdminPanelsProps) {
+  const safeTenantSummary = tenantList?.summary ?? {
+    total: 0,
+    active: 0,
+    inactive: 0,
+  };
+  const safeTenantItems = tenantList?.items ?? [];
+  const safeRecentIssues = tenantCodeIssuance?.recentIssues ?? [];
+  const safeCcpOverall = ccpDocuments?.overall ?? {
+    completionRate: 0,
+    completedTenants: 0,
+    totalTenants: 0,
+  };
+  const safeCcpItems = ccpDocuments?.items ?? [];
+
   const hasKpiError = kpis.hasError === true;
   const hasTenantCodeIssuanceError = tenantCodeIssuance.hasError === true;
   const hasTenantListError = tenantList.hasError === true;
@@ -216,7 +230,7 @@ export function PlatformAdminPanels({
                     APP_LABELS.dashboard.platformAdmin.kpi.newTenantsLast7Days
                   }
                   value={String(kpis.newTenantsLast7Days)}
-                  secondary={`${APP_LABELS.dashboard.platformAdmin.summary.totalTenants}: ${tenantList.summary.total}`}
+                  secondary={`${APP_LABELS.dashboard.platformAdmin.summary.totalTenants}: ${safeTenantSummary.total}`}
                   accentColor="#2e7d32"
                 />
               </Grid>
@@ -301,24 +315,22 @@ export function PlatformAdminPanels({
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {tenantCodeIssuance.recentIssues
-                          .slice(0, MAX_ROWS)
-                          .map((item) => (
-                            <TableRow key={item.tenantCode} hover>
-                              <TableCell
-                                sx={{
-                                  fontFamily: 'monospace',
-                                  fontSize: '0.75rem',
-                                }}
-                              >
-                                {item.tenantCode}
-                              </TableCell>
-                              <TableCell>{item.companyName}</TableCell>
-                              <TableCell>
-                                <StatusChip status={item.status} />
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                        {safeRecentIssues.slice(0, MAX_ROWS).map((item) => (
+                          <TableRow key={item.tenantCode} hover>
+                            <TableCell
+                              sx={{
+                                fontFamily: 'monospace',
+                                fontSize: '0.75rem',
+                              }}
+                            >
+                              {item.tenantCode}
+                            </TableCell>
+                            <TableCell>{item.companyName}</TableCell>
+                            <TableCell>
+                              <StatusChip status={item.status} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   )}
@@ -344,7 +356,7 @@ export function PlatformAdminPanels({
                         }
                       </Typography>
                       <Typography variant="h6" fontWeight={700}>
-                        {tenantList.summary.total}
+                        {safeTenantSummary.total}
                       </Typography>
                     </Box>
                     <Box>
@@ -359,11 +371,11 @@ export function PlatformAdminPanels({
                         fontWeight={700}
                         color="success.main"
                       >
-                        {tenantList.summary.active}
+                        {safeTenantSummary.active}
                       </Typography>
                     </Box>
                   </Box>
-                  {tenantList.items.length > 0 && (
+                  {safeTenantItems.length > 0 && (
                     <Table size="small">
                       <TableHead>
                         <TableRow>
@@ -382,7 +394,7 @@ export function PlatformAdminPanels({
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {tenantList.items.slice(0, MAX_ROWS).map((item) => (
+                        {safeTenantItems.slice(0, MAX_ROWS).map((item) => (
                           <TableRow key={item.tenantCode} hover>
                             <TableCell>{item.companyName}</TableCell>
                             <TableCell>{item.adminName}</TableCell>
@@ -415,12 +427,12 @@ export function PlatformAdminPanels({
                       }
                     </Typography>
                     <Typography variant="h6" fontWeight={700}>
-                      {ccpDocuments.overall.completionRate}%
+                      {safeCcpOverall.completionRate}%
                     </Typography>
                   </Box>
-                  {ccpDocuments.items.length > 0 && (
+                  {safeCcpItems.length > 0 && (
                     <Stack spacing={1.5}>
-                      {ccpDocuments.items.slice(0, MAX_ROWS).map((item) => (
+                      {safeCcpItems.slice(0, MAX_ROWS).map((item) => (
                         <Box key={item.tenantCode}>
                           <Box
                             sx={{

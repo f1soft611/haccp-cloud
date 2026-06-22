@@ -85,7 +85,7 @@ public class AuthManageDAO extends EgovAbstractMapper {
      * @throws Exception
      */
     public List<PermissionTypeVO> selectPermissionTypeList(PermissionTypeVO permissionTypeVO) throws Exception {
-        return selectList("authManageDAO.selectPermissionTypeList", permissionTypeVO);
+        return selectList("AuthManageDAO.selectPermissionTypeList", permissionTypeVO);
     }
 
     /**
@@ -95,7 +95,7 @@ public class AuthManageDAO extends EgovAbstractMapper {
      * @throws Exception
      */
     public int insertPermissionType(PermissionTypeVO permissionTypeVO) throws Exception {
-        return insert("authManageDAO.insertPermissionType", permissionTypeVO);
+        return insert("AuthManageDAO.insertPermissionType", permissionTypeVO);
     }
 
     /**
@@ -213,6 +213,6 @@ public class AuthManageDAO extends EgovAbstractMapper {
      * @throws Exception
      */
     public String checkUserMenuPermission(Object params) throws Exception {
-        return selectOne("authManageDAO.checkUserMenuPermission", params);
+        return selectOne("AuthManageDAO.checkUserMenuPermission", params);
     }
 }

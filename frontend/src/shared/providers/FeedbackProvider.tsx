@@ -22,6 +22,7 @@ export type FeedbackContextValue = {
   clearFeedback: () => void;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const FeedbackContext = createContext<FeedbackContextValue | null>(null);
 
 type FeedbackState = {

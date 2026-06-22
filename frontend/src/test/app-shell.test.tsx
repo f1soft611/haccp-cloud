@@ -71,6 +71,20 @@ describe('App shell', () => {
   beforeEach(() => {
     resetAuthStore();
 
+    // Mock menu service to avoid MSW issues in integration tests
+    vi.spyOn(
+      platformUserMenuService,
+      'listAccessibleMenuPaths',
+    ).mockResolvedValue([
+      '/dashboard',
+      '/platform/tenants',
+      '/platform/menus',
+      '/platform/roles',
+      '/platform/login-history',
+      '/users',
+      '/documents',
+    ]);
+
     server.use(
       http.post('/api/auth/login-jwt', async ({ request }) => {
         const payload = (await request.json()) as {
@@ -166,12 +180,23 @@ describe('App shell', () => {
           },
         });
       }),
-      http.get('/api/admin/user-menus/:authorityCode', ({ params }) => {
-        const authorityCode = String(params.authorityCode ?? '').toUpperCase();
+      http.get('/api/platform-admin/user-menus/me', ({ request }) => {
+        // Extract role from Authorization header (token format: "Bearer token-TENANTCODE-userid")
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader?.replace('Bearer ', '') || '';
+
+        // Parse token to determine role
+        let authorityCode = 'TENANT_USER';
+        if (token.includes('platform_admin')) {
+          authorityCode = 'PLATFORM_ADMIN';
+        } else if (token.includes('admin') && !token.includes('platform')) {
+          authorityCode = 'TENANT_ADMIN';
+        }
 
         const menuPathsByAuthority: Record<string, string[]> = {
           PLATFORM_ADMIN: [
             '/dashboard',
+            '/platform/tenants',
             '/platform/menus',
             '/platform/roles',
             '/platform/login-history',
@@ -184,14 +209,41 @@ describe('App shell', () => {
           (menuUrl) => ({ menuUrl }),
         );
 
-        return HttpResponse.json({ result: { menuList } });
+        return HttpResponse.json(menuList);
       }),
-      http.get('/admin/user-menus/:authorityCode', ({ params }) => {
+      http.get(
+        '/api/platform-admin/user-menus/:authorityCode',
+        ({ params }) => {
+          const authorityCode = String(
+            params.authorityCode ?? '',
+          ).toUpperCase();
+
+          const menuPathsByAuthority: Record<string, string[]> = {
+            PLATFORM_ADMIN: [
+              '/dashboard',
+              '/platform/tenants',
+              '/platform/menus',
+              '/platform/roles',
+              '/platform/login-history',
+            ],
+            TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
+            TENANT_USER: ['/dashboard', '/documents'],
+          };
+
+          const menuList = (menuPathsByAuthority[authorityCode] ?? []).map(
+            (menuUrl) => ({ menuUrl }),
+          );
+
+          return HttpResponse.json({ result: { menuList } });
+        },
+      ),
+      http.get('/platform-admin/user-menus/:authorityCode', ({ params }) => {
         const authorityCode = String(params.authorityCode ?? '').toUpperCase();
 
         const menuPathsByAuthority: Record<string, string[]> = {
           PLATFORM_ADMIN: [
             '/dashboard',
+            '/platform/tenants',
             '/platform/menus',
             '/platform/roles',
             '/platform/login-history',
@@ -211,6 +263,7 @@ describe('App shell', () => {
 
   afterEach(() => {
     resetAuthStore();
+    vi.restoreAllMocks();
   });
 
   it('shows korean login title for MVP entry point', async () => {
@@ -360,7 +413,7 @@ describe('App shell', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders AppLayout shell with top bar and footer but without work menu', () => {
+  it('renders AppLayout shell with top bar and footer but without work menu', async () => {
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -394,7 +447,7 @@ describe('App shell', () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId('work-menu-bar')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: APP_LABELS.menu.dashboard }),
+      await screen.findByRole('button', { name: APP_LABELS.menu.dashboard }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: APP_LABELS.menu.users }),
@@ -436,7 +489,9 @@ describe('App shell', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: APP_LABELS.menu.dashboardGroup }),
+      await screen.findByRole('button', {
+        name: APP_LABELS.menu.dashboardGroup,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
@@ -484,6 +539,21 @@ describe('App shell', () => {
 
     expect(
       await screen.findByTestId('platform-menu-management-page'),
+    ).toBeInTheDocument();
+  });
+
+  it('allows PLATFORM_ADMIN to access platform tenant management route', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: '000001',
+      userId: 'platform_admin',
+      role: 'PLATFORM_ADMIN',
+    });
+
+    renderAppRoutesAt('/platform/tenants');
+
+    expect(
+      await screen.findByTestId('platform-tenant-management-page'),
     ).toBeInTheDocument();
   });
 

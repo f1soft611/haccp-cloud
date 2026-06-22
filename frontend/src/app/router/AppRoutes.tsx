@@ -14,6 +14,7 @@ import { PlatformAdminLoginPage } from '../../pages/auth/PlatformAdminLoginPage'
 import { LoginHistoryPage } from '../../pages/admin/LoginHistoryPage';
 import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
 import { PlatformAuthorityManagementPage } from '../../pages/platform-admin/authorities/PlatformAuthorityManagementPage';
+import { PlatformTenantManagementPage } from '../../pages/platform-admin/tenants/PlatformTenantManagementPage';
 import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
 import { useAuthStore } from '../../shared/store/authStore';
 
@@ -44,6 +45,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
               <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/tenants"
+          element={
+            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+              <PlatformTenantManagementPage />
             </ProtectedRoute>
           }
         />

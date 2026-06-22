@@ -40,7 +40,6 @@ type LoginHistoryListResponse = {
 const LOGIN_HISTORY_LIST_ENDPOINTS = [
   '/platform-admin/login-history/list',
   '/platform-admin/login-history',
-  '/loginHistory/list',
 ] as const;
 
 export async function getLoginHistoryList(

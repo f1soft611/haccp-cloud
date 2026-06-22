@@ -1,5 +1,4 @@
 import { apiClient } from '../api/apiClient';
-import type { AuthorityCode } from '../../shared/auth/authorityCode';
 
 type UserMenuEntry = {
   menuUrl?: string | null;
@@ -17,6 +16,8 @@ type UserMenuEnvelope = {
   menuList?: UserMenuListEntry[];
 };
 
+type UserMenuResponse = UserMenuEnvelope | UserMenuListEntry[];
+
 export type AccessibleMenuMeta = {
   path: string;
   menuNm?: string;
@@ -32,9 +33,12 @@ function normalizeMenuPath(menuUrl: string): string {
 
   const normalizedPath = trimmed.replace(/\/+$/, '');
 
-  // Keep backward compatibility while platform onboarding moves to the new route.
-  if (normalizedPath === '/onboarding') {
-    return '/platform/onboarding';
+  // Keep backward compatibility while platform onboarding moves to tenant management list.
+  if (
+    normalizedPath === '/onboarding' ||
+    normalizedPath === '/platform/onboarding'
+  ) {
+    return '/platform/tenants';
   }
 
   if (normalizedPath === '/login-history') {
@@ -44,30 +48,20 @@ function normalizeMenuPath(menuUrl: string): string {
   return normalizedPath;
 }
 
-function normalizeAuthorityCode(authorityCode: string): AuthorityCode {
-  const normalized = authorityCode.trim().toUpperCase();
-
-  if (normalized === 'PLATFORM_ADMIN') {
-    return 'PLATFORM_ADMIN';
+function extractUserMenuList(data: UserMenuResponse): UserMenuListEntry[] {
+  if (Array.isArray(data)) {
+    return data;
   }
 
-  if (normalized === 'TENANT_ADMIN') {
-    return 'TENANT_ADMIN';
-  }
-
-  return 'TENANT_USER';
+  return data.result?.menuList ?? data.menuList ?? [];
 }
 
-export async function listAccessibleMenuPaths(
-  authorityCode: string,
-): Promise<string[]> {
-  const normalizedAuthorityCode = normalizeAuthorityCode(authorityCode);
-
-  const { data } = await apiClient.get<UserMenuEnvelope>(
-    `/admin/user-menus/${normalizedAuthorityCode}`,
+export async function listAccessibleMenuPaths(): Promise<string[]> {
+  const { data } = await apiClient.get<UserMenuResponse>(
+    '/platform-admin/user-menus/me',
   );
 
-  const menuList = data.result?.menuList ?? data.menuList ?? [];
+  const menuList = extractUserMenuList(data);
   const menuPaths = menuList
     .map((item) => (typeof item === 'string' ? item : (item.menuUrl ?? '')))
     .map((menuUrl) => normalizeMenuPath(menuUrl))
@@ -76,16 +70,12 @@ export async function listAccessibleMenuPaths(
   return Array.from(new Set(menuPaths));
 }
 
-export async function listAccessibleMenus(
-  authorityCode: string,
-): Promise<AccessibleMenuMeta[]> {
-  const normalizedAuthorityCode = normalizeAuthorityCode(authorityCode);
-
-  const { data } = await apiClient.get<UserMenuEnvelope>(
-    `/admin/user-menus/${normalizedAuthorityCode}`,
+export async function listAccessibleMenus(): Promise<AccessibleMenuMeta[]> {
+  const { data } = await apiClient.get<UserMenuResponse>(
+    '/platform-admin/user-menus/me',
   );
 
-  const menuList = data.result?.menuList ?? data.menuList ?? [];
+  const menuList = extractUserMenuList(data);
   const normalizedMenus = menuList
     .map((item) => {
       if (typeof item === 'string') {

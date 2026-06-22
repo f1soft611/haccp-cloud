@@ -39,8 +39,10 @@ function formatBrn(value: string): string {
 type FormData = {
   companyName: string;
   businessRegistrationNumber: string;
+  corporateNumber: string;
   representativeName: string;
   businessType: string;
+  businessCategory: string;
   address: string;
   phoneNumber: string;
   registrationDate: string;
@@ -51,8 +53,10 @@ type FormData = {
 const EMPTY_FORM: FormData = {
   companyName: '',
   businessRegistrationNumber: '',
+  corporateNumber: '',
   representativeName: '',
   businessType: '',
+  businessCategory: '',
   address: '',
   phoneNumber: '',
   registrationDate: '',
@@ -98,8 +102,13 @@ export function OnboardingPage() {
       setDuplicateError(false);
       setStep(3);
     },
-    onError: (error: { response?: { status?: number } }) => {
-      if (error?.response?.status === 409) {
+    onError: (error: {
+      status?: number;
+      response?: { status?: number; data?: { code?: string } };
+    }) => {
+      const status = error?.response?.status ?? error?.status;
+      const code = error?.response?.data?.code;
+      if (status === 409 || code === 'DUPLICATE_BRN') {
         setDuplicateError(true);
       }
     },
@@ -119,6 +128,9 @@ export function OnboardingPage() {
     const required: (keyof FormData)[] = [
       'companyName',
       'businessRegistrationNumber',
+      'corporateNumber',
+      'businessType',
+      'businessCategory',
       'adminName',
       'adminEmail',
     ];
@@ -143,8 +155,10 @@ export function OnboardingPage() {
     mutation.mutate({
       companyName: form.companyName.trim(),
       businessRegistrationNumber: form.businessRegistrationNumber.trim(),
+      corporateNumber: form.corporateNumber.trim(),
       representativeName: form.representativeName.trim(),
       businessType: form.businessType.trim(),
+      businessCategory: form.businessCategory.trim(),
       address: form.address.trim(),
       phoneNumber: form.phoneNumber.trim(),
       registrationDate: form.registrationDate.trim(),
@@ -222,6 +236,15 @@ export function OnboardingPage() {
                 </Stack>
                 <Stack direction="row" spacing={2}>
                   <TextField
+                    label={APP_LABELS.field.corporateNumber}
+                    value={form.corporateNumber}
+                    onChange={(e) =>
+                      setField('corporateNumber', e.target.value)
+                    }
+                    required
+                    fullWidth
+                  />
+                  <TextField
                     label={APP_LABELS.field.representativeName}
                     value={form.representativeName}
                     onChange={(e) =>
@@ -229,11 +252,24 @@ export function OnboardingPage() {
                     }
                     fullWidth
                   />
+                </Stack>
+                <Stack direction="row" spacing={2}>
                   <TextField
                     label={APP_LABELS.field.businessType}
                     placeholder="예: 식품제조업"
                     value={form.businessType}
                     onChange={(e) => setField('businessType', e.target.value)}
+                    required
+                    fullWidth
+                  />
+                  <TextField
+                    label={APP_LABELS.field.businessCategory}
+                    placeholder="예: 즉석조리식품"
+                    value={form.businessCategory}
+                    onChange={(e) =>
+                      setField('businessCategory', e.target.value)
+                    }
+                    required
                     fullWidth
                   />
                 </Stack>
@@ -327,7 +363,14 @@ export function OnboardingPage() {
 
             <Paper
               variant="outlined"
-              sx={{ p: 2, borderRadius: 2, bgcolor: 'grey.50' }}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.06)'
+                    : 'grey.50',
+              }}
             >
               <Typography
                 variant="caption"
@@ -346,12 +389,20 @@ export function OnboardingPage() {
                 value={form.businessRegistrationNumber}
               />
               <LabelValue
+                label={APP_LABELS.field.corporateNumber}
+                value={form.corporateNumber}
+              />
+              <LabelValue
                 label={APP_LABELS.field.representativeName}
                 value={form.representativeName}
               />
               <LabelValue
                 label={APP_LABELS.field.businessType}
                 value={form.businessType}
+              />
+              <LabelValue
+                label={APP_LABELS.field.businessCategory}
+                value={form.businessCategory}
               />
               <LabelValue
                 label={APP_LABELS.field.address}
@@ -369,7 +420,14 @@ export function OnboardingPage() {
 
             <Paper
               variant="outlined"
-              sx={{ p: 2, borderRadius: 2, bgcolor: 'grey.50' }}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.06)'
+                    : 'grey.50',
+              }}
             >
               <Typography
                 variant="caption"
@@ -433,7 +491,10 @@ export function OnboardingPage() {
                 p: 2.5,
                 borderRadius: 2,
                 width: '100%',
-                bgcolor: 'grey.50',
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.06)'
+                    : 'grey.50',
               }}
             >
               <Stack spacing={0.5}>

@@ -111,14 +111,16 @@ public class EgovLoginApiController {
 
 		// 로그인 이력 엔티티 생성
 		LoginHistory loginHistory = new LoginHistory();
-		loginHistory.setFactoryCode(loginVO.getFactoryCode());
+		loginHistory.setTenantCode(loginVO.getTenantCode());
 		loginHistory.setUserId(loginVO.getId());
+		loginHistory.setAuthorityCode(loginVO.getRoleCode());
 		loginHistory.setLoginIp(clientIp);
 		loginHistory.setLoginType("SESSION");
 		loginHistory.setUserAgent(userAgent);
 
 		if (loginResultVO != null && loginResultVO.getId() != null && !"".equals(loginResultVO.getId())) {
-			loginHistory.setFactoryCode(loginResultVO.getFactoryCode());
+			loginHistory.setTenantCode(loginResultVO.getTenantCode());
+			loginHistory.setAuthorityCode(loginResultVO.getRoleCode());
 			if (Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN")) {
 				loginResultVO.setUserSe("ADM");
 			}
@@ -180,14 +182,16 @@ public class EgovLoginApiController {
 
 		// 2. 로그인 이력 저장
 		LoginHistory loginHistory = new LoginHistory();
-		loginHistory.setFactoryCode(loginVO.getFactoryCode());
+		loginHistory.setTenantCode(loginVO.getTenantCode());
 		loginHistory.setUserId(loginVO.getId());
+		loginHistory.setAuthorityCode(loginVO.getRoleCode());
 		loginHistory.setLoginIp(clientIp);
 		loginHistory.setLoginType("JWT");
 		loginHistory.setUserAgent(userAgent);
 		
 		if (loginResultVO != null && loginResultVO.getId() != null && !loginResultVO.getId().equals("")) {
-			loginHistory.setFactoryCode(loginResultVO.getFactoryCode());
+			loginHistory.setTenantCode(loginResultVO.getTenantCode());
+			loginHistory.setAuthorityCode(loginResultVO.getRoleCode());
 			if(Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN")) {//로그인 결과에서 역할코드값에 따른 권한부여
 				loginResultVO.setUserSe("ADM");
 	        }
@@ -257,8 +261,8 @@ public class EgovLoginApiController {
 			throws Exception {
 		HashMap<String, Object> resultMap = new HashMap<String, Object>();
 
-		// 플랫폼 관리자 전용 로그인은 클라이언트의 회사코드 입력 없이 서버가 PLATFORM 컨텍스트로 처리한다.
-		loginVO.setFactoryCode("PLATFORM");
+		// 플랫폼 관리자 전용 로그인은 클라이언트의 테넌트코드 입력 없이 서버가 PLATFORM 컨텍스트로 처리한다.
+		loginVO.setTenantCode("PLATFORM");
 		loginVO.setRoleCode("PLATFORM_ADMIN");
 
 		String clientIp = getClientIp(request);
@@ -267,8 +271,9 @@ public class EgovLoginApiController {
 		LoginVO loginResultVO = loginService.actionLogin(loginVO);
 
 		LoginHistory loginHistory = new LoginHistory();
-		loginHistory.setFactoryCode(loginVO.getFactoryCode());
+		loginHistory.setTenantCode(loginVO.getTenantCode());
 		loginHistory.setUserId(loginVO.getId());
+		loginHistory.setAuthorityCode(loginVO.getRoleCode());
 		loginHistory.setLoginIp(clientIp);
 		loginHistory.setLoginType("JWT_ADMIN");
 		loginHistory.setUserAgent(userAgent);
@@ -279,9 +284,10 @@ public class EgovLoginApiController {
 		boolean isPlatformAdmin = isValidLogin && Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN");
 
 		if (isPlatformAdmin) {
-			if (StringUtils.hasText(loginResultVO.getFactoryCode())) {
-				loginHistory.setFactoryCode(loginResultVO.getFactoryCode());
+			if (StringUtils.hasText(loginResultVO.getTenantCode())) {
+				loginHistory.setTenantCode(loginResultVO.getTenantCode());
 			}
+			loginHistory.setAuthorityCode(loginResultVO.getRoleCode());
 			loginResultVO.setUserSe("ADM");
 			request.getSession().setAttribute("LoginVO", loginResultVO);
 

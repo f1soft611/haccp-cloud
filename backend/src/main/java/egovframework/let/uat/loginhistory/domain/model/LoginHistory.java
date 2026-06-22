@@ -36,8 +36,8 @@ public class LoginHistory implements Serializable {
 	@Schema(description = "로그인 이력 ID")
 	private Long loginHistoryId;
 
-	@Schema(description = "회사 코드")
-	private String factoryCode;
+	@Schema(description = "테넌트 코드")
+	private String tenantCode;
 
 	@Schema(description = "사용자 ID")
 	private String userId;
@@ -56,6 +56,9 @@ public class LoginHistory implements Serializable {
 
 	@Schema(description = "사용자 에이전트")
 	private String userAgent;
+
+	@Schema(description = "권한 코드")
+	private String authorityCode;
 
 	@Schema(description = "로그인 결과 (Y:성공, N:실패)")
 	private String loginResult;
@@ -92,6 +95,16 @@ public class LoginHistory implements Serializable {
 
 	@Schema(description = "정부 인터페이스 응답 JSON")
 	private String govResponseJson;
+
+	@Deprecated
+	public String getFactoryCode() {
+		return tenantCode;
+	}
+
+	@Deprecated
+	public void setFactoryCode(String factoryCode) {
+		this.tenantCode = factoryCode;
+	}
 
 	/**
 	 * toString 메소드를 대치한다.

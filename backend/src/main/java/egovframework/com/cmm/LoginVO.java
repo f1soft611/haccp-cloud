@@ -33,8 +33,8 @@ public class LoginVO implements Serializable{
 	 */
 	private static final long serialVersionUID = -8274004534207618049L;
 
-	@Schema(description = "회사코드")
-	private String factoryCode;
+	@Schema(description = "테넌트 코드")
+	private String tenantCode;
 
 	@Schema(description = "아이디")
 	private String id;
@@ -90,6 +90,16 @@ public class LoginVO implements Serializable{
 
 	@Schema(description = "역할코드", allowableValues = {"PLATFORM_ADMIN", "TENANT_ADMIN", "TENANT_USER"})
 	private String roleCode;
+
+	@Deprecated
+	public String getFactoryCode() {
+		return tenantCode;
+	}
+
+	@Deprecated
+	public void setFactoryCode(String factoryCode) {
+		this.tenantCode = factoryCode;
+	}
 	
 	
 }
