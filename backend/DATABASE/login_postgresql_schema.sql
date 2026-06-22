@@ -19,6 +19,9 @@ CREATE TABLE tb_factoryinfo (
   factory_nm VARCHAR(100) NOT NULL,
   tenant_code VARCHAR(50) NOT NULL UNIQUE,
   admin_email VARCHAR(200),
+  corporate_number VARCHAR(50),
+  business_type VARCHAR(100),
+  business_category VARCHAR(100),
   use_at CHAR(1) NOT NULL DEFAULT 'Y' CHECK (use_at IN ('Y', 'N')),
   created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now()

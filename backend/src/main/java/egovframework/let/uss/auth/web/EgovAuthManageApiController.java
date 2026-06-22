@@ -20,11 +20,8 @@ import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.uss.auth.service.EgovAuthManageService;
-import egovframework.let.uss.auth.service.FactoryRegistrationRequestVO;
-import egovframework.let.uss.auth.service.FactoryRegistrationResultVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.PermissionTypeVO;
-import egovframework.let.uss.auth.service.PlatformFactoryService;
 import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -48,9 +45,6 @@ public class EgovAuthManageApiController {
 
     @Resource(name = "authManageService")
     private EgovAuthManageService authManageService;
-
-    @Resource(name = "platformFactoryService")
-    private PlatformFactoryService platformFactoryService;
 
     @Resource(name = "resultVoHelper")
     private ResultVoHelper resultVoHelper;
@@ -328,22 +322,4 @@ public class EgovAuthManageApiController {
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
-    /**
-     * 플랫폼 관리자가 업체를 등록하고 6자리 업체코드를 발급한다.
-     */
-    @Operation(
-        summary = "업체 등록 및 코드 부여",
-        description = "TB_FactoryInfo에 업체를 등록하고 6자리 FACTORY_CODE를 발급한다.",
-        security = {@SecurityRequirement(name = "Authorization")}
-    )
-    @PostMapping("/factories")
-    public ResultVO registerFactory(@RequestBody FactoryRegistrationRequestVO requestVO) {
-        FactoryRegistrationResultVO resultVO = platformFactoryService.registerFactory(requestVO);
-
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("factory", resultVO);
-        resultMap.put("resultMsg", "success.common.insert");
-
-        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
-    }
 }

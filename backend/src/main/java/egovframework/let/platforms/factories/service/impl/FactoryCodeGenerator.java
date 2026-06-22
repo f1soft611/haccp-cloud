@@ -1,4 +1,4 @@
-package egovframework.let.uss.auth.service.impl;
+package egovframework.let.platforms.factories.service.impl;
 
 final class FactoryCodeGenerator {
 
