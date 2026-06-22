@@ -14,12 +14,10 @@ import { AppLayout } from '../shared/components/layout/AppLayout';
 import { useAuthStore, type UserRole } from '../shared/store/authStore';
 import { APP_LABELS } from '../shared/constants/labels';
 
-const mockListAccessibleMenuPaths =
-  vi.fn<(authorityCode: string) => Promise<string[]>>();
+const mockListAccessibleMenuPaths = vi.fn<() => Promise<string[]>>();
 
 vi.mock('../services/platform/platformUserMenuService', () => ({
-  listAccessibleMenuPaths: (authorityCode: string) =>
-    mockListAccessibleMenuPaths(authorityCode),
+  listAccessibleMenuPaths: () => mockListAccessibleMenuPaths(),
 }));
 
 const renderLayoutWithRole = (

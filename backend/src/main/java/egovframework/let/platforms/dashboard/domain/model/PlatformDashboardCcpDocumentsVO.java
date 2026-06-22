@@ -29,6 +29,7 @@ public class PlatformDashboardCcpDocumentsVO {
     @Getter
     @Setter
     public static class ItemVO {
+        private Long tenantId;
         private String tenantCode;
         private String companyName;
         private int generatedCount;

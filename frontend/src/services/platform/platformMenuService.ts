@@ -38,6 +38,16 @@ export type UpdatePlatformMenuRequest = {
   useAt: 'Y' | 'N';
 };
 
+type MenuUpsertApiPayload = {
+  menuNm: string;
+  menuDc: string;
+  menuUrl: string;
+  parentMenuId: string | null;
+  menuOrdr: number;
+  iconNm: string;
+  useAt: 'Y' | 'N';
+};
+
 export type ListPlatformMenusPagedParams = {
   pageIndex: number;
   pageSize: number;
@@ -48,7 +58,7 @@ export type ListPlatformMenusPagedParams = {
 
 type MenuPagedApiResponse = {
   result?: {
-    menuList?: PlatformMenuItem[];
+    menuList?: RawPlatformMenuItem[];
     totalCount?: number;
     paginationInfo?: {
       currentPageNo?: number;
@@ -58,13 +68,20 @@ type MenuPagedApiResponse = {
   };
 };
 
+type RawPlatformMenuItem = Omit<PlatformMenuItem, 'menuId' | 'parentMenuId'> & {
+  menuId?: string | number | null;
+  menuCode?: string | null;
+  parentMenuId?: string | number | null;
+  parentMenuCode?: string | null;
+};
+
 type MenuListApiResponse =
-  | PlatformMenuItem[]
+  | RawPlatformMenuItem[]
   | {
       result?: {
-        menuList?: PlatformMenuItem[];
+        menuList?: RawPlatformMenuItem[];
       };
-      menuList?: PlatformMenuItem[];
+      menuList?: RawPlatformMenuItem[];
     };
 
 type MenuItemApiResponse =
@@ -76,24 +93,38 @@ type MenuItemApiResponse =
       menuInfo?: PlatformMenuItem;
     };
 
-function normalizeParentMenuId(
-  value: string | null | undefined,
-): string | null {
-  if (value == null) {
-    return null;
+function normalizeTextValue(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
   }
-
-  return value.trim() === '' ? null : value;
+  if (value == null) {
+    return '';
+  }
+  return String(value).trim();
 }
 
-function normalizeMenuItem(item: PlatformMenuItem): PlatformMenuItem {
+function normalizeParentMenuId(value: unknown): string | null {
+  const normalized = normalizeTextValue(value);
+  return normalized === '' ? null : normalized;
+}
+
+function normalizeMenuId(item: RawPlatformMenuItem): string {
+  return normalizeTextValue(item.menuId);
+}
+
+function normalizeParentMenuCode(item: RawPlatformMenuItem): string | null {
+  return normalizeParentMenuId(item.parentMenuId);
+}
+
+function normalizeMenuItem(item: RawPlatformMenuItem): PlatformMenuItem {
   return {
     ...item,
-    parentMenuId: normalizeParentMenuId(item.parentMenuId),
+    menuId: normalizeMenuId(item),
+    parentMenuId: normalizeParentMenuCode(item),
   };
 }
 
-function extractMenuList(data: MenuListApiResponse): PlatformMenuItem[] {
+function extractMenuList(data: MenuListApiResponse): RawPlatformMenuItem[] {
   if (Array.isArray(data)) {
     return data;
   }
@@ -135,15 +166,39 @@ export async function listPlatformMenusPaged(
 export async function createPlatformMenu(
   payload: CreatePlatformMenuRequest,
 ): Promise<void> {
-  await apiClient.post<MenuItemApiResponse>('/platform-admin/menus', payload);
+  const requestBody: MenuUpsertApiPayload = {
+    menuNm: payload.menuNm,
+    menuDc: payload.menuDc,
+    menuUrl: payload.menuUrl,
+    parentMenuId: normalizeParentMenuId(payload.parentMenuId),
+    menuOrdr: payload.menuOrdr,
+    iconNm: payload.iconNm,
+    useAt: payload.useAt,
+  };
+
+  await apiClient.post<MenuItemApiResponse>(
+    '/platform-admin/menus',
+    requestBody,
+  );
 }
 
 export async function updatePlatformMenu(
   payload: UpdatePlatformMenuRequest,
 ): Promise<void> {
+  const { menuId, ...rest } = payload;
+  const requestBody: MenuUpsertApiPayload = {
+    menuNm: rest.menuNm,
+    menuDc: rest.menuDc,
+    menuUrl: rest.menuUrl,
+    parentMenuId: normalizeParentMenuId(rest.parentMenuId),
+    menuOrdr: rest.menuOrdr,
+    iconNm: rest.iconNm,
+    useAt: rest.useAt,
+  };
+
   await apiClient.patch<MenuItemApiResponse>(
-    `/platform-admin/menus/${payload.menuId}`,
-    payload,
+    `/platform-admin/menus/${menuId}`,
+    requestBody,
   );
 }
 

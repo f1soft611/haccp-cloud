@@ -21,7 +21,10 @@ public class MenuInfoVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "메뉴 ID")
-    private String menuId = "";
+    private Long menuId;
+
+    @Schema(description = "메뉴 코드")
+    private String menuCode = "";
 
     @Schema(description = "메뉴명")
     private String menuNm = "";
@@ -30,7 +33,10 @@ public class MenuInfoVO implements Serializable {
     private String menuDc = "";
 
     @Schema(description = "상위 메뉴 ID")
-    private String parentMenuId = "";
+    private Long parentMenuId;
+
+    @Schema(description = "상위 메뉴 코드")
+    private String parentMenuCode = "";
 
     @Schema(description = "메뉴 순서")
     private int menuOrdr = 0;

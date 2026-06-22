@@ -37,11 +37,11 @@
     <select id="selectGroupIdDetail" parameterType="ComDefaultCodeVO" resultMap="CmmCodeDetail">
         SELECT
             #{tableNm} AS code_id,
-            group_id AS code,
-            group_nm || '(' || group_dc || ')' AS code_nm,
-            group_dc AS code_dc
+            department_code AS code,
+            department_nm || '(' || COALESCE(department_dc, '') || ')' AS code_nm,
+            department_dc AS code_dc
         FROM
-            TB_DepartmentInfo
+            tb_department
         WHERE 1=1
     </select>
 </mapper>

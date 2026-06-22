@@ -13,9 +13,9 @@ import egovframework.let.platforms.dashboard.domain.model.PlatformDashboardCcpDo
 import egovframework.let.platforms.dashboard.domain.model.PlatformDashboardKpisVO;
 import egovframework.let.platforms.dashboard.domain.model.PlatformDashboardSearchConditionVO;
 import egovframework.let.platforms.dashboard.domain.model.PlatformDashboardTenantCodeIssuanceVO;
-import egovframework.let.platforms.factories.service.PlatformFactoryService;
-import egovframework.let.platforms.factories.domain.model.PlatformTenantDashboardQueryVO;
-import egovframework.let.platforms.factories.domain.model.PlatformTenantDashboardResultVO;
+import egovframework.let.platforms.tenants.service.PlatformTenantService;
+import egovframework.let.platforms.tenants.domain.model.PlatformTenantDashboardQueryVO;
+import egovframework.let.platforms.tenants.domain.model.PlatformTenantDashboardResultVO;
 
 /**
  * 플랫폼 대시보드 서비스 구현체
@@ -26,8 +26,8 @@ import egovframework.let.platforms.factories.domain.model.PlatformTenantDashboar
 @Service("platformDashboardService")
 public class PlatformDashboardServiceImpl implements PlatformDashboardService {
 
-    @Resource(name = "platformFactoryService")
-    private PlatformFactoryService platformFactoryService;
+    @Resource(name = "platformTenantService")
+    private PlatformTenantService platformTenantService;
 
     @Resource(name = "platformDashboardDAO")
     private PlatformDashboardDAO platformDashboardDAO;
@@ -72,7 +72,7 @@ public class PlatformDashboardServiceImpl implements PlatformDashboardService {
 
     @Override
     public PlatformTenantDashboardResultVO listDashboardTenants(PlatformTenantDashboardQueryVO queryVO) {
-        return platformFactoryService.listDashboardTenants(queryVO);
+        return platformTenantService.listDashboardTenants(queryVO);
     }
 
     @Override
@@ -85,6 +85,7 @@ public class PlatformDashboardServiceImpl implements PlatformDashboardService {
         if (tenants.getItems() != null) {
             for (int i = 0; i < tenants.getItems().size(); i++) {
                 PlatformDashboardCcpDocumentsVO.ItemVO row = new PlatformDashboardCcpDocumentsVO.ItemVO();
+                row.setTenantId(tenants.getItems().get(i).getTenantId());
                 row.setTenantCode(tenants.getItems().get(i).getTenantCode());
                 row.setCompanyName(tenants.getItems().get(i).getCompanyName());
                 row.setGeneratedCount(0);
@@ -110,7 +111,7 @@ public class PlatformDashboardServiceImpl implements PlatformDashboardService {
         queryVO.setPageIndex(0);
         queryVO.setPageSize(100);
         queryVO.setStatus("all");
-        return platformFactoryService.listDashboardTenants(queryVO);
+        return platformTenantService.listDashboardTenants(queryVO);
     }
 
 }

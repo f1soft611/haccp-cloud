@@ -30,6 +30,7 @@ type BackendLoginVO = {
   id?: string;
   name?: string;
   groupNm?: string;
+  roleCode?: string;
 };
 
 type BackendLoginEnvelope = {
@@ -123,8 +124,25 @@ async function postAuth<T>(path: string, body: unknown) {
   return axios.post<T>(resolveAuthUrl(path), body);
 }
 
-function resolveRole(userId: string, groupNm?: string): UserRole {
+function resolveRole(
+  userId: string,
+  groupNm?: string,
+  roleCode?: string,
+): UserRole {
+  const normalizedRoleCode = (roleCode ?? '').trim().toUpperCase();
   const normalizedGroup = (groupNm ?? '').trim().toUpperCase();
+
+  if (normalizedRoleCode === 'PLATFORM_ADMIN') {
+    return 'PLATFORM_ADMIN';
+  }
+
+  if (normalizedRoleCode === 'TENANT_ADMIN') {
+    return 'TENANT_ADMIN';
+  }
+
+  if (normalizedRoleCode === 'TENANT_USER') {
+    return 'USER';
+  }
 
   if (
     normalizedGroup === 'ROLE_ADMIN' ||
@@ -169,7 +187,7 @@ function normalizeLoginResponse(
     tenantCode: resultVO.factoryCode ?? '000001',
     userId,
     displayName: resultVO.name?.trim() || undefined,
-    role: resolveRole(userId, resultVO.groupNm),
+    role: resolveRole(userId, resultVO.groupNm, resultVO.roleCode),
     accessToken: data.jToken ?? '',
     refreshToken: data.refreshToken,
     loginHistoryId: data.loginHistoryId,

@@ -1,125 +1,129 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="loginDAO">
 
-	<!-- 로그인 처리를 위한 resultMap -->
-	<resultMap id="login" type="egovframework.com.cmm.LoginVO">
-		<result property="factoryCode" column="factoryCode"/>
-		<result property="id" column="id"/>
-		<result property="name" column="name"/>
-		<result property="ihidNum" column="ihidNum"/>
-		<result property="email" column="email"/>
-		<result property="password" column="password"/>
-		<result property="userSe" column="userSe"/>
-		<result property="orgnztId" column="orgnztId"/>
-		<result property="uniqId" column="uniqId"/>
-		<!-- 누락된 필드 추가 -->
-		<result property="groupId" column="groupId"/>
-		<result property="groupNm" column="groupNm"/>
-		<result property="roleCode" column="roleCode"/>
-	</resultMap>
+<!-- 로그인 처리를 위한 resultMap -->
+<resultMap id="login" type="egovframework.com.cmm.LoginVO">
+<result property="factoryCode" column="factoryCode"/>
+<result property="id" column="id"/>
+<result property="name" column="name"/>
+<result property="ihidNum" column="ihidNum"/>
+<result property="email" column="email"/>
+<result property="password" column="password"/>
+<result property="userSe" column="userSe"/>
+<result property="orgnztId" column="orgnztId"/>
+<result property="uniqId" column="uniqId"/>
+<!-- 누락된 필드 추가 -->
+<result property="groupId" column="groupId"/>
+<result property="groupNm" column="groupNm"/>
+<result property="roleCode" column="roleCode"/>
+</resultMap>
 
-	<resultMap id="id" type="egovframework.com.cmm.LoginVO">
-		<result property="id" column="id"/>
-	</resultMap>
+<resultMap id="id" type="egovframework.com.cmm.LoginVO">
+<result property="id" column="id"/>
+</resultMap>
 
-	<resultMap id="password" type="egovframework.com.cmm.LoginVO">
-		<result property="password" column="password"/>
-	</resultMap>
+<resultMap id="password" type="egovframework.com.cmm.LoginVO">
+<result property="password" column="password"/>
+</resultMap>
 
-	<!-- 일반 로그인 -->
-	<select id="actionLogin" resultMap="login">
-		SELECT
-			li.factory_code    AS factoryCode,
-			li.login_id        AS id,
-			ui.user_nm         AS name,
-			li.password_hash   AS password,
-			NULL               AS ihidNum,
-			ui.email_adres     AS email,
-			CASE
-				WHEN li.authority_code = 'PLATFORM_ADMIN' THEN 'ADM'
-				ELSE 'USR'
-			END                AS userSe,
-			ui.department_id   AS orgnztId,
-			ui.esntl_id        AS uniqId,
-			ui.department_id   AS groupId,
-			di.department_code AS groupCode,
-			CASE
-				WHEN li.authority_code = 'PLATFORM_ADMIN' THEN 'ROLE_ADMIN'
-				WHEN li.authority_code = 'TENANT_ADMIN' THEN 'ROLE_TENANT_ADMIN'
-				ELSE 'ROLE_USER'
-			END                AS groupNm,
-			li.authority_code  AS roleCode
-		FROM
-			TB_LoginInfo li
-			JOIN TB_UserInfo ui
-			  ON ui.user_id = li.user_id
-			 AND ui.factory_code = li.factory_code
-			LEFT JOIN TB_DepartmentInfo di
-			  ON di.department_id = ui.department_id
-			 AND di.factory_code = ui.factory_code
-		WHERE
-			li.login_id = #{id}
-		  AND li.password_hash = #{password}
-		  AND li.factory_code = #{factoryCode}
-		  <if test="roleCode != null and roleCode != ''">
-		  AND li.authority_code = #{roleCode}
-		  </if>
-		  AND COALESCE(li.use_at, 'Y') = 'Y'
-		  AND COALESCE(ui.use_at, 'Y') = 'Y'
-		  AND COALESCE(di.use_at, 'Y') = 'Y'
-	</select>
+<!-- 일반 로그인 -->
+<select id="actionLogin" resultMap="login">
+SELECT
+li.login_code       AS id,
+t.tenant_code       AS factoryCode,
+u.user_nm           AS name,
+li.password_hash    AS password,
+NULL                AS ihidNum,
+u.email_adres       AS email,
+CASE
+WHEN a.authority_code = 'PLATFORM_ADMIN' THEN 'ADM'
+ELSE 'USR'
+END                 AS userSe,
+u.department_id     AS orgnztId,
+u.user_code         AS uniqId,
+u.department_id     AS groupId,
+d.department_code   AS groupCode,
+CASE
+WHEN a.authority_code = 'PLATFORM_ADMIN' THEN 'ROLE_ADMIN'
+WHEN a.authority_code = 'TENANT_ADMIN' THEN 'ROLE_TENANT_ADMIN'
+ELSE 'ROLE_USER'
+END                 AS groupNm,
+a.authority_code    AS roleCode
+FROM tb_login_account li
+JOIN tb_user u
+  ON u.user_id = li.user_id
+JOIN tb_tenant t
+  ON t.tenant_id = li.tenant_id
+JOIN tb_authority a
+  ON a.authority_id = li.authority_id
+LEFT JOIN tb_department d
+  ON d.department_id = u.department_id
+WHERE
+li.login_code = #{id}
+  AND li.password_hash = #{password}
+  AND t.tenant_code = #{factoryCode}
+  <if test="roleCode != null and roleCode != ''">
+  AND a.authority_code = #{roleCode}
+  </if>
+  AND COALESCE(li.use_at, 'Y') = 'Y'
+  AND COALESCE(u.use_at, 'Y') = 'Y'
+  AND COALESCE(d.use_at, 'Y') = 'Y'
+  AND COALESCE(t.use_at, 'Y') = 'Y'
+  AND COALESCE(a.use_at, 'Y') = 'Y'
+</select>
 
-	<select id="searchId" resultMap="id">
-		SELECT
-			li.login_id AS id
-		FROM
-			TB_LoginInfo li
-			JOIN TB_UserInfo ui
-			  ON ui.user_id = li.user_id
-			 AND ui.factory_code = li.factory_code
-		WHERE
-			ui.user_nm = #{name}
-		  AND ui.email_adres = #{email}
-		  <if test="factoryCode != null and factoryCode != ''">
-		  AND li.factory_code = #{factoryCode}
-		  </if>
-		  AND COALESCE(li.use_at, 'Y') = 'Y'
-		  AND COALESCE(ui.use_at, 'Y') = 'Y'
-		ORDER BY li.created_at DESC
-		LIMIT 1
-	</select>
+<select id="searchId" resultMap="id">
+SELECT
+li.login_code AS id
+FROM tb_login_account li
+JOIN tb_user u
+  ON u.user_id = li.user_id
+JOIN tb_tenant t
+  ON t.tenant_id = li.tenant_id
+WHERE
+u.user_nm = #{name}
+  AND u.email_adres = #{email}
+  <if test="factoryCode != null and factoryCode != ''">
+  AND t.tenant_code = #{factoryCode}
+  </if>
+  AND COALESCE(li.use_at, 'Y') = 'Y'
+  AND COALESCE(u.use_at, 'Y') = 'Y'
+  AND COALESCE(t.use_at, 'Y') = 'Y'
+ORDER BY li.created_at DESC
+LIMIT 1
+</select>
 
-	<select id="searchPassword" resultMap="password">
-		SELECT
-			li.password_hash AS password
-		FROM
-			TB_LoginInfo li
-			JOIN TB_UserInfo ui
-			  ON ui.user_id = li.user_id
-			 AND ui.factory_code = li.factory_code
-		WHERE
-			li.login_id = #{id}
-		  AND ui.user_nm = #{name}
-		  AND ui.email_adres = #{email}
-		  <if test="factoryCode != null and factoryCode != ''">
-		  AND li.factory_code = #{factoryCode}
-		  </if>
-		  AND COALESCE(li.use_at, 'Y') = 'Y'
-		  AND COALESCE(ui.use_at, 'Y') = 'Y'
-	</select>
+<select id="searchPassword" resultMap="password">
+SELECT
+li.password_hash AS password
+FROM tb_login_account li
+JOIN tb_user u
+  ON u.user_id = li.user_id
+JOIN tb_tenant t
+  ON t.tenant_id = li.tenant_id
+WHERE
+li.login_code = #{id}
+  AND u.user_nm = #{name}
+  AND u.email_adres = #{email}
+  <if test="factoryCode != null and factoryCode != ''">
+  AND t.tenant_code = #{factoryCode}
+  </if>
+  AND COALESCE(li.use_at, 'Y') = 'Y'
+  AND COALESCE(u.use_at, 'Y') = 'Y'
+  AND COALESCE(t.use_at, 'Y') = 'Y'
+</select>
 
-	<update id="updatePassword">
-		UPDATE TB_LoginInfo
-		SET
-			password_hash = #{password},
-			updated_at = now()
-		WHERE
-			login_id = #{id}
-		  <if test="factoryCode != null and factoryCode != ''">
-		  AND factory_code = #{factoryCode}
-		  </if>
-	</update>
+<update id="updatePassword">
+UPDATE tb_login_account
+SET
+password_hash = #{password},
+updated_at = now()
+WHERE
+login_code = #{id}
+  <if test="factoryCode != null and factoryCode != ''">
+  AND tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{factoryCode})
+  </if>
+</update>
 
 </mapper>

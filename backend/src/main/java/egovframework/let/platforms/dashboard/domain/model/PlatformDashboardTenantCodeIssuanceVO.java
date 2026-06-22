@@ -23,6 +23,7 @@ public class PlatformDashboardTenantCodeIssuanceVO {
     @Getter
     @Setter
     public static class RecentIssueVO {
+        private Long tenantId;
         private String tenantCode;
         private String companyName;
         private String issuedAt;

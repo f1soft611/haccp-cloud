@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.annotation.Resource;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,29 +67,29 @@ public class PlatformAuthorityApiController {
 
     @PostMapping("/roles")
     public AuthorityInfoVO createRole(@RequestBody AuthorityInfoVO payload) throws Exception {
-        if (payload == null || !hasText(payload.getAuthorityCode())) {
+        if (payload == null || !StringUtils.hasText(payload.getAuthorityCode())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "권한 코드는 필수입니다.");
         }
 
         return platformAuthorityService.createRole(payload);
     }
 
-    @PatchMapping("/roles/{code}")
-    public AuthorityInfoVO updateRoleUseAt(@PathVariable String code, @RequestBody AuthorityInfoVO payload) throws Exception {
-        if (payload == null || !hasText(payload.getUseAt())) {
+    @PatchMapping("/roles/{id}")
+    public AuthorityInfoVO updateRoleUseAt(@PathVariable Long id, @RequestBody AuthorityInfoVO payload) throws Exception {
+        if (payload == null || !StringUtils.hasText(payload.getUseAt())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt 값은 필수입니다.");
         }
 
-        return platformAuthorityService.updateRoleUseAt(code, payload);
+        return platformAuthorityService.updateRoleUseAt(id, payload);
     }
 
-    @PutMapping("/roles/{code}")
-    public AuthorityInfoVO updateRole(@PathVariable String code, @RequestBody AuthorityInfoVO payload) throws Exception {
-        if (payload == null || !hasText(payload.getAuthorityNm())) {
+    @PutMapping("/roles/{id}")
+    public AuthorityInfoVO updateRole(@PathVariable Long id, @RequestBody AuthorityInfoVO payload) throws Exception {
+        if (payload == null || !StringUtils.hasText(payload.getAuthorityNm())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "authorityNm 값은 필수입니다.");
         }
 
-        return platformAuthorityService.updateRole(code, payload);
+        return platformAuthorityService.updateRole(id, payload);
     }
 
     @GetMapping("/role-menus")
@@ -106,20 +107,25 @@ public class PlatformAuthorityApiController {
         return platformAuthorityService.replaceRoleMenus(roleCode, payload);
     }
 
-    @GetMapping("/user-menus/{authorityCode}")
-    public List<MenuInfoVO> listUserMenus(@PathVariable String authorityCode) throws Exception {
-        return platformAuthorityService.listUserMenus(authorityCode.trim().toUpperCase());
-    }
-
-    private String toUpper(String value) {
-        if (value == null) {
-            return "";
+    /**
+     * 현재 로그인 사용자의 권한에 따른 접근 가능 메뉴 목록 조회
+     * JWT 토큰의 roleCode를 SecurityContext에서 읽어 권한 확정
+     */
+    @GetMapping("/user-menus/me")
+    public List<MenuInfoVO> listCurrentUserMenus() throws Exception {
+        Object userDetails = egovframework.com.cmm.util.EgovUserDetailsHelper.getAuthenticatedUser();
+        if (!(userDetails instanceof egovframework.com.cmm.LoginVO)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 사용자 정보를 찾을 수 없습니다.");
         }
-        return value.trim().toUpperCase();
-    }
 
-    private boolean hasText(String value) {
-        return value != null && !value.trim().isEmpty();
+        egovframework.com.cmm.LoginVO loginVO = (egovframework.com.cmm.LoginVO) userDetails;
+        String roleCode = loginVO.getRoleCode();
+
+        if (!StringUtils.hasText(roleCode)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자 권한 정보가 없습니다.");
+        }
+
+        return platformAuthorityService.listUserMenus(roleCode.trim().toUpperCase());
     }
 
     private void validatePage(int pageIndex, int pageSize) {
@@ -139,7 +145,7 @@ public class PlatformAuthorityApiController {
     }
 
     private void validateSearchField(String searchField) {
-        if (!hasText(searchField)) {
+        if (!StringUtils.hasText(searchField)) {
             return;
         }
         String normalized = searchField.trim();
@@ -149,7 +155,7 @@ public class PlatformAuthorityApiController {
     }
 
     private void validateUseAt(String useAt) {
-        if (!hasText(useAt)) {
+        if (!StringUtils.hasText(useAt)) {
             return;
         }
         String normalized = useAt.trim().toUpperCase();

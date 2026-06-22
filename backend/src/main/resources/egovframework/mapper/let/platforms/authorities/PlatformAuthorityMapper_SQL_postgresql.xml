@@ -5,6 +5,7 @@
     <!-- 권한 목록 조회 -->
     <select id="PlatformAuthorityDAO.selectAuthorityList" resultType="egovframework.let.uss.auth.service.AuthorityInfoVO">
         SELECT
+            authority_id AS authorityId,
             authority_code AS authorityCode,
             authority_nm AS authorityNm,
             authority_dc AS authorityDc,
@@ -15,13 +16,14 @@
             'SYSTEM' AS frstRegisterId,
             updated_at AS lastUpdtPnttm,
             'SYSTEM' AS lastUpdusrId
-        FROM tb_authorityinfo
+        FROM tb_authority
         ORDER BY authority_level, authority_code
     </select>
 
     <!-- 권한 페이징 목록 조회 -->
     <select id="PlatformAuthorityDAO.selectAuthorityPagedList" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO" resultType="egovframework.let.uss.auth.service.AuthorityInfoVO">
         SELECT
+            authority_id AS authorityId,
             authority_code AS authorityCode,
             authority_nm AS authorityNm,
             authority_dc AS authorityDc,
@@ -32,7 +34,7 @@
             'SYSTEM' AS frstRegisterId,
             updated_at AS lastUpdtPnttm,
             'SYSTEM' AS lastUpdusrId
-        FROM tb_authorityinfo
+        FROM tb_authority
         WHERE 1=1
         <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
             AND use_at = #{useAt}
@@ -58,7 +60,7 @@
     <!-- 권한 페이징 개수 조회 -->
     <select id="PlatformAuthorityDAO.selectAuthorityPagedCount" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO" resultType="int">
         SELECT COUNT(1)
-        FROM tb_authorityinfo
+        FROM tb_authority
         WHERE 1=1
         <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
             AND use_at = #{useAt}
@@ -80,7 +82,7 @@
 
     <!-- 권한 등록 -->
     <insert id="PlatformAuthorityDAO.insertAuthority" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
-        INSERT INTO tb_authorityinfo (
+        INSERT INTO tb_authority (
             authority_code,
             authority_nm,
             authority_dc,
@@ -103,20 +105,20 @@
 
     <!-- 권한 수정 -->
     <update id="PlatformAuthorityDAO.updateAuthority" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
-        UPDATE tb_authorityinfo
+        UPDATE tb_authority
         SET authority_nm = #{authorityNm},
             authority_dc = #{authorityDc},
             use_at = #{useAt},
             updated_at = now()
-        WHERE authority_code = #{authorityCode}
+        WHERE authority_id = #{authorityId}
     </update>
 
     <!-- 권한 사용여부 수정 -->
     <update id="PlatformAuthorityDAO.updateAuthorityUseAt" parameterType="egovframework.let.uss.auth.service.AuthorityInfoVO">
-        UPDATE tb_authorityinfo
+        UPDATE tb_authority
         SET use_at = #{useAt},
             updated_at = now()
-        WHERE authority_code = #{authorityCode}
+        WHERE authority_id = #{authorityId}
     </update>
 
     <!-- 권한-메뉴 권한 목록 조회 -->
@@ -124,29 +126,34 @@
         WITH RECURSIVE menu_tree AS (
             SELECT
                 m.menu_id,
+                m.menu_code,
                 m.parent_menu_id,
                 m.menu_nm,
                 m.menu_ordr,
                 lpad(coalesce(m.menu_ordr, 0)::text, 5, '0') AS sort_path,
                 1 AS depth
-            FROM tb_menu_info m
+            FROM tb_menu m
             WHERE m.parent_menu_id IS NULL
             UNION ALL
             SELECT
                 c.menu_id,
+                c.menu_code,
                 c.parent_menu_id,
                 c.menu_nm,
                 c.menu_ordr,
                 mt.sort_path || '-' || lpad(coalesce(c.menu_ordr, 0)::text, 5, '0') AS sort_path,
                 mt.depth + 1
-            FROM tb_menu_info c
+            FROM tb_menu c
                 INNER JOIN menu_tree mt ON c.parent_menu_id = mt.menu_id
         )
         SELECT
-            rmp.rmp_id AS roleMenuId,
-            rmp.authority_code AS authorityCode,
+            rmp.rmp_id AS roleMenuPermissionId,
+            rmp.authority_id AS authorityId,
+            a.authority_code AS authorityCode,
             rmp.menu_id AS menuId,
+            m.menu_code AS menuCode,
             rmp.permission_id AS permissionId,
+            p.permission_code AS permissionCode,
             rmp.use_at AS useAt,
             rmp.crt_dt AS frstRegistPnttm,
             rmp.crt_id AS frstRegisterId,
@@ -158,19 +165,19 @@
             p.permission_nm AS permissionNm,
             p.permission_level AS permissionLevel
         FROM tb_role_menu_permission rmp
-            LEFT JOIN tb_authorityinfo a ON rmp.authority_code = a.authority_code
+            LEFT JOIN tb_authority a ON rmp.authority_id = a.authority_id
             LEFT JOIN menu_tree mt ON rmp.menu_id = mt.menu_id
-            LEFT JOIN tb_menu_info m ON rmp.menu_id = m.menu_id
-            LEFT JOIN tb_permission_type p ON rmp.permission_id = p.permission_id
+            LEFT JOIN tb_menu m ON rmp.menu_id = m.menu_id
+            LEFT JOIN tb_permission p ON rmp.permission_id = p.permission_id
         WHERE rmp.use_at = 'Y'
         <if test="authorityCode != null and authorityCode != ''">
-            AND rmp.authority_code = #{authorityCode}
+            AND a.authority_code = #{authorityCode}
         </if>
-        <if test="menuId != null and menuId != ''">
-            AND rmp.menu_id = #{menuId}
+        <if test="menuCode != null and menuCode != ''">
+            AND m.menu_code = #{menuCode}
         </if>
-        <if test="permissionId != null and permissionId != ''">
-            AND rmp.permission_id = #{permissionId}
+        <if test="permissionCode != null and permissionCode != ''">
+            AND p.permission_code = #{permissionCode}
         </if>
         ORDER BY mt.sort_path
     </select>
@@ -178,7 +185,7 @@
     <!-- 권한-메뉴 권한 등록 -->
     <insert id="PlatformAuthorityDAO.insertRoleMenuPermission" parameterType="egovframework.let.uss.auth.service.RoleMenuPermissionVO">
         INSERT INTO tb_role_menu_permission (
-            authority_code,
+            authority_id,
             menu_id,
             permission_id,
             use_at,
@@ -187,9 +194,9 @@
             upd_dt,
             upd_id
         ) VALUES (
-            #{authorityCode},
-            #{menuId},
-            #{permissionId},
+            (SELECT authority_id FROM tb_authority WHERE authority_code = #{authorityCode}),
+            (SELECT menu_id FROM tb_menu WHERE menu_code = #{menuCode}),
+            (SELECT permission_id FROM tb_permission WHERE permission_code = #{permissionCode}),
             #{useAt},
             now(),
             #{frstRegisterId},
@@ -201,13 +208,18 @@
     <!-- 권한코드 기준 권한-메뉴 권한 삭제 -->
     <delete id="PlatformAuthorityDAO.deleteRoleMenuPermissionsByAuthority" parameterType="string">
         DELETE FROM tb_role_menu_permission
-        WHERE authority_code = #{value}
+        WHERE authority_id = (
+            SELECT authority_id
+            FROM tb_authority
+            WHERE authority_code = #{value}
+        )
     </delete>
 
     <!-- 사용자 접근 가능 메뉴 목록 조회 -->
     <select id="PlatformAuthorityDAO.selectUserAccessibleMenus" parameterType="string" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
-        SELECT DISTINCT
+        SELECT
             m.menu_id AS menuId,
+            m.menu_code AS menuCode,
             m.menu_nm AS menuNm,
             m.menu_dc AS menuDc,
             m.parent_menu_id AS parentMenuId,
@@ -217,14 +229,15 @@
             m.use_at AS useAt,
             CASE WHEN MAX(p.permission_level) = 'write' THEN 'write' ELSE 'read' END AS permissionLevel,
             1 AS accessible
-        FROM tb_menu_info m
+        FROM tb_menu m
             INNER JOIN tb_role_menu_permission rmp ON m.menu_id = rmp.menu_id
-            INNER JOIN tb_permission_type p ON rmp.permission_id = p.permission_id
+            INNER JOIN tb_permission p ON rmp.permission_id = p.permission_id
+            INNER JOIN tb_authority a ON rmp.authority_id = a.authority_id
         WHERE m.use_at = 'Y'
           AND rmp.use_at = 'Y'
           AND p.use_at = 'Y'
-          AND rmp.authority_code = #{value}
-        GROUP BY m.menu_id, m.menu_nm, m.menu_dc, m.parent_menu_id, m.menu_ordr, m.menu_url, m.icon_nm, m.use_at
+          AND a.authority_code = #{value}
+        GROUP BY m.menu_id, m.menu_code, m.menu_nm, m.menu_dc, m.parent_menu_id, m.menu_ordr, m.menu_url, m.icon_nm, m.use_at
         ORDER BY m.parent_menu_id, m.menu_ordr, m.menu_id
     </select>
 </mapper>

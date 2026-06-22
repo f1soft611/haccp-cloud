@@ -24,7 +24,7 @@ class EgovAuthManageServiceImplTest {
         ReflectionTestUtils.setField(service, "authManageDAO", authManageDAO);
 
         MenuInfoVO menuInfoVO = new MenuInfoVO();
-        menuInfoVO.setMenuId("MENU_1");
+        menuInfoVO.setMenuCode("MENU_1");
 
         when(authManageDAO.deleteRoleMenuPermissionsByMenuId("MENU_1")).thenReturn(1);
         when(authManageDAO.deleteMenu(any(MenuInfoVO.class))).thenReturn(1);

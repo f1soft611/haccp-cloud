@@ -120,6 +120,28 @@ describe('authService', () => {
     });
   });
 
+  it('treats roleCode PLATFORM_ADMIN as platform role even when groupNm is missing', async () => {
+    const mockedPost = vi.mocked(apiClient.post);
+    mockedPost.mockResolvedValue({
+      data: {
+        resultCode: '200',
+        jToken: 'jwt-token',
+        resultVO: {
+          factoryCode: '000001',
+          id: 'platform_admin',
+          roleCode: 'PLATFORM_ADMIN',
+        },
+      },
+    });
+
+    const result = await loginPlatformAdmin({
+      userId: 'platform_admin',
+      password: 'Passw0rd!',
+    });
+
+    expect(result.role).toBe('PLATFORM_ADMIN');
+  });
+
   it('rejects platform admin login when backend role is not PLATFORM_ADMIN', async () => {
     const mockedPost = vi.mocked(apiClient.post);
     mockedPost.mockResolvedValue({

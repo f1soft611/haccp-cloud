@@ -13,6 +13,7 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
@@ -91,23 +92,31 @@ export function PlatformTenantManagementPage() {
           spacing={1}
           alignItems="flex-end"
         >
-          <Select
-            value={searchField}
-            size="small"
-            onChange={(event) =>
-              setSearchField(event.target.value as SearchField)
-            }
-          >
-            <MenuItem value="tenantCode">업체코드</MenuItem>
-            <MenuItem value="companyName">업체명</MenuItem>
-            <MenuItem value="adminName">관리자명</MenuItem>
-          </Select>
+          <Box sx={{ minWidth: 130 }}>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
+              검색 조건
+            </Typography>
+            <Select
+              value={searchField}
+              size="small"
+              fullWidth
+              onChange={(event) =>
+                setSearchField(event.target.value as SearchField)
+              }
+            >
+              <MenuItem value="tenantCode">업체코드</MenuItem>
+              <MenuItem value="companyName">업체명</MenuItem>
+              <MenuItem value="adminName">관리자명</MenuItem>
+            </Select>
+          </Box>
 
           <TextField
             size="small"
             label="검색어"
+            fullWidth
             value={searchKeyword}
             onChange={(event) => setSearchKeyword(event.target.value)}
+            sx={{ flex: 1 }}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
                 handleSearch();
@@ -115,27 +124,36 @@ export function PlatformTenantManagementPage() {
             }}
           />
 
-          <Select
-            value={statusFilter}
-            size="small"
-            onChange={(event) =>
-              setStatusFilter(event.target.value as StatusFilter)
-            }
-          >
-            <MenuItem value="all">전체</MenuItem>
-            <MenuItem value="ACTIVE">활성</MenuItem>
-            <MenuItem value="INACTIVE">비활성</MenuItem>
-          </Select>
+          <Box sx={{ minWidth: 120 }}>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
+              상태
+            </Typography>
+            <Select
+              value={statusFilter}
+              size="small"
+              fullWidth
+              onChange={(event) =>
+                setStatusFilter(event.target.value as StatusFilter)
+              }
+            >
+              <MenuItem value="all">전체</MenuItem>
+              <MenuItem value="ACTIVE">활성</MenuItem>
+              <MenuItem value="INACTIVE">비활성</MenuItem>
+            </Select>
+          </Box>
 
-          <Button variant="contained" onClick={handleSearch}>
+          <Button
+            variant="contained"
+            onClick={handleSearch}
+            disabled={tenantQuery.isPending}
+          >
             조회
           </Button>
-
-          <Box sx={{ flex: 1 }} />
 
           <Button
             variant="contained"
             onClick={() => navigate('/platform/onboarding')}
+            sx={{ ml: { md: 'auto' } }}
           >
             신규 온보딩
           </Button>
@@ -160,8 +178,28 @@ export function PlatformTenantManagementPage() {
                   key={`platform-tenant-grid-skeleton-${index}`}
                   data-testid={`platform-tenant-grid-skeleton-row-${index}`}
                 >
-                  <TableCell colSpan={6}>
-                    <Skeleton variant="text" width="100%" />
+                  <TableCell>
+                    <Skeleton variant="text" width="80%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="72%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="68%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="88%" />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Skeleton
+                      variant="rounded"
+                      width={52}
+                      height={24}
+                      sx={{ mx: 'auto' }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="65%" />
                   </TableCell>
                 </TableRow>
               ))

@@ -103,12 +103,15 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
     }
 
     @Override
-    public AuthorityInfoVO updateRoleUseAt(String code, AuthorityInfoVO payload) throws Exception {
+    public AuthorityInfoVO updateRoleUseAt(Long authorityId, AuthorityInfoVO payload) throws Exception {
         if (payload == null || !hasText(payload.getUseAt())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt 값은 필수입니다.");
         }
 
-        payload.setAuthorityCode(toUpper(code));
+        payload.setAuthorityId(authorityId);
+        if (hasText(payload.getAuthorityCode())) {
+            payload.setAuthorityCode(toUpper(payload.getAuthorityCode()));
+        }
         payload.setUseAt(toUpper(payload.getUseAt()));
 
         if (!hasText(payload.getLastUpdusrId())) {
@@ -121,12 +124,15 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
     }
 
     @Override
-    public AuthorityInfoVO updateRole(String code, AuthorityInfoVO payload) throws Exception {
+    public AuthorityInfoVO updateRole(Long authorityId, AuthorityInfoVO payload) throws Exception {
         if (payload == null || !hasText(payload.getAuthorityNm())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "authorityNm 값은 필수입니다.");
         }
 
-        payload.setAuthorityCode(toUpper(code));
+        payload.setAuthorityId(authorityId);
+        if (hasText(payload.getAuthorityCode())) {
+            payload.setAuthorityCode(toUpper(payload.getAuthorityCode()));
+        }
         payload.setAuthorityNm(payload.getAuthorityNm().trim());
         payload.setUseAt(hasText(payload.getUseAt()) ? toUpper(payload.getUseAt()) : "Y");
 
@@ -150,16 +156,16 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
         condition.setAuthorityCode(normalizedRoleCode);
         List<RoleMenuPermissionVO> permissions = platformAuthorityDAO.selectRoleMenuPermissionList(condition);
 
-        Set<String> menuIdSet = new LinkedHashSet<String>();
+        Set<String> menuCodeSet = new LinkedHashSet<String>();
         for (RoleMenuPermissionVO permission : permissions) {
-            if (permission != null && hasText(permission.getMenuId())) {
-                menuIdSet.add(toUpper(permission.getMenuId()));
+            if (permission != null && hasText(permission.getMenuCode())) {
+                menuCodeSet.add(toUpper(permission.getMenuCode()));
             }
         }
 
         Map<String, Object> response = new HashMap<String, Object>();
         response.put("roleCode", normalizedRoleCode);
-        response.put("menuIds", new ArrayList<String>(menuIdSet));
+        response.put("menuIds", new ArrayList<String>(menuCodeSet));
         return response;
     }
 
@@ -178,11 +184,11 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
 
         platformAuthorityDAO.deleteRoleMenuPermissionsByAuthority(payload.getRoleCode());
 
-        for (String menuId : payload.getMenuIds()) {
+        for (String menuCode : payload.getMenuIds()) {
             RoleMenuPermissionVO item = new RoleMenuPermissionVO();
             item.setAuthorityCode(payload.getRoleCode());
-            item.setMenuId(menuId);
-            item.setPermissionId(DEFAULT_PERMISSION_ID);
+            item.setMenuCode(menuCode);
+            item.setPermissionCode(DEFAULT_PERMISSION_ID);
             item.setUseAt("Y");
             item.setFrstRegisterId(SYSTEM_USER_ID);
             item.setLastUpdusrId(SYSTEM_USER_ID);

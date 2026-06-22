@@ -21,7 +21,7 @@ public interface PlatformMenuService {
      * @return 메뉴 목록
      * @throws Exception
      */
-    List<MenuInfoVO> listMenus(String menuNm, String parentMenuId) throws Exception;
+    List<MenuInfoVO> listMenus(String menuNm, Long parentMenuId) throws Exception;
 
     /**
      * 메뉴 목록(페이징)을 조회한다.
@@ -55,14 +55,14 @@ public interface PlatformMenuService {
      * @return 수정된 메뉴
      * @throws Exception
      */
-    MenuInfoVO updateMenu(String menuId, MenuInfoVO menuInfoVO) throws Exception;
+    MenuInfoVO updateMenu(Long menuId, MenuInfoVO menuInfoVO) throws Exception;
 
     /**
      * 메뉴를 삭제한다.
      * @param menuId 메뉴 ID
      * @throws Exception
      */
-    void deleteMenu(String menuId) throws Exception;
+    void deleteMenu(Long menuId) throws Exception;
 
     /**
      * 메뉴 상세정보를 조회한다.
@@ -70,7 +70,7 @@ public interface PlatformMenuService {
      * @return 메뉴 정보
      * @throws Exception
      */
-    MenuInfoVO getMenuDetail(String menuId) throws Exception;
+    MenuInfoVO getMenuDetail(Long menuId) throws Exception;
 
     /**
      * 페이징 결과 맵을 생성한다.

@@ -37,8 +37,8 @@ public class PlatformMenuApiController {
     @GetMapping
     public List<MenuInfoVO> listMenus(
             @RequestParam(required = false) String menuNm,
-            @RequestParam(required = false) String parentMenuId) throws Exception {
-        return platformMenuService.listMenus(menuNm, normalizeNullable(parentMenuId));
+            @RequestParam(required = false) Long parentMenuId) throws Exception {
+        return platformMenuService.listMenus(menuNm, parentMenuId);
     }
 
     @GetMapping("/paged")
@@ -69,7 +69,7 @@ public class PlatformMenuApiController {
     }
 
     @PatchMapping("/{menuId}")
-    public MenuInfoVO updateMenu(@PathVariable String menuId, @RequestBody MenuInfoVO menuInfoVO) throws Exception {
+    public MenuInfoVO updateMenu(@PathVariable Long menuId, @RequestBody MenuInfoVO menuInfoVO) throws Exception {
         menuInfoVO.setMenuId(menuId);
         normalizePayload(menuInfoVO);
         validateForCreateOrUpdate(menuInfoVO, menuId);
@@ -77,11 +77,11 @@ public class PlatformMenuApiController {
     }
 
     @DeleteMapping("/{menuId}")
-    public void deleteMenu(@PathVariable String menuId) throws Exception {
+    public void deleteMenu(@PathVariable Long menuId) throws Exception {
         platformMenuService.deleteMenu(menuId);
     }
 
-    private void validateForCreateOrUpdate(MenuInfoVO menuInfoVO, String selfMenuId) throws Exception {
+    private void validateForCreateOrUpdate(MenuInfoVO menuInfoVO, Long selfMenuId) throws Exception {
         if (!hasText(menuInfoVO.getMenuNm())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "메뉴명은 필수입니다.");
         }
@@ -90,14 +90,13 @@ public class PlatformMenuApiController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "메뉴 URL은 필수입니다.");
         }
 
-        String parentMenuId = normalizeNullable(menuInfoVO.getParentMenuId());
-        menuInfoVO.setParentMenuId(parentMenuId);
+        Long parentMenuId = menuInfoVO.getParentMenuId();
 
         if (parentMenuId == null) {
             return;
         }
 
-        if (hasText(selfMenuId) && selfMenuId.equals(parentMenuId)) {
+        if (selfMenuId != null && selfMenuId.equals(parentMenuId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "상위 메뉴는 자기 자신으로 지정할 수 없습니다.");
         }
 
@@ -108,8 +107,6 @@ public class PlatformMenuApiController {
     }
 
     private void normalizePayload(MenuInfoVO menuInfoVO) {
-        menuInfoVO.setParentMenuId(normalizeNullable(menuInfoVO.getParentMenuId()));
-
         if (!hasText(menuInfoVO.getUseAt())) {
             menuInfoVO.setUseAt("Y");
         }

@@ -262,6 +262,7 @@ export function PlatformAuthorityManagementPage() {
       confirmText: item.active ? '비활성화' : '활성화',
       action: () => {
         statusMutation.mutate({
+          id: item.id,
           code: item.code,
           active: !item.active,
         });
@@ -298,6 +299,7 @@ export function PlatformAuthorityManagementPage() {
       confirmText: '저장',
       action: () => {
         updateMutation.mutate({
+          id: editTargetRole.id,
           code: editTargetRole.code,
           name: editFormData.name.trim(),
           description: editFormData.description.trim(),

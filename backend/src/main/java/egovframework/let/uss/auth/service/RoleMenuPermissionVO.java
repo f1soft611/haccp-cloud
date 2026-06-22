@@ -20,17 +20,26 @@ public class RoleMenuPermissionVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "역할 메뉴 ID")
-    private String roleMenuId = "";
+    @Schema(description = "역할 메뉴 권한 매핑 ID")
+    private Long roleMenuPermissionId;
+
+    @Schema(description = "권한 ID")
+    private Long authorityId;
 
     @Schema(description = "권한 코드")
     private String authorityCode = "";
 
     @Schema(description = "메뉴 ID")
-    private String menuId = "";
+    private Long menuId;
 
-    @Schema(description = "권한 ID")
-    private String permissionId = "";
+    @Schema(description = "메뉴 ID (비즈니스 코드)")
+    private String menuCode = "";
+
+    @Schema(description = "권한(Permission) ID")
+    private Long permissionId;
+
+    @Schema(description = "권한(Permission) 코드")
+    private String permissionCode = "";
 
     @Schema(description = "사용여부")
     private String useAt = "Y";

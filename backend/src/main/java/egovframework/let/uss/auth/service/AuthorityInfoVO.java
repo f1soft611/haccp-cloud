@@ -20,6 +20,9 @@ public class AuthorityInfoVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Schema(description = "권한 ID")
+    private Long authorityId;
+
     @Schema(description = "권한 코드")
     private String authorityCode = "";
 

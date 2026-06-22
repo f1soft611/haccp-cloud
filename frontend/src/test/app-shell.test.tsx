@@ -71,6 +71,20 @@ describe('App shell', () => {
   beforeEach(() => {
     resetAuthStore();
 
+    // Mock menu service to avoid MSW issues in integration tests
+    vi.spyOn(
+      platformUserMenuService,
+      'listAccessibleMenuPaths',
+    ).mockResolvedValue([
+      '/dashboard',
+      '/platform/tenants',
+      '/platform/menus',
+      '/platform/roles',
+      '/platform/login-history',
+      '/users',
+      '/documents',
+    ]);
+
     server.use(
       http.post('/api/auth/login-jwt', async ({ request }) => {
         const payload = (await request.json()) as {
@@ -166,6 +180,37 @@ describe('App shell', () => {
           },
         });
       }),
+      http.get('/api/platform-admin/user-menus/me', ({ request }) => {
+        // Extract role from Authorization header (token format: "Bearer token-TENANTCODE-userid")
+        const authHeader = request.headers.get('Authorization');
+        const token = authHeader?.replace('Bearer ', '') || '';
+
+        // Parse token to determine role
+        let authorityCode = 'TENANT_USER';
+        if (token.includes('platform_admin')) {
+          authorityCode = 'PLATFORM_ADMIN';
+        } else if (token.includes('admin') && !token.includes('platform')) {
+          authorityCode = 'TENANT_ADMIN';
+        }
+
+        const menuPathsByAuthority: Record<string, string[]> = {
+          PLATFORM_ADMIN: [
+            '/dashboard',
+            '/platform/tenants',
+            '/platform/menus',
+            '/platform/roles',
+            '/platform/login-history',
+          ],
+          TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
+          TENANT_USER: ['/dashboard', '/documents'],
+        };
+
+        const menuList = (menuPathsByAuthority[authorityCode] ?? []).map(
+          (menuUrl) => ({ menuUrl }),
+        );
+
+        return HttpResponse.json(menuList);
+      }),
       http.get(
         '/api/platform-admin/user-menus/:authorityCode',
         ({ params }) => {
@@ -218,6 +263,7 @@ describe('App shell', () => {
 
   afterEach(() => {
     resetAuthStore();
+    vi.restoreAllMocks();
   });
 
   it('shows korean login title for MVP entry point', async () => {

@@ -29,7 +29,7 @@ const {
     updatedAt: '2026-06-18T09:00:00.000Z',
   })),
   updatePlatformRoleStatusMock: vi.fn(async (payload) => ({
-    id: payload.code,
+    id: payload.id,
     code: payload.code,
     name: payload.code,
     description: '',
@@ -38,7 +38,7 @@ const {
     updatedAt: '2026-06-18T09:00:00.000Z',
   })),
   updatePlatformRoleMock: vi.fn(async (payload) => ({
-    id: payload.code,
+    id: payload.id,
     code: payload.code,
     name: payload.name,
     description: payload.description ?? '',
@@ -384,6 +384,7 @@ describe('PlatformAuthorityManagementPage', () => {
       expect(updatePlatformRoleMock).toHaveBeenCalled();
       expect(updatePlatformRoleMock.mock.calls[0]?.[0]).toEqual(
         expect.objectContaining({
+          id: 'PR-1',
           code: 'PLATFORM_ADMIN',
           name: '플랫폼 총괄 관리자',
           description: '플랫폼 운영 총괄 권한',

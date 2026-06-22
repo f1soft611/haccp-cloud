@@ -21,7 +21,10 @@ public class PermissionTypeVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "권한 ID")
-    private String permissionId = "";
+    private Long permissionId;
+
+    @Schema(description = "권한 코드")
+    private String permissionCode = "";
 
     @Schema(description = "권한명")
     private String permissionNm = "";

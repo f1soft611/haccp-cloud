@@ -55,7 +55,7 @@ public interface PlatformAuthorityService {
      * @return 수정된 권한
      * @throws Exception
      */
-    AuthorityInfoVO updateRoleUseAt(String code, AuthorityInfoVO payload) throws Exception;
+    AuthorityInfoVO updateRoleUseAt(Long authorityId, AuthorityInfoVO payload) throws Exception;
 
     /**
      * 권한 정보를 수정한다.
@@ -64,7 +64,7 @@ public interface PlatformAuthorityService {
      * @return 수정된 권한
      * @throws Exception
      */
-    AuthorityInfoVO updateRole(String code, AuthorityInfoVO payload) throws Exception;
+    AuthorityInfoVO updateRole(Long authorityId, AuthorityInfoVO payload) throws Exception;
 
     /**
      * 권한별 메뉴 권한 정보를 조회한다.

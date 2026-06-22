@@ -4,7 +4,8 @@ param(
     [int]$Port = 5432,
     [string]$AdminUser = "postgres",
     [string]$Database = "haccp_cloud",
-    [string]$SchemaFile = "$PSScriptRoot\login_postgresql_schema.sql"
+    [string]$SchemaFile = "$PSScriptRoot\login_postgresql_schema.sql",
+    [switch]$ForceRecreateSchema
 )
 
 $psql = Join-Path $PgBin "psql.exe"
@@ -42,6 +43,14 @@ try {
         }
     } else {
         Write-Host "Database '$Database' already exists."
+    }
+
+    if ($ForceRecreateSchema) {
+        Write-Host "Force resetting schema 'public' in database '$Database'..."
+        & $psql -h $PgHost -p $Port -U $AdminUser -d $Database -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to force reset schema 'public'. Check active sessions/permissions."
+        }
     }
 
     Write-Host "Applying schema file: $SchemaFile"

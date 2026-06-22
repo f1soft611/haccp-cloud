@@ -13,7 +13,6 @@ import {
 } from './workMenuConfig';
 import { listAccessibleMenuPaths } from '../../../services/platform/platformUserMenuService';
 import * as userMenuService from '../../../services/platform/platformUserMenuService';
-import { toAuthorityCode } from '../../auth/authorityCode';
 import { useAuthStore } from '../../store/authStore';
 import { UserMenuMetadataProvider } from './userMenuMetadataContext';
 
@@ -28,12 +27,8 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const authorityCode = toAuthorityCode(role);
-
   let listAccessibleMenusFn:
-    | ((
-        authorityCode: string,
-      ) => Promise<
+    | (() => Promise<
         { path: string; menuNm?: string; menuDc?: string; iconNm?: string }[]
       >)
     | undefined;
@@ -47,16 +42,16 @@ export function AppLayout() {
   }
 
   const accessibleMenuQuery = useQuery({
-    queryKey: ['user-accessible-menus', authorityCode],
-    queryFn: () => listAccessibleMenuPaths(authorityCode),
+    queryKey: ['user-accessible-menus'],
+    queryFn: () => listAccessibleMenuPaths(),
     retry: false,
   });
 
   const accessibleMenuMetaQuery = useQuery({
-    queryKey: ['user-accessible-menu-metadata', authorityCode],
+    queryKey: ['user-accessible-menu-metadata'],
     queryFn: () =>
       typeof listAccessibleMenusFn === 'function'
-        ? listAccessibleMenusFn(authorityCode)
+        ? listAccessibleMenusFn()
         : Promise.resolve([]),
     enabled: typeof listAccessibleMenusFn === 'function',
     retry: false,

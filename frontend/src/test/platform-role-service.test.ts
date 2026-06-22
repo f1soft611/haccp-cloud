@@ -44,9 +44,10 @@ describe('platformRoleService', () => {
     ]);
   });
 
-  it('sends authorityDc together with description on update', async () => {
+  it('updates role by authority id and sends authorityDc together with description', async () => {
     vi.mocked(apiClient.put).mockResolvedValueOnce({
       data: {
+        authorityId: 9,
         authorityCode: 'QA_MANAGER',
         authorityNm: '품질 관리자',
         authorityDc: '품질 승인 권한',
@@ -55,6 +56,7 @@ describe('platformRoleService', () => {
     });
 
     await updatePlatformRole({
+      id: '9',
       code: 'QA_MANAGER',
       name: '품질 관리자',
       description: '품질 승인 권한',
@@ -62,7 +64,7 @@ describe('platformRoleService', () => {
     });
 
     expect(apiClient.put).toHaveBeenCalledWith(
-      '/platform-admin/roles/QA_MANAGER',
+      '/platform-admin/roles/9',
       expect.objectContaining({
         description: '품질 승인 권한',
         authorityDc: '품질 승인 권한',

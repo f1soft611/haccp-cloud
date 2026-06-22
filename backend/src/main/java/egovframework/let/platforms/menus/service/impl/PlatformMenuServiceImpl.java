@@ -3,6 +3,7 @@ package egovframework.let.platforms.menus.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.annotation.Resource;
 
@@ -30,7 +31,7 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
     private PlatformMenuDAO platformMenuDAO;
 
     @Override
-    public List<MenuInfoVO> listMenus(String menuNm, String parentMenuId) throws Exception {
+    public List<MenuInfoVO> listMenus(String menuNm, Long parentMenuId) throws Exception {
         MenuInfoVO condition = new MenuInfoVO();
         condition.setMenuNm(menuNm);
         condition.setParentMenuId(parentMenuId);
@@ -75,10 +76,14 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
 
     @Override
     public MenuInfoVO createMenu(MenuInfoVO menuInfoVO) throws Exception {
+        if (!hasText(menuInfoVO.getMenuCode())) {
+            menuInfoVO.setMenuCode(generateMenuCode());
+        }
+
         platformMenuDAO.insertMenu(menuInfoVO);
 
         MenuInfoVO detailCondition = new MenuInfoVO();
-        detailCondition.setMenuId(menuInfoVO.getMenuId());
+        detailCondition.setMenuCode(menuInfoVO.getMenuCode());
         MenuInfoVO created = platformMenuDAO.selectMenuDetail(detailCondition);
         if (created == null) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "메뉴 등록 결과를 조회할 수 없습니다.");
@@ -88,7 +93,7 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
     }
 
     @Override
-    public MenuInfoVO updateMenu(String menuId, MenuInfoVO menuInfoVO) throws Exception {
+    public MenuInfoVO updateMenu(Long menuId, MenuInfoVO menuInfoVO) throws Exception {
         MenuInfoVO beforeCondition = new MenuInfoVO();
         beforeCondition.setMenuId(menuId);
         MenuInfoVO before = platformMenuDAO.selectMenuDetail(beforeCondition);
@@ -96,6 +101,7 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "수정할 메뉴가 존재하지 않습니다.");
         }
 
+        menuInfoVO.setMenuId(menuId);
         platformMenuDAO.updateMenu(menuInfoVO);
 
         MenuInfoVO afterCondition = new MenuInfoVO();
@@ -109,7 +115,7 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
     }
 
     @Override
-    public void deleteMenu(String menuId) throws Exception {
+    public void deleteMenu(Long menuId) throws Exception {
         MenuInfoVO existing = getMenuDetail(menuId);
         if (existing == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "삭제할 메뉴가 존재하지 않습니다.");
@@ -128,7 +134,7 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
     }
 
     @Override
-    public MenuInfoVO getMenuDetail(String menuId) throws Exception {
+    public MenuInfoVO getMenuDetail(Long menuId) throws Exception {
         MenuInfoVO condition = new MenuInfoVO();
         condition.setMenuId(menuId);
         return platformMenuDAO.selectMenuDetail(condition);
@@ -141,5 +147,13 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
         resultMap.put("totalCount", totalCount);
         resultMap.put("paginationInfo", paginationInfo);
         return resultMap;
+    }
+
+    private String generateMenuCode() {
+        return "MENU_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }
