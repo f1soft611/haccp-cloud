@@ -42,6 +42,7 @@ import { GridPaginationBar } from '../../../shared/components/data/GridPaginatio
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
+import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import {
   createPlatformMenu,
   deletePlatformMenu,
@@ -177,8 +178,8 @@ export function PlatformMenuManagementPage() {
         queryKey: ['platform-admin', 'menus-paged'],
       });
     },
-    onError: () => {
-      showError('메뉴 등록에 실패했습니다.');
+    onError: (error) => {
+      showError(extractApiErrorMessage(error, '메뉴 등록에 실패했습니다.'));
     },
   });
 
@@ -196,8 +197,8 @@ export function PlatformMenuManagementPage() {
         queryKey: ['platform-admin', 'menus-paged'],
       });
     },
-    onError: () => {
-      showError('메뉴 수정에 실패했습니다.');
+    onError: (error) => {
+      showError(extractApiErrorMessage(error, '메뉴 수정에 실패했습니다.'));
     },
   });
 
@@ -213,8 +214,8 @@ export function PlatformMenuManagementPage() {
         queryKey: ['platform-admin', 'menus-paged'],
       });
     },
-    onError: () => {
-      showError('메뉴 삭제에 실패했습니다.');
+    onError: (error) => {
+      showError(extractApiErrorMessage(error, '메뉴 삭제에 실패했습니다.'));
     },
   });
 

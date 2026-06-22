@@ -64,4 +64,11 @@ public interface PlatformMenuDAO {
      * @throws Exception
      */
     void deleteMenu(MenuInfoVO condition) throws Exception;
+
+    /**
+     * 메뉴에 연결된 권한-메뉴 매핑을 삭제한다.
+     * @param menuId 메뉴 ID
+     * @throws Exception
+     */
+    void deleteRoleMenuPermissionsByMenuId(Long menuId) throws Exception;
 }

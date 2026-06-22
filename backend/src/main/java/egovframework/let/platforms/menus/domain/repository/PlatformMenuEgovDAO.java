@@ -69,4 +69,12 @@ public class PlatformMenuEgovDAO extends EgovAbstractMapper implements PlatformM
     public void deleteMenu(MenuInfoVO condition) throws Exception {
         delete("PlatformMenuDAO.deleteMenu", condition);
     }
+
+    /**
+     * 메뉴에 연결된 권한-메뉴 매핑을 삭제한다.
+     */
+    @Override
+    public void deleteRoleMenuPermissionsByMenuId(Long menuId) throws Exception {
+        delete("PlatformMenuDAO.deleteRoleMenuPermissionsByMenuId", menuId);
+    }
 }

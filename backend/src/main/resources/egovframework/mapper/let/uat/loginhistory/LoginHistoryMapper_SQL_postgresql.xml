@@ -4,13 +4,14 @@
 
 	<resultMap id="loginHistoryResultMap" type="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
 		<result property="loginHistoryId" column="login_history_id"/>
-		<result property="factoryCode" column="factory_code"/>
+		<result property="tenantCode" column="factory_code"/>
 		<result property="userId" column="user_id"/>
 		<result property="userName" column="user_name"/>
 		<result property="loginDt" column="login_dt"/>
 		<result property="loginIp" column="login_ip"/>
 		<result property="loginType" column="login_type"/>
 		<result property="userAgent" column="user_agent"/>
+		<result property="authorityCode" column="authority_code"/>
 		<result property="loginResult" column="login_result"/>
 		<result property="failReason" column="fail_reason"/>
 		<result property="logoutDt" column="logout_dt"/>
@@ -27,9 +28,14 @@
 
 	<!-- 로그인 이력 등록 -->
 	<insert id="insertLoginHistory" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory" useGeneratedKeys="true" keyProperty="loginHistoryId">
-		INSERT INTO TB_LoginHistory (
-			factory_code,
+		INSERT INTO tb_login_history (
+			tenant_id,
+			login_account_id,
+			authority_id,
 			user_id,
+			login_code,
+			authority_code,
+			user_code,
 			user_name,
 			login_dt,
 			login_ip,
@@ -38,9 +44,44 @@
 			login_result,
 			fail_reason
 		) VALUES (
-			#{factoryCode},
-			#{userId},
-			#{userName},
+			COALESCE(
+				(SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1),
+				(SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1)
+			),
+			(
+				SELECT la.login_account_id
+				FROM tb_login_account la
+				JOIN tb_tenant t ON t.tenant_id = la.tenant_id
+				WHERE la.login_code = #{userId}
+				  AND t.tenant_code = #{tenantCode}
+				LIMIT 1
+			),
+			(
+				SELECT a.authority_id
+				FROM tb_authority a
+				WHERE a.authority_code = COALESCE(#{authorityCode}, 'UNKNOWN')
+				LIMIT 1
+			),
+			(
+				SELECT la.user_id
+				FROM tb_login_account la
+				JOIN tb_tenant t ON t.tenant_id = la.tenant_id
+				WHERE la.login_code = #{userId}
+				  AND t.tenant_code = #{tenantCode}
+				LIMIT 1
+			),
+			COALESCE(NULLIF(#{userId}, ''), 'UNKNOWN'),
+			COALESCE(NULLIF(#{authorityCode}, ''), 'UNKNOWN'),
+			(
+				SELECT u.user_code
+				FROM tb_login_account la
+				JOIN tb_tenant t ON t.tenant_id = la.tenant_id
+				JOIN tb_user u ON u.user_id = la.user_id
+				WHERE la.login_code = #{userId}
+				  AND t.tenant_code = #{tenantCode}
+				LIMIT 1
+			),
+			COALESCE(NULLIF(#{userName}, ''), COALESCE(NULLIF(#{userId}, ''), 'UNKNOWN')),
 			now(),
 			#{loginIp},
 			#{loginType},
@@ -52,148 +93,6 @@
 
 	<!-- 로그인 이력 목록 조회 -->
 	<select id="selectLoginHistoryList" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO" resultMap="loginHistoryResultMap">
-		SELECT 
-			login_history_id,
-			factory_code,
-			user_id,
-			user_name,
-			to_char(login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
-			login_ip,
-			login_type,
-			user_agent,
-			login_result,
-			fail_reason,
-			to_char(logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
-			session_time,
-			gov_interface_yn,
-			to_char(gov_interface_dt, 'YYYY-MM-DD HH24:MI:SS') AS gov_interface_dt,
-			gov_recptn_rslt_cd,
-			gov_recptn_rslt,
-			gov_recptn_rslt_dtl,
-			gov_fail_reason,
-			gov_request_json,
-			gov_response_json
-		FROM (
-			SELECT 
-				*,
-				ROW_NUMBER() OVER (ORDER BY login_dt DESC) AS rnum
-			FROM TB_LoginHistory
-			WHERE 1 = 1
-			<if test="factoryCode != null and factoryCode != ''">
-				AND factory_code = #{factoryCode}
-			</if>
-			<if test="searchUserId != null and searchUserId != ''">
-				AND user_id ILIKE '%' || #{searchUserId} || '%'
-			</if>
-			<if test="searchUserName != null and searchUserName != ''">
-				AND user_name ILIKE '%' || #{searchUserName} || '%'
-			</if>
-			<if test="searchLoginResult != null and searchLoginResult != ''">
-				AND login_result = #{searchLoginResult}
-			</if>
-			<if test="searchStartDt != null and searchStartDt != ''">
-				AND login_dt >= #{searchStartDt}::timestamp
-			</if>
-			<if test="searchEndDt != null and searchEndDt != ''">
-				AND login_dt <![CDATA[<=]]> (#{searchEndDt}::timestamp + INTERVAL '1 day')
-			</if>
-		) AS temp
-		WHERE rnum BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
-		ORDER BY login_dt DESC
-	</select>
-
-	<!-- 로그인 이력 전체 건수 조회 -->
-	<select id="selectLoginHistoryListTotCnt" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO" resultType="int">
-		SELECT COUNT(*) AS cnt
-		FROM TB_LoginHistory
-		WHERE 1 = 1
-		<if test="factoryCode != null and factoryCode != ''">
-			AND factory_code = #{factoryCode}
-		</if>
-		<if test="searchUserId != null and searchUserId != ''">
-			AND user_id ILIKE '%' || #{searchUserId} || '%'
-		</if>
-		<if test="searchUserName != null and searchUserName != ''">
-			AND user_name ILIKE '%' || #{searchUserName} || '%'
-		</if>
-		<if test="searchLoginResult != null and searchLoginResult != ''">
-			AND login_result = #{searchLoginResult}
-		</if>
-		<if test="searchStartDt != null and searchStartDt != ''">
-			AND login_dt >= #{searchStartDt}::timestamp
-		</if>
-		<if test="searchEndDt != null and searchEndDt != ''">
-			AND login_dt <![CDATA[<=]]> (#{searchEndDt}::timestamp + INTERVAL '1 day')
-		</if>
-	</select>
-
-	<!-- 로그인 이력 상세 조회 -->
-	<select id="selectLoginHistoryDetail" parameterType="Long" resultMap="loginHistoryResultMap">
-		SELECT 
-			login_history_id,
-			factory_code,
-			user_id,
-			user_name,
-			to_char(login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
-			login_ip,
-			login_type,
-			user_agent,
-			login_result,
-			fail_reason,
-			to_char(logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
-			session_time,
-			gov_interface_yn,
-			to_char(gov_interface_dt, 'YYYY-MM-DD HH24:MI:SS') AS gov_interface_dt,
-			gov_recptn_rslt_cd,
-			gov_recptn_rslt,
-			gov_recptn_rslt_dtl,
-			gov_fail_reason,
-			gov_request_json,
-			gov_response_json
-		FROM TB_LoginHistory
-		WHERE login_history_id = #{loginHistoryId}
-	</select>
-
-	<!-- 로그아웃 정보 업데이트 -->
-	<update id="updateLogoutInfo" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
-		UPDATE TB_LoginHistory
-		SET 
-			logout_dt = now(),
-			session_time = EXTRACT(EPOCH FROM (now() - login_dt))::integer / 60
-		WHERE login_history_id = #{loginHistoryId}
-	</update>
-
-	<!-- 정부 인터페이스 대상 최신 로그인 이력 1건 조회 -->
-	<select id="selectLatestLoginHistoryForGovInterface" resultMap="loginHistoryResultMap">
-		SELECT 
-			login_history_id,
-			factory_code,
-			user_id,
-			user_name,
-			to_char(login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
-			login_ip,
-			login_type,
-			user_agent,
-			login_result,
-			fail_reason,
-			to_char(logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
-			session_time,
-			gov_interface_yn,
-			to_char(gov_interface_dt, 'YYYY-MM-DD HH24:MI:SS') AS gov_interface_dt,
-			gov_recptn_rslt_cd,
-			gov_recptn_rslt,
-			gov_recptn_rslt_dtl,
-			gov_fail_reason,
-			gov_request_json,
-			gov_response_json
-		FROM TB_LoginHistory
-		WHERE COALESCE(gov_interface_yn, 'N') = 'N'
-		ORDER BY login_dt DESC, login_history_id DESC
-		LIMIT 1
-	</select>
-
-	<!-- 정부 인터페이스 대상 최신 로그인 이력 1건 조회 (기간 + 익일 재시도) -->
-	<select id="selectLatestLoginHistoryForGovInterfaceByDateRange" parameterType="map" resultMap="loginHistoryResultMap">
 		SELECT
 			login_history_id,
 			factory_code,
@@ -203,23 +102,184 @@
 			login_ip,
 			login_type,
 			user_agent,
+			authority_code,
 			login_result,
 			fail_reason,
 			to_char(logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
 			session_time,
-			gov_interface_yn,
-			to_char(gov_interface_dt, 'YYYY-MM-DD HH24:MI:SS') AS gov_interface_dt,
-			gov_recptn_rslt_cd,
-			gov_recptn_rslt,
-			gov_recptn_rslt_dtl,
-			gov_fail_reason,
-			gov_request_json,
-			gov_response_json
-		FROM TB_LoginHistory
+			NULL::varchar AS gov_interface_yn,
+			NULL::varchar AS gov_interface_dt,
+			NULL::varchar AS gov_recptn_rslt_cd,
+			NULL::varchar AS gov_recptn_rslt,
+			NULL::varchar AS gov_recptn_rslt_dtl,
+			NULL::varchar AS gov_fail_reason,
+			NULL::text AS gov_request_json,
+			NULL::text AS gov_response_json
+		FROM (
+			SELECT
+				lh.login_history_id,
+				t.tenant_code AS factory_code,
+				lh.login_code AS user_id,
+				lh.user_name,
+				lh.login_dt,
+				lh.login_ip,
+				lh.login_type,
+				lh.user_agent,
+				lh.authority_code,
+				lh.login_result,
+				lh.fail_reason,
+				lh.logout_dt,
+				lh.session_time,
+				ROW_NUMBER() OVER (ORDER BY login_dt DESC) AS rnum
+			FROM tb_login_history lh
+			JOIN tb_tenant t ON t.tenant_id = lh.tenant_id
+			WHERE 1 = 1
+			<if test="tenantCode != null and tenantCode != ''">
+				AND t.tenant_code = #{tenantCode}
+			</if>
+			<if test="searchUserId != null and searchUserId != ''">
+				AND lh.login_code ILIKE '%' || #{searchUserId} || '%'
+			</if>
+			<if test="searchUserName != null and searchUserName != ''">
+				AND lh.user_name ILIKE '%' || #{searchUserName} || '%'
+			</if>
+			<if test="searchLoginResult != null and searchLoginResult != ''">
+				AND lh.login_result = #{searchLoginResult}
+			</if>
+			<if test="searchStartDt != null and searchStartDt != ''">
+				AND lh.login_dt >= #{searchStartDt}::timestamp
+			</if>
+			<if test="searchEndDt != null and searchEndDt != ''">
+				AND lh.login_dt <![CDATA[<=]]> (#{searchEndDt}::timestamp + INTERVAL '1 day')
+			</if>
+		) AS temp
+		WHERE rnum BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+		ORDER BY login_dt DESC
+	</select>
+
+	<!-- 로그인 이력 전체 건수 조회 -->
+	<select id="selectLoginHistoryListTotCnt" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO" resultType="int">
+		SELECT COUNT(*) AS cnt
+		FROM tb_login_history lh
+		JOIN tb_tenant t ON t.tenant_id = lh.tenant_id
+		WHERE 1 = 1
+		<if test="tenantCode != null and tenantCode != ''">
+			AND t.tenant_code = #{tenantCode}
+		</if>
+		<if test="searchUserId != null and searchUserId != ''">
+			AND lh.login_code ILIKE '%' || #{searchUserId} || '%'
+		</if>
+		<if test="searchUserName != null and searchUserName != ''">
+			AND lh.user_name ILIKE '%' || #{searchUserName} || '%'
+		</if>
+		<if test="searchLoginResult != null and searchLoginResult != ''">
+			AND lh.login_result = #{searchLoginResult}
+		</if>
+		<if test="searchStartDt != null and searchStartDt != ''">
+			AND lh.login_dt >= #{searchStartDt}::timestamp
+		</if>
+		<if test="searchEndDt != null and searchEndDt != ''">
+			AND lh.login_dt <![CDATA[<=]]> (#{searchEndDt}::timestamp + INTERVAL '1 day')
+		</if>
+	</select>
+
+	<!-- 로그인 이력 상세 조회 -->
+	<select id="selectLoginHistoryDetail" parameterType="Long" resultMap="loginHistoryResultMap">
+		SELECT
+			lh.login_history_id,
+			t.tenant_code AS factory_code,
+			lh.login_code AS user_id,
+			lh.user_name,
+			to_char(lh.login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
+			lh.login_ip,
+			lh.login_type,
+			lh.user_agent,
+			lh.authority_code,
+			lh.login_result,
+			lh.fail_reason,
+			to_char(lh.logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
+			lh.session_time,
+			NULL::varchar AS gov_interface_yn,
+			NULL::varchar AS gov_interface_dt,
+			NULL::varchar AS gov_recptn_rslt_cd,
+			NULL::varchar AS gov_recptn_rslt,
+			NULL::varchar AS gov_recptn_rslt_dtl,
+			NULL::varchar AS gov_fail_reason,
+			NULL::text AS gov_request_json,
+			NULL::text AS gov_response_json
+		FROM tb_login_history lh
+		JOIN tb_tenant t ON t.tenant_id = lh.tenant_id
+		WHERE lh.login_history_id = #{loginHistoryId}
+	</select>
+
+	<!-- 로그아웃 정보 업데이트 -->
+	<update id="updateLogoutInfo" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
+		UPDATE tb_login_history
+		SET 
+			logout_dt = now(),
+			session_time = EXTRACT(EPOCH FROM (now() - login_dt))::integer / 60
+		WHERE login_history_id = #{loginHistoryId}
+	</update>
+
+	<!-- 정부 인터페이스 대상 최신 로그인 이력 1건 조회 -->
+	<select id="selectLatestLoginHistoryForGovInterface" resultMap="loginHistoryResultMap">
+		SELECT
+			lh.login_history_id,
+			t.tenant_code AS factory_code,
+			lh.login_code AS user_id,
+			lh.user_name,
+			to_char(lh.login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
+			lh.login_ip,
+			lh.login_type,
+			lh.user_agent,
+			lh.authority_code,
+			lh.login_result,
+			lh.fail_reason,
+			to_char(lh.logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
+			lh.session_time,
+			NULL::varchar AS gov_interface_yn,
+			NULL::varchar AS gov_interface_dt,
+			NULL::varchar AS gov_recptn_rslt_cd,
+			NULL::varchar AS gov_recptn_rslt,
+			NULL::varchar AS gov_recptn_rslt_dtl,
+			NULL::varchar AS gov_fail_reason,
+			NULL::text AS gov_request_json,
+			NULL::text AS gov_response_json
+		FROM tb_login_history lh
+		JOIN tb_tenant t ON t.tenant_id = lh.tenant_id
+		ORDER BY login_dt DESC, login_history_id DESC
+		LIMIT 1
+	</select>
+
+	<!-- 정부 인터페이스 대상 최신 로그인 이력 1건 조회 (기간 + 익일 재시도) -->
+	<select id="selectLatestLoginHistoryForGovInterfaceByDateRange" parameterType="map" resultMap="loginHistoryResultMap">
+		SELECT
+			lh.login_history_id,
+			t.tenant_code AS factory_code,
+			lh.login_code AS user_id,
+			lh.user_name,
+			to_char(lh.login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
+			lh.login_ip,
+			lh.login_type,
+			lh.user_agent,
+			lh.authority_code,
+			lh.login_result,
+			lh.fail_reason,
+			to_char(lh.logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
+			lh.session_time,
+			NULL::varchar AS gov_interface_yn,
+			NULL::varchar AS gov_interface_dt,
+			NULL::varchar AS gov_recptn_rslt_cd,
+			NULL::varchar AS gov_recptn_rslt,
+			NULL::varchar AS gov_recptn_rslt_dtl,
+			NULL::varchar AS gov_fail_reason,
+			NULL::text AS gov_request_json,
+			NULL::text AS gov_response_json
+		FROM tb_login_history lh
+		JOIN tb_tenant t ON t.tenant_id = lh.tenant_id
 		WHERE (
-			DATE(login_dt) >= #{fromDate}::date
-			AND DATE(login_dt) <![CDATA[<=]]> #{toDate}::date
-			AND gov_interface_dt IS NULL
+			DATE(lh.login_dt) >= #{fromDate}::date
+			AND DATE(lh.login_dt) <![CDATA[<=]]> #{toDate}::date
 		)
 		ORDER BY login_dt DESC, login_history_id DESC
 		LIMIT 1

@@ -4,7 +4,7 @@
 
 <!-- 로그인 처리를 위한 resultMap -->
 <resultMap id="login" type="egovframework.com.cmm.LoginVO">
-<result property="factoryCode" column="factoryCode"/>
+<result property="tenantCode" column="tenantCode"/>
 <result property="id" column="id"/>
 <result property="name" column="name"/>
 <result property="ihidNum" column="ihidNum"/>
@@ -31,7 +31,7 @@
 <select id="actionLogin" resultMap="login">
 SELECT
 li.login_code       AS id,
-t.tenant_code       AS factoryCode,
+t.tenant_code       AS tenantCode,
 u.user_nm           AS name,
 li.password_hash    AS password,
 NULL                AS ihidNum,
@@ -62,7 +62,7 @@ LEFT JOIN tb_department d
 WHERE
 li.login_code = #{id}
   AND li.password_hash = #{password}
-  AND t.tenant_code = #{factoryCode}
+  AND t.tenant_code = #{tenantCode}
   <if test="roleCode != null and roleCode != ''">
   AND a.authority_code = #{roleCode}
   </if>
@@ -84,8 +84,8 @@ JOIN tb_tenant t
 WHERE
 u.user_nm = #{name}
   AND u.email_adres = #{email}
-  <if test="factoryCode != null and factoryCode != ''">
-  AND t.tenant_code = #{factoryCode}
+  <if test="tenantCode != null and tenantCode != ''">
+  AND t.tenant_code = #{tenantCode}
   </if>
   AND COALESCE(li.use_at, 'Y') = 'Y'
   AND COALESCE(u.use_at, 'Y') = 'Y'
@@ -106,8 +106,8 @@ WHERE
 li.login_code = #{id}
   AND u.user_nm = #{name}
   AND u.email_adres = #{email}
-  <if test="factoryCode != null and factoryCode != ''">
-  AND t.tenant_code = #{factoryCode}
+  <if test="tenantCode != null and tenantCode != ''">
+  AND t.tenant_code = #{tenantCode}
   </if>
   AND COALESCE(li.use_at, 'Y') = 'Y'
   AND COALESCE(u.use_at, 'Y') = 'Y'
@@ -121,8 +121,8 @@ password_hash = #{password},
 updated_at = now()
 WHERE
 login_code = #{id}
-  <if test="factoryCode != null and factoryCode != ''">
-  AND tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{factoryCode})
+  <if test="tenantCode != null and tenantCode != ''">
+  AND tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode})
   </if>
 </update>
 

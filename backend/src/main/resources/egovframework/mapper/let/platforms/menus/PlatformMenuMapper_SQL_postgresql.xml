@@ -173,4 +173,10 @@
         DELETE FROM tb_menu
         WHERE menu_id = #{menuId}
     </delete>
+
+    <!-- 메뉴에 연결된 권한-메뉴 매핑 삭제 -->
+    <delete id="PlatformMenuDAO.deleteRoleMenuPermissionsByMenuId" parameterType="long">
+        DELETE FROM tb_role_menu_permission
+        WHERE menu_id = #{value}
+    </delete>
 </mapper>

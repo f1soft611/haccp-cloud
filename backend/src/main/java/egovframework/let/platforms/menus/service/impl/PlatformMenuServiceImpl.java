@@ -8,6 +8,7 @@ import java.util.UUID;
 import javax.annotation.Resource;
 
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -130,7 +131,17 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
 
         MenuInfoVO deleteCondition = new MenuInfoVO();
         deleteCondition.setMenuId(menuId);
-        platformMenuDAO.deleteMenu(deleteCondition);
+
+        try {
+            platformMenuDAO.deleteRoleMenuPermissionsByMenuId(menuId);
+            platformMenuDAO.deleteMenu(deleteCondition);
+        } catch (DataAccessException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "이 메뉴를 참조하는 데이터가 있어 삭제할 수 없습니다. 권한-메뉴 매핑 또는 관련 데이터를 먼저 정리해 주세요.",
+                    e
+            );
+        }
     }
 
     @Override
