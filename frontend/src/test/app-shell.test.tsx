@@ -172,6 +172,7 @@ describe('App shell', () => {
         const menuPathsByAuthority: Record<string, string[]> = {
           PLATFORM_ADMIN: [
             '/dashboard',
+            '/platform/tenants',
             '/platform/menus',
             '/platform/roles',
             '/platform/login-history',
@@ -192,6 +193,7 @@ describe('App shell', () => {
         const menuPathsByAuthority: Record<string, string[]> = {
           PLATFORM_ADMIN: [
             '/dashboard',
+            '/platform/tenants',
             '/platform/menus',
             '/platform/roles',
             '/platform/login-history',
@@ -360,7 +362,7 @@ describe('App shell', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders AppLayout shell with top bar and footer but without work menu', () => {
+  it('renders AppLayout shell with top bar and footer but without work menu', async () => {
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -394,7 +396,7 @@ describe('App shell', () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId('work-menu-bar')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: APP_LABELS.menu.dashboard }),
+      await screen.findByRole('button', { name: APP_LABELS.menu.dashboard }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: APP_LABELS.menu.users }),
@@ -436,7 +438,9 @@ describe('App shell', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: APP_LABELS.menu.dashboardGroup }),
+      await screen.findByRole('button', {
+        name: APP_LABELS.menu.dashboardGroup,
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
@@ -484,6 +488,21 @@ describe('App shell', () => {
 
     expect(
       await screen.findByTestId('platform-menu-management-page'),
+    ).toBeInTheDocument();
+  });
+
+  it('allows PLATFORM_ADMIN to access platform tenant management route', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: '000001',
+      userId: 'platform_admin',
+      role: 'PLATFORM_ADMIN',
+    });
+
+    renderAppRoutesAt('/platform/tenants');
+
+    expect(
+      await screen.findByTestId('platform-tenant-management-page'),
     ).toBeInTheDocument();
   });
 

@@ -17,7 +17,11 @@ import { toAuthorityCode } from '../../auth/authorityCode';
 import { useAuthStore } from '../../store/authStore';
 import { UserMenuMetadataProvider } from './userMenuMetadataContext';
 
-const ALWAYS_ALLOWED_PATHS = ['/account/password'];
+const ALWAYS_ALLOWED_PATHS = [
+  '/account/password',
+  '/onboarding',
+  '/platform/onboarding',
+];
 
 export function AppLayout() {
   const role = useAuthStore((state) => state.role);

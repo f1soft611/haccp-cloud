@@ -23,6 +23,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeMode(getStoredThemeMode(themeStorageUserId) ?? 'light');
   }, [themeStorageUserId]);
 

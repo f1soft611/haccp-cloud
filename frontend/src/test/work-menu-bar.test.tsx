@@ -30,6 +30,7 @@ const renderLayoutWithRole = (
   const defaultPathsByRole: Record<UserRole, string[]> = {
     PLATFORM_ADMIN: [
       '/dashboard',
+      '/platform/tenants',
       '/platform/onboarding',
       '/platform/menus',
       '/platform/roles',
@@ -69,6 +70,14 @@ const renderLayoutWithRole = (
               <Route
                 path="/dashboard"
                 element={<div data-testid="dashboard-stub">dashboard</div>}
+              />
+              <Route
+                path="/platform/tenants"
+                element={
+                  <div data-testid="platform-tenants-stub">
+                    platform tenants
+                  </div>
+                }
               />
               <Route
                 path="/platform/menus"
@@ -174,7 +183,7 @@ describe('WorkMenuBar role-based visibility', () => {
       screen.getByRole('link', {
         name: APP_LABELS.menu.platformFactoryManagement,
       }),
-    ).toHaveAttribute('href', '/platform/onboarding');
+    ).toHaveAttribute('href', '/platform/tenants');
     expect(
       screen.getByRole('link', {
         name: APP_LABELS.menu.platformRoleManagement,

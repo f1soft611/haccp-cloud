@@ -32,9 +32,12 @@ function normalizeMenuPath(menuUrl: string): string {
 
   const normalizedPath = trimmed.replace(/\/+$/, '');
 
-  // Keep backward compatibility while platform onboarding moves to the new route.
-  if (normalizedPath === '/onboarding') {
-    return '/platform/onboarding';
+  // Keep backward compatibility while platform onboarding moves to tenant management list.
+  if (
+    normalizedPath === '/onboarding' ||
+    normalizedPath === '/platform/onboarding'
+  ) {
+    return '/platform/tenants';
   }
 
   if (normalizedPath === '/login-history') {

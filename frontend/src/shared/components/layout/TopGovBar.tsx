@@ -92,6 +92,7 @@ export function TopGovBar() {
   }, [selectedFontSize]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedThemeMode(getStoredThemeMode(themeStorageUserId) ?? 'light');
   }, [themeStorageUserId, isDarkMode]);
 
