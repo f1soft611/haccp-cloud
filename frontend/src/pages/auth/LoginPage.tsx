@@ -674,18 +674,25 @@ export function LoginPage() {
                       </Button>
                     )}
 
-                    {/* <Button
-                      variant="text"
-                      onClick={() => navigate('/login', { replace: true })}
-                      sx={{
-                        px: 0,
-                        minWidth: 'auto',
-                        textTransform: 'none',
-                        color: lightPalette.primary.main,
-                      }}
-                    >
-                      다른 도메인으로 로그인
-                    </Button> */}
+                    {loginStep === 'id' && (
+                      <Button
+                        variant="text"
+                        onClick={() => {
+                          setUserId('');
+                          setPassword('');
+                          setError('');
+                          navigate('/login', { replace: true });
+                        }}
+                        sx={{
+                          px: 0,
+                          minWidth: 'auto',
+                          textTransform: 'none',
+                          color: lightPalette.primary.main,
+                        }}
+                      >
+                        다른 도메인으로 로그인
+                      </Button>
+                    )}
                   </Stack>
                 )}
               </Stack>

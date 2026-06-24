@@ -21,7 +21,7 @@ class LoginHistoryPostgresqlMapperSqlTest {
                 .contains("insert into tb_login_history")
                 .contains("tenant_id")
                 .contains("login_code")
-            .contains("authority_code")
+            .contains("role_code")
             .contains("user_code");
     }
 

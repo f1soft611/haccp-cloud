@@ -73,7 +73,9 @@ describe('Login domain route', () => {
     expect(await screen.findByLabelText('비밀번호')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '로그인' })).toBeInTheDocument();
     expect(screen.getByText('다른 ID로 로그인')).toBeInTheDocument();
-    expect(screen.getByText('다른 도메인으로 로그인')).toBeInTheDocument();
+    expect(
+      screen.queryByText('다른 도메인으로 로그인'),
+    ).not.toBeInTheDocument();
   });
 
   it('returns to ID step when clicking other ID login link', async () => {
@@ -88,6 +90,17 @@ describe('Login domain route', () => {
 
     expect(screen.getByRole('button', { name: '다음' })).toBeInTheDocument();
     expect(screen.queryByLabelText('비밀번호')).not.toBeInTheDocument();
+  });
+
+  it('clears ID field when switching to other domain login', async () => {
+    renderAt('/login/f1soft.co.kr');
+
+    const idInput = await screen.findByLabelText('사용자 ID');
+    fireEvent.change(idInput, { target: { value: 'socra710' } });
+    fireEvent.click(screen.getByText('다른 도메인으로 로그인'));
+
+    const rootLoginIdInput = await screen.findByLabelText('사용자 ID');
+    expect(rootLoginIdInput).toHaveValue('');
   });
 
   it('shows fallback logo sample when tenant logo is missing', async () => {

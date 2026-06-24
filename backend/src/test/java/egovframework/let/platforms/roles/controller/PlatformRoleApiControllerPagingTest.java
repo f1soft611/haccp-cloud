@@ -43,7 +43,7 @@ class PlatformRoleApiControllerPagingTest {
         payload.put("totalCount", 7);
         payload.put("paginationInfo", java.util.Collections.singletonMap("currentPageNo", 1));
         result.setResult(payload);
-        when(platformRoleService.listRolesPaged(1, 20, "name", "관리자", "all")).thenReturn(result);
+        when(platformRoleService.listRolesPaged(1, 20, "name", "관리자", null, "all")).thenReturn(result);
 
         mockMvc.perform(get("/api/platform-admin/roles/paged")
                 .param("pageIndex", "1")
