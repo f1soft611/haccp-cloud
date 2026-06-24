@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore, type UserRole } from '../../shared/store/authStore';
+import { resolveLoginPathWithLastDomain } from '../../shared/utils/loginDomainRouting';
 
 type ProtectedRouteProps = PropsWithChildren<{
   allowedRoles?: UserRole[];
@@ -20,7 +21,7 @@ export function ProtectedRoute({
     onboardingRequired || onboardingStatus !== 'COMPLETED';
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={resolveLoginPathWithLastDomain()} replace />;
   }
 
   if (

@@ -37,7 +37,7 @@ li.login_code      AS id,
 u.user_nm          AS name,
 li.password_hash   AS password,
 NULL               AS ihidNum,
-u.email_adres      AS email,
+u.email_addr       AS email,
 CASE
 WHEN r.role_code = 'PLATFORM_ADMIN' THEN 'ADM'
 ELSE 'USR'
@@ -64,7 +64,7 @@ JOIN tb_role r
 LEFT JOIN tb_department d
   ON d.department_id = u.department_id
 WHERE
-li.login_code = #{id}
+(li.login_code = #{id} OR u.email_addr = #{id})
   AND li.password_hash = #{password}
   AND li.tenant_id = #{tenantId}
   <if test="roleCode != null and roleCode != ''">
@@ -87,7 +87,7 @@ JOIN tb_tenant t
   ON t.tenant_id = li.tenant_id
 WHERE
 u.user_nm = #{name}
-  AND u.email_adres = #{email}
+  AND u.email_addr = #{email}
   <if test="tenantCode != null and tenantCode != ''">
   AND t.tenant_code = #{tenantCode}
   </if>
@@ -109,13 +109,26 @@ JOIN tb_tenant t
 WHERE
 li.login_code = #{id}
   AND u.user_nm = #{name}
-  AND u.email_adres = #{email}
+  AND u.email_addr = #{email}
   <if test="tenantCode != null and tenantCode != ''">
   AND t.tenant_code = #{tenantCode}
   </if>
   AND COALESCE(li.use_at, 'Y') = 'Y'
   AND COALESCE(u.use_at, 'Y') = 'Y'
   AND COALESCE(t.use_at, 'Y') = 'Y'
+</select>
+
+<select id="selectLoginCodeByTenantIdAndEmail" parameterType="map" resultType="string">
+SELECT li.login_code
+FROM tb_login_account li
+JOIN tb_user u
+  ON u.login_id = li.login_id
+WHERE li.tenant_id = #{tenantId}
+  AND u.email_addr = #{email}
+  AND COALESCE(li.use_at, 'Y') = 'Y'
+  AND COALESCE(u.use_at, 'Y') = 'Y'
+ORDER BY li.created_at DESC
+LIMIT 1
 </select>
 
 <update id="updatePassword">

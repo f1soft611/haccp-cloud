@@ -151,6 +151,9 @@ describe('Login page error flow', () => {
 
     renderAt('/login');
 
+    fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
+      target: { value: 'tenant_admin' },
+    });
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.password), {
       target: { value: 'wrong-password' },
     });

@@ -3,7 +3,7 @@ package egovframework.let.platforms.tenants.domain.model;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 
 /**
  * 테넌트 정보 VO
@@ -44,10 +44,10 @@ public class TenantVO {
     private String onboardingStatus;
 
     @Schema(description = "생성일시")
-    private LocalDateTime createdAt;
+    private Timestamp createdAt;
 
     @Schema(description = "수정일시")
-    private LocalDateTime updatedAt;
+    private Timestamp updatedAt;
 
     @Schema(description = "생성자 ID")
     private Long createdBy;

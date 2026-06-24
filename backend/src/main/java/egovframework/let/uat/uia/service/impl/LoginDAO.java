@@ -1,6 +1,8 @@
 package egovframework.let.uat.uia.service.impl;
 
 import egovframework.com.cmm.LoginVO;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 
@@ -63,5 +65,19 @@ public class LoginDAO extends EgovAbstractMapper {
 	 */
 	public void updatePassword(LoginVO vo) throws Exception {
 		update("loginDAO.updatePassword", vo);
+	}
+
+	/**
+	 * 테넌트 내 이메일로 로그인 코드를 조회한다.
+	 * @param tenantId 테넌트 ID
+	 * @param email 이메일 주소
+	 * @return 로그인 코드
+	 * @exception Exception
+	 */
+	public String selectLoginCodeByTenantIdAndEmail(Long tenantId, String email) throws Exception {
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("tenantId", tenantId);
+		params.put("email", email);
+		return (String) selectOne("loginDAO.selectLoginCodeByTenantIdAndEmail", params);
 	}
 }

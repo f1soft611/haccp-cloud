@@ -52,9 +52,12 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	 */
 	@Override
 	public LoginVO actionLogin(LoginVO vo) throws Exception {
-		if (vo.getId() != null) {
-			vo.getId().trim();
+		String inputId = vo.getId();
+		if (inputId != null) {
+			inputId = inputId.trim();
+			vo.setId(inputId);
 		}
+		String plainPassword = vo.getPassword();
 
 		// 1. TenantContextHolder에서 tenantId 추출
 		Long tenantId = TenantContextHolder.getTenantId();
@@ -71,14 +74,22 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 		vo.setTenantId(tenantId);
 
 		// 2. 입력한 비밀번호를 암호화한다.
-		String enpassword = EgovFileScrty.encryptPassword(vo.getPassword(), vo.getId());
+		String enpassword = EgovFileScrty.encryptPassword(plainPassword, vo.getId());
 		vo.setPassword(enpassword);
 
 		// 3. 아이디와 암호화된 비밀번호가 DB와 일치하는지 확인한다.
 		LoginVO loginVO = loginDAO.actionLogin(vo);
+		if (!isValidLogin(loginVO) && isEmailFormat(vo.getId())) {
+			String canonicalLoginCode = loginDAO.selectLoginCodeByTenantIdAndEmail(tenantId, vo.getId());
+			if (canonicalLoginCode != null && !canonicalLoginCode.trim().isEmpty()) {
+				String retryHash = EgovFileScrty.encryptPassword(plainPassword, canonicalLoginCode);
+				vo.setPassword(retryHash);
+				loginVO = loginDAO.actionLogin(vo);
+			}
+		}
 
 		// 4. 결과를 리턴한다.
-		if (loginVO != null && !loginVO.getId().equals("") && !loginVO.getPassword().equals("")) {
+		if (isValidLogin(loginVO)) {
 			log.info("Login successful: userId={}, tenantId={}", loginVO.getId(), tenantId);
 			return loginVO;
 		} else {
@@ -87,6 +98,18 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 		}
 
 		return loginVO;
+	}
+
+	private boolean isValidLogin(LoginVO loginVO) {
+		return loginVO != null
+				&& loginVO.getId() != null
+				&& !loginVO.getId().isEmpty()
+				&& loginVO.getPassword() != null
+				&& !loginVO.getPassword().isEmpty();
+	}
+
+	private boolean isEmailFormat(String value) {
+		return value != null && value.contains("@") && value.indexOf('@') > 0 && value.indexOf('@') < value.length() - 1;
 	}
 
 	private boolean isPlatformAdminLogin(LoginVO vo) {

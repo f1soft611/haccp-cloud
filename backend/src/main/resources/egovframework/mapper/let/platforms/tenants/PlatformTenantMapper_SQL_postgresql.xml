@@ -69,7 +69,7 @@
     </select>
 
     <select id="TenantInfoDAO.selectAdminEmailByLoginAccountId" parameterType="long" resultType="string">
-        SELECT u.email_adres
+        SELECT u.email_addr
         FROM tb_login_account li
         JOIN tb_user u ON u.user_id = li.user_id
         WHERE li.login_account_id = #{value}
