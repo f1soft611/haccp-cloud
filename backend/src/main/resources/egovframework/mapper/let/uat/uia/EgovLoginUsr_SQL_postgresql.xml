@@ -4,6 +4,7 @@
 
 <!-- 로그인 처리를 위한 resultMap -->
 <resultMap id="login" type="egovframework.com.cmm.LoginVO">
+<result property="tenantId" column="tenantId"/>
 <result property="tenantCode" column="tenantCode"/>
 <result property="id" column="id"/>
 <result property="name" column="name"/>
@@ -30,47 +31,50 @@
 <!-- 일반 로그인 -->
 <select id="actionLogin" resultMap="login">
 SELECT
-li.login_code       AS id,
-t.tenant_code       AS tenantCode,
-u.user_nm           AS name,
-li.password_hash    AS password,
-NULL                AS ihidNum,
-u.email_adres       AS email,
+li.tenant_id       AS tenantId,
+t.tenant_code      AS tenantCode,
+li.login_code      AS id,
+u.user_nm          AS name,
+li.password_hash   AS password,
+NULL               AS ihidNum,
+u.email_adres      AS email,
 CASE
-WHEN a.authority_code = 'PLATFORM_ADMIN' THEN 'ADM'
+WHEN r.role_code = 'PLATFORM_ADMIN' THEN 'ADM'
 ELSE 'USR'
-END                 AS userSe,
-u.department_id     AS orgnztId,
-u.user_code         AS uniqId,
-u.department_id     AS groupId,
-d.department_code   AS groupCode,
+END                AS userSe,
+u.department_id    AS orgnztId,
+u.user_id::text    AS uniqId,
+u.department_id    AS groupId,
+COALESCE(d.department_nm, u.department_id::text) AS groupCode,
 CASE
-WHEN a.authority_code = 'PLATFORM_ADMIN' THEN 'ROLE_ADMIN'
-WHEN a.authority_code = 'TENANT_ADMIN' THEN 'ROLE_TENANT_ADMIN'
+WHEN r.role_code = 'PLATFORM_ADMIN' THEN 'ROLE_ADMIN'
+WHEN r.role_code = 'TENANT_ADMIN' THEN 'ROLE_TENANT_ADMIN'
 ELSE 'ROLE_USER'
-END                 AS groupNm,
-a.authority_code    AS roleCode
+END                AS groupNm,
+r.role_code        AS roleCode
 FROM tb_login_account li
 JOIN tb_user u
-  ON u.user_id = li.user_id
+  ON u.login_id = li.login_id
 JOIN tb_tenant t
   ON t.tenant_id = li.tenant_id
-JOIN tb_authority a
-  ON a.authority_id = li.authority_id
+JOIN tb_login_account_role lr
+  ON lr.login_id = li.login_id
+JOIN tb_role r
+  ON r.role_id = lr.role_id
 LEFT JOIN tb_department d
   ON d.department_id = u.department_id
 WHERE
 li.login_code = #{id}
   AND li.password_hash = #{password}
-  AND t.tenant_code = #{tenantCode}
+  AND li.tenant_id = #{tenantId}
   <if test="roleCode != null and roleCode != ''">
-  AND a.authority_code = #{roleCode}
+  AND r.role_code = #{roleCode}
   </if>
   AND COALESCE(li.use_at, 'Y') = 'Y'
   AND COALESCE(u.use_at, 'Y') = 'Y'
   AND COALESCE(d.use_at, 'Y') = 'Y'
   AND COALESCE(t.use_at, 'Y') = 'Y'
-  AND COALESCE(a.use_at, 'Y') = 'Y'
+  AND COALESCE(r.use_at, 'Y') = 'Y'
 </select>
 
 <select id="searchId" resultMap="id">
@@ -78,7 +82,7 @@ SELECT
 li.login_code AS id
 FROM tb_login_account li
 JOIN tb_user u
-  ON u.user_id = li.user_id
+  ON u.login_id = li.login_id
 JOIN tb_tenant t
   ON t.tenant_id = li.tenant_id
 WHERE
@@ -99,7 +103,7 @@ SELECT
 li.password_hash AS password
 FROM tb_login_account li
 JOIN tb_user u
-  ON u.user_id = li.user_id
+  ON u.login_id = li.login_id
 JOIN tb_tenant t
   ON t.tenant_id = li.tenant_id
 WHERE

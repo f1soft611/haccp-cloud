@@ -104,12 +104,23 @@ export function OnboardingPage() {
     },
     onError: (error: {
       status?: number;
-      response?: { status?: number; data?: { code?: string } };
+      response?: {
+        status?: number;
+        data?: { code?: string; errorCode?: string; errorMessage?: string };
+      };
     }) => {
       const status = error?.response?.status ?? error?.status;
-      const code = error?.response?.data?.code;
-      if (status === 409 || code === 'DUPLICATE_BRN') {
+      const errorCode =
+        error?.response?.data?.errorCode ?? error?.response?.data?.code;
+
+      if (
+        status === 409 ||
+        errorCode === 'DUPLICATE_BRN' ||
+        errorCode === 'DUPLICATE_CORPORATE_NUMBER'
+      ) {
         setDuplicateError(true);
+      } else {
+        setDuplicateError(false);
       }
     },
   });
@@ -351,12 +362,18 @@ export function OnboardingPage() {
             </Typography>
 
             {duplicateError && (
-              <Alert severity="error">
-                {APP_LABELS.message.onboardingDuplicateBrn}
+              <Alert severity="error" sx={{ mb: 2 }}>
+                <Typography variant="body2" fontWeight={500}>
+                  사업자번호 중복 등록
+                </Typography>
+                <Typography variant="caption" color="inherit">
+                  이미 등록된 활성 업체의 사업자번호입니다. 다른 사업자번호로
+                  다시 시도해주세요.
+                </Typography>
               </Alert>
             )}
             {!duplicateError && mutation.isError && (
-              <Alert severity="error">
+              <Alert severity="error" sx={{ mb: 2 }}>
                 {APP_LABELS.message.onboardingFailed}
               </Alert>
             )}

@@ -16,17 +16,20 @@
 
 ## 스키마 범위
 
-현재 `backend/DATABASE/login_postgresql_schema.sql` 은 아래 테이블만 남기는 것을 기준으로 한다.
+현재 `backend/DATABASE/create_postgresql_schema_active_tables.sql` 기준으로 아래 활성 테이블만 유지한다.
 
-- `tb_factoryinfo` - 업체/테넌트 마스터
-- `tb_logininfo` - 로그인 계정 및 초기 관리자 로그인
-- `tb_authorityinfo` - 로그인 권한 3종
-- `tb_departmentinfo` - 부서
-- `tb_userinfo` - 사용자
+- `tb_tenant` - 테넌트/업체
+- `tb_department` - 부서
+- `tb_login_account` - 로그인 계정
+- `tb_user` - 사용자
+- `tb_authority` - 권한
+- `tb_role` - 역할
+- `tb_login_account_role` - 계정-역할 매핑
+- `tb_menu` - 메뉴
+- `tb_permission` - 권한 작업
+- `tb_role_menu_permission` - 역할-메뉴-권한 매핑
 - `tb_login_history` - 로그인 이력
-- `tb_permission_type` - 메뉴 권한 타입
-- `tb_menu_info` - 메뉴 트리
-- `tb_role_menu_permission` - 권한별 메뉴 매핑
+- `tb_schedulerconfig` - 스케줄러 설정
 
 ## 초기 로그인
 

@@ -277,20 +277,12 @@ describe('App shell', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders dedicated platform admin login page at /login/platform', async () => {
+  it('redirects /login/platform to the merged login page', async () => {
     renderAppRoutesAt('/login/platform');
 
     expect(
-      await screen.findByRole('heading', {
-        name: '플랫폼 관리자 로그인',
-      }),
+      await screen.findByRole('heading', { name: APP_LABELS.pageTitle.login }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('heading', { name: APP_LABELS.pageTitle.login }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText(APP_LABELS.field.tenantCode),
-    ).not.toBeInTheDocument();
   });
 
   it('allows authenticated user to open /account/password', async () => {

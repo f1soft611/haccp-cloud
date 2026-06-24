@@ -51,7 +51,7 @@ Maven PATH가 없으면 Maven 설치 경로의 `bin`을 PATH에 추가한 뒤 �
 
 ## 5) 빠른 점검
 
-- DB 점검: `tb_factoryinfo`, `tb_authorityinfo`, `tb_departmentinfo`, `tb_userinfo`, `tb_logininfo`, `tb_login_history`, `tb_permission_type`, `tb_menu_info`, `tb_role_menu_permission` 테이블 존재
+- DB 점검: `tb_tenant`, `tb_department`, `tb_login_account`, `tb_user`, `tb_authority`, `tb_role`, `tb_login_account_role`, `tb_menu`, `tb_permission`, `tb_role_menu_permission`, `tb_login_history` 테이블 존재
 - 초기 로그인 점검: `platform_admin / Passw0rd!` 로 로그인 가능
 - 로그 점검: PostgreSQL Driver/URL 관련 예외 없음
 - 기능 점검: 로그인 API 1건 호출 성공

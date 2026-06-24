@@ -10,6 +10,8 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
@@ -143,6 +145,15 @@ public class EgovConfigAppCommon {
 	@Bean
 	public CommonsMultipartResolver multipartResolver() {
 		return localMultiCommonsMultipartResolver();
+	}
+
+	/**
+	 * Spring Security 비밀번호 인코더
+	 * @return BCrypt 기반 PasswordEncoder
+	 */
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
 	}
 	
 	/**

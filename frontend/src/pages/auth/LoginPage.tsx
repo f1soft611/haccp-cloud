@@ -7,11 +7,12 @@ import {
   Stack,
   TextField,
   Typography,
+  CircularProgress,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../services/auth/authService';
+import { login, loginPlatformAdmin } from '../../services/auth/authService';
 import { extractApiErrorMessage } from '../../services/api/errorMessage';
 import { useAuthStore } from '../../shared/store/authStore';
 import { APP_LABELS } from '../../shared/constants/labels';
@@ -22,15 +23,21 @@ export function LoginPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.login);
 
-  const [tenantCode, setTenantCode] = useState('TENANT-A');
-  const [userId, setUserId] = useState('tenant_admin');
-  const [password, setPassword] = useState('Passw0rd!');
+  const [userId, setUserId] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const performLogin = async (loginMode: 'tenant' | 'platform') => {
     setError('');
+
+    setIsLoading(true);
     try {
-      const result = await login({ tenantCode, userId, password });
+      const result =
+        loginMode === 'platform'
+          ? await loginPlatformAdmin({ userId, password })
+          : await login({ userId, password });
+
       setAuth({
         tenantCode: result.tenantCode,
         userId: result.userId,
@@ -45,8 +52,17 @@ export function LoginPage() {
       navigate(result.role === 'PLATFORM_ADMIN' ? '/platform' : '/dashboard', {
         replace: true,
       });
-    } catch (error) {
-      setError(extractApiErrorMessage(error, APP_LABELS.message.loginFailed));
+    } catch (err) {
+      setError(
+        extractApiErrorMessage(
+          err,
+          loginMode === 'platform'
+            ? APP_LABELS.message.platformAdminLoginFailed
+            : APP_LABELS.message.loginFailed,
+        ),
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -95,8 +111,9 @@ export function LoginPage() {
                 fontFamily: 'Pretendard, SUIT, Noto Sans KR, sans-serif',
               }}
             >
-              Tenant Portal
+              {APP_LABELS.appTitle}
             </Typography>
+
             <Typography
               variant="h4"
               sx={{
@@ -108,6 +125,7 @@ export function LoginPage() {
             >
               {APP_LABELS.pageTitle.login}
             </Typography>
+
             <Typography
               color="text.secondary"
               sx={{
@@ -117,34 +135,14 @@ export function LoginPage() {
             >
               {APP_LABELS.message.loginHelp}
             </Typography>
+
             {error && <Alert severity="error">{error}</Alert>}
-            <TextField
-              label={APP_LABELS.field.tenantCode}
-              value={tenantCode}
-              onChange={(e) => setTenantCode(e.target.value)}
-              fullWidth
-              slotProps={
-                isDarkMode
-                  ? {
-                      inputLabel: {
-                        sx: { color: 'rgba(248, 250, 252, 0.82)' },
-                      },
-                      input: {
-                        sx: {
-                          color: '#f8fafc',
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: 'rgba(45, 212, 191, 0.34)',
-                          },
-                        },
-                      },
-                    }
-                  : undefined
-              }
-            />
+
             <TextField
               label={APP_LABELS.field.userId}
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
+              disabled={isLoading}
               fullWidth
               slotProps={
                 isDarkMode
@@ -169,6 +167,7 @@ export function LoginPage() {
               label={APP_LABELS.field.password}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
               fullWidth
               slotProps={
                 isDarkMode
@@ -191,7 +190,8 @@ export function LoginPage() {
             <Button
               variant="contained"
               size="large"
-              onClick={handleLogin}
+              onClick={() => performLogin('tenant')}
+              disabled={isLoading}
               sx={{
                 mt: 0.5,
                 py: 1.2,
@@ -202,11 +202,17 @@ export function LoginPage() {
                   : 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
               }}
             >
-              {APP_LABELS.action.login}
+              {isLoading ? (
+                <CircularProgress size={24} />
+              ) : (
+                APP_LABELS.action.login
+              )}
             </Button>
+
             <Button
               variant="text"
-              onClick={() => navigate('/login/platform')}
+              onClick={() => performLogin('platform')}
+              disabled={isLoading}
               sx={{ fontWeight: 700 }}
             >
               {APP_LABELS.action.platformAdminLogin}

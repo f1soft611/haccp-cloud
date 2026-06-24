@@ -72,9 +72,8 @@ describe('authService', () => {
     });
 
     await login({
-      tenantCode: 'TENANT-A',
-      userId: 'tenant_admin',
-      password: 'Passw0rd!',
+      userId: 'platform_admin',
+      password: 'test_password',
     });
 
     expect(mockedPost).toHaveBeenCalledWith('/auth/login-jwt', {
@@ -192,9 +191,8 @@ describe('authService', () => {
 
     await expect(
       login({
-        tenantCode: 'TENANT-A',
-        userId: 'tenant_admin',
-        password: 'Passw0rd!',
+        userId: 'platform_admin',
+        password: 'wrong_password',
       }),
     ).rejects.toThrow('로그인 처리 중 오류가 발생했습니다.');
   });

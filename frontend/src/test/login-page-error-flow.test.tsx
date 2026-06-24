@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material';
 import { http, HttpResponse } from 'msw';
@@ -49,7 +49,20 @@ function renderAt(path: string) {
 }
 
 describe('Login page error flow', () => {
-  it('keeps platform login page when backend returns non-admin role response', async () => {
+  it('renders generic login page at /login without tenant domain error', async () => {
+    resetAuthStore();
+
+    renderAt('/login');
+
+    expect(
+      await screen.findByRole('heading', { name: APP_LABELS.pageTitle.login }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(APP_LABELS.message.loginHelp),
+    ).toBeInTheDocument();
+  });
+
+  it('uses the merged page for platform admin login and rejects non-admin responses', async () => {
     resetAuthStore();
 
     server.use(
@@ -66,7 +79,7 @@ describe('Login page error flow', () => {
       ),
     );
 
-    renderAt('/login/platform');
+    renderAt('/login');
 
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
       target: { value: 'tenant_user' },
@@ -83,14 +96,23 @@ describe('Login page error flow', () => {
       APP_LABELS.message.platformAdminLoginFailed,
     );
     expect(screen.getByTestId('location-path')).toHaveTextContent(
-      '/login/platform',
+      '/login',
     );
   });
 
-  it('keeps platform admin login route and shows backend reason when admin login fails', async () => {
+  it('shows backend reason when merged platform admin login fails', async () => {
     resetAuthStore();
 
-    renderAt('/login/platform');
+    server.use(
+      http.post('/api/auth/login-jwt/admin', () =>
+        HttpResponse.json({
+          resultCode: 'FAIL',
+          message: '플랫폼 관리자 로그인에 실패했습니다.',
+        }),
+      ),
+    );
+
+    renderAt('/login');
 
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.password), {
       target: { value: 'wrong-password' },
@@ -107,20 +129,23 @@ describe('Login page error flow', () => {
       APP_LABELS.message.platformAdminLoginFailed,
     );
     expect(screen.getByTestId('location-path')).toHaveTextContent(
-      '/login/platform',
+      '/login',
     );
     expect(
       screen.queryByRole('heading', { name: APP_LABELS.pageTitle.login }),
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
   });
 
-  it('shows backend reason when tenant login fails', async () => {
+  it('allows normal tenant login from the merged page', async () => {
     resetAuthStore();
 
     renderAt('/login');
 
+    fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
+      target: { value: 'tenant_admin' },
+    });
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.password), {
-      target: { value: 'wrong-password' },
+      target: { value: 'Passw0rd!' },
     });
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.login }),
@@ -128,7 +153,7 @@ describe('Login page error flow', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert).toBeInTheDocument();
-    expect(alert).not.toHaveTextContent(APP_LABELS.message.loginFailed);
+    expect(alert).not.toHaveTextContent('도메인을 포함한 로그인 ID');
     expect(screen.getByTestId('location-path')).toHaveTextContent('/login');
   });
 
@@ -145,7 +170,16 @@ describe('Login page error flow', () => {
       onboardingStatus: 'COMPLETED',
     });
 
-    renderAt('/login/platform');
+    server.use(
+      http.post('/api/auth/login-jwt/admin', () =>
+        HttpResponse.json({
+          resultCode: 'FAIL',
+          message: '플랫폼 관리자 로그인에 실패했습니다.',
+        }),
+      ),
+    );
+
+    renderAt('/login');
 
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.password), {
       target: { value: 'wrong-password' },

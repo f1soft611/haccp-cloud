@@ -62,12 +62,66 @@
         WHERE tenant_code = #{value}
     </select>
 
+    <select id="TenantInfoDAO.selectOnboardingStatusByTenantCode" parameterType="string" resultType="string">
+        SELECT onboarding_status
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+    </select>
+
+    <select id="TenantInfoDAO.selectTenantNameByCode" parameterType="string" resultType="string">
+        SELECT tenant_nm
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+    </select>
+
+    <select id="TenantInfoDAO.selectAdminEmailByLoginAccountId" parameterType="long" resultType="string">
+        SELECT u.email_adres
+        FROM tb_login_account li
+        JOIN tb_user u ON u.user_id = li.user_id
+        WHERE li.login_account_id = #{value}
+    </select>
+
     <update id="TenantInfoDAO.updateOnboardingStatusByTenantCode" parameterType="map">
         UPDATE tb_tenant
         SET onboarding_status = #{onboardingStatus},
             updated_at = now()
         WHERE tenant_code = #{tenantCode}
     </update>
+
+    <update id="TenantInfoDAO.updateLoginAccountOnboardingStatus" parameterType="map">
+        UPDATE tb_login_account
+        SET onboarding_status = #{onboardingStatus},
+            updated_at = now()
+        WHERE login_account_id = #{loginAccountId}
+    </update>
+
+    <update id="TenantInfoDAO.updateLoginAccountPasswordAndActivate" parameterType="map">
+        UPDATE tb_login_account
+        SET password_hash = #{passwordHash},
+            password_algo = #{passwordAlgo},
+            use_at = #{useAt},
+            onboarding_status = #{onboardingStatus},
+            updated_at = now()
+        WHERE login_account_id = #{loginAccountId}
+    </update>
+
+    <update id="TenantInfoDAO.updateUserMobileNoByLoginAccountId" parameterType="map">
+        UPDATE tb_user
+        SET mobile_no = #{mobileNo},
+            updated_at = now()
+        WHERE user_id = (
+            SELECT user_id
+            FROM tb_login_account
+            WHERE login_account_id = #{loginAccountId}
+        )
+    </update>
+
+    <select id="TenantInfoDAO.selectActiveTenantCountByCorporateNumber" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tb_tenant
+        WHERE use_at = 'Y'
+          AND NULLIF(REGEXP_REPLACE(COALESCE(corporate_number, ''), '[^0-9]', '', 'g'), '') = #{value}
+    </select>
 
     <!-- 조건별 테넌트 건수 조회 -->
     <select id="TenantInfoDAO.selectTenantCount" parameterType="map" resultType="int">
@@ -157,4 +211,72 @@
         ORDER BY created_at DESC
         LIMIT #{limit}
     </select>
+
+    <!-- 관리자 이메일의 도메인으로 테넌트 조회 -->
+    <select id="TenantInfoDAO.selectByAdminEmailDomain" parameterType="string" resultMap="tenantResultMap">
+        SELECT 
+            tenant_id,
+            tenant_code,
+            tenant_nm,
+            admin_email,
+            corporate_number,
+            business_type,
+            business_category,
+            logo_image,
+            onboarding_status,
+            created_at,
+            updated_at,
+            created_by,
+            use_at
+        FROM tb_tenant
+        WHERE use_at = 'Y'
+          AND SUBSTRING(admin_email FROM POSITION('@' IN admin_email) + 1) = #{domain}
+        LIMIT 1
+    </select>
+
+    <!-- 테넌트 ID로 테넌트 조회 -->
+    <select id="TenantInfoDAO.selectById" parameterType="long" resultMap="tenantResultMap">
+        SELECT 
+            tenant_id,
+            tenant_code,
+            tenant_nm,
+            admin_email,
+            corporate_number,
+            business_type,
+            business_category,
+            logo_image,
+            onboarding_status,
+            created_at,
+            updated_at,
+            created_by,
+            use_at
+        FROM tb_tenant
+        WHERE tenant_id = #{tenantId}
+    </select>
+
+    <!-- 테넌트 로고 이미지 업데이트 -->
+    <update id="TenantInfoDAO.updateLogoImage" parameterType="map">
+        UPDATE tb_tenant
+        SET logo_image = #{logoImage},
+            updated_at = now()
+        WHERE tenant_id = #{tenantId}
+    </update>
+
+    <!-- 테넌트 resultMap -->
+    <resultMap id="tenantResultMap" type="egovframework.let.platforms.tenants.domain.model.TenantVO">
+        <result property="tenantId" column="tenant_id"/>
+        <result property="tenantCode" column="tenant_code"/>
+        <result property="tenantNm" column="tenant_nm"/>
+        <result property="adminEmail" column="admin_email"/>
+        <result property="corporateNumber" column="corporate_number"/>
+        <result property="businessType" column="business_type"/>
+        <result property="businessCategory" column="business_category"/>
+        <result property="logoImage" column="logo_image"/>
+        <result property="onboardingStatus" column="onboarding_status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="useAt" column="use_at"/>
+    </resultMap>
+
 </mapper>

@@ -3,6 +3,7 @@ package egovframework.com.security;
 import egovframework.com.cmm.filter.HTMLTagFilter;
 import egovframework.com.jwt.JwtAuthenticationEntryPoint;
 import egovframework.com.jwt.JwtAuthenticationFilter;
+import egovframework.let.platforms.tenants.context.TenantContextFilter;
 
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.context.annotation.Bean;
@@ -123,7 +124,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    protected SecurityFilterChain filterChain(HttpSecurity http, TenantContextFilter tenantContextFilter) throws Exception {
 
         return http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -144,6 +145,7 @@ public class SecurityConfig {
                 .sessionManagement(
                         (sessionManagement) -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors().and()
+                .addFilterBefore(tenantContextFilter, ChannelProcessingFilter.class)
                 .addFilterBefore(characterEncodingFilter(), ChannelProcessingFilter.class)
                 .addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(multipartFilter(), CsrfFilter.class)

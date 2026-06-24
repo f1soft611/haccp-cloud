@@ -287,7 +287,7 @@
 
 	<!-- 정부 인터페이스 전송 결과 업데이트 -->
 	<update id="updateGovInterfaceResult" parameterType="egovframework.let.uat.loginhistory.domain.model.LoginHistory">
-		UPDATE TB_LoginHistory
+		UPDATE tb_login_history
 		SET
 			gov_interface_yn = #{govInterfaceYn},
 			gov_interface_dt = now(),

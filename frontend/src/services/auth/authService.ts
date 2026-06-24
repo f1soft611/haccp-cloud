@@ -3,7 +3,6 @@ import { apiClient } from '../api/apiClient';
 import type { OnboardingStatus, UserRole } from '../../shared/store/authStore';
 
 export type LoginRequest = {
-  tenantCode: string;
   userId: string;
   password: string;
 };
@@ -202,8 +201,6 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
     {
       id: request.userId,
       password: request.password,
-      factoryCode: request.tenantCode,
-      tenantCode: request.tenantCode,
     },
   );
 
@@ -213,10 +210,7 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
   }
 
   const normalized = normalizeLoginResponse(data);
-  return {
-    ...normalized,
-    tenantCode: request.tenantCode,
-  };
+  return normalized;
 }
 
 export async function loginPlatformAdmin(
