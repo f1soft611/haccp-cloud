@@ -57,9 +57,7 @@ describe('Login page error flow', () => {
     expect(
       await screen.findByRole('heading', { name: APP_LABELS.pageTitle.login }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(APP_LABELS.message.loginHelp),
-    ).toBeInTheDocument();
+    expect(screen.getByText(APP_LABELS.message.loginHelp)).toBeInTheDocument();
   });
 
   it('uses the merged page for platform admin login and rejects non-admin responses', async () => {
@@ -95,9 +93,7 @@ describe('Login page error flow', () => {
     expect(alert).not.toHaveTextContent(
       APP_LABELS.message.platformAdminLoginFailed,
     );
-    expect(screen.getByTestId('location-path')).toHaveTextContent(
-      '/login',
-    );
+    expect(screen.getByTestId('location-path')).toHaveTextContent('/login');
   });
 
   it('shows backend reason when merged platform admin login fails', async () => {
@@ -128,9 +124,7 @@ describe('Login page error flow', () => {
     expect(alert).not.toHaveTextContent(
       APP_LABELS.message.platformAdminLoginFailed,
     );
-    expect(screen.getByTestId('location-path')).toHaveTextContent(
-      '/login',
-    );
+    expect(screen.getByTestId('location-path')).toHaveTextContent('/login');
     expect(
       screen.queryByRole('heading', { name: APP_LABELS.pageTitle.login }),
     ).toBeInTheDocument();
