@@ -52,9 +52,9 @@ public interface TenantInfoDAO {
     List<SampleTenantVO> selectRecentTenants(int limit);
 
     /**
-     * admin_email의 도메인으로 테넌트 조회
-     * 예: f1soft.co.kr → 해당 도메인을 가진 테넌트 반환
-     * 
+     * 테넌트 도메인 매핑으로 테넌트 조회
+     * 예: f1soft.co.kr -> 해당 도메인을 가진 테넌트 반환
+     *
      * @param domain 도메인 (예: f1soft.co.kr)
      * @return 테넌트 VO
      */

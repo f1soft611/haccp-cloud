@@ -2,8 +2,8 @@
 -- HACCP Cloud PostgreSQL Schema Creation Script (Active Tables Only)
 -- =============================================================================
 -- Database: haccp_cloud
--- Version: 1.0 (2026-06-23)
--- Description: 12 core tables only - legacy tables removed
+-- Version: 1.1 (2026-06-24)
+-- Description: 12 core tables only - role-only auth + tenant domain mapping
 -- =============================================================================
 
 BEGIN;
@@ -18,6 +18,20 @@ CREATE TABLE IF NOT EXISTS tb_tenant (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT
+);
+
+-- Tenant Domain Mapping (for domain-based login routing)
+CREATE TABLE IF NOT EXISTS tb_tenant_domain (
+    tenant_domain_id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    email_domain VARCHAR(255) NOT NULL,
+    is_primary CHAR(1) DEFAULT 'N' NOT NULL CHECK (is_primary IN ('Y', 'N')),
+    use_at CHAR(1) DEFAULT 'Y' NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE (email_domain),
+    FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE
 );
 
 -- Department/Organization
@@ -68,21 +82,6 @@ CREATE TABLE IF NOT EXISTS tb_user (
     FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE,
     FOREIGN KEY (login_id) REFERENCES tb_login_account(login_id) ON DELETE SET NULL,
     FOREIGN KEY (department_id) REFERENCES tb_department(department_id) ON DELETE SET NULL
-);
-
--- Authority
-CREATE TABLE IF NOT EXISTS tb_authority (
-    authority_id BIGSERIAL PRIMARY KEY,
-    tenant_id BIGINT NOT NULL,
-    authority_code VARCHAR(50) NOT NULL,
-    authority_nm VARCHAR(100) NOT NULL,
-    authority_dc VARCHAR(500),
-    use_at CHAR(1) DEFAULT 'Y' NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    UNIQUE (tenant_id, authority_code),
-    FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE
 );
 
 -- Role
@@ -160,10 +159,10 @@ CREATE TABLE IF NOT EXISTS tb_login_history (
     login_history_id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
     login_account_id BIGINT,
-    authority_id BIGINT,
+    role_id BIGINT,
     user_id BIGINT,
     login_code VARCHAR(50) NOT NULL,
-    authority_code VARCHAR(50) NOT NULL,
+    role_code VARCHAR(50) NOT NULL,
     user_code VARCHAR(50),
     user_nm VARCHAR(100) NOT NULL,
     login_dt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -185,7 +184,7 @@ CREATE TABLE IF NOT EXISTS tb_login_history (
     
     FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE,
     FOREIGN KEY (login_account_id) REFERENCES tb_login_account(login_id) ON DELETE SET NULL,
-    FOREIGN KEY (authority_id) REFERENCES tb_authority(authority_id) ON DELETE SET NULL,
+    FOREIGN KEY (role_id) REFERENCES tb_role(role_id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES tb_user(user_id) ON DELETE SET NULL
 );
 
@@ -203,6 +202,9 @@ CREATE TABLE IF NOT EXISTS tb_schedulerconfig (
 );
 
 -- Create Indexes for Performance
+CREATE INDEX IF NOT EXISTS idx_tenant_domain_tenant ON tb_tenant_domain(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_tenant_domain_use_at ON tb_tenant_domain(use_at);
+
 CREATE INDEX IF NOT EXISTS idx_tenant_department ON tb_department(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_parent_department ON tb_department(parent_department_id);
 
@@ -212,9 +214,6 @@ CREATE INDEX IF NOT EXISTS idx_login_code ON tb_login_account(login_code);
 CREATE INDEX IF NOT EXISTS idx_tenant_user ON tb_user(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_user_department ON tb_user(department_id);
 CREATE INDEX IF NOT EXISTS idx_user_login_id ON tb_user(login_id);
-
-CREATE INDEX IF NOT EXISTS idx_tenant_authority ON tb_authority(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_authority_code ON tb_authority(authority_code);
 
 CREATE INDEX IF NOT EXISTS idx_tenant_role ON tb_role(tenant_id);
 

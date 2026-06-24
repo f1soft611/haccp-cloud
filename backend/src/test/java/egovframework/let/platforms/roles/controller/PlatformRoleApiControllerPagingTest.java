@@ -1,4 +1,4 @@
-package egovframework.let.platforms.authorities.controller;
+package egovframework.let.platforms.roles.controller;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -13,18 +13,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.platforms.authorities.service.PlatformAuthorityService;
+import egovframework.let.platforms.roles.service.PlatformRoleService;
 
-class PlatformAuthorityApiControllerPagingTest {
+class PlatformRoleApiControllerPagingTest {
 
     private MockMvc mockMvc;
-    private PlatformAuthorityService platformAuthorityService;
+    private PlatformRoleService platformRoleService;
 
     @BeforeEach
     void setUp() {
-        PlatformAuthorityApiController controller = new PlatformAuthorityApiController();
-        platformAuthorityService = mock(PlatformAuthorityService.class);
-        ReflectionTestUtils.setField(controller, "platformAuthorityService", platformAuthorityService);
+        PlatformRoleApiController controller = new PlatformRoleApiController();
+        platformRoleService = mock(PlatformRoleService.class);
+        ReflectionTestUtils.setField(controller, "platformRoleService", platformRoleService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
@@ -43,7 +43,7 @@ class PlatformAuthorityApiControllerPagingTest {
         payload.put("totalCount", 7);
         payload.put("paginationInfo", java.util.Collections.singletonMap("currentPageNo", 1));
         result.setResult(payload);
-        when(platformAuthorityService.listRolesPaged(1, 20, "name", "관리자", "all")).thenReturn(result);
+        when(platformRoleService.listRolesPaged(1, 20, "name", "관리자", "all")).thenReturn(result);
 
         mockMvc.perform(get("/api/platform-admin/roles/paged")
                 .param("pageIndex", "1")

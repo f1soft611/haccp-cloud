@@ -139,7 +139,7 @@ public class PlatformTenantApiController {
     @GetMapping("/tenants/{domain}")
     @Operation(
             summary = "도메인으로 테넌트 정보 조회",
-            description = "관리자 이메일의 도메인(예: f1soft.co.kr)으로 테넌트 정보를 조회한다. 로그인 페이지에서 로고 및 회사명을 표시하기 위해 사용된다."
+            description = "테넌트 도메인 매핑(예: f1soft.co.kr)으로 테넌트 정보를 조회한다. 로그인 페이지에서 로고 및 회사명을 표시하기 위해 사용된다."
     )
     public ResultVO getTenantByDomain(@PathVariable String domain) {
         try {

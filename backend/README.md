@@ -19,10 +19,10 @@
 현재 `backend/DATABASE/create_postgresql_schema_active_tables.sql` 기준으로 아래 활성 테이블만 유지한다.
 
 - `tb_tenant` - 테넌트/업체
+- `tb_tenant_domain` - 업체 이메일 도메인 매핑
 - `tb_department` - 부서
 - `tb_login_account` - 로그인 계정
 - `tb_user` - 사용자
-- `tb_authority` - 권한
 - `tb_role` - 역할
 - `tb_login_account_role` - 계정-역할 매핑
 - `tb_menu` - 메뉴
@@ -37,7 +37,7 @@
 
 - login id: `platform_admin`
 - password seed: `Passw0rd!`
-- authority: `PLATFORM_ADMIN`
+- role: `PLATFORM_ADMIN`
 
 ## 구동
 

@@ -72,15 +72,38 @@ describe('authService', () => {
     });
 
     await login({
-      userId: 'platform_admin',
-      password: 'test_password',
+      userId: 'tenant_admin',
+      password: 'Passw0rd!',
     });
 
     expect(mockedPost).toHaveBeenCalledWith('/auth/login-jwt', {
       id: 'tenant_admin',
       password: 'Passw0rd!',
-      factoryCode: 'TENANT-A',
+    });
+  });
+
+  it('includes tenantCode and factoryCode when tenant context is provided', async () => {
+    const mockedPost = vi.mocked(apiClient.post);
+    mockedPost.mockResolvedValue({
+      data: {
+        tenantCode: 'TENANT-A',
+        userId: 'tenant_admin',
+        role: 'TENANT_ADMIN',
+        accessToken: 'token',
+      },
+    });
+
+    await login({
+      userId: 'tenant_admin',
+      password: 'Passw0rd!',
       tenantCode: 'TENANT-A',
+    });
+
+    expect(mockedPost).toHaveBeenCalledWith('/auth/login-jwt', {
+      id: 'tenant_admin',
+      password: 'Passw0rd!',
+      tenantCode: 'TENANT-A',
+      factoryCode: 'TENANT-A',
     });
   });
 

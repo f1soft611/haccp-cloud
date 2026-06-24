@@ -11,7 +11,7 @@
 		<result property="loginIp" column="login_ip"/>
 		<result property="loginType" column="login_type"/>
 		<result property="userAgent" column="user_agent"/>
-		<result property="authorityCode" column="authority_code"/>
+		<result property="roleCode" column="role_code"/>
 		<result property="loginResult" column="login_result"/>
 		<result property="failReason" column="fail_reason"/>
 		<result property="logoutDt" column="logout_dt"/>
@@ -31,12 +31,12 @@
 		INSERT INTO tb_login_history (
 			tenant_id,
 			login_account_id,
-			authority_id,
+			role_id,
 			user_id,
 			login_code,
-			authority_code,
+			role_code,
 			user_code,
-			user_name,
+			user_nm,
 			login_dt,
 			login_ip,
 			login_type,
@@ -49,7 +49,7 @@
 				(SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1)
 			),
 			(
-				SELECT la.login_account_id
+				SELECT la.login_id
 				FROM tb_login_account la
 				JOIN tb_tenant t ON t.tenant_id = la.tenant_id
 				WHERE la.login_code = #{userId}
@@ -57,30 +57,28 @@
 				LIMIT 1
 			),
 			(
-				SELECT a.authority_id
-				FROM tb_authority a
-				WHERE a.authority_code = COALESCE(#{authorityCode}, 'UNKNOWN')
+				SELECT r.role_id
+				FROM tb_login_account la
+				JOIN tb_tenant t ON t.tenant_id = la.tenant_id
+				JOIN tb_login_account_role lar ON lar.login_id = la.login_id
+				JOIN tb_role r ON r.role_id = lar.role_id
+				WHERE la.login_code = #{userId}
+				  AND t.tenant_code = #{tenantCode}
+				  AND r.role_code = COALESCE(NULLIF(#{roleCode}, ''), r.role_code)
 				LIMIT 1
 			),
 			(
-				SELECT la.user_id
-				FROM tb_login_account la
+				SELECT u.user_id
+				FROM tb_user u
+				JOIN tb_login_account la ON la.login_id = u.login_id
 				JOIN tb_tenant t ON t.tenant_id = la.tenant_id
 				WHERE la.login_code = #{userId}
 				  AND t.tenant_code = #{tenantCode}
 				LIMIT 1
 			),
 			COALESCE(NULLIF(#{userId}, ''), 'UNKNOWN'),
-			COALESCE(NULLIF(#{authorityCode}, ''), 'UNKNOWN'),
-			(
-				SELECT u.user_code
-				FROM tb_login_account la
-				JOIN tb_tenant t ON t.tenant_id = la.tenant_id
-				JOIN tb_user u ON u.user_id = la.user_id
-				WHERE la.login_code = #{userId}
-				  AND t.tenant_code = #{tenantCode}
-				LIMIT 1
-			),
+			COALESCE(NULLIF(#{roleCode}, ''), 'UNKNOWN'),
+			NULL,
 			COALESCE(NULLIF(#{userName}, ''), COALESCE(NULLIF(#{userId}, ''), 'UNKNOWN')),
 			now(),
 			#{loginIp},
@@ -102,7 +100,7 @@
 			login_ip,
 			login_type,
 			user_agent,
-			authority_code,
+			role_code,
 			login_result,
 			fail_reason,
 			to_char(logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
@@ -120,12 +118,12 @@
 				lh.login_history_id,
 				t.tenant_code AS factory_code,
 				lh.login_code AS user_id,
-				lh.user_name,
+				lh.user_nm AS user_name,
 				lh.login_dt,
 				lh.login_ip,
 				lh.login_type,
 				lh.user_agent,
-				lh.authority_code,
+				lh.role_code,
 				lh.login_result,
 				lh.fail_reason,
 				lh.logout_dt,
@@ -141,7 +139,7 @@
 				AND lh.login_code ILIKE '%' || #{searchUserId} || '%'
 			</if>
 			<if test="searchUserName != null and searchUserName != ''">
-				AND lh.user_name ILIKE '%' || #{searchUserName} || '%'
+				AND lh.user_nm ILIKE '%' || #{searchUserName} || '%'
 			</if>
 			<if test="searchLoginResult != null and searchLoginResult != ''">
 				AND lh.login_result = #{searchLoginResult}
@@ -170,7 +168,7 @@
 			AND lh.login_code ILIKE '%' || #{searchUserId} || '%'
 		</if>
 		<if test="searchUserName != null and searchUserName != ''">
-			AND lh.user_name ILIKE '%' || #{searchUserName} || '%'
+			AND lh.user_nm ILIKE '%' || #{searchUserName} || '%'
 		</if>
 		<if test="searchLoginResult != null and searchLoginResult != ''">
 			AND lh.login_result = #{searchLoginResult}
@@ -189,12 +187,12 @@
 			lh.login_history_id,
 			t.tenant_code AS factory_code,
 			lh.login_code AS user_id,
-			lh.user_name,
+			lh.user_nm AS user_name,
 			to_char(lh.login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
 			lh.login_ip,
 			lh.login_type,
 			lh.user_agent,
-			lh.authority_code,
+			lh.role_code,
 			lh.login_result,
 			lh.fail_reason,
 			to_char(lh.logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
@@ -227,12 +225,12 @@
 			lh.login_history_id,
 			t.tenant_code AS factory_code,
 			lh.login_code AS user_id,
-			lh.user_name,
+			lh.user_nm AS user_name,
 			to_char(lh.login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
 			lh.login_ip,
 			lh.login_type,
 			lh.user_agent,
-			lh.authority_code,
+			lh.role_code,
 			lh.login_result,
 			lh.fail_reason,
 			to_char(lh.logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,
@@ -257,12 +255,12 @@
 			lh.login_history_id,
 			t.tenant_code AS factory_code,
 			lh.login_code AS user_id,
-			lh.user_name,
+			lh.user_nm AS user_name,
 			to_char(lh.login_dt, 'YYYY-MM-DD HH24:MI:SS') AS login_dt,
 			lh.login_ip,
 			lh.login_type,
 			lh.user_agent,
-			lh.authority_code,
+			lh.role_code,
 			lh.login_result,
 			lh.fail_reason,
 			to_char(lh.logout_dt, 'YYYY-MM-DD HH24:MI:SS') AS logout_dt,

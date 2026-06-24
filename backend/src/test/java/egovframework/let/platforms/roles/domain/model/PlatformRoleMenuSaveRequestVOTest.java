@@ -1,4 +1,4 @@
-package egovframework.let.platforms.authorities.domain.model;
+package egovframework.let.platforms.roles.domain.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

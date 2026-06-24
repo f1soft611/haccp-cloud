@@ -10,7 +10,7 @@ import javax.annotation.Resource;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.stereotype.Service;
 
-import egovframework.let.uss.auth.service.AuthorityInfoVO;
+import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.EgovAuthManageService;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.PermissionTypeVO;
@@ -103,44 +103,44 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
      * 권한 목록을 조회한다.
      */
     @Override
-    public List<AuthorityInfoVO> selectAuthorityList() throws Exception {
-        return authManageDAO.selectAuthorityList();
+    public List<RoleInfoVO> selectRoleList() throws Exception {
+        return authManageDAO.selectRoleList();
     }
 
     @Override
-    public List<AuthorityInfoVO> selectAuthorityPagedList(AuthorityInfoVO authorityInfoVO) throws Exception {
-        return authManageDAO.selectAuthorityPagedList(authorityInfoVO);
+    public List<RoleInfoVO> selectRolePagedList(RoleInfoVO roleInfoVO) throws Exception {
+        return authManageDAO.selectRolePagedList(roleInfoVO);
     }
 
     @Override
-    public int selectAuthorityPagedCount(AuthorityInfoVO authorityInfoVO) throws Exception {
-        return authManageDAO.selectAuthorityPagedCount(authorityInfoVO);
+    public int selectRolePagedCount(RoleInfoVO roleInfoVO) throws Exception {
+        return authManageDAO.selectRolePagedCount(roleInfoVO);
     }
 
     /**
      * 권한을 등록한다.
      */
     @Override
-    public int insertAuthority(AuthorityInfoVO authorityInfoVO) throws Exception {
-        return authManageDAO.insertAuthority(authorityInfoVO);
+    public int insertRole(RoleInfoVO roleInfoVO) throws Exception {
+        return authManageDAO.insertRole(roleInfoVO);
     }
 
     /**
      * 권한 정보를 수정한다.
      */
     @Override
-    public int updateAuthority(AuthorityInfoVO authorityInfoVO) throws Exception {
-        AuthorityInfoVO.validateUpdatePolicy(authorityInfoVO);
-        return authManageDAO.updateAuthority(authorityInfoVO);
+    public int updateRole(RoleInfoVO roleInfoVO) throws Exception {
+        RoleInfoVO.validateUpdatePolicy(roleInfoVO);
+        return authManageDAO.updateRole(roleInfoVO);
     }
 
     /**
      * 권한 사용여부를 수정한다.
      */
     @Override
-    public int updateAuthorityUseAt(AuthorityInfoVO authorityInfoVO) throws Exception {
-        AuthorityInfoVO.validateUpdatePolicy(authorityInfoVO);
-        return authManageDAO.updateAuthorityUseAt(authorityInfoVO);
+    public int updateRoleUseAt(RoleInfoVO roleInfoVO) throws Exception {
+        RoleInfoVO.validateUpdatePolicy(roleInfoVO);
+        return authManageDAO.updateRoleUseAt(roleInfoVO);
     }
 
     /**
@@ -169,11 +169,11 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
     }
 
     /**
-     * 권한 코드 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
+     * 역할 코드 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
      */
     @Override
-    public int deleteRoleMenuPermissionsByAuthority(String authorityCode) throws Exception {
-        return authManageDAO.deleteRoleMenuPermissionsByAuthority(authorityCode);
+    public int deleteRoleMenuPermissionsByRoleCode(String roleCode) throws Exception {
+        return authManageDAO.deleteRoleMenuPermissionsByRoleCode(roleCode);
     }
 
     /**
@@ -188,17 +188,17 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
      * 사용자별 접근 가능한 메뉴 목록을 조회한다.
      */
     @Override
-    public List<MenuInfoVO> selectUserAccessibleMenus(String authorityCode) throws Exception {
-        return authManageDAO.selectUserAccessibleMenus(authorityCode);
+    public List<MenuInfoVO> selectUserAccessibleMenus(String roleCode) throws Exception {
+        return authManageDAO.selectUserAccessibleMenus(roleCode);
     }
 
     /**
      * 특정 메뉴에 대한 사용자 권한을 확인한다.
      */
     @Override
-    public String checkUserMenuPermission(String authorityCode, String menuUrl) throws Exception {
+    public String checkUserMenuPermission(String roleCode, String menuUrl) throws Exception {
         Map<String, Object> params = new HashMap<>();
-        params.put("authorityCode", authorityCode);
+        params.put("roleCode", roleCode);
         params.put("menuUrl", menuUrl);
         
         String permission = authManageDAO.checkUserMenuPermission(params);

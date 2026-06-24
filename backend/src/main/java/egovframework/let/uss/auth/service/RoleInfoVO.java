@@ -8,32 +8,32 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 권한 정보 VO 클래스
+ * 역할 정보 VO 클래스
  * @author SHMT-MES
  * @since 2024.01.01
  * @version 1.0
  */
-@Schema(description = "권한 정보 VO")
+@Schema(description = "역할 정보 VO")
 @Getter
 @Setter
-public class AuthorityInfoVO implements Serializable {
+public class RoleInfoVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "권한 ID")
-    private Long authorityId;
+    @Schema(description = "역할 ID")
+    private Long roleId;
 
-    @Schema(description = "권한 코드")
-    private String authorityCode = "";
+    @Schema(description = "역할 코드")
+    private String roleCode = "";
 
-    @Schema(description = "권한명")
-    private String authorityNm = "";
+    @Schema(description = "역할명")
+    private String roleNm = "";
 
-    @Schema(description = "권한 설명")
-    private String authorityDc = "";
+    @Schema(description = "역할 설명")
+    private String roleDc = "";
 
-    @Schema(description = "권한 레벨")
-    private Integer authorityLevel;
+    @Schema(description = "역할 레벨")
+    private Integer roleLevel;
 
     @Schema(description = "테넌트 범위 여부")
     private String tenantScoped = "Y";
@@ -75,17 +75,18 @@ public class AuthorityInfoVO implements Serializable {
     private int recordCountPerPage = 10;
 
     /**
-     * 권한 상태 변경 정책을 검증한다.
-     * @param target 변경 대상 권한
+     * 역할 상태 변경 정책을 검증한다.
+     * @param target 변경 대상 역할
      */
-    public static void validateUpdatePolicy(AuthorityInfoVO target) {
+    public static void validateUpdatePolicy(RoleInfoVO target) {
         if (target == null) {
-            throw new IllegalArgumentException("authority target is required");
+            throw new IllegalArgumentException("role target is required");
         }
 
-        if ("PLATFORM_ADMIN".equalsIgnoreCase(target.getAuthorityCode())
+        if ("PLATFORM_ADMIN".equalsIgnoreCase(target.getRoleCode())
                 && "N".equalsIgnoreCase(target.getUseAt())) {
             throw new IllegalArgumentException("PLATFORM_ADMIN cannot be deactivated");
         }
     }
+
 }

@@ -5,6 +5,7 @@ import type { OnboardingStatus, UserRole } from '../../shared/store/authStore';
 export type LoginRequest = {
   userId: string;
   password: string;
+  tenantCode?: string;
 };
 
 export type PlatformAdminLoginRequest = {
@@ -201,6 +202,12 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
     {
       id: request.userId,
       password: request.password,
+      ...(request.tenantCode
+        ? {
+            tenantCode: request.tenantCode,
+            factoryCode: request.tenantCode,
+          }
+        : {}),
     },
   );
 

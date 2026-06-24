@@ -1,4 +1,4 @@
-package egovframework.let.platforms.authorities.domain.model;
+package egovframework.let.platforms.roles.domain.model;
 
 import java.io.Serializable;
 
@@ -6,14 +6,14 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 플랫폼 권한 검색 조건 VO
+ * 플랫폼 역할 검색 조건 VO
  * @author AI Assistant
  * @since 2026.06.22
  * @version 1.0
  */
 @Getter
 @Setter
-public class PlatformAuthoritySearchConditionVO implements Serializable {
+public class PlatformRoleSearchConditionVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

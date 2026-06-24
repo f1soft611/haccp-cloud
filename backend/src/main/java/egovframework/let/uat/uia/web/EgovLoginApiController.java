@@ -113,14 +113,14 @@ public class EgovLoginApiController {
 		LoginHistory loginHistory = new LoginHistory();
 		loginHistory.setTenantCode(loginVO.getTenantCode());
 		loginHistory.setUserId(loginVO.getId());
-		loginHistory.setAuthorityCode(loginVO.getRoleCode());
+		loginHistory.setRoleCode(loginVO.getRoleCode());
 		loginHistory.setLoginIp(clientIp);
 		loginHistory.setLoginType("SESSION");
 		loginHistory.setUserAgent(userAgent);
 
 		if (loginResultVO != null && loginResultVO.getId() != null && !"".equals(loginResultVO.getId())) {
 			loginHistory.setTenantCode(loginResultVO.getTenantCode());
-			loginHistory.setAuthorityCode(loginResultVO.getRoleCode());
+			loginHistory.setRoleCode(loginResultVO.getRoleCode());
 			if (Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN")) {
 				loginResultVO.setUserSe("ADM");
 			}
@@ -184,14 +184,14 @@ public class EgovLoginApiController {
 		LoginHistory loginHistory = new LoginHistory();
 		loginHistory.setTenantCode(loginVO.getTenantCode());
 		loginHistory.setUserId(loginVO.getId());
-		loginHistory.setAuthorityCode(loginVO.getRoleCode());
+		loginHistory.setRoleCode(loginVO.getRoleCode());
 		loginHistory.setLoginIp(clientIp);
 		loginHistory.setLoginType("JWT");
 		loginHistory.setUserAgent(userAgent);
 		
 		if (loginResultVO != null && loginResultVO.getId() != null && !loginResultVO.getId().equals("")) {
 			loginHistory.setTenantCode(loginResultVO.getTenantCode());
-			loginHistory.setAuthorityCode(loginResultVO.getRoleCode());
+			loginHistory.setRoleCode(loginResultVO.getRoleCode());
 			if(Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN")) {//로그인 결과에서 역할코드값에 따른 권한부여
 				loginResultVO.setUserSe("ADM");
 	        }
@@ -273,7 +273,7 @@ public class EgovLoginApiController {
 		LoginHistory loginHistory = new LoginHistory();
 		loginHistory.setTenantCode(loginVO.getTenantCode());
 		loginHistory.setUserId(loginVO.getId());
-		loginHistory.setAuthorityCode(loginVO.getRoleCode());
+		loginHistory.setRoleCode(loginVO.getRoleCode());
 		loginHistory.setLoginIp(clientIp);
 		loginHistory.setLoginType("JWT_ADMIN");
 		loginHistory.setUserAgent(userAgent);
@@ -287,7 +287,7 @@ public class EgovLoginApiController {
 			if (StringUtils.hasText(loginResultVO.getTenantCode())) {
 				loginHistory.setTenantCode(loginResultVO.getTenantCode());
 			}
-			loginHistory.setAuthorityCode(loginResultVO.getRoleCode());
+			loginHistory.setRoleCode(loginResultVO.getRoleCode());
 			loginResultVO.setUserSe("ADM");
 			request.getSession().setAttribute("LoginVO", loginResultVO);
 

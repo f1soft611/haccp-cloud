@@ -87,6 +87,22 @@ const sampleTenants: SampleTenantItem[] = [
   },
 ];
 
+const tenantByDomain: Record<
+  string,
+  { tenantId: number; tenantCode: string; tenantNm: string; logoImage?: string }
+> = {
+  'f1soft.co.kr': {
+    tenantId: 1,
+    tenantCode: 'TENANT-A',
+    tenantNm: '에프원소프트',
+  },
+  'tenant-a.local': {
+    tenantId: 1,
+    tenantCode: 'TENANT-A',
+    tenantNm: '알파푸드',
+  },
+};
+
 let issuedTenantSequence = 101;
 
 function buildMockIssuedTenantCode() {
@@ -787,6 +803,33 @@ export const handlers = [
         id: payload.id,
         name: '플랫폼관리자',
         groupNm: 'ROLE_ADMIN',
+      },
+    });
+  }),
+
+  http.get('/api/tenants/:domain', ({ params }) => {
+    const domain = String(params.domain ?? '')
+      .trim()
+      .toLowerCase();
+
+    const tenant = tenantByDomain[domain];
+    if (!tenant) {
+      return HttpResponse.json(
+        { resultCode: 404, resultMessage: 'NOT_FOUND' },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json({
+      resultCode: 200,
+      resultMessage: '성공했습니다.',
+      result: {
+        tenantId: tenant.tenantId,
+        tenantCode: tenant.tenantCode,
+        tenantNm: tenant.tenantNm,
+        logoImage: tenant.logoImage,
+        onboardingStatus: 'COMPLETED',
+        useAt: 'Y',
       },
     });
   }),

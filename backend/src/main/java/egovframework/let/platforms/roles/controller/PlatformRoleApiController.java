@@ -1,4 +1,4 @@
-package egovframework.let.platforms.authorities.controller;
+package egovframework.let.platforms.roles.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -19,30 +19,30 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.platforms.authorities.service.PlatformAuthorityService;
-import egovframework.let.platforms.authorities.domain.model.PlatformRoleMenuSaveRequestVO;
-import egovframework.let.uss.auth.service.AuthorityInfoVO;
+import egovframework.let.platforms.roles.service.PlatformRoleService;
+import egovframework.let.platforms.roles.domain.model.PlatformRoleMenuSaveRequestVO;
+import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 플랫폼 관리자 권한/권한메뉴 통합 API
+ * 플랫폼 관리자 역할/역할-메뉴 통합 API
  */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/platform-admin")
-public class PlatformAuthorityApiController {
+public class PlatformRoleApiController {
 
     private static final String DEFAULT_PERMISSION_ID = "PERM_WRITE";
     private static final String SYSTEM_USER_ID = "system";
     private static final int[] ALLOWED_PAGE_SIZES = {10, 20, 50};
 
-    @Resource(name = "platformAuthorityService")
-    private PlatformAuthorityService platformAuthorityService;
+    @Resource(name = "platformRoleService")
+    private PlatformRoleService platformRoleService;
 
     @GetMapping("/roles")
-    public List<AuthorityInfoVO> listRoles() throws Exception {
-        return platformAuthorityService.listRoles();
+    public List<RoleInfoVO> listRoles() throws Exception {
+        return platformRoleService.listRoles();
     }
 
     @GetMapping("/roles/paged")
@@ -56,7 +56,7 @@ public class PlatformAuthorityApiController {
         validateSearchField(searchField);
         validateUseAt(useAt);
 
-        return platformAuthorityService.listRolesPaged(
+        return platformRoleService.listRolesPaged(
                 pageIndex,
                 pageSize,
                 searchField,
@@ -66,35 +66,35 @@ public class PlatformAuthorityApiController {
     }
 
     @PostMapping("/roles")
-    public AuthorityInfoVO createRole(@RequestBody AuthorityInfoVO payload) throws Exception {
-        if (payload == null || !StringUtils.hasText(payload.getAuthorityCode())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "권한 코드는 필수입니다.");
+    public RoleInfoVO createRole(@RequestBody RoleInfoVO payload) throws Exception {
+        if (payload == null || !StringUtils.hasText(payload.getRoleCode())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "역할 코드는 필수입니다.");
         }
 
-        return platformAuthorityService.createRole(payload);
+        return platformRoleService.createRole(payload);
     }
 
     @PatchMapping("/roles/{id}")
-    public AuthorityInfoVO updateRoleUseAt(@PathVariable Long id, @RequestBody AuthorityInfoVO payload) throws Exception {
+    public RoleInfoVO updateRoleUseAt(@PathVariable Long id, @RequestBody RoleInfoVO payload) throws Exception {
         if (payload == null || !StringUtils.hasText(payload.getUseAt())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt 값은 필수입니다.");
         }
 
-        return platformAuthorityService.updateRoleUseAt(id, payload);
+        return platformRoleService.updateRoleUseAt(id, payload);
     }
 
     @PutMapping("/roles/{id}")
-    public AuthorityInfoVO updateRole(@PathVariable Long id, @RequestBody AuthorityInfoVO payload) throws Exception {
-        if (payload == null || !StringUtils.hasText(payload.getAuthorityNm())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "authorityNm 값은 필수입니다.");
+    public RoleInfoVO updateRole(@PathVariable Long id, @RequestBody RoleInfoVO payload) throws Exception {
+        if (payload == null || !StringUtils.hasText(payload.getRoleNm())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleNm 값은 필수입니다.");
         }
 
-        return platformAuthorityService.updateRole(id, payload);
+        return platformRoleService.updateRole(id, payload);
     }
 
     @GetMapping("/role-menus")
     public Map<String, Object> getRoleMenus(@RequestParam String roleCode) throws Exception {
-        return platformAuthorityService.getRoleMenus(roleCode);
+        return platformRoleService.getRoleMenus(roleCode);
     }
 
     @PutMapping("/role-menus/{roleCode}")
@@ -104,7 +104,7 @@ public class PlatformAuthorityApiController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
 
-        return platformAuthorityService.replaceRoleMenus(roleCode, payload);
+        return platformRoleService.replaceRoleMenus(roleCode, payload);
     }
 
     /**
@@ -125,7 +125,7 @@ public class PlatformAuthorityApiController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자 권한 정보가 없습니다.");
         }
 
-        return platformAuthorityService.listUserMenus(roleCode.trim().toUpperCase());
+        return platformRoleService.listUserMenus(roleCode.trim().toUpperCase());
     }
 
     private void validatePage(int pageIndex, int pageSize) {

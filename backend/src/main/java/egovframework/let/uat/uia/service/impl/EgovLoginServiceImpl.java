@@ -58,14 +58,15 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 
 		// 1. TenantContextHolder에서 tenantId 추출
 		Long tenantId = TenantContextHolder.getTenantId();
-		if (tenantId == null && isPlatformAdminLogin(vo)) {
+		if (tenantId == null) {
 			tenantId = resolveTenantIdByTenantCode(vo.getTenantCode());
-		} else if (tenantId == null) {
+		}
+		if (tenantId == null && !isPlatformAdminLogin(vo)) {
 			tenantId = resolveTenantIdByLoginIdDomain(vo.getId());
 		}
 		if (tenantId == null) {
 			log.warn("TenantContextHolder: tenantId is null. login attempt by id={}", vo.getId());
-			throw new IllegalStateException("도메인을 포함한 로그인 ID로 접속해주세요.");
+			throw new IllegalStateException("업체 도메인 경로로 접속했는지 확인해주세요.");
 		}
 		vo.setTenantId(tenantId);
 

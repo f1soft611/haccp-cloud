@@ -5,15 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class AuthorityInfoPolicyTest {
+class RoleInfoPolicyTest {
 
     @DisplayName("PLATFORM_ADMIN 권한은 비활성화할 수 없다")
     @Test
     void preventPlatformAdminDeactivation() {
-        AuthorityInfoVO target = new AuthorityInfoVO();
-        target.setAuthorityCode("PLATFORM_ADMIN");
+        RoleInfoVO target = new RoleInfoVO();
+        target.setRoleCode("PLATFORM_ADMIN");
         target.setUseAt("N");
 
-        assertThrows(IllegalArgumentException.class, () -> AuthorityInfoVO.validateUpdatePolicy(target));
+        assertThrows(IllegalArgumentException.class, () -> RoleInfoVO.validateUpdatePolicy(target));
     }
 }

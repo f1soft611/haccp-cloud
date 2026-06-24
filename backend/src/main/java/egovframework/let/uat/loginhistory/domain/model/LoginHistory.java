@@ -8,15 +8,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.io.Serializable;
 
 /**
- * 로그인 이력 관리를 위한 데이터 모델 클래스
- * @author SHMT-MES
- * @since 2026.01.08
- * @version 1.0
- * @see
- *
  * <pre>
- * << 개정이력(Modification Information) >>
- *
  *   수정일      수정자           수정내용
  *  -------    --------    ---------------------------
  *   2026.01.08 SHMT-MES          최초 생성
@@ -57,8 +49,8 @@ public class LoginHistory implements Serializable {
 	@Schema(description = "사용자 에이전트")
 	private String userAgent;
 
-	@Schema(description = "권한 코드")
-	private String authorityCode;
+	@Schema(description = "역할 코드")
+	private String roleCode;
 
 	@Schema(description = "로그인 결과 (Y:성공, N:실패)")
 	private String loginResult;

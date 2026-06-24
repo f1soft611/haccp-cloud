@@ -23,11 +23,11 @@ public class RoleMenuPermissionVO implements Serializable {
     @Schema(description = "역할 메뉴 권한 매핑 ID")
     private Long roleMenuPermissionId;
 
-    @Schema(description = "권한 ID")
-    private Long authorityId;
+    @Schema(description = "역할 ID")
+    private Long roleId;
 
-    @Schema(description = "권한 코드")
-    private String authorityCode = "";
+    @Schema(description = "역할 코드")
+    private String roleCode = "";
 
     @Schema(description = "메뉴 ID")
     private Long menuId;
@@ -57,8 +57,8 @@ public class RoleMenuPermissionVO implements Serializable {
     private String lastUpdusrId = "";
 
     // 추가 필드 (조회용)
-    @Schema(description = "권한명")
-    private String authorityNm = "";
+    @Schema(description = "역할명")
+    private String roleNm = "";
 
     @Schema(description = "메뉴명")
     private String menuNm = "";

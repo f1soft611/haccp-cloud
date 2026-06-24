@@ -1,4 +1,4 @@
-package egovframework.let.platforms.authorities.service.impl;
+package egovframework.let.platforms.roles.service.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,31 +16,31 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.platforms.authorities.domain.repository.PlatformAuthorityDAO;
-import egovframework.let.platforms.authorities.service.PlatformAuthorityService;
-import egovframework.let.platforms.authorities.domain.model.PlatformRoleMenuSaveRequestVO;
-import egovframework.let.uss.auth.service.AuthorityInfoVO;
+import egovframework.let.platforms.roles.domain.repository.PlatformRoleDAO;
+import egovframework.let.platforms.roles.service.PlatformRoleService;
+import egovframework.let.platforms.roles.domain.model.PlatformRoleMenuSaveRequestVO;
+import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
 
 /**
- * 플랫폼 권한 서비스 구현체
+ * 플랫폼 역할 서비스 구현체
  * @author AI Assistant
  * @since 2026.06.22
  * @version 1.0
  */
-@Service("platformAuthorityService")
-public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
+@Service("platformRoleService")
+public class PlatformRoleServiceImpl implements PlatformRoleService {
 
     private static final String DEFAULT_PERMISSION_ID = "PERM_WRITE";
     private static final String SYSTEM_USER_ID = "system";
 
-    @Resource(name = "platformAuthorityDAO")
-    private PlatformAuthorityDAO platformAuthorityDAO;
+    @Resource(name = "platformRoleDAO")
+    private PlatformRoleDAO platformRoleDAO;
 
     @Override
-    public List<AuthorityInfoVO> listRoles() throws Exception {
-        return platformAuthorityDAO.selectAuthorityList();
+    public List<RoleInfoVO> listRoles() throws Exception {
+        return platformRoleDAO.selectRoleList();
     }
 
     @Override
@@ -50,7 +50,7 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
             String searchField,
             String searchKeyword,
             String useAt) throws Exception {
-        AuthorityInfoVO condition = new AuthorityInfoVO();
+        RoleInfoVO condition = new RoleInfoVO();
         condition.setPageIndex(pageIndex);
         condition.setPageSize(pageSize);
         condition.setSearchField(hasText(searchField) ? searchField.trim() : "");
@@ -66,8 +66,8 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
         condition.setLastIndex(paginationInfo.getLastRecordIndex());
         condition.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-        List<AuthorityInfoVO> roleList = platformAuthorityDAO.selectAuthorityPagedList(condition);
-        int totalCount = platformAuthorityDAO.selectAuthorityPagedCount(condition);
+        List<RoleInfoVO> roleList = platformRoleDAO.selectRolePagedList(condition);
+        int totalCount = platformRoleDAO.selectRolePagedCount(condition);
         paginationInfo.setTotalRecordCount(totalCount);
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
@@ -83,12 +83,12 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
     }
 
     @Override
-    public AuthorityInfoVO createRole(AuthorityInfoVO payload) throws Exception {
-        if (payload == null || !hasText(payload.getAuthorityCode())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "권한 코드는 필수입니다.");
+    public RoleInfoVO createRole(RoleInfoVO payload) throws Exception {
+        if (payload == null || !hasText(payload.getRoleCode())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "역할 코드는 필수입니다.");
         }
 
-        payload.setAuthorityCode(toUpper(payload.getAuthorityCode()));
+        payload.setRoleCode(toUpper(payload.getRoleCode()));
         payload.setUseAt("Y");
 
         if (!hasText(payload.getFrstRegisterId())) {
@@ -98,19 +98,19 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
             payload.setLastUpdusrId(SYSTEM_USER_ID);
         }
 
-        platformAuthorityDAO.insertAuthority(payload);
+        platformRoleDAO.insertRole(payload);
         return payload;
     }
 
     @Override
-    public AuthorityInfoVO updateRoleUseAt(Long authorityId, AuthorityInfoVO payload) throws Exception {
+    public RoleInfoVO updateRoleUseAt(Long roleId, RoleInfoVO payload) throws Exception {
         if (payload == null || !hasText(payload.getUseAt())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt 값은 필수입니다.");
         }
 
-        payload.setAuthorityId(authorityId);
-        if (hasText(payload.getAuthorityCode())) {
-            payload.setAuthorityCode(toUpper(payload.getAuthorityCode()));
+        payload.setRoleId(roleId);
+        if (hasText(payload.getRoleCode())) {
+            payload.setRoleCode(toUpper(payload.getRoleCode()));
         }
         payload.setUseAt(toUpper(payload.getUseAt()));
 
@@ -118,30 +118,30 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
             payload.setLastUpdusrId(SYSTEM_USER_ID);
         }
 
-        AuthorityInfoVO.validateUpdatePolicy(payload);
-        platformAuthorityDAO.updateAuthorityUseAt(payload);
+        RoleInfoVO.validateUpdatePolicy(payload);
+        platformRoleDAO.updateRoleUseAt(payload);
         return payload;
     }
 
     @Override
-    public AuthorityInfoVO updateRole(Long authorityId, AuthorityInfoVO payload) throws Exception {
-        if (payload == null || !hasText(payload.getAuthorityNm())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "authorityNm 값은 필수입니다.");
+    public RoleInfoVO updateRole(Long roleId, RoleInfoVO payload) throws Exception {
+        if (payload == null || !hasText(payload.getRoleNm())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleNm 값은 필수입니다.");
         }
 
-        payload.setAuthorityId(authorityId);
-        if (hasText(payload.getAuthorityCode())) {
-            payload.setAuthorityCode(toUpper(payload.getAuthorityCode()));
+        payload.setRoleId(roleId);
+        if (hasText(payload.getRoleCode())) {
+            payload.setRoleCode(toUpper(payload.getRoleCode()));
         }
-        payload.setAuthorityNm(payload.getAuthorityNm().trim());
+        payload.setRoleNm(payload.getRoleNm().trim());
         payload.setUseAt(hasText(payload.getUseAt()) ? toUpper(payload.getUseAt()) : "Y");
 
         if (!hasText(payload.getLastUpdusrId())) {
             payload.setLastUpdusrId(SYSTEM_USER_ID);
         }
 
-        AuthorityInfoVO.validateUpdatePolicy(payload);
-        platformAuthorityDAO.updateAuthority(payload);
+        RoleInfoVO.validateUpdatePolicy(payload);
+        platformRoleDAO.updateRole(payload);
         return payload;
     }
 
@@ -153,8 +153,8 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
         }
 
         RoleMenuPermissionVO condition = new RoleMenuPermissionVO();
-        condition.setAuthorityCode(normalizedRoleCode);
-        List<RoleMenuPermissionVO> permissions = platformAuthorityDAO.selectRoleMenuPermissionList(condition);
+        condition.setRoleCode(normalizedRoleCode);
+        List<RoleMenuPermissionVO> permissions = platformRoleDAO.selectRoleMenuPermissionList(condition);
 
         Set<String> menuCodeSet = new LinkedHashSet<String>();
         for (RoleMenuPermissionVO permission : permissions) {
@@ -182,17 +182,17 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleCode는 필수입니다.");
         }
 
-        platformAuthorityDAO.deleteRoleMenuPermissionsByAuthority(payload.getRoleCode());
+        platformRoleDAO.deleteRoleMenuPermissionsByRoleCode(payload.getRoleCode());
 
         for (String menuCode : payload.getMenuIds()) {
             RoleMenuPermissionVO item = new RoleMenuPermissionVO();
-            item.setAuthorityCode(payload.getRoleCode());
+            item.setRoleCode(payload.getRoleCode());
             item.setMenuCode(menuCode);
             item.setPermissionCode(DEFAULT_PERMISSION_ID);
             item.setUseAt("Y");
             item.setFrstRegisterId(SYSTEM_USER_ID);
             item.setLastUpdusrId(SYSTEM_USER_ID);
-            platformAuthorityDAO.insertRoleMenuPermission(item);
+            platformRoleDAO.insertRoleMenuPermission(item);
         }
 
         Map<String, Object> response = new HashMap<String, Object>();
@@ -209,8 +209,8 @@ public class PlatformAuthorityServiceImpl implements PlatformAuthorityService {
     }
 
     @Override
-    public List<MenuInfoVO> listUserMenus(String authorityCode) throws Exception {
-        return platformAuthorityDAO.selectUserAccessibleMenus(authorityCode);
+    public List<MenuInfoVO> listUserMenus(String roleCode) throws Exception {
+        return platformRoleDAO.selectUserAccessibleMenus(roleCode);
     }
 
     private boolean hasText(String value) {

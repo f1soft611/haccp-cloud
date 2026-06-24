@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 테넌트 컨텍스트 필터
- * URL 경로에서 테넌트 도메인을 추출하여 TenantContextHolder에 설정
+ * URL 경로에서 테넌트 도메인을 추출해 도메인 매핑으로 TenantContextHolder에 설정
  *
  * 예: /f1soft.co.kr/login → f1soft.co.kr 도메인 추출 → 테넌트 조회 → Context 설정
  *
