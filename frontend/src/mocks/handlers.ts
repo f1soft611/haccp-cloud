@@ -1698,6 +1698,24 @@ export const handlers = [
     return HttpResponse.json({ result: { menuList } });
   }),
 
+  http.get('/api/platform-admin/plan-access/me', ({ request }) => {
+    const tenantCode = getTenantCodeFromHeader(request);
+
+    const features: Record<string, boolean> = {
+      FEATURE_USER_MGMT: true,
+      FEATURE_DOC_WORKFLOW: true,
+      FEATURE_AUDIT_LOG: true,
+      FEATURE_API_EXPORT: true,
+    };
+
+    return HttpResponse.json({
+      tenantId: tenantCode === 'TENANT-B' ? 2 : 1,
+      tenantCode,
+      planCode: 'C',
+      features,
+    });
+  }),
+
   http.get('/api/dashboard', ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const tenantDocuments = tenantScoped(documents, tenantCode);

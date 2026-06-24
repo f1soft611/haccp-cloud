@@ -178,7 +178,6 @@ export function LoginPage() {
   const [recommendedDomain, setRecommendedDomain] = useState('');
   const [tenantCode, setTenantCode] = useState('');
   const [domain, setDomain] = useState('');
-  const [domainLoaded, setDomainLoaded] = useState(false);
   const userIdInputRef = useRef<HTMLInputElement | null>(null);
   const passwordInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -198,7 +197,6 @@ export function LoginPage() {
       if (!resolvedDomain) {
         setRecommendedDomain(loadLastLoginDomain());
         setTenantBrand(null);
-        setDomainLoaded(true);
         return;
       }
 
@@ -239,10 +237,6 @@ export function LoginPage() {
         }
 
         setTenantInfo(null);
-      } finally {
-        if (mounted) {
-          setDomainLoaded(true);
-        }
       }
     };
 

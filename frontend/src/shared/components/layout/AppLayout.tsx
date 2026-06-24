@@ -13,6 +13,11 @@ import {
 } from './workMenuConfig';
 import { listAccessibleMenuPaths } from '../../../services/platform/platformUserMenuService';
 import * as userMenuService from '../../../services/platform/platformUserMenuService';
+import { getCurrentPlanAccess } from '../../../services/plan/planAccessService';
+import {
+  isFeatureAllowed,
+  resolveFeatureCodeByPath,
+} from '../../../services/plan/featureCatalog';
 import { useAuthStore } from '../../store/authStore';
 import { UserMenuMetadataProvider } from './userMenuMetadataContext';
 
@@ -20,6 +25,7 @@ const ALWAYS_ALLOWED_PATHS = [
   '/account/password',
   '/onboarding',
   '/platform/onboarding',
+  '/tenant-first-setup',
 ];
 
 export function AppLayout() {
@@ -57,6 +63,12 @@ export function AppLayout() {
     retry: false,
   });
 
+  const planAccessQuery = useQuery({
+    queryKey: ['current-plan-access'],
+    queryFn: getCurrentPlanAccess,
+    retry: false,
+  });
+
   const roleDefaultMenuGroups = useMemo(() => getWorkMenuGroups(role), [role]);
   const roleDefaultPaths = useMemo(
     () =>
@@ -73,6 +85,14 @@ export function AppLayout() {
         : (accessibleMenuQuery.data ?? []),
     [accessibleMenuQuery.data, accessibleMenuQuery.isError, roleDefaultPaths],
   );
+
+  const featureFilteredAllowedPaths = useMemo(() => {
+    const features = planAccessQuery.data?.features;
+
+    return allowedPaths.filter((path) =>
+      isFeatureAllowed(features, resolveFeatureCodeByPath(path)),
+    );
+  }, [allowedPaths, planAccessQuery.data?.features]);
 
   const menuMetadataByPath = useMemo(() => {
     const metadataMap: Record<
@@ -101,7 +121,7 @@ export function AppLayout() {
 
     const filteredGroups = filterWorkMenuGroupsByPaths(
       roleDefaultMenuGroups,
-      allowedPaths,
+      featureFilteredAllowedPaths,
     );
 
     return filteredGroups.map((group) => ({
@@ -121,7 +141,7 @@ export function AppLayout() {
       }),
     }));
   }, [
-    allowedPaths,
+    featureFilteredAllowedPaths,
     isInitialMenuLoading,
     menuMetadataByPath,
     roleDefaultMenuGroups,
@@ -130,13 +150,13 @@ export function AppLayout() {
   const fallbackRedirectPath = useMemo(() => {
     if (
       role === 'PLATFORM_ADMIN' &&
-      allowedPaths.some((path) => path.startsWith('/platform'))
+      featureFilteredAllowedPaths.some((path) => path.startsWith('/platform'))
     ) {
       return '/platform';
     }
 
-    return allowedPaths[0];
-  }, [allowedPaths, role]);
+    return featureFilteredAllowedPaths[0];
+  }, [featureFilteredAllowedPaths, role]);
 
   useEffect(() => {
     if (accessibleMenuQuery.isPending) {
@@ -149,10 +169,10 @@ export function AppLayout() {
       return;
     }
 
-    if (allowedPaths.length === 0) {
+    if (featureFilteredAllowedPaths.length === 0) {
       return;
     }
-    const isAllowed = allowedPaths.some((path) =>
+    const isAllowed = featureFilteredAllowedPaths.some((path) =>
       location.pathname.startsWith(path),
     );
     if (!isAllowed) {
@@ -160,7 +180,7 @@ export function AppLayout() {
     }
   }, [
     accessibleMenuQuery.isPending,
-    allowedPaths,
+    featureFilteredAllowedPaths,
     fallbackRedirectPath,
     location.pathname,
     navigate,

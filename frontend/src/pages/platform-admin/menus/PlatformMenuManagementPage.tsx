@@ -43,6 +43,11 @@ import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
+import { getCurrentPlanAccess } from '../../../services/plan/planAccessService';
+import {
+  isFeatureAllowed,
+  resolveFeatureCodeByButton,
+} from '../../../services/plan/featureCatalog';
 import {
   createPlatformMenu,
   deletePlatformMenu,
@@ -163,6 +168,17 @@ export function PlatformMenuManagementPage() {
         useAt: appliedFilters.useAt as 'Y' | 'N' | 'all',
       }),
   });
+
+  const planAccessQuery = useQuery({
+    queryKey: ['current-plan-access'],
+    queryFn: getCurrentPlanAccess,
+    retry: false,
+  });
+
+  const canManageMenus = isFeatureAllowed(
+    planAccessQuery.data?.features,
+    resolveFeatureCodeByButton('platform-menu-create'),
+  );
 
   const createMutation = useMutation({
     mutationFn: createPlatformMenu,
@@ -400,6 +416,12 @@ export function PlatformMenuManagementPage() {
         <Alert severity="error">메뉴 목록을 불러올 수 없습니다.</Alert>
       ) : null}
 
+      {planAccessQuery.isSuccess && !canManageMenus ? (
+        <Alert severity="info">
+          현재 요금제에서는 메뉴 변경 기능이 제한됩니다. 요금제를 확인해주세요.
+        </Alert>
+      ) : null}
+
       <Paper sx={{ p: 2 }}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}
@@ -462,7 +484,7 @@ export function PlatformMenuManagementPage() {
           <Button
             variant="contained"
             onClick={handleOpenAddModal}
-            disabled={isLoading}
+            disabled={isLoading || !canManageMenus}
           >
             + 메뉴 추가
           </Button>
@@ -644,6 +666,7 @@ export function PlatformMenuManagementPage() {
                   <IconButton
                     size="small"
                     onClick={() => handleOpenEditModal(rootMenu)}
+                    disabled={!canManageMenus}
                     sx={{
                       mr: 0.25,
                       color: isDarkMode ? '#fbbf24' : '#1f4f8f',
@@ -663,7 +686,9 @@ export function PlatformMenuManagementPage() {
                     size="small"
                     onClick={() => handleDelete(rootMenu)}
                     disabled={
-                      Boolean(rootMenu.hasChildren) || deleteMutation.isPending
+                      !canManageMenus ||
+                      Boolean(rootMenu.hasChildren) ||
+                      deleteMutation.isPending
                     }
                     sx={{
                       color: isDarkMode ? '#f87171' : '#c53b3b',
@@ -789,6 +814,7 @@ export function PlatformMenuManagementPage() {
                       <IconButton
                         size="small"
                         onClick={() => handleOpenEditModal(childMenu)}
+                        disabled={!canManageMenus}
                         sx={{
                           mr: 0.25,
                           color: '#1f4f8f',
@@ -802,6 +828,7 @@ export function PlatformMenuManagementPage() {
                         size="small"
                         onClick={() => handleDelete(childMenu)}
                         disabled={
+                          !canManageMenus ||
                           Boolean(childMenu.hasChildren) ||
                           deleteMutation.isPending
                         }
@@ -840,6 +867,7 @@ export function PlatformMenuManagementPage() {
               onClick={handleSave}
               variant="contained"
               disabled={
+                !canManageMenus ||
                 !formData.menuNm.trim() ||
                 !formData.menuUrl.trim() ||
                 createMutation.isPending ||
