@@ -1,6 +1,8 @@
 package egovframework.let.platforms.tenants.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -18,6 +20,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import egovframework.com.cmm.ResponseCode;
+import egovframework.com.cmm.service.ResultVO;
+import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.platforms.tenants.domain.model.SampleTenantVO;
 import egovframework.let.platforms.tenants.domain.model.TenantRegistrationResultVO;
 import egovframework.let.platforms.tenants.service.PlatformTenantService;
@@ -26,14 +31,27 @@ class PlatformTenantApiControllerTest {
 
     private MockMvc mockMvc;
     private PlatformTenantService platformTenantService;
+    private ResultVoHelper resultVoHelper;
 
     @BeforeEach
     void setUp() {
         PlatformTenantApiController controller = new PlatformTenantApiController();
         platformTenantService = mock(PlatformTenantService.class);
+        resultVoHelper = mock(ResultVoHelper.class);
 
         ReflectionTestUtils.setField(controller, "platformTenantService", platformTenantService);
+        ReflectionTestUtils.setField(controller, "resultVoHelper", resultVoHelper);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+
+        when(resultVoHelper.buildFromMap(anyMap(), eq(ResponseCode.SUCCESS))).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> map = (java.util.Map<String, Object>) invocation.getArgument(0);
+            ResultVO result = new ResultVO();
+            result.setResult(map);
+            result.setResultCode(ResponseCode.SUCCESS.getCode());
+            result.setResultMessage(ResponseCode.SUCCESS.getMessage());
+            return result;
+        });
     }
 
     @Test
@@ -51,10 +69,9 @@ class PlatformTenantApiControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"companyName\":\"테스트업체\",\"businessRegistrationNumber\":\"123-45-67890\",\"corporateNumber\":\"CORP-001\",\"businessType\":\"식품제조\",\"businessCategory\":\"즉석조리식품\",\"adminEmail\":\"admin@test.com\"}"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.tenantCode").value("TENANT_000001"))
-            .andExpect(jsonPath("$.companyName").value("테스트업체"))
-            .andExpect(jsonPath("$.businessRegistrationNumber").value("123-45-67890"))
-            .andExpect(jsonPath("$.corporateNumber").value("CORP-001"));
+            .andExpect(jsonPath("$.result.tenantCode").value("TENANT_000001"))
+            .andExpect(jsonPath("$.result.companyName").value("테스트업체"))
+            .andExpect(jsonPath("$.result.mailDispatchStatus").value("SENT"));
     }
 
     @Test
