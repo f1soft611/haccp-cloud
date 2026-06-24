@@ -15,10 +15,13 @@ export const APP_LABELS = {
   },
   menu: {
     dashboardGroup: '대시보드 관리',
-    systemGroup: '플랫폼 관리',
+    platformGroup: '플랫폼 관리',
+    documentGroup: '문서 관리',
+    systemGroup: '시스템 관리',
     dashboard: '대시보드',
     platformMenuManagement: '메뉴 관리',
     platformFactoryManagement: '업체 관리',
+    platformPlanManagement: '플랜 관리',
     platformRoleManagement: '권한 관리',
     platformRoleMenuManagement: '권한별 메뉴 등록',
     onboarding: '업체등록',
@@ -31,7 +34,6 @@ export const APP_LABELS = {
   },
   pageTitle: {
     login: '로그인',
-    platformAdminLogin: '플랫폼 관리자 로그인',
     onboarding: '업체 온보딩',
     tenantFirstSetup: '업체 관리자 최초 설정',
     users: '사용자 관리',
@@ -41,6 +43,7 @@ export const APP_LABELS = {
     loginHistory: '로그인 이력',
     dashboard: 'HACCP 문서 포털',
     platformMenuManagement: '메뉴 관리',
+    platformPlanManagement: '플랜 관리',
     platformRoleManagement: '플랫폼 권한/메뉴 관리',
     platformRoleMenuManagement: '플랫폼 권한/메뉴 관리',
     notFound: '페이지를 찾을 수 없음',
@@ -73,7 +76,6 @@ export const APP_LABELS = {
   action: {
     login: '로그인',
     platformAdminLogin: '플랫폼 관리자 로그인',
-    tenantLogin: '일반 로그인으로 이동',
     createTenant: '업체 생성',
     issueTenantCode: '업체 코드 발급',
     retry: '다시 시도',
@@ -110,12 +112,10 @@ export const APP_LABELS = {
     summary: '요약',
   },
   message: {
-    loginHelp: '테스트 로그인: 업체 코드 + 사용자 ID',
-    platformAdminLoginHelp: '플랫폼 관리자 계정으로만 로그인할 수 있습니다.',
-    loginFailed:
-      '로그인 실패: 업체 코드, 사용자 ID 또는 비밀번호를 확인하세요.',
+    loginHelp: '도메인을 포함한 로그인 ID를 입력하세요.',
+    loginFailed: '로그인 실패: 사용자 ID 또는 비밀번호를 확인하세요.',
     platformAdminLoginFailed:
-      '관리자 로그인 실패: 플랫폼 관리자 계정 정보를 확인하세요.',
+      '플랫폼 관리자 로그인 실패: 계정 정보를 확인하세요.',
     onboardingDescription:
       '플랫폼 관리자가 신규 업체 관리자 정보를 입력해 업체 코드를 발급합니다.',
     onboardingSuccess: '업체 코드 발급 및 안내 메일 발송이 완료되었습니다.',

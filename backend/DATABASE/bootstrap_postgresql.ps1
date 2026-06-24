@@ -4,7 +4,7 @@ param(
     [int]$Port = 5432,
     [string]$AdminUser = "postgres",
     [string]$Database = "haccp_cloud",
-    [string]$SchemaFile = "$PSScriptRoot\login_postgresql_schema.sql",
+    [string]$SchemaFile = "$PSScriptRoot\create_postgresql_schema_active_tables.sql",
     [switch]$ForceRecreateSchema
 )
 

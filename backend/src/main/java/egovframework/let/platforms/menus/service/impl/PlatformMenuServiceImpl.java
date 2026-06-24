@@ -77,7 +77,9 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
 
     @Override
     public MenuInfoVO createMenu(MenuInfoVO menuInfoVO) throws Exception {
-        if (!hasText(menuInfoVO.getMenuCode())) {
+        if (hasText(menuInfoVO.getMenuCode())) {
+            menuInfoVO.setMenuCode(menuInfoVO.getMenuCode().trim().toUpperCase());
+        } else {
             menuInfoVO.setMenuCode(generateMenuCode());
         }
 

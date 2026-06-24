@@ -72,7 +72,6 @@ describe('authService', () => {
     });
 
     await login({
-      tenantCode: 'TENANT-A',
       userId: 'tenant_admin',
       password: 'Passw0rd!',
     });
@@ -80,8 +79,31 @@ describe('authService', () => {
     expect(mockedPost).toHaveBeenCalledWith('/auth/login-jwt', {
       id: 'tenant_admin',
       password: 'Passw0rd!',
-      factoryCode: 'TENANT-A',
+    });
+  });
+
+  it('includes tenantCode and factoryCode when tenant context is provided', async () => {
+    const mockedPost = vi.mocked(apiClient.post);
+    mockedPost.mockResolvedValue({
+      data: {
+        tenantCode: 'TENANT-A',
+        userId: 'tenant_admin',
+        role: 'TENANT_ADMIN',
+        accessToken: 'token',
+      },
+    });
+
+    await login({
+      userId: 'tenant_admin',
+      password: 'Passw0rd!',
       tenantCode: 'TENANT-A',
+    });
+
+    expect(mockedPost).toHaveBeenCalledWith('/auth/login-jwt', {
+      id: 'tenant_admin',
+      password: 'Passw0rd!',
+      tenantCode: 'TENANT-A',
+      factoryCode: 'TENANT-A',
     });
   });
 
@@ -192,9 +214,8 @@ describe('authService', () => {
 
     await expect(
       login({
-        tenantCode: 'TENANT-A',
-        userId: 'tenant_admin',
-        password: 'Passw0rd!',
+        userId: 'platform_admin',
+        password: 'wrong_password',
       }),
     ).rejects.toThrow('로그인 처리 중 오류가 발생했습니다.');
   });

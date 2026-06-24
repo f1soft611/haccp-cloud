@@ -33,6 +33,9 @@ public class LoginVO implements Serializable{
 	 */
 	private static final long serialVersionUID = -8274004534207618049L;
 
+	@Schema(description = "테넌트 ID")
+	private Long tenantId;
+
 	@Schema(description = "테넌트 코드")
 	private String tenantCode;
 

@@ -10,11 +10,11 @@ import { DocumentsPage } from '../../pages/tenant-management/documents/Documents
 import { DocumentHistoryPage } from '../../pages/tenant-management/documents/DocumentHistoryPage';
 import { NotFoundPage } from '../../pages/NotFoundPage';
 import { TenantFirstLoginSetupPage } from '../../pages/tenant-management/onboarding/TenantFirstLoginSetupPage';
-import { PlatformAdminLoginPage } from '../../pages/auth/PlatformAdminLoginPage';
 import { LoginHistoryPage } from '../../pages/admin/LoginHistoryPage';
 import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
 import { PlatformAuthorityManagementPage } from '../../pages/platform-admin/authorities/PlatformAuthorityManagementPage';
 import { PlatformTenantManagementPage } from '../../pages/platform-admin/tenants/PlatformTenantManagementPage';
+import { PlatformPlanManagementPage } from '../../pages/platform-admin/plans/PlatformPlanManagementPage';
 import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
 import { useAuthStore } from '../../shared/store/authStore';
 
@@ -29,7 +29,11 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/login/platform" element={<PlatformAdminLoginPage />} />
+      <Route path="/login/:domain" element={<LoginPage />} />
+      <Route
+        path="/login/platform"
+        element={<Navigate to="/login" replace />}
+      />
       <Route
         element={
           <ProtectedRoute>
@@ -97,6 +101,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
               <PlatformMenuManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/plans"
+          element={
+            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+              <PlatformPlanManagementPage />
             </ProtectedRoute>
           }
         />

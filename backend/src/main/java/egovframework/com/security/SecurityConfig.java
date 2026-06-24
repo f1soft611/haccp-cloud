@@ -3,6 +3,7 @@ package egovframework.com.security;
 import egovframework.com.cmm.filter.HTMLTagFilter;
 import egovframework.com.jwt.JwtAuthenticationEntryPoint;
 import egovframework.com.jwt.JwtAuthenticationFilter;
+import egovframework.let.platforms.tenants.context.TenantContextFilter;
 
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.context.annotation.Bean;
@@ -41,6 +42,17 @@ import javax.servlet.MultipartConfigElement;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final String CONTENT_SECURITY_POLICY =
+        "default-src 'self'; "
+            + "base-uri 'self'; "
+            + "frame-ancestors 'none'; "
+            + "object-src 'none'; "
+            + "img-src 'self' https: data:; "
+            + "script-src 'self' 'unsafe-inline'; "
+            + "style-src 'self' 'unsafe-inline'; "
+            + "font-src 'self' https: data:; "
+            + "connect-src 'self' https: http:;";
+
     // Http Methpd : Get 인증예외 List
     private String[] AUTH_GET_WHITELIST = {
             "/mainPage", // 메인 화면 리스트 조회
@@ -51,6 +63,7 @@ public class SecurityConfig {
     private String[] AUTH_WHITELIST = {
             "/",
             "/login/**",
+            "/api/tenants/**", // 도메인 기반 로그인 페이지 테넌트 정보 조회
             "/auth/login-jwt", // JWT 로그인
             "/auth/login-jwt/admin", // 플랫폼 관리자 JWT 로그인
             "/auth/login", // 일반 로그인
@@ -123,10 +136,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    protected SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    protected SecurityFilterChain filterChain(HttpSecurity http, TenantContextFilter tenantContextFilter) throws Exception {
 
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp.policyDirectives(CONTENT_SECURITY_POLICY)))
                 .authorizeHttpRequests(authorize -> authorize
                     .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight 요청 허용
                         .antMatchers("/admin/**").hasRole("ADMIN") // 관리자 페이지는 ADMIN만 접근
@@ -144,6 +159,7 @@ public class SecurityConfig {
                 .sessionManagement(
                         (sessionManagement) -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors().and()
+                .addFilterBefore(tenantContextFilter, ChannelProcessingFilter.class)
                 .addFilterBefore(characterEncodingFilter(), ChannelProcessingFilter.class)
                 .addFilterBefore(authenticationTokenFilterBean(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(multipartFilter(), CsrfFilter.class)

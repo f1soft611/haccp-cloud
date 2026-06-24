@@ -8,63 +8,64 @@
             permission_id AS permissionId,
             permission_code AS permissionCode,
             permission_nm AS permissionNm,
-            permission_dc AS permissionDc,
-            permission_level AS permissionLevel,
+            NULL::varchar AS permissionDc,
+            CASE WHEN permission_code = 'PERM_WRITE' THEN 'write' ELSE 'read' END AS permissionLevel,
             use_at AS useAt,
-            crt_dt AS frstRegistPnttm,
-            crt_id AS frstRegisterId,
-            upd_dt AS lastUpdtPnttm,
-            upd_id AS lastUpdusrId
+            created_at AS frstRegistPnttm,
+            'SYSTEM' AS frstRegisterId,
+            created_at AS lastUpdtPnttm,
+            'SYSTEM' AS lastUpdusrId
         FROM tb_permission
         WHERE use_at = 'Y'
         <if test="permissionNm != null and permissionNm != ''">
             AND permission_nm ILIKE '%' || #{permissionNm} || '%'
         </if>
         <if test="permissionLevel != null and permissionLevel != ''">
-            AND permission_level = #{permissionLevel}
+            AND (
+                (#{permissionLevel} = 'write' AND permission_code = 'PERM_WRITE')
+                OR (#{permissionLevel} = 'read' AND permission_code = 'PERM_READ')
+            )
         </if>
-        ORDER BY sort_ordr
+        ORDER BY permission_code
     </select>
 
     <!-- 권한 유형 등록 -->
     <insert id="AuthManageDAO.insertPermissionType" parameterType="egovframework.let.uss.auth.service.PermissionTypeVO">
         INSERT INTO tb_permission (
+            tenant_id,
             permission_code,
             permission_nm,
-            permission_dc,
-            permission_level,
             use_at,
-            crt_dt,
-            crt_id,
-            upd_dt,
-            upd_id
+            created_at
         ) VALUES (
+            (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1),
             #{permissionCode},
             #{permissionNm},
-            #{permissionDc},
-            #{permissionLevel},
             #{useAt},
-            now(),
-            #{frstRegisterId},
-            now(),
-            #{lastUpdusrId}
+            now()
         )
     </insert>
 
     <!-- 특정 메뉴 사용자 권한 조회 -->
     <select id="AuthManageDAO.checkUserMenuPermission" parameterType="map" resultType="string">
         SELECT CASE
-                   WHEN MAX(p.permission_level) = 'write' THEN 'write'
-                   WHEN MAX(p.permission_level) = 'read' THEN 'read'
+                   WHEN MAX(CASE WHEN p.permission_code = 'PERM_WRITE' THEN 1 ELSE 0 END) = 1 THEN 'write'
+                   WHEN MAX(CASE WHEN p.permission_code = 'PERM_READ' THEN 1 ELSE 0 END) = 1 THEN 'read'
                    ELSE 'none'
                END AS permissionLevel
         FROM tb_role_menu_permission rmp
             INNER JOIN tb_menu m ON rmp.menu_id = m.menu_id
-            INNER JOIN tb_authority a ON rmp.authority_id = a.authority_id
+            INNER JOIN tb_role r ON rmp.role_id = r.role_id
             INNER JOIN tb_permission p ON rmp.permission_id = p.permission_id
-        WHERE a.authority_code = #{authorityCode}
+            INNER JOIN tb_tenant_subscription ts
+                ON ts.tenant_id = r.tenant_id
+               AND ts.subscription_status = 'ACTIVE'
+            INNER JOIN tb_plan_menu pm
+                ON pm.plan_id = ts.plan_id
+               AND pm.menu_code = m.menu_code
+               AND pm.use_at = 'Y'
+        WHERE r.role_code = #{roleCode}
           AND m.menu_url = #{menuUrl}
-          AND rmp.use_at = 'Y'
           AND m.use_at = 'Y'
           AND p.use_at = 'Y'
     </select>

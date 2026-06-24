@@ -82,15 +82,26 @@ public class PlatformMenuApiController {
     }
 
     private void validateForCreateOrUpdate(MenuInfoVO menuInfoVO, Long selfMenuId) throws Exception {
+        Long parentMenuId = menuInfoVO.getParentMenuId();
+
+        if (selfMenuId != null && hasText(menuInfoVO.getMenuCode())) {
+            MenuInfoVO current = platformMenuService.getMenuDetail(selfMenuId);
+            if (current != null && hasText(current.getMenuCode())) {
+                String incomingCode = menuInfoVO.getMenuCode().trim().toUpperCase();
+                String currentCode = current.getMenuCode().trim().toUpperCase();
+                if (!incomingCode.equals(currentCode)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "메뉴 코드는 수정할 수 없습니다.");
+                }
+            }
+        }
+
         if (!hasText(menuInfoVO.getMenuNm())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "메뉴명은 필수입니다.");
         }
 
-        if (!hasText(menuInfoVO.getMenuUrl())) {
+        if (parentMenuId != null && !hasText(menuInfoVO.getMenuUrl())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "메뉴 URL은 필수입니다.");
         }
-
-        Long parentMenuId = menuInfoVO.getParentMenuId();
 
         if (parentMenuId == null) {
             return;
@@ -107,6 +118,22 @@ public class PlatformMenuApiController {
     }
 
     private void normalizePayload(MenuInfoVO menuInfoVO) {
+        if (hasText(menuInfoVO.getMenuCode())) {
+            menuInfoVO.setMenuCode(menuInfoVO.getMenuCode().trim().toUpperCase());
+        }
+
+        if (menuInfoVO.getMenuNm() != null) {
+            menuInfoVO.setMenuNm(menuInfoVO.getMenuNm().trim());
+        }
+
+        if (menuInfoVO.getMenuDc() != null) {
+            menuInfoVO.setMenuDc(menuInfoVO.getMenuDc().trim());
+        }
+
+        if (menuInfoVO.getMenuUrl() != null) {
+            menuInfoVO.setMenuUrl(menuInfoVO.getMenuUrl().trim());
+        }
+
         if (!hasText(menuInfoVO.getUseAt())) {
             menuInfoVO.setUseAt("Y");
         }

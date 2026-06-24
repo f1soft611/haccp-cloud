@@ -36,19 +36,4 @@ describe('login pages theme mode', () => {
       'dark',
     );
   });
-
-  it('applies stored dark theme to platform admin login page', async () => {
-    window.history.pushState({}, '', '/login/platform');
-    storeThemeMode(undefined, 'dark');
-
-    render(
-      <AppProviders>
-        <App />
-      </AppProviders>,
-    );
-
-    expect(
-      await screen.findByTestId('platform-login-page-shell'),
-    ).toHaveAttribute('data-theme-mode', 'dark');
-  });
 });

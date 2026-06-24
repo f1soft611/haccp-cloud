@@ -10,6 +10,7 @@ import {
 import { logout as logoutApi } from '../../../services/auth/logoutService';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { APP_LABELS } from '../../../shared/constants/labels';
+import { resolveLoginPathWithLastDomain } from '../../../shared/utils/loginDomainRouting';
 import { PlatformAdminPanels } from './PlatformAdminPanels';
 
 export function PlatformAdminDashboard() {
@@ -26,7 +27,7 @@ export function PlatformAdminDashboard() {
       // Force local logout even if backend call fails.
     } finally {
       clearAuth();
-      navigate('/login', { replace: true });
+      navigate(resolveLoginPathWithLastDomain(), { replace: true });
     }
   };
 

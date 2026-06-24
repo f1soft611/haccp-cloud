@@ -12,6 +12,7 @@ type TenantItem = {
   tenantCode: string;
   companyName: string;
   businessRegistrationNumber: string;
+  planCode?: string;
   createdAt: string;
 };
 
@@ -26,6 +27,7 @@ type OnboardingStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
 type PlatformMenuItem = {
   menuId: string;
+  menuCode?: string;
   menuNm: string;
   menuDc: string;
   parentMenuId: string | null;
@@ -46,6 +48,7 @@ type PlatformRoleItem = {
   code: string;
   name: string;
   description: string;
+  tenantCode?: string;
   active: boolean;
   updatedBy: string;
   updatedAt: string;
@@ -62,12 +65,14 @@ let tenants: TenantItem[] = [
     tenantCode: 'TENANT-A',
     companyName: '알파푸드',
     businessRegistrationNumber: '123-45-67890',
+    planCode: 'C',
     createdAt: '2026-06-10T09:00:00.000Z',
   },
   {
     tenantCode: 'TENANT-B',
     companyName: '베타HACCP',
     businessRegistrationNumber: '234-56-78901',
+    planCode: 'B',
     createdAt: '2026-06-10T09:30:00.000Z',
   },
 ];
@@ -86,6 +91,22 @@ const sampleTenants: SampleTenantItem[] = [
     issuedAt: '2026-06-10T09:30:00.000Z',
   },
 ];
+
+const tenantByDomain: Record<
+  string,
+  { tenantId: number; tenantCode: string; tenantNm: string; logoImage?: string }
+> = {
+  'f1soft.co.kr': {
+    tenantId: 1,
+    tenantCode: 'TENANT-A',
+    tenantNm: '에프원소프트',
+  },
+  'tenant-a.local': {
+    tenantId: 1,
+    tenantCode: 'TENANT-A',
+    tenantNm: '알파푸드',
+  },
+};
 
 let issuedTenantSequence = 101;
 
@@ -237,6 +258,7 @@ let platformMenus: PlatformMenuItem[] = [
   },
   {
     menuId: 'PM-5-1',
+    menuCode: 'MENU_MENU_MANAGEMENT',
     menuNm: '메뉴 관리',
     menuDc: '메뉴 관리 페이지',
     parentMenuId: 'PM-5',
@@ -247,6 +269,22 @@ let platformMenus: PlatformMenuItem[] = [
     frstRegistPnttm: '2026-06-15T10:13:00.000Z',
     frstRegisterId: 'platform_admin',
     lastUpdtPnttm: '2026-06-15T10:13:00.000Z',
+    lastUpdusrId: 'platform_admin',
+    parentMenuNm: '시스템 관리',
+  },
+  {
+    menuId: 'PM-5-2',
+    menuCode: 'MENU_PLAN_MANAGEMENT',
+    menuNm: '플랜 관리',
+    menuDc: '플랜별 메뉴 매핑 관리',
+    parentMenuId: 'PM-5',
+    menuOrdr: 2,
+    menuUrl: '/platform/plans',
+    iconNm: 'Settings',
+    useAt: 'Y',
+    frstRegistPnttm: '2026-06-15T10:14:00.000Z',
+    frstRegisterId: 'platform_admin',
+    lastUpdtPnttm: '2026-06-15T10:14:00.000Z',
     lastUpdusrId: 'platform_admin',
     parentMenuNm: '시스템 관리',
   },
@@ -286,6 +324,7 @@ const accessibleMenuPathsByAuthorityCode: Record<AuthorityCode, string[]> = {
   PLATFORM_ADMIN: [
     '/dashboard',
     '/platform/onboarding',
+    '/platform/plans',
     '/platform/menus',
     '/platform/roles',
     '/platform/role-menus',
@@ -301,6 +340,7 @@ let platformRoles: PlatformRoleItem[] = [
     code: 'PLATFORM_ADMIN',
     name: '플랫폼 관리자',
     description: '플랫폼 설정 및 운영 관리 권한',
+    tenantCode: 'PLATFORM',
     active: true,
     updatedBy: 'platform_admin',
     updatedAt: '2026-06-15T09:00:00.000Z',
@@ -310,6 +350,7 @@ let platformRoles: PlatformRoleItem[] = [
     code: 'TENANT_ADMIN',
     name: '업체 관리자',
     description: '업체 운영 및 사용자 관리 권한',
+    tenantCode: 'TENANT-A',
     active: true,
     updatedBy: 'platform_admin',
     updatedAt: '2026-06-15T09:20:00.000Z',
@@ -319,6 +360,7 @@ let platformRoles: PlatformRoleItem[] = [
     code: 'TENANT_USER',
     name: '업체 사용자',
     description: '일반 업무 처리 권한',
+    tenantCode: 'TENANT-A',
     active: true,
     updatedBy: 'platform_admin',
     updatedAt: '2026-06-15T09:30:00.000Z',
@@ -337,6 +379,7 @@ const roleMenuMappings: Record<AuthorityCode, string[]> = {
     'PM-4',
     'PM-5',
     'PM-5-1',
+    'PM-5-2',
   ],
   TENANT_ADMIN: ['PM-1', 'PM-2', 'PM-2-1', 'PM-2-2', 'PM-2-3', 'PM-3'],
   TENANT_USER: ['PM-1', 'PM-3'],
@@ -787,6 +830,33 @@ export const handlers = [
         id: payload.id,
         name: '플랫폼관리자',
         groupNm: 'ROLE_ADMIN',
+      },
+    });
+  }),
+
+  http.get('/api/tenants/:domain', ({ params }) => {
+    const domain = String(params.domain ?? '')
+      .trim()
+      .toLowerCase();
+
+    const tenant = tenantByDomain[domain];
+    if (!tenant) {
+      return HttpResponse.json(
+        { resultCode: 404, resultMessage: 'NOT_FOUND' },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json({
+      resultCode: 200,
+      resultMessage: '성공했습니다.',
+      result: {
+        tenantId: tenant.tenantId,
+        tenantCode: tenant.tenantCode,
+        tenantNm: tenant.tenantNm,
+        logoImage: tenant.logoImage,
+        onboardingStatus: 'COMPLETED',
+        useAt: 'Y',
       },
     });
   }),
@@ -1366,6 +1436,7 @@ export const handlers = [
         adminEmail: tenantAdmin?.email ?? '-',
         status: 'ACTIVE' as const,
         onboardingStatus: 'ACTIVE' as const,
+        planCode: tenant.planCode ?? 'C',
         createdAt: tenant.createdAt,
       };
     });
@@ -1436,6 +1507,7 @@ export const handlers = [
 
   http.post('/api/platform-admin/menus', async ({ request }) => {
     const payload = (await request.json()) as {
+      menuCode?: string;
       menuNm?: string;
       menuDc?: string;
       menuUrl?: string;
@@ -1445,15 +1517,20 @@ export const handlers = [
       useAt?: 'Y' | 'N';
     };
 
-    if (!payload.menuNm || !payload.menuUrl) {
+    const isRootMenu = payload.parentMenuId == null;
+
+    if (!payload.menuNm || (!isRootMenu && !payload.menuUrl)) {
       return HttpResponse.json({ message: 'Invalid input' }, { status: 400 });
     }
 
+    const normalizedMenuCode = (payload.menuCode ?? '').trim().toUpperCase();
+
     const created: PlatformMenuItem = {
       menuId: `PM-${Date.now()}`,
+      menuCode: normalizedMenuCode || `MENU_${Date.now()}`,
       menuNm: payload.menuNm,
       menuDc: payload.menuDc ?? '',
-      menuUrl: payload.menuUrl,
+      menuUrl: payload.menuUrl ?? '',
       parentMenuId: payload.parentMenuId ?? null,
       menuOrdr: payload.menuOrdr ?? 0,
       iconNm: payload.iconNm ?? 'Menu',
@@ -1498,7 +1575,9 @@ export const handlers = [
     target.menuNm = payload.menuNm ?? target.menuNm;
     target.menuDc = payload.menuDc ?? target.menuDc;
     target.menuUrl = payload.menuUrl ?? target.menuUrl;
-    target.parentMenuId = payload.parentMenuId ?? target.parentMenuId;
+    if (Object.prototype.hasOwnProperty.call(payload, 'parentMenuId')) {
+      target.parentMenuId = payload.parentMenuId ?? null;
+    }
     target.menuOrdr = payload.menuOrdr ?? target.menuOrdr;
     target.iconNm = payload.iconNm ?? target.iconNm;
     target.useAt = payload.useAt ?? target.useAt;
@@ -1529,8 +1608,17 @@ export const handlers = [
     return HttpResponse.json({ message: 'Deleted' });
   }),
 
-  http.get('/api/platform-admin/roles', () => {
-    return HttpResponse.json([...platformRoles]);
+  http.get('/api/platform-admin/roles', ({ request }) => {
+    const requestUrl = new URL(request.url);
+    const tenantCode = (requestUrl.searchParams.get('tenantCode') ?? '')
+      .trim()
+      .toUpperCase();
+    const items = tenantCode
+      ? platformRoles.filter(
+          (item) => (item.tenantCode ?? 'PLATFORM') === tenantCode,
+        )
+      : platformRoles;
+    return HttpResponse.json([...items]);
   }),
 
   http.post('/api/platform-admin/roles', async ({ request }) => {
@@ -1539,6 +1627,7 @@ export const handlers = [
       name?: string;
       description?: string;
       active?: boolean;
+      tenantCode?: string;
     };
 
     if (!payload.code || !payload.name) {
@@ -1560,6 +1649,7 @@ export const handlers = [
       code: payload.code.toUpperCase(),
       name: payload.name,
       description: payload.description ?? '',
+      tenantCode: (payload.tenantCode ?? 'PLATFORM').trim().toUpperCase(),
       active: payload.active ?? true,
       updatedBy: 'platform_admin',
       updatedAt: new Date().toISOString(),
@@ -1646,6 +1736,28 @@ export const handlers = [
     },
   ),
 
+  http.get('/api/platform-admin/role-menu-candidates', ({ request }) => {
+    const requestUrl = new URL(request.url);
+    const tenantCode = (requestUrl.searchParams.get('tenantCode') ?? 'PLATFORM')
+      .trim()
+      .toUpperCase();
+    const planCode =
+      tenants.find((tenant) => tenant.tenantCode === tenantCode)?.planCode ??
+      'C';
+
+    const planMenuCodesByPlan: Record<string, string[]> = {
+      A: ['PM-1', 'PM-5-1'],
+      B: ['PM-1', 'PM-5-1', 'PM-2-1', 'PM-2-2'],
+      C: ['PM-1', 'PM-5-1', 'PM-2-1', 'PM-2-2', 'PM-2-3', 'PM-3-1'],
+      P: platformMenus.map((menu) => menu.menuId),
+    };
+
+    return HttpResponse.json({
+      tenantCode,
+      menuCodes: planMenuCodesByPlan[planCode] ?? planMenuCodesByPlan.C,
+    });
+  }),
+
   http.get('/api/platform-admin/user-menus/:authorityCode', ({ params }) => {
     const authorityCode = normalizeAuthorityCode(String(params.authorityCode));
     const menuList = accessibleMenuPathsByAuthorityCode[authorityCode].map(
@@ -1654,6 +1766,153 @@ export const handlers = [
 
     return HttpResponse.json({ result: { menuList } });
   }),
+
+  http.get('/api/platform-admin/plan-access/me', ({ request }) => {
+    const tenantCode = getTenantCodeFromHeader(request);
+
+    const features: Record<string, boolean> = {
+      FEATURE_USER_MGMT: true,
+      FEATURE_DOC_WORKFLOW: true,
+      FEATURE_AUDIT_LOG: true,
+      FEATURE_API_EXPORT: true,
+    };
+
+    return HttpResponse.json({
+      tenantId: tenantCode === 'TENANT-B' ? 2 : 1,
+      tenantCode,
+      planCode:
+        tenants.find((tenant) => tenant.tenantCode === tenantCode)?.planCode ??
+        'C',
+      features,
+    });
+  }),
+
+  http.get('/api/platform-admin/plan-access/plans', () => {
+    return HttpResponse.json([
+      {
+        planCode: 'A',
+        planName: 'Basic',
+        useAt: 'Y',
+        featureCount: 2,
+        menuCount: 2,
+      },
+      {
+        planCode: 'B',
+        planName: 'Standard',
+        useAt: 'Y',
+        featureCount: 3,
+        menuCount: 4,
+      },
+      {
+        planCode: 'C',
+        planName: 'Pro',
+        useAt: 'Y',
+        featureCount: 4,
+        menuCount: 6,
+      },
+      {
+        planCode: 'P',
+        planName: 'Platform',
+        useAt: 'Y',
+        featureCount: 6,
+        menuCount: platformMenus.length,
+      },
+    ]);
+  }),
+
+  http.get(
+    '/api/platform-admin/plan-access/plans/:planCode/features',
+    ({ params }) => {
+      const planCode = String(params.planCode ?? 'C')
+        .trim()
+        .toUpperCase();
+      const featuresByPlan: Record<string, Record<string, boolean>> = {
+        A: { FEATURE_USER_MGMT: true, FEATURE_DOC_WORKFLOW: false },
+        B: {
+          FEATURE_USER_MGMT: true,
+          FEATURE_DOC_WORKFLOW: true,
+          FEATURE_AUDIT_LOG: false,
+        },
+        C: {
+          FEATURE_USER_MGMT: true,
+          FEATURE_DOC_WORKFLOW: true,
+          FEATURE_AUDIT_LOG: true,
+          FEATURE_API_EXPORT: true,
+        },
+        P: {
+          FEATURE_USER_MGMT: true,
+          FEATURE_DOC_WORKFLOW: true,
+          FEATURE_AUDIT_LOG: true,
+          FEATURE_API_EXPORT: true,
+        },
+      };
+
+      return HttpResponse.json({
+        planCode,
+        features: featuresByPlan[planCode] ?? featuresByPlan.C,
+      });
+    },
+  ),
+
+  http.get(
+    '/api/platform-admin/plan-access/plans/:planCode/menus',
+    ({ params }) => {
+      const planCode = String(params.planCode ?? 'C')
+        .trim()
+        .toUpperCase();
+      const planMenuCodesByPlan: Record<string, string[]> = {
+        A: ['PM-1', 'PM-5-1'],
+        B: ['PM-1', 'PM-5-1', 'PM-2-1', 'PM-2-2'],
+        C: ['PM-1', 'PM-5-1', 'PM-2-1', 'PM-2-2', 'PM-2-3', 'PM-3-1'],
+        P: platformMenus.map((menu) => menu.menuId),
+      };
+
+      return HttpResponse.json({
+        planCode,
+        menuCodes: planMenuCodesByPlan[planCode] ?? planMenuCodesByPlan.C,
+      });
+    },
+  ),
+
+  http.put(
+    '/api/platform-admin/plan-access/plans/:planCode/menus',
+    async ({ params, request }) => {
+      const planCode = String(params.planCode ?? 'C')
+        .trim()
+        .toUpperCase();
+      const payload = (await request.json()) as { menuCodes?: string[] };
+      return HttpResponse.json({
+        planCode,
+        menuCodes: payload.menuCodes ?? [],
+      });
+    },
+  ),
+
+  http.get(
+    '/api/platform-admin/plan-access/tenant-plan-menus',
+    ({ request }) => {
+      const requestUrl = new URL(request.url);
+      const tenantCode = (
+        requestUrl.searchParams.get('tenantCode') ?? 'PLATFORM'
+      )
+        .trim()
+        .toUpperCase();
+      const planCode =
+        tenants.find((tenant) => tenant.tenantCode === tenantCode)?.planCode ??
+        'C';
+      const planMenuCodesByPlan: Record<string, string[]> = {
+        A: ['PM-1', 'PM-5-1'],
+        B: ['PM-1', 'PM-5-1', 'PM-2-1', 'PM-2-2'],
+        C: ['PM-1', 'PM-5-1', 'PM-2-1', 'PM-2-2', 'PM-2-3', 'PM-3-1'],
+        P: platformMenus.map((menu) => menu.menuId),
+      };
+
+      return HttpResponse.json({
+        tenantCode,
+        menuCodes: planMenuCodesByPlan[planCode] ?? planMenuCodesByPlan.C,
+      });
+    },
+  ),
 
   http.get('/api/dashboard', ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);

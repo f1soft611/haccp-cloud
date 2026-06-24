@@ -20,6 +20,7 @@ import egovframework.let.platforms.tenants.domain.model.PlatformTenantDashboardS
 import egovframework.let.platforms.tenants.domain.model.SampleTenantVO;
 import egovframework.let.platforms.tenants.domain.model.TenantRegistrationRequestVO;
 import egovframework.let.platforms.tenants.domain.model.TenantRegistrationResultVO;
+import egovframework.let.platforms.tenants.domain.model.TenantVO;
 import egovframework.let.platforms.tenants.domain.repository.TenantInfoDAO;
 import egovframework.let.platforms.tenants.service.PlatformTenantService;
 
@@ -45,8 +46,14 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         String tenantNm = requestVO.getTenantNm().trim();
         String adminEmail = emptyToNull(requestVO.getAdminEmail());
         String corporateNumber = emptyToNull(requestVO.getCorporateNumber());
+        String normalizedCorporateNumber = normalizeCorporateNumber(corporateNumber);
         String businessType = emptyToNull(requestVO.getBusinessType());
         String businessCategory = emptyToNull(requestVO.getBusinessCategory());
+
+        int activeDuplicateCount = tenantInfoDAO.selectActiveTenantCountByCorporateNumber(normalizedCorporateNumber);
+        if (activeDuplicateCount > 0) {
+            throw new IllegalStateException("이미 등록된 활성 업체의 사업자번호입니다");
+        }
 
         for (int attempt = 0; attempt < 5; attempt++) {
             String datePrefix = TENANT_CODE_DATE_FORMATTER.format(LocalDate.now(BUSINESS_ZONE));
@@ -115,6 +122,55 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
     @Override
     public List<SampleTenantVO> listRecentTenants(int limit) {
         return tenantInfoDAO.selectRecentTenants(limit);
+    }
+
+    @Override
+    public TenantVO findByAdminEmailDomain(String domain) {
+        if (domain == null || domain.trim().isEmpty()) {
+            throw new IllegalArgumentException("domain is required");
+        }
+
+        String normalizedDomain = domain.trim();
+        TenantVO tenant = tenantInfoDAO.selectByAdminEmailDomain(normalizedDomain);
+
+        if (tenant == null) {
+            throw new IllegalArgumentException("Tenant not found for domain: " + normalizedDomain);
+        }
+
+        return tenant;
+    }
+
+    @Override
+    public TenantVO findById(Long tenantId) {
+        if (tenantId == null || tenantId <= 0) {
+            throw new IllegalArgumentException("tenantId is required and must be positive");
+        }
+
+        TenantVO tenant = tenantInfoDAO.selectById(tenantId);
+
+        if (tenant == null) {
+            throw new IllegalArgumentException("Tenant not found for tenantId: " + tenantId);
+        }
+
+        return tenant;
+    }
+
+    @Override
+    @Transactional
+    public void updateLogoImage(Long tenantId, String logoImage) {
+        if (tenantId == null || tenantId <= 0) {
+            throw new IllegalArgumentException("tenantId is required and must be positive");
+        }
+
+        // logoImage는 null이거나 Base64 문자열이어야 함
+        if (logoImage != null && logoImage.trim().isEmpty()) {
+            logoImage = null;
+        }
+
+        int result = tenantInfoDAO.updateLogoImage(tenantId, logoImage);
+        if (result == 0) {
+            throw new IllegalArgumentException("Failed to update logo image for tenantId: " + tenantId);
+        }
     }
 
     private PlatformTenantDashboardQueryVO normalizeQuery(PlatformTenantDashboardQueryVO queryVO) {
@@ -223,6 +279,18 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         if (!EMAIL_PATTERN.matcher(adminEmail.trim()).matches()) {
             throw new IllegalArgumentException("adminEmail format is invalid");
         }
+    }
+
+    private String normalizeCorporateNumber(String corporateNumber) {
+        if (corporateNumber == null) {
+            throw new IllegalArgumentException("corporateNumber is required");
+        }
+
+        String normalized = corporateNumber.replaceAll("[^0-9]", "");
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException("corporateNumber format is invalid");
+        }
+        return normalized;
     }
 
     private String emptyToNull(String value) {

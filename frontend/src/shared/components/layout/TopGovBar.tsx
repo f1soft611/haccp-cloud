@@ -19,6 +19,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { logout as logoutApi } from '../../../services/auth/logoutService';
 import { useAuthStore } from '../../store/authStore';
 import { APP_LABELS } from '../../constants/labels';
+import { resolveLoginPathWithLastDomain } from '../../utils/loginDomainRouting';
 import {
   getStoredThemeMode,
   storeThemeMode,
@@ -103,7 +104,7 @@ export function TopGovBar() {
       // Force local logout even if backend call fails.
     } finally {
       clearAuth();
-      navigate('/login', { replace: true });
+      navigate(resolveLoginPathWithLastDomain(), { replace: true });
     }
   };
 

@@ -35,6 +35,7 @@ class PlatformTenantServiceImplTest {
         String previousCode = datePrefix + "0007";
         String nextCode = datePrefix + "0008";
 
+        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumber("001")).thenReturn(0);
         when(tenantInfoDAO.selectMaxTenantCodeByDatePrefix(datePrefix)).thenReturn(previousCode);
         when(tenantInfoDAO.insertTenant(
                 eq(nextCode),
@@ -61,6 +62,7 @@ class PlatformTenantServiceImplTest {
         assertEquals("식품제조", result.getBusinessType());
         assertEquals("즉석조리식품", result.getBusinessCategory());
 
+        verify(tenantInfoDAO).selectActiveTenantCountByCorporateNumber("001");
         verify(tenantInfoDAO).insertTenant(
             eq(nextCode),
                 eq("테스트업체"),
@@ -68,6 +70,26 @@ class PlatformTenantServiceImplTest {
                 eq("CORP-001"),
                 eq("식품제조"),
                 eq("즉석조리식품"));
+    }
+
+    @DisplayName("활성 업체에 동일 사업자번호가 있으면 등록에 실패한다")
+    @Test
+    void registerTenant_failsWhenActiveCorporateNumberDuplicated() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+
+        TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
+        requestVO.setTenantNm("테스트업체");
+        requestVO.setAdminEmail("admin@test.com");
+        requestVO.setCorporateNumber("123-45-67890");
+        requestVO.setBusinessType("식품제조");
+        requestVO.setBusinessCategory("즉석조리식품");
+
+        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumber("1234567890")).thenReturn(1);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> service.registerTenant(requestVO));
+        assertEquals("이미 등록된 활성 업체의 사업자번호입니다", ex.getMessage());
     }
 
     @DisplayName("업체명 없으면 등록에 실패한다")

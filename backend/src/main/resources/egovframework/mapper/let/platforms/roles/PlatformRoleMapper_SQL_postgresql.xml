@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PlatformRoleDAO">
+
+    <!-- 권한 목록 조회 -->
+    <select id="PlatformRoleDAO.selectRoleList" parameterType="egovframework.let.uss.auth.service.RoleInfoVO" resultType="egovframework.let.uss.auth.service.RoleInfoVO">
+        SELECT
+            r.role_id AS roleId,
+            r.role_code AS roleCode,
+            r.role_nm AS roleNm,
+            NULL::varchar AS roleDc,
+            CASE
+                WHEN r.role_code = 'PLATFORM_ADMIN' THEN 1
+                WHEN r.role_code = 'TENANT_ADMIN' THEN 2
+                ELSE 3
+            END AS roleLevel,
+            'Y' AS tenantScoped,
+            t.tenant_code AS tenantCode,
+            r.use_at AS useAt,
+            r.created_at AS frstRegistPnttm,
+            'SYSTEM' AS frstRegisterId,
+            r.updated_at AS lastUpdtPnttm,
+            'SYSTEM' AS lastUpdusrId
+        FROM tb_role r
+            INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
+        WHERE 1=1
+        <if test="tenantCode != null and tenantCode != ''">
+            AND t.tenant_code = #{tenantCode}
+        </if>
+        ORDER BY roleLevel, roleCode
+    </select>
+
+    <!-- 권한 페이징 목록 조회 -->
+    <select id="PlatformRoleDAO.selectRolePagedList" parameterType="egovframework.let.uss.auth.service.RoleInfoVO" resultType="egovframework.let.uss.auth.service.RoleInfoVO">
+        SELECT
+            r.role_id AS roleId,
+            r.role_code AS roleCode,
+            r.role_nm AS roleNm,
+            NULL::varchar AS roleDc,
+            CASE
+                WHEN r.role_code = 'PLATFORM_ADMIN' THEN 1
+                WHEN r.role_code = 'TENANT_ADMIN' THEN 2
+                ELSE 3
+            END AS roleLevel,
+            'Y' AS tenantScoped,
+            t.tenant_code AS tenantCode,
+            r.use_at AS useAt,
+            r.created_at AS frstRegistPnttm,
+            'SYSTEM' AS frstRegisterId,
+            r.updated_at AS lastUpdtPnttm,
+            'SYSTEM' AS lastUpdusrId
+        FROM tb_role r
+            INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
+        WHERE 1=1
+        <if test="tenantCode != null and tenantCode != ''">
+            AND t.tenant_code = #{tenantCode}
+        </if>
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND r.use_at = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'code'">
+                    AND r.role_code ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'name'">
+                    AND r.role_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'description'">
+                    AND r.role_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+            </choose>
+        </if>
+        ORDER BY roleLevel, roleCode
+        OFFSET #{firstIndex}
+        LIMIT #{recordCountPerPage}
+    </select>
+
+    <!-- 권한 페이징 개수 조회 -->
+    <select id="PlatformRoleDAO.selectRolePagedCount" parameterType="egovframework.let.uss.auth.service.RoleInfoVO" resultType="int">
+        SELECT COUNT(1)
+        FROM tb_role r
+            INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
+        WHERE 1=1
+        <if test="tenantCode != null and tenantCode != ''">
+            AND t.tenant_code = #{tenantCode}
+        </if>
+        <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
+            AND r.use_at = #{useAt}
+        </if>
+        <if test="searchKeyword != null and searchKeyword != ''">
+            <choose>
+                <when test="searchField == 'code'">
+                    AND r.role_code ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'name'">
+                    AND r.role_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+                <when test="searchField == 'description'">
+                    AND r.role_nm ILIKE '%' || #{searchKeyword} || '%'
+                </when>
+            </choose>
+        </if>
+    </select>
+
+    <!-- 권한 등록 -->
+    <insert id="PlatformRoleDAO.insertRole" parameterType="egovframework.let.uss.auth.service.RoleInfoVO">
+        INSERT INTO tb_role (
+            tenant_id,
+            role_code,
+            role_nm,
+            use_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            (SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1),
+            #{roleCode},
+            #{roleNm},
+            #{useAt},
+            now(),
+            now()
+        )
+    </insert>
+
+    <!-- 권한 수정 -->
+    <update id="PlatformRoleDAO.updateRole" parameterType="egovframework.let.uss.auth.service.RoleInfoVO">
+        UPDATE tb_role
+        SET role_nm = #{roleNm},
+            use_at = #{useAt},
+            updated_at = now()
+        WHERE role_id = #{roleId}
+    </update>
+
+    <!-- 권한 사용여부 수정 -->
+    <update id="PlatformRoleDAO.updateRoleUseAt" parameterType="egovframework.let.uss.auth.service.RoleInfoVO">
+        UPDATE tb_role
+        SET use_at = #{useAt},
+            updated_at = now()
+        WHERE role_id = #{roleId}
+    </update>
+
+    <!-- 권한-메뉴 권한 목록 조회 -->
+    <select id="PlatformRoleDAO.selectRoleMenuPermissionList" parameterType="egovframework.let.uss.auth.service.RoleMenuPermissionVO" resultType="egovframework.let.uss.auth.service.RoleMenuPermissionVO">
+        WITH RECURSIVE menu_tree AS (
+            SELECT
+                m.menu_id,
+                m.menu_code,
+                m.parent_menu_id,
+                m.menu_nm,
+                m.menu_order,
+                lpad(coalesce(m.menu_order, 0)::text, 5, '0') AS sort_path,
+                1 AS depth
+            FROM tb_menu m
+            WHERE m.parent_menu_id IS NULL
+            UNION ALL
+            SELECT
+                c.menu_id,
+                c.menu_code,
+                c.parent_menu_id,
+                c.menu_nm,
+                c.menu_order,
+                mt.sort_path || '-' || lpad(coalesce(c.menu_order, 0)::text, 5, '0') AS sort_path,
+                mt.depth + 1
+            FROM tb_menu c
+                INNER JOIN menu_tree mt ON c.parent_menu_id = mt.menu_id
+        )
+        SELECT
+            rmp.role_menu_permission_id AS roleMenuPermissionId,
+            rmp.role_id AS roleId,
+            r.role_code AS roleCode,
+            rmp.menu_id AS menuId,
+            m.menu_code AS menuCode,
+            rmp.permission_id AS permissionId,
+            p.permission_code AS permissionCode,
+            'Y' AS useAt,
+            rmp.created_at AS frstRegistPnttm,
+            'SYSTEM' AS frstRegisterId,
+            rmp.created_at AS lastUpdtPnttm,
+            'SYSTEM' AS lastUpdusrId,
+            r.role_nm AS roleNm,
+            mt.menu_nm AS menuNm,
+            m.menu_url AS menuUrl,
+            p.permission_nm AS permissionNm,
+            CASE WHEN p.permission_code = 'PERM_WRITE' THEN 'write' ELSE 'read' END AS permissionLevel
+        FROM tb_role_menu_permission rmp
+            LEFT JOIN tb_role r ON rmp.role_id = r.role_id
+            LEFT JOIN tb_tenant t ON r.tenant_id = t.tenant_id
+            LEFT JOIN menu_tree mt ON rmp.menu_id = mt.menu_id
+            LEFT JOIN tb_menu m ON rmp.menu_id = m.menu_id
+            LEFT JOIN tb_permission p ON rmp.permission_id = p.permission_id
+        WHERE 1=1
+        <if test="roleCode != null and roleCode != ''">
+            AND r.role_code = #{roleCode}
+        </if>
+        <if test="tenantCode != null and tenantCode != ''">
+            AND t.tenant_code = #{tenantCode}
+        </if>
+        <if test="menuCode != null and menuCode != ''">
+            AND m.menu_code = #{menuCode}
+        </if>
+        <if test="permissionCode != null and permissionCode != ''">
+            AND p.permission_code = #{permissionCode}
+        </if>
+        ORDER BY mt.sort_path
+    </select>
+
+    <!-- 권한-메뉴 권한 등록 -->
+    <insert id="PlatformRoleDAO.insertRoleMenuPermission" parameterType="egovframework.let.uss.auth.service.RoleMenuPermissionVO">
+        INSERT INTO tb_role_menu_permission (
+            role_id,
+            menu_id,
+            permission_id,
+            created_at
+        ) VALUES (
+            (
+                SELECT r.role_id
+                FROM tb_role r
+                WHERE r.role_code = #{roleCode}
+                                <if test="tenantCode != null and tenantCode != ''">
+                                    AND r.tenant_id = (
+                                        SELECT tenant_id
+                                        FROM tb_tenant
+                                        WHERE tenant_code = #{tenantCode}
+                                        LIMIT 1
+                                    )
+                                </if>
+                ORDER BY r.role_id
+                LIMIT 1
+            ),
+            (
+                SELECT m.menu_id
+                FROM tb_menu m
+                WHERE m.menu_code = #{menuCode}
+                ORDER BY m.menu_id
+                LIMIT 1
+            ),
+            (
+                SELECT p.permission_id
+                FROM tb_permission p
+                JOIN tb_role r ON r.tenant_id = p.tenant_id
+                WHERE r.role_code = #{roleCode}
+                                <if test="tenantCode != null and tenantCode != ''">
+                                    AND r.tenant_id = (
+                                        SELECT tenant_id
+                                        FROM tb_tenant
+                                        WHERE tenant_code = #{tenantCode}
+                                        LIMIT 1
+                                    )
+                                </if>
+                  AND p.permission_code = #{permissionCode}
+                ORDER BY p.permission_id
+                LIMIT 1
+            ),
+            now()
+        )
+        ON CONFLICT (role_id, menu_id, permission_id) DO NOTHING
+    </insert>
+
+    <!-- 권한코드 기준 권한-메뉴 권한 삭제 -->
+    <delete id="PlatformRoleDAO.deleteRoleMenuPermissionsByRoleCode" parameterType="map">
+        DELETE FROM tb_role_menu_permission
+        WHERE role_id IN (
+            SELECT r.role_id
+            FROM tb_role r
+                INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
+            WHERE r.role_code = #{roleCode}
+            <if test="tenantCode != null and tenantCode != ''">
+                AND t.tenant_code = #{tenantCode}
+            </if>
+        )
+    </delete>
+
+    <!-- 사용자 접근 가능 메뉴 목록 조회 -->
+    <select id="PlatformRoleDAO.selectUserAccessibleMenus" parameterType="string" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
+        SELECT
+            m.menu_id AS menuId,
+            m.menu_code AS menuCode,
+            m.menu_nm AS menuNm,
+            COALESCE(m.menu_dc, '') AS menuDc,
+            m.parent_menu_id AS parentMenuId,
+            m.menu_order AS menuOrdr,
+            m.menu_url AS menuUrl,
+            COALESCE(m.icon_nm, 'Menu') AS iconNm,
+            m.use_at AS useAt,
+            CASE WHEN MAX(CASE WHEN p.permission_code = 'PERM_WRITE' THEN 1 ELSE 0 END) = 1 THEN 'write' ELSE 'read' END AS permissionLevel,
+            1 AS accessible
+        FROM tb_menu m
+            INNER JOIN tb_role_menu_permission rmp ON m.menu_id = rmp.menu_id
+            INNER JOIN tb_permission p ON rmp.permission_id = p.permission_id
+            INNER JOIN tb_role r ON rmp.role_id = r.role_id
+            INNER JOIN tb_tenant_subscription ts
+                ON ts.tenant_id = r.tenant_id
+               AND ts.subscription_status = 'ACTIVE'
+            INNER JOIN tb_plan_menu pm
+                ON pm.plan_id = ts.plan_id
+               AND pm.menu_code = m.menu_code
+               AND pm.use_at = 'Y'
+        WHERE m.use_at = 'Y'
+          AND p.use_at = 'Y'
+          AND r.role_code = #{value}
+        GROUP BY m.menu_id, m.menu_code, m.menu_nm, m.menu_dc, m.parent_menu_id, m.menu_order, m.menu_url, m.icon_nm, m.use_at
+        ORDER BY m.parent_menu_id, m.menu_order, m.menu_id
+    </select>
+</mapper>

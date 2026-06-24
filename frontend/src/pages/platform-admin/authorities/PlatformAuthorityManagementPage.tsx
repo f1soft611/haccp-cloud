@@ -33,6 +33,7 @@ import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import { listPlatformMenus } from '../../../services/platform/platformMenuService';
+import { listPlatformTenants } from '../../../services/platform/platformTenantManagementService';
 import {
   createPlatformRole,
   listPlatformRolesPaged,
@@ -42,6 +43,7 @@ import {
 } from '../../../services/platform/platformRoleService';
 import {
   getPlatformRoleMenuMapping,
+  listRoleMenuCandidatesByTenant,
   savePlatformRoleMenuMapping,
 } from '../../../services/platform/platformRoleMenuService';
 
@@ -56,10 +58,12 @@ export function PlatformAuthorityManagementPage() {
   const [searchField, setSearchField] = useState('name');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [filterActive, setFilterActive] = useState('all');
+  const [selectedTenantCode, setSelectedTenantCode] = useState('PLATFORM');
   const [appliedFilters, setAppliedFilters] = useState({
     searchField: 'name',
     searchKeyword: '',
     useAt: 'all',
+    tenantCode: 'PLATFORM',
   });
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -97,6 +101,7 @@ export function PlatformAuthorityManagementPage() {
       'roles-paged',
       pageIndex,
       pageSize,
+      appliedFilters.tenantCode,
       appliedFilters.searchField,
       appliedFilters.searchKeyword,
       appliedFilters.useAt,
@@ -105,12 +110,25 @@ export function PlatformAuthorityManagementPage() {
       listPlatformRolesPaged({
         pageIndex,
         pageSize,
+        tenantCode: appliedFilters.tenantCode,
         searchField: appliedFilters.searchField as
           | 'code'
           | 'name'
           | 'description',
         searchKeyword: appliedFilters.searchKeyword || undefined,
         useAt: appliedFilters.useAt as 'Y' | 'N' | 'all',
+      }),
+    retry: false,
+  });
+
+  const tenantsQuery = useQuery({
+    queryKey: ['platform-admin', 'tenant-options'],
+    queryFn: () =>
+      listPlatformTenants({
+        pageIndex: 1,
+        pageSize: 50,
+        status: 'all',
+        onboardingStatus: 'all',
       }),
     retry: false,
   });
@@ -123,9 +141,26 @@ export function PlatformAuthorityManagementPage() {
   const effectiveRoleCode = selectedRole?.code ?? '';
 
   const mappingQuery = useQuery({
-    queryKey: ['platform-admin', 'role-menus', effectiveRoleCode],
-    queryFn: () => getPlatformRoleMenuMapping(effectiveRoleCode),
+    queryKey: [
+      'platform-admin',
+      'role-menus',
+      effectiveRoleCode,
+      appliedFilters.tenantCode,
+    ],
+    queryFn: () =>
+      getPlatformRoleMenuMapping(effectiveRoleCode, appliedFilters.tenantCode),
     enabled: effectiveRoleCode.length > 0,
+  });
+
+  const roleMenuCandidatesQuery = useQuery({
+    queryKey: [
+      'platform-admin',
+      'role-menu-candidates',
+      appliedFilters.tenantCode,
+    ],
+    queryFn: () => listRoleMenuCandidatesByTenant(appliedFilters.tenantCode),
+    enabled: appliedFilters.tenantCode.length > 0,
+    retry: false,
   });
 
   const selectedMenuIds = draftMenuIds ?? mappingQuery.data?.menuIds ?? [];
@@ -148,6 +183,19 @@ export function PlatformAuthorityManagementPage() {
   const filteredRoles = useMemo(
     () => rolesQuery.data?.items ?? [],
     [rolesQuery.data?.items],
+  );
+
+  const candidateMenuCodeSet = useMemo(
+    () => new Set(roleMenuCandidatesQuery.data ?? []),
+    [roleMenuCandidatesQuery.data],
+  );
+
+  const scopedMenus = useMemo(
+    () =>
+      (menusQuery.data ?? []).filter((menu) =>
+        candidateMenuCodeSet.has(menu.menuCode || ''),
+      ),
+    [menusQuery.data, candidateMenuCodeSet],
   );
 
   const createMutation = useMutation({
@@ -237,6 +285,7 @@ export function PlatformAuthorityManagementPage() {
       confirmText: '등록',
       action: () => {
         createMutation.mutate({
+          tenantCode: appliedFilters.tenantCode,
           code: formData.code.trim().toUpperCase(),
           name: formData.name.trim(),
           description: formData.description.trim(),
@@ -252,6 +301,7 @@ export function PlatformAuthorityManagementPage() {
       searchField,
       searchKeyword: searchKeyword.trim(),
       useAt: filterActive,
+      tenantCode: selectedTenantCode,
     });
   };
 
@@ -330,6 +380,7 @@ export function PlatformAuthorityManagementPage() {
       action: () => {
         saveMutation.mutate({
           roleCode: effectiveRoleCode,
+          tenantCode: appliedFilters.tenantCode,
           menuIds: selectedMenuIds,
         });
       },
@@ -384,6 +435,25 @@ export function PlatformAuthorityManagementPage() {
           spacing={1}
           alignItems="flex-end"
         >
+          <Box sx={{ minWidth: 140 }}>
+            <Typography variant="body2" sx={{ mb: 0.5 }}>
+              업체
+            </Typography>
+            <Select
+              value={selectedTenantCode}
+              onChange={(event) => setSelectedTenantCode(event.target.value)}
+              size="small"
+              fullWidth
+            >
+              <MenuItem value="PLATFORM">PLATFORM</MenuItem>
+              {(tenantsQuery.data?.items ?? []).map((tenant) => (
+                <MenuItem key={tenant.tenantCode} value={tenant.tenantCode}>
+                  {tenant.tenantCode}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+
           <Box sx={{ minWidth: 140 }}>
             <Typography variant="body2" sx={{ mb: 0.5 }}>
               검색 조건
@@ -832,28 +902,29 @@ export function PlatformAuthorityManagementPage() {
                   </TableCell>
                 </TableRow>
               ))
-            ) : (menusQuery.data ?? []).length === 0 ? (
+            ) : scopedMenus.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} align="center">
                   등록된 메뉴가 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              (menusQuery.data ?? []).map((menu) => {
-                const checked = selectedMenuIds.includes(menu.menuId);
+              scopedMenus.map((menu) => {
+                const menuCode = menu.menuCode || menu.menuId;
+                const checked = selectedMenuIds.includes(menuCode);
                 return (
                   <TableRow key={menu.menuId} hover>
                     <TableCell align="center">
                       <Checkbox
                         checked={checked}
-                        onChange={() => toggleMenu(menu.menuId)}
+                        onChange={() => toggleMenu(menuCode)}
                         inputProps={{
                           'aria-label': `${menu.menuNm} (${menu.menuUrl})`,
                         }}
                       />
                     </TableCell>
                     <TableCell>{menu.menuNm}</TableCell>
-                    <TableCell>{menu.menuDc || '-'}</TableCell>
+                    <TableCell>{menu.menuDc || menu.menuCode || '-'}</TableCell>
                     <TableCell>
                       <Box
                         component="span"

@@ -69,7 +69,7 @@ export function PlatformRoleMenuManagementPage() {
   return (
     <Stack spacing={2} data-testid="platform-role-menu-management-page">
       <PageHeader
-        groupLabel={APP_LABELS.menu.systemGroup}
+        groupLabel={APP_LABELS.menu.platformGroup}
         title={APP_LABELS.pageTitle.platformRoleMenuManagement}
         description="권한별 메뉴 노출 관계를 설정합니다."
       />

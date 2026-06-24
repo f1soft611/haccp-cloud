@@ -11,6 +11,8 @@
         <result property="adminEmail" column="admin_email"/>
         <result property="status" column="status"/>
         <result property="onboardingStatus" column="onboarding_status"/>
+        <result property="planCode" column="plan_code"/>
+        <result property="planName" column="plan_name"/>
         <result property="createdAt" column="created_at"/>
         <result property="corporateNumber" column="corporate_number"/>
         <result property="businessType" column="business_type"/>
@@ -41,18 +43,12 @@
             tenant_code,
             tenant_nm,
             admin_email,
-            corporate_number,
-            business_type,
-            business_category,
-            onboarding_status
+            use_at
         ) VALUES (
             #{tenantSerialCode},
             #{tenantNm},
             #{adminEmail},
-            #{corporateNumber},
-            #{businessType},
-            #{businessCategory},
-            'EMAIL_QUEUED'
+            'Y'
         )
     </insert>
 
@@ -62,12 +58,62 @@
         WHERE tenant_code = #{value}
     </select>
 
+    <select id="TenantInfoDAO.selectOnboardingStatusByTenantCode" parameterType="string" resultType="string">
+        SELECT 'EMAIL_QUEUED'
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+    </select>
+
+    <select id="TenantInfoDAO.selectTenantNameByCode" parameterType="string" resultType="string">
+        SELECT tenant_nm
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+    </select>
+
+    <select id="TenantInfoDAO.selectAdminEmailByLoginAccountId" parameterType="long" resultType="string">
+        SELECT u.email_addr
+        FROM tb_login_account li
+        JOIN tb_user u ON u.user_id = li.user_id
+        WHERE li.login_account_id = #{value}
+    </select>
+
     <update id="TenantInfoDAO.updateOnboardingStatusByTenantCode" parameterType="map">
         UPDATE tb_tenant
-        SET onboarding_status = #{onboardingStatus},
-            updated_at = now()
+        SET updated_at = now()
         WHERE tenant_code = #{tenantCode}
     </update>
+
+    <update id="TenantInfoDAO.updateLoginAccountOnboardingStatus" parameterType="map">
+        UPDATE tb_login_account
+        SET onboarding_status = #{onboardingStatus},
+            updated_at = now()
+        WHERE login_account_id = #{loginAccountId}
+    </update>
+
+    <update id="TenantInfoDAO.updateLoginAccountPasswordAndActivate" parameterType="map">
+        UPDATE tb_login_account
+        SET password_hash = #{passwordHash},
+            password_algo = #{passwordAlgo},
+            use_at = #{useAt},
+            onboarding_status = #{onboardingStatus},
+            updated_at = now()
+        WHERE login_account_id = #{loginAccountId}
+    </update>
+
+    <update id="TenantInfoDAO.updateUserMobileNoByLoginAccountId" parameterType="map">
+        UPDATE tb_user
+        SET mobile_no = #{mobileNo},
+            updated_at = now()
+        WHERE user_id = (
+            SELECT user_id
+            FROM tb_login_account
+            WHERE login_account_id = #{loginAccountId}
+        )
+    </update>
+
+    <select id="TenantInfoDAO.selectActiveTenantCountByCorporateNumber" parameterType="string" resultType="int">
+                SELECT 0
+    </select>
 
     <!-- 조건별 테넌트 건수 조회 -->
     <select id="TenantInfoDAO.selectTenantCount" parameterType="map" resultType="int">
@@ -93,9 +139,6 @@
         <if test="status != null and status != '' and status == 'INACTIVE'">
             AND use_at = 'N'
         </if>
-        <if test="onboardingStatus != null and onboardingStatus != '' and onboardingStatus != 'ALL' and onboardingStatus != 'all'">
-            AND COALESCE(NULLIF(TRIM(onboarding_status), ''), 'EMAIL_QUEUED') = #{onboardingStatus}
-        </if>
         <if test="useAtOnly != null and useAtOnly != ''">
             AND use_at = #{useAtOnly}
         </if>
@@ -104,42 +147,50 @@
     <!-- 대시보드 테넌트 목록 조회 -->
     <select id="TenantInfoDAO.selectDashboardTenantItems" parameterType="map" resultMap="platformTenantDashboardItemResultMap">
         SELECT
-            tenant_id,
-            tenant_code,
-            tenant_nm AS company_name,
+            t.tenant_id,
+            t.tenant_code,
+            t.tenant_nm AS company_name,
             '-' AS admin_name,
-            COALESCE(NULLIF(TRIM(admin_email), ''), '-') AS admin_email,
-            CASE WHEN use_at = 'Y' THEN 'ACTIVE' ELSE 'INACTIVE' END AS status,
-            COALESCE(NULLIF(TRIM(onboarding_status), ''), 'EMAIL_QUEUED') AS onboarding_status,
-            TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
-            corporate_number,
-            business_type,
-            business_category
-        FROM tb_tenant
+            COALESCE(NULLIF(TRIM(t.admin_email), ''), '-') AS admin_email,
+            CASE WHEN t.use_at = 'Y' THEN 'ACTIVE' ELSE 'INACTIVE' END AS status,
+            'EMAIL_QUEUED' AS onboarding_status,
+            COALESCE(p.plan_code, '-') AS plan_code,
+            COALESCE(p.plan_nm, '-') AS plan_name,
+            TO_CHAR(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
+            NULL AS corporate_number,
+            NULL AS business_type,
+            NULL AS business_category
+        FROM tb_tenant t
+        LEFT JOIN (
+            SELECT DISTINCT ON (s.tenant_id)
+                s.tenant_id,
+                s.plan_id
+            FROM tb_tenant_subscription s
+            WHERE s.subscription_status = 'ACTIVE'
+            ORDER BY s.tenant_id, s.starts_at DESC
+        ) ts ON ts.tenant_id = t.tenant_id
+        LEFT JOIN tb_plan p ON p.plan_id = ts.plan_id
         WHERE 1=1
         <if test="searchKeyword != null and searchKeyword != ''">
             <choose>
                 <when test="searchField == 'tenantCode'">
-                    AND tenant_code ILIKE '%' || #{searchKeyword} || '%'
+                    AND t.tenant_code ILIKE '%' || #{searchKeyword} || '%'
                 </when>
                 <when test="searchField == 'adminName'">
-                    AND COALESCE(admin_email, '') ILIKE '%' || #{searchKeyword} || '%'
+                    AND COALESCE(t.admin_email, '') ILIKE '%' || #{searchKeyword} || '%'
                 </when>
                 <otherwise>
-                    AND tenant_nm ILIKE '%' || #{searchKeyword} || '%'
+                    AND t.tenant_nm ILIKE '%' || #{searchKeyword} || '%'
                 </otherwise>
             </choose>
         </if>
         <if test="status != null and status != '' and status == 'ACTIVE'">
-            AND use_at = 'Y'
+            AND t.use_at = 'Y'
         </if>
         <if test="status != null and status != '' and status == 'INACTIVE'">
-            AND use_at = 'N'
+            AND t.use_at = 'N'
         </if>
-        <if test="onboardingStatus != null and onboardingStatus != '' and onboardingStatus != 'ALL' and onboardingStatus != 'all'">
-            AND COALESCE(NULLIF(TRIM(onboarding_status), ''), 'EMAIL_QUEUED') = #{onboardingStatus}
-        </if>
-        ORDER BY created_at DESC
+        ORDER BY t.created_at DESC
         LIMIT #{pageSize}
         OFFSET (#{pageIndex} * #{pageSize})
     </select>
@@ -150,11 +201,81 @@
             tenant_id,
             tenant_code,
             tenant_nm AS company_name,
-            corporate_number AS business_registration_number,
+            NULL AS business_registration_number,
             COALESCE(NULLIF(TRIM(admin_email), ''), '-') AS admin_email,
             TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS issued_at
         FROM tb_tenant
         ORDER BY created_at DESC
         LIMIT #{limit}
     </select>
+
+        <!-- 도메인 매핑 테이블로 테넌트 조회 -->
+    <select id="TenantInfoDAO.selectByAdminEmailDomain" parameterType="string" resultMap="tenantResultMap">
+        SELECT 
+                        t.tenant_id,
+                        t.tenant_code,
+                        t.tenant_nm,
+                        t.admin_email,
+                        NULL AS corporate_number,
+                        NULL AS business_type,
+                        NULL AS business_category,
+                        NULL AS logo_image,
+                        'EMAIL_QUEUED' AS onboarding_status,
+                        t.created_at,
+                        t.updated_at,
+                        t.created_by,
+                        t.use_at
+                FROM tb_tenant t
+                JOIN tb_tenant_domain td ON td.tenant_id = t.tenant_id
+                WHERE t.use_at = 'Y'
+                    AND td.use_at = 'Y'
+                    AND td.email_domain = #{domain}
+                ORDER BY CASE WHEN td.is_primary = 'Y' THEN 0 ELSE 1 END, td.tenant_domain_id
+        LIMIT 1
+    </select>
+
+    <!-- 테넌트 ID로 테넌트 조회 -->
+    <select id="TenantInfoDAO.selectById" parameterType="long" resultMap="tenantResultMap">
+        SELECT 
+            tenant_id,
+            tenant_code,
+            tenant_nm,
+            admin_email,
+            NULL AS corporate_number,
+            NULL AS business_type,
+            NULL AS business_category,
+            NULL AS logo_image,
+            'EMAIL_QUEUED' AS onboarding_status,
+            created_at,
+            updated_at,
+            created_by,
+            use_at
+        FROM tb_tenant
+        WHERE tenant_id = #{tenantId}
+    </select>
+
+    <!-- 테넌트 로고 이미지 업데이트 -->
+    <update id="TenantInfoDAO.updateLogoImage" parameterType="map">
+        UPDATE tb_tenant
+        SET updated_at = now()
+        WHERE tenant_id = #{tenantId}
+    </update>
+
+    <!-- 테넌트 resultMap -->
+    <resultMap id="tenantResultMap" type="egovframework.let.platforms.tenants.domain.model.TenantVO">
+        <result property="tenantId" column="tenant_id"/>
+        <result property="tenantCode" column="tenant_code"/>
+        <result property="tenantNm" column="tenant_nm"/>
+        <result property="adminEmail" column="admin_email"/>
+        <result property="corporateNumber" column="corporate_number"/>
+        <result property="businessType" column="business_type"/>
+        <result property="businessCategory" column="business_category"/>
+        <result property="logoImage" column="logo_image"/>
+        <result property="onboardingStatus" column="onboarding_status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="useAt" column="use_at"/>
+    </resultMap>
+
 </mapper>

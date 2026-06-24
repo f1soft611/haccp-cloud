@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="TenantAuthTokenDAO">
+
+    <insert id="insertToken" parameterType="egovframework.let.platforms.tenants.domain.model.TenantAuthTokenVO">
+        INSERT INTO tb_tenant_auth_token (
+            tenant_id, login_account_id, tenant_code, auth_token, token_type, expires_at, created_at
+        ) VALUES (
+            #{tenantId}, #{loginAccountId}, #{tenantCode}, #{authToken}, #{tokenType}, #{expiresAt}, #{createdAt}
+        )
+    </insert>
+
+    <select id="selectTokenByValue" parameterType="string" resultType="egovframework.let.platforms.tenants.domain.model.TenantAuthTokenVO">
+        SELECT
+            auth_token_id AS authTokenId,
+            tenant_id AS tenantId,
+            login_account_id AS loginAccountId,
+            tenant_code AS tenantCode,
+            auth_token AS authToken,
+            token_type AS tokenType,
+            expires_at AS expiresAt,
+            used_at AS usedAt,
+            created_at AS createdAt
+        FROM tb_tenant_auth_token
+        WHERE auth_token = #{authToken}
+    </select>
+
+    <update id="markTokenAsUsed" parameterType="string">
+        UPDATE tb_tenant_auth_token
+        SET used_at = CURRENT_TIMESTAMP
+        WHERE auth_token = #{authToken}
+    </update>
+
+    <select id="selectActiveTokenByTenantCode" parameterType="string" resultType="egovframework.let.platforms.tenants.domain.model.TenantAuthTokenVO">
+        SELECT
+            auth_token_id AS authTokenId,
+            tenant_id AS tenantId,
+            login_account_id AS loginAccountId,
+            tenant_code AS tenantCode,
+            auth_token AS authToken,
+            token_type AS tokenType,
+            expires_at AS expiresAt,
+            used_at AS usedAt,
+            created_at AS createdAt
+        FROM tb_tenant_auth_token
+        WHERE tenant_code = #{tenantCode}
+          AND used_at IS NULL
+          AND expires_at > CURRENT_TIMESTAMP
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <update id="expireTokensByTenantCode" parameterType="string">
+        UPDATE tb_tenant_auth_token
+        SET expires_at = CURRENT_TIMESTAMP
+        WHERE tenant_code = #{tenantCode}
+          AND used_at IS NULL
+          AND expires_at > CURRENT_TIMESTAMP
+    </update>
+
+</mapper>

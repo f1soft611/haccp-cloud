@@ -23,7 +23,6 @@ frontend/
 │   ├── pages/                    # 페이지 컴포넌트 (계층화된 구조)
 │   │   ├── auth/                 # 인증 관련
 │   │   │   ├── LoginPage.tsx
-│   │   │   └── PlatformAdminLoginPage.tsx
 │   │   │
 │   │   ├── platform-admin/       # 플랫폼 관리자 기능
 │   │   │   ├── menus/
@@ -134,7 +133,7 @@ frontend/
 
 | 분류                   | 포함 페이지                               | 설명               |
 | ---------------------- | ----------------------------------------- | ------------------ |
-| **auth/**              | LoginPage, PlatformAdminLoginPage         | 인증 관련 페이지   |
+| **auth/**              | LoginPage                                 | 인증 관련 페이지   |
 | **platform-admin/**    | MenuManagement, RoleManagement            | 플랫폼 관리자 기능 |
 | **tenant-management/** | Users, Departments, Documents, Onboarding | 테넌트/조직 관리   |
 | **admin/**             | LoginHistory                              | 시스템 관리 기능   |
@@ -204,7 +203,6 @@ frontend/
 ```
 pages/
 ├── LoginPage.tsx
-├── PlatformAdminLoginPage.tsx
 ├── PlatformMenuManagementPage.tsx
 ├── PlatformRoleMenuManagementPage.tsx
 ├── PlatformRoleManagementPage.tsx

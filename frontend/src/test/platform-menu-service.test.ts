@@ -98,6 +98,7 @@ describe('platformMenuService', () => {
     vi.mocked(apiClient.post).mockResolvedValueOnce({ data: {} });
 
     await createPlatformMenu({
+      menuCode: 'menu_new_code',
       menuNm: '신규 메뉴',
       menuDc: '설명',
       menuUrl: '/platform/new-menu',
@@ -108,6 +109,7 @@ describe('platformMenuService', () => {
     });
 
     expect(apiClient.post).toHaveBeenCalledWith('/platform-admin/menus', {
+      menuCode: 'MENU_NEW_CODE',
       menuNm: '신규 메뉴',
       menuDc: '설명',
       menuUrl: '/platform/new-menu',

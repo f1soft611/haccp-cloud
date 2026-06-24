@@ -49,76 +49,34 @@ function renderAt(path: string) {
 }
 
 describe('Login page error flow', () => {
-  it('keeps platform login page when backend returns non-admin role response', async () => {
-    resetAuthStore();
-
-    server.use(
-      http.post('/api/auth/login-jwt/admin', () =>
-        HttpResponse.json({
-          resultCode: '200',
-          jToken: 'token-tenant-user',
-          resultVO: {
-            factoryCode: '000001',
-            id: 'tenant_user',
-            groupNm: 'ROLE_USER',
-          },
-        }),
-      ),
-    );
-
-    renderAt('/login/platform');
-
-    fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
-      target: { value: 'tenant_user' },
-    });
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: APP_LABELS.action.platformAdminLogin,
-      }),
-    );
-
-    const alert = await screen.findByRole('alert');
-    expect(alert).toBeInTheDocument();
-    expect(alert).not.toHaveTextContent(
-      APP_LABELS.message.platformAdminLoginFailed,
-    );
-    expect(screen.getByTestId('location-path')).toHaveTextContent(
-      '/login/platform',
-    );
-  });
-
-  it('keeps platform admin login route and shows backend reason when admin login fails', async () => {
-    resetAuthStore();
-
-    renderAt('/login/platform');
-
-    fireEvent.change(screen.getByLabelText(APP_LABELS.field.password), {
-      target: { value: 'wrong-password' },
-    });
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: APP_LABELS.action.platformAdminLogin,
-      }),
-    );
-
-    const alert = await screen.findByRole('alert');
-    expect(alert).toBeInTheDocument();
-    expect(alert).not.toHaveTextContent(
-      APP_LABELS.message.platformAdminLoginFailed,
-    );
-    expect(screen.getByTestId('location-path')).toHaveTextContent(
-      '/login/platform',
-    );
-    expect(
-      screen.queryByRole('heading', { name: APP_LABELS.pageTitle.login }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('shows backend reason when tenant login fails', async () => {
+  it('renders generic login page at /login without tenant domain error', async () => {
     resetAuthStore();
 
     renderAt('/login');
 
+    expect(
+      await screen.findByRole('heading', { name: APP_LABELS.pageTitle.login }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(APP_LABELS.message.loginHelp)).toBeInTheDocument();
+  });
+
+  it('shows backend error alert when single login fails', async () => {
+    resetAuthStore();
+
+    server.use(
+      http.post('/api/auth/login-jwt', () =>
+        HttpResponse.json({
+          resultCode: 'FAIL',
+          resultMessage: '로그인 처리 중 오류가 발생했습니다.',
+        }),
+      ),
+    );
+
+    renderAt('/login');
+
+    fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
+      target: { value: 'tenant_user' },
+    });
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.password), {
       target: { value: 'wrong-password' },
     });
@@ -128,11 +86,48 @@ describe('Login page error flow', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert).toBeInTheDocument();
-    expect(alert).not.toHaveTextContent(APP_LABELS.message.loginFailed);
+    expect(alert).toBeInTheDocument();
     expect(screen.getByTestId('location-path')).toHaveTextContent('/login');
   });
 
-  it('does not clear existing auth state on failed platform admin login', async () => {
+  it('keeps user on login when tenant context is unresolved', async () => {
+    resetAuthStore();
+
+    server.use(
+      http.post('/api/auth/login-jwt', () =>
+        HttpResponse.json({
+          resultCode: '200',
+          jToken: 'token-tenant-admin',
+          refreshToken: 'refresh-tenant-admin',
+          resultVO: {
+            factoryCode: 'TENANT-A',
+            id: 'tenant_admin',
+            groupNm: 'ROLE_TENANT_ADMIN',
+          },
+          onboardingRequired: false,
+          onboardingStatus: 'COMPLETED',
+        }),
+      ),
+    );
+
+    renderAt('/login');
+
+    fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
+      target: { value: 'tenant_admin' },
+    });
+    fireEvent.change(screen.getByLabelText(APP_LABELS.field.password), {
+      target: { value: 'Passw0rd!' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.login }),
+    );
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toBeInTheDocument();
+    expect(screen.getByTestId('location-path')).toHaveTextContent('/login');
+  });
+
+  it('does not clear existing auth state on failed login', async () => {
     resetAuthStore();
     useAuthStore.setState({
       isAuthenticated: true,
@@ -145,15 +140,25 @@ describe('Login page error flow', () => {
       onboardingStatus: 'COMPLETED',
     });
 
-    renderAt('/login/platform');
+    server.use(
+      http.post('/api/auth/login-jwt', () =>
+        HttpResponse.json({
+          resultCode: 'FAIL',
+          message: '로그인에 실패했습니다.',
+        }),
+      ),
+    );
 
+    renderAt('/login');
+
+    fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
+      target: { value: 'tenant_admin' },
+    });
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.password), {
       target: { value: 'wrong-password' },
     });
     fireEvent.click(
-      screen.getByRole('button', {
-        name: APP_LABELS.action.platformAdminLogin,
-      }),
+      screen.getByRole('button', { name: APP_LABELS.action.login }),
     );
 
     await screen.findByRole('alert');

@@ -1,6 +1,9 @@
 package egovframework.let.uat.uia.service.impl;
 
 import egovframework.com.cmm.LoginVO;
+import egovframework.let.platforms.tenants.domain.model.TenantVO;
+import egovframework.let.platforms.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platforms.tenants.context.TenantContextHolder;
 import egovframework.let.uat.uia.service.EgovLoginService;
 import egovframework.let.utl.fcc.service.EgovNumberUtil;
 import egovframework.let.utl.fcc.service.EgovStringUtil;
@@ -11,6 +14,7 @@ import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import javax.annotation.Resource;
 
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 일반 로그인을 처리하는 비즈니스 구현 클래스
@@ -26,14 +30,19 @@ import org.springframework.stereotype.Service;
  *  -------    --------    ---------------------------
  *  2009.03.06  박지욱          최초 생성
  *  2011.08.31  JJY            경량환경 템플릿 커스터마이징버전 생성
+ *  2026.06.23  AI             다중 테넌트 지원 - TenantContextHolder 통합
  *
  *  </pre>
  */
+@Slf4j
 @Service("loginService")
 public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements EgovLoginService {
 
 	@Resource(name = "loginDAO")
 	private LoginDAO loginDAO;
+
+	@Resource(name = "tenantInfoDAO")
+	private TenantInfoDAO tenantInfoDAO;
 
 	/**
 	 * 일반 로그인을 처리한다
@@ -43,25 +52,95 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	 */
 	@Override
 	public LoginVO actionLogin(LoginVO vo) throws Exception {
-		if (vo.getId() != null) {
-			vo.setId(vo.getId().trim());
+		String inputId = vo.getId();
+		if (inputId != null) {
+			inputId = inputId.trim();
+			vo.setId(inputId);
 		}
+		String plainPassword = vo.getPassword();
 
-		// 1. 입력한 비밀번호를 암호화한다.
-		String enpassword = EgovFileScrty.encryptPassword(vo.getPassword(), vo.getId());
+		// 1. TenantContextHolder에서 tenantId 추출
+		Long tenantId = TenantContextHolder.getTenantId();
+		if (tenantId == null) {
+			tenantId = resolveTenantIdByTenantCode(vo.getTenantCode());
+		}
+		if (tenantId == null && !isPlatformAdminLogin(vo)) {
+			tenantId = resolveTenantIdByLoginIdDomain(vo.getId());
+		}
+		if (tenantId == null) {
+			log.warn("TenantContextHolder: tenantId is null. login attempt by id={}", vo.getId());
+			throw new IllegalStateException("업체 도메인 경로로 접속했는지 확인해주세요.");
+		}
+		vo.setTenantId(tenantId);
+
+		// 2. 입력한 비밀번호를 암호화한다.
+		String enpassword = EgovFileScrty.encryptPassword(plainPassword, vo.getId());
 		vo.setPassword(enpassword);
 
-		// 2. 아이디와 암호화된 비밀번호가 DB와 일치하는지 확인한다.
+		// 3. 아이디와 암호화된 비밀번호가 DB와 일치하는지 확인한다.
 		LoginVO loginVO = loginDAO.actionLogin(vo);
+		if (!isValidLogin(loginVO) && isEmailFormat(vo.getId())) {
+			String canonicalLoginCode = loginDAO.selectLoginCodeByTenantIdAndEmail(tenantId, vo.getId());
+			if (canonicalLoginCode != null && !canonicalLoginCode.trim().isEmpty()) {
+				String retryHash = EgovFileScrty.encryptPassword(plainPassword, canonicalLoginCode);
+				vo.setPassword(retryHash);
+				loginVO = loginDAO.actionLogin(vo);
+			}
+		}
 
-		// 3. 결과를 리턴한다.
-		if (loginVO != null && !loginVO.getId().equals("") && !loginVO.getPassword().equals("")) {
+		// 4. 결과를 리턴한다.
+		if (isValidLogin(loginVO)) {
+			log.info("Login successful: userId={}, tenantId={}", loginVO.getId(), tenantId);
 			return loginVO;
 		} else {
 			loginVO = new LoginVO();
+			log.warn("Login failed: userId={}, tenantId={}", vo.getId(), tenantId);
 		}
 
 		return loginVO;
+	}
+
+	private boolean isValidLogin(LoginVO loginVO) {
+		return loginVO != null
+				&& loginVO.getId() != null
+				&& !loginVO.getId().isEmpty()
+				&& loginVO.getPassword() != null
+				&& !loginVO.getPassword().isEmpty();
+	}
+
+	private boolean isEmailFormat(String value) {
+		return value != null && value.contains("@") && value.indexOf('@') > 0 && value.indexOf('@') < value.length() - 1;
+	}
+
+	private boolean isPlatformAdminLogin(LoginVO vo) {
+		return vo != null && "PLATFORM_ADMIN".equals(vo.getRoleCode());
+	}
+
+	private Long resolveTenantIdByTenantCode(String tenantCode) {
+		if (tenantCode == null || tenantCode.trim().isEmpty()) {
+			return null;
+		}
+
+		return tenantInfoDAO.selectTenantIdByCode(tenantCode.trim());
+	}
+
+	private Long resolveTenantIdByLoginIdDomain(String loginId) {
+		if (loginId == null) {
+			return null;
+		}
+
+		int atIndex = loginId.indexOf('@');
+		if (atIndex < 0 || atIndex == loginId.length() - 1) {
+			return null;
+		}
+
+		String domain = loginId.substring(atIndex + 1).trim();
+		if (domain.isEmpty()) {
+			return null;
+		}
+
+		TenantVO tenant = tenantInfoDAO.selectByAdminEmailDomain(domain);
+		return tenant != null ? tenant.getTenantId() : null;
 	}
 
 	/**

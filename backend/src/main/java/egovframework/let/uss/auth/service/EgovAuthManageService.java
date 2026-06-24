@@ -84,50 +84,50 @@ public interface EgovAuthManageService {
 
     /**
      * 권한 목록을 조회한다.
-     * @return List<AuthorityInfoVO> 권한목록
+     * @return List<RoleInfoVO> 권한목록
      * @throws Exception
      */
-    List<AuthorityInfoVO> selectAuthorityList() throws Exception;
+    List<RoleInfoVO> selectRoleList() throws Exception;
 
     /**
      * 권한 페이징 목록을 조회한다.
-     * @param authorityInfoVO 검색조건
-     * @return List<AuthorityInfoVO> 권한목록
+     * @param roleInfoVO 검색조건
+     * @return List<RoleInfoVO> 권한목록
      * @throws Exception
      */
-    List<AuthorityInfoVO> selectAuthorityPagedList(AuthorityInfoVO authorityInfoVO) throws Exception;
+    List<RoleInfoVO> selectRolePagedList(RoleInfoVO roleInfoVO) throws Exception;
 
     /**
      * 권한 페이징 총 건수를 조회한다.
-     * @param authorityInfoVO 검색조건
+     * @param roleInfoVO 검색조건
      * @return int 총 건수
      * @throws Exception
      */
-    int selectAuthorityPagedCount(AuthorityInfoVO authorityInfoVO) throws Exception;
+    int selectRolePagedCount(RoleInfoVO roleInfoVO) throws Exception;
 
     /**
      * 권한을 등록한다.
-     * @param authorityInfoVO 권한정보
+     * @param roleInfoVO 권한정보
      * @return int 등록결과
      * @throws Exception
      */
-    int insertAuthority(AuthorityInfoVO authorityInfoVO) throws Exception;
+    int insertRole(RoleInfoVO roleInfoVO) throws Exception;
 
     /**
      * 권한 정보를 수정한다.
-     * @param authorityInfoVO 권한정보
+     * @param roleInfoVO 권한정보
      * @return int 수정결과
      * @throws Exception
      */
-    int updateAuthority(AuthorityInfoVO authorityInfoVO) throws Exception;
+    int updateRole(RoleInfoVO roleInfoVO) throws Exception;
 
     /**
      * 권한 사용여부를 수정한다.
-     * @param authorityInfoVO 권한정보
+     * @param roleInfoVO 권한정보
      * @return int 수정결과
      * @throws Exception
      */
-    int updateAuthorityUseAt(AuthorityInfoVO authorityInfoVO) throws Exception;
+    int updateRoleUseAt(RoleInfoVO roleInfoVO) throws Exception;
 
     /**
      * 역할별 메뉴 권한 목록을 조회한다.
@@ -154,12 +154,12 @@ public interface EgovAuthManageService {
     int deleteRoleMenuPermission(RoleMenuPermissionVO roleMenuPermissionVO) throws Exception;
 
     /**
-     * 권한 코드 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
-     * @param authorityCode 권한코드
+    * 역할 코드 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
+    * @param roleCode 역할코드
      * @return int 삭제결과
      * @throws Exception
      */
-    int deleteRoleMenuPermissionsByAuthority(String authorityCode) throws Exception;
+    int deleteRoleMenuPermissionsByRoleCode(String roleCode) throws Exception;
 
     /**
      * 메뉴 ID 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
@@ -171,18 +171,18 @@ public interface EgovAuthManageService {
 
     /**
      * 사용자별 접근 가능한 메뉴 목록을 조회한다.
-    * @param authorityCode 권한코드
+    * @param roleCode 역할코드
      * @return List<MenuInfoVO> 접근가능메뉴목록
      * @throws Exception
      */
-    List<MenuInfoVO> selectUserAccessibleMenus(String authorityCode) throws Exception;
+    List<MenuInfoVO> selectUserAccessibleMenus(String roleCode) throws Exception;
 
     /**
      * 특정 메뉴에 대한 사용자 권한을 확인한다.
-     * @param authorityCode 권한코드
+     * @param roleCode 역할코드
      * @param menuUrl 메뉴URL
      * @return String 권한레벨 (read/write/none)
      * @throws Exception
      */
-    String checkUserMenuPermission(String authorityCode, String menuUrl) throws Exception;
+    String checkUserMenuPermission(String roleCode, String menuUrl) throws Exception;
 }

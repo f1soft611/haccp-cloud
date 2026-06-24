@@ -5,7 +5,7 @@ import java.util.List;
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 import org.springframework.stereotype.Repository;
 
-import egovframework.let.uss.auth.service.AuthorityInfoVO;
+import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.PermissionTypeVO;
 import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
@@ -100,50 +100,50 @@ public class AuthManageDAO extends EgovAbstractMapper {
 
     /**
      * 권한 목록을 조회한다.
-     * @return List<AuthorityInfoVO> 권한목록
+     * @return List<RoleInfoVO> 권한목록
      * @throws Exception
      */
-    public List<AuthorityInfoVO> selectAuthorityList() throws Exception {
-        return selectList("authManageDAO.selectAuthorityList");
+    public List<RoleInfoVO> selectRoleList() throws Exception {
+        return selectList("authManageDAO.selectRoleList");
     }
 
-    public List<AuthorityInfoVO> selectAuthorityPagedList(AuthorityInfoVO authorityInfoVO) throws Exception {
-        return selectList("authManageDAO.selectAuthorityPagedList", authorityInfoVO);
+    public List<RoleInfoVO> selectRolePagedList(RoleInfoVO roleInfoVO) throws Exception {
+        return selectList("authManageDAO.selectRolePagedList", roleInfoVO);
     }
 
-    public int selectAuthorityPagedCount(AuthorityInfoVO authorityInfoVO) throws Exception {
-        Integer count = selectOne("authManageDAO.selectAuthorityPagedCount", authorityInfoVO);
+    public int selectRolePagedCount(RoleInfoVO roleInfoVO) throws Exception {
+        Integer count = selectOne("authManageDAO.selectRolePagedCount", roleInfoVO);
         return count == null ? 0 : count;
     }
 
     /**
      * 권한을 등록한다.
-     * @param authorityInfoVO 권한정보
+     * @param roleInfoVO 권한정보
      * @return int 등록결과
      * @throws Exception
      */
-    public int insertAuthority(AuthorityInfoVO authorityInfoVO) throws Exception {
-        return insert("authManageDAO.insertAuthority", authorityInfoVO);
+    public int insertRole(RoleInfoVO roleInfoVO) throws Exception {
+        return insert("authManageDAO.insertRole", roleInfoVO);
     }
 
     /**
      * 권한 정보를 수정한다.
-     * @param authorityInfoVO 권한정보
+     * @param roleInfoVO 권한정보
      * @return int 수정결과
      * @throws Exception
      */
-    public int updateAuthority(AuthorityInfoVO authorityInfoVO) throws Exception {
-        return update("authManageDAO.updateAuthority", authorityInfoVO);
+    public int updateRole(RoleInfoVO roleInfoVO) throws Exception {
+        return update("authManageDAO.updateRole", roleInfoVO);
     }
 
     /**
      * 권한 사용여부를 수정한다.
-     * @param authorityInfoVO 권한정보
+     * @param roleInfoVO 권한정보
      * @return int 수정결과
      * @throws Exception
      */
-    public int updateAuthorityUseAt(AuthorityInfoVO authorityInfoVO) throws Exception {
-        return update("authManageDAO.updateAuthorityUseAt", authorityInfoVO);
+    public int updateRoleUseAt(RoleInfoVO roleInfoVO) throws Exception {
+        return update("authManageDAO.updateRoleUseAt", roleInfoVO);
     }
 
     /**
@@ -177,13 +177,13 @@ public class AuthManageDAO extends EgovAbstractMapper {
     }
 
     /**
-     * 권한 코드 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
-     * @param authorityCode 권한코드
+     * 역할 코드 기준으로 역할별 메뉴 권한을 일괄 삭제한다.
+     * @param roleCode 역할코드
      * @return int 삭제결과
      * @throws Exception
      */
-    public int deleteRoleMenuPermissionsByAuthority(String authorityCode) throws Exception {
-        return delete("authManageDAO.deleteRoleMenuPermissionsByAuthority", authorityCode);
+    public int deleteRoleMenuPermissionsByRoleCode(String roleCode) throws Exception {
+        return delete("authManageDAO.deleteRoleMenuPermissionsByRoleCode", roleCode);
     }
 
     /**
@@ -198,17 +198,17 @@ public class AuthManageDAO extends EgovAbstractMapper {
 
     /**
      * 사용자별 접근 가능한 메뉴 목록을 조회한다.
-     * @param authorityCode 권한코드
+     * @param roleCode 역할코드
      * @return List<MenuInfoVO> 접근가능메뉴목록
      * @throws Exception
      */
-    public List<MenuInfoVO> selectUserAccessibleMenus(String authorityCode) throws Exception {
-        return selectList("authManageDAO.selectUserAccessibleMenus", authorityCode);
+    public List<MenuInfoVO> selectUserAccessibleMenus(String roleCode) throws Exception {
+        return selectList("authManageDAO.selectUserAccessibleMenus", roleCode);
     }
 
     /**
      * 특정 메뉴에 대한 사용자 권한을 확인한다.
-    * @param params 파라미터 (authorityCode, menuUrl)
+    * @param params 파라미터 (roleCode, menuUrl)
      * @return String 권한레벨
      * @throws Exception
      */
