@@ -9,7 +9,7 @@
       "destination": "http://218.155.74.34/haccp-cloud/api/:path*"
     },
     {
-      "source": "/((?!haccp-cloud/(api|auth)|assets/|.*\\..*).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
