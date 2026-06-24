@@ -92,7 +92,9 @@ describe('Login domain route', () => {
     expect(screen.queryByLabelText('비밀번호')).not.toBeInTheDocument();
   });
 
-  it('clears ID field when switching to other domain login', async () => {
+  it('clears ID field and shows recent domain prompt when switching to other domain login', async () => {
+    window.localStorage.setItem('haccp.last-login-domain', 'f1soft.co.kr');
+
     renderAt('/login/f1soft.co.kr');
 
     const idInput = await screen.findByLabelText('사용자 ID');
@@ -101,6 +103,10 @@ describe('Login domain route', () => {
 
     const rootLoginIdInput = await screen.findByLabelText('사용자 ID');
     expect(rootLoginIdInput).toHaveValue('');
+    expect(
+      screen.getByText('최근 로그인 도메인: f1soft.co.kr'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '적용' })).toBeInTheDocument();
   });
 
   it('shows fallback logo sample when tenant logo is missing', async () => {
@@ -134,27 +140,28 @@ describe('Login domain route', () => {
     });
   });
 
-  it('shows domain-scoped heading when tenant name is unavailable', async () => {
+  it('falls back to generic login when domain lookup fails', async () => {
     renderAt('/login/alpha-food.co.kr');
 
     expect(
-      await screen.findByRole('heading', {
-        name: 'alpha-food.co.kr 오피스에 로그인',
-      }),
+      await screen.findByRole('heading', { name: '로그인' }),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/오피스에 로그인/)).not.toBeInTheDocument();
   });
 
-  it('recommends last successful domain at /login and applies it', async () => {
-    window.localStorage.setItem('haccp.last-login-domain', 'f1soft.co.kr');
-
+  it('keeps generic login screen at /login when there is no login history', async () => {
     renderAt('/login');
 
     expect(
-      await screen.findByText('최근 로그인 도메인: f1soft.co.kr'),
+      await screen.findByRole('heading', { name: '로그인' }),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/오피스에 로그인/)).not.toBeInTheDocument();
+  });
 
-    const applyButton = screen.getByRole('button', { name: '적용' });
-    applyButton.click();
+  it('auto-enters domain login at /login when last domain exists', async () => {
+    window.localStorage.setItem('haccp.last-login-domain', 'f1soft.co.kr');
+
+    renderAt('/login');
 
     expect(
       await screen.findByRole('heading', { name: '에프원소프트에 로그인' }),

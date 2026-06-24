@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { appTheme } from '../../app/theme';
 import { login } from '../../services/auth/authService';
 import { extractApiErrorMessage } from '../../services/api/errorMessage';
@@ -145,26 +145,12 @@ function resolveDomainFromLocation(routeDomain?: string): string {
     return normalizedRouteDomain;
   }
 
-  if (typeof window === 'undefined') {
-    return '';
-  }
-
-  const hostname = normalizeDomainCandidate(window.location.hostname);
-  const pathDomain = window.location.pathname
-    .split('/')
-    .filter(Boolean)
-    .map((segment) => normalizeDomainCandidate(segment))
-    .find((segment) => !!segment);
-
-  if (hostname) {
-    return hostname;
-  }
-
-  return pathDomain ?? '';
+  return '';
 }
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { domain: routeDomain } = useParams<{ domain?: string }>();
   const setAuth = useAuthStore((state) => state.login);
 
@@ -180,9 +166,13 @@ export function LoginPage() {
   const [domain, setDomain] = useState('');
   const userIdInputRef = useRef<HTMLInputElement | null>(null);
   const passwordInputRef = useRef<HTMLInputElement | null>(null);
+  const shouldSkipAutoDomainRedirect =
+    (location.state as { skipAutoDomainRedirect?: boolean } | null)
+      ?.skipAutoDomainRedirect === true;
 
   useEffect(() => {
     let mounted = true;
+    let hasNavigatedFallback = false;
 
     const loadTenant = async () => {
       const resolvedDomain = resolveDomainFromLocation(routeDomain);
@@ -190,33 +180,58 @@ export function LoginPage() {
         return;
       }
 
-      setDomain(resolvedDomain);
-      setLoginStep(resolvedDomain ? 'id' : 'password');
+      setDomain('');
+      setLoginStep('password');
       setPassword('');
-
-      if (!resolvedDomain) {
-        setRecommendedDomain(loadLastLoginDomain());
-        setTenantBrand(null);
-        return;
-      }
-
+      setTenantInfo(null);
+      setTenantCode('');
+      setTenantBrand(null);
       setRecommendedDomain('');
 
-      const rememberedUserId = loadLastLoginUserId(resolvedDomain);
-      if (rememberedUserId) {
-        setUserId(rememberedUserId);
-        setLoginStep('password');
-      }
+      if (!resolvedDomain) {
+        const lastDomain = loadLastLoginDomain();
+        if (lastDomain) {
+          setRecommendedDomain(lastDomain);
+        }
 
-      const cachedBrand = loadTenantBrandCache(resolvedDomain);
-      if (cachedBrand) {
-        setTenantBrand(cachedBrand);
+        if (lastDomain && !shouldSkipAutoDomainRedirect) {
+          navigate(`/login/${encodeURIComponent(lastDomain)}`, {
+            replace: true,
+          });
+          return;
+        }
+        return;
       }
 
       try {
         const info = await getTenantByDomain(resolvedDomain);
         if (!mounted) {
           return;
+        }
+
+        if (!info) {
+          if (!hasNavigatedFallback) {
+            hasNavigatedFallback = true;
+            navigate('/login', {
+              replace: true,
+              state: { skipAutoDomainRedirect: true },
+            });
+          }
+          return;
+        }
+
+        setDomain(resolvedDomain);
+        setLoginStep('id');
+
+        const rememberedUserId = loadLastLoginUserId(resolvedDomain);
+        if (rememberedUserId) {
+          setUserId(rememberedUserId);
+          setLoginStep('password');
+        }
+
+        const cachedBrand = loadTenantBrandCache(resolvedDomain);
+        if (cachedBrand) {
+          setTenantBrand(cachedBrand);
         }
 
         setTenantInfo(info);
@@ -236,7 +251,13 @@ export function LoginPage() {
           return;
         }
 
-        setTenantInfo(null);
+        if (!hasNavigatedFallback) {
+          hasNavigatedFallback = true;
+          navigate('/login', {
+            replace: true,
+            state: { skipAutoDomainRedirect: true },
+          });
+        }
       }
     };
 
@@ -245,7 +266,17 @@ export function LoginPage() {
     return () => {
       mounted = false;
     };
-  }, [routeDomain]);
+  }, [routeDomain, navigate, shouldSkipAutoDomainRedirect]);
+
+  const applyRecommendedDomain = () => {
+    if (!recommendedDomain) {
+      return;
+    }
+
+    navigate(`/login/${encodeURIComponent(recommendedDomain)}`, {
+      replace: true,
+    });
+  };
 
   const logoSrc = resolveSafeLogoSrc(tenantBrand?.logoImage);
   const isDomainScopedLogin = !!domain;
@@ -282,16 +313,6 @@ export function LoginPage() {
 
     passwordInputRef.current?.focus();
   }, [isDomainScopedLogin, loginStep]);
-
-  const applyRecommendedDomain = () => {
-    if (!recommendedDomain) {
-      return;
-    }
-
-    navigate(`/login/${encodeURIComponent(recommendedDomain)}`, {
-      replace: true,
-    });
-  };
 
   const performLogin = async () => {
     setError('');
@@ -681,7 +702,10 @@ export function LoginPage() {
                           setUserId('');
                           setPassword('');
                           setError('');
-                          navigate('/login', { replace: true });
+                          navigate('/login', {
+                            replace: true,
+                            state: { skipAutoDomainRedirect: true },
+                          });
                         }}
                         sx={{
                           px: 0,
