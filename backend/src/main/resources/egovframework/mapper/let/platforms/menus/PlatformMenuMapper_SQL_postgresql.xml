@@ -8,12 +8,12 @@
             m.menu_id AS menuId,
             m.menu_code AS menuCode,
             m.menu_nm AS menuNm,
-            NULL::varchar AS menuDc,
+            COALESCE(m.menu_dc, '') AS menuDc,
             m.parent_menu_id AS parentMenuId,
             p.menu_code AS parentMenuCode,
             m.menu_order AS menuOrdr,
             m.menu_url AS menuUrl,
-            NULL::varchar AS iconNm,
+            COALESCE(m.icon_nm, 'Menu') AS iconNm,
             m.use_at AS useAt,
             m.created_at AS frstRegistPnttm,
             'SYSTEM' AS frstRegisterId,
@@ -39,12 +39,12 @@
             m.menu_id AS menuId,
             m.menu_code AS menuCode,
             m.menu_nm AS menuNm,
-            NULL::varchar AS menuDc,
+            COALESCE(m.menu_dc, '') AS menuDc,
             m.parent_menu_id AS parentMenuId,
             p.menu_code AS parentMenuCode,
             m.menu_order AS menuOrdr,
             m.menu_url AS menuUrl,
-            NULL::varchar AS iconNm,
+            COALESCE(m.icon_nm, 'Menu') AS iconNm,
             m.use_at AS useAt,
             m.created_at AS frstRegistPnttm,
             'SYSTEM' AS frstRegisterId,
@@ -64,7 +64,7 @@
                     AND m.menu_nm ILIKE '%' || #{searchKeyword} || '%'
                 </when>
                 <when test="searchField == 'menuDc'">
-                    AND m.menu_nm ILIKE '%' || #{searchKeyword} || '%'
+                    AND COALESCE(m.menu_dc, '') ILIKE '%' || #{searchKeyword} || '%'
                 </when>
                 <when test="searchField == 'menuUrl'">
                     AND m.menu_url ILIKE '%' || #{searchKeyword} || '%'
@@ -90,7 +90,7 @@
                     AND m.menu_nm ILIKE '%' || #{searchKeyword} || '%'
                 </when>
                 <when test="searchField == 'menuDc'">
-                    AND m.menu_nm ILIKE '%' || #{searchKeyword} || '%'
+                    AND COALESCE(m.menu_dc, '') ILIKE '%' || #{searchKeyword} || '%'
                 </when>
                 <when test="searchField == 'menuUrl'">
                     AND m.menu_url ILIKE '%' || #{searchKeyword} || '%'
@@ -105,12 +105,12 @@
             m.menu_id AS menuId,
             m.menu_code AS menuCode,
             m.menu_nm AS menuNm,
-            NULL::varchar AS menuDc,
+            COALESCE(m.menu_dc, '') AS menuDc,
             m.parent_menu_id AS parentMenuId,
             p.menu_code AS parentMenuCode,
             m.menu_order AS menuOrdr,
             m.menu_url AS menuUrl,
-            NULL::varchar AS iconNm,
+            COALESCE(m.icon_nm, 'Menu') AS iconNm,
             m.use_at AS useAt,
             m.created_at AS frstRegistPnttm,
             'SYSTEM' AS frstRegisterId,
@@ -119,28 +119,38 @@
             p.menu_nm AS parentMenuNm
         FROM tb_menu m
             LEFT JOIN tb_menu p ON m.parent_menu_id = p.menu_id
-        WHERE m.menu_id = #{menuId}
+        WHERE 1 = 1
+        <if test="menuId != null">
+            AND m.menu_id = #{menuId}
+        </if>
+        <if test="menuId == null and menuCode != null and menuCode != ''">
+            AND m.menu_code = #{menuCode}
+        </if>
+        ORDER BY m.menu_id DESC
+        LIMIT 1
     </select>
 
     <!-- 메뉴 등록 -->
     <insert id="PlatformMenuDAO.insertMenu" parameterType="egovframework.let.uss.auth.service.MenuInfoVO">
         INSERT INTO tb_menu (
-            tenant_id,
             menu_code,
             menu_nm,
+            menu_dc,
             parent_menu_id,
             menu_order,
             menu_url,
+            icon_nm,
             use_at,
             created_at,
             updated_at
         ) VALUES (
-            (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1),
             #{menuCode},
             #{menuNm},
+            #{menuDc},
             #{parentMenuId},
             #{menuOrdr},
             #{menuUrl},
+            #{iconNm},
             #{useAt},
             now(),
             now()
@@ -151,9 +161,11 @@
     <update id="PlatformMenuDAO.updateMenu" parameterType="egovframework.let.uss.auth.service.MenuInfoVO">
         UPDATE tb_menu
         SET menu_nm = #{menuNm},
+            menu_dc = #{menuDc},
             parent_menu_id = #{parentMenuId},
             menu_order = #{menuOrdr},
             menu_url = #{menuUrl},
+            icon_nm = #{iconNm},
             use_at = #{useAt},
             updated_at = now()
         WHERE menu_id = #{menuId}

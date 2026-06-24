@@ -93,7 +93,7 @@ class PlanAccessInterceptorTest {
 
     @Test
     void preHandle_returnsForbidden_whenQuotaExceeded() throws Exception {
-        when(planAccessService.isFeatureEnabled(1L, "FEATURE_USER_MGMT")).thenReturn(true);
+        when(planAccessService.isFeatureEnabled(1L, "FEATURE_TENANT_USER_MGMT")).thenReturn(true);
         when(authManageService.checkUserMenuPermission("TENANT_ADMIN", "/members"))
                 .thenReturn("write");
         when(planAccessService.isWithinLimit(1L, "LIMIT_USER_COUNT")).thenReturn(false);

@@ -29,6 +29,9 @@ public class RoleMenuPermissionVO implements Serializable {
     @Schema(description = "역할 코드")
     private String roleCode = "";
 
+    @Schema(description = "테넌트 코드")
+    private String tenantCode = "";
+
     @Schema(description = "메뉴 ID")
     private Long menuId;
 

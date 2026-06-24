@@ -90,7 +90,7 @@ export function PlatformTenantManagementPage() {
   return (
     <Stack spacing={2} data-testid="platform-tenant-management-page">
       <PageHeader
-        groupLabel={APP_LABELS.menu.systemGroup}
+        groupLabel={APP_LABELS.menu.platformGroup}
         title={APP_LABELS.menu.platformFactoryManagement}
         description="업체 운영 현황을 조회하고 신규 온보딩으로 연결합니다."
       />
@@ -201,6 +201,7 @@ export function PlatformTenantManagementPage() {
           <TableRow>
             <TableCell>업체코드</TableCell>
             <TableCell>업체명</TableCell>
+            <TableCell align="center">플랜</TableCell>
             <TableCell>관리자명</TableCell>
             <TableCell>관리자이메일</TableCell>
             <TableCell align="center">사용유무</TableCell>
@@ -220,6 +221,14 @@ export function PlatformTenantManagementPage() {
                   </TableCell>
                   <TableCell>
                     <Skeleton variant="text" width="72%" />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Skeleton
+                      variant="rounded"
+                      width={56}
+                      height={24}
+                      sx={{ mx: 'auto' }}
+                    />
                   </TableCell>
                   <TableCell>
                     <Skeleton variant="text" width="68%" />
@@ -252,7 +261,7 @@ export function PlatformTenantManagementPage() {
 
           {!tenantQuery.isPending && rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} align="center">
+              <TableCell colSpan={8} align="center">
                 조회 결과가 없습니다.
               </TableCell>
             </TableRow>
@@ -263,6 +272,14 @@ export function PlatformTenantManagementPage() {
                 <TableRow key={row.tenantCode} hover>
                   <TableCell>{row.tenantCode}</TableCell>
                   <TableCell>{row.companyName}</TableCell>
+                  <TableCell align="center">
+                    <Chip
+                      label={row.planCode || row.planName || '-'}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  </TableCell>
                   <TableCell>{row.adminName}</TableCell>
                   <TableCell>{row.adminEmail}</TableCell>
                   <TableCell align="center">

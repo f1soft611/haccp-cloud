@@ -8,6 +8,7 @@ const { listPlatformMenusMock } = vi.hoisted(() => ({
   listPlatformMenusMock: vi.fn(async () => [
     {
       menuId: 'PM-1',
+      menuCode: 'MENU_PLATFORM_MENU',
       menuNm: '메뉴 관리',
       menuDc: '플랫폼 메뉴 관리',
       menuUrl: '/test',
@@ -23,9 +24,15 @@ const { listPlatformMenusPagedMock } = vi.hoisted(() => ({
   listPlatformMenusPagedMock: vi.fn(),
 }));
 
+const { createPlatformMenuMock, updatePlatformMenuMock } = vi.hoisted(() => ({
+  createPlatformMenuMock: vi.fn(),
+  updatePlatformMenuMock: vi.fn(),
+}));
+
 const DEFAULT_MENUS = [
   {
     menuId: 'PM-1',
+    menuCode: 'MENU_PLATFORM_MENU',
     menuNm: '메뉴 관리',
     menuDc: '플랫폼 메뉴 관리',
     menuUrl: '/test',
@@ -39,8 +46,8 @@ const DEFAULT_MENUS = [
 vi.mock('../services/platform/platformMenuService', () => ({
   listPlatformMenus: listPlatformMenusMock,
   listPlatformMenusPaged: listPlatformMenusPagedMock,
-  createPlatformMenu: vi.fn(),
-  updatePlatformMenu: vi.fn(),
+  createPlatformMenu: createPlatformMenuMock,
+  updatePlatformMenu: updatePlatformMenuMock,
   deletePlatformMenu: vi.fn(),
 }));
 
@@ -75,6 +82,10 @@ describe('PlatformMenuManagementPage', () => {
       items: DEFAULT_MENUS,
       totalCount: 1,
     }));
+    createPlatformMenuMock.mockReset();
+    createPlatformMenuMock.mockResolvedValue(undefined);
+    updatePlatformMenuMock.mockReset();
+    updatePlatformMenuMock.mockResolvedValue(undefined);
   });
 
   it('uses dark row background for platform admin theme', async () => {
@@ -176,6 +187,7 @@ describe('PlatformMenuManagementPage', () => {
       items: [
         {
           menuId: 'PM-2',
+          menuCode: 'MENU_LOGIN_HISTORY',
           menuNm: '로그인 이력',
           menuDc: '자식 메뉴',
           menuUrl: '/platform/login-history',
@@ -201,6 +213,7 @@ describe('PlatformMenuManagementPage', () => {
       items: [
         {
           menuId: 'PM-1',
+          menuCode: 'MENU_ROOT',
           menuNm: '상위 메뉴',
           menuDc: '부모 메뉴',
           menuUrl: '/platform/root',
@@ -226,5 +239,54 @@ describe('PlatformMenuManagementPage', () => {
     const deleteButton = deleteIcon.closest('button');
     expect(deleteButton).not.toBeNull();
     expect(deleteButton).toBeDisabled();
+  });
+
+  it('allows adding a root menu without a menu URL', async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: '+ 메뉴 추가' }));
+
+    const dialog = await screen.findByRole('dialog');
+
+    fireEvent.change(within(dialog).getAllByRole('textbox')[1], {
+      target: { value: '새 루트 메뉴' },
+    });
+
+    const addButton = within(dialog).getByRole('button', { name: '추가' });
+    expect(addButton).toBeEnabled();
+  });
+
+  it('allows editing a root menu that has an empty menu URL', async () => {
+    const rootMenuWithoutUrl = {
+      menuId: 'PM-ROOT',
+      menuCode: 'MENU_ROOT_GROUP',
+      menuNm: '루트 그룹',
+      menuDc: '최상위 그룹',
+      menuUrl: '',
+      parentMenuId: null,
+      menuOrdr: 1,
+      iconNm: 'Settings',
+      useAt: 'Y' as const,
+    };
+
+    listPlatformMenusMock.mockImplementationOnce(async () => [
+      rootMenuWithoutUrl,
+    ]);
+    listPlatformMenusPagedMock.mockImplementationOnce(async () => ({
+      items: [rootMenuWithoutUrl],
+      totalCount: 1,
+    }));
+
+    renderPage();
+
+    const editIcons = await screen.findAllByTestId('EditOutlinedIcon');
+    const firstEditButton = editIcons[0]?.closest('button');
+
+    expect(firstEditButton).not.toBeNull();
+    fireEvent.click(firstEditButton as HTMLButtonElement);
+
+    const dialog = await screen.findByRole('dialog');
+    const saveButton = within(dialog).getByRole('button', { name: '저장' });
+    expect(saveButton).toBeEnabled();
   });
 });

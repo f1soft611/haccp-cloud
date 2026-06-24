@@ -236,11 +236,11 @@
             m.menu_id AS menuId,
             m.menu_code AS menuCode,
             m.menu_nm AS menuNm,
-            CAST(NULL AS varchar) AS menuDc,
+            ISNULL(m.menu_dc, '') AS menuDc,
             m.parent_menu_id AS parentMenuId,
             m.menu_order AS menuOrdr,
             m.menu_url AS menuUrl,
-            CAST(NULL AS varchar) AS iconNm,
+            ISNULL(m.icon_nm, 'Menu') AS iconNm,
             m.use_at AS useAt,
             CASE WHEN MAX(CASE WHEN p.permission_code = 'PERM_WRITE' THEN 1 ELSE 0 END) = 1 THEN 'write' ELSE 'read' END AS permissionLevel,
             1 AS accessible
@@ -248,10 +248,17 @@
             INNER JOIN tb_role_menu_permission rmp ON m.menu_id = rmp.menu_id
             INNER JOIN tb_permission p ON rmp.permission_id = p.permission_id
             INNER JOIN tb_role r ON rmp.role_id = r.role_id
+            INNER JOIN tb_tenant_subscription ts
+                ON ts.tenant_id = r.tenant_id
+               AND ts.subscription_status = 'ACTIVE'
+            INNER JOIN tb_plan_menu pm
+                ON pm.plan_id = ts.plan_id
+               AND pm.menu_code = m.menu_code
+               AND pm.use_at = 'Y'
         WHERE m.use_at = 'Y'
           AND p.use_at = 'Y'
           AND r.role_code = #{value}
-        GROUP BY m.menu_id, m.menu_code, m.menu_nm, m.parent_menu_id, m.menu_order, m.menu_url, m.use_at
+        GROUP BY m.menu_id, m.menu_code, m.menu_nm, m.menu_dc, m.parent_menu_id, m.menu_order, m.menu_url, m.icon_nm, m.use_at
         ORDER BY m.parent_menu_id, m.menu_order, m.menu_id
     </select>
 

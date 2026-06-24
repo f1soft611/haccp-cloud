@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -193,6 +194,148 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         } catch (DataAccessException ex) {
             log.warn("Failed to resolve feature map. tenantId={}, reason={}", tenantId, ex.getMessage());
             return Collections.emptyMap();
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> listPlans() {
+        if (!isPlanSchemaReady()) {
+            return Collections.emptyList();
+        }
+
+        try {
+            String sql = "" +
+                    "SELECT p.plan_code, p.plan_nm, p.use_at, " +
+                    "       COUNT(DISTINCT pf.plan_feature_id) AS feature_count, " +
+                    "       COUNT(DISTINCT pm.plan_menu_id) AS menu_count " +
+                    "FROM tb_plan p " +
+                    "LEFT JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id " +
+                    "LEFT JOIN tb_plan_menu pm ON pm.plan_id = p.plan_id AND pm.use_at = 'Y' " +
+                    "GROUP BY p.plan_code, p.plan_nm, p.use_at " +
+                    "ORDER BY p.plan_code";
+
+            return jdbcTemplate.query(sql, (rs, rowNum) -> {
+                Map<String, Object> row = new LinkedHashMap<String, Object>();
+                row.put("planCode", rs.getString("plan_code"));
+                row.put("planName", rs.getString("plan_nm"));
+                row.put("useAt", rs.getString("use_at"));
+                row.put("featureCount", rs.getInt("feature_count"));
+                row.put("menuCount", rs.getInt("menu_count"));
+                return row;
+            });
+        } catch (DataAccessException ex) {
+            log.warn("Failed to list plans. reason={}", ex.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public Map<String, Boolean> resolveFeatureEnabledMapByPlanCode(String planCode) {
+        if (!StringUtils.hasText(planCode) || !isPlanSchemaReady()) {
+            return Collections.emptyMap();
+        }
+
+        try {
+            String sql = "" +
+                    "SELECT pf.feature_code, pf.enabled_at " +
+                    "FROM tb_plan p " +
+                    "JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id " +
+                    "WHERE p.plan_code = ? " +
+                    "ORDER BY pf.feature_code";
+
+            Map<String, Boolean> featureMap = new LinkedHashMap<String, Boolean>();
+            jdbcTemplate.query(sql, new Object[]{planCode.trim().toUpperCase()}, rs -> {
+                String featureCode = rs.getString("feature_code");
+                String enabledAt = rs.getString("enabled_at");
+                featureMap.put(featureCode, ENABLED.equalsIgnoreCase(enabledAt));
+            });
+            return featureMap;
+        } catch (DataAccessException ex) {
+            log.warn("Failed to resolve plan feature map. planCode={}, reason={}", planCode, ex.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
+    @Override
+    public List<String> resolvePlanMenuCodes(String planCode) {
+        if (!StringUtils.hasText(planCode) || !isPlanSchemaReady()) {
+            return Collections.emptyList();
+        }
+
+        try {
+            String sql = "" +
+                    "SELECT pm.menu_code " +
+                    "FROM tb_plan_menu pm " +
+                    "JOIN tb_plan p ON p.plan_id = pm.plan_id " +
+                    "WHERE p.plan_code = ? " +
+                    "  AND pm.use_at = 'Y' " +
+                    "ORDER BY pm.menu_code";
+
+            return jdbcTemplate.query(
+                    sql,
+                    new Object[]{planCode.trim().toUpperCase()},
+                    (rs, rowNum) -> rs.getString("menu_code"));
+        } catch (DataAccessException ex) {
+            log.warn("Failed to resolve plan menus. planCode={}, reason={}", planCode, ex.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<String> resolveTenantPlanMenuCodes(String tenantCode) {
+        if (!StringUtils.hasText(tenantCode)) {
+            return Collections.emptyList();
+        }
+
+        Long tenantId = resolveTenantIdByTenantCode(tenantCode);
+        if (tenantId == null) {
+            return Collections.emptyList();
+        }
+
+        String planCode = resolveActivePlanCode(tenantId);
+        if (!StringUtils.hasText(planCode)) {
+            return Collections.emptyList();
+        }
+
+        return resolvePlanMenuCodes(planCode);
+    }
+
+    @Override
+    public void replacePlanMenus(String planCode, List<String> menuCodes) {
+        if (!StringUtils.hasText(planCode) || !isPlanSchemaReady()) {
+            return;
+        }
+
+        String normalizedPlanCode = planCode.trim().toUpperCase();
+        List<String> normalizedMenuCodes = new ArrayList<String>();
+        if (menuCodes != null) {
+            for (String menuCode : menuCodes) {
+                if (StringUtils.hasText(menuCode)) {
+                    normalizedMenuCodes.add(menuCode.trim().toUpperCase());
+                }
+            }
+        }
+
+        try {
+            String deleteSql = "" +
+                    "DELETE FROM tb_plan_menu " +
+                    "WHERE plan_id = (SELECT plan_id FROM tb_plan WHERE plan_code = ? LIMIT 1)";
+            jdbcTemplate.update(deleteSql, normalizedPlanCode);
+
+            String insertSql = "" +
+                    "INSERT INTO tb_plan_menu (plan_id, menu_code, use_at, created_at, updated_at) " +
+                    "SELECT p.plan_id, ?, 'Y', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP " +
+                    "FROM tb_plan p " +
+                    "WHERE p.plan_code = ? " +
+                    "ON CONFLICT (plan_id, menu_code) DO UPDATE " +
+                    "SET use_at = 'Y', updated_at = CURRENT_TIMESTAMP";
+
+            for (String menuCode : normalizedMenuCodes) {
+                jdbcTemplate.update(insertSql, menuCode, normalizedPlanCode);
+            }
+        } catch (DataAccessException ex) {
+            log.warn("Failed to replace plan menus. planCode={}, reason={}", planCode, ex.getMessage());
+            throw ex;
         }
     }
 

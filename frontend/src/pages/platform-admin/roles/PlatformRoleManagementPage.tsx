@@ -76,7 +76,7 @@ export function PlatformRoleManagementPage() {
   return (
     <Stack spacing={2} data-testid="platform-role-management-page">
       <PageHeader
-        groupLabel={APP_LABELS.menu.systemGroup}
+        groupLabel={APP_LABELS.menu.platformGroup}
         title={APP_LABELS.pageTitle.platformRoleManagement}
         description="권한 코드를 등록하고 활성 상태를 관리합니다."
       />

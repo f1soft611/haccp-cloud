@@ -2,6 +2,7 @@ package egovframework.let.platforms.roles.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 import javax.annotation.Resource;
 
@@ -41,8 +42,8 @@ public class PlatformRoleApiController {
     private PlatformRoleService platformRoleService;
 
     @GetMapping("/roles")
-    public List<RoleInfoVO> listRoles() throws Exception {
-        return platformRoleService.listRoles();
+    public List<RoleInfoVO> listRoles(@RequestParam(required = false) String tenantCode) throws Exception {
+        return platformRoleService.listRoles(tenantCode);
     }
 
     @GetMapping("/roles/paged")
@@ -51,6 +52,7 @@ public class PlatformRoleApiController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String searchField,
             @RequestParam(required = false) String searchKeyword,
+            @RequestParam(required = false) String tenantCode,
             @RequestParam(required = false, defaultValue = "all") String useAt) throws Exception {
         validatePage(pageIndex, pageSize);
         validateSearchField(searchField);
@@ -61,6 +63,7 @@ public class PlatformRoleApiController {
                 pageSize,
                 searchField,
                 searchKeyword,
+                tenantCode,
                 useAt
         );
     }
@@ -69,6 +72,10 @@ public class PlatformRoleApiController {
     public RoleInfoVO createRole(@RequestBody RoleInfoVO payload) throws Exception {
         if (payload == null || !StringUtils.hasText(payload.getRoleCode())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "역할 코드는 필수입니다.");
+        }
+
+        if (!StringUtils.hasText(payload.getTenantCode())) {
+            payload.setTenantCode("PLATFORM");
         }
 
         return platformRoleService.createRole(payload);
@@ -93,18 +100,29 @@ public class PlatformRoleApiController {
     }
 
     @GetMapping("/role-menus")
-    public Map<String, Object> getRoleMenus(@RequestParam String roleCode) throws Exception {
-        return platformRoleService.getRoleMenus(roleCode);
+    public Map<String, Object> getRoleMenus(
+            @RequestParam String roleCode,
+            @RequestParam(required = false) String tenantCode) throws Exception {
+        return platformRoleService.getRoleMenus(roleCode, tenantCode);
     }
 
     @PutMapping("/role-menus/{roleCode}")
     public Map<String, Object> replaceRoleMenus(@PathVariable String roleCode,
+            @RequestParam(required = false) String tenantCode,
             @RequestBody PlatformRoleMenuSaveRequestVO payload) throws Exception {
         if (payload == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
 
-        return platformRoleService.replaceRoleMenus(roleCode, payload);
+        return platformRoleService.replaceRoleMenus(roleCode, tenantCode, payload);
+    }
+
+    @GetMapping("/role-menu-candidates")
+    public Map<String, Object> getRoleMenuCandidates(@RequestParam String tenantCode) throws Exception {
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        result.put("tenantCode", tenantCode == null ? "" : tenantCode.trim().toUpperCase());
+        result.put("menuCodes", platformRoleService.listAllowedMenuCodesByTenantPlan(tenantCode));
+        return result;
     }
 
     /**

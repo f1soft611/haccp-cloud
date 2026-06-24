@@ -11,6 +11,8 @@
         <result property="adminEmail" column="admin_email"/>
         <result property="status" column="status"/>
         <result property="onboardingStatus" column="onboarding_status"/>
+        <result property="planCode" column="plan_code"/>
+        <result property="planName" column="plan_name"/>
         <result property="createdAt" column="created_at"/>
         <result property="corporateNumber" column="corporate_number"/>
         <result property="businessType" column="business_type"/>
@@ -145,39 +147,50 @@
     <!-- 대시보드 테넌트 목록 조회 -->
     <select id="TenantInfoDAO.selectDashboardTenantItems" parameterType="map" resultMap="platformTenantDashboardItemResultMap">
         SELECT
-            tenant_id,
-            tenant_code,
-            tenant_nm AS company_name,
+            t.tenant_id,
+            t.tenant_code,
+            t.tenant_nm AS company_name,
             '-' AS admin_name,
-            COALESCE(NULLIF(TRIM(admin_email), ''), '-') AS admin_email,
-            CASE WHEN use_at = 'Y' THEN 'ACTIVE' ELSE 'INACTIVE' END AS status,
+            COALESCE(NULLIF(TRIM(t.admin_email), ''), '-') AS admin_email,
+            CASE WHEN t.use_at = 'Y' THEN 'ACTIVE' ELSE 'INACTIVE' END AS status,
             'EMAIL_QUEUED' AS onboarding_status,
-            TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
+            COALESCE(p.plan_code, '-') AS plan_code,
+            COALESCE(p.plan_nm, '-') AS plan_name,
+            TO_CHAR(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
             NULL AS corporate_number,
             NULL AS business_type,
             NULL AS business_category
-        FROM tb_tenant
+        FROM tb_tenant t
+        LEFT JOIN (
+            SELECT DISTINCT ON (s.tenant_id)
+                s.tenant_id,
+                s.plan_id
+            FROM tb_tenant_subscription s
+            WHERE s.subscription_status = 'ACTIVE'
+            ORDER BY s.tenant_id, s.starts_at DESC
+        ) ts ON ts.tenant_id = t.tenant_id
+        LEFT JOIN tb_plan p ON p.plan_id = ts.plan_id
         WHERE 1=1
         <if test="searchKeyword != null and searchKeyword != ''">
             <choose>
                 <when test="searchField == 'tenantCode'">
-                    AND tenant_code ILIKE '%' || #{searchKeyword} || '%'
+                    AND t.tenant_code ILIKE '%' || #{searchKeyword} || '%'
                 </when>
                 <when test="searchField == 'adminName'">
-                    AND COALESCE(admin_email, '') ILIKE '%' || #{searchKeyword} || '%'
+                    AND COALESCE(t.admin_email, '') ILIKE '%' || #{searchKeyword} || '%'
                 </when>
                 <otherwise>
-                    AND tenant_nm ILIKE '%' || #{searchKeyword} || '%'
+                    AND t.tenant_nm ILIKE '%' || #{searchKeyword} || '%'
                 </otherwise>
             </choose>
         </if>
         <if test="status != null and status != '' and status == 'ACTIVE'">
-            AND use_at = 'Y'
+            AND t.use_at = 'Y'
         </if>
         <if test="status != null and status != '' and status == 'INACTIVE'">
-            AND use_at = 'N'
+            AND t.use_at = 'N'
         </if>
-        ORDER BY created_at DESC
+        ORDER BY t.created_at DESC
         LIMIT #{pageSize}
         OFFSET (#{pageIndex} * #{pageSize})
     </select>

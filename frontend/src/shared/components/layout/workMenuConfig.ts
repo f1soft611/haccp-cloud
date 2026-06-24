@@ -33,6 +33,17 @@ export type MenuGroup = {
   items: MenuItem[];
 };
 
+export type AccessibleMenuHierarchyMeta = {
+  menuId?: number;
+  parentMenuId?: number | null;
+  menuCode?: string;
+  menuNm?: string;
+  menuDc?: string;
+  path: string;
+  iconNm?: string;
+  menuOrdr?: number;
+};
+
 const MENU_ICON_NAMES: MenuIconName[] = [
   'Dashboard',
   'Settings',
@@ -82,8 +93,8 @@ const PLATFORM_ADMIN_MENU_GROUPS: MenuGroup[] = [
     ],
   },
   {
-    key: 'system-management',
-    label: APP_LABELS.menu.systemGroup,
+    key: 'platform-management',
+    label: APP_LABELS.menu.platformGroup,
     roles: ['PLATFORM_ADMIN'],
     items: [
       {
@@ -92,6 +103,13 @@ const PLATFORM_ADMIN_MENU_GROUPS: MenuGroup[] = [
         path: '/platform/tenants',
         roles: ['PLATFORM_ADMIN'],
         icon: 'Business',
+      },
+      {
+        label: APP_LABELS.menu.platformPlanManagement,
+        description: '플랜별 메뉴 매핑과 기능 설정을 조회하고 관리합니다.',
+        path: '/platform/plans',
+        roles: ['PLATFORM_ADMIN'],
+        icon: 'Settings',
       },
       {
         label: APP_LABELS.menu.platformMenuManagement,
@@ -113,6 +131,55 @@ const PLATFORM_ADMIN_MENU_GROUPS: MenuGroup[] = [
         path: '/platform/role-menus',
         roles: ['PLATFORM_ADMIN'],
         icon: 'Link',
+      },
+      {
+        label: APP_LABELS.menu.loginHistory,
+        description: '관리자 및 사용자 로그인 이력을 조회합니다.',
+        path: '/platform/login-history',
+        roles: ['PLATFORM_ADMIN'],
+        icon: 'AccessTime',
+      },
+    ],
+  },
+  {
+    key: 'document-management',
+    label: APP_LABELS.menu.documentGroup,
+    roles: ['PLATFORM_ADMIN'],
+    items: [
+      {
+        label: APP_LABELS.menu.documents,
+        description: '업체 문서 템플릿을 조회하고 관리합니다.',
+        path: '/documents',
+        roles: ['PLATFORM_ADMIN'],
+        icon: 'Assignment',
+      },
+      {
+        label: APP_LABELS.menu.history,
+        description: '업체 문서 변경 이력을 조회합니다.',
+        path: '/document-history',
+        roles: ['PLATFORM_ADMIN'],
+        icon: 'History',
+      },
+    ],
+  },
+  {
+    key: 'system-management',
+    label: APP_LABELS.menu.systemGroup,
+    roles: ['PLATFORM_ADMIN'],
+    items: [
+      {
+        label: APP_LABELS.menu.users,
+        description: '업체 사용자 계정과 권한을 관리합니다.',
+        path: '/users',
+        roles: ['PLATFORM_ADMIN'],
+        icon: 'People',
+      },
+      {
+        label: APP_LABELS.menu.departments,
+        description: '업체 부서 정보를 등록하고 수정합니다.',
+        path: '/departments',
+        roles: ['PLATFORM_ADMIN'],
+        icon: 'Category',
       },
       {
         label: APP_LABELS.menu.loginHistory,
@@ -225,6 +292,122 @@ export function filterWorkMenuGroupsByPaths(
     .filter((group) => group.items.length > 0);
 }
 
+function toSortedMenus(menus: AccessibleMenuHierarchyMeta[]) {
+  return [...menus].sort((a, b) => {
+    const orderA = a.menuOrdr ?? Number.MAX_SAFE_INTEGER;
+    const orderB = b.menuOrdr ?? Number.MAX_SAFE_INTEGER;
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    return (
+      (a.menuId ?? Number.MAX_SAFE_INTEGER) -
+      (b.menuId ?? Number.MAX_SAFE_INTEGER)
+    );
+  });
+}
+
+export function buildMenuGroupsFromAccessibleMenus(
+  role: UserRole,
+  menus: AccessibleMenuHierarchyMeta[],
+  accessiblePaths: string[],
+): MenuGroup[] {
+  if (menus.length === 0) {
+    return [];
+  }
+
+  const roots = toSortedMenus(menus).filter(
+    (menu) => menu.parentMenuId == null,
+  );
+
+  const allowedPathSet = new Set(accessiblePaths);
+  const childrenByParentId = new Map<number, AccessibleMenuHierarchyMeta[]>();
+
+  menus.forEach((menu) => {
+    if (menu.parentMenuId == null) {
+      return;
+    }
+
+    const list = childrenByParentId.get(menu.parentMenuId) ?? [];
+    list.push(menu);
+    childrenByParentId.set(menu.parentMenuId, list);
+  });
+
+  if (roots.length === 0) {
+    const items: MenuItem[] = toSortedMenus(menus)
+      .filter((menu) => menu.path.length > 0 && allowedPathSet.has(menu.path))
+      .map((menu) => ({
+        label: menu.menuNm || menu.path,
+        description: menu.menuDc,
+        path: menu.path,
+        roles: [role],
+        icon: toMenuIconName(menu.iconNm),
+      }));
+
+    if (items.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        key: 'menu-group-fallback',
+        label: APP_LABELS.menu.dashboard,
+        roles: [role],
+        items,
+      },
+    ];
+  }
+
+  return roots
+    .map((root): MenuGroup | null => {
+      const directChildren =
+        root.menuId == null
+          ? []
+          : toSortedMenus(childrenByParentId.get(root.menuId) ?? []);
+
+      const items: MenuItem[] = directChildren
+        .filter(
+          (child) => child.path.length > 0 && allowedPathSet.has(child.path),
+        )
+        .map((child) => ({
+          label: child.menuNm || child.path,
+          description: child.menuDc,
+          path: child.path,
+          roles: [role],
+          icon: toMenuIconName(child.iconNm),
+        }));
+
+      if (
+        items.length === 0 &&
+        root.path.length > 0 &&
+        allowedPathSet.has(root.path)
+      ) {
+        items.push({
+          label: root.menuNm || root.path,
+          description: root.menuDc,
+          path: root.path,
+          roles: [role],
+          icon: toMenuIconName(root.iconNm),
+        });
+      }
+
+      if (items.length === 0) {
+        return null;
+      }
+
+      return {
+        key:
+          root.menuCode ||
+          (root.menuId != null
+            ? `menu-group-${root.menuId}`
+            : `menu-group-${root.path}`),
+        label: root.menuNm || root.path || APP_LABELS.menu.dashboard,
+        roles: [role],
+        items,
+      };
+    })
+    .filter((group): group is MenuGroup => group !== null);
+}
+
 export const WORK_MENU_ITEMS: MenuItem[] = [
   {
     label: APP_LABELS.menu.dashboard,
@@ -237,6 +420,12 @@ export const WORK_MENU_ITEMS: MenuItem[] = [
     path: '/platform/menus',
     roles: ['PLATFORM_ADMIN'],
     icon: 'Menu',
+  },
+  {
+    label: APP_LABELS.menu.platformPlanManagement,
+    path: '/platform/plans',
+    roles: ['PLATFORM_ADMIN'],
+    icon: 'Settings',
   },
   {
     label: APP_LABELS.menu.platformRoleManagement,

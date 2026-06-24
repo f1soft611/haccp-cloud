@@ -19,7 +19,7 @@ public interface PlatformRoleDAO {
      * @return 역할 목록
      * @throws Exception
      */
-    List<RoleInfoVO> selectRoleList() throws Exception;
+    List<RoleInfoVO> selectRoleList(RoleInfoVO condition) throws Exception;
 
     /**
      * 역할 목록(페이징)을 조회한다.
@@ -71,7 +71,7 @@ public interface PlatformRoleDAO {
     * @param roleCode 역할 코드
      * @throws Exception
      */
-    void deleteRoleMenuPermissionsByRoleCode(String roleCode) throws Exception;
+    void deleteRoleMenuPermissionsByRoleCode(Object condition) throws Exception;
 
     /**
      * 역할별 메뉴 권한을 등록한다.

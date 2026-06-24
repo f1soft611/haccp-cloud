@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
@@ -19,6 +20,7 @@ import egovframework.com.cmm.service.ResultVO;
 import egovframework.let.platforms.roles.domain.repository.PlatformRoleDAO;
 import egovframework.let.platforms.roles.service.PlatformRoleService;
 import egovframework.let.platforms.roles.domain.model.PlatformRoleMenuSaveRequestVO;
+import egovframework.let.platforms.access.service.PlanAccessService;
 import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
@@ -38,9 +40,16 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
     @Resource(name = "platformRoleDAO")
     private PlatformRoleDAO platformRoleDAO;
 
+    @Resource(name = "planAccessService")
+    private PlanAccessService planAccessService;
+
     @Override
-    public List<RoleInfoVO> listRoles() throws Exception {
-        return platformRoleDAO.selectRoleList();
+    public List<RoleInfoVO> listRoles(String tenantCode) throws Exception {
+        RoleInfoVO condition = new RoleInfoVO();
+        if (hasText(tenantCode)) {
+            condition.setTenantCode(tenantCode.trim().toUpperCase());
+        }
+        return platformRoleDAO.selectRoleList(condition);
     }
 
     @Override
@@ -49,12 +58,14 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
             int pageSize,
             String searchField,
             String searchKeyword,
+            String tenantCode,
             String useAt) throws Exception {
         RoleInfoVO condition = new RoleInfoVO();
         condition.setPageIndex(pageIndex);
         condition.setPageSize(pageSize);
         condition.setSearchField(hasText(searchField) ? searchField.trim() : "");
         condition.setSearchKeyword(hasText(searchKeyword) ? searchKeyword.trim() : "");
+        condition.setTenantCode(hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "");
         condition.setUseAt(hasText(useAt) ? useAt.trim().toUpperCase() : "all");
 
         PaginationInfo paginationInfo = new PaginationInfo();
@@ -90,6 +101,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
 
         payload.setRoleCode(toUpper(payload.getRoleCode()));
         payload.setUseAt("Y");
+        payload.setTenantCode(hasText(payload.getTenantCode()) ? toUpper(payload.getTenantCode()) : "PLATFORM");
 
         if (!hasText(payload.getFrstRegisterId())) {
             payload.setFrstRegisterId(SYSTEM_USER_ID);
@@ -146,14 +158,16 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
     }
 
     @Override
-    public Map<String, Object> getRoleMenus(String roleCode) throws Exception {
+    public Map<String, Object> getRoleMenus(String roleCode, String tenantCode) throws Exception {
         String normalizedRoleCode = toUpper(roleCode);
+        String normalizedTenantCode = hasText(tenantCode) ? toUpper(tenantCode) : "PLATFORM";
         if (!hasText(normalizedRoleCode)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleCode는 필수입니다.");
         }
 
         RoleMenuPermissionVO condition = new RoleMenuPermissionVO();
         condition.setRoleCode(normalizedRoleCode);
+        condition.setTenantCode(normalizedTenantCode);
         List<RoleMenuPermissionVO> permissions = platformRoleDAO.selectRoleMenuPermissionList(condition);
 
         Set<String> menuCodeSet = new LinkedHashSet<String>();
@@ -165,12 +179,13 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
 
         Map<String, Object> response = new HashMap<String, Object>();
         response.put("roleCode", normalizedRoleCode);
+        response.put("tenantCode", normalizedTenantCode);
         response.put("menuIds", new ArrayList<String>(menuCodeSet));
         return response;
     }
 
     @Override
-    public Map<String, Object> replaceRoleMenus(String roleCode, PlatformRoleMenuSaveRequestVO payload) throws Exception {
+    public Map<String, Object> replaceRoleMenus(String roleCode, String tenantCode, PlatformRoleMenuSaveRequestVO payload) throws Exception {
         if (payload == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
@@ -182,11 +197,24 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleCode는 필수입니다.");
         }
 
-        platformRoleDAO.deleteRoleMenuPermissionsByRoleCode(payload.getRoleCode());
+        String normalizedTenantCode = hasText(tenantCode) ? toUpper(tenantCode) : "PLATFORM";
+        List<String> allowedMenuCodes = listAllowedMenuCodesByTenantPlan(normalizedTenantCode);
+        Set<String> allowedSet = new LinkedHashSet<String>(allowedMenuCodes);
 
-        for (String menuCode : payload.getMenuIds()) {
+        List<String> filteredMenuIds = payload.getMenuIds().stream()
+                .filter(allowedSet::contains)
+                .collect(Collectors.toList());
+
+        Map<String, Object> deleteCondition = new HashMap<String, Object>();
+        deleteCondition.put("roleCode", payload.getRoleCode());
+        deleteCondition.put("tenantCode", normalizedTenantCode);
+
+        platformRoleDAO.deleteRoleMenuPermissionsByRoleCode(deleteCondition);
+
+        for (String menuCode : filteredMenuIds) {
             RoleMenuPermissionVO item = new RoleMenuPermissionVO();
             item.setRoleCode(payload.getRoleCode());
+            item.setTenantCode(normalizedTenantCode);
             item.setMenuCode(menuCode);
             item.setPermissionCode(DEFAULT_PERMISSION_ID);
             item.setUseAt("Y");
@@ -197,8 +225,15 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
 
         Map<String, Object> response = new HashMap<String, Object>();
         response.put("roleCode", payload.getRoleCode());
-        response.put("menuIds", payload.getMenuIds());
+        response.put("tenantCode", normalizedTenantCode);
+        response.put("menuIds", filteredMenuIds);
         return response;
+    }
+
+    @Override
+    public List<String> listAllowedMenuCodesByTenantPlan(String tenantCode) throws Exception {
+        String normalizedTenantCode = hasText(tenantCode) ? toUpper(tenantCode) : "PLATFORM";
+        return planAccessService.resolveTenantPlanMenuCodes(normalizedTenantCode);
     }
 
     private String toUpper(String value) {

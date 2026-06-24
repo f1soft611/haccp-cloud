@@ -21,7 +21,7 @@ public interface PlatformRoleService {
      * @return 역할 목록
      * @throws Exception
      */
-    List<RoleInfoVO> listRoles() throws Exception;
+    List<RoleInfoVO> listRoles(String tenantCode) throws Exception;
 
     /**
      * 역할 목록(페이징)을 조회한다.
@@ -38,7 +38,17 @@ public interface PlatformRoleService {
             int pageSize,
             String searchField,
             String searchKeyword,
+            String tenantCode,
             String useAt) throws Exception;
+
+    default ResultVO listRolesPaged(
+            int pageIndex,
+            int pageSize,
+            String searchField,
+            String searchKeyword,
+            String useAt) throws Exception {
+        return listRolesPaged(pageIndex, pageSize, searchField, searchKeyword, null, useAt);
+    }
 
     /**
      * 역할을 등록한다.
@@ -72,7 +82,7 @@ public interface PlatformRoleService {
      * @return 역할 메뉴 정보
      * @throws Exception
      */
-    Map<String, Object> getRoleMenus(String roleCode) throws Exception;
+    Map<String, Object> getRoleMenus(String roleCode, String tenantCode) throws Exception;
 
     /**
      * 역할별 메뉴 권한을 교체 저장한다.
@@ -81,7 +91,9 @@ public interface PlatformRoleService {
      * @return 저장 결과
      * @throws Exception
      */
-    Map<String, Object> replaceRoleMenus(String roleCode, PlatformRoleMenuSaveRequestVO payload) throws Exception;
+    Map<String, Object> replaceRoleMenus(String roleCode, String tenantCode, PlatformRoleMenuSaveRequestVO payload) throws Exception;
+
+    List<String> listAllowedMenuCodesByTenantPlan(String tenantCode) throws Exception;
 
     /**
      * 사용자 접근 가능 메뉴를 조회한다.

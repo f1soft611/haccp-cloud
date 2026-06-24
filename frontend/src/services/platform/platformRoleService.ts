@@ -15,6 +15,7 @@ type PlatformRoleApiItem = {
   useAt?: 'Y' | 'N';
   lastUpdusrId?: string;
   lastUpdtPnttm?: string;
+  tenantCode?: string;
 };
 
 export type PlatformRoleItem = {
@@ -22,12 +23,14 @@ export type PlatformRoleItem = {
   code: string;
   name: string;
   description: string;
+  tenantCode?: string;
   active: boolean;
   updatedBy: string;
   updatedAt: string;
 };
 
 export type CreatePlatformRoleRequest = {
+  tenantCode?: string;
   code: string;
   name: string;
   description: string;
@@ -51,6 +54,7 @@ export type UpdatePlatformRoleStatusRequest = {
 export type ListPlatformRolesPagedParams = {
   pageIndex: number;
   pageSize: number;
+  tenantCode?: string;
   searchField?: 'code' | 'name' | 'description';
   searchKeyword?: string;
   useAt?: 'Y' | 'N' | 'all';
@@ -78,6 +82,7 @@ function normalizePlatformRoleItem(
     code,
     name: item.name ?? item.authorityNm ?? code,
     description: item.description ?? item.authorityDc ?? '',
+    tenantCode: item.tenantCode,
     active: item.active ?? item.useAt !== 'N',
     updatedBy: item.updatedBy ?? item.lastUpdusrId ?? '',
     updatedAt: item.updatedAt ?? item.lastUpdtPnttm ?? '',
@@ -104,7 +109,12 @@ export async function listPlatformRolesPaged(
 }> {
   const { data } = await apiClient.get<PlatformRolesPagedResponse>(
     '/platform-admin/roles/paged',
-    { params },
+    {
+      params: {
+        ...params,
+        tenantCode: params.tenantCode,
+      },
+    },
   );
 
   return {
@@ -128,6 +138,7 @@ export async function createPlatformRole(
       authorityCode: payload.code,
       authorityNm: payload.name,
       useAt: payload.active ? 'Y' : 'N',
+      tenantCode: payload.tenantCode,
     },
   );
   return normalizePlatformRoleItem(data);

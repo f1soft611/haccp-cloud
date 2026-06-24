@@ -57,7 +57,14 @@
             INNER JOIN tb_menu m ON rmp.menu_id = m.menu_id
             INNER JOIN tb_role r ON rmp.role_id = r.role_id
             INNER JOIN tb_permission p ON rmp.permission_id = p.permission_id
-                WHERE r.role_code = #{roleCode}
+            INNER JOIN tb_tenant_subscription ts
+                ON ts.tenant_id = r.tenant_id
+               AND ts.subscription_status = 'ACTIVE'
+            INNER JOIN tb_plan_menu pm
+                ON pm.plan_id = ts.plan_id
+               AND pm.menu_code = m.menu_code
+               AND pm.use_at = 'Y'
+        WHERE r.role_code = #{roleCode}
           AND m.menu_url = #{menuUrl}
           AND m.use_at = 'Y'
           AND p.use_at = 'Y'

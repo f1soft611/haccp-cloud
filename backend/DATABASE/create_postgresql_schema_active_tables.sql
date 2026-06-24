@@ -113,17 +113,17 @@ CREATE TABLE IF NOT EXISTS tb_login_account_role (
 -- Menu
 CREATE TABLE IF NOT EXISTS tb_menu (
     menu_id BIGSERIAL PRIMARY KEY,
-    tenant_id BIGINT NOT NULL,
     parent_menu_id BIGINT,
     menu_code VARCHAR(50),
     menu_nm VARCHAR(100) NOT NULL,
+    menu_dc VARCHAR(500),
     menu_url VARCHAR(500),
+    icon_nm VARCHAR(100),
     menu_order INT,
     use_at CHAR(1) DEFAULT 'Y' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE,
     FOREIGN KEY (parent_menu_id) REFERENCES tb_menu(menu_id) ON DELETE CASCADE
 );
 

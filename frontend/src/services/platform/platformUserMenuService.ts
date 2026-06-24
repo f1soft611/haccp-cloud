@@ -1,6 +1,10 @@
 import { apiClient } from '../api/apiClient';
 
 type UserMenuEntry = {
+  menuId?: number | null;
+  parentMenuId?: number | null;
+  menuCode?: string | null;
+  menuOrdr?: number | null;
   menuUrl?: string | null;
   menuNm?: string | null;
   menuDc?: string | null;
@@ -19,11 +23,31 @@ type UserMenuEnvelope = {
 type UserMenuResponse = UserMenuEnvelope | UserMenuListEntry[];
 
 export type AccessibleMenuMeta = {
+  menuId?: number;
+  parentMenuId?: number | null;
+  menuCode?: string;
+  menuOrdr?: number;
   path: string;
   menuNm?: string;
   menuDc?: string;
   iconNm?: string;
 };
+
+function mergeMenuMeta(
+  current: AccessibleMenuMeta,
+  incoming: AccessibleMenuMeta,
+): AccessibleMenuMeta {
+  return {
+    menuId: current.menuId ?? incoming.menuId,
+    parentMenuId: current.parentMenuId ?? incoming.parentMenuId ?? null,
+    menuCode: current.menuCode ?? incoming.menuCode,
+    menuOrdr: current.menuOrdr ?? incoming.menuOrdr,
+    path: current.path || incoming.path,
+    menuNm: current.menuNm || incoming.menuNm,
+    menuDc: current.menuDc || incoming.menuDc,
+    iconNm: current.iconNm || incoming.iconNm,
+  };
+}
 
 function normalizeMenuPath(menuUrl: string): string {
   const trimmed = menuUrl.trim();
@@ -80,6 +104,10 @@ export async function listAccessibleMenus(): Promise<AccessibleMenuMeta[]> {
     .map((item) => {
       if (typeof item === 'string') {
         return {
+          menuId: undefined,
+          parentMenuId: null,
+          menuCode: undefined,
+          menuOrdr: undefined,
           path: normalizeMenuPath(item),
           menuNm: undefined,
           menuDc: undefined,
@@ -88,35 +116,37 @@ export async function listAccessibleMenus(): Promise<AccessibleMenuMeta[]> {
       }
 
       return {
+        menuId: item.menuId ?? undefined,
+        parentMenuId: item.parentMenuId ?? null,
+        menuCode: item.menuCode?.trim() || undefined,
+        menuOrdr: item.menuOrdr ?? undefined,
         path: normalizeMenuPath(item.menuUrl ?? ''),
         menuNm: item.menuNm?.trim(),
         menuDc: item.menuDc?.trim(),
         iconNm: item.iconNm?.trim(),
       };
     })
-    .filter((item) => item.path.length > 0);
+    .filter(
+      (item) => item.path.length > 0 || item.menuId != null || !!item.menuCode,
+    );
 
-  const uniqueByPath = new Map<string, AccessibleMenuMeta>();
+  const uniqueMenus = new Map<string, AccessibleMenuMeta>();
   normalizedMenus.forEach((item) => {
-    if (!uniqueByPath.has(item.path)) {
-      uniqueByPath.set(item.path, item);
-      return;
-    }
+    const key =
+      item.menuId != null
+        ? `id:${item.menuId}`
+        : item.menuCode
+          ? `code:${item.menuCode}`
+          : `path:${item.parentMenuId ?? 'root'}:${item.path}`;
 
-    const current = uniqueByPath.get(item.path);
+    const current = uniqueMenus.get(key);
     if (!current) {
-      uniqueByPath.set(item.path, item);
+      uniqueMenus.set(key, item);
       return;
     }
 
-    // Keep the first non-empty menu label/description for each path.
-    uniqueByPath.set(item.path, {
-      path: item.path,
-      menuNm: current.menuNm || item.menuNm,
-      menuDc: current.menuDc || item.menuDc,
-      iconNm: current.iconNm || item.iconNm,
-    });
+    uniqueMenus.set(key, mergeMenuMeta(current, item));
   });
 
-  return Array.from(uniqueByPath.values());
+  return Array.from(uniqueMenus.values());
 }

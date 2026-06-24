@@ -2,6 +2,7 @@ import { apiClient } from '../api/apiClient';
 
 export type PlatformMenuItem = {
   menuId: string;
+  menuCode: string;
   menuNm: string;
   menuDc: string;
   parentMenuId: string | null;
@@ -18,6 +19,7 @@ export type PlatformMenuItem = {
 };
 
 export type CreatePlatformMenuRequest = {
+  menuCode: string;
   menuNm: string;
   menuDc: string;
   menuUrl: string;
@@ -39,6 +41,7 @@ export type UpdatePlatformMenuRequest = {
 };
 
 type MenuUpsertApiPayload = {
+  menuCode?: string;
   menuNm: string;
   menuDc: string;
   menuUrl: string;
@@ -120,6 +123,7 @@ function normalizeMenuItem(item: RawPlatformMenuItem): PlatformMenuItem {
   return {
     ...item,
     menuId: normalizeMenuId(item),
+    menuCode: normalizeTextValue(item.menuCode),
     parentMenuId: normalizeParentMenuCode(item),
   };
 }
@@ -166,7 +170,9 @@ export async function listPlatformMenusPaged(
 export async function createPlatformMenu(
   payload: CreatePlatformMenuRequest,
 ): Promise<void> {
+  const normalizedMenuCode = normalizeTextValue(payload.menuCode).toUpperCase();
   const requestBody: MenuUpsertApiPayload = {
+    ...(normalizedMenuCode ? { menuCode: normalizedMenuCode } : {}),
     menuNm: payload.menuNm,
     menuDc: payload.menuDc,
     menuUrl: payload.menuUrl,

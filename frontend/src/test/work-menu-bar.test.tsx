@@ -34,6 +34,10 @@ const renderLayoutWithRole = (
       '/platform/roles',
       '/platform/role-menus',
       '/platform/login-history',
+      '/users',
+      '/departments',
+      '/documents',
+      '/document-history',
     ],
     TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
     USER: ['/dashboard', '/documents'],
@@ -142,7 +146,7 @@ describe('WorkMenuBar role-based visibility', () => {
     mockListAccessibleMenuPaths.mockReset();
   });
 
-  it('PLATFORM_ADMIN sees dashboardGroup and systemGroup buttons but not a users link', async () => {
+  it('PLATFORM_ADMIN sees dashboard, platform, document, and system group buttons', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
     expect(
@@ -151,21 +155,24 @@ describe('WorkMenuBar role-based visibility', () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+      screen.getByRole('button', { name: APP_LABELS.menu.platformGroup }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole('link', { name: APP_LABELS.menu.users }),
-    ).not.toBeInTheDocument();
+      screen.getByRole('button', { name: APP_LABELS.menu.documentGroup }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+    ).toBeInTheDocument();
   });
 
-  it('clicking systemGroup button reveals platform management links but not users link', async () => {
+  it('clicking platformGroup button reveals platform management links', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
-    const systemGroupButton = await screen.findByRole('button', {
-      name: APP_LABELS.menu.systemGroup,
+    const platformGroupButton = await screen.findByRole('button', {
+      name: APP_LABELS.menu.platformGroup,
     });
 
-    fireEvent.click(systemGroupButton);
+    fireEvent.click(platformGroupButton);
 
     expect(
       await screen.findByRole('link', {
@@ -192,9 +199,46 @@ describe('WorkMenuBar role-based visibility', () => {
         name: APP_LABELS.menu.loginHistory,
       }),
     ).toHaveAttribute('href', '/platform/login-history');
+  });
+
+  it('clicking systemGroup button reveals users and departments links', async () => {
+    renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
+
+    const systemGroupButton = await screen.findByRole('button', {
+      name: APP_LABELS.menu.systemGroup,
+    });
+
+    fireEvent.click(systemGroupButton);
+
     expect(
-      screen.queryByRole('link', { name: APP_LABELS.menu.users }),
-    ).not.toBeInTheDocument();
+      await screen.findByRole('link', {
+        name: APP_LABELS.menu.users,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: APP_LABELS.menu.departments,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('clicking documentGroup button reveals document links', async () => {
+    renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
+
+    const documentGroupButton = await screen.findByRole('button', {
+      name: APP_LABELS.menu.documentGroup,
+    });
+
+    fireEvent.click(documentGroupButton);
+
+    expect(
+      await screen.findByRole('link', {
+        name: APP_LABELS.menu.documents,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: APP_LABELS.menu.history }),
+    ).toBeInTheDocument();
   });
 
   it('USER does not see systemGroup button and does not see platformMenuManagement link', () => {
@@ -210,12 +254,12 @@ describe('WorkMenuBar role-based visibility', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('filters platform system menus when accessible menu paths do not include platform pages', async () => {
+  it('filters platform group when accessible menu paths do not include platform pages', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard', ['/users']);
 
     await waitFor(() => {
       expect(
-        screen.queryByRole('button', { name: APP_LABELS.menu.systemGroup }),
+        screen.queryByRole('button', { name: APP_LABELS.menu.platformGroup }),
       ).not.toBeInTheDocument();
     });
   });
@@ -223,7 +267,7 @@ describe('WorkMenuBar role-based visibility', () => {
   it('work-menu-bar has segmented nav variant marker', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
-    await screen.findByRole('button', { name: APP_LABELS.menu.dashboardGroup });
+    await screen.findByRole('button', { name: APP_LABELS.menu.dashboard });
 
     expect(screen.getByTestId('work-menu-bar')).toHaveAttribute(
       'data-nav-variant',
@@ -282,7 +326,7 @@ describe('WorkMenuBar role-based visibility', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+        screen.getByRole('button', { name: APP_LABELS.menu.platformGroup }),
       ).toBeInTheDocument();
     });
   });
@@ -290,9 +334,7 @@ describe('WorkMenuBar role-based visibility', () => {
   it('group buttons expose aria-pressed state', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
-    const systemBtn = await screen.findByRole('button', {
-      name: APP_LABELS.menu.systemGroup,
-    });
+    const [systemBtn] = await screen.findAllByRole('button');
     expect(systemBtn).toHaveAttribute('aria-pressed');
   });
 });

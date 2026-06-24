@@ -7,11 +7,15 @@ import { PageShell } from './PageShell';
 import { PortalFooter } from './PortalFooter';
 import { WorkMenuBar } from './WorkMenuBar';
 import {
+  buildMenuGroupsFromAccessibleMenus,
   filterWorkMenuGroupsByPaths,
   getWorkMenuGroups,
   toMenuIconName,
 } from './workMenuConfig';
-import { listAccessibleMenuPaths } from '../../../services/platform/platformUserMenuService';
+import {
+  listAccessibleMenuPaths,
+  type AccessibleMenuMeta,
+} from '../../../services/platform/platformUserMenuService';
 import * as userMenuService from '../../../services/platform/platformUserMenuService';
 import { getCurrentPlanAccess } from '../../../services/plan/planAccessService';
 import {
@@ -33,11 +37,7 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  let listAccessibleMenusFn:
-    | (() => Promise<
-        { path: string; menuNm?: string; menuDc?: string; iconNm?: string }[]
-      >)
-    | undefined;
+  let listAccessibleMenusFn: (() => Promise<AccessibleMenuMeta[]>) | undefined;
 
   try {
     listAccessibleMenusFn = (
@@ -111,12 +111,58 @@ export function AppLayout() {
     return metadataMap;
   }, [accessibleMenuMetaQuery.data]);
 
+  const roleDefaultMenuItemByPath = useMemo(() => {
+    const itemByPath = new Map<
+      string,
+      (typeof roleDefaultMenuGroups)[number]['items'][number]
+    >();
+
+    roleDefaultMenuGroups.forEach((group) => {
+      group.items.forEach((item) => {
+        if (!itemByPath.has(item.path)) {
+          itemByPath.set(item.path, item);
+        }
+      });
+    });
+
+    return itemByPath;
+  }, [roleDefaultMenuGroups]);
+
   const isInitialMenuLoading =
     accessibleMenuQuery.isPending && accessibleMenuQuery.data === undefined;
 
   const menuGroups = useMemo(() => {
     if (isInitialMenuLoading) {
       return [];
+    }
+
+    const dynamicGroups = buildMenuGroupsFromAccessibleMenus(
+      role,
+      accessibleMenuMetaQuery.data ?? [],
+      featureFilteredAllowedPaths,
+    );
+
+    if (dynamicGroups.length > 0) {
+      return dynamicGroups.map((group) => ({
+        ...group,
+        items: group.items.map((item) => {
+          const metadata = menuMetadataByPath[item.path];
+          const fallbackDefault = roleDefaultMenuItemByPath.get(item.path);
+
+          return {
+            ...item,
+            label: metadata?.menuNm || fallbackDefault?.label || item.label,
+            description:
+              metadata?.menuDc ||
+              fallbackDefault?.description ||
+              item.description,
+            icon:
+              toMenuIconName(metadata?.iconNm) ||
+              fallbackDefault?.icon ||
+              item.icon,
+          };
+        }),
+      }));
     }
 
     const filteredGroups = filterWorkMenuGroupsByPaths(
@@ -143,7 +189,10 @@ export function AppLayout() {
   }, [
     featureFilteredAllowedPaths,
     isInitialMenuLoading,
+    accessibleMenuMetaQuery.data,
     menuMetadataByPath,
+    roleDefaultMenuItemByPath,
+    role,
     roleDefaultMenuGroups,
   ]);
 

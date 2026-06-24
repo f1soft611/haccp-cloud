@@ -15,6 +15,8 @@ export type PlatformTenantManagementItem = {
   adminEmail: string;
   status: PlatformTenantStatus;
   onboardingStatus: PlatformTenantOnboardingStatus;
+  planCode?: string;
+  planName?: string;
   createdAt: string;
 };
 

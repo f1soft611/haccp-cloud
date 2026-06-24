@@ -19,8 +19,8 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      * 역할 목록을 조회한다.
      */
     @Override
-    public List<RoleInfoVO> selectRoleList() throws Exception {
-        return selectList("PlatformRoleDAO.selectRoleList");
+    public List<RoleInfoVO> selectRoleList(RoleInfoVO condition) throws Exception {
+        return selectList("PlatformRoleDAO.selectRoleList", condition);
     }
 
     /**
@@ -76,8 +76,8 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      * 역할코드 기준으로 메뉴권한을 삭제한다.
      */
     @Override
-    public void deleteRoleMenuPermissionsByRoleCode(String roleCode) throws Exception {
-        delete("PlatformRoleDAO.deleteRoleMenuPermissionsByRoleCode", roleCode);
+    public void deleteRoleMenuPermissionsByRoleCode(Object condition) throws Exception {
+        delete("PlatformRoleDAO.deleteRoleMenuPermissionsByRoleCode", condition);
     }
 
     /**

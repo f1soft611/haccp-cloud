@@ -692,11 +692,11 @@ describe('App shell', () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+      screen.getByRole('button', { name: APP_LABELS.menu.platformGroup }),
     ).toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole('button', { name: APP_LABELS.menu.systemGroup }),
+      screen.getByRole('button', { name: APP_LABELS.menu.platformGroup }),
     );
 
     expect(

@@ -38,46 +38,46 @@ public class PlanAccessInterceptor implements HandlerInterceptor {
 
             // Platform menu management
             new EndpointAccessRule("GET", "/api/platform-admin/menus/**", "/platform/menus", LEVEL_READ,
-                    "FEATURE_USER_MGMT", null),
+                    "FEATURE_PLATFORM_MENU_MGMT", null),
             new EndpointAccessRule("POST", "/api/platform-admin/menus/**", "/platform/menus", LEVEL_WRITE,
-                    "FEATURE_USER_MGMT", null),
+                    "FEATURE_PLATFORM_MENU_MGMT", null),
             new EndpointAccessRule("PATCH", "/api/platform-admin/menus/**", "/platform/menus", LEVEL_WRITE,
-                    "FEATURE_USER_MGMT", null),
+                    "FEATURE_PLATFORM_MENU_MGMT", null),
             new EndpointAccessRule("DELETE", "/api/platform-admin/menus/**", "/platform/menus", LEVEL_WRITE,
-                    "FEATURE_USER_MGMT", null),
+                    "FEATURE_PLATFORM_MENU_MGMT", null),
 
             // Platform role management
             new EndpointAccessRule("GET", "/api/platform-admin/roles/**", "/platform/roles", LEVEL_READ,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_PLATFORM_ROLE_MGMT", null),
             new EndpointAccessRule("POST", "/api/platform-admin/roles/**", "/platform/roles", LEVEL_WRITE,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_PLATFORM_ROLE_MGMT", null),
             new EndpointAccessRule("PATCH", "/api/platform-admin/roles/**", "/platform/roles", LEVEL_WRITE,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_PLATFORM_ROLE_MGMT", null),
             new EndpointAccessRule("PUT", "/api/platform-admin/roles/**", "/platform/roles", LEVEL_WRITE,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_PLATFORM_ROLE_MGMT", null),
 
             // Platform role-menu mapping
             new EndpointAccessRule("GET", "/api/platform-admin/role-menus/**", "/platform/role-menus", LEVEL_READ,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_PLATFORM_ROLE_MGMT", null),
             new EndpointAccessRule("PUT", "/api/platform-admin/role-menus/**", "/platform/role-menus", LEVEL_WRITE,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_PLATFORM_ROLE_MGMT", null),
 
             // Platform tenant management
             new EndpointAccessRule("POST", "/api/platform-admin/tenants/**", "/platform/tenants", LEVEL_WRITE,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_PLATFORM_TENANT_MGMT", null),
 
             // Tenant member management
             new EndpointAccessRule("GET", "/members", "/users", LEVEL_READ,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_TENANT_USER_MGMT", null),
             new EndpointAccessRule("GET", "/members/insert", "/users", LEVEL_READ,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_TENANT_USER_MGMT", null),
                     new EndpointAccessRule("POST", "/members/insert", "/members", LEVEL_WRITE,
-                    "FEATURE_USER_MGMT", "LIMIT_USER_COUNT")
+                    "FEATURE_TENANT_USER_MGMT", "LIMIT_USER_COUNT")
             ,
             new EndpointAccessRule("PUT", "/members/update", "/users", LEVEL_WRITE,
-                "FEATURE_USER_MGMT", null),
+                "FEATURE_TENANT_USER_MGMT", null),
             new EndpointAccessRule("GET", "/members/update/**", "/users", LEVEL_READ,
-                "FEATURE_USER_MGMT", null)
+                "FEATURE_TENANT_USER_MGMT", null)
     );
 
     private final PlanAccessService planAccessService;

@@ -54,6 +54,20 @@ CREATE TABLE IF NOT EXISTS tb_plan_feature (
     )
 );
 
+-- 2-1) Plan menu visibility matrix
+-- menu_code is used instead of menu_id so one plan can be reused across tenants.
+CREATE TABLE IF NOT EXISTS tb_plan_menu (
+    plan_menu_id BIGSERIAL PRIMARY KEY,
+    plan_id BIGINT NOT NULL,
+    menu_code VARCHAR(100) NOT NULL,
+    use_at CHAR(1) DEFAULT 'Y' NOT NULL CHECK (use_at IN ('Y', 'N')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE (plan_id, menu_code),
+    FOREIGN KEY (plan_id) REFERENCES tb_plan(plan_id) ON DELETE CASCADE
+);
+
 -- 3) Tenant subscription history/current state
 -- subscription_status:
 --   ACTIVE, SUSPENDED, EXPIRED, CANCELED
@@ -96,12 +110,19 @@ ON tb_plan_feature(plan_id);
 CREATE INDEX IF NOT EXISTS idx_plan_feature_code
 ON tb_plan_feature(feature_code);
 
--- 4) Seed base plans (A/B/C)
+CREATE INDEX IF NOT EXISTS idx_plan_menu_plan
+ON tb_plan_menu(plan_id);
+
+CREATE INDEX IF NOT EXISTS idx_plan_menu_code
+ON tb_plan_menu(menu_code);
+
+-- 4) Seed base plans (A/B/C/P)
 INSERT INTO tb_plan (plan_code, plan_nm, plan_desc, use_at)
 VALUES
     ('A', 'Basic', 'Entry plan', 'Y'),
     ('B', 'Professional', 'Mid-tier plan', 'Y'),
-    ('C', 'Enterprise', 'Advanced plan', 'Y')
+    ('C', 'Enterprise', 'Advanced plan', 'Y'),
+    ('P', 'Platform Admin', 'Platform control plan for internal admin tenant', 'Y')
 ON CONFLICT (plan_code) DO UPDATE
 SET plan_nm = EXCLUDED.plan_nm,
     plan_desc = EXCLUDED.plan_desc,
@@ -118,7 +139,10 @@ SELECT p.plan_id, x.feature_code, x.feature_nm, x.feature_type, x.enabled_at, x.
 FROM tb_plan p
 CROSS JOIN (
     VALUES
-        ('FEATURE_USER_MGMT', 'User management', 'BOOLEAN', 'Y', NULL),
+    ('FEATURE_PLATFORM_TENANT_MGMT', 'Platform tenant management', 'BOOLEAN', 'N', NULL),
+    ('FEATURE_PLATFORM_MENU_MGMT', 'Platform menu management', 'BOOLEAN', 'N', NULL),
+    ('FEATURE_PLATFORM_ROLE_MGMT', 'Platform role management', 'BOOLEAN', 'N', NULL),
+    ('FEATURE_TENANT_USER_MGMT', 'Tenant user management', 'BOOLEAN', 'Y', NULL),
         ('FEATURE_DOC_WORKFLOW', 'Document workflow', 'BOOLEAN', 'N', NULL),
         ('FEATURE_AUDIT_LOG', 'Audit log', 'BOOLEAN', 'N', NULL),
         ('FEATURE_API_EXPORT', 'API export', 'BOOLEAN', 'N', NULL),
@@ -138,7 +162,10 @@ SELECT p.plan_id, x.feature_code, x.feature_nm, x.feature_type, x.enabled_at, x.
 FROM tb_plan p
 CROSS JOIN (
     VALUES
-        ('FEATURE_USER_MGMT', 'User management', 'BOOLEAN', 'Y', NULL),
+    ('FEATURE_PLATFORM_TENANT_MGMT', 'Platform tenant management', 'BOOLEAN', 'N', NULL),
+    ('FEATURE_PLATFORM_MENU_MGMT', 'Platform menu management', 'BOOLEAN', 'N', NULL),
+    ('FEATURE_PLATFORM_ROLE_MGMT', 'Platform role management', 'BOOLEAN', 'N', NULL),
+    ('FEATURE_TENANT_USER_MGMT', 'Tenant user management', 'BOOLEAN', 'Y', NULL),
         ('FEATURE_DOC_WORKFLOW', 'Document workflow', 'BOOLEAN', 'Y', NULL),
         ('FEATURE_AUDIT_LOG', 'Audit log', 'BOOLEAN', 'N', NULL),
         ('FEATURE_API_EXPORT', 'API export', 'BOOLEAN', 'Y', NULL),
@@ -158,7 +185,10 @@ SELECT p.plan_id, x.feature_code, x.feature_nm, x.feature_type, x.enabled_at, x.
 FROM tb_plan p
 CROSS JOIN (
     VALUES
-        ('FEATURE_USER_MGMT', 'User management', 'BOOLEAN', 'Y', NULL),
+        ('FEATURE_PLATFORM_TENANT_MGMT', 'Platform tenant management', 'BOOLEAN', 'N', NULL),
+        ('FEATURE_PLATFORM_MENU_MGMT', 'Platform menu management', 'BOOLEAN', 'N', NULL),
+        ('FEATURE_PLATFORM_ROLE_MGMT', 'Platform role management', 'BOOLEAN', 'N', NULL),
+        ('FEATURE_TENANT_USER_MGMT', 'Tenant user management', 'BOOLEAN', 'Y', NULL),
         ('FEATURE_DOC_WORKFLOW', 'Document workflow', 'BOOLEAN', 'Y', NULL),
         ('FEATURE_AUDIT_LOG', 'Audit log', 'BOOLEAN', 'Y', NULL),
         ('FEATURE_API_EXPORT', 'API export', 'BOOLEAN', 'Y', NULL),
@@ -170,6 +200,105 @@ SET feature_nm = EXCLUDED.feature_nm,
     feature_type = EXCLUDED.feature_type,
     enabled_at = EXCLUDED.enabled_at,
     limit_value = EXCLUDED.limit_value,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- P plan (platform internal tenant)
+INSERT INTO tb_plan_feature (plan_id, feature_code, feature_nm, feature_type, enabled_at, limit_value)
+SELECT p.plan_id, x.feature_code, x.feature_nm, x.feature_type, x.enabled_at, x.limit_value
+FROM tb_plan p
+CROSS JOIN (
+    VALUES
+        ('FEATURE_PLATFORM_TENANT_MGMT', 'Platform tenant management', 'BOOLEAN', 'Y', NULL),
+        ('FEATURE_PLATFORM_MENU_MGMT', 'Platform menu management', 'BOOLEAN', 'Y', NULL),
+        ('FEATURE_PLATFORM_ROLE_MGMT', 'Platform role management', 'BOOLEAN', 'Y', NULL),
+    ('FEATURE_TENANT_USER_MGMT', 'Tenant user management', 'BOOLEAN', 'Y', NULL),
+    ('FEATURE_DOC_WORKFLOW', 'Document workflow', 'BOOLEAN', 'Y', NULL),
+        ('FEATURE_AUDIT_LOG', 'Audit log', 'BOOLEAN', 'Y', NULL),
+        ('FEATURE_API_EXPORT', 'API export', 'BOOLEAN', 'Y', NULL),
+        ('LIMIT_USER_COUNT', 'Maximum users', 'LIMIT', 'Y', 1000)
+) AS x(feature_code, feature_nm, feature_type, enabled_at, limit_value)
+WHERE p.plan_code = 'P'
+ON CONFLICT (plan_id, feature_code) DO UPDATE
+SET feature_nm = EXCLUDED.feature_nm,
+    feature_type = EXCLUDED.feature_type,
+    enabled_at = EXCLUDED.enabled_at,
+    limit_value = EXCLUDED.limit_value,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- 5-1) Seed plan-menu matrix
+-- A: tenant basic menu set (no document template menu)
+INSERT INTO tb_plan_menu (plan_id, menu_code, use_at)
+SELECT p.plan_id, x.menu_code, x.use_at
+FROM tb_plan p
+CROSS JOIN (
+    VALUES
+        ('MENU_TENANT_DASHBOARD', 'Y'),
+        ('MENU_TENANT_USERS', 'Y'),
+        ('MENU_TENANT_DEPARTMENTS', 'Y'),
+        ('MENU_TENANT_HISTORY', 'Y')
+) AS x(menu_code, use_at)
+WHERE p.plan_code = 'A'
+ON CONFLICT (plan_id, menu_code) DO UPDATE
+SET use_at = EXCLUDED.use_at,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- B: A + documents
+INSERT INTO tb_plan_menu (plan_id, menu_code, use_at)
+SELECT p.plan_id, x.menu_code, x.use_at
+FROM tb_plan p
+CROSS JOIN (
+    VALUES
+        ('MENU_TENANT_DASHBOARD', 'Y'),
+        ('MENU_TENANT_USERS', 'Y'),
+        ('MENU_TENANT_DEPARTMENTS', 'Y'),
+        ('MENU_TENANT_DOCUMENTS', 'Y'),
+        ('MENU_TENANT_HISTORY', 'Y')
+) AS x(menu_code, use_at)
+WHERE p.plan_code = 'B'
+ON CONFLICT (plan_id, menu_code) DO UPDATE
+SET use_at = EXCLUDED.use_at,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- C: B + enterprise still uses same menu surface
+INSERT INTO tb_plan_menu (plan_id, menu_code, use_at)
+SELECT p.plan_id, x.menu_code, x.use_at
+FROM tb_plan p
+CROSS JOIN (
+    VALUES
+        ('MENU_TENANT_DASHBOARD', 'Y'),
+        ('MENU_TENANT_USERS', 'Y'),
+        ('MENU_TENANT_DEPARTMENTS', 'Y'),
+        ('MENU_TENANT_DOCUMENTS', 'Y'),
+        ('MENU_TENANT_HISTORY', 'Y')
+) AS x(menu_code, use_at)
+WHERE p.plan_code = 'C'
+ON CONFLICT (plan_id, menu_code) DO UPDATE
+SET use_at = EXCLUDED.use_at,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- P: platform super tenant menu surface
+INSERT INTO tb_plan_menu (plan_id, menu_code, use_at)
+SELECT p.plan_id, x.menu_code, x.use_at
+FROM tb_plan p
+CROSS JOIN (
+    VALUES
+        ('MENU_PLATFORM_ROOT', 'Y'),
+        ('MENU_DOCUMENT_ROOT', 'Y'),
+        ('MENU_SYSTEM_ROOT', 'Y'),
+        ('MENU_PLAN_MANAGEMENT', 'Y'),
+        ('MENU_MENU_MANAGEMENT', 'Y'),
+        ('MENU_AUTHORITY_MANAGEMENT', 'Y'),
+        ('MENU_TENANT_MANAGEMENT', 'Y'),
+        ('MENU_LOGIN_HISTORY', 'Y'),
+        ('MENU_TENANT_USERS', 'Y'),
+        ('MENU_TENANT_DEPARTMENTS', 'Y'),
+        ('MENU_TENANT_DOCUMENTS', 'Y'),
+        ('MENU_TENANT_HISTORY', 'Y'),
+        ('MENU_TENANT_DASHBOARD', 'Y')
+) AS x(menu_code, use_at)
+WHERE p.plan_code = 'P'
+ON CONFLICT (plan_id, menu_code) DO UPDATE
+SET use_at = EXCLUDED.use_at,
     updated_at = CURRENT_TIMESTAMP;
 
 -- 6) Optional bootstrap: assign default plan A for tenants with no ACTIVE subscription
