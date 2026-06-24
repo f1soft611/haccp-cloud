@@ -7,6 +7,10 @@
     {
       "source": "/haccp-cloud/api/:path*",
       "destination": "http://218.155.74.34/haccp-cloud/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
