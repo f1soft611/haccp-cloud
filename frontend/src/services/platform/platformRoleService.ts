@@ -3,9 +3,13 @@ import { apiClient } from '../api/apiClient';
 type PlatformRoleApiItem = {
   id?: string | number;
   authorityId?: string | number;
+  roleId?: string | number;
   code?: string;
+  roleCode?: string;
   name?: string;
+  roleNm?: string;
   description?: string;
+  roleDc?: string;
   authorityDc?: string;
   active?: boolean;
   updatedBy?: string;
@@ -75,13 +79,13 @@ type PlatformRolesPagedResponse = {
 function normalizePlatformRoleItem(
   item: PlatformRoleApiItem,
 ): PlatformRoleItem {
-  const code = item.code ?? item.authorityCode ?? '';
-  const normalizedId = item.id ?? item.authorityId;
+  const code = item.code ?? item.roleCode ?? item.authorityCode ?? '';
+  const normalizedId = item.id ?? item.roleId ?? item.authorityId;
   return {
     id: normalizedId == null ? code : String(normalizedId),
     code,
-    name: item.name ?? item.authorityNm ?? code,
-    description: item.description ?? item.authorityDc ?? '',
+    name: item.name ?? item.roleNm ?? item.authorityNm ?? code,
+    description: item.description ?? item.roleDc ?? item.authorityDc ?? '',
     tenantCode: item.tenantCode,
     active: item.active ?? item.useAt !== 'N',
     updatedBy: item.updatedBy ?? item.lastUpdusrId ?? '',
@@ -130,11 +134,14 @@ export async function createPlatformRole(
   const { data } = await apiClient.post<PlatformRoleApiItem>(
     '/platform-admin/roles',
     {
+      roleCode: payload.code,
+      roleNm: payload.name,
+      roleDc: payload.description,
+      authorityDc: payload.description,
+      active: payload.active,
       code: payload.code,
       name: payload.name,
       description: payload.description,
-      authorityDc: payload.description,
-      active: payload.active,
       authorityCode: payload.code,
       authorityNm: payload.name,
       useAt: payload.active ? 'Y' : 'N',
@@ -173,11 +180,14 @@ export async function updatePlatformRole(
   const { data } = await apiClient.put<PlatformRoleApiItem>(
     `/platform-admin/roles/${roleIdentifier}`,
     {
+      roleCode: payload.code,
+      roleNm: payload.name,
+      roleDc: payload.description,
+      authorityDc: payload.description,
+      active: payload.active,
       code: payload.code,
       name: payload.name,
       description: payload.description,
-      authorityDc: payload.description,
-      active: payload.active,
       authorityCode: payload.code,
       authorityNm: payload.name,
       useAt: payload.active ? 'Y' : 'N',

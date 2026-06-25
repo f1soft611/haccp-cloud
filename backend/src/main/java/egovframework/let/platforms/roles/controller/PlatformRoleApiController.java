@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.service.ResultVO;
+import egovframework.com.cmm.LoginVO;
+import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.let.platforms.roles.service.PlatformRoleService;
 import egovframework.let.platforms.roles.domain.model.PlatformRoleMenuSaveRequestVO;
 import egovframework.let.uss.auth.service.RoleInfoVO;
@@ -43,7 +45,7 @@ public class PlatformRoleApiController {
 
     @GetMapping("/roles")
     public List<RoleInfoVO> listRoles(@RequestParam(required = false) String tenantCode) throws Exception {
-        return platformRoleService.listRoles(tenantCode);
+        return platformRoleService.listRoles(resolveTenantCode(tenantCode));
     }
 
     @GetMapping("/roles/paged")
@@ -63,7 +65,7 @@ public class PlatformRoleApiController {
                 pageSize,
                 searchField,
                 searchKeyword,
-                tenantCode,
+            resolveTenantCode(tenantCode),
                 useAt
         );
     }
@@ -74,9 +76,7 @@ public class PlatformRoleApiController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "역할 코드는 필수입니다.");
         }
 
-        if (!StringUtils.hasText(payload.getTenantCode())) {
-            payload.setTenantCode("PLATFORM");
-        }
+        payload.setTenantCode(resolveTenantCode(payload.getTenantCode()));
 
         return platformRoleService.createRole(payload);
     }
@@ -103,7 +103,7 @@ public class PlatformRoleApiController {
     public Map<String, Object> getRoleMenus(
             @RequestParam String roleCode,
             @RequestParam(required = false) String tenantCode) throws Exception {
-        return platformRoleService.getRoleMenus(roleCode, tenantCode);
+        return platformRoleService.getRoleMenus(roleCode, resolveTenantCode(tenantCode));
     }
 
     @PutMapping("/role-menus/{roleCode}")
@@ -114,14 +114,15 @@ public class PlatformRoleApiController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
 
-        return platformRoleService.replaceRoleMenus(roleCode, tenantCode, payload);
+        return platformRoleService.replaceRoleMenus(roleCode, resolveTenantCode(tenantCode), payload);
     }
 
     @GetMapping("/role-menu-candidates")
-    public Map<String, Object> getRoleMenuCandidates(@RequestParam String tenantCode) throws Exception {
+    public Map<String, Object> getRoleMenuCandidates(@RequestParam(required = false) String tenantCode) throws Exception {
+        String resolvedTenantCode = resolveTenantCode(tenantCode);
         Map<String, Object> result = new LinkedHashMap<String, Object>();
-        result.put("tenantCode", tenantCode == null ? "" : tenantCode.trim().toUpperCase());
-        result.put("menuCodes", platformRoleService.listAllowedMenuCodesByTenantPlan(tenantCode));
+        result.put("tenantCode", resolvedTenantCode);
+        result.put("menuCodes", platformRoleService.listAllowedMenuCodesByTenantPlan(resolvedTenantCode));
         return result;
     }
 
@@ -180,5 +181,21 @@ public class PlatformRoleApiController {
         if (!"Y".equals(normalized) && !"N".equals(normalized) && !"ALL".equals(normalized)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt 값이 유효하지 않습니다.");
         }
+    }
+
+    private String resolveTenantCode(String requestedTenantCode) {
+        if (StringUtils.hasText(requestedTenantCode)) {
+            return requestedTenantCode.trim().toUpperCase();
+        }
+
+        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+        if (userDetails instanceof LoginVO) {
+            LoginVO loginVO = (LoginVO) userDetails;
+            if (StringUtils.hasText(loginVO.getTenantCode())) {
+                return loginVO.getTenantCode().trim().toUpperCase();
+            }
+        }
+
+        return "PLATFORM";
     }
 }
