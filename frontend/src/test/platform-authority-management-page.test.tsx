@@ -17,7 +17,10 @@ const {
   updatePlatformRoleStatusMock,
   listPlatformRolesPagedMock,
   getPlatformRoleMenuMappingMock,
+  listRoleMenuCandidatesByTenantMock,
   savePlatformRoleMenuMappingMock,
+  getPlatformRoleFeaturesMock,
+  savePlatformRoleFeaturesMock,
 } = vi.hoisted(() => ({
   createPlatformRoleMock: vi.fn(async (payload) => ({
     id: 'PR-NEW',
@@ -71,9 +74,34 @@ const {
   })),
   getPlatformRoleMenuMappingMock: vi.fn(async (roleCode: string) => ({
     roleCode,
-    menuIds: roleCode === 'TENANT_ADMIN' ? ['PM-2'] : ['PM-1'],
+    menuIds:
+      roleCode === 'TENANT_ADMIN'
+        ? ['MENU_LOGIN_HISTORY']
+        : ['MENU_DASHBOARD', 'MENU_DASHBOARD_STATS'],
   })),
+  listRoleMenuCandidatesByTenantMock: vi.fn(async () => [
+    'MENU_DASHBOARD',
+    'MENU_DASHBOARD_STATS',
+    'MENU_LOGIN_HISTORY',
+  ]),
   savePlatformRoleMenuMappingMock: vi.fn(async (payload) => payload),
+  getPlatformRoleFeaturesMock: vi.fn(async (roleCode: string) => [
+    {
+      featureCode: 'FEATURE_ROLE_MGMT',
+      featureName: '권한 관리',
+      featureType: 'BOOLEAN',
+      enabled: roleCode === 'PLATFORM_ADMIN',
+      limitValue: null,
+    },
+    {
+      featureCode: 'LIMIT_USER_COUNT',
+      featureName: '사용자 수 제한',
+      featureType: 'LIMIT',
+      enabled: true,
+      limitValue: roleCode === 'TENANT_ADMIN' ? 50 : 200,
+    },
+  ]),
+  savePlatformRoleFeaturesMock: vi.fn(async (payload) => payload.features),
 }));
 
 vi.mock('../services/platform/platformRoleService', () => ({
@@ -87,6 +115,7 @@ vi.mock('../services/platform/platformMenuService', () => ({
   listPlatformMenus: vi.fn(async () => [
     {
       menuId: 'PM-0',
+      menuCode: 'MENU_ROLE_PAGE',
       menuNm: '권한/메뉴 관리 커스텀 타이틀',
       menuDc: '권한 페이지 헤더 타이틀 테스트용',
       parentMenuId: null,
@@ -101,6 +130,7 @@ vi.mock('../services/platform/platformMenuService', () => ({
     },
     {
       menuId: 'PM-1',
+      menuCode: 'MENU_DASHBOARD',
       menuNm: '대시보드',
       menuDc: '대시보드 메뉴',
       parentMenuId: null,
@@ -114,7 +144,23 @@ vi.mock('../services/platform/platformMenuService', () => ({
       lastUpdusrId: '',
     },
     {
+      menuId: 'PM-1-1',
+      menuCode: 'MENU_DASHBOARD_STATS',
+      menuNm: '대시보드 통계',
+      menuDc: '대시보드 통계 메뉴',
+      parentMenuId: 'PM-1',
+      menuOrdr: 1,
+      menuUrl: '/dashboard/stats',
+      iconNm: 'StackedBarChart',
+      useAt: 'Y',
+      frstRegistPnttm: '',
+      frstRegisterId: '',
+      lastUpdtPnttm: '',
+      lastUpdusrId: '',
+    },
+    {
       menuId: 'PM-2',
+      menuCode: 'MENU_LOGIN_HISTORY',
       menuNm: '로그인 이력',
       menuDc: '로그인 이력 메뉴',
       parentMenuId: null,
@@ -132,7 +178,13 @@ vi.mock('../services/platform/platformMenuService', () => ({
 
 vi.mock('../services/platform/platformRoleMenuService', () => ({
   getPlatformRoleMenuMapping: getPlatformRoleMenuMappingMock,
+  listRoleMenuCandidatesByTenant: listRoleMenuCandidatesByTenantMock,
   savePlatformRoleMenuMapping: savePlatformRoleMenuMappingMock,
+}));
+
+vi.mock('../services/platform/platformRoleFeatureService', () => ({
+  getPlatformRoleFeatures: getPlatformRoleFeaturesMock,
+  savePlatformRoleFeatures: savePlatformRoleFeaturesMock,
 }));
 
 function renderPage() {
@@ -163,6 +215,9 @@ describe('PlatformAuthorityManagementPage', () => {
     updatePlatformRoleMock.mockClear();
     updatePlatformRoleStatusMock.mockClear();
     savePlatformRoleMenuMappingMock.mockClear();
+    listRoleMenuCandidatesByTenantMock.mockClear();
+    getPlatformRoleFeaturesMock.mockClear();
+    savePlatformRoleFeaturesMock.mockClear();
 
     listPlatformRolesPagedMock.mockReset();
     listPlatformRolesPagedMock.mockImplementation(async () => ({
@@ -193,9 +248,37 @@ describe('PlatformAuthorityManagementPage', () => {
     getPlatformRoleMenuMappingMock.mockImplementation(
       async (roleCode: string) => ({
         roleCode,
-        menuIds: roleCode === 'TENANT_ADMIN' ? ['PM-2'] : ['PM-1'],
+        menuIds:
+          roleCode === 'TENANT_ADMIN'
+            ? ['MENU_LOGIN_HISTORY']
+            : ['MENU_DASHBOARD', 'MENU_DASHBOARD_STATS'],
       }),
     );
+
+    listRoleMenuCandidatesByTenantMock.mockReset();
+    listRoleMenuCandidatesByTenantMock.mockImplementation(async () => [
+      'MENU_DASHBOARD',
+      'MENU_DASHBOARD_STATS',
+      'MENU_LOGIN_HISTORY',
+    ]);
+
+    getPlatformRoleFeaturesMock.mockReset();
+    getPlatformRoleFeaturesMock.mockImplementation(async (roleCode: string) => [
+      {
+        featureCode: 'FEATURE_ROLE_MGMT',
+        featureName: '권한 관리',
+        featureType: 'BOOLEAN',
+        enabled: roleCode === 'PLATFORM_ADMIN',
+        limitValue: null,
+      },
+      {
+        featureCode: 'LIMIT_USER_COUNT',
+        featureName: '사용자 수 제한',
+        featureType: 'LIMIT',
+        enabled: true,
+        limitValue: roleCode === 'TENANT_ADMIN' ? 50 : 200,
+      },
+    ]);
   });
 
   it('renders authority row data for platform admin context', async () => {
@@ -412,25 +495,72 @@ describe('PlatformAuthorityManagementPage', () => {
     await waitFor(() => {
       expect(getPlatformRoleMenuMappingMock).toHaveBeenCalledWith(
         'TENANT_ADMIN',
+        'PLATFORM',
       );
     });
 
-    const loginHistoryCheckbox = screen.getByRole('checkbox', {
-      name: '로그인 이력 (/platform/login-history)',
+    const dashboardParentCheckbox = screen.getByRole('checkbox', {
+      name: '대시보드 (/dashboard)',
     });
-    fireEvent.click(loginHistoryCheckbox);
+    const dashboardChildCheckbox = screen.getByRole('checkbox', {
+      name: '대시보드 통계 (/dashboard/stats)',
+    });
+
+    fireEvent.click(dashboardParentCheckbox);
+
+    await waitFor(() => {
+      expect(dashboardChildCheckbox).toBeChecked();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     fireEvent.click(screen.getAllByRole('button', { name: '저장' }).at(-1)!);
 
     await waitFor(() => {
       expect(savePlatformRoleMenuMappingMock).toHaveBeenCalled();
-      expect(savePlatformRoleMenuMappingMock.mock.calls[0]?.[0]).toEqual({
-        roleCode: 'TENANT_ADMIN',
-        menuIds: [],
-      });
+      expect(savePlatformRoleMenuMappingMock.mock.calls[0]?.[0]).toEqual(
+        expect.objectContaining({
+          roleCode: 'TENANT_ADMIN',
+          menuIds: expect.arrayContaining([
+            'MENU_DASHBOARD',
+            'MENU_DASHBOARD_STATS',
+            'MENU_LOGIN_HISTORY',
+          ]),
+        }),
+      );
     });
-  });
+
+    const tenantRoleFeatureButtons = await screen.findAllByRole('button', {
+      name: '기능 매핑',
+    });
+    fireEvent.click(tenantRoleFeatureButtons[1]);
+
+    expect(await screen.findByText('권한별 기능 매핑')).toBeInTheDocument();
+    expect(await screen.findByText('사용자 수 제한')).toBeInTheDocument();
+    expect(screen.getByText('LIMIT')).toBeInTheDocument();
+
+    const limitInput = screen.getByRole('spinbutton', {
+      name: 'LIMIT_USER_COUNT 값',
+    });
+    fireEvent.change(limitInput, { target: { value: '80' } });
+
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '저장' }).at(-1)!);
+
+    await waitFor(() => {
+      expect(savePlatformRoleFeaturesMock).toHaveBeenCalled();
+      expect(savePlatformRoleFeaturesMock.mock.calls[0]?.[0]).toEqual(
+        expect.objectContaining({
+          roleCode: 'TENANT_ADMIN',
+          features: expect.arrayContaining([
+            expect.objectContaining({
+              featureCode: 'LIMIT_USER_COUNT',
+              limitValue: 80,
+            }),
+          ]),
+        }),
+      );
+    });
+  }, 15000);
 
   it('applies page size to paged role API params', async () => {
     renderPage();

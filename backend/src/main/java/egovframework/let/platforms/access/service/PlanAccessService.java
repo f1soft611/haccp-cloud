@@ -19,6 +19,8 @@ public interface PlanAccessService {
 
     Map<String, Boolean> resolveFeatureEnabledMapByPlanCode(String planCode);
 
+    List<Map<String, Object>> resolvePlanFeatureItems(String planCode);
+
     List<String> resolvePlanMenuCodes(String planCode);
 
     List<String> resolveTenantPlanMenuCodes(String tenantCode);

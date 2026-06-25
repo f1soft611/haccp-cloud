@@ -385,6 +385,73 @@ const roleMenuMappings: Record<AuthorityCode, string[]> = {
   TENANT_USER: ['PM-1', 'PM-3'],
 };
 
+const roleFeatureMappings: Record<
+  AuthorityCode,
+  Array<{
+    featureCode: string;
+    featureName: string;
+    featureType: 'BOOLEAN' | 'LIMIT';
+    enabled: boolean;
+    limitValue: number | null;
+  }>
+> = {
+  PLATFORM_ADMIN: [
+    {
+      featureCode: 'FEATURE_PLATFORM_ROLE_MGMT',
+      featureName: 'Platform role management',
+      featureType: 'BOOLEAN',
+      enabled: true,
+      limitValue: null,
+    },
+    {
+      featureCode: 'FEATURE_TENANT_USER_MGMT',
+      featureName: 'Tenant user management',
+      featureType: 'BOOLEAN',
+      enabled: true,
+      limitValue: null,
+    },
+    {
+      featureCode: 'LIMIT_USER_COUNT',
+      featureName: 'Maximum users',
+      featureType: 'LIMIT',
+      enabled: true,
+      limitValue: 200,
+    },
+  ],
+  TENANT_ADMIN: [
+    {
+      featureCode: 'FEATURE_TENANT_USER_MGMT',
+      featureName: 'Tenant user management',
+      featureType: 'BOOLEAN',
+      enabled: true,
+      limitValue: null,
+    },
+    {
+      featureCode: 'FEATURE_DOC_WORKFLOW',
+      featureName: 'Document workflow',
+      featureType: 'BOOLEAN',
+      enabled: true,
+      limitValue: null,
+    },
+    {
+      featureCode: 'LIMIT_USER_COUNT',
+      featureName: 'Maximum users',
+      featureType: 'LIMIT',
+      enabled: true,
+      limitValue: 50,
+    },
+  ],
+  TENANT_USER: [
+    {
+      featureCode: 'FEATURE_DOC_WORKFLOW',
+      featureName: 'Document workflow',
+      featureType: 'BOOLEAN',
+      enabled: true,
+      limitValue: null,
+    },
+  ],
+};
+
 function normalizeAuthorityCode(authorityCode: string): AuthorityCode {
   const normalized = authorityCode.trim().toUpperCase();
 
@@ -1736,6 +1803,51 @@ export const handlers = [
     },
   ),
 
+  http.get('/api/platform-admin/role-features', ({ request }) => {
+    const requestUrl = new URL(request.url);
+    const roleCode = normalizeAuthorityCode(
+      requestUrl.searchParams.get('roleCode') ?? '',
+    );
+
+    return HttpResponse.json({
+      roleCode,
+      features: roleFeatureMappings[roleCode] ?? [],
+    });
+  }),
+
+  http.put(
+    '/api/platform-admin/role-features/:roleCode',
+    async ({ params, request }) => {
+      const payload = (await request.json()) as {
+        features?: Array<{
+          featureCode?: string;
+          featureName?: string;
+          featureType?: 'BOOLEAN' | 'LIMIT';
+          enabled?: boolean;
+          limitValue?: number | null;
+        }>;
+      };
+      const roleCode = normalizeAuthorityCode(String(params.roleCode));
+      roleFeatureMappings[roleCode] = (payload.features ?? []).map((item) => ({
+        featureCode: String(item.featureCode ?? '')
+          .trim()
+          .toUpperCase(),
+        featureName: String(item.featureName ?? '').trim(),
+        featureType: item.featureType === 'LIMIT' ? 'LIMIT' : 'BOOLEAN',
+        enabled: item.enabled === true,
+        limitValue:
+          item.featureType === 'LIMIT' && item.limitValue != null
+            ? Number(item.limitValue)
+            : null,
+      }));
+
+      return HttpResponse.json({
+        roleCode,
+        features: roleFeatureMappings[roleCode],
+      });
+    },
+  ),
+
   http.get('/api/platform-admin/role-menu-candidates', ({ request }) => {
     const requestUrl = new URL(request.url);
     const tenantCode = (requestUrl.searchParams.get('tenantCode') ?? 'PLATFORM')
@@ -1792,6 +1904,7 @@ export const handlers = [
       {
         planCode: 'A',
         planName: 'Basic',
+        planDesc: '기본 기능과 제한된 사용자 수를 제공하는 입문 플랜',
         useAt: 'Y',
         featureCount: 2,
         menuCount: 2,
@@ -1799,6 +1912,7 @@ export const handlers = [
       {
         planCode: 'B',
         planName: 'Standard',
+        planDesc: '일반 운영에 필요한 핵심 기능을 제공하는 표준 플랜',
         useAt: 'Y',
         featureCount: 3,
         menuCount: 4,
@@ -1806,6 +1920,7 @@ export const handlers = [
       {
         planCode: 'C',
         planName: 'Pro',
+        planDesc: '감사/내보내기 기능을 포함한 고급 운영 플랜',
         useAt: 'Y',
         featureCount: 4,
         menuCount: 6,
@@ -1813,6 +1928,7 @@ export const handlers = [
       {
         planCode: 'P',
         planName: 'Platform',
+        planDesc: '플랫폼 전용 전체 기능 플랜',
         useAt: 'Y',
         featureCount: 6,
         menuCount: platformMenus.length,
@@ -1826,30 +1942,143 @@ export const handlers = [
       const planCode = String(params.planCode ?? 'C')
         .trim()
         .toUpperCase();
-      const featuresByPlan: Record<string, Record<string, boolean>> = {
-        A: { FEATURE_USER_MGMT: true, FEATURE_DOC_WORKFLOW: false },
-        B: {
-          FEATURE_USER_MGMT: true,
-          FEATURE_DOC_WORKFLOW: true,
-          FEATURE_AUDIT_LOG: false,
-        },
-        C: {
-          FEATURE_USER_MGMT: true,
-          FEATURE_DOC_WORKFLOW: true,
-          FEATURE_AUDIT_LOG: true,
-          FEATURE_API_EXPORT: true,
-        },
-        P: {
-          FEATURE_USER_MGMT: true,
-          FEATURE_DOC_WORKFLOW: true,
-          FEATURE_AUDIT_LOG: true,
-          FEATURE_API_EXPORT: true,
-        },
+      const featuresByPlan: Record<
+        string,
+        Array<{
+          featureCode: string;
+          featureName: string;
+          featureType: 'BOOLEAN' | 'LIMIT';
+          enabled: boolean;
+          limitValue: number | null;
+        }>
+      > = {
+        A: [
+          {
+            featureCode: 'FEATURE_DOC_WORKFLOW',
+            featureName: 'Document workflow',
+            featureType: 'BOOLEAN',
+            enabled: false,
+            limitValue: null,
+          },
+          {
+            featureCode: 'LIMIT_USER_COUNT',
+            featureName: 'Maximum users',
+            featureType: 'LIMIT',
+            enabled: true,
+            limitValue: 20,
+          },
+        ],
+        B: [
+          {
+            featureCode: 'FEATURE_DOC_WORKFLOW',
+            featureName: 'Document workflow',
+            featureType: 'BOOLEAN',
+            enabled: true,
+            limitValue: null,
+          },
+          {
+            featureCode: 'FEATURE_AUDIT_LOG',
+            featureName: 'Audit log',
+            featureType: 'BOOLEAN',
+            enabled: false,
+            limitValue: null,
+          },
+          {
+            featureCode: 'LIMIT_USER_COUNT',
+            featureName: 'Maximum users',
+            featureType: 'LIMIT',
+            enabled: true,
+            limitValue: 100,
+          },
+        ],
+        C: [
+          {
+            featureCode: 'FEATURE_DOC_WORKFLOW',
+            featureName: 'Document workflow',
+            featureType: 'BOOLEAN',
+            enabled: true,
+            limitValue: null,
+          },
+          {
+            featureCode: 'FEATURE_AUDIT_LOG',
+            featureName: 'Audit log',
+            featureType: 'BOOLEAN',
+            enabled: true,
+            limitValue: null,
+          },
+          {
+            featureCode: 'FEATURE_API_EXPORT',
+            featureName: 'API export',
+            featureType: 'BOOLEAN',
+            enabled: true,
+            limitValue: null,
+          },
+          {
+            featureCode: 'LIMIT_USER_COUNT',
+            featureName: 'Maximum users',
+            featureType: 'LIMIT',
+            enabled: true,
+            limitValue: 1000,
+          },
+        ],
+        P: [
+          {
+            featureCode: 'FEATURE_DOC_WORKFLOW',
+            featureName: 'Document workflow',
+            featureType: 'BOOLEAN',
+            enabled: true,
+            limitValue: null,
+          },
+          {
+            featureCode: 'FEATURE_AUDIT_LOG',
+            featureName: 'Audit log',
+            featureType: 'BOOLEAN',
+            enabled: true,
+            limitValue: null,
+          },
+          {
+            featureCode: 'FEATURE_API_EXPORT',
+            featureName: 'API export',
+            featureType: 'BOOLEAN',
+            enabled: true,
+            limitValue: null,
+          },
+          {
+            featureCode: 'LIMIT_USER_COUNT',
+            featureName: 'Maximum users',
+            featureType: 'LIMIT',
+            enabled: true,
+            limitValue: 5000,
+          },
+        ],
       };
 
       return HttpResponse.json({
         planCode,
         features: featuresByPlan[planCode] ?? featuresByPlan.C,
+      });
+    },
+  ),
+
+  http.put(
+    '/api/platform-admin/plan-access/plans/:planCode/features',
+    async ({ params, request }) => {
+      const planCode = String(params.planCode ?? 'C')
+        .trim()
+        .toUpperCase();
+      const payload = (await request.json()) as {
+        features?: Array<{
+          featureCode?: string;
+          featureName?: string;
+          featureType?: 'BOOLEAN' | 'LIMIT';
+          enabled?: boolean;
+          limitValue?: number | null;
+        }>;
+      };
+
+      return HttpResponse.json({
+        planCode,
+        features: payload.features ?? [],
       });
     },
   ),

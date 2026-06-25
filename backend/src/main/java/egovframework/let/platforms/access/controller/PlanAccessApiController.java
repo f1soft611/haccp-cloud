@@ -53,7 +53,7 @@ public class PlanAccessApiController {
     public Map<String, Object> getPlanFeatures(@PathVariable String planCode) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
         result.put("planCode", planCode == null ? "" : planCode.trim().toUpperCase());
-        result.put("features", planAccessService.resolveFeatureEnabledMapByPlanCode(planCode));
+        result.put("features", planAccessService.resolvePlanFeatureItems(planCode));
         return result;
     }
 

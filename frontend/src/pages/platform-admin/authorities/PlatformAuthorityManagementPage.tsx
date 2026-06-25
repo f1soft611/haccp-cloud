@@ -20,6 +20,7 @@ import {
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@mui/material/styles';
 import { useMemo, useState } from 'react';
@@ -46,6 +47,11 @@ import {
   listRoleMenuCandidatesByTenant,
   savePlatformRoleMenuMapping,
 } from '../../../services/platform/platformRoleMenuService';
+import {
+  getPlatformRoleFeatures,
+  savePlatformRoleFeatures,
+} from '../../../services/platform/platformRoleFeatureService';
+import type { PlanFeatureItem } from '../../../services/plan/planAccessService';
 
 export function PlatformAuthorityManagementPage() {
   const theme = useTheme();
@@ -68,6 +74,7 @@ export function PlatformAuthorityManagementPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [mappingModalOpen, setMappingModalOpen] = useState(false);
+  const [featureMappingModalOpen, setFeatureMappingModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -87,6 +94,9 @@ export function PlatformAuthorityManagementPage() {
     useAt: 'Y' as 'Y' | 'N',
   });
   const [draftMenuIds, setDraftMenuIds] = useState<string[] | null>(null);
+  const [draftFeatures, setDraftFeatures] = useState<PlanFeatureItem[] | null>(
+    null,
+  );
   const [confirmState, setConfirmState] = useState<{
     title: string;
     description: string;
@@ -150,6 +160,19 @@ export function PlatformAuthorityManagementPage() {
     queryFn: () =>
       getPlatformRoleMenuMapping(effectiveRoleCode, appliedFilters.tenantCode),
     enabled: effectiveRoleCode.length > 0,
+  });
+
+  const roleFeatureQuery = useQuery({
+    queryKey: [
+      'platform-admin',
+      'role-features',
+      effectiveRoleCode,
+      appliedFilters.tenantCode,
+    ],
+    queryFn: () =>
+      getPlatformRoleFeatures(effectiveRoleCode, appliedFilters.tenantCode),
+    enabled: effectiveRoleCode.length > 0 && featureMappingModalOpen,
+    retry: false,
   });
 
   const roleMenuCandidatesQuery = useQuery({
@@ -269,6 +292,22 @@ export function PlatformAuthorityManagementPage() {
     },
   });
 
+  const saveFeatureMutation = useMutation({
+    mutationFn: savePlatformRoleFeatures,
+    onSuccess: (_, payload) => {
+      setDraftFeatures(null);
+      setFeatureMappingModalOpen(false);
+      setConfirmState(null);
+      showSuccess('권한별 기능 매핑이 저장되었습니다.');
+      void queryClient.invalidateQueries({
+        queryKey: ['platform-admin', 'role-features', payload.roleCode],
+      });
+    },
+    onError: () => {
+      showError('권한별 기능 매핑 저장에 실패했습니다.');
+    },
+  });
+
   const openCreateModal = () => {
     setFormData({ code: '', name: '', description: '', useAt: 'Y' });
     setCreateModalOpen(true);
@@ -327,6 +366,12 @@ export function PlatformAuthorityManagementPage() {
     setMappingModalOpen(true);
   };
 
+  const handleOpenFeatureMappingModal = (role: PlatformRoleItem) => {
+    setSelectedRole(role);
+    setDraftFeatures(null);
+    setFeatureMappingModalOpen(true);
+  };
+
   const handleOpenEditModal = (role: PlatformRoleItem) => {
     setEditTargetRole(role);
     setEditFormData({
@@ -368,6 +413,154 @@ export function PlatformAuthorityManagementPage() {
     });
   };
 
+  const menuCodeById = useMemo(() => {
+    const map = new Map<string, string>();
+    scopedMenus.forEach((menu) => {
+      map.set(menu.menuId, menu.menuCode || menu.menuId);
+    });
+    return map;
+  }, [scopedMenus]);
+
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<string | null, typeof scopedMenus>();
+    scopedMenus.forEach((menu) => {
+      const key = menu.parentMenuId ?? null;
+      const list = map.get(key) ?? [];
+      list.push(menu);
+      map.set(key, list);
+    });
+
+    map.forEach((list) => {
+      list.sort((a, b) => a.menuOrdr - b.menuOrdr);
+    });
+
+    return map;
+  }, [scopedMenus]);
+
+  const descendantCodesByMenuId = useMemo(() => {
+    const cache = new Map<string, string[]>();
+
+    const collect = (menuId: string): string[] => {
+      if (cache.has(menuId)) {
+        return cache.get(menuId) ?? [];
+      }
+
+      const selfCode = menuCodeById.get(menuId) ?? menuId;
+      const children = childrenByParentId.get(menuId) ?? [];
+      const childCodes = children.flatMap((child) => collect(child.menuId));
+      const result = [selfCode, ...childCodes];
+      cache.set(menuId, result);
+      return result;
+    };
+
+    scopedMenus.forEach((menu) => {
+      collect(menu.menuId);
+    });
+
+    return cache;
+  }, [scopedMenus, childrenByParentId, menuCodeById]);
+
+  const selectedMenuCodeSet = useMemo(
+    () => new Set(selectedMenuIds),
+    [selectedMenuIds],
+  );
+
+  const getMenuNodeState = (menu: (typeof scopedMenus)[number]) => {
+    const selfCode = menu.menuCode || menu.menuId;
+    const descendants = (descendantCodesByMenuId.get(menu.menuId) ?? []).filter(
+      (code) => code !== selfCode,
+    );
+
+    const allDescendantsChecked =
+      descendants.length > 0 &&
+      descendants.every((code) => selectedMenuCodeSet.has(code));
+    const someDescendantsChecked = descendants.some((code) =>
+      selectedMenuCodeSet.has(code),
+    );
+
+    const checked = selectedMenuCodeSet.has(selfCode) || allDescendantsChecked;
+    const indeterminate = !checked && someDescendantsChecked;
+
+    return { checked, indeterminate };
+  };
+
+  const toggleMenuNode = (menu: (typeof scopedMenus)[number]) => {
+    const { checked, indeterminate } = getMenuNodeState(menu);
+    const targets = descendantCodesByMenuId.get(menu.menuId) ?? [
+      menu.menuCode || menu.menuId,
+    ];
+    const nextSet = new Set(selectedMenuIds);
+
+    if (checked || indeterminate) {
+      targets.forEach((code) => nextSet.delete(code));
+    } else {
+      targets.forEach((code) => nextSet.add(code));
+    }
+
+    setDraftMenuIds(Array.from(nextSet));
+  };
+
+  const flattenMenuTree = (
+    parentId: string | null,
+    depth: number,
+  ): Array<{ menu: (typeof scopedMenus)[number]; depth: number }> => {
+    const nodes = childrenByParentId.get(parentId) ?? [];
+    return nodes.flatMap((menu) => [
+      { menu, depth },
+      ...flattenMenuTree(menu.menuId, depth + 1),
+    ]);
+  };
+
+  const treeMenus = flattenMenuTree(null, 0);
+
+  const mergedRoleFeatures = useMemo(
+    () => draftFeatures ?? roleFeatureQuery.data ?? [],
+    [draftFeatures, roleFeatureQuery.data],
+  );
+
+  const toggleRoleFeature = (featureCode: string) => {
+    setDraftFeatures((prev) => {
+      const base =
+        prev ??
+        (roleFeatureQuery.data ?? []).map((item) => ({
+          ...item,
+          limitValue: item.limitValue ?? null,
+        }));
+
+      return base.map((item) =>
+        item.featureCode === featureCode
+          ? {
+              ...item,
+              enabled: !item.enabled,
+            }
+          : item,
+      );
+    });
+  };
+
+  const changeRoleFeatureLimit = (featureCode: string, value: string) => {
+    setDraftFeatures((prev) => {
+      const base =
+        prev ??
+        (roleFeatureQuery.data ?? []).map((item) => ({
+          ...item,
+          limitValue: item.limitValue ?? null,
+        }));
+
+      return base.map((item) => {
+        if (item.featureCode !== featureCode) {
+          return item;
+        }
+
+        const parsed = value.trim() === '' ? null : Number(value);
+        return {
+          ...item,
+          limitValue: Number.isFinite(parsed) ? parsed : null,
+        };
+      });
+    });
+  };
+
   const handleSaveMapping = () => {
     if (!selectedRole || !effectiveRoleCode) {
       return;
@@ -387,11 +580,31 @@ export function PlatformAuthorityManagementPage() {
     });
   };
 
+  const handleSaveFeatureMapping = () => {
+    if (!selectedRole || !effectiveRoleCode) {
+      return;
+    }
+
+    setConfirmState({
+      title: '기능 매핑 저장 확인',
+      description: `'${selectedRole.name}' 권한의 기능 매핑을 저장하시겠습니까?`,
+      confirmText: '저장',
+      action: () => {
+        saveFeatureMutation.mutate({
+          roleCode: effectiveRoleCode,
+          tenantCode: appliedFilters.tenantCode,
+          features: mergedRoleFeatures,
+        });
+      },
+    });
+  };
+
   const isBusy =
     createMutation.isPending ||
     updateMutation.isPending ||
     statusMutation.isPending ||
-    saveMutation.isPending;
+    saveMutation.isPending ||
+    saveFeatureMutation.isPending;
 
   const rolesErrorMessage = rolesQuery.isError
     ? extractApiErrorMessage(
@@ -422,6 +635,12 @@ export function PlatformAuthorityManagementPage() {
       ) : null}
       {saveMutation.isError ? (
         <Alert severity="warning">권한별 메뉴 저장에 실패했습니다.</Alert>
+      ) : null}
+      {saveFeatureMutation.isSuccess ? (
+        <Alert severity="success">권한별 기능 매핑이 저장되었습니다.</Alert>
+      ) : null}
+      {saveFeatureMutation.isError ? (
+        <Alert severity="warning">권한별 기능 저장에 실패했습니다.</Alert>
       ) : null}
       {rolesErrorMessage ? (
         <Alert severity="error" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -635,6 +854,25 @@ export function PlatformAuthorityManagementPage() {
                     }}
                   >
                     <LinkOutlinedIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    aria-label="기능 매핑"
+                    onClick={() => handleOpenFeatureMappingModal(item)}
+                    sx={{
+                      mr: 0.5,
+                      color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+                      bgcolor: isDarkMode
+                        ? 'rgba(251, 191, 36, 0.12)'
+                        : 'rgba(31, 79, 143, 0.08)',
+                      '&:hover': {
+                        bgcolor: isDarkMode
+                          ? 'rgba(251, 191, 36, 0.2)'
+                          : 'rgba(31, 79, 143, 0.16)',
+                      },
+                    }}
+                  >
+                    <TuneOutlinedIcon fontSize="small" />
                   </IconButton>
                   <IconButton
                     size="small"
@@ -909,21 +1147,26 @@ export function PlatformAuthorityManagementPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              scopedMenus.map((menu) => {
-                const menuCode = menu.menuCode || menu.menuId;
-                const checked = selectedMenuIds.includes(menuCode);
+              treeMenus.map(({ menu, depth }) => {
+                const { checked, indeterminate } = getMenuNodeState(menu);
                 return (
                   <TableRow key={menu.menuId} hover>
                     <TableCell align="center">
                       <Checkbox
                         checked={checked}
-                        onChange={() => toggleMenu(menuCode)}
+                        indeterminate={indeterminate}
+                        onChange={() => toggleMenuNode(menu)}
                         inputProps={{
                           'aria-label': `${menu.menuNm} (${menu.menuUrl})`,
                         }}
                       />
                     </TableCell>
-                    <TableCell>{menu.menuNm}</TableCell>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Box sx={{ width: depth * 16, flexShrink: 0 }} />
+                        <Typography variant="body2">{menu.menuNm}</Typography>
+                      </Stack>
+                    </TableCell>
                     <TableCell>{menu.menuDc || menu.menuCode || '-'}</TableCell>
                     <TableCell>
                       <Box
@@ -954,6 +1197,128 @@ export function PlatformAuthorityManagementPage() {
                   </TableRow>
                 );
               })
+            )}
+          </TableBody>
+        </AdminGrid>
+      </FormDialog>
+
+      <FormDialog
+        open={featureMappingModalOpen}
+        onClose={() => setFeatureMappingModalOpen(false)}
+        maxWidth="md"
+        title="권한별 기능 매핑"
+        description={
+          selectedRole
+            ? `${selectedRole.name} (${selectedRole.code}) 권한의 기능 매핑을 설정하세요.`
+            : '권한을 선택한 뒤 기능 매핑을 설정하세요.'
+        }
+        actions={
+          <>
+            <Button
+              onClick={handleSaveFeatureMapping}
+              variant="contained"
+              disabled={!selectedRole || saveFeatureMutation.isPending}
+            >
+              저장
+            </Button>
+            <Button onClick={() => setFeatureMappingModalOpen(false)}>
+              취소
+            </Button>
+          </>
+        }
+      >
+        {roleFeatureQuery.isError ? (
+          <Alert severity="warning">
+            권한별 기능 정보를 불러오지 못했습니다.
+          </Alert>
+        ) : null}
+
+        <AdminGrid ariaLabel="권한별 기능 매핑 목록" maxHeight={420}>
+          <TableHead>
+            <TableRow>
+              <TableCell>기능명</TableCell>
+              <TableCell width="120">기능 타입</TableCell>
+              <TableCell width="100" align="center">
+                활성 여부
+              </TableCell>
+              <TableCell width="160">값</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {roleFeatureQuery.isLoading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <TableRow key={`platform-role-feature-grid-skeleton-${index}`}>
+                  <TableCell>
+                    <Skeleton variant="text" width="72%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="68%" />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Skeleton
+                      variant="rounded"
+                      width={20}
+                      height={20}
+                      sx={{ mx: 'auto' }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="rounded" width="90%" height={24} />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : mergedRoleFeatures.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center">
+                  등록된 기능 정보가 없습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              mergedRoleFeatures.map((feature) => (
+                <TableRow key={feature.featureCode} hover>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {feature.featureName}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {feature.featureCode}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{feature.featureType}</TableCell>
+                  <TableCell align="center">
+                    <Checkbox
+                      checked={feature.enabled}
+                      onChange={() => toggleRoleFeature(feature.featureCode)}
+                      inputProps={{
+                        'aria-label': `${feature.featureName} 활성 여부`,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {feature.featureType === 'LIMIT' ? (
+                      <TextField
+                        size="small"
+                        type="number"
+                        label={`${feature.featureCode} 값`}
+                        value={feature.limitValue ?? ''}
+                        onChange={(event) =>
+                          changeRoleFeatureLimit(
+                            feature.featureCode,
+                            event.target.value,
+                          )
+                        }
+                        disabled={!feature.enabled}
+                        inputProps={{ min: 0 }}
+                        fullWidth
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </AdminGrid>
