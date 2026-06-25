@@ -297,6 +297,8 @@ let users: UserItem[] = [
     name: '관리자A',
     email: 'admin.a@alpha.com',
     department: '품질관리팀',
+    roleCode: 'TENANT_ADMIN',
+    roleCodes: ['TENANT_ADMIN'],
     role: 'TENANT_ADMIN',
     active: true,
   },
@@ -306,6 +308,8 @@ let users: UserItem[] = [
     name: '사용자A1',
     email: 'user.a1@alpha.com',
     department: '생산1팀',
+    roleCode: 'TENANT_USER',
+    roleCodes: ['TENANT_USER'],
     role: 'USER',
     active: true,
   },
@@ -315,6 +319,8 @@ let users: UserItem[] = [
     name: '관리자B',
     email: 'admin.b@beta.com',
     department: '품질관리팀',
+    roleCode: 'TENANT_ADMIN',
+    roleCodes: ['TENANT_ADMIN'],
     role: 'TENANT_ADMIN',
     active: true,
   },
@@ -1211,7 +1217,7 @@ export const handlers = [
     return HttpResponse.json(sampleTenants);
   }),
 
-  http.get('/api/first-login-setup/status', ({ request }) => {
+  http.get(/.*\/api\/first-login-setup\/status$/, ({ request }) => {
     const tenantCode = getRequiredTenantCodeFromHeader(request);
 
     if (!tenantCode) {
@@ -1237,7 +1243,7 @@ export const handlers = [
     });
   }),
 
-  http.post('/api/first-login-setup/complete', ({ request }) => {
+  http.post(/.*\/api\/first-login-setup\/complete$/, ({ request }) => {
     const tenantCode = getRequiredTenantCodeFromHeader(request);
 
     if (!tenantCode) {
@@ -1266,28 +1272,42 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/users', ({ request }) => {
+  http.get(/.*\/api\/users$/, ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     return HttpResponse.json(tenantScoped(users, tenantCode));
   }),
 
-  http.post('/api/users', async ({ request }) => {
+  http.post(/.*\/api\/users$/, async ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const payload = (await request.json()) as {
       name?: string;
       email?: string;
       department?: string;
-      role?: UserRole;
+      roleCode?: string;
+      roleCodes?: string[];
     };
 
     if (
       !payload.name ||
       !payload.email ||
       !payload.department ||
-      !payload.role
+      !payload.roleCode
     ) {
       return HttpResponse.json({ message: 'Invalid input' }, { status: 400 });
     }
+
+    const normalizedRoleCode = payload.roleCode.trim().toUpperCase();
+    const normalizedRoleCodes = Array.from(
+      new Set(
+        [...(payload.roleCodes ?? []), normalizedRoleCode]
+          .map((code) =>
+            String(code ?? '')
+              .trim()
+              .toUpperCase(),
+          )
+          .filter(Boolean),
+      ),
+    );
 
     const created: UserItem = {
       id: `U-${users.length + 1}`,
@@ -1295,7 +1315,14 @@ export const handlers = [
       name: payload.name,
       email: payload.email,
       department: payload.department,
-      role: payload.role,
+      roleCode: normalizedRoleCode,
+      roleCodes: normalizedRoleCodes,
+      role:
+        normalizedRoleCode === 'PLATFORM_ADMIN' ||
+        normalizedRoleCode === 'TENANT_ADMIN' ||
+        normalizedRoleCode === 'TENANT_USER'
+          ? (normalizedRoleCode as UserRole)
+          : 'USER',
       active: true,
     };
 
@@ -1303,12 +1330,70 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  http.patch('/api/users/:id', async ({ params, request }) => {
+  http.put(/.*\/api\/users\/([^/]+)$/, async ({ params, request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
+    const targetId = String(params[0] ?? '');
+    const payload = (await request.json()) as {
+      name?: string;
+      email?: string;
+      department?: string;
+      roleCode?: string;
+      roleCodes?: string[];
+      active?: boolean;
+    };
+
+    const target = users.find(
+      (item) => item.id === targetId && item.tenantCode === tenantCode,
+    );
+    if (!target) {
+      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    if (
+      !payload.name ||
+      !payload.email ||
+      !payload.department ||
+      !payload.roleCode
+    ) {
+      return HttpResponse.json({ message: 'Invalid input' }, { status: 400 });
+    }
+
+    const normalizedRoleCode = payload.roleCode.trim().toUpperCase();
+    const normalizedRoleCodes = Array.from(
+      new Set(
+        [...(payload.roleCodes ?? []), normalizedRoleCode]
+          .map((code) =>
+            String(code ?? '')
+              .trim()
+              .toUpperCase(),
+          )
+          .filter(Boolean),
+      ),
+    );
+
+    target.name = payload.name;
+    target.email = payload.email;
+    target.department = payload.department;
+    target.roleCode = normalizedRoleCode;
+    target.roleCodes = normalizedRoleCodes;
+    target.role =
+      normalizedRoleCode === 'PLATFORM_ADMIN' ||
+      normalizedRoleCode === 'TENANT_ADMIN' ||
+      normalizedRoleCode === 'TENANT_USER'
+        ? (normalizedRoleCode as UserRole)
+        : 'USER';
+    target.active = payload.active ?? target.active;
+
+    return HttpResponse.json(target);
+  }),
+
+  http.patch(/.*\/api\/users\/([^/]+)$/, async ({ params, request }) => {
+    const tenantCode = getTenantCodeFromHeader(request);
+    const targetId = String(params[0] ?? '');
     const payload = (await request.json()) as { active?: boolean };
 
     const target = users.find(
-      (item) => item.id === params.id && item.tenantCode === tenantCode,
+      (item) => item.id === targetId && item.tenantCode === tenantCode,
     );
     if (!target) {
       return HttpResponse.json({ message: 'Not found' }, { status: 404 });
@@ -1318,12 +1403,12 @@ export const handlers = [
     return HttpResponse.json(target);
   }),
 
-  http.get('/api/departments', ({ request }) => {
+  http.get(/.*\/api\/departments$/, ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     return HttpResponse.json(tenantScoped(departments, tenantCode));
   }),
 
-  http.post('/api/departments', async ({ request }) => {
+  http.post(/.*\/api\/departments$/, async ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const payload = (await request.json()) as { name?: string };
 
@@ -1563,6 +1648,74 @@ export const handlers = [
         totalTenants,
       },
       items,
+    });
+  }),
+
+  http.get('/api/platform-admin/menus/paged', ({ request }) => {
+    const url = new URL(request.url);
+    const pageIndex = Number(url.searchParams.get('pageIndex') ?? '1');
+    const pageSize = Number(url.searchParams.get('pageSize') ?? '10');
+    const searchField = url.searchParams.get('searchField') ?? 'menuNm';
+    const searchKeyword = (url.searchParams.get('searchKeyword') ?? '')
+      .toLowerCase()
+      .trim();
+    const useAt = url.searchParams.get('useAt') ?? 'all';
+
+    let filtered = [...platformMenus];
+
+    if (useAt !== 'all' && useAt !== 'ALL') {
+      filtered = filtered.filter((m) => m.useAt === useAt);
+    }
+
+    if (searchKeyword) {
+      filtered = filtered.filter((m) => {
+        if (searchField === 'menuNm')
+          return m.menuNm.toLowerCase().includes(searchKeyword);
+        if (searchField === 'menuDc')
+          return m.menuDc.toLowerCase().includes(searchKeyword);
+        if (searchField === 'menuUrl')
+          return m.menuUrl.toLowerCase().includes(searchKeyword);
+        return true;
+      });
+    }
+
+    // 계층 정렬: root 메뉴와 자식 메뉴를 그룹으로 묶어 정렬
+    const sorted = [...filtered].sort((a, b) => {
+      const aRootOrder =
+        a.parentMenuId == null
+          ? a.menuOrdr
+          : (filtered.find((m) => m.menuId === a.parentMenuId)?.menuOrdr ??
+            999);
+      const bRootOrder =
+        b.parentMenuId == null
+          ? b.menuOrdr
+          : (filtered.find((m) => m.menuId === b.parentMenuId)?.menuOrdr ??
+            999);
+      if (aRootOrder !== bRootOrder) return aRootOrder - bRootOrder;
+      const aRootId = a.parentMenuId ?? a.menuId;
+      const bRootId = b.parentMenuId ?? b.menuId;
+      if (aRootId !== bRootId) return aRootId < bRootId ? -1 : 1;
+      // root 먼저 (parentMenuId가 null이면 0, 아니면 1)
+      const aIsRoot = a.parentMenuId == null ? 0 : 1;
+      const bIsRoot = b.parentMenuId == null ? 0 : 1;
+      if (aIsRoot !== bIsRoot) return aIsRoot - bIsRoot;
+      return a.menuOrdr - b.menuOrdr;
+    });
+
+    const totalCount = sorted.length;
+    const firstIndex = (pageIndex - 1) * pageSize;
+    const menuList = sorted.slice(firstIndex, firstIndex + pageSize);
+
+    return HttpResponse.json({
+      result: {
+        menuList,
+        totalCount,
+        paginationInfo: {
+          currentPageNo: pageIndex,
+          recordCountPerPage: pageSize,
+          totalRecordCount: totalCount,
+        },
+      },
     });
   }),
 

@@ -47,19 +47,19 @@ public class PlanAccessInterceptor implements HandlerInterceptor {
                     "FEATURE_PLATFORM_MENU_MGMT", null),
 
             // Platform role management
-            new EndpointAccessRule("GET", "/api/platform-admin/roles/**", "/platform/roles", LEVEL_READ,
+            new EndpointAccessRule("GET", "/api/platform-admin/roles/**", "/org/roles", LEVEL_READ,
                 "FEATURE_PLATFORM_ROLE_MGMT", null),
-            new EndpointAccessRule("POST", "/api/platform-admin/roles/**", "/platform/roles", LEVEL_WRITE,
+            new EndpointAccessRule("POST", "/api/platform-admin/roles/**", "/org/roles", LEVEL_WRITE,
                 "FEATURE_PLATFORM_ROLE_MGMT", null),
-            new EndpointAccessRule("PATCH", "/api/platform-admin/roles/**", "/platform/roles", LEVEL_WRITE,
+            new EndpointAccessRule("PATCH", "/api/platform-admin/roles/**", "/org/roles", LEVEL_WRITE,
                 "FEATURE_PLATFORM_ROLE_MGMT", null),
-            new EndpointAccessRule("PUT", "/api/platform-admin/roles/**", "/platform/roles", LEVEL_WRITE,
+            new EndpointAccessRule("PUT", "/api/platform-admin/roles/**", "/org/roles", LEVEL_WRITE,
                 "FEATURE_PLATFORM_ROLE_MGMT", null),
 
             // Platform role-menu mapping
-            new EndpointAccessRule("GET", "/api/platform-admin/role-menus/**", "/platform/role-menus", LEVEL_READ,
+            new EndpointAccessRule("GET", "/api/platform-admin/role-menus/**", "/org/roles", LEVEL_READ,
                 "FEATURE_PLATFORM_ROLE_MGMT", null),
-            new EndpointAccessRule("PUT", "/api/platform-admin/role-menus/**", "/platform/role-menus", LEVEL_WRITE,
+            new EndpointAccessRule("PUT", "/api/platform-admin/role-menus/**", "/org/roles", LEVEL_WRITE,
                 "FEATURE_PLATFORM_ROLE_MGMT", null),
 
             // Platform tenant management

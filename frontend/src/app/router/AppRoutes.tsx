@@ -113,18 +113,10 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="/platform/roles"
+          path="/org/roles"
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
               <PlatformAuthorityManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/platform/role-menus"
-          element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
-              <Navigate to="/platform/roles" replace />
             </ProtectedRoute>
           }
         />

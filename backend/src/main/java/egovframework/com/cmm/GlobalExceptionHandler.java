@@ -14,16 +14,16 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BizException.class)
-    public Map<String, Object> handleBizException(BizException e) {
+    public ResponseEntity<Map<String, Object>> handleBizException(BizException e) {
         Map<String, Object> res = new HashMap<>();
         res.put("resultCode", "FAIL");
         res.put("resultMessage", e.getMessage());
         res.put("message", e.getMessage());
-        return res;
+        return ResponseEntity.status(400).body(res);
     }
 
     @ExceptionHandler(DataAccessException.class)
-    public Map<String, Object> handleDataAccessException(DataAccessException e) {
+    public ResponseEntity<Map<String, Object>> handleDataAccessException(DataAccessException e) {
         Throwable t = e;
         String msg = null;
 
@@ -44,16 +44,16 @@ public class GlobalExceptionHandler {
         res.put("resultCode", "FAIL");
         res.put("message", msg);
         res.put("resultMessage", msg);
-        return res;
+        return ResponseEntity.status(500).body(res);
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public Map<String, Object> handleIllegalStateException(IllegalStateException e) {
+    public ResponseEntity<Map<String, Object>> handleIllegalStateException(IllegalStateException e) {
         Map<String, Object> res = new HashMap<>();
         res.put("resultCode", "FAIL");
         res.put("message", e.getMessage());
         res.put("resultMessage", e.getMessage());
-        return res;
+        return ResponseEntity.status(500).body(res);
     }
 
     @ExceptionHandler(ResponseStatusException.class)
@@ -70,11 +70,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public Map<String, Object> handleException(Exception e) {
+    public ResponseEntity<Map<String, Object>> handleException(Exception e) {
         Map<String, Object> res = new HashMap<>();
         res.put("resultCode", "FAIL");
         res.put("message", "서버 처리 중 오류가 발생했습니다.");
         res.put("resultMessage", "서버 처리 중 오류가 발생했습니다.");
-        return res;
+        return ResponseEntity.status(500).body(res);
     }
 }

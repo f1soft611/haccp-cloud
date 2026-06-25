@@ -18,11 +18,19 @@ export type AuthoritySearchValue = {
 export function PlatformAuthoritySearchBar(props: {
   value: AuthoritySearchValue;
   disabled?: boolean;
+  showCreateButton?: boolean;
   onChange: (next: AuthoritySearchValue) => void;
   onSearch: () => void;
   onCreate: () => void;
 }) {
-  const { value, disabled = false, onChange, onSearch, onCreate } = props;
+  const {
+    value,
+    disabled = false,
+    showCreateButton = true,
+    onChange,
+    onSearch,
+    onCreate,
+  } = props;
 
   return (
     <Paper sx={{ p: 2 }}>
@@ -94,9 +102,11 @@ export function PlatformAuthoritySearchBar(props: {
           조회
         </Button>
 
-        <Button variant="contained" onClick={onCreate} disabled={disabled}>
-          + 권한 추가
-        </Button>
+        {showCreateButton ? (
+          <Button variant="contained" onClick={onCreate} disabled={disabled}>
+            + 권한 추가
+          </Button>
+        ) : null}
       </Stack>
     </Paper>
   );

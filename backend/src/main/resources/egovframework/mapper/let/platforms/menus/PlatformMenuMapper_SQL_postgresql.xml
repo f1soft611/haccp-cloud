@@ -71,7 +71,12 @@
                 </when>
             </choose>
         </if>
-        ORDER BY m.parent_menu_id, m.menu_order, m.menu_id
+        ORDER BY
+            COALESCE(p.menu_order, m.menu_order),
+            COALESCE(p.menu_id, m.menu_id),
+            m.parent_menu_id NULLS FIRST,
+            m.menu_order,
+            m.menu_id
         OFFSET #{firstIndex}
         LIMIT #{recordCountPerPage}
     </select>
@@ -147,7 +152,7 @@
             #{menuCode},
             #{menuNm},
             #{menuDc},
-            #{parentMenuId},
+            #{parentMenuId,jdbcType=BIGINT},
             #{menuOrdr},
             #{menuUrl},
             #{iconNm},
@@ -162,7 +167,7 @@
         UPDATE tb_menu
         SET menu_nm = #{menuNm},
             menu_dc = #{menuDc},
-            parent_menu_id = #{parentMenuId},
+            parent_menu_id = #{parentMenuId,jdbcType=BIGINT},
             menu_order = #{menuOrdr},
             menu_url = #{menuUrl},
             icon_nm = #{iconNm},

@@ -49,7 +49,7 @@ describe('Tenant first login setup page', () => {
 
   it('renders setup progress counts from API', async () => {
     server.use(
-      http.get('/api/first-login-setup/status', () =>
+      http.get(/.*\/api\/first-login-setup\/status$/, () =>
         HttpResponse.json({
           tenantCode: 'TENANT-Z',
           userCount: 0,
@@ -141,7 +141,7 @@ describe('Tenant first login setup page', () => {
     };
 
     server.use(
-      http.get('/api/first-login-setup/status', () =>
+      http.get(/.*\/api\/first-login-setup\/status$/, () =>
         HttpResponse.json({
           tenantCode: 'TENANT-Z',
           userCount,
@@ -150,19 +150,20 @@ describe('Tenant first login setup page', () => {
           onboardingStatus: getOnboardingStatus(),
         }),
       ),
-      http.post('/api/users', async ({ request }) => {
+      http.post(/.*\/api\/users$/, async ({ request }) => {
         const payload = (await request.json()) as {
           name?: string;
           email?: string;
           department?: string;
-          role?: string;
+          roleCode?: string;
+          roleCodes?: string[];
         };
 
         if (
           !payload.name ||
           !payload.email ||
           !payload.department ||
-          !payload.role
+          !payload.roleCode
         ) {
           return HttpResponse.json(
             { message: 'Invalid input' },
@@ -178,11 +179,12 @@ describe('Tenant first login setup page', () => {
           name: payload.name,
           email: payload.email,
           department: payload.department,
-          role: payload.role,
+          roleCode: payload.roleCode,
+          roleCodes: payload.roleCodes ?? [payload.roleCode],
           active: true,
         });
       }),
-      http.post('/api/departments', async ({ request }) => {
+      http.post(/.*\/api\/departments$/, async ({ request }) => {
         const payload = (await request.json()) as { name?: string };
 
         if (!payload.name) {
@@ -201,7 +203,7 @@ describe('Tenant first login setup page', () => {
           active: true,
         });
       }),
-      http.post('/api/first-login-setup/complete', () => {
+      http.post(/.*\/api\/first-login-setup\/complete$/, () => {
         if (userCount < 1 || departmentCount < 1) {
           return HttpResponse.json(
             { message: '사용자 1명 이상, 부서 1개 이상이 필요합니다.' },
@@ -260,7 +262,7 @@ describe('Tenant first login setup page', () => {
 
   it('does not mark onboarding completed when completion response is not completed', async () => {
     server.use(
-      http.get('/api/first-login-setup/status', () =>
+      http.get(/.*\/api\/first-login-setup\/status$/, () =>
         HttpResponse.json({
           tenantCode: 'TENANT-Z',
           userCount: 1,
@@ -269,7 +271,7 @@ describe('Tenant first login setup page', () => {
           onboardingStatus: 'COMPLETED',
         }),
       ),
-      http.post('/api/first-login-setup/complete', () =>
+      http.post(/.*\/api\/first-login-setup\/complete$/, () =>
         HttpResponse.json({
           completed: false,
           onboardingRequired: true,
@@ -304,7 +306,7 @@ describe('Tenant first login setup page', () => {
 
   it('shows requirement error when completing setup without enough entities', async () => {
     server.use(
-      http.get('/api/first-login-setup/status', () =>
+      http.get(/.*\/api\/first-login-setup\/status$/, () =>
         HttpResponse.json({
           tenantCode: 'TENANT-Z',
           userCount: 0,
@@ -313,7 +315,7 @@ describe('Tenant first login setup page', () => {
           onboardingStatus: 'NOT_STARTED',
         }),
       ),
-      http.post('/api/first-login-setup/complete', () =>
+      http.post(/.*\/api\/first-login-setup\/complete$/, () =>
         HttpResponse.json(
           { message: '사용자 1명 이상, 부서 1개 이상이 필요합니다.' },
           { status: 422 },
