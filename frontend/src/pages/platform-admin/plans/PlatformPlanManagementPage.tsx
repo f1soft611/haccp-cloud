@@ -155,15 +155,6 @@ export function PlatformPlanManagementPage() {
     setFeatureMappingOpen(true);
   };
 
-  const toggleMenuCode = (menuCode: string) => {
-    setDraftMenuCodes((prev) => {
-      const base = prev ?? planMenusQuery.data ?? [];
-      return base.includes(menuCode)
-        ? base.filter((item) => item !== menuCode)
-        : [...base, menuCode];
-    });
-  };
-
   const toggleFeature = (featureCode: string) => {
     setDraftFeatures((prev) => {
       const base =

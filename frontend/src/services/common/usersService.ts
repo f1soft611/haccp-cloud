@@ -31,7 +31,7 @@ export type CreateUserRequest = {
   name: string;
   email: string;
   department: string;
-  roleCode?: UserRole;
+  roleCode?: string;
   roleCodes?: string[];
   active?: boolean;
 };
@@ -42,7 +42,7 @@ export type UpdateUserRequest = {
   name: string;
   email: string;
   department: string;
-  roleCode?: UserRole;
+  roleCode?: string;
   roleCodes?: string[];
   active?: boolean;
 };
