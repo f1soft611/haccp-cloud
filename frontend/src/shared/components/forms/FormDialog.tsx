@@ -50,16 +50,14 @@ export function FormDialog({
         paper: {
           sx: {
             overflow: 'hidden',
-            borderRadius: 3,
+            borderRadius: 1,
             maxHeight: 'calc(100vh - 64px)',
             display: 'flex',
             flexDirection: 'column',
             boxShadow: isDarkMode
               ? '0 24px 80px rgba(2, 6, 23, 0.6)'
-              : '0 24px 80px rgba(15, 36, 64, 0.28)',
-            background: isDarkMode
-              ? 'linear-gradient(180deg, rgba(17,24,39,0.98) 0%, rgba(15,23,42,0.98) 100%)'
-              : 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(240,253,250,0.98) 100%)',
+              : '0 20px 56px rgba(15, 36, 64, 0.16)',
+            backgroundColor: isDarkMode ? '#111827' : '#ffffff',
             color: isDarkMode ? '#f8fafc' : '#111827',
           },
         },
@@ -173,16 +171,8 @@ export function FormDialog({
           py: 2,
           borderTop: isDarkMode
             ? '1px solid rgba(251, 191, 36, 0.2)'
-            : '1px solid rgba(20, 184, 166, 0.2)',
-          bgcolor: isDarkMode
-            ? 'rgba(15, 23, 42, 0.92)'
-            : 'rgba(236, 253, 245, 0.92)',
-          backgroundImage: isDarkMode
-            ? 'linear-gradient(180deg, rgba(17,24,39,0.72) 0%, rgba(15,23,42,0.94) 100%)'
-            : 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(236,253,245,0.94) 100%)',
-          boxShadow: isDarkMode
-            ? 'inset 0 1px 0 rgba(251, 191, 36, 0.08)'
-            : 'inset 0 1px 0 rgba(255, 255, 255, 0.72)',
+            : '1px solid rgba(66, 111, 106, 0.16)',
+          bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.92)' : '#ffffff',
           justifyContent: 'flex-end',
           gap: 1,
         }}

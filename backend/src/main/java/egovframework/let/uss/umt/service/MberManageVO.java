@@ -106,6 +106,9 @@ public class MberManageVO extends UserDefaultVO implements Serializable{
 	@Schema(description = "이메일주소")
 	@JsonAlias("email")
 	private String mberEmailAdres="";
+
+	@Schema(description = "권한코드")
+	private String roleCode="";
 	
 	/**
 	 * toString 메소드를 대치한다.

@@ -70,6 +70,13 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
     group.items.some((item) => location.pathname.startsWith(item.path)),
   );
 
+  useEffect(() => {
+    const nextGroupKey = routeMatchedGroup?.key ?? null;
+    setSelectedGroupKey((currentGroupKey) =>
+      currentGroupKey === nextGroupKey ? currentGroupKey : nextGroupKey,
+    );
+  }, [routeMatchedGroup?.key]);
+
   const selectedGroup =
     visibleGroups.find((group) => group.key === selectedGroupKey) ??
     routeMatchedGroup ??

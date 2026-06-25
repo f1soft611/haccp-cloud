@@ -205,19 +205,20 @@ public class PlanAccessServiceImpl implements PlanAccessService {
 
         try {
             String sql = "" +
-                    "SELECT p.plan_code, p.plan_nm, p.use_at, " +
+                    "SELECT p.plan_code, p.plan_nm, p.plan_desc, p.use_at, " +
                     "       COUNT(DISTINCT pf.plan_feature_id) AS feature_count, " +
                     "       COUNT(DISTINCT pm.plan_menu_id) AS menu_count " +
                     "FROM tb_plan p " +
                     "LEFT JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id " +
                     "LEFT JOIN tb_plan_menu pm ON pm.plan_id = p.plan_id AND pm.use_at = 'Y' " +
-                    "GROUP BY p.plan_code, p.plan_nm, p.use_at " +
+                    "GROUP BY p.plan_code, p.plan_nm, p.plan_desc, p.use_at " +
                     "ORDER BY p.plan_code";
 
             return jdbcTemplate.query(sql, (rs, rowNum) -> {
                 Map<String, Object> row = new LinkedHashMap<String, Object>();
                 row.put("planCode", rs.getString("plan_code"));
                 row.put("planName", rs.getString("plan_nm"));
+                row.put("planDesc", rs.getString("plan_desc"));
                 row.put("useAt", rs.getString("use_at"));
                 row.put("featureCount", rs.getInt("feature_count"));
                 row.put("menuCount", rs.getInt("menu_count"));
@@ -253,6 +254,35 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         } catch (DataAccessException ex) {
             log.warn("Failed to resolve plan feature map. planCode={}, reason={}", planCode, ex.getMessage());
             return Collections.emptyMap();
+        }
+    }
+
+    @Override
+    public List<Map<String, Object>> resolvePlanFeatureItems(String planCode) {
+        if (!StringUtils.hasText(planCode) || !isPlanSchemaReady()) {
+            return Collections.emptyList();
+        }
+
+        try {
+            String sql = "" +
+                    "SELECT pf.feature_code, pf.feature_nm, pf.feature_type, pf.enabled_at, pf.limit_value " +
+                    "FROM tb_plan p " +
+                    "JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id " +
+                    "WHERE p.plan_code = ? " +
+                    "ORDER BY pf.feature_code";
+
+            return jdbcTemplate.query(sql, new Object[]{planCode.trim().toUpperCase()}, (rs, rowNum) -> {
+                Map<String, Object> row = new LinkedHashMap<String, Object>();
+                row.put("featureCode", rs.getString("feature_code"));
+                row.put("featureName", rs.getString("feature_nm"));
+                row.put("featureType", rs.getString("feature_type"));
+                row.put("enabled", ENABLED.equalsIgnoreCase(rs.getString("enabled_at")));
+                row.put("limitValue", rs.getObject("limit_value"));
+                return row;
+            });
+        } catch (DataAccessException ex) {
+            log.warn("Failed to resolve plan feature items. planCode={}, reason={}", planCode, ex.getMessage());
+            return Collections.emptyList();
         }
     }
 
