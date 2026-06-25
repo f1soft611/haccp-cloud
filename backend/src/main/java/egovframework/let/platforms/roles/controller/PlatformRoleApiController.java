@@ -188,12 +188,17 @@ public class PlatformRoleApiController {
             return requestedTenantCode.trim().toUpperCase();
         }
 
-        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
-        if (userDetails instanceof LoginVO) {
-            LoginVO loginVO = (LoginVO) userDetails;
-            if (StringUtils.hasText(loginVO.getTenantCode())) {
-                return loginVO.getTenantCode().trim().toUpperCase();
+        // Standalone controller tests and 일부 비인증 진입 경로에서는 인증 컨텍스트가 비어 있을 수 있다.
+        try {
+            Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+            if (userDetails instanceof LoginVO) {
+                LoginVO loginVO = (LoginVO) userDetails;
+                if (StringUtils.hasText(loginVO.getTenantCode())) {
+                    return loginVO.getTenantCode().trim().toUpperCase();
+                }
             }
+        } catch (RuntimeException ignored) {
+            // 인증 컨텍스트가 없으면 플랫폼 기본 tenant로 fallback
         }
 
         return "PLATFORM";
