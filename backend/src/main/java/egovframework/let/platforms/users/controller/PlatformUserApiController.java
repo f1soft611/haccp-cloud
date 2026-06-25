@@ -16,13 +16,16 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.LoginVO;
+import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
+import egovframework.let.platforms.users.domain.model.PlatformUserSaveRequestVO;
+import egovframework.let.platforms.users.domain.model.PlatformUserVO;
 import egovframework.let.platforms.users.service.PlatformUserService;
-import egovframework.let.platforms.users.service.PlatformUserService.UpsertUserRequest;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -33,44 +36,55 @@ public class PlatformUserApiController {
     private final PlatformUserService platformUserService;
 
     @GetMapping
-    public List<Map<String, Object>> listUsers(
+    public List<?> listUsers(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
-            HttpServletRequest request) {
+            HttpServletRequest request) throws Exception {
         String tenantCode = resolveTenantCode(tenantHeader, request);
-        Long tenantId = resolveTenantId(tenantCode);
-        return platformUserService.listUsers(tenantId, tenantCode);
+        return platformUserService.listUsers(tenantCode);
+    }
+
+    @GetMapping("/paged")
+    public Map<String, Object> listUsersPaged(
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @RequestParam(defaultValue = "1") int pageIndex,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String filterActive,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        ResultVO resultVO = platformUserService.listUsersPaged(pageIndex, pageSize, keyword, filterActive, tenantCode);
+        Map<String, Object> result = resultVO.getResult();
+        Map<String, Object> response = new LinkedHashMap<String, Object>();
+        response.put("items", result.get("userList"));
+        response.put("totalCount", result.get("totalCount"));
+        response.put("paginationInfo", result.get("paginationInfo"));
+        return response;
     }
 
     @PostMapping
-    public Map<String, Object> createUser(
+    public PlatformUserVO createUser(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
-            @RequestBody UpsertUserRequest payload,
-            HttpServletRequest request) {
-        String tenantCode = resolveTenantCode(tenantHeader, request);
-        Long tenantId = resolveTenantId(tenantCode);
-
+            @RequestBody PlatformUserSaveRequestVO payload,
+            HttpServletRequest request) throws Exception {
+        payload.setTenantCode(resolveTenantCode(tenantHeader, request));
         try {
-            return platformUserService.createUser(tenantId, tenantCode, payload);
+            return platformUserService.createUser(payload);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (IllegalStateException ex) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), ex);
-        } catch (Exception ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "사용자 등록에 실패했습니다.", ex);
         }
     }
 
     @PutMapping("/{id}")
-    public Map<String, Object> updateUser(
+    public PlatformUserVO updateUser(
             @PathVariable Long id,
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
-            @RequestBody UpsertUserRequest payload,
-            HttpServletRequest request) {
-        String tenantCode = resolveTenantCode(tenantHeader, request);
-        Long tenantId = resolveTenantId(tenantCode);
-
+            @RequestBody PlatformUserSaveRequestVO payload,
+            HttpServletRequest request) throws Exception {
+        payload.setTenantCode(resolveTenantCode(tenantHeader, request));
         try {
-            return platformUserService.updateUser(tenantId, tenantCode, id, payload);
+            return platformUserService.updateUser(id, payload);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (IllegalStateException ex) {
@@ -79,34 +93,26 @@ public class PlatformUserApiController {
     }
 
     @PatchMapping("/{id}")
-    public Map<String, Object> updateUserStatus(
+    public PlatformUserVO updateUserStatus(
             @PathVariable Long id,
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @RequestBody Map<String, Object> payload,
-            HttpServletRequest request) {
+            HttpServletRequest request) throws Exception {
         if (payload == null || !payload.containsKey("active")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "active 값은 필수입니다.");
         }
 
-        boolean active = Boolean.TRUE.equals(payload.get("active"));
-        String tenantCode = resolveTenantCode(tenantHeader, request);
-        Long tenantId = resolveTenantId(tenantCode);
+        PlatformUserSaveRequestVO requestVO = new PlatformUserSaveRequestVO();
+        requestVO.setTenantCode(resolveTenantCode(tenantHeader, request));
+        requestVO.setActive(Boolean.TRUE.equals(payload.get("active")));
 
         try {
-            return platformUserService.updateUserActive(tenantId, tenantCode, id, active);
+            return platformUserService.updateUserActive(id, requestVO);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (IllegalStateException ex) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), ex);
         }
-    }
-
-    private Long resolveTenantId(String tenantCode) {
-        Long tenantId = platformUserService.resolveTenantIdByCode(tenantCode);
-        if (tenantId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tenantCode를 확인할 수 없습니다.");
-        }
-        return tenantId;
     }
 
     private String resolveTenantCode(String tenantHeader, HttpServletRequest request) {
@@ -125,17 +131,6 @@ public class PlatformUserApiController {
         Object attributeTenantCode = request.getAttribute("tenantCode");
         if (attributeTenantCode != null && StringUtils.hasText(String.valueOf(attributeTenantCode))) {
             return String.valueOf(attributeTenantCode).trim().toUpperCase();
-        }
-
-        Map<String, String> fallbackByHost = new LinkedHashMap<String, String>();
-        fallbackByHost.put("localhost", "TENANT-A");
-
-        String host = request.getServerName();
-        if (host != null) {
-            String normalizedHost = host.toLowerCase();
-            if (fallbackByHost.containsKey(normalizedHost)) {
-                return fallbackByHost.get(normalizedHost);
-            }
         }
 
         return "PLATFORM";

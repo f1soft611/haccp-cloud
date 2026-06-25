@@ -1,11 +1,13 @@
 import { Alert, Stack } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { GridPaginationBar } from '../../../shared/components/data/GridPaginationBar';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
+import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { useAuthStore } from '../../../shared/store/authStore';
 import {
   createUser,
-  listUsers,
+  listUsersPaged,
   updateUser,
   updateUserStatus,
   type UserItem,
@@ -26,6 +28,8 @@ import { UserStatusDialog } from './components/UserStatusDialog';
 export function UsersPage() {
   const queryClient = useQueryClient();
   const tenantCode = useAuthStore((state) => state.tenantCode);
+  const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } =
+    useGridPagination();
 
   const [searchValue, setSearchValue] = useState<UsersSearchValue>({
     keyword: '',
@@ -41,8 +45,23 @@ export function UsersPage() {
   const [statusTarget, setStatusTarget] = useState<UserItem | null>(null);
 
   const usersQuery = useQuery({
-    queryKey: ['users', tenantCode || 'self'],
-    queryFn: () => listUsers(tenantCode || undefined),
+    queryKey: [
+      'users',
+      tenantCode || 'self',
+      pageIndex,
+      pageSize,
+      appliedSearch.keyword,
+      appliedSearch.filterActive,
+    ],
+    queryFn: () =>
+      listUsersPaged({
+        tenantCode: tenantCode || undefined,
+        pageIndex,
+        pageSize,
+        keyword: appliedSearch.keyword || undefined,
+        filterActive: appliedSearch.filterActive,
+      }),
+    retry: false,
   });
 
   const rolesQuery = useQuery({
@@ -60,32 +79,12 @@ export function UsersPage() {
       }));
   }, [rolesQuery.data]);
 
-  const filteredUsers = useMemo(() => {
-    const keyword = appliedSearch.keyword.trim().toLowerCase();
-
-    return (usersQuery.data ?? []).filter((user) => {
-      if (
-        appliedSearch.filterActive !== 'all' &&
-        user.active !== (appliedSearch.filterActive === 'Y')
-      ) {
-        return false;
-      }
-
-      if (!keyword) {
-        return true;
-      }
-
-      const target =
-        `${user.name} ${user.email} ${user.department}`.toLowerCase();
-      return target.includes(keyword);
-    });
-  });
-
   const createMutation = useMutation({
     mutationFn: createUser,
     onSuccess: () => {
       setFormOpen(false);
       setEditingUser(null);
+      resetPage();
       void queryClient.invalidateQueries({
         queryKey: ['users', tenantCode || 'self'],
       });
@@ -97,6 +96,7 @@ export function UsersPage() {
     onSuccess: () => {
       setFormOpen(false);
       setEditingUser(null);
+      resetPage();
       void queryClient.invalidateQueries({
         queryKey: ['users', tenantCode || 'self'],
       });
@@ -107,6 +107,7 @@ export function UsersPage() {
     mutationFn: updateUserStatus,
     onSuccess: () => {
       setStatusTarget(null);
+      resetPage();
       void queryClient.invalidateQueries({
         queryKey: ['users', tenantCode || 'self'],
       });
@@ -114,6 +115,7 @@ export function UsersPage() {
   });
 
   const handleSearch = () => {
+    resetPage();
     setAppliedSearch({
       keyword: searchValue.keyword.trim(),
       filterActive: searchValue.filterActive,
@@ -185,10 +187,18 @@ export function UsersPage() {
       />
 
       <UsersGrid
-        rows={filteredUsers}
+        rows={usersQuery.data?.items ?? []}
         loading={usersQuery.isLoading}
         onEdit={handleOpenEdit}
         onToggle={(user) => setStatusTarget(user)}
+      />
+
+      <GridPaginationBar
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        totalCount={usersQuery.data?.totalCount ?? 0}
+        onPageChange={setPageIndex}
+        onPageSizeChange={setPageSize}
       />
 
       <UserFormDialog

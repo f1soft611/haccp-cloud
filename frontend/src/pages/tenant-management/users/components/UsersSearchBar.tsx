@@ -22,7 +22,11 @@ export function UsersSearchBar({
 }: UsersSearchBarProps) {
   return (
     <Paper sx={{ p: 2 }}>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={1}
+        alignItems={{ xs: 'stretch', md: 'flex-end' }}
+      >
         <TextField
           size="small"
           fullWidth
@@ -57,7 +61,7 @@ export function UsersSearchBar({
         </TextField>
 
         <Button
-          variant="outlined"
+          variant="contained"
           onClick={onSearch}
           disabled={disabled}
           sx={{ minWidth: 96 }}
@@ -65,7 +69,12 @@ export function UsersSearchBar({
           검색
         </Button>
 
-        <Button variant="contained" onClick={onCreate} sx={{ minWidth: 120 }}>
+        <Button
+          variant="contained"
+          onClick={onCreate}
+          disabled={disabled}
+          sx={{ minWidth: 120 }}
+        >
           사용자 등록
         </Button>
       </Stack>

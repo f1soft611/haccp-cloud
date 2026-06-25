@@ -49,13 +49,11 @@ export function ConfirmDialog({
         paper: {
           sx: {
             overflow: 'hidden',
-            borderRadius: 3,
+            borderRadius: 1,
             boxShadow: isDarkMode
               ? '0 20px 70px rgba(2, 6, 23, 0.6)'
-              : '0 20px 70px rgba(15, 36, 64, 0.28)',
-            background: isDarkMode
-              ? 'linear-gradient(180deg, rgba(17,24,39,0.98) 0%, rgba(15,23,42,0.98) 100%)'
-              : 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(240,253,250,0.98) 100%)',
+              : '0 18px 48px rgba(15, 36, 64, 0.16)',
+            backgroundColor: isDarkMode ? '#111827' : '#ffffff',
           },
         },
       }}
@@ -113,10 +111,8 @@ export function ConfirmDialog({
           py: 2,
           borderTop: isDarkMode
             ? '1px solid rgba(251, 191, 36, 0.18)'
-            : '1px solid rgba(20, 184, 166, 0.18)',
-          bgcolor: isDarkMode
-            ? 'rgba(15, 23, 42, 0.92)'
-            : 'rgba(236, 253, 245, 0.9)',
+            : '1px solid rgba(66, 111, 106, 0.16)',
+          bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.92)' : '#ffffff',
           justifyContent: 'flex-end',
           gap: 1,
         }}

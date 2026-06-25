@@ -4,19 +4,19 @@ import { useTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 
 const DEFAULT_CONTAINER_SX = {
-  border: '1px solid rgba(15, 118, 110, 0.22)',
-  borderRadius: 2,
-  boxShadow: '0 10px 28px rgba(15, 118, 110, 0.12)',
+  border: '1px solid rgba(66, 111, 106, 0.24)',
+  borderRadius: 0.5,
+  boxShadow: '0 8px 18px rgba(66, 111, 106, 0.08)',
   overflow: 'auto',
   bgcolor: '#fff',
 };
 
 const DEFAULT_TABLE_SX = {
   '& .MuiTableCell-head': {
-    bgcolor: '#0f766e',
-    color: '#ffffff',
+    bgcolor: '#d7ecea',
+    color: '#2f5f5b',
     fontWeight: 700,
-    borderBottom: '1px solid rgba(255, 255, 255, 0.25)',
+    borderBottom: '1px solid rgba(66, 111, 106, 0.28)',
   },
   '& .MuiTableCell-root': {
     borderBottom: '1px solid rgba(15, 118, 110, 0.12)',

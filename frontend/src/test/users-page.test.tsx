@@ -23,5 +23,12 @@ describe('UsersPage', () => {
     expect(
       screen.getByRole('heading', { name: '사용자 관리' }),
     ).toBeInTheDocument();
+    expect(await screen.findByText('총 2건')).toBeInTheDocument();
+    expect(
+      await screen.findAllByRole('button', { name: '사용자 수정' }),
+    ).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: '로그인 차단' })).toHaveLength(
+      2,
+    );
   });
 });

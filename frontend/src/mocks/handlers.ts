@@ -1277,6 +1277,40 @@ export const handlers = [
     return HttpResponse.json(tenantScoped(users, tenantCode));
   }),
 
+  http.get(/.*\/api\/users\/paged$/, ({ request }) => {
+    const tenantCode = getTenantCodeFromHeader(request);
+    const url = new URL(request.url);
+    const pageIndex = Number(url.searchParams.get('pageIndex') ?? '1');
+    const pageSize = Number(url.searchParams.get('pageSize') ?? '10');
+    const keyword = url.searchParams.get('keyword')?.toLowerCase() ?? '';
+    const filterActive = url.searchParams.get('filterActive') ?? 'all';
+
+    const filtered = tenantScoped(users, tenantCode).filter((row) => {
+      if (filterActive === 'Y' && !row.active) {
+        return false;
+      }
+
+      if (filterActive === 'N' && row.active) {
+        return false;
+      }
+
+      if (!keyword) {
+        return true;
+      }
+
+      const target = `${row.name} ${row.email} ${row.department}`.toLowerCase();
+      return target.includes(keyword);
+    });
+
+    const offset = Math.max(0, (pageIndex - 1) * pageSize);
+    const items = filtered.slice(offset, offset + pageSize);
+
+    return HttpResponse.json({
+      items,
+      totalCount: filtered.length,
+    });
+  }),
+
   http.post(/.*\/api\/users$/, async ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const payload = (await request.json()) as {

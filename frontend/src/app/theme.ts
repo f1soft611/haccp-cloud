@@ -68,7 +68,7 @@ export const appTheme = createTheme({
     MuiTableHead: {
       styleOverrides: {
         root: {
-          backgroundColor: '#e6fffa',
+          backgroundColor: '#d7ecea',
         },
       },
     },
@@ -85,10 +85,10 @@ export const appTheme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         head: {
-          borderBottom: '1px solid rgba(15, 118, 110, 0.22)',
+          borderBottom: '1px solid rgba(66, 111, 106, 0.28)',
           fontWeight: 700,
-          color: '#115e59',
-          backgroundColor: '#e6fffa',
+          color: '#2f5f5b',
+          backgroundColor: '#d7ecea',
         },
         body: {
           borderBottom: '1px solid rgba(15, 118, 110, 0.12)',

@@ -13,6 +13,19 @@ export type UserItem = {
   active: boolean;
 };
 
+export type ListUsersPagedParams = {
+  tenantCode?: string;
+  pageIndex: number;
+  pageSize: number;
+  keyword?: string;
+  filterActive?: 'all' | 'Y' | 'N';
+};
+
+export type ListUsersPagedResult = {
+  items: UserItem[];
+  totalCount: number;
+};
+
 export type CreateUserRequest = {
   tenantCode?: string;
   name: string;
@@ -117,6 +130,35 @@ export async function listUsers(tenantCode?: string): Promise<UserItem[]> {
     headers,
   });
   return (data ?? []).map(normalizeUserItem);
+}
+
+export async function listUsersPaged(
+  params: ListUsersPagedParams,
+): Promise<ListUsersPagedResult> {
+  const headers = params.tenantCode
+    ? { 'x-tenant-code': params.tenantCode }
+    : undefined;
+
+  const { data } = await apiClient.get<{
+    items?: Array<Parameters<typeof normalizeUserItem>[0]>;
+    totalCount?: number;
+  }>('/users/paged', {
+    headers,
+    params: {
+      pageIndex: params.pageIndex,
+      pageSize: params.pageSize,
+      keyword: params.keyword || undefined,
+      filterActive:
+        params.filterActive && params.filterActive !== 'all'
+          ? params.filterActive
+          : undefined,
+    },
+  });
+
+  return {
+    items: (data.items ?? []).map(normalizeUserItem),
+    totalCount: data.totalCount ?? 0,
+  };
 }
 
 export async function createUser(
