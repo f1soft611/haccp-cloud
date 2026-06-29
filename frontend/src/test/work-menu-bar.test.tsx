@@ -16,7 +16,7 @@ import { APP_LABELS } from '../shared/constants/labels';
 
 const mockListAccessibleMenuPaths = vi.fn<() => Promise<string[]>>();
 
-vi.mock('../services/platform/platformUserMenuService', () => ({
+vi.mock('../services/platform-admin/platformUserMenuService', () => ({
   listAccessibleMenuPaths: () => mockListAccessibleMenuPaths(),
 }));
 

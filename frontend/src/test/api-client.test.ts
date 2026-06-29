@@ -2,7 +2,7 @@ import { act } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { expect, vi } from 'vitest';
 import { server } from '../mocks/server';
-import { getDashboardMetrics } from '../services/common/dashboardService';
+import { getDashboardMetrics } from '../services/documents/dashboardService';
 import { apiClient, resolveApiBaseUrl } from '../services/api/apiClient';
 import { useAuthStore } from '../shared/store/authStore';
 

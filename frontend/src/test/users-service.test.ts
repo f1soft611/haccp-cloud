@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listUsers, listUsersPaged } from '../services/common/usersService';
+import { listUsers, listUsersPaged } from '../services/organization/usersService';
 
 describe('usersService', () => {
   it('lists users in tenant scope', async () => {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   listAccessibleMenuPaths,
   listAccessibleMenus,
-} from '../services/platform/platformUserMenuService';
+} from '../services/platform-admin/platformUserMenuService';
 import { apiClient } from '../services/api/apiClient';
 
 vi.mock('../services/api/apiClient', () => ({

@@ -17,7 +17,7 @@ import {
   APP_LABELS,
   getActiveLabel,
 } from '../../../../shared/constants/labels';
-import type { PlatformRoleItem } from '../../../../services/platform/platformRoleService';
+import type { PlatformRoleItem } from '../../../../services/platform-admin/platformRoleService';
 
 export function PlatformAuthorityGrid(props: {
   rows: PlatformRoleItem[];

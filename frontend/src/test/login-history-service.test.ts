@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../services/api/apiClient';
-import { getLoginHistoryList } from '../services/auth/loginHistoryService';
+import { getLoginHistoryList } from '../services/platform-admin/loginHistoryService';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {

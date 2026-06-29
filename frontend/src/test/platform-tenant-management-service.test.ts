@@ -3,7 +3,7 @@ import { apiClient } from '../services/api/apiClient';
 import {
   listPlatformTenants,
   type PlatformTenantManagementItem,
-} from '../services/platform/platformTenantManagementService';
+} from '../services/platform-admin/platformTenantManagementService';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {

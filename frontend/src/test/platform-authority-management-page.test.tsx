@@ -8,7 +8,7 @@ import {
 } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
-import { PlatformAuthorityManagementPage } from '../pages/platform-admin/authorities/PlatformAuthorityManagementPage';
+import { PlatformAuthorityManagementPage } from '../pages/organization/authorities/PlatformAuthorityManagementPage';
 import { useAuthStore } from '../shared/store/authStore';
 
 const {
@@ -142,18 +142,18 @@ const {
   savePlatformRoleMenuMappingMock: vi.fn(async (payload) => payload),
 }));
 
-vi.mock('../services/platform/platformRoleService', () => ({
+vi.mock('../services/platform-admin/platformRoleService', () => ({
   listPlatformRolesPaged: listPlatformRolesPagedMock,
   createPlatformRole: createPlatformRoleMock,
   updatePlatformRole: updatePlatformRoleMock,
   updatePlatformRoleStatus: updatePlatformRoleStatusMock,
 }));
 
-vi.mock('../services/platform/platformMenuService', () => ({
+vi.mock('../services/platform-admin/platformMenuService', () => ({
   listPlatformMenus: listPlatformMenusMock,
 }));
 
-vi.mock('../services/platform/platformRoleMenuService', () => ({
+vi.mock('../services/platform-admin/platformRoleMenuService', () => ({
   getPlatformRoleMenuMapping: getPlatformRoleMenuMappingMock,
   savePlatformRoleMenuMapping: savePlatformRoleMenuMappingMock,
 }));

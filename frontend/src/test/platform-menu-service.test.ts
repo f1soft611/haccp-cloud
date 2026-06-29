@@ -5,7 +5,7 @@ import {
   listPlatformMenus,
   listPlatformMenusPaged,
   updatePlatformMenu,
-} from '../services/platform/platformMenuService';
+} from '../services/platform-admin/platformMenuService';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {

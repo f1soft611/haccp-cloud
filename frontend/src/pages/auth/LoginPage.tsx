@@ -17,7 +17,7 @@ import { extractApiErrorMessage } from '../../services/api/errorMessage';
 import {
   getTenantByDomain,
   type TenantDomainInfo,
-} from '../../services/tenant/tenantService';
+} from '../../services/organization/tenantService';
 import { useAuthStore } from '../../shared/store/authStore';
 import { APP_LABELS } from '../../shared/constants/labels';
 import {

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
-import { LoginHistoryPage } from '../pages/admin/LoginHistoryPage';
+import { LoginHistoryPage } from '../pages/platform-admin/login-history/LoginHistoryPage';
 import { APP_LABELS } from '../shared/constants/labels';
 
 const { getLoginHistoryListMock } = vi.hoisted(() => ({
@@ -11,7 +11,7 @@ const { getLoginHistoryListMock } = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('../services/auth/loginHistoryService', () => ({
+vi.mock('../services/platform-admin/loginHistoryService', () => ({
   getLoginHistoryList: getLoginHistoryListMock,
 }));
 

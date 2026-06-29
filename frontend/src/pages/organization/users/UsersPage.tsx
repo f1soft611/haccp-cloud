@@ -11,9 +11,9 @@ import {
   updateUser,
   updateUserStatus,
   type UserItem,
-} from '../../../services/common/usersService';
+} from '../../../services/organization/usersService';
 import { APP_LABELS } from '../../../shared/constants/labels';
-import { listPlatformRoles } from '../../../services/platform/platformRoleService';
+import { listPlatformRoles } from '../../../services/platform-admin/platformRoleService';
 import {
   UsersSearchBar,
   type UsersSearchValue,

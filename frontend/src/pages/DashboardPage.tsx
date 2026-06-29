@@ -18,11 +18,11 @@ import { NavLink } from 'react-router-dom';
 import {
   listDocuments,
   type DocumentTemplate,
-} from '../services/common/documentsService';
+} from '../services/documents/documentsService';
 import { getDashboardConfigByRole } from './dashboard/roleDashboardConfig';
 import { PlatformAdminDashboard } from './dashboard/platformAdmin/PlatformAdminDashboard';
 import { useAuthStore } from '../shared/store/authStore';
-import { getDashboardMetrics } from '../services/common/dashboardService';
+import { getDashboardMetrics } from '../services/documents/dashboardService';
 import { APP_LABELS, getRoleLabel } from '../shared/constants/labels';
 import { dashboardThemeTokens } from '../app/theme';
 

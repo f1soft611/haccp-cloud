@@ -10,7 +10,7 @@ const { listPlatformTenantsMock } = vi.hoisted(() => ({
   listPlatformTenantsMock: vi.fn(),
 }));
 
-vi.mock('../services/platform/platformTenantManagementService', () => ({
+vi.mock('../services/platform-admin/platformTenantManagementService', () => ({
   listPlatformTenants: listPlatformTenantsMock,
 }));
 

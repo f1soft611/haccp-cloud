@@ -23,8 +23,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   issueTenantCode,
   listSampleTenants,
-} from '../../../services/tenant/tenantService';
-import type { IssueTenantCodeRequest } from '../../../services/tenant/tenantService';
+} from '../../../services/organization/tenantService';
+import type { IssueTenantCodeRequest } from '../../../services/organization/tenantService';
 import { APP_LABELS } from '../../../shared/constants/labels';
 
 const BRN_REGEX = /^\d{3}-\d{2}-\d{5}$/;

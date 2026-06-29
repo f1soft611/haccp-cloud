@@ -12,7 +12,7 @@ import { useTheme } from '@mui/material/styles';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
-import type { PlanSummary } from '../../../../services/plan/planAccessService';
+import type { PlanSummary } from '../../../../services/platform-admin/planAccessService';
 
 export function PlatformPlanGrid(props: {
   rows: PlanSummary[];

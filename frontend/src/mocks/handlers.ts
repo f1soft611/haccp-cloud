@@ -1,12 +1,12 @@
 import { http, HttpResponse } from 'msw';
 import type { AuthorityCode } from '../shared/auth/authorityCode';
 import type { UserRole } from '../shared/store/authStore';
-import type { DepartmentItem } from '../services/common/departmentsService';
+import type { DepartmentItem } from '../services/organization/departmentsService';
 import type {
   DocumentHistoryItem,
   DocumentTemplate,
-} from '../services/common/documentsService';
-import type { UserItem } from '../services/common/usersService';
+} from '../services/documents/documentsService';
+import type { UserItem } from '../services/organization/usersService';
 
 type TenantItem = {
   tenantCode: string;

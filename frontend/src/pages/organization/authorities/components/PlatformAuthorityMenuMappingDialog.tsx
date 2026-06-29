@@ -14,8 +14,8 @@ import {
 import { useMemo } from 'react';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
-import type { PlatformMenuItem } from '../../../../services/platform/platformMenuService';
-import type { PlatformRoleItem } from '../../../../services/platform/platformRoleService';
+import type { PlatformMenuItem } from '../../../../services/platform-admin/platformMenuService';
+import type { PlatformRoleItem } from '../../../../services/platform-admin/platformRoleService';
 
 export function PlatformAuthorityMenuMappingDialog(props: {
   open: boolean;

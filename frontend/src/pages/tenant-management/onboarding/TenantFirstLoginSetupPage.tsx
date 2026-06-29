@@ -9,12 +9,12 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useState } from 'react';
-import { createDepartment } from '../../../services/common/departmentsService';
+import { createDepartment } from '../../../services/organization/departmentsService';
 import {
   completeFirstSetup,
   getFirstSetupStatus,
-} from '../../../services/tenant/firstLoginSetupService';
-import { createUser } from '../../../services/common/usersService';
+} from '../../../services/organization/firstLoginSetupService';
+import { createUser } from '../../../services/organization/usersService';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { APP_LABELS } from '../../../shared/constants/labels';
 

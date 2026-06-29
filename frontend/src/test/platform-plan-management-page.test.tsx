@@ -25,7 +25,7 @@ const {
   listPlatformMenusMock: vi.fn(),
 }));
 
-vi.mock('../services/plan/planAccessService', () => ({
+vi.mock('../services/platform-admin/planAccessService', () => ({
   listPlanSummaries: listPlanSummariesMock,
   getPlanMenuCodes: getPlanMenuCodesMock,
   getPlanFeatures: getPlanFeaturesMock,
@@ -33,7 +33,7 @@ vi.mock('../services/plan/planAccessService', () => ({
   savePlanFeatures: savePlanFeaturesMock,
 }));
 
-vi.mock('../services/platform/platformMenuService', () => ({
+vi.mock('../services/platform-admin/platformMenuService', () => ({
   listPlatformMenus: listPlatformMenusMock,
 }));
 

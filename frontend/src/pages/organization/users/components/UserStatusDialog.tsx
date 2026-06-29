@@ -1,4 +1,4 @@
-import type { UserItem } from '../../../../services/common/usersService';
+import type { UserItem } from '../../../../services/organization/usersService';
 import { ConfirmDialog } from '../../../../shared/components/feedback/ConfirmDialog';
 
 type UserStatusDialogProps = {

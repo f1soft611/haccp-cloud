@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import type { UserItem } from '../../../../services/common/usersService';
+import type { UserItem } from '../../../../services/organization/usersService';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 
 type UsersGridProps = {

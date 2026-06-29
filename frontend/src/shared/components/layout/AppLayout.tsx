@@ -13,13 +13,13 @@ import {
 import {
   listAccessibleMenuPaths,
   type AccessibleMenuMeta,
-} from '../../../services/platform/platformUserMenuService';
-import * as userMenuService from '../../../services/platform/platformUserMenuService';
-import { getCurrentPlanAccess } from '../../../services/plan/planAccessService';
+} from '../../../services/platform-admin/platformUserMenuService';
+import * as userMenuService from '../../../services/platform-admin/platformUserMenuService';
+import { getCurrentPlanAccess } from '../../../services/platform-admin/planAccessService';
 import {
   isFeatureAllowed,
   resolveFeatureCodeByPath,
-} from '../../../services/plan/featureCatalog';
+} from '../../../services/platform-admin/featureCatalog';
 import { useAuthStore } from '../../store/authStore';
 import { UserMenuMetadataProvider } from './userMenuMetadataContext';
 

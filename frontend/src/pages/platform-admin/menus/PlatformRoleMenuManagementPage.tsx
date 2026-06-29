@@ -10,12 +10,12 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
-import { listPlatformMenus } from '../../../services/platform/platformMenuService';
-import { listPlatformRoles } from '../../../services/platform/platformRoleService';
+import { listPlatformMenus } from '../../../services/platform-admin/platformMenuService';
+import { listPlatformRoles } from '../../../services/platform-admin/platformRoleService';
 import {
   getPlatformRoleMenuMapping,
   savePlatformRoleMenuMapping,
-} from '../../../services/platform/platformRoleMenuService';
+} from '../../../services/platform-admin/platformRoleMenuService';
 
 export function PlatformRoleMenuManagementPage() {
   const [selectedRoleCode, setSelectedRoleCode] = useState('');

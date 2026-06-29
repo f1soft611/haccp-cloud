@@ -1,4 +1,4 @@
-import type { PlanFeatureItem } from '../plan/planAccessService';
+import type { PlanFeatureItem } from './planAccessService';
 import { apiClient } from '../api/apiClient';
 
 function normalizeFeatureCode(value: unknown): string {

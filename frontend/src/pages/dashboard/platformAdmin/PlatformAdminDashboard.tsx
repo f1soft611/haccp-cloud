@@ -6,7 +6,7 @@ import {
   listPlatformAdminCcpDocuments,
   listPlatformAdminTenantCodeIssuance,
   listPlatformAdminTenants,
-} from '../../../services/common/dashboardService';
+} from '../../../services/documents/dashboardService';
 import { logout as logoutApi } from '../../../services/auth/logoutService';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { APP_LABELS } from '../../../shared/constants/labels';

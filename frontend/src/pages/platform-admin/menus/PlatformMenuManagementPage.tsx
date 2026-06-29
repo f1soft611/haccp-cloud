@@ -47,11 +47,11 @@ import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
-import { getCurrentPlanAccess } from '../../../services/plan/planAccessService';
+import { getCurrentPlanAccess } from '../../../services/platform-admin/planAccessService';
 import {
   isFeatureAllowed,
   resolveFeatureCodeByButton,
-} from '../../../services/plan/featureCatalog';
+} from '../../../services/platform-admin/featureCatalog';
 import {
   createPlatformMenu,
   deletePlatformMenu,
@@ -59,7 +59,7 @@ import {
   listPlatformMenus,
   updatePlatformMenu,
   type PlatformMenuItem,
-} from '../../../services/platform/platformMenuService';
+} from '../../../services/platform-admin/platformMenuService';
 
 const ICON_OPTIONS = [
   'Dashboard',

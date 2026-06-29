@@ -23,7 +23,7 @@ import { GridPaginationBar } from '../../../shared/components/data/GridPaginatio
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
-import { listPlatformTenants } from '../../../services/platform/platformTenantManagementService';
+import { listPlatformTenants } from '../../../services/platform-admin/platformTenantManagementService';
 
 type SearchField = 'tenantCode' | 'companyName' | 'adminName';
 type StatusFilter = 'all' | 'ACTIVE' | 'INACTIVE';

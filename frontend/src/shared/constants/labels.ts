@@ -1,4 +1,4 @@
-import type { DocumentStatus } from '../../services/common/documentsService';
+import type { DocumentStatus } from '../../services/documents/documentsService';
 import type { UserRole } from '../store/authStore';
 
 export type DocumentStatusCode = DocumentStatus;

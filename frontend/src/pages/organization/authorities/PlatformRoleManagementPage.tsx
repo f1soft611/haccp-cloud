@@ -1,25 +1,15 @@
-import {
-  Alert,
-  Button,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-} from '@mui/material';
+import { Alert, Button, Paper, Stack, TextField } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { APP_LABELS, getActiveLabel } from '../../../shared/constants/labels';
+import { APP_LABELS } from '../../../shared/constants/labels';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import {
   createPlatformRole,
   listPlatformRoles,
   updatePlatformRoleStatus,
   type PlatformRoleItem,
-} from '../../../services/platform/platformRoleService';
+} from '../../../services/platform-admin/platformRoleService';
+import { RoleGrid } from './components/RoleGrid';
 
 export function PlatformRoleManagementPage() {
   const queryClient = useQueryClient();
@@ -113,34 +103,10 @@ export function PlatformRoleManagementPage() {
         </Stack>
       </Paper>
 
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>권한 코드</TableCell>
-            <TableCell>권한명</TableCell>
-            <TableCell>{APP_LABELS.field.content}</TableCell>
-            <TableCell>{APP_LABELS.table.status}</TableCell>
-            <TableCell align="right">{APP_LABELS.table.action}</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {(rolesQuery.data ?? []).map((item) => (
-            <TableRow key={item.id} hover>
-              <TableCell>{item.code}</TableCell>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.description || '-'}</TableCell>
-              <TableCell>{getActiveLabel(item.active)}</TableCell>
-              <TableCell align="right">
-                <Button size="small" onClick={() => handleToggleActive(item)}>
-                  {item.active
-                    ? APP_LABELS.action.deactivate
-                    : APP_LABELS.action.activate}
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <RoleGrid
+        rows={rolesQuery.data ?? []}
+        onToggleActive={handleToggleActive}
+      />
     </Stack>
   );
 }

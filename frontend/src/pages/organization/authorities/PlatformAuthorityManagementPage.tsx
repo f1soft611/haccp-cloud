@@ -9,18 +9,18 @@ import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import {
   listPlatformMenus,
   type PlatformMenuItem,
-} from '../../../services/platform/platformMenuService';
+} from '../../../services/platform-admin/platformMenuService';
 import {
   createPlatformRole,
   listPlatformRolesPaged,
   updatePlatformRole,
   updatePlatformRoleStatus,
   type PlatformRoleItem,
-} from '../../../services/platform/platformRoleService';
+} from '../../../services/platform-admin/platformRoleService';
 import {
   getPlatformRoleMenuMapping,
   savePlatformRoleMenuMapping,
-} from '../../../services/platform/platformRoleMenuService';
+} from '../../../services/platform-admin/platformRoleMenuService';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { useAuthStore } from '../../../shared/store/authStore';

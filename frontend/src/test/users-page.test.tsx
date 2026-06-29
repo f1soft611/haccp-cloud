@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
-import { UsersPage } from '../pages/tenant-management/users/UsersPage';
+import { UsersPage } from '../pages/organization/users/UsersPage';
 import { useAuthStore } from '../shared/store/authStore';
 
 describe('UsersPage', () => {

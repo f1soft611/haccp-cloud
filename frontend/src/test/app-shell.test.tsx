@@ -20,9 +20,9 @@ import { AppLayout } from '../shared/components/layout/AppLayout';
 import { FeedbackProvider } from '../shared/providers/FeedbackProvider';
 import { useAuthStore } from '../shared/store/authStore';
 import { APP_LABELS } from '../shared/constants/labels';
-import * as platformUserMenuService from '../services/platform/platformUserMenuService';
-import * as dashboardService from '../services/common/dashboardService';
-import * as documentsService from '../services/common/documentsService';
+import * as platformUserMenuService from '../services/platform-admin/platformUserMenuService';
+import * as dashboardService from '../services/documents/dashboardService';
+import * as documentsService from '../services/documents/documentsService';
 
 configure({ asyncUtilTimeout: 3000 });
 
