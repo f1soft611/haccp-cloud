@@ -1,11 +1,4 @@
-import {
-  Alert,
-  Button,
-  Checkbox,
-  FormControlLabel,
-  Paper,
-  Stack,
-} from '@mui/material';
+import { Alert, Stack } from '@mui/material';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { APP_LABELS } from '../../../shared/constants/labels';
@@ -16,6 +9,7 @@ import {
   getPlatformRoleMenuMapping,
   savePlatformRoleMenuMapping,
 } from '../../../services/platform-admin/platformRoleMenuService';
+import { RoleMenuMappingPanel } from './components/RoleMenuMappingPanel';
 
 export function PlatformRoleMenuManagementPage() {
   const [selectedRoleCode, setSelectedRoleCode] = useState('');
@@ -46,7 +40,12 @@ export function PlatformRoleMenuManagementPage() {
     mutationFn: savePlatformRoleMenuMapping,
   });
 
-  const toggleMenu = (menuId: string) => {
+  const handleSelectRole = (code: string) => {
+    setSelectedRoleCode(code);
+    setDraftMenuIds(null);
+  };
+
+  const handleToggleMenu = (menuId: string) => {
     setDraftMenuIds((prev) => {
       const base = prev ?? mappingQuery.data?.menuIds ?? [];
       return base.includes(menuId)
@@ -56,10 +55,7 @@ export function PlatformRoleMenuManagementPage() {
   };
 
   const handleSave = () => {
-    if (!effectiveRoleCode) {
-      return;
-    }
-
+    if (!effectiveRoleCode) return;
     saveMutation.mutate({
       roleCode: effectiveRoleCode,
       menuIds: selectedMenuIds,
@@ -81,49 +77,17 @@ export function PlatformRoleMenuManagementPage() {
         <Alert severity="warning">권한별 메뉴 저장에 실패했습니다.</Alert>
       ) : null}
 
-      <Paper sx={{ p: 2 }}>
-        <Stack direction="row" flexWrap="wrap" spacing={1} sx={{ mb: 1.5 }}>
-          {(rolesQuery.data ?? []).map((role) => (
-            <Button
-              key={role.id}
-              variant={
-                effectiveRoleCode === role.code ? 'contained' : 'outlined'
-              }
-              size="small"
-              onClick={() => {
-                setSelectedRoleCode(role.code);
-                setDraftMenuIds(null);
-              }}
-            >
-              {role.name}
-            </Button>
-          ))}
-        </Stack>
-
-        <Stack spacing={0.5}>
-          {(menusQuery.data ?? []).map((menu) => (
-            <FormControlLabel
-              key={menu.menuId}
-              control={
-                <Checkbox
-                  checked={selectedMenuIds.includes(menu.menuId)}
-                  onChange={() => toggleMenu(menu.menuId)}
-                />
-              }
-              label={`${menu.menuNm} (${menu.menuUrl})`}
-            />
-          ))}
-        </Stack>
-
-        <Button
-          variant="contained"
-          sx={{ mt: 1.5 }}
-          onClick={handleSave}
-          disabled={saveMutation.isPending || !effectiveRoleCode}
-        >
-          {APP_LABELS.action.save}
-        </Button>
-      </Paper>
+      <RoleMenuMappingPanel
+        roles={rolesQuery.data ?? []}
+        menus={menusQuery.data ?? []}
+        selectedRoleCode={effectiveRoleCode}
+        selectedMenuIds={selectedMenuIds}
+        submitting={saveMutation.isPending}
+        onSelectRole={handleSelectRole}
+        onToggleMenu={handleToggleMenu}
+        onSave={handleSave}
+      />
     </Stack>
   );
 }
+
