@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>협업을 위한 개발 가이드 (교육안)</title>
+    <style>
+      :root {
+        --bg: #f7f8fc;
+        --panel: #ffffff;
+        --text: #1f2430;
+        --muted: #5a6475;
+        --brand: #0f766e;
+        --line: #dde2ec;
+        --code-bg: #0f172a;
+        --code-text: #e2e8f0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', 'Noto Sans KR', sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 0% 0%, #e8fff9 0, transparent 35%),
+          var(--bg);
+        line-height: 1.65;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 32px auto;
+        padding: 0 20px 40px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 10px 25px rgba(20, 35, 60, 0.06);
+        margin-bottom: 16px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 2rem;
+      }
+      h2 {
+        margin-top: 26px;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
+        color: var(--brand);
+        font-size: 1.25rem;
+      }
+      h3 {
+        margin-top: 18px;
+        font-size: 1.05rem;
+      }
+      ul,
+      ol {
+        padding-left: 20px;
+      }
+      .meta {
+        color: var(--muted);
+        margin: 0;
+      }
+      .note {
+        border-left: 4px solid var(--brand);
+        padding: 10px 12px;
+        background: #f0fdfa;
+        border-radius: 8px;
+        margin: 12px 0;
+      }
+      code {
+        background: #eef2f8;
+        padding: 1px 6px;
+        border-radius: 6px;
+        font-family: Consolas, 'Cascadia Code', monospace;
+        font-size: 0.92em;
+      }
+      a {
+        color: #0a5e96;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="card">
+        <h1>협업을 위한 개발 가이드 (교육안)</h1>
+        <p class="meta">일시: 2026-06-30</p>
+        <p class="meta">대상: 프론트엔드/백엔드 개발자</p>
+        <p class="meta">
+          목적: 팀 내 개발 방식 통일과 AI 기반 협업 생산성 향상
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>1. 프로젝트 구조 간단 설명 (프론트, 백엔드)</h2>
+
+        <h3>프론트엔드</h3>
+        <ul>
+          <li>위치: <code>frontend/</code></li>
+          <li>
+            핵심 구조
+            <ul>
+              <li><code>src/app</code>: 앱 공통 초기화 및 라우팅/전역 설정</li>
+              <li><code>src/pages</code>: 화면 단위 기능</li>
+              <li><code>src/services</code>: API 통신 및 비즈니스 로직 연계</li>
+              <li><code>src/shared</code>: 공통 컴포넌트, 유틸, 타입</li>
+              <li><code>src/test</code>: 테스트 코드</li>
+            </ul>
+          </li>
+          <li>
+            개발 포인트
+            <ul>
+              <li>
+                기능별 폴더 구조를 유지하고 공통 로직은 <code>shared</code>로
+                분리
+              </li>
+              <li>API 경로/응답 스키마를 서비스 계층에서 일관되게 관리</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h3>백엔드</h3>
+        <ul>
+          <li>위치: <code>backend/</code></li>
+          <li>
+            핵심 구조
+            <ul>
+              <li><code>src/main/java</code>: 도메인/서비스/컨트롤러 구현</li>
+              <li><code>src/main/resources</code>: 설정 및 매퍼/리소스</li>
+              <li><code>src/test/java</code>: 단위/통합 테스트</li>
+              <li>
+                <code>DATABASE</code>: 스키마, 마이그레이션, 시드, 운영 스크립트
+              </li>
+            </ul>
+          </li>
+          <li>
+            개발 포인트
+            <ul>
+              <li>계층 분리(Controller-Service-DAO) 준수</li>
+              <li>SQL/매퍼 변경 시 스키마 및 마이그레이션 문서 동기화</li>
+            </ul>
+          </li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>2. 프론트, 백엔드 개발 패턴 통일</h2>
+
+        <h3>공통 원칙</h3>
+        <ul>
+          <li>네이밍 규칙 통일: 기능 기준 명명 + 일관된 suffix 사용</li>
+          <li>
+            계층 책임 분리: 화면/요청 처리/비즈니스/데이터 접근 역할 명확화
+          </li>
+          <li>
+            에러 처리 표준화: 사용자 메시지, 로그 포맷, 예외 매핑 규칙 통일
+          </li>
+          <li>
+            테스트 기준 통일: 최소 단위 테스트 + 핵심 플로우 통합 테스트 확보
+          </li>
+        </ul>
+
+        <h3>프론트 패턴</h3>
+        <ul>
+          <li>API 호출은 <code>services</code>를 통해서만 수행</li>
+          <li>
+            UI 컴포넌트는 표현 로직 중심, 비즈니스 로직은 훅/서비스로 분리
+          </li>
+          <li>공통 타입을 기준으로 요청/응답 모델 표준화</li>
+        </ul>
+
+        <h3>백엔드 패턴</h3>
+        <ul>
+          <li>Controller: 입력 검증/응답 포맷</li>
+          <li>Service: 트랜잭션 및 비즈니스 규칙</li>
+          <li>DAO/Mapper: 데이터 조회/저장 책임 한정</li>
+          <li>DB 변경은 SQL + 문서 + 실행 스크립트까지 한 세트로 관리</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>3. superpowers 스킬을 이용한 AI 개발</h2>
+
+        <h3>왜 쓰는가</h3>
+        <ul>
+          <li>작업 접근 방식(브레인스토밍, 디버깅, 계획 수립)을 표준화</li>
+          <li>코드 변경 전 요구사항 정리와 검증 절차를 강제</li>
+          <li>팀원 간 AI 활용 편차를 줄이고 산출물 품질을 일정하게 유지</li>
+        </ul>
+
+        <h3>기본 사용 흐름</h3>
+        <ol>
+          <li>작업 요청 수신</li>
+          <li>
+            관련 스킬 선택 (<code>brainstorming</code>,
+            <code>writing-plans</code>,
+            <code>verification-before-completion</code> 등)
+          </li>
+          <li>설계/계획 문서화</li>
+          <li>구현 및 검증</li>
+          <li>리뷰 및 반영</li>
+        </ol>
+
+        <h3>실무 적용 팁</h3>
+        <ul>
+          <li>단순 수정도 최소한의 설계 의도를 먼저 합의</li>
+          <li>"완료" 선언 전 테스트/검증 로그를 반드시 확인</li>
+          <li>공통 프롬프트 템플릿과 스킬 사용 예시를 팀 문서로 축적</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>4. 공통된 작업지시서를 가지고 시연</h2>
+
+        <h3>시연 시나리오 (예시)</h3>
+        <ul>
+          <li>주제: "메뉴 관리 기능에 필드 1개 추가 및 목록/상세 반영"</li>
+          <li>
+            목표: 같은 작업지시서를 바탕으로 프론트/백엔드/DB 변경을 일관되게
+            수행
+          </li>
+        </ul>
+
+        <h3>작업지시서 템플릿</h3>
+        <ul>
+          <li>배경/목적</li>
+          <li>요구사항 (필수/선택)</li>
+          <li>영향 범위 (프론트/백엔드/DB)</li>
+          <li>API/데이터 계약 변경 사항</li>
+          <li>테스트 케이스</li>
+          <li>완료 조건(Definition of Done)</li>
+        </ul>
+
+        <h3>시연 순서</h3>
+        <ol>
+          <li>작업지시서 확인 및 질의</li>
+          <li>AI 스킬 기반 계획 수립</li>
+          <li>프론트/백엔드 병행 구현</li>
+          <li>테스트 실행 및 결과 확인</li>
+          <li>리뷰 포인트 정리</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>마무리</h2>
+        <h3>핵심 메시지</h3>
+        <ul>
+          <li>구조를 맞추면 협업 속도가 빨라진다.</li>
+          <li>패턴을 맞추면 유지보수가 쉬워진다.</li>
+          <li>스킬 기반 AI 활용으로 품질 편차를 줄일 수 있다.</li>
+        </ul>
+
+        <h3>다음 액션</h3>
+        <ul>
+          <li>
+            <a href="공통-작업지시서-팀-표준-템플릿.html"
+              >공통 작업지시서 템플릿 팀 표준화</a
+            >
+          </li>
+          <li>스킬 사용 가이드 1페이지 요약본 배포</li>
+          <li>주간 단위로 시연/회고 진행</li>
+        </ul>
+
+        <p class="note">
+          참고: 이 페이지는 Markdown 원본을 기준으로 공유용 HTML로 구성됨.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
