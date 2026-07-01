@@ -1,4 +1,4 @@
-package egovframework.let.uat.loginhistory.service;
+package egovframework.let.platform_admin.loginhistory.service;
 
 /**
  * 로그인 이력을 정부 로그 API로 전송하는 서비스 인터페이스

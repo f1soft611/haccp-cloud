@@ -1,9 +1,9 @@
-package egovframework.let.uat.loginhistory.service.impl;
+package egovframework.let.platform_admin.loginhistory.service.impl;
 
-import egovframework.let.uat.loginhistory.domain.model.LoginHistory;
-import egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO;
-import egovframework.let.uat.loginhistory.domain.repository.LoginHistoryDAO;
-import egovframework.let.uat.loginhistory.service.LoginHistoryService;
+import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistory;
+import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistoryVO;
+import egovframework.let.platform_admin.loginhistory.domain.repository.LoginHistoryDAO;
+import egovframework.let.platform_admin.loginhistory.service.LoginHistoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

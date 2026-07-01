@@ -1,11 +1,11 @@
-package egovframework.let.uat.loginhistory.controller;
+package egovframework.let.platform_admin.loginhistory.controller;
 
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.uat.loginhistory.domain.model.LoginHistory;
-import egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO;
-import egovframework.let.uat.loginhistory.service.LoginHistoryService;
+import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistory;
+import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistoryVO;
+import egovframework.let.platform_admin.loginhistory.service.LoginHistoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

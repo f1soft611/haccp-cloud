@@ -1,7 +1,7 @@
-package egovframework.let.uat.loginhistory.domain.repository;
+package egovframework.let.platform_admin.loginhistory.domain.repository;
 
-import egovframework.let.uat.loginhistory.domain.model.LoginHistory;
-import egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO;
+import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistory;
+import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistoryVO;
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 import org.springframework.stereotype.Repository;
 

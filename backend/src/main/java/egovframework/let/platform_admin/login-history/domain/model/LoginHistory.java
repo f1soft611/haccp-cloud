@@ -1,4 +1,4 @@
-package egovframework.let.uat.loginhistory.domain.model;
+package egovframework.let.platform_admin.loginhistory.domain.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

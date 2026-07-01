@@ -1,4 +1,4 @@
-package egovframework.let.uat.loginhistory.service.impl;
+package egovframework.let.platform_admin.loginhistory.service.impl;
 
 /**
  * 정부 로그 API 응답코드 판정 유틸리티

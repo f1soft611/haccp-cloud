@@ -1,10 +1,10 @@
-package egovframework.let.uat.loginhistory.service.impl;
+package egovframework.let.platform_admin.loginhistory.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import egovframework.let.uat.loginhistory.domain.model.LoginHistory;
-import egovframework.let.uat.loginhistory.service.LoginHistoryGovInterfaceService;
-import egovframework.let.uat.loginhistory.service.LoginHistoryService;
+import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistory;
+import egovframework.let.platform_admin.loginhistory.service.LoginHistoryGovInterfaceService;
+import egovframework.let.platform_admin.loginhistory.service.LoginHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

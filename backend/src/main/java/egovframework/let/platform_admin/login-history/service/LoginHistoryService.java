@@ -1,7 +1,7 @@
-package egovframework.let.uat.loginhistory.service;
+package egovframework.let.platform_admin.loginhistory.service;
 
-import egovframework.let.uat.loginhistory.domain.model.LoginHistory;
-import egovframework.let.uat.loginhistory.domain.model.LoginHistoryVO;
+import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistory;
+import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistoryVO;
 
 import java.util.List;
 
