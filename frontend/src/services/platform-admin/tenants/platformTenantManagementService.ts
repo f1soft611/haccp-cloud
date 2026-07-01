@@ -1,4 +1,4 @@
-import { apiClient } from '../api/apiClient';
+import { apiClient } from '../../api/apiClient';
 
 export type PlatformTenantStatus = 'ACTIVE' | 'INACTIVE';
 export type PlatformTenantOnboardingStatus =

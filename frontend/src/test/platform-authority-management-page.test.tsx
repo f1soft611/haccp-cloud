@@ -76,6 +76,7 @@ const {
       menuCode: 'MENU_ROLE_PAGE',
       menuNm: '권한/메뉴 관리 커스텀 타이틀',
       menuDc: '권한 페이지 헤더 타이틀 테스트용',
+      parentMenuNm: '조직 관리',
       parentMenuId: null,
       menuOrdr: 0,
       menuUrl: '/platform/roles',
@@ -244,6 +245,7 @@ describe('PlatformAuthorityManagementPage', () => {
     expect(
       await screen.findByRole('columnheader', { name: '권한 코드' }),
     ).toBeInTheDocument();
+    expect(await screen.findByText('조직 관리')).toBeInTheDocument();
     expect(await screen.findByText('PLATFORM_ADMIN')).toBeInTheDocument();
     await waitFor(() => {
       expect(listPlatformRolesPagedMock).toHaveBeenCalledWith(
@@ -376,5 +378,35 @@ describe('PlatformAuthorityManagementPage', () => {
         }),
       );
     });
+  });
+
+  it('renders when the current page menu has no URL', async () => {
+    listPlatformMenusMock.mockResolvedValueOnce([
+      {
+        menuId: 'PM-0',
+        menuCode: 'MENU_ROLE_PAGE',
+        menuNm: '권한/메뉴 관리 커스텀 타이틀',
+        menuDc: '권한 페이지 헤더 타이틀 테스트용',
+        parentMenuNm: '조직 관리',
+        parentMenuId: null,
+        menuOrdr: 0,
+        menuUrl: null as unknown as string,
+        iconNm: 'Security',
+        useAt: 'Y',
+        frstRegistPnttm: '',
+        frstRegisterId: '',
+        lastUpdtPnttm: '',
+        lastUpdusrId: '',
+      },
+    ]);
+
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', {
+        name: '플랫폼 권한/메뉴 관리',
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('플랫폼 관리')).toBeInTheDocument();
   });
 });

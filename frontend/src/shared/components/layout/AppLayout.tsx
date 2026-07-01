@@ -21,7 +21,10 @@ import {
   resolveFeatureCodeByPath,
 } from '../../../services/platform-admin/featureCatalog';
 import { useAuthStore } from '../../store/authStore';
-import { UserMenuMetadataProvider } from './userMenuMetadataContext';
+import {
+  CurrentMenuGroupLabelProvider,
+  UserMenuMetadataProvider,
+} from './userMenuMetadataContext';
 
 const ALWAYS_ALLOWED_PATHS = [
   '/account/password',
@@ -164,6 +167,14 @@ export function AppLayout() {
     role,
   ]);
 
+  const currentMenuGroupLabel = useMemo(() => {
+    const matchedGroup = menuGroups.find((group) =>
+      group.items.some((item) => location.pathname.startsWith(item.path)),
+    );
+
+    return matchedGroup?.label;
+  }, [location.pathname, menuGroups]);
+
   const fallbackRedirectPath = useMemo(() => {
     return featureFilteredAllowedPaths[0];
   }, [featureFilteredAllowedPaths]);
@@ -203,16 +214,18 @@ export function AppLayout() {
 
   return (
     <UserMenuMetadataProvider value={menuMetadataByPath}>
-      <Box
-        sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
-      >
-        <TopGovBar />
-        <WorkMenuBar menuGroups={menuGroups} role={role} />
-        <PageShell>
-          <Outlet />
-        </PageShell>
-        <PortalFooter />
-      </Box>
+      <CurrentMenuGroupLabelProvider value={currentMenuGroupLabel}>
+        <Box
+          sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+        >
+          <TopGovBar />
+          <WorkMenuBar menuGroups={menuGroups} role={role} />
+          <PageShell>
+            <Outlet />
+          </PageShell>
+          <PortalFooter />
+        </Box>
+      </CurrentMenuGroupLabelProvider>
     </UserMenuMetadataProvider>
   );
 }

@@ -3,13 +3,13 @@ import { AppLayout } from '../../shared/components/layout/AppLayout';
 import { LoginPage } from '../../pages/auth/LoginPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardPage } from '../../pages/DashboardPage';
-import { OnboardingPage } from '../../pages/tenant-management/onboarding/OnboardingPage';
+import { OnboardingPage } from '../../pages/platform-admin/tenants/OnboardingPage';
 import { UsersPage } from '../../pages/organization/users/UsersPage';
 import { DepartmentsPage } from '../../pages/organization/departments/DepartmentsPage';
 import { DocumentsPage } from '../../pages/documents/DocumentsPage';
 import { DocumentHistoryPage } from '../../pages/documents/DocumentHistoryPage';
 import { NotFoundPage } from '../../pages/NotFoundPage';
-import { TenantFirstLoginSetupPage } from '../../pages/tenant-management/onboarding/TenantFirstLoginSetupPage';
+import { TenantFirstLoginSetupPage } from '../../pages/platform-admin/tenants/TenantFirstLoginSetupPage';
 import { LoginHistoryPage } from '../../pages/platform-admin/login-history/LoginHistoryPage';
 import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
 import { PlatformAuthorityManagementPage } from '../../pages/organization/authorities/PlatformAuthorityManagementPage';
@@ -65,7 +65,7 @@ export function AppRoutes() {
           element={<Navigate to="/platform/onboarding" replace />}
         />
         <Route
-          path="/users"
+          path="/org/users"
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
               <UsersPage />
@@ -81,7 +81,7 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="/departments"
+          path="/org/departments"
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
               <DepartmentsPage />

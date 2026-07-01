@@ -1,11 +1,4 @@
-import {
-  Alert,
-  Button,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Button, Paper, Stack, Typography } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { useState } from 'react';
@@ -17,6 +10,8 @@ import {
 import { createUser } from '../../../services/organization/usersService';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { APP_LABELS } from '../../../shared/constants/labels';
+import { TenantFirstSetupUserForm } from './components/first-setup/TenantFirstSetupUserForm';
+import { TenantFirstSetupDepartmentForm } from './components/first-setup/TenantFirstSetupDepartmentForm';
 
 export function TenantFirstLoginSetupPage() {
   const queryClient = useQueryClient();
@@ -92,6 +87,7 @@ export function TenantFirstLoginSetupPage() {
 
   const userCount = statusQuery.data?.userCount ?? 0;
   const departmentCount = statusQuery.data?.departmentCount ?? 0;
+  const canCompleteSetup = userCount >= 1 && departmentCount >= 1;
 
   const handleCreateUser = () => {
     if (isTenantCodeMissing) {
@@ -129,6 +125,8 @@ export function TenantFirstLoginSetupPage() {
     createDepartmentMutation.mutate({
       tenantCode,
       name: trimmedDepartmentName,
+      parentId: null,
+      sortOrder: 0,
     });
   };
 
@@ -137,6 +135,11 @@ export function TenantFirstLoginSetupPage() {
 
     if (isTenantCodeMissing) {
       setCompletionError(APP_LABELS.message.tenantFirstSetupMissingTenantCode);
+      return;
+    }
+
+    if (!canCompleteSetup) {
+      setCompletionError('사용자 1명 이상, 부서 1개 이상이 필요합니다.');
       return;
     }
 
@@ -189,51 +192,30 @@ export function TenantFirstLoginSetupPage() {
         <Typography>사용자 {userCount} / 1</Typography>
         <Typography>부서 {departmentCount} / 1</Typography>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-          <TextField
-            label={APP_LABELS.field.name}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <TextField
-            label={APP_LABELS.field.email}
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <TextField
-            label={APP_LABELS.field.department}
-            value={department}
-            onChange={(event) => setDepartment(event.target.value)}
-          />
-          <Button
-            variant="contained"
-            onClick={handleCreateUser}
-            disabled={createUserMutation.isPending}
-          >
-            {APP_LABELS.action.addUser}
-          </Button>
-        </Stack>
+        <TenantFirstSetupUserForm
+          name={name}
+          email={email}
+          department={department}
+          pending={createUserMutation.isPending}
+          onNameChange={setName}
+          onEmailChange={setEmail}
+          onDepartmentChange={setDepartment}
+          onSubmit={handleCreateUser}
+        />
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-          <TextField
-            label={APP_LABELS.field.departmentName}
-            value={departmentName}
-            onChange={(event) => setDepartmentName(event.target.value)}
-          />
-          <Button
-            variant="contained"
-            onClick={handleCreateDepartment}
-            disabled={createDepartmentMutation.isPending}
-          >
-            {APP_LABELS.action.addDepartment}
-          </Button>
-        </Stack>
+        <TenantFirstSetupDepartmentForm
+          departmentName={departmentName}
+          pending={createDepartmentMutation.isPending}
+          onDepartmentNameChange={setDepartmentName}
+          onSubmit={handleCreateDepartment}
+        />
 
         <Button
           variant="contained"
           onClick={handleCompleteSetup}
           disabled={
             isTenantCodeMissing ||
+            !canCompleteSetup ||
             completeMutation.isPending ||
             statusQuery.isPending
           }

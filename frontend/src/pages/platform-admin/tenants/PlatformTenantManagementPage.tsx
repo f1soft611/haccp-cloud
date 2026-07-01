@@ -1,56 +1,31 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  MenuItem,
-  Paper,
-  Select,
-  Skeleton,
-  Stack,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, Stack } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AdminGrid } from '../../../shared/components/data/AdminGrid';
-import { GridPaginationBar } from '../../../shared/components/data/GridPaginationBar';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
-import { listPlatformTenants } from '../../../services/platform-admin/platformTenantManagementService';
+import { listPlatformTenants } from '../../../services/platform-admin/tenants/platformTenantManagementService';
+import { PlatformTenantSearchBar } from './components/PlatformTenantSearchBar';
+import { PlatformTenantGrid } from './components/PlatformTenantGrid';
+import { type PlatformTenantSearchValue } from './types';
 
-type SearchField = 'tenantCode' | 'companyName' | 'adminName';
-type StatusFilter = 'all' | 'ACTIVE' | 'INACTIVE';
-type OnboardingStatusFilter =
-  | 'all'
-  | 'EMAIL_QUEUED'
-  | 'EMAIL_SENT'
-  | 'EMAIL_VERIFIED'
-  | 'FIRST_SETUP_COMPLETED'
-  | 'ACTIVE';
+const DEFAULT_SEARCH_VALUE: PlatformTenantSearchValue = {
+  searchField: 'companyName',
+  searchKeyword: '',
+  status: 'all',
+  onboardingStatus: 'all',
+};
 
 export function PlatformTenantManagementPage() {
   const navigate = useNavigate();
   const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } =
     useGridPagination();
 
-  const [searchField, setSearchField] = useState<SearchField>('companyName');
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [onboardingStatusFilter, setOnboardingStatusFilter] =
-    useState<OnboardingStatusFilter>('all');
-  const [appliedFilter, setAppliedFilter] = useState({
-    searchField: 'companyName' as SearchField,
-    searchKeyword: '',
-    status: 'all' as StatusFilter,
-    onboardingStatus: 'all' as OnboardingStatusFilter,
-  });
+  const [searchValue, setSearchValue] =
+    useState<PlatformTenantSearchValue>(DEFAULT_SEARCH_VALUE);
+  const [appliedFilter, setAppliedFilter] =
+    useState<PlatformTenantSearchValue>(DEFAULT_SEARCH_VALUE);
 
   const tenantQuery = useQuery({
     queryKey: [
@@ -80,10 +55,8 @@ export function PlatformTenantManagementPage() {
   const handleSearch = () => {
     resetPage();
     setAppliedFilter({
-      searchField,
-      searchKeyword: searchKeyword.trim(),
-      status: statusFilter,
-      onboardingStatus: onboardingStatusFilter,
+      ...searchValue,
+      searchKeyword: searchValue.searchKeyword.trim(),
     });
   };
 
@@ -99,236 +72,17 @@ export function PlatformTenantManagementPage() {
         <Alert severity="warning">업체 목록을 불러오지 못했습니다.</Alert>
       ) : null}
 
-      <Paper sx={{ p: 2 }}>
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={1}
-          alignItems="flex-end"
-        >
-          <Box sx={{ minWidth: 130 }}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              검색 조건
-            </Typography>
-            <Select
-              value={searchField}
-              size="small"
-              fullWidth
-              onChange={(event) =>
-                setSearchField(event.target.value as SearchField)
-              }
-            >
-              <MenuItem value="tenantCode">업체코드</MenuItem>
-              <MenuItem value="companyName">업체명</MenuItem>
-              <MenuItem value="adminName">관리자명</MenuItem>
-            </Select>
-          </Box>
+      <PlatformTenantSearchBar
+        value={searchValue}
+        disabled={tenantQuery.isPending}
+        onChange={setSearchValue}
+        onSearch={handleSearch}
+        onClickOnboarding={() => navigate('/platform/onboarding')}
+      />
 
-          <TextField
-            size="small"
-            label="검색어"
-            fullWidth
-            value={searchKeyword}
-            onChange={(event) => setSearchKeyword(event.target.value)}
-            sx={{ flex: 1 }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                handleSearch();
-              }
-            }}
-          />
-
-          <Box sx={{ minWidth: 120 }}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              상태
-            </Typography>
-            <Select
-              value={statusFilter}
-              size="small"
-              fullWidth
-              onChange={(event) =>
-                setStatusFilter(event.target.value as StatusFilter)
-              }
-            >
-              <MenuItem value="all">전체</MenuItem>
-              <MenuItem value="ACTIVE">활성</MenuItem>
-              <MenuItem value="INACTIVE">비활성</MenuItem>
-            </Select>
-          </Box>
-
-          <Box sx={{ minWidth: 170 }}>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              온보딩 상태
-            </Typography>
-            <Select
-              value={onboardingStatusFilter}
-              size="small"
-              fullWidth
-              onChange={(event) =>
-                setOnboardingStatusFilter(
-                  event.target.value as OnboardingStatusFilter,
-                )
-              }
-            >
-              <MenuItem value="all">전체</MenuItem>
-              <MenuItem value="EMAIL_QUEUED">메일 발송 대기</MenuItem>
-              <MenuItem value="EMAIL_SENT">메일 발송 완료</MenuItem>
-              <MenuItem value="EMAIL_VERIFIED">메일 인증 완료</MenuItem>
-              <MenuItem value="FIRST_SETUP_COMPLETED">초기 설정 완료</MenuItem>
-              <MenuItem value="ACTIVE">온보딩 완료</MenuItem>
-            </Select>
-          </Box>
-
-          <Button
-            variant="contained"
-            onClick={handleSearch}
-            disabled={tenantQuery.isPending}
-          >
-            조회
-          </Button>
-
-          <Button
-            variant="contained"
-            onClick={() => navigate('/platform/onboarding')}
-            sx={{ ml: { md: 'auto' } }}
-          >
-            신규 온보딩
-          </Button>
-        </Stack>
-      </Paper>
-
-      <AdminGrid ariaLabel="업체 목록">
-        <TableHead>
-          <TableRow>
-            <TableCell>업체코드</TableCell>
-            <TableCell>업체명</TableCell>
-            <TableCell align="center">플랜</TableCell>
-            <TableCell>관리자명</TableCell>
-            <TableCell>관리자이메일</TableCell>
-            <TableCell align="center">사용유무</TableCell>
-            <TableCell align="center">온보딩 상태</TableCell>
-            <TableCell align="center">생성일</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {tenantQuery.isPending
-            ? Array.from({ length: 5 }).map((_, index) => (
-                <TableRow
-                  key={`platform-tenant-grid-skeleton-${index}`}
-                  data-testid={`platform-tenant-grid-skeleton-row-${index}`}
-                >
-                  <TableCell>
-                    <Skeleton variant="text" width="80%" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton variant="text" width="72%" />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Skeleton
-                      variant="rounded"
-                      width={56}
-                      height={24}
-                      sx={{ mx: 'auto' }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton variant="text" width="68%" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton variant="text" width="88%" />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Skeleton
-                      variant="rounded"
-                      width={52}
-                      height={24}
-                      sx={{ mx: 'auto' }}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Skeleton
-                      variant="rounded"
-                      width={96}
-                      height={24}
-                      sx={{ mx: 'auto' }}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Skeleton variant="text" width="65%" />
-                  </TableCell>
-                </TableRow>
-              ))
-            : null}
-
-          {!tenantQuery.isPending && rows.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={8} align="center">
-                조회 결과가 없습니다.
-              </TableCell>
-            </TableRow>
-          ) : null}
-
-          {!tenantQuery.isPending
-            ? rows.map((row) => (
-                <TableRow key={row.tenantCode} hover>
-                  <TableCell>{row.tenantCode}</TableCell>
-                  <TableCell>{row.companyName}</TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={row.planCode || row.planName || '-'}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>{row.adminName}</TableCell>
-                  <TableCell>{row.adminEmail}</TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={row.status === 'ACTIVE' ? '활성' : '비활성'}
-                      size="small"
-                      color={row.status === 'ACTIVE' ? 'success' : 'default'}
-                      variant={row.status === 'ACTIVE' ? 'filled' : 'outlined'}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={
-                        row.onboardingStatus === 'ACTIVE'
-                          ? '온보딩 완료'
-                          : row.onboardingStatus === 'FIRST_SETUP_COMPLETED'
-                            ? '초기 설정 완료'
-                            : row.onboardingStatus === 'EMAIL_VERIFIED'
-                              ? '메일 인증 완료'
-                              : row.onboardingStatus === 'EMAIL_SENT'
-                                ? '메일 발송 완료'
-                                : '메일 발송 대기'
-                      }
-                      size="small"
-                      color={
-                        row.onboardingStatus === 'ACTIVE'
-                          ? 'success'
-                          : row.onboardingStatus === 'EMAIL_VERIFIED' ||
-                              row.onboardingStatus === 'FIRST_SETUP_COMPLETED'
-                            ? 'info'
-                            : 'warning'
-                      }
-                      variant={
-                        row.onboardingStatus === 'ACTIVE'
-                          ? 'filled'
-                          : 'outlined'
-                      }
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    {row.createdAt ? row.createdAt.slice(0, 10) : '-'}
-                  </TableCell>
-                </TableRow>
-              ))
-            : null}
-        </TableBody>
-      </AdminGrid>
-
-      <GridPaginationBar
+      <PlatformTenantGrid
+        rows={rows}
+        loading={tenantQuery.isPending}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={tenantQuery.data?.total ?? 0}

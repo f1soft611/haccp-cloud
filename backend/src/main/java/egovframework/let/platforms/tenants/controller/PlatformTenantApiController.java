@@ -86,6 +86,10 @@ public class PlatformTenantApiController {
             Map<String, Object> resultMap = new HashMap<String, Object>();
             resultMap.put("tenantCode", response.getTenantCode());
             resultMap.put("companyName", response.getCompanyName());
+            resultMap.put("businessRegistrationNumber", response.getBusinessRegistrationNumber());
+            resultMap.put("corporateNumber", response.getCorporateNumber());
+            resultMap.put("adminEmail", response.getAdminEmail());
+            resultMap.put("createdAt", response.getCreatedAt());
             resultMap.put("mailDispatchStatus", response.getMailDispatchStatus());
             resultMap.put("resultMsg", "success.common.insert");
 

@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS tb_department (
     tenant_id BIGINT NOT NULL,
     department_nm VARCHAR(100) NOT NULL,
     parent_department_id BIGINT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     use_at CHAR(1) DEFAULT 'Y' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

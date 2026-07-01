@@ -130,11 +130,26 @@ export function PlatformAuthorityManagementPage() {
 
   const currentPageMenu = useMemo(
     () =>
-      (menusQuery.data ?? []).find(
-        (menu) => menu.menuUrl.trim().toLowerCase() === '/platform/roles',
-      ),
+      (menusQuery.data ?? []).find((menu) => {
+        const menuUrl = menu.menuUrl?.trim().toLowerCase() ?? '';
+        return menuUrl === '/platform/roles';
+      }),
     [menusQuery.data],
   );
+
+  const pageGroupLabel = useMemo(() => {
+    if (!currentPageMenu) {
+      return APP_LABELS.menu.platformGroup;
+    }
+
+    return (
+      currentPageMenu.parentMenuNm ||
+      menusQuery.data?.find(
+        (menu) => menu.menuId === currentPageMenu.parentMenuId,
+      )?.menuNm ||
+      APP_LABELS.menu.platformGroup
+    );
+  }, [currentPageMenu, menusQuery.data]);
 
   const pageTitle =
     currentPageMenu?.menuNm ?? APP_LABELS.pageTitle.platformRoleManagement;
@@ -354,7 +369,7 @@ export function PlatformAuthorityManagementPage() {
   return (
     <Stack spacing={2} data-testid="platform-authority-management-page">
       <PageHeader
-        groupLabel={APP_LABELS.menu.platformGroup}
+        groupLabel={pageGroupLabel}
         title={pageTitle}
         description={pageDescription}
       />

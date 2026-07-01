@@ -473,9 +473,56 @@ function normalizeAuthorityCode(authorityCode: string): AuthorityCode {
 }
 
 let departments: DepartmentItem[] = [
-  { id: 'D-1', tenantCode: 'TENANT-A', name: '품질관리팀', active: true },
-  { id: 'D-2', tenantCode: 'TENANT-A', name: '생산1팀', active: true },
-  { id: 'D-3', tenantCode: 'TENANT-B', name: '품질관리팀', active: true },
+  {
+    id: 'D-1',
+    tenantCode: 'TENANT-A',
+    name: '생산관리부',
+    parentId: null,
+    parentName: null,
+    sortOrder: 0,
+    active: true,
+    hasChildren: true,
+  },
+  {
+    id: 'D-2',
+    tenantCode: 'TENANT-A',
+    name: '품질관리팀',
+    parentId: 'D-1',
+    parentName: '생산관리부',
+    sortOrder: 10,
+    active: true,
+    hasChildren: false,
+  },
+  {
+    id: 'D-3',
+    tenantCode: 'TENANT-A',
+    name: '생산1팀',
+    parentId: 'D-1',
+    parentName: '생산관리부',
+    sortOrder: 20,
+    active: true,
+    hasChildren: false,
+  },
+  {
+    id: 'D-4',
+    tenantCode: 'TENANT-A',
+    name: '경영지원부',
+    parentId: null,
+    parentName: null,
+    sortOrder: 10,
+    active: true,
+    hasChildren: false,
+  },
+  {
+    id: 'D-5',
+    tenantCode: 'TENANT-B',
+    name: '품질관리팀',
+    parentId: null,
+    parentName: null,
+    sortOrder: 0,
+    active: true,
+    hasChildren: false,
+  },
 ];
 
 let documents: DocumentTemplate[] = [
@@ -1444,21 +1491,92 @@ export const handlers = [
 
   http.post(/.*\/api\/departments$/, async ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
-    const payload = (await request.json()) as { name?: string };
+    const payload = (await request.json()) as {
+      name?: string;
+      parentId?: string | null;
+      sortOrder?: number;
+    };
 
     if (!payload.name) {
       return HttpResponse.json({ message: 'Invalid input' }, { status: 400 });
     }
 
+    const parentDept = payload.parentId
+      ? departments.find((d) => d.id === payload.parentId)
+      : null;
+
     const created: DepartmentItem = {
-      id: `D-${departments.length + 1}`,
+      id: `D-${Date.now()}`,
       tenantCode,
       name: payload.name,
+      parentId: payload.parentId ?? null,
+      parentName: parentDept?.name ?? null,
+      sortOrder: payload.sortOrder ?? 0,
       active: true,
+      hasChildren: false,
     };
 
-    departments = [created, ...departments];
+    if (parentDept) {
+      parentDept.hasChildren = true;
+    }
+
+    departments = [...departments, created];
     return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.put(/.*\/api\/departments\/:id/, async ({ params, request }) => {
+    const tenantCode = getTenantCodeFromHeader(request);
+    const payload = (await request.json()) as {
+      name?: string;
+      parentId?: string | null;
+      sortOrder?: number;
+      active?: boolean;
+    };
+
+    const target = departments.find(
+      (item) => item.id === params.id && item.tenantCode === tenantCode,
+    );
+
+    if (!target) {
+      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    const parentDept = payload.parentId
+      ? departments.find((d) => d.id === payload.parentId)
+      : null;
+
+    target.name = payload.name ?? target.name;
+    target.parentId =
+      payload.parentId !== undefined ? payload.parentId : target.parentId;
+    target.parentName = parentDept?.name ?? null;
+    target.sortOrder = payload.sortOrder ?? target.sortOrder;
+    target.active = payload.active ?? target.active;
+
+    return HttpResponse.json(target);
+  }),
+
+  http.delete(/.*\/api\/departments\/:id/, ({ params, request }) => {
+    const tenantCode = getTenantCodeFromHeader(request);
+    const target = departments.find(
+      (item) => item.id === params.id && item.tenantCode === tenantCode,
+    );
+
+    if (!target) {
+      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    const hasChildren = departments.some(
+      (d) => d.parentId === params.id && d.tenantCode === tenantCode,
+    );
+    if (hasChildren) {
+      return HttpResponse.json(
+        { message: '하위 부서가 있어 삭제할 수 없습니다.' },
+        { status: 409 },
+      );
+    }
+
+    departments = departments.filter((d) => d.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
   }),
 
   http.patch('/api/departments/:id', async ({ params, request }) => {

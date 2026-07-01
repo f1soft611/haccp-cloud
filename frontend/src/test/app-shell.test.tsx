@@ -820,6 +820,50 @@ describe('App shell', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('shows the menu-group breadcrumb for tenant admin users page', async () => {
+    vi.mocked(
+      platformUserMenuService.listAccessibleMenuPaths,
+    ).mockResolvedValueOnce(['/dashboard', '/org/users', '/documents']);
+    vi.mocked(
+      platformUserMenuService.listAccessibleMenus,
+    ).mockResolvedValueOnce([
+      {
+        path: '/dashboard',
+        menuId: 1,
+        parentMenuId: null,
+        menuNm: '대시보드 관리',
+      },
+      {
+        path: '/org/users',
+        menuId: 2,
+        parentMenuId: 1,
+        menuNm: APP_LABELS.menu.users,
+      },
+      {
+        path: '/documents',
+        menuId: 3,
+        parentMenuId: 1,
+        menuNm: APP_LABELS.menu.documents,
+      },
+    ]);
+
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+      onboardingRequired: false,
+      onboardingStatus: 'COMPLETED',
+    });
+
+    renderAppRoutesAt('/org/users');
+
+    expect(await screen.findByText('대시보드 관리')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: APP_LABELS.pageTitle.users }),
+    ).toBeInTheDocument();
+  });
+
   it('redirects USER from /departments to /dashboard', async () => {
     setAuthStoreState({
       isAuthenticated: true,

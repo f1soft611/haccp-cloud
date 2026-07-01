@@ -106,14 +106,96 @@ export type TenantDomainInfo = {
   tenantCode?: string;
 };
 
+type IssueTenantCodeEnvelope = {
+  resultCode?: number | string;
+  resultMessage?: string;
+  result?: Partial<IssueTenantCodeResponse> & {
+    tenantNm?: string;
+    companyName?: string;
+    company_name?: string;
+    businessRegistrationNumber?: string;
+    business_registration_number?: string;
+    corporateNumber?: string;
+    corporate_number?: string;
+    adminEmail?: string;
+    admin_email?: string;
+    createdAt?: string;
+    created_at?: string;
+    mailDispatchStatus?: MailDispatchStatus | string;
+    mail_dispatch_status?: MailDispatchStatus | string;
+  };
+  resultData?: Partial<IssueTenantCodeResponse> & {
+    tenantNm?: string;
+    companyName?: string;
+    company_name?: string;
+    businessRegistrationNumber?: string;
+    business_registration_number?: string;
+    corporateNumber?: string;
+    corporate_number?: string;
+    adminEmail?: string;
+    admin_email?: string;
+    createdAt?: string;
+    created_at?: string;
+    mailDispatchStatus?: MailDispatchStatus | string;
+    mail_dispatch_status?: MailDispatchStatus | string;
+  };
+  tenantCode?: string;
+  companyName?: string;
+  company_name?: string;
+  businessRegistrationNumber?: string;
+  business_registration_number?: string;
+  corporateNumber?: string;
+  corporate_number?: string;
+  adminEmail?: string;
+  admin_email?: string;
+  createdAt?: string;
+  created_at?: string;
+  mailDispatchStatus?: MailDispatchStatus | string;
+  mail_dispatch_status?: MailDispatchStatus | string;
+};
+
+function normalizeIssueTenantCodeResponse(
+  data: IssueTenantCodeEnvelope | IssueTenantCodeResponse,
+): IssueTenantCodeResponse {
+  const payload =
+    (data as IssueTenantCodeEnvelope).result ??
+    (data as IssueTenantCodeEnvelope).resultData ??
+    data;
+
+  const mailDispatchStatus = String(
+    payload.mailDispatchStatus ?? payload.mail_dispatch_status ?? '',
+  )
+    .trim()
+    .toUpperCase() as MailDispatchStatus;
+
+  return {
+    tenantCode: String(payload.tenantCode ?? payload.tenant_code ?? '').trim(),
+    companyName: String(
+      payload.companyName ??
+        payload.company_name ??
+        payload.tenantNm ??
+        payload.tenant_nm ??
+        '',
+    ).trim(),
+    businessRegistrationNumber: String(
+      payload.businessRegistrationNumber ??
+        payload.business_registration_number ??
+        '',
+    ).trim(),
+    adminEmail: String(payload.adminEmail ?? payload.admin_email ?? '').trim(),
+    createdAt: String(payload.createdAt ?? payload.created_at ?? '').trim(),
+    mailDispatchStatus: mailDispatchStatus || 'FAILED',
+  };
+}
+
 export async function issueTenantCode(
   payload: IssueTenantCodeRequest,
 ): Promise<IssueTenantCodeResponse> {
-  const { data } = await apiClient.post<IssueTenantCodeResponse>(
+  const { data } = await apiClient.post<IssueTenantCodeEnvelope>(
     '/tenants/issue-code',
     payload,
   );
-  return data;
+  return normalizeIssueTenantCodeResponse(data);
 }
 
 export async function listSampleTenants(): Promise<SampleTenantItem[]> {
