@@ -4,6 +4,7 @@ import { ThemeProvider } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
 import { OnboardingPage } from '../pages/platform-admin/tenants/OnboardingPage';
 import * as tenantService from '../services/organization/tenantService';
+import * as planAccessService from '../services/platform-admin/planAccessService';
 import { appTheme } from '../app/theme';
 import { APP_LABELS } from '../shared/constants/labels';
 
@@ -23,7 +24,7 @@ function renderPage() {
   );
 }
 
-function fillStep1({
+async function fillStep1({
   companyName = '테스트푸드',
   brn = '123-45-12345',
   corporateNumber = '110111-1234567',
@@ -32,6 +33,15 @@ function fillStep1({
   adminName = '홍길동',
   adminEmail = 'admin@testfood.com',
 } = {}) {
+  await screen.findByRole('option', { name: '기본 플랜' });
+
+  fireEvent.change(
+    screen.getByLabelText(new RegExp(APP_LABELS.field.planCode)),
+    {
+      target: { value: 'BASIC' },
+    },
+  );
+
   if (companyName) {
     fireEvent.change(
       screen.getByLabelText(new RegExp(APP_LABELS.field.companyName)),
@@ -91,6 +101,19 @@ function fillStep1({
 }
 
 describe('Platform onboarding page wizard', () => {
+  beforeEach(() => {
+    vi.spyOn(planAccessService, 'listPlanSummaries').mockResolvedValue([
+      {
+        planCode: 'BASIC',
+        planName: '기본 플랜',
+        planDesc: '',
+        useAt: 'Y',
+        featureCount: 0,
+        menuCount: 0,
+      },
+    ]);
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -117,7 +140,7 @@ describe('Platform onboarding page wizard', () => {
 
   it('shows BRN format error for invalid format', async () => {
     renderPage();
-    fillStep1({ brn: '12345' });
+    await fillStep1({ brn: '12345' });
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -128,7 +151,7 @@ describe('Platform onboarding page wizard', () => {
 
   it('advances to step 2 with valid inputs', async () => {
     renderPage();
-    fillStep1();
+    await fillStep1();
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -142,7 +165,7 @@ describe('Platform onboarding page wizard', () => {
 
   it('goes back to step 1 when edit button clicked', async () => {
     renderPage();
-    fillStep1();
+    await fillStep1();
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -166,7 +189,7 @@ describe('Platform onboarding page wizard', () => {
     });
 
     renderPage();
-    fillStep1();
+    await fillStep1();
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -195,7 +218,7 @@ describe('Platform onboarding page wizard', () => {
     });
 
     renderPage();
-    fillStep1();
+    await fillStep1();
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -221,7 +244,7 @@ describe('Platform onboarding page wizard', () => {
     });
 
     renderPage();
-    fillStep1();
+    await fillStep1();
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );

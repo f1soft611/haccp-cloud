@@ -2,7 +2,6 @@ package egovframework.let.platform_admin.tenants.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -24,6 +23,7 @@ import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.platform_admin.tenants.controller.PlatformTenantApiController;
+import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO;
 import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
 import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
@@ -44,13 +44,14 @@ class PlatformTenantApiControllerTest {
         ReflectionTestUtils.setField(controller, "resultVoHelper", resultVoHelper);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
-        when(resultVoHelper.buildFromMap(anyMap(), eq(ResponseCode.SUCCESS))).thenAnswer(invocation -> {
+        when(resultVoHelper.buildFromMap(anyMap(), any(ResponseCode.class))).thenAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             java.util.Map<String, Object> map = (java.util.Map<String, Object>) invocation.getArgument(0);
+            ResponseCode responseCode = invocation.getArgument(1);
             ResultVO result = new ResultVO();
             result.setResult(map);
-            result.setResultCode(ResponseCode.SUCCESS.getCode());
-            result.setResultMessage(ResponseCode.SUCCESS.getMessage());
+            result.setResultCode(responseCode.getCode());
+            result.setResultMessage(responseCode.getMessage());
             return result;
         });
     }
@@ -91,5 +92,23 @@ class PlatformTenantApiControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].tenantCode").value("TENANT_000001"))
             .andExpect(jsonPath("$[1].tenantCode").value("TENANT_000002"));
+    }
+
+    @Test
+    void getTenantDetail_returnsTenantPayload() throws Exception {
+        PlatformTenantDashboardItemVO detail = new PlatformTenantDashboardItemVO();
+        detail.setTenantCode("TENANT_000001");
+        detail.setCompanyName("테스트업체");
+        detail.setAdminName("홍길동");
+        detail.setAdminEmail("admin@test.com");
+        detail.setStatus("ACTIVE");
+        detail.setOnboardingStatus("EMAIL_SENT");
+
+        when(platformTenantService.findDashboardTenantByCode("TENANT_000001")).thenReturn(detail);
+
+        mockMvc.perform(get("/api/platform-admin/tenants/TENANT_000001"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.result.tenant.tenantCode").value("TENANT_000001"))
+            .andExpect(jsonPath("$.result.tenant.onboardingStatus").value("EMAIL_SENT"));
     }
 }

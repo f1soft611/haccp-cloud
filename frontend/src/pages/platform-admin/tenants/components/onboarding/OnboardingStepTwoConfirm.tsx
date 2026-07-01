@@ -55,6 +55,10 @@ export function OnboardingStepTwoConfirm({
             value={form.companyName}
           />
           <OnboardingLabelValue
+            label={APP_LABELS.field.planCode}
+            value={form.planCode}
+          />
+          <OnboardingLabelValue
             label={APP_LABELS.field.businessRegistrationNumber}
             value={form.businessRegistrationNumber}
           />

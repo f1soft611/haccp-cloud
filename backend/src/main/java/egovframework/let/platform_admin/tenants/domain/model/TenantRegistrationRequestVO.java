@@ -25,4 +25,7 @@ public class TenantRegistrationRequestVO {
 
     @Schema(description = "업태")
     private String businessCategory;
+
+    @Schema(description = "플랜 코드")
+    private String planCode;
 }

@@ -30,6 +30,10 @@ public interface TenantInfoDAO {
 
         String selectAdminEmailByLoginAccountId(Long loginAccountId);
 
+        String selectAdminEmailByTenantCode(String tenantCode);
+
+        Long selectLatestLoginAccountIdByTenantCode(String tenantCode);
+
     int updateOnboardingStatusByTenantCode(String tenantCode, String onboardingStatus);
 
         int updateLoginAccountOnboardingStatus(Long loginAccountId, String onboardingStatus);
@@ -48,6 +52,8 @@ public interface TenantInfoDAO {
     int selectTenantCount(PlatformTenantDashboardQueryVO queryVO, String useAtOnly);
 
     List<PlatformTenantDashboardItemVO> selectDashboardTenantItems(PlatformTenantDashboardQueryVO queryVO);
+
+    PlatformTenantDashboardItemVO selectDashboardTenantItemByCode(String tenantCode);
 
     List<SampleTenantVO> selectRecentTenants(int limit);
 

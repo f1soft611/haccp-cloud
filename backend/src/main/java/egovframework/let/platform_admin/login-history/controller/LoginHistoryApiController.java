@@ -3,6 +3,8 @@ package egovframework.let.platform_admin.loginhistory.controller;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
+import egovframework.let.platform_admin.access.web.PlanAccessLevel;
+import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
 import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistory;
 import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistoryVO;
 import egovframework.let.platform_admin.loginhistory.service.LoginHistoryService;
@@ -51,6 +53,11 @@ public class LoginHistoryApiController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "조회 성공")
 	})
+	@PlanAccessPolicy(
+			menuUrl = "/platform/login-history",
+			featureCode = "FEATURE_AUDIT_LOG",
+			requiredPermissionLevel = PlanAccessLevel.READ
+	)
 	@GetMapping({"", "/list"})
 	public ResultVO selectLoginHistoryList(
 			@ModelAttribute LoginHistoryVO loginHistoryVO,
@@ -128,6 +135,11 @@ public class LoginHistoryApiController {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "조회 성공")
 	})
+	@PlanAccessPolicy(
+			menuUrl = "/platform/login-history",
+			featureCode = "FEATURE_AUDIT_LOG",
+			requiredPermissionLevel = PlanAccessLevel.READ
+	)
 	@GetMapping("/{loginHistoryId}")
 	public ResultVO selectLoginHistoryDetail(
 			@PathVariable Long loginHistoryId,

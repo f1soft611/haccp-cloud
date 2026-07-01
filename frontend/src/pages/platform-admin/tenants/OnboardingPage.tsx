@@ -14,6 +14,7 @@ import {
   issueTenantCode,
   listSampleTenants,
 } from '../../../services/organization/tenantService';
+import { listPlanSummaries } from '../../../services/platform-admin/planAccessService';
 import type { IssueTenantCodeRequest } from '../../../services/organization/tenantService';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import { APP_LABELS } from '../../../shared/constants/labels';
@@ -27,6 +28,7 @@ import {
 } from './components/onboarding/types';
 
 const BRN_REGEX = /^\d{3}-\d{2}-\d{5}$/;
+const CORPORATE_NUMBER_REGEX = /^\d{13}$/;
 
 function formatBrn(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 10);
@@ -70,11 +72,17 @@ export function OnboardingPage() {
     EMPTY_ONBOARDING_FORM,
   );
   const [brnError, setBrnError] = useState(false);
+  const [corporateNumberError, setCorporateNumberError] = useState(false);
   const [validationError, setValidationError] = useState(false);
 
   const sampleTenantsQuery = useQuery({
     queryKey: ['sample-tenants'],
     queryFn: listSampleTenants,
+  });
+
+  const planSummariesQuery = useQuery({
+    queryKey: ['platform-admin', 'plans', 'summaries'],
+    queryFn: listPlanSummaries,
   });
 
   const mutation = useMutation({
@@ -99,11 +107,16 @@ export function OnboardingPage() {
     setBrnError(false);
   };
 
+  const handleCorporateNumberChange = (raw: string) => {
+    setField('corporateNumber', raw);
+    setCorporateNumberError(false);
+  };
+
   const handleStep1Next = () => {
     const required: (keyof TenantOnboardingFormData)[] = [
       'companyName',
+      'planCode',
       'businessRegistrationNumber',
-      'corporateNumber',
       'businessType',
       'businessCategory',
       'adminName',
@@ -111,6 +124,10 @@ export function OnboardingPage() {
     ];
     const hasEmpty = required.some((k) => !form[k].trim());
     const brnInvalid = !BRN_REGEX.test(form.businessRegistrationNumber);
+    const normalizedCorporateNumber = form.corporateNumber.replace(/\D/g, '');
+    const corporateNumberInvalid =
+      normalizedCorporateNumber.length > 0 &&
+      !CORPORATE_NUMBER_REGEX.test(normalizedCorporateNumber);
 
     if (hasEmpty) {
       setValidationError(true);
@@ -120,14 +137,20 @@ export function OnboardingPage() {
       setBrnError(true);
       return;
     }
+    if (corporateNumberInvalid) {
+      setCorporateNumberError(true);
+      return;
+    }
     setValidationError(false);
     setBrnError(false);
+    setCorporateNumberError(false);
     setStep(2);
   };
 
   const handleIssue = () => {
     mutation.mutate({
       companyName: form.companyName.trim(),
+      planCode: form.planCode.trim(),
       businessRegistrationNumber: form.businessRegistrationNumber.trim(),
       corporateNumber: form.corporateNumber.trim(),
       representativeName: form.representativeName.trim(),
@@ -144,6 +167,7 @@ export function OnboardingPage() {
   const handleReset = () => {
     setForm(EMPTY_ONBOARDING_FORM);
     setBrnError(false);
+    setCorporateNumberError(false);
     setValidationError(false);
     mutation.reset();
     setStep(1);
@@ -172,12 +196,22 @@ export function OnboardingPage() {
         <OnboardingStepOneForm
           form={form}
           brnError={brnError}
+          corporateNumberError={corporateNumberError}
           validationError={validationError}
+          planOptions={planSummariesQuery.data ?? []}
+          planLoading={planSummariesQuery.isPending}
           onFieldChange={setField}
           onBrnChange={handleBrnChange}
+          onCorporateNumberChange={handleCorporateNumberChange}
           onNext={handleStep1Next}
         />
       )}
+
+      {step === 1 && planSummariesQuery.isError ? (
+        <Alert severity="warning">
+          플랜 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+        </Alert>
+      ) : null}
 
       {step === 2 && (
         <OnboardingStepTwoConfirm

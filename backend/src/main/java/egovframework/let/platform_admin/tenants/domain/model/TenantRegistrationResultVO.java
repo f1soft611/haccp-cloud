@@ -32,6 +32,9 @@ public class TenantRegistrationResultVO {
     @Schema(description = "업태")
     private String businessCategory;
 
+    @Schema(description = "플랜 코드")
+    private String planCode;
+
     @Schema(description = "생성일시(ISO)")
     private String createdAt;
 }

@@ -1,5 +1,6 @@
 export type TenantOnboardingFormData = {
   companyName: string;
+  planCode: string;
   businessRegistrationNumber: string;
   corporateNumber: string;
   representativeName: string;
@@ -14,6 +15,7 @@ export type TenantOnboardingFormData = {
 
 export const EMPTY_ONBOARDING_FORM: TenantOnboardingFormData = {
   companyName: '',
+  planCode: '',
   businessRegistrationNumber: '',
   corporateNumber: '',
   representativeName: '',

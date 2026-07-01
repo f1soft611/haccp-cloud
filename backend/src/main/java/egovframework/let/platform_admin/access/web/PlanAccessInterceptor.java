@@ -2,16 +2,15 @@ package egovframework.let.platform_admin.access.web;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.http.MediaType;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,55 +29,6 @@ public class PlanAccessInterceptor implements HandlerInterceptor {
 
     private static final String LEVEL_READ = "read";
     private static final String LEVEL_WRITE = "write";
-    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
-
-    private static final List<EndpointAccessRule> RULES = Arrays.asList(
-            new EndpointAccessRule("GET", "/api/platform-admin/login-history/**", "/platform/login-history", LEVEL_READ,
-                    "FEATURE_AUDIT_LOG", null),
-
-            // Platform menu management
-            new EndpointAccessRule("GET", "/api/platform-admin/menus/**", "/platform/menus", LEVEL_READ,
-                    "FEATURE_PLATFORM_MENU_MGMT", null),
-            new EndpointAccessRule("POST", "/api/platform-admin/menus/**", "/platform/menus", LEVEL_WRITE,
-                    "FEATURE_PLATFORM_MENU_MGMT", null),
-            new EndpointAccessRule("PATCH", "/api/platform-admin/menus/**", "/platform/menus", LEVEL_WRITE,
-                    "FEATURE_PLATFORM_MENU_MGMT", null),
-            new EndpointAccessRule("DELETE", "/api/platform-admin/menus/**", "/platform/menus", LEVEL_WRITE,
-                    "FEATURE_PLATFORM_MENU_MGMT", null),
-
-            // Platform role management
-            new EndpointAccessRule("GET", "/api/platform-admin/roles/**", "/org/roles", LEVEL_READ,
-                "FEATURE_PLATFORM_ROLE_MGMT", null),
-            new EndpointAccessRule("POST", "/api/platform-admin/roles/**", "/org/roles", LEVEL_WRITE,
-                "FEATURE_PLATFORM_ROLE_MGMT", null),
-            new EndpointAccessRule("PATCH", "/api/platform-admin/roles/**", "/org/roles", LEVEL_WRITE,
-                "FEATURE_PLATFORM_ROLE_MGMT", null),
-            new EndpointAccessRule("PUT", "/api/platform-admin/roles/**", "/org/roles", LEVEL_WRITE,
-                "FEATURE_PLATFORM_ROLE_MGMT", null),
-
-            // Platform role-menu mapping
-            new EndpointAccessRule("GET", "/api/platform-admin/role-menus/**", "/org/roles", LEVEL_READ,
-                "FEATURE_PLATFORM_ROLE_MGMT", null),
-            new EndpointAccessRule("PUT", "/api/platform-admin/role-menus/**", "/org/roles", LEVEL_WRITE,
-                "FEATURE_PLATFORM_ROLE_MGMT", null),
-
-            // Platform tenant management
-            new EndpointAccessRule("POST", "/api/platform-admin/tenants/**", "/platform/tenants", LEVEL_WRITE,
-                "FEATURE_PLATFORM_TENANT_MGMT", null),
-
-            // Tenant member management
-            new EndpointAccessRule("GET", "/members", "/users", LEVEL_READ,
-                "FEATURE_TENANT_USER_MGMT", null),
-            new EndpointAccessRule("GET", "/members/insert", "/users", LEVEL_READ,
-                "FEATURE_TENANT_USER_MGMT", null),
-                    new EndpointAccessRule("POST", "/members/insert", "/members", LEVEL_WRITE,
-                    "FEATURE_TENANT_USER_MGMT", "LIMIT_USER_COUNT")
-            ,
-            new EndpointAccessRule("PUT", "/members/update", "/users", LEVEL_WRITE,
-                "FEATURE_TENANT_USER_MGMT", null),
-            new EndpointAccessRule("GET", "/members/update/**", "/users", LEVEL_READ,
-                "FEATURE_TENANT_USER_MGMT", null)
-    );
 
     private final PlanAccessService planAccessService;
     private final EgovAuthManageService egovAuthManageService;
@@ -86,8 +36,8 @@ public class PlanAccessInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        EndpointAccessRule matchedRule = resolveRule(request);
-        if (matchedRule == null) {
+        PlanAccessPolicy policy = resolvePolicy(handler);
+        if (policy == null) {
             return true;
         }
 
@@ -109,18 +59,22 @@ public class PlanAccessInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        if (!planAccessService.isFeatureEnabled(tenantId, matchedRule.getFeatureCode())) {
+        if (!planAccessService.isFeatureEnabled(tenantId, policy.featureCode())) {
             writeError(response, HttpServletResponse.SC_FORBIDDEN, "PLAN_NOT_ALLOWED", "현재 요금제에서 허용되지 않은 기능입니다.");
             return false;
         }
 
-        if (!hasRolePermission(roleCode, matchedRule.getMenuUrl(), matchedRule.getRequiredPermissionLevel())) {
+        String requiredPermissionLevel = policy.requiredPermissionLevel() == PlanAccessLevel.WRITE
+                ? LEVEL_WRITE
+                : LEVEL_READ;
+
+        if (!hasRolePermission(roleCode, policy.menuUrl(), requiredPermissionLevel)) {
             writeError(response, HttpServletResponse.SC_FORBIDDEN, "ROLE_NOT_ALLOWED", "현재 역할에서 허용되지 않은 기능입니다.");
             return false;
         }
 
-        if (StringUtils.hasText(matchedRule.getLimitFeatureCode())
-                && !planAccessService.isWithinLimit(tenantId, matchedRule.getLimitFeatureCode())) {
+        if (StringUtils.hasText(policy.limitFeatureCode())
+                && !planAccessService.isWithinLimit(tenantId, policy.limitFeatureCode())) {
             writeError(response, HttpServletResponse.SC_FORBIDDEN, "QUOTA_EXCEEDED", "요금제 사용 한도를 초과했습니다.");
             return false;
         }
@@ -128,20 +82,24 @@ public class PlanAccessInterceptor implements HandlerInterceptor {
         return true;
     }
 
-    private EndpointAccessRule resolveRule(HttpServletRequest request) {
-        String requestPath = request.getRequestURI();
-        String method = request.getMethod();
-
-        for (EndpointAccessRule rule : RULES) {
-            if (!rule.getHttpMethod().equalsIgnoreCase(method)) {
-                continue;
-            }
-            if (PATH_MATCHER.match(rule.getPathPattern(), requestPath)) {
-                return rule;
-            }
+    private PlanAccessPolicy resolvePolicy(Object handler) {
+        if (!(handler instanceof HandlerMethod)) {
+            return null;
         }
 
-        return null;
+        HandlerMethod handlerMethod = (HandlerMethod) handler;
+        PlanAccessPolicy methodPolicy = AnnotatedElementUtils.findMergedAnnotation(
+                handlerMethod.getMethod(),
+                PlanAccessPolicy.class
+        );
+        if (methodPolicy != null) {
+            return methodPolicy;
+        }
+
+        return AnnotatedElementUtils.findMergedAnnotation(
+                handlerMethod.getBeanType(),
+                PlanAccessPolicy.class
+        );
     }
 
     private LoginVO resolveLoginUser() {

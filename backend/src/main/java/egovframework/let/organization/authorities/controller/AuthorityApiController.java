@@ -22,6 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
+import egovframework.let.platform_admin.access.web.PlanAccessLevel;
+import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
 import egovframework.let.organization.authorities.service.AuthorityService;
 import egovframework.let.organization.authorities.domain.model.AuthorityMenuSaveRequestVO;
 import egovframework.let.uss.auth.service.RoleInfoVO;
@@ -43,11 +45,21 @@ public class AuthorityApiController {
     @Resource(name = "authorityService")
     private AuthorityService authorityService;
 
+        @PlanAccessPolicy(
+            menuUrl = "/org/roles",
+            featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+        )
     @GetMapping("/roles")
     public List<RoleInfoVO> listRoles(@RequestParam(required = false) String tenantCode) throws Exception {
         return authorityService.listRoles(resolveTenantCode(tenantCode));
     }
 
+        @PlanAccessPolicy(
+            menuUrl = "/org/roles",
+            featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+        )
     @GetMapping("/roles/paged")
     public ResultVO listRolesPaged(
             @RequestParam(defaultValue = "1") int pageIndex,
@@ -70,6 +82,11 @@ public class AuthorityApiController {
         );
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/org/roles",
+            featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
     @PostMapping("/roles")
     public RoleInfoVO createRole(@RequestBody RoleInfoVO payload) throws Exception {
         if (payload == null || !StringUtils.hasText(payload.getRoleCode())) {
@@ -81,6 +98,11 @@ public class AuthorityApiController {
         return authorityService.createRole(payload);
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/org/roles",
+            featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
     @PatchMapping("/roles/{id}")
     public RoleInfoVO updateRoleUseAt(@PathVariable Long id, @RequestBody RoleInfoVO payload) throws Exception {
         if (payload == null || !StringUtils.hasText(payload.getUseAt())) {
@@ -90,6 +112,11 @@ public class AuthorityApiController {
         return authorityService.updateRoleUseAt(id, payload);
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/org/roles",
+            featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
     @PutMapping("/roles/{id}")
     public RoleInfoVO updateRole(@PathVariable Long id, @RequestBody RoleInfoVO payload) throws Exception {
         if (payload == null || !StringUtils.hasText(payload.getRoleNm())) {
@@ -99,6 +126,11 @@ public class AuthorityApiController {
         return authorityService.updateRole(id, payload);
     }
 
+    @PlanAccessPolicy(
+        menuUrl = "/org/roles",
+        featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
+        requiredPermissionLevel = PlanAccessLevel.READ
+    )
     @GetMapping("/role-menus")
     public Map<String, Object> getRoleMenus(
             @RequestParam String roleCode,
@@ -106,6 +138,11 @@ public class AuthorityApiController {
         return authorityService.getRoleMenus(roleCode, resolveTenantCode(tenantCode));
     }
 
+    @PlanAccessPolicy(
+        menuUrl = "/org/roles",
+        featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
+        requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
     @PutMapping("/role-menus/{roleCode}")
     public Map<String, Object> replaceRoleMenus(@PathVariable String roleCode,
             @RequestParam(required = false) String tenantCode,
@@ -118,6 +155,11 @@ public class AuthorityApiController {
     }
 
     @GetMapping("/role-menu-candidates")
+    @PlanAccessPolicy(
+        menuUrl = "/org/roles",
+        featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
+        requiredPermissionLevel = PlanAccessLevel.READ
+    )
     public Map<String, Object> getRoleMenuCandidates(@RequestParam(required = false) String tenantCode) throws Exception {
         String resolvedTenantCode = resolveTenantCode(tenantCode);
         Map<String, Object> result = new LinkedHashMap<String, Object>();
@@ -131,6 +173,11 @@ public class AuthorityApiController {
      * JWT 토큰의 roleCode를 SecurityContext에서 읽어 권한 확정
      */
     @GetMapping("/user-menus/me")
+    @PlanAccessPolicy(
+        menuUrl = "/org/roles",
+        featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
+        requiredPermissionLevel = PlanAccessLevel.READ
+    )
     public List<MenuInfoVO> listCurrentUserMenus() throws Exception {
         Object userDetails = egovframework.com.cmm.util.EgovUserDetailsHelper.getAuthenticatedUser();
         if (!(userDetails instanceof egovframework.com.cmm.LoginVO)) {

@@ -17,8 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.ResultVoHelper;
-import java.util.HashMap;
-import java.util.Map;
+import egovframework.let.platform_admin.access.web.PlanAccessLevel;
+import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
+import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO;
 import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantIssueCodeRequestVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantIssueCodeResponseVO;
@@ -50,6 +51,11 @@ public class PlatformTenantApiController {
             description = "tb_tenant에 테넌트를 등록하고 테넌트 코드를 발급한다.",
             security = {@SecurityRequirement(name = "Authorization")}
     )
+        @PlanAccessPolicy(
+            menuUrl = "/platform/tenants",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+        )
     @PostMapping({"/admin/tenants", "/platform-admin/tenants"})
     public ResultVO registerTenant(@RequestBody TenantRegistrationRequestVO requestVO) {
         TenantRegistrationResultVO resultVO = platformTenantService.registerTenant(requestVO);
@@ -70,6 +76,7 @@ public class PlatformTenantApiController {
             serviceRequest.setCorporateNumber(requestVO.getCorporateNumber());
             serviceRequest.setBusinessType(requestVO.getBusinessType());
             serviceRequest.setBusinessCategory(requestVO.getBusinessCategory());
+            serviceRequest.setPlanCode(requestVO.getPlanCode());
 
             TenantRegistrationResultVO created = platformTenantService.registerTenant(serviceRequest);
             platformTenantService.updateOnboardingStatusByTenantCode(created.getTenantCode(), "EMAIL_SENT");
@@ -206,6 +213,26 @@ public class PlatformTenantApiController {
     @GetMapping("/tenants/samples")
     public List<SampleTenantVO> listSampleTenants() {
         return platformTenantService.listRecentTenants(5);
+    }
+
+    @PlanAccessPolicy(
+            menuUrl = "/platform/tenants",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+    )
+    @GetMapping("/platform-admin/tenants/{tenantCode}")
+    public ResultVO getTenantDetail(@PathVariable String tenantCode) {
+        PlatformTenantDashboardItemVO item = platformTenantService.findDashboardTenantByCode(tenantCode);
+        if (item == null) {
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("errorCode", "TENANT_NOT_FOUND");
+            errorMap.put("errorMessage", "업체 정보를 찾을 수 없습니다.");
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
+        }
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("tenant", item);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     private String trimToEmpty(String value) {

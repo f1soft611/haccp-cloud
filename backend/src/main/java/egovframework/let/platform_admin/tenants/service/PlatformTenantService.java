@@ -3,6 +3,7 @@ package egovframework.let.platform_admin.tenants.service;
 import java.util.List;
 
 import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardQueryVO;
+import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO;
 import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardResultVO;
 import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationRequestVO;
@@ -19,6 +20,8 @@ public interface PlatformTenantService {
     void updateOnboardingStatusByTenantCode(String tenantCode, String onboardingStatus);
 
     PlatformTenantDashboardResultVO listDashboardTenants(PlatformTenantDashboardQueryVO queryVO);
+
+    PlatformTenantDashboardItemVO findDashboardTenantByCode(String tenantCode);
 
     List<SampleTenantVO> listRecentTenants(int limit);
 

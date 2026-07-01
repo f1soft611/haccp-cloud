@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="egovframework.let.organization.users.domain.repository.PlatformUserDAO">
+<mapper namespace="PlatformUserDAO">
 
     <select id="PlatformUserDAO.selectUserList" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultType="egovframework.let.organization.users.domain.model.PlatformUserVO">
         SELECT

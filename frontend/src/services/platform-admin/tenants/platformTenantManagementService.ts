@@ -9,6 +9,7 @@ export type PlatformTenantOnboardingStatus =
   | 'ACTIVE';
 
 export type PlatformTenantManagementItem = {
+  tenantId?: number;
   tenantCode: string;
   companyName: string;
   adminName: string;
@@ -17,6 +18,9 @@ export type PlatformTenantManagementItem = {
   onboardingStatus: PlatformTenantOnboardingStatus;
   planCode?: string;
   planName?: string;
+  corporateNumber?: string;
+  businessType?: string;
+  businessCategory?: string;
   createdAt: string;
 };
 
@@ -51,6 +55,23 @@ type DashboardTenantEnvelope = {
   items?: PlatformTenantManagementItem[];
 };
 
+type TenantDetailEnvelope = {
+  result?: {
+    tenant?: PlatformTenantManagementItem;
+  };
+  resultData?: {
+    tenant?: PlatformTenantManagementItem;
+  };
+  tenant?: PlatformTenantManagementItem;
+};
+
+function normalizeTenantDetail(
+  data: TenantDetailEnvelope,
+): PlatformTenantManagementItem | null {
+  const item = data.result?.tenant ?? data.resultData?.tenant ?? data.tenant;
+  return item ?? null;
+}
+
 export async function listPlatformTenants(
   params: ListPlatformTenantsParams,
 ): Promise<ListPlatformTenantsResult> {
@@ -79,4 +100,43 @@ export async function listPlatformTenants(
     active: data.summary?.active ?? 0,
     inactive: data.summary?.inactive ?? 0,
   };
+}
+
+export async function getPlatformTenantByCode(
+  tenantCode: string,
+): Promise<PlatformTenantManagementItem | null> {
+  const normalized = tenantCode.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const { data } = await apiClient.get<TenantDetailEnvelope>(
+    `/platform-admin/tenants/${encodeURIComponent(normalized)}`,
+  );
+
+  return normalizeTenantDetail(data);
+}
+
+export async function dispatchTenantVerificationEmail(
+  tenantCode: string,
+): Promise<void> {
+  await apiClient.post(
+    '/v1/tenants/onboarding/dispatch-verification-email',
+    null,
+    {
+      params: { tenantCode },
+    },
+  );
+}
+
+export async function resendTenantVerificationEmail(
+  tenantCode: string,
+): Promise<void> {
+  await apiClient.post(
+    '/v1/tenants/onboarding/resend-verification-email',
+    null,
+    {
+      params: { tenantCode },
+    },
+  );
 }

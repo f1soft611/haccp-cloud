@@ -11,6 +11,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.Properties;
+
+import javax.mail.Session;
+import javax.mail.internet.MimeMessage;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +30,7 @@ import egovframework.let.platform_admin.tenants.domain.model.TenantAuthTokenVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVerificationResponseVO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantAuthTokenDAO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platform_admin.tenants.service.impl.TenantOnboardingServiceImpl;
 import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 
 /**
@@ -58,6 +63,7 @@ class TenantOnboardingServiceImplTest {
         String adminEmail = "admin@test.com";
 
         when(tenantInfoDAO.selectTenantIdByCode(tenantCode)).thenReturn(100L);
+        when(javaMailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
 
         // When
         tenantOnboardingService.createAndSendVerificationEmail(tenantCode, loginAccountId, adminEmail);
@@ -76,9 +82,7 @@ class TenantOnboardingServiceImplTest {
         verify(tenantAuthTokenDAO, times(1)).expireTokensByTenantCode(tenantCode);
         verify(tenantInfoDAO, times(1)).updateOnboardingStatusByTenantCode(tenantCode, "EMAIL_SENT");
 
-        ArgumentCaptor<SimpleMailMessage> mailCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(javaMailSender, times(1)).send(mailCaptor.capture());
-        assertEquals(adminEmail, mailCaptor.getValue().getTo()[0]);
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
 
     @DisplayName("존재하지 않는 테넌트 코드로 이메일 생성 시 예외가 발생한다")

@@ -19,6 +19,13 @@ public interface TenantOnboardingService {
     void createAndSendVerificationEmail(String tenantCode, String loginAccountId, String adminEmail);
 
     /**
+     * 테넌트 코드 기반 인증 이메일 발송
+     *
+     * @param tenantCode 테넌트 코드
+     */
+    void dispatchVerificationEmail(String tenantCode);
+
+    /**
      * 이메일 인증 토큰 검증
      *
      * @param authToken 인증 토큰

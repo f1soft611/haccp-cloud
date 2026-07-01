@@ -66,6 +66,7 @@ type TenantByDomainEnvelope = {
 
 export type IssueTenantCodeRequest = {
   companyName: string;
+  planCode: string;
   businessRegistrationNumber: string;
   corporateNumber: string;
   representativeName: string;
@@ -104,6 +105,15 @@ export type TenantDomainInfo = {
   onboardingStatus?: string;
   useAt?: string;
   tenantCode?: string;
+};
+
+export type TenantVerificationResult = {
+  tenantCode: string;
+  tenantNm: string;
+  adminEmail: string;
+  loginAccountId: number;
+  verified: boolean;
+  message: string;
 };
 
 type IssueTenantCodeEnvelope = {
@@ -201,6 +211,29 @@ export async function issueTenantCode(
 export async function listSampleTenants(): Promise<SampleTenantItem[]> {
   const { data } = await apiClient.get<SampleTenantItem[]>('/tenants/samples');
   return data;
+}
+
+export async function verifyTenantEmail(
+  authToken: string,
+): Promise<TenantVerificationResult> {
+  const { data } = await apiClient.post<{
+    code?: string;
+    message?: string;
+    data?: Partial<TenantVerificationResult>;
+  }>('/v1/tenants/onboarding/verify-email', null, {
+    params: { authToken },
+  });
+
+  const payload = data.data ?? {};
+
+  return {
+    tenantCode: String(payload.tenantCode ?? '').trim(),
+    tenantNm: String(payload.tenantNm ?? '').trim(),
+    adminEmail: String(payload.adminEmail ?? '').trim(),
+    loginAccountId: Number(payload.loginAccountId ?? 0),
+    verified: payload.verified === true,
+    message: String(payload.message ?? data.message ?? '').trim(),
+  };
 }
 
 export async function getTenantByDomain(

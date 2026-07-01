@@ -59,6 +59,16 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
     }
 
     @Override
+    public String selectAdminEmailByTenantCode(String tenantCode) {
+        return selectOne("TenantInfoDAO.selectAdminEmailByTenantCode", tenantCode);
+    }
+
+    @Override
+    public Long selectLatestLoginAccountIdByTenantCode(String tenantCode) {
+        return selectOne("TenantInfoDAO.selectLatestLoginAccountIdByTenantCode", tenantCode);
+    }
+
+    @Override
     public int updateOnboardingStatusByTenantCode(String tenantCode, String onboardingStatus) {
         Map<String, Object> param = new HashMap<String, Object>();
         param.put("tenantCode", tenantCode);
@@ -127,6 +137,11 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
         param.put("status", queryVO.getStatus());
         param.put("onboardingStatus", queryVO.getOnboardingStatus());
         return selectList("TenantInfoDAO.selectDashboardTenantItems", param);
+    }
+
+    @Override
+    public PlatformTenantDashboardItemVO selectDashboardTenantItemByCode(String tenantCode) {
+        return selectOne("TenantInfoDAO.selectDashboardTenantItemByCode", tenantCode);
     }
 
     @Override

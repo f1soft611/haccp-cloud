@@ -18,6 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
+import egovframework.let.platform_admin.access.web.PlanAccessLevel;
+import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
 import egovframework.let.platform_admin.access.service.PlanAccessService;
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +30,11 @@ public class PlanAccessApiController {
 
     private final PlanAccessService planAccessService;
 
+        @PlanAccessPolicy(
+            menuUrl = "/platform/plans",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+        )
     @GetMapping("/me")
     public Map<String, Object> getCurrentTenantPlanAccess() {
         LoginVO loginVO = resolveCurrentUser();
@@ -44,11 +51,21 @@ public class PlanAccessApiController {
         return result;
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/platform/plans",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+    )
     @GetMapping("/plans")
     public List<Map<String, Object>> listPlans() {
         return planAccessService.listPlans();
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/platform/plans",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+    )
     @GetMapping("/plans/{planCode}/features")
     public Map<String, Object> getPlanFeatures(@PathVariable String planCode) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
@@ -57,6 +74,11 @@ public class PlanAccessApiController {
         return result;
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/platform/plans",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+    )
     @GetMapping("/plans/{planCode}/menus")
     public Map<String, Object> getPlanMenus(@PathVariable String planCode) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
@@ -65,6 +87,11 @@ public class PlanAccessApiController {
         return result;
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/platform/plans",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
     @PutMapping("/plans/{planCode}/menus")
     public Map<String, Object> replacePlanMenus(
             @PathVariable String planCode,
@@ -84,6 +111,11 @@ public class PlanAccessApiController {
         return result;
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/platform/plans",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+    )
     @GetMapping("/tenant-plan-menus")
     public Map<String, Object> getTenantPlanMenus(@RequestParam String tenantCode) {
         if (!StringUtils.hasText(tenantCode)) {

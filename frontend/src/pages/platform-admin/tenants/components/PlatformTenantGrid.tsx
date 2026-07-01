@@ -16,6 +16,7 @@ type PlatformTenantGridProps = {
   pageIndex: number;
   pageSize: number;
   totalCount: number;
+  onRowClick?: (row: PlatformTenantManagementItem) => void;
   onPageChange: (next: number) => void;
   onPageSizeChange: (next: number) => void;
 };
@@ -46,6 +47,7 @@ export function PlatformTenantGrid({
   pageIndex,
   pageSize,
   totalCount,
+  onRowClick,
   onPageChange,
   onPageSizeChange,
 }: PlatformTenantGridProps) {
@@ -124,7 +126,18 @@ export function PlatformTenantGrid({
 
           {!loading
             ? rows.map((row) => (
-                <TableRow key={row.tenantCode} hover>
+                <TableRow
+                  key={row.tenantCode}
+                  hover
+                  onClick={() => onRowClick?.(row)}
+                  sx={
+                    onRowClick
+                      ? {
+                          cursor: 'pointer',
+                        }
+                      : undefined
+                  }
+                >
                   <TableCell>{row.tenantCode}</TableCell>
                   <TableCell>{row.companyName}</TableCell>
                   <TableCell align="center">

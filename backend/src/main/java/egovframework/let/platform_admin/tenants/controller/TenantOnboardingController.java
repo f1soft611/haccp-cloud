@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import egovframework.let.platform_admin.tenants.domain.model.TenantOnboardingCompleteRequestVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVerificationResponseVO;
 import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
+import egovframework.let.platform_admin.tenants.service.exception.MailAuthenticationFailureException;
+import egovframework.let.platform_admin.tenants.service.exception.MailConfigurationException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -70,8 +72,100 @@ public class TenantOnboardingController {
 
             return ResponseEntity.badRequest().body(response);
 
+        } catch (MailConfigurationException e) {
+            return buildMailConfigErrorResponse(e.getMessage());
+
+        } catch (MailAuthenticationFailureException e) {
+            return buildMailAuthErrorResponse(e.getMessage());
+
         } catch (Exception e) {
             log.error("인증 이메일 발송 중 오류 발생", e);
+
+            Map<String, Object> response = new HashMap<String, Object>();
+            response.put("code", "500");
+            response.put("message", "서버 오류가 발생했습니다");
+            response.put("data", null);
+
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @PostMapping("/dispatch-verification-email")
+    @Operation(summary = "테넌트 코드 기반 인증 이메일 발송",
+            description = "테넌트 코드로 관리자 이메일과 로그인 계정을 찾아 인증 메일을 발송")
+    public ResponseEntity<?> dispatchVerificationEmail(@RequestParam(required = true) String tenantCode) {
+        try {
+            tenantOnboardingService.dispatchVerificationEmail(tenantCode);
+
+            Map<String, Object> response = new HashMap<String, Object>();
+            response.put("code", "200");
+            response.put("message", "인증 이메일 발송이 완료되었습니다");
+            response.put("data", null);
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<String, Object>();
+            response.put("code", "400");
+            response.put("message", e.getMessage());
+            response.put("data", null);
+
+            return ResponseEntity.badRequest().body(response);
+        } catch (MailConfigurationException e) {
+            return buildMailConfigErrorResponse(e.getMessage());
+        } catch (MailAuthenticationFailureException e) {
+            return buildMailAuthErrorResponse(e.getMessage());
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<String, Object>();
+            response.put("code", "409");
+            response.put("message", e.getMessage());
+            response.put("data", null);
+
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        } catch (Exception e) {
+            log.error("인증 이메일 발송(tenantCode) 중 오류 발생", e);
+
+            Map<String, Object> response = new HashMap<String, Object>();
+            response.put("code", "500");
+            response.put("message", "서버 오류가 발생했습니다");
+            response.put("data", null);
+
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @PostMapping("/resend-verification-email")
+    @Operation(summary = "인증 이메일 재발송",
+            description = "온보딩 진행 업체의 인증 메일 재발송")
+    public ResponseEntity<?> resendVerificationEmail(@RequestParam(required = true) String tenantCode) {
+        try {
+            tenantOnboardingService.resendVerificationEmail(tenantCode);
+
+            Map<String, Object> response = new HashMap<String, Object>();
+            response.put("code", "200");
+            response.put("message", "인증 이메일 재발송이 완료되었습니다");
+            response.put("data", null);
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<String, Object>();
+            response.put("code", "400");
+            response.put("message", e.getMessage());
+            response.put("data", null);
+
+            return ResponseEntity.badRequest().body(response);
+        } catch (MailConfigurationException e) {
+            return buildMailConfigErrorResponse(e.getMessage());
+        } catch (MailAuthenticationFailureException e) {
+            return buildMailAuthErrorResponse(e.getMessage());
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<String, Object>();
+            response.put("code", "409");
+            response.put("message", e.getMessage());
+            response.put("data", null);
+
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        } catch (Exception e) {
+            log.error("인증 이메일 재발송 중 오류 발생", e);
 
             Map<String, Object> response = new HashMap<String, Object>();
             response.put("code", "500");
@@ -198,5 +292,25 @@ public class TenantOnboardingController {
 
             return ResponseEntity.internalServerError().body(response);
         }
+    }
+
+    private ResponseEntity<Map<String, Object>> buildMailConfigErrorResponse(String message) {
+        Map<String, Object> response = new HashMap<String, Object>();
+        response.put("code", "503");
+        response.put("errorCode", "MAIL_CONFIG_ERROR");
+        response.put("message", message);
+        response.put("data", null);
+
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    }
+
+    private ResponseEntity<Map<String, Object>> buildMailAuthErrorResponse(String message) {
+        Map<String, Object> response = new HashMap<String, Object>();
+        response.put("code", "502");
+        response.put("errorCode", "MAIL_AUTH_ERROR");
+        response.put("message", message);
+        response.put("data", null);
+
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
     }
 }

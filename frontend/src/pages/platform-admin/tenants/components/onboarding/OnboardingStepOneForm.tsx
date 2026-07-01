@@ -10,22 +10,31 @@ import {
 } from '@mui/material';
 import { APP_LABELS } from '../../../../../shared/constants/labels';
 import { type TenantOnboardingFormData } from './types';
+import type { PlanSummary } from '../../../../../services/platform-admin/planAccessService';
 
 type OnboardingStepOneFormProps = {
   form: TenantOnboardingFormData;
   brnError: boolean;
+  corporateNumberError: boolean;
   validationError: boolean;
+  planOptions: PlanSummary[];
+  planLoading: boolean;
   onFieldChange: (key: keyof TenantOnboardingFormData, value: string) => void;
   onBrnChange: (value: string) => void;
+  onCorporateNumberChange: (value: string) => void;
   onNext: () => void;
 };
 
 export function OnboardingStepOneForm({
   form,
   brnError,
+  corporateNumberError,
   validationError,
+  planOptions,
+  planLoading,
   onFieldChange,
   onBrnChange,
+  onCorporateNumberChange,
   onNext,
 }: OnboardingStepOneFormProps) {
   return (
@@ -49,6 +58,32 @@ export function OnboardingStepOneForm({
                 fullWidth
               />
               <TextField
+                label={APP_LABELS.field.planCode}
+                value={form.planCode}
+                onChange={(e) => onFieldChange('planCode', e.target.value)}
+                select
+                SelectProps={{ native: true }}
+                disabled={planLoading || planOptions.length === 0}
+                helperText={
+                  planLoading
+                    ? '플랜 목록을 불러오는 중입니다.'
+                    : planOptions.length === 0
+                      ? '사용 가능한 플랜이 없습니다.'
+                      : undefined
+                }
+                required
+                fullWidth
+              >
+                <option value="">플랜을 선택하세요</option>
+                {planOptions.map((plan) => (
+                  <option key={plan.planCode} value={plan.planCode}>
+                    {plan.planName || plan.planCode}
+                  </option>
+                ))}
+              </TextField>
+            </Stack>
+            <Stack direction="row" spacing={2}>
+              <TextField
                 label={APP_LABELS.field.businessRegistrationNumber}
                 placeholder="000-00-00000"
                 value={form.businessRegistrationNumber}
@@ -63,17 +98,20 @@ export function OnboardingStepOneForm({
                 fullWidth
                 inputProps={{ maxLength: 12 }}
               />
-            </Stack>
-            <Stack direction="row" spacing={2}>
               <TextField
                 label={APP_LABELS.field.corporateNumber}
                 value={form.corporateNumber}
-                onChange={(e) =>
-                  onFieldChange('corporateNumber', e.target.value)
+                onChange={(e) => onCorporateNumberChange(e.target.value)}
+                error={corporateNumberError}
+                helperText={
+                  corporateNumberError
+                    ? APP_LABELS.message.onboardingCorporateNumberFormatError
+                    : '미입력 가능 (숫자 13자리)'
                 }
-                required
                 fullWidth
               />
+            </Stack>
+            <Stack direction="row" spacing={2}>
               <TextField
                 label={APP_LABELS.field.representativeName}
                 value={form.representativeName}

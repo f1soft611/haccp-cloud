@@ -86,6 +86,7 @@ export function PlatformTenantManagementPage() {
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={tenantQuery.data?.total ?? 0}
+        onRowClick={(row) => navigate(`/platform/tenants/${row.tenantCode}`)}
         onPageChange={setPageIndex}
         onPageSizeChange={setPageSize}
       />

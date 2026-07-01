@@ -28,6 +28,11 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class TenantContextFilter extends OncePerRequestFilter {
 
+    private static final String[] PUBLIC_REQUEST_PREFIXES = {
+            "/api/v1/tenants/onboarding/",
+            "/api/tenants/onboarding/"
+    };
+
     @Autowired
     private PlatformTenantService tenantService;
 
@@ -73,6 +78,23 @@ public class TenantContextFilter extends OncePerRequestFilter {
             // 6. TenantContext 정리 (메모리 누수 방지)
             TenantContextHolder.clear();
         }
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String requestUri = request.getRequestURI();
+        if (requestUri == null) {
+            return false;
+        }
+
+        for (String publicRequestPrefix : PUBLIC_REQUEST_PREFIXES) {
+            if (requestUri.startsWith(publicRequestPrefix)) {
+                log.debug("테넌트 컨텍스트 필터 제외: requestUri={}", requestUri);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

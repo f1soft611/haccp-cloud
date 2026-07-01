@@ -10,6 +10,7 @@
 ### 1.1 이동된 도메인
 
 #### Access 도메인
+
 - **원본:** `backend/src/main/java/egovframework/let/platforms/access/`
 - **대상:** `backend/src/main/java/egovframework/let/platform_admin/access/`
 - **패키지:** `egovframework.let.platforms.access` → `egovframework.let.platform_admin.access`
@@ -21,6 +22,7 @@
   - `web/EndpointAccessRule.java`
 
 #### Dashboard 도메인
+
 - **원본:** `backend/src/main/java/egovframework/let/platforms/dashboard/`
 - **대상:** `backend/src/main/java/egovframework/let/platform_admin/dashboard/`
 - **패키지:** `egovframework.let.platforms.dashboard` → `egovframework.let.platform_admin.dashboard`
@@ -44,13 +46,14 @@
 
 ## 2. 파일 이동 통계
 
-| 항목 | 수량 |
-|------|------|
-| Java 파일 | 14개 |
-| MyBatis Mapper XML | 2개 |
+| 항목                | 수량     |
+| ------------------- | -------- |
+| Java 파일           | 14개     |
+| MyBatis Mapper XML  | 2개      |
 | **총 이동 파일 수** | **16개** |
 
 ### 2.1 Git 이동 통계
+
 ```
  25 files changed, 608 insertions(+), 70 deletions(-)
 
@@ -69,28 +72,31 @@
 다음 3개 파일에서 access 패키지 참조 업데이트:
 
 1. **egovframework/com/security/WebMvcConfig.java**
+
    ```java
    // Before:
    import egovframework.let.platforms.access.web.PlanAccessInterceptor;
-   
+
    // After:
    import egovframework.let.platform_admin.access.web.PlanAccessInterceptor;
    ```
 
 2. **egovframework/let/organization/authorities/service/impl/AuthorityServiceImpl.java**
+
    ```java
    // Before:
    import egovframework.let.platforms.access.service.PlanAccessService;
-   
+
    // After:
    import egovframework.let.platform_admin.access.service.PlanAccessService;
    ```
 
 3. **egovframework/let/organization/users/service/impl/PlatformUserServiceImpl.java**
+
    ```java
    // Before:
    import egovframework.let.platforms.access.service.PlanAccessService;
-   
+
    // After:
    import egovframework.let.platform_admin.access.service.PlanAccessService;
    ```
@@ -183,7 +189,7 @@ backend/src/main/resources/egovframework/mapper/let/platform_admin/
 refactor: migrate access and dashboard to platform_admin
 
 - Move Java source: let/platforms/access -> let/platform_admin/access
-- Move Java source: let/platforms/dashboard -> let/platform_admin/dashboard  
+- Move Java source: let/platforms/dashboard -> let/platform_admin/dashboard
 - Update package: egovframework.let.platforms.access -> egovframework.let.platform_admin.access
 - Update package: egovframework.let.platforms.dashboard -> egovframework.let.platform_admin.dashboard
 - Move MyBatis mapper resources: platforms -> platform_admin (PostgreSQL + MSSQL)
@@ -204,22 +210,23 @@ Build Status:
 
 ### 7.1 완료된 작업
 
-| 항목 | 상태 |
-|------|------|
-| access 폴더 이동 | ✅ 완료 |
-| dashboard 폴더 이동 | ✅ 완료 |
-| 패키지명 변경 (access) | ✅ 완료 |
-| 패키지명 변경 (dashboard) | ✅ 완료 |
-| MyBatis mapper 이동 | ✅ 완료 |
-| Import 문 업데이트 | ✅ 완료 |
-| mvn clean compile | ✅ SUCCESS |
-| mvn clean package | ✅ SUCCESS |
-| 원본 폴더 정리 | ✅ 완료 |
-| Git commit | ✅ 완료 |
+| 항목                      | 상태       |
+| ------------------------- | ---------- |
+| access 폴더 이동          | ✅ 완료    |
+| dashboard 폴더 이동       | ✅ 완료    |
+| 패키지명 변경 (access)    | ✅ 완료    |
+| 패키지명 변경 (dashboard) | ✅ 완료    |
+| MyBatis mapper 이동       | ✅ 완료    |
+| Import 문 업데이트        | ✅ 완료    |
+| mvn clean compile         | ✅ SUCCESS |
+| mvn clean package         | ✅ SUCCESS |
+| 원본 폴더 정리            | ✅ 완료    |
+| Git commit                | ✅ 완료    |
 
 ### 7.2 platform_admin 최종 구성
 
 **5개 도메인 모두 통합 완료:**
+
 1. ✅ `tenants` - Task 9
 2. ✅ `menus` - Task 9
 3. ✅ `login-history` - Task 9
@@ -233,6 +240,7 @@ Build Status:
 ### 8.1 패키지 구조 통합
 
 **Before (분산 구조):**
+
 ```
 platforms/
   ├── access/
@@ -244,6 +252,7 @@ platform_admin/
 ```
 
 **After (통합 구조):**
+
 ```
 platform_admin/
   ├── access/
@@ -279,6 +288,7 @@ platform_admin/
 ✅ **Task 10 완료 - 모든 도메인 통합 완료**
 
 **향후 예정:**
+
 - 통합 테스트 (mvn test)
 - 배포 검증
 - 프로덕션 릴리스

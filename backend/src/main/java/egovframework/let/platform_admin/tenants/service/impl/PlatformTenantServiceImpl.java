@@ -49,10 +49,13 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         String normalizedCorporateNumber = normalizeCorporateNumber(corporateNumber);
         String businessType = emptyToNull(requestVO.getBusinessType());
         String businessCategory = emptyToNull(requestVO.getBusinessCategory());
+        String planCode = emptyToNull(requestVO.getPlanCode());
 
-        int activeDuplicateCount = tenantInfoDAO.selectActiveTenantCountByCorporateNumber(normalizedCorporateNumber);
-        if (activeDuplicateCount > 0) {
-            throw new IllegalStateException("이미 등록된 활성 업체의 사업자번호입니다");
+        if (normalizedCorporateNumber != null) {
+            int activeDuplicateCount = tenantInfoDAO.selectActiveTenantCountByCorporateNumber(normalizedCorporateNumber);
+            if (activeDuplicateCount > 0) {
+                throw new IllegalStateException("이미 등록된 활성 업체의 사업자번호입니다");
+            }
         }
 
         String datePrefix = TENANT_CODE_DATE_FORMATTER.format(LocalDate.now(BUSINESS_ZONE));
@@ -78,6 +81,7 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         resultVO.setCorporateNumber(corporateNumber);
         resultVO.setBusinessType(businessType);
         resultVO.setBusinessCategory(businessCategory);
+        resultVO.setPlanCode(planCode);
         resultVO.setCreatedAt(Instant.now().toString());
         return resultVO;
     }
@@ -109,6 +113,25 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         result.setSummary(summary);
         result.setItems(items);
         return result;
+    }
+
+    @Override
+    public PlatformTenantDashboardItemVO findDashboardTenantByCode(String tenantCode) {
+        String normalized = emptyToNull(tenantCode);
+        if (normalized == null) {
+            throw new IllegalArgumentException("tenantCode is required");
+        }
+
+        PlatformTenantDashboardItemVO item = tenantInfoDAO.selectDashboardTenantItemByCode(normalized);
+        if (item != null) {
+            return item;
+        }
+
+        if (normalized.startsWith("TENANT_")) {
+            item = tenantInfoDAO.selectDashboardTenantItemByCode(normalized.substring("TENANT_".length()));
+        }
+
+        return item;
     }
 
     @Override
@@ -255,9 +278,6 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         if (requestVO == null || requestVO.getTenantNm() == null || requestVO.getTenantNm().trim().isEmpty()) {
             throw new IllegalArgumentException("tenantNm is required");
         }
-        if (requestVO.getCorporateNumber() == null || requestVO.getCorporateNumber().trim().isEmpty()) {
-            throw new IllegalArgumentException("corporateNumber is required");
-        }
         if (requestVO.getBusinessType() == null || requestVO.getBusinessType().trim().isEmpty()) {
             throw new IllegalArgumentException("businessType is required");
         }
@@ -274,12 +294,12 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
     }
 
     private String normalizeCorporateNumber(String corporateNumber) {
-        if (corporateNumber == null) {
-            throw new IllegalArgumentException("corporateNumber is required");
+        if (corporateNumber == null || corporateNumber.trim().isEmpty()) {
+            return null;
         }
 
         String normalized = corporateNumber.replaceAll("[^0-9]", "");
-        if (normalized.isEmpty()) {
+        if (normalized.length() != 13) {
             throw new IllegalArgumentException("corporateNumber format is invalid");
         }
         return normalized;

@@ -14,8 +14,10 @@ import { LoginHistoryPage } from '../../pages/platform-admin/login-history/Login
 import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
 import { PlatformAuthorityManagementPage } from '../../pages/organization/authorities/PlatformAuthorityManagementPage';
 import { PlatformTenantManagementPage } from '../../pages/platform-admin/tenants/PlatformTenantManagementPage';
+import { PlatformTenantDetailPage } from '../../pages/platform-admin/tenants/PlatformTenantDetailPage';
 import { PlatformPlanManagementPage } from '../../pages/platform-admin/plans/PlatformPlanManagementPage';
 import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
+import { OnboardingVerifyPage } from '../../pages/platform-admin/tenants/OnboardingVerifyPage';
 import { useAuthStore } from '../../shared/store/authStore';
 
 function DefaultHomeRoute() {
@@ -30,6 +32,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/login/:domain" element={<LoginPage />} />
+      <Route path="/onboarding/verify" element={<OnboardingVerifyPage />} />
       <Route
         path="/login/platform"
         element={<Navigate to="/login" replace />}
@@ -57,6 +60,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
               <PlatformTenantManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/tenants/:tenantCode"
+          element={
+            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+              <PlatformTenantDetailPage />
             </ProtectedRoute>
           }
         />

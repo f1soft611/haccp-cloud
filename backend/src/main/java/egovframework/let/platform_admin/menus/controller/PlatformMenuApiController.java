@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.service.ResultVO;
+import egovframework.let.platform_admin.access.web.PlanAccessLevel;
+import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
 import egovframework.let.platform_admin.menus.service.PlatformMenuService;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,11 @@ public class PlatformMenuApiController {
     @Resource(name = "platformMenuService")
     private PlatformMenuService platformMenuService;
 
+        @PlanAccessPolicy(
+            menuUrl = "/platform/menus",
+            featureCode = "FEATURE_PLATFORM_MENU_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+        )
     @GetMapping
     public List<MenuInfoVO> listMenus(
             @RequestParam(required = false) String menuNm,
@@ -41,6 +48,11 @@ public class PlatformMenuApiController {
         return platformMenuService.listMenus(menuNm, parentMenuId);
     }
 
+        @PlanAccessPolicy(
+            menuUrl = "/platform/menus",
+            featureCode = "FEATURE_PLATFORM_MENU_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.READ
+        )
     @GetMapping("/paged")
     public ResultVO listMenusPaged(
             @RequestParam(defaultValue = "1") int pageIndex,
@@ -61,6 +73,11 @@ public class PlatformMenuApiController {
         );
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/platform/menus",
+            featureCode = "FEATURE_PLATFORM_MENU_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
     @PostMapping
     public MenuInfoVO createMenu(@RequestBody MenuInfoVO menuInfoVO) throws Exception {
         normalizePayload(menuInfoVO);
@@ -68,6 +85,11 @@ public class PlatformMenuApiController {
         return platformMenuService.createMenu(menuInfoVO);
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/platform/menus",
+            featureCode = "FEATURE_PLATFORM_MENU_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
     @PatchMapping("/{menuId}")
     public MenuInfoVO updateMenu(@PathVariable Long menuId, @RequestBody MenuInfoVO menuInfoVO) throws Exception {
         menuInfoVO.setMenuId(menuId);
@@ -76,6 +98,11 @@ public class PlatformMenuApiController {
         return platformMenuService.updateMenu(menuId, menuInfoVO);
     }
 
+    @PlanAccessPolicy(
+            menuUrl = "/platform/menus",
+            featureCode = "FEATURE_PLATFORM_MENU_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
     @DeleteMapping("/{menuId}")
     public void deleteMenu(@PathVariable Long menuId) throws Exception {
         platformMenuService.deleteMenu(menuId);
