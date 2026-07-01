@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="TenantInfoDAO">
+<mapper namespace="egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO">
 
     <!-- 업체 대시보드 item resultMap -->
     <resultMap id="platformTenantDashboardItemResultMap" type="egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO">
