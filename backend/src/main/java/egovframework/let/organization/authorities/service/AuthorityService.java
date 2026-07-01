@@ -1,10 +1,10 @@
-package egovframework.let.platforms.roles.service;
+package egovframework.let.organization.authorities.service;
 
 import java.util.List;
 import java.util.Map;
 
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.platforms.roles.domain.model.PlatformRoleMenuSaveRequestVO;
+import egovframework.let.organization.authorities.domain.model.AuthorityMenuSaveRequestVO;
 import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 
@@ -14,7 +14,7 @@ import egovframework.let.uss.auth.service.MenuInfoVO;
  * @since 2026.06.22
  * @version 1.0
  */
-public interface PlatformRoleService {
+public interface AuthorityService {
 
     /**
      * 역할 목록을 조회한다.
@@ -91,7 +91,7 @@ public interface PlatformRoleService {
      * @return 저장 결과
      * @throws Exception
      */
-    Map<String, Object> replaceRoleMenus(String roleCode, String tenantCode, PlatformRoleMenuSaveRequestVO payload) throws Exception;
+    Map<String, Object> replaceRoleMenus(String roleCode, String tenantCode, AuthorityMenuSaveRequestVO payload) throws Exception;
 
     List<String> listAllowedMenuCodesByTenantPlan(String tenantCode) throws Exception;
 

@@ -1,4 +1,4 @@
-package egovframework.let.platforms.roles.domain.repository;
+package egovframework.let.organization.authorities.domain.repository;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
  * @since 2026.06.22
  * @version 1.0
  */
-public interface PlatformRoleDAO {
+public interface AuthorityDAO {
 
     /**
      * 역할 목록을 조회한다.

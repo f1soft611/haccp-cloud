@@ -1,4 +1,4 @@
-package egovframework.let.platforms.roles.service.impl;
+package egovframework.let.organization.authorities.service.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,9 +17,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.platforms.roles.domain.repository.PlatformRoleDAO;
-import egovframework.let.platforms.roles.service.PlatformRoleService;
-import egovframework.let.platforms.roles.domain.model.PlatformRoleMenuSaveRequestVO;
+import egovframework.let.organization.authorities.domain.repository.AuthorityDAO;
+import egovframework.let.organization.authorities.service.AuthorityService;
+import egovframework.let.organization.authorities.domain.model.AuthorityMenuSaveRequestVO;
 import egovframework.let.platforms.access.service.PlanAccessService;
 import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
@@ -31,14 +31,14 @@ import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
  * @since 2026.06.22
  * @version 1.0
  */
-@Service("platformRoleService")
-public class PlatformRoleServiceImpl implements PlatformRoleService {
+@Service("authorityService")
+public class AuthorityServiceImpl implements AuthorityService {
 
     private static final String DEFAULT_PERMISSION_ID = "PERM_WRITE";
     private static final String SYSTEM_USER_ID = "system";
 
-    @Resource(name = "platformRoleDAO")
-    private PlatformRoleDAO platformRoleDAO;
+    @Resource(name = "authorityDAO")
+    private AuthorityDAO authorityDAO;
 
     @Resource(name = "planAccessService")
     private PlanAccessService planAccessService;
@@ -49,7 +49,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
         if (hasText(tenantCode)) {
             condition.setTenantCode(tenantCode.trim().toUpperCase());
         }
-        return platformRoleDAO.selectRoleList(condition);
+        return authorityDAO.selectRoleList(condition);
     }
 
     @Override
@@ -77,8 +77,8 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
         condition.setLastIndex(paginationInfo.getLastRecordIndex());
         condition.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-        List<RoleInfoVO> roleList = platformRoleDAO.selectRolePagedList(condition);
-        int totalCount = platformRoleDAO.selectRolePagedCount(condition);
+        List<RoleInfoVO> roleList = authorityDAO.selectRolePagedList(condition);
+        int totalCount = authorityDAO.selectRolePagedCount(condition);
         paginationInfo.setTotalRecordCount(totalCount);
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
@@ -110,7 +110,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
             payload.setLastUpdusrId(SYSTEM_USER_ID);
         }
 
-        platformRoleDAO.insertRole(payload);
+        authorityDAO.insertRole(payload);
         return payload;
     }
 
@@ -131,7 +131,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
         }
 
         RoleInfoVO.validateUpdatePolicy(payload);
-        platformRoleDAO.updateRoleUseAt(payload);
+        authorityDAO.updateRoleUseAt(payload);
         return payload;
     }
 
@@ -153,7 +153,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
         }
 
         RoleInfoVO.validateUpdatePolicy(payload);
-        platformRoleDAO.updateRole(payload);
+        authorityDAO.updateRole(payload);
         return payload;
     }
 
@@ -168,7 +168,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
         RoleMenuPermissionVO condition = new RoleMenuPermissionVO();
         condition.setRoleCode(normalizedRoleCode);
         condition.setTenantCode(normalizedTenantCode);
-        List<RoleMenuPermissionVO> permissions = platformRoleDAO.selectRoleMenuPermissionList(condition);
+        List<RoleMenuPermissionVO> permissions = authorityDAO.selectRoleMenuPermissionList(condition);
 
         Set<String> menuCodeSet = new LinkedHashSet<String>();
         for (RoleMenuPermissionVO permission : permissions) {
@@ -185,7 +185,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
     }
 
     @Override
-    public Map<String, Object> replaceRoleMenus(String roleCode, String tenantCode, PlatformRoleMenuSaveRequestVO payload) throws Exception {
+    public Map<String, Object> replaceRoleMenus(String roleCode, String tenantCode, AuthorityMenuSaveRequestVO payload) throws Exception {
         if (payload == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
@@ -209,7 +209,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
         deleteCondition.put("roleCode", payload.getRoleCode());
         deleteCondition.put("tenantCode", normalizedTenantCode);
 
-        platformRoleDAO.deleteRoleMenuPermissionsByRoleCode(deleteCondition);
+        authorityDAO.deleteRoleMenuPermissionsByRoleCode(deleteCondition);
 
         for (String menuCode : filteredMenuIds) {
             RoleMenuPermissionVO item = new RoleMenuPermissionVO();
@@ -220,7 +220,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
             item.setUseAt("Y");
             item.setFrstRegisterId(SYSTEM_USER_ID);
             item.setLastUpdusrId(SYSTEM_USER_ID);
-            platformRoleDAO.insertRoleMenuPermission(item);
+            authorityDAO.insertRoleMenuPermission(item);
         }
 
         Map<String, Object> response = new HashMap<String, Object>();
@@ -245,7 +245,7 @@ public class PlatformRoleServiceImpl implements PlatformRoleService {
 
     @Override
     public List<MenuInfoVO> listUserMenus(String roleCode) throws Exception {
-        return platformRoleDAO.selectUserAccessibleMenus(roleCode);
+        return authorityDAO.selectUserAccessibleMenus(roleCode);
     }
 
     private boolean hasText(String value) {

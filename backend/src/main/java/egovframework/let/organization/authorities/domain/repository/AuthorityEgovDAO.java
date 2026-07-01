@@ -1,4 +1,4 @@
-package egovframework.let.platforms.roles.domain.repository;
+package egovframework.let.organization.authorities.domain.repository;
 
 import java.util.List;
 
@@ -12,15 +12,15 @@ import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
 /**
  * 플랫폼 역할 DAO
  */
-@Repository("platformRoleDAO")
-public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformRoleDAO {
+@Repository("authorityDAO")
+public class AuthorityEgovDAO extends EgovAbstractMapper implements AuthorityDAO {
 
     /**
      * 역할 목록을 조회한다.
      */
     @Override
     public List<RoleInfoVO> selectRoleList(RoleInfoVO condition) throws Exception {
-        return selectList("PlatformRoleDAO.selectRoleList", condition);
+        return selectList("AuthorityDAO.selectRoleList", condition);
     }
 
     /**
@@ -28,7 +28,7 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      */
     @Override
     public List<RoleInfoVO> selectRolePagedList(RoleInfoVO condition) throws Exception {
-        return selectList("PlatformRoleDAO.selectRolePagedList", condition);
+        return selectList("AuthorityDAO.selectRolePagedList", condition);
     }
 
     /**
@@ -36,7 +36,7 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      */
     @Override
     public int selectRolePagedCount(RoleInfoVO condition) throws Exception {
-        Integer count = selectOne("PlatformRoleDAO.selectRolePagedCount", condition);
+        Integer count = selectOne("AuthorityDAO.selectRolePagedCount", condition);
         return count == null ? 0 : count;
     }
 
@@ -45,7 +45,7 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      */
     @Override
     public void insertRole(RoleInfoVO payload) throws Exception {
-        insert("PlatformRoleDAO.insertRole", payload);
+        insert("AuthorityDAO.insertRole", payload);
     }
 
     /**
@@ -53,7 +53,7 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      */
     @Override
     public void updateRoleUseAt(RoleInfoVO payload) throws Exception {
-        update("PlatformRoleDAO.updateRoleUseAt", payload);
+        update("AuthorityDAO.updateRoleUseAt", payload);
     }
 
     /**
@@ -61,7 +61,7 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      */
     @Override
     public void updateRole(RoleInfoVO payload) throws Exception {
-        update("PlatformRoleDAO.updateRole", payload);
+        update("AuthorityDAO.updateRole", payload);
     }
 
     /**
@@ -69,7 +69,7 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      */
     @Override
     public List<RoleMenuPermissionVO> selectRoleMenuPermissionList(RoleMenuPermissionVO condition) throws Exception {
-        return selectList("PlatformRoleDAO.selectRoleMenuPermissionList", condition);
+        return selectList("AuthorityDAO.selectRoleMenuPermissionList", condition);
     }
 
     /**
@@ -77,7 +77,7 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      */
     @Override
     public void deleteRoleMenuPermissionsByRoleCode(Object condition) throws Exception {
-        delete("PlatformRoleDAO.deleteRoleMenuPermissionsByRoleCode", condition);
+        delete("AuthorityDAO.deleteRoleMenuPermissionsByRoleCode", condition);
     }
 
     /**
@@ -85,7 +85,7 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      */
     @Override
     public void insertRoleMenuPermission(RoleMenuPermissionVO item) throws Exception {
-        insert("PlatformRoleDAO.insertRoleMenuPermission", item);
+        insert("AuthorityDAO.insertRoleMenuPermission", item);
     }
 
     /**
@@ -93,6 +93,6 @@ public class PlatformRoleEgovDAO extends EgovAbstractMapper implements PlatformR
      */
     @Override
     public List<MenuInfoVO> selectUserAccessibleMenus(String roleCode) throws Exception {
-        return selectList("PlatformRoleDAO.selectUserAccessibleMenus", roleCode);
+        return selectList("AuthorityDAO.selectUserAccessibleMenus", roleCode);
     }
 }

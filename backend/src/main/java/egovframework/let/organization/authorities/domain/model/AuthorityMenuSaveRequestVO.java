@@ -1,4 +1,4 @@
-package egovframework.let.platforms.roles.domain.model;
+package egovframework.let.organization.authorities.domain.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import lombok.Setter;
 @Schema(description = "플랫폼 역할별 메뉴 저장 요청 VO")
 @Getter
 @Setter
-public class PlatformRoleMenuSaveRequestVO implements Serializable {
+public class AuthorityMenuSaveRequestVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

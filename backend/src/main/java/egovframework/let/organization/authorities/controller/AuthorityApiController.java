@@ -1,4 +1,4 @@
-package egovframework.let.platforms.roles.controller;
+package egovframework.let.organization.authorities.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -22,8 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
-import egovframework.let.platforms.roles.service.PlatformRoleService;
-import egovframework.let.platforms.roles.domain.model.PlatformRoleMenuSaveRequestVO;
+import egovframework.let.organization.authorities.service.AuthorityService;
+import egovframework.let.organization.authorities.domain.model.AuthorityMenuSaveRequestVO;
 import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import lombok.RequiredArgsConstructor;
@@ -34,18 +34,18 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/platform-admin")
-public class PlatformRoleApiController {
+public class AuthorityApiController {
 
     private static final String DEFAULT_PERMISSION_ID = "PERM_WRITE";
     private static final String SYSTEM_USER_ID = "system";
     private static final int[] ALLOWED_PAGE_SIZES = {10, 20, 50};
 
-    @Resource(name = "platformRoleService")
-    private PlatformRoleService platformRoleService;
+    @Resource(name = "authorityService")
+    private AuthorityService authorityService;
 
     @GetMapping("/roles")
     public List<RoleInfoVO> listRoles(@RequestParam(required = false) String tenantCode) throws Exception {
-        return platformRoleService.listRoles(resolveTenantCode(tenantCode));
+        return authorityService.listRoles(resolveTenantCode(tenantCode));
     }
 
     @GetMapping("/roles/paged")
@@ -60,7 +60,7 @@ public class PlatformRoleApiController {
         validateSearchField(searchField);
         validateUseAt(useAt);
 
-        return platformRoleService.listRolesPaged(
+        return authorityService.listRolesPaged(
                 pageIndex,
                 pageSize,
                 searchField,
@@ -78,7 +78,7 @@ public class PlatformRoleApiController {
 
         payload.setTenantCode(resolveTenantCode(payload.getTenantCode()));
 
-        return platformRoleService.createRole(payload);
+        return authorityService.createRole(payload);
     }
 
     @PatchMapping("/roles/{id}")
@@ -87,7 +87,7 @@ public class PlatformRoleApiController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt 값은 필수입니다.");
         }
 
-        return platformRoleService.updateRoleUseAt(id, payload);
+        return authorityService.updateRoleUseAt(id, payload);
     }
 
     @PutMapping("/roles/{id}")
@@ -96,25 +96,25 @@ public class PlatformRoleApiController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleNm 값은 필수입니다.");
         }
 
-        return platformRoleService.updateRole(id, payload);
+        return authorityService.updateRole(id, payload);
     }
 
     @GetMapping("/role-menus")
     public Map<String, Object> getRoleMenus(
             @RequestParam String roleCode,
             @RequestParam(required = false) String tenantCode) throws Exception {
-        return platformRoleService.getRoleMenus(roleCode, resolveTenantCode(tenantCode));
+        return authorityService.getRoleMenus(roleCode, resolveTenantCode(tenantCode));
     }
 
     @PutMapping("/role-menus/{roleCode}")
     public Map<String, Object> replaceRoleMenus(@PathVariable String roleCode,
             @RequestParam(required = false) String tenantCode,
-            @RequestBody PlatformRoleMenuSaveRequestVO payload) throws Exception {
+            @RequestBody AuthorityMenuSaveRequestVO payload) throws Exception {
         if (payload == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
 
-        return platformRoleService.replaceRoleMenus(roleCode, resolveTenantCode(tenantCode), payload);
+        return authorityService.replaceRoleMenus(roleCode, resolveTenantCode(tenantCode), payload);
     }
 
     @GetMapping("/role-menu-candidates")
@@ -122,7 +122,7 @@ public class PlatformRoleApiController {
         String resolvedTenantCode = resolveTenantCode(tenantCode);
         Map<String, Object> result = new LinkedHashMap<String, Object>();
         result.put("tenantCode", resolvedTenantCode);
-        result.put("menuCodes", platformRoleService.listAllowedMenuCodesByTenantPlan(resolvedTenantCode));
+        result.put("menuCodes", authorityService.listAllowedMenuCodesByTenantPlan(resolvedTenantCode));
         return result;
     }
 
@@ -144,61 +144,54 @@ public class PlatformRoleApiController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자 권한 정보가 없습니다.");
         }
 
-        return platformRoleService.listUserMenus(roleCode.trim().toUpperCase());
+        return authorityService.listUserMenus(roleCode.trim().toUpperCase());
     }
 
     private void validatePage(int pageIndex, int pageSize) {
         if (pageIndex < 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "pageIndex는 1 이상이어야 합니다.");
         }
-        boolean allowed = false;
-        for (int allowedPageSize : ALLOWED_PAGE_SIZES) {
-            if (pageSize == allowedPageSize) {
-                allowed = true;
-                break;
+        if (pageSize < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "pageSize는 1 이상이어야 합니다.");
+        }
+        for (int allowed : ALLOWED_PAGE_SIZES) {
+            if (pageSize == allowed) {
+                return;
             }
         }
-        if (!allowed) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "pageSize는 10, 20, 50만 허용됩니다.");
-        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "pageSize는 " + String.join(", ", "10", "20", "50") + " 중 하나여야 합니다.");
     }
 
     private void validateSearchField(String searchField) {
-        if (!StringUtils.hasText(searchField)) {
+        if (searchField == null || searchField.isEmpty()) {
             return;
         }
-        String normalized = searchField.trim();
-        if (!"code".equals(normalized) && !"name".equals(normalized) && !"description".equals(normalized)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "searchField 값이 유효하지 않습니다.");
+        if (!searchField.equals("code") && !searchField.equals("name") && !searchField.equals("description")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "searchField는 code, name, description 중 하나여야 합니다.");
         }
     }
 
     private void validateUseAt(String useAt) {
-        if (!StringUtils.hasText(useAt)) {
+        if (useAt == null || useAt.isEmpty()) {
             return;
         }
-        String normalized = useAt.trim().toUpperCase();
-        if (!"Y".equals(normalized) && !"N".equals(normalized) && !"ALL".equals(normalized)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt 값이 유효하지 않습니다.");
+        if (!useAt.equals("Y") && !useAt.equals("N") && !useAt.equals("all")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt는 Y, N, all 중 하나여야 합니다.");
         }
     }
 
-    private String resolveTenantCode(String requestedTenantCode) {
-        if (StringUtils.hasText(requestedTenantCode)) {
-            return requestedTenantCode.trim().toUpperCase();
+    private String resolveTenantCode(String tenantCode) {
+        if (StringUtils.hasText(tenantCode)) {
+            return tenantCode.trim().toUpperCase();
         }
 
-        // Standalone controller tests and 일부 비인증 진입 경로에서는 인증 컨텍스트가 비어 있을 수 있다.
-        try {
-            Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
-            if (userDetails instanceof LoginVO) {
-                LoginVO loginVO = (LoginVO) userDetails;
-                if (StringUtils.hasText(loginVO.getTenantCode())) {
-                    return loginVO.getTenantCode().trim().toUpperCase();
-                }
+        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+        if (userDetails instanceof LoginVO) {
+            LoginVO loginVO = (LoginVO) userDetails;
+            String userTenantCode = loginVO.getTenantCode();
+            if (StringUtils.hasText(userTenantCode)) {
+                return userTenantCode.trim().toUpperCase();
             }
-        } catch (RuntimeException ignored) {
-            // 인증 컨텍스트가 없으면 플랫폼 기본 tenant로 fallback
         }
 
         return "PLATFORM";
