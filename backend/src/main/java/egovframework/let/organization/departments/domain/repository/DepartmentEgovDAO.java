@@ -1,4 +1,4 @@
-package egovframework.let.platforms.departments.domain.repository;
+package egovframework.let.organization.departments.domain.repository;
 
 import java.util.List;
 import java.util.Map;
@@ -6,8 +6,8 @@ import java.util.Map;
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 import org.springframework.stereotype.Repository;
 
-import egovframework.let.platforms.departments.domain.model.DepartmentSearchConditionVO;
-import egovframework.let.platforms.departments.domain.model.DepartmentVO;
+import egovframework.let.organization.departments.domain.model.DepartmentSearchConditionVO;
+import egovframework.let.organization.departments.domain.model.DepartmentVO;
 
 @Repository("departmentDAO")
 public class DepartmentEgovDAO extends EgovAbstractMapper implements DepartmentDAO {

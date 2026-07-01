@@ -1,10 +1,10 @@
-package egovframework.let.platforms.departments.domain.repository;
+package egovframework.let.organization.departments.domain.repository;
 
 import java.util.List;
 import java.util.Map;
 
-import egovframework.let.platforms.departments.domain.model.DepartmentSearchConditionVO;
-import egovframework.let.platforms.departments.domain.model.DepartmentVO;
+import egovframework.let.organization.departments.domain.model.DepartmentSearchConditionVO;
+import egovframework.let.organization.departments.domain.model.DepartmentVO;
 
 /**
  * 부서 관리 DAO

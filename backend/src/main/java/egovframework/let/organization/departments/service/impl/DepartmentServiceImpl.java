@@ -1,4 +1,4 @@
-package egovframework.let.platforms.departments.service.impl;
+package egovframework.let.organization.departments.service.impl;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,11 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
-import egovframework.let.platforms.departments.domain.model.DepartmentSaveRequestVO;
-import egovframework.let.platforms.departments.domain.model.DepartmentSearchConditionVO;
-import egovframework.let.platforms.departments.domain.model.DepartmentVO;
-import egovframework.let.platforms.departments.domain.repository.DepartmentDAO;
-import egovframework.let.platforms.departments.service.DepartmentService;
+import egovframework.let.organization.departments.domain.model.DepartmentSaveRequestVO;
+import egovframework.let.organization.departments.domain.model.DepartmentSearchConditionVO;
+import egovframework.let.organization.departments.domain.model.DepartmentVO;
+import egovframework.let.organization.departments.domain.repository.DepartmentDAO;
+import egovframework.let.organization.departments.service.DepartmentService;
 
 /**
  * 부서 관리 서비스 구현

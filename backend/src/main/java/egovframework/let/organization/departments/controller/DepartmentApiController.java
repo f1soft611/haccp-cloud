@@ -1,4 +1,4 @@
-package egovframework.let.platforms.departments.controller;
+package egovframework.let.organization.departments.controller;
 
 import java.util.List;
 
@@ -22,9 +22,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
-import egovframework.let.platforms.departments.domain.model.DepartmentSaveRequestVO;
-import egovframework.let.platforms.departments.domain.model.DepartmentVO;
-import egovframework.let.platforms.departments.service.DepartmentService;
+import egovframework.let.organization.departments.domain.model.DepartmentSaveRequestVO;
+import egovframework.let.organization.departments.domain.model.DepartmentVO;
+import egovframework.let.organization.departments.service.DepartmentService;
 import lombok.extern.slf4j.Slf4j;
 
 /**

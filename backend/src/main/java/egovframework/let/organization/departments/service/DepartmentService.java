@@ -1,9 +1,9 @@
-package egovframework.let.platforms.departments.service;
+package egovframework.let.organization.departments.service;
 
 import java.util.List;
 
-import egovframework.let.platforms.departments.domain.model.DepartmentSaveRequestVO;
-import egovframework.let.platforms.departments.domain.model.DepartmentVO;
+import egovframework.let.organization.departments.domain.model.DepartmentSaveRequestVO;
+import egovframework.let.organization.departments.domain.model.DepartmentVO;
 
 /**
  * 부서 관리 서비스

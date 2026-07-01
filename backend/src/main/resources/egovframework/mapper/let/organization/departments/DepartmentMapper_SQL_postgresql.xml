@@ -4,8 +4,8 @@
 
     <!-- 부서 목록 조회 (계층 포함) -->
     <select id="DepartmentDAO.selectDepartmentList"
-            parameterType="egovframework.let.platforms.departments.domain.model.DepartmentSearchConditionVO"
-            resultType="egovframework.let.platforms.departments.domain.model.DepartmentVO">
+            parameterType="egovframework.let.organization.departments.domain.model.DepartmentSearchConditionVO"
+            resultType="egovframework.let.organization.departments.domain.model.DepartmentVO">
         SELECT
             d.department_id                     AS departmentId,
             t.tenant_code                       AS tenantCode,
@@ -39,7 +39,7 @@
     <!-- 단건 조회 -->
     <select id="DepartmentDAO.selectDepartmentById"
             parameterType="map"
-            resultType="egovframework.let.platforms.departments.domain.model.DepartmentVO">
+            resultType="egovframework.let.organization.departments.domain.model.DepartmentVO">
         SELECT
             d.department_id                     AS departmentId,
             t.tenant_code                       AS tenantCode,

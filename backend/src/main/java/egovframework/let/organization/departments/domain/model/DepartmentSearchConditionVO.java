@@ -1,4 +1,4 @@
-package egovframework.let.platforms.departments.domain.model;
+package egovframework.let.organization.departments.domain.model;
 
 import java.io.Serializable;
 
