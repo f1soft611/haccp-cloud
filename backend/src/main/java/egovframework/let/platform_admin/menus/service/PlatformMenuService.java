@@ -1,4 +1,4 @@
-package egovframework.let.platforms.menus.service;
+package egovframework.let.platform_admin.menus.service;
 
 import java.util.List;
 import java.util.Map;

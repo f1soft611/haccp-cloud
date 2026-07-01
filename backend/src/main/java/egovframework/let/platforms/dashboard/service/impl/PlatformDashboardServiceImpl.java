@@ -13,9 +13,9 @@ import egovframework.let.platforms.dashboard.domain.model.PlatformDashboardCcpDo
 import egovframework.let.platforms.dashboard.domain.model.PlatformDashboardKpisVO;
 import egovframework.let.platforms.dashboard.domain.model.PlatformDashboardSearchConditionVO;
 import egovframework.let.platforms.dashboard.domain.model.PlatformDashboardTenantCodeIssuanceVO;
-import egovframework.let.platforms.tenants.service.PlatformTenantService;
-import egovframework.let.platforms.tenants.domain.model.PlatformTenantDashboardQueryVO;
-import egovframework.let.platforms.tenants.domain.model.PlatformTenantDashboardResultVO;
+import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
+import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardQueryVO;
+import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardResultVO;
 
 /**
  * 플랫폼 대시보드 서비스 구현체

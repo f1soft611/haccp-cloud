@@ -1,4 +1,4 @@
-package egovframework.let.platforms.tenants.service.impl;
+package egovframework.let.platform_admin.tenants.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,10 +16,10 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-import egovframework.let.platforms.tenants.domain.model.TenantRegistrationRequestVO;
-import egovframework.let.platforms.tenants.domain.model.TenantRegistrationResultVO;
-import egovframework.let.platforms.tenants.domain.repository.TenantInfoDAO;
-import egovframework.let.platforms.tenants.service.impl.PlatformTenantServiceImpl;
+import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationRequestVO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
+import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platform_admin.tenants.service.impl.PlatformTenantServiceImpl;
 
 class PlatformTenantServiceImplTest {
 

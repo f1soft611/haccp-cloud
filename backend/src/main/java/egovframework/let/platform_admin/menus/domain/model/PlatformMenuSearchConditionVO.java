@@ -1,4 +1,4 @@
-package egovframework.let.platforms.menus.domain.model;
+package egovframework.let.platform_admin.menus.domain.model;
 
 import java.io.Serializable;
 

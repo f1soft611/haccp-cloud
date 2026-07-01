@@ -1,4 +1,4 @@
-package egovframework.let.platforms.tenants.service.impl;
+package egovframework.let.platform_admin.tenants.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -22,11 +22,11 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import egovframework.let.platforms.tenants.domain.model.TenantAuthTokenVO;
-import egovframework.let.platforms.tenants.domain.model.TenantVerificationResponseVO;
-import egovframework.let.platforms.tenants.domain.repository.TenantAuthTokenDAO;
-import egovframework.let.platforms.tenants.domain.repository.TenantInfoDAO;
-import egovframework.let.platforms.tenants.service.TenantOnboardingService;
+import egovframework.let.platform_admin.tenants.domain.model.TenantAuthTokenVO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantVerificationResponseVO;
+import egovframework.let.platform_admin.tenants.domain.repository.TenantAuthTokenDAO;
+import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 
 /**
  * 테넌트 온보딩 서비스 통합 테스트

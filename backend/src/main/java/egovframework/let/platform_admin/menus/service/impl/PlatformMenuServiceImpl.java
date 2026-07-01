@@ -1,4 +1,4 @@
-package egovframework.let.platforms.menus.service.impl;
+package egovframework.let.platform_admin.menus.service.impl;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,8 +15,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.platforms.menus.domain.repository.PlatformMenuDAO;
-import egovframework.let.platforms.menus.service.PlatformMenuService;
+import egovframework.let.platform_admin.menus.domain.repository.PlatformMenuDAO;
+import egovframework.let.platform_admin.menus.service.PlatformMenuService;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 
 /**

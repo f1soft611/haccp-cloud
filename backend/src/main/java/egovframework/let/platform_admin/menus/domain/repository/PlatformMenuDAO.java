@@ -1,4 +1,4 @@
-package egovframework.let.platforms.menus.domain.repository;
+package egovframework.let.platform_admin.menus.domain.repository;
 
 import java.util.List;
 

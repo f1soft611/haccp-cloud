@@ -1,9 +1,9 @@
 package egovframework.let.uat.uia.service.impl;
 
 import egovframework.com.cmm.LoginVO;
-import egovframework.let.platforms.tenants.domain.model.TenantVO;
-import egovframework.let.platforms.tenants.domain.repository.TenantInfoDAO;
-import egovframework.let.platforms.tenants.context.TenantContextHolder;
+import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
+import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
 import egovframework.let.uat.uia.service.EgovLoginService;
 import egovframework.let.utl.fcc.service.EgovNumberUtil;
 import egovframework.let.utl.fcc.service.EgovStringUtil;

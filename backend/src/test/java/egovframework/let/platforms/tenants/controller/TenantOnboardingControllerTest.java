@@ -1,9 +1,9 @@
-package egovframework.let.platforms.tenants.controller;
+package egovframework.let.platform_admin.tenants.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import egovframework.let.platforms.tenants.domain.model.TenantOnboardingCompleteRequestVO;
-import egovframework.let.platforms.tenants.domain.model.TenantVerificationResponseVO;
-import egovframework.let.platforms.tenants.service.TenantOnboardingService;
+import egovframework.let.platform_admin.tenants.domain.model.TenantOnboardingCompleteRequestVO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantVerificationResponseVO;
+import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.Test;

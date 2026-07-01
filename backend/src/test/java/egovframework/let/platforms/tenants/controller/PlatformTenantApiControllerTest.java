@@ -1,4 +1,4 @@
-package egovframework.let.platforms.tenants.controller;
+package egovframework.let.platform_admin.tenants.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -23,10 +23,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.ResultVoHelper;
-import egovframework.let.platforms.tenants.controller.PlatformTenantApiController;
-import egovframework.let.platforms.tenants.domain.model.SampleTenantVO;
-import egovframework.let.platforms.tenants.domain.model.TenantRegistrationResultVO;
-import egovframework.let.platforms.tenants.service.PlatformTenantService;
+import egovframework.let.platform_admin.tenants.controller.PlatformTenantApiController;
+import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
+import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
 
 class PlatformTenantApiControllerTest {
 

@@ -3,7 +3,7 @@ package egovframework.com.security;
 import egovframework.com.cmm.filter.HTMLTagFilter;
 import egovframework.com.jwt.JwtAuthenticationEntryPoint;
 import egovframework.com.jwt.JwtAuthenticationFilter;
-import egovframework.let.platforms.tenants.context.TenantContextFilter;
+import egovframework.let.platform_admin.tenants.context.TenantContextFilter;
 
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.context.annotation.Bean;

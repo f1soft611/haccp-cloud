@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="TenantAuthTokenDAO">
 
-    <insert id="insertToken" parameterType="egovframework.let.platforms.tenants.domain.model.TenantAuthTokenVO">
+    <insert id="insertToken" parameterType="egovframework.let.platform_admin.tenants.domain.model.TenantAuthTokenVO">
         INSERT INTO tb_tenant_auth_token (
             tenant_id, login_account_id, tenant_code, auth_token, token_type, expires_at, created_at
         ) VALUES (
@@ -10,7 +10,7 @@
         )
     </insert>
 
-    <select id="selectTokenByValue" parameterType="string" resultType="egovframework.let.platforms.tenants.domain.model.TenantAuthTokenVO">
+    <select id="selectTokenByValue" parameterType="string" resultType="egovframework.let.platform_admin.tenants.domain.model.TenantAuthTokenVO">
         SELECT
             auth_token_id AS authTokenId,
             tenant_id AS tenantId,
@@ -31,7 +31,7 @@
         WHERE auth_token = #{authToken}
     </update>
 
-    <select id="selectActiveTokenByTenantCode" parameterType="string" resultType="egovframework.let.platforms.tenants.domain.model.TenantAuthTokenVO">
+    <select id="selectActiveTokenByTenantCode" parameterType="string" resultType="egovframework.let.platform_admin.tenants.domain.model.TenantAuthTokenVO">
         SELECT
             auth_token_id AS authTokenId,
             tenant_id AS tenantId,

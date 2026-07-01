@@ -3,7 +3,7 @@
 <mapper namespace="TenantInfoDAO">
 
     <!-- 업체 대시보드 item resultMap -->
-    <resultMap id="platformTenantDashboardItemResultMap" type="egovframework.let.platforms.tenants.domain.model.PlatformTenantDashboardItemVO">
+    <resultMap id="platformTenantDashboardItemResultMap" type="egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO">
         <result property="tenantCode" column="tenant_code"/>
         <result property="companyName" column="company_name"/>
         <result property="adminName" column="admin_name"/>
@@ -17,7 +17,7 @@
     </resultMap>
 
     <!-- 최근 테넌트 resultMap -->
-    <resultMap id="sampleTenantResultMap" type="egovframework.let.platforms.tenants.domain.model.SampleTenantVO">
+    <resultMap id="sampleTenantResultMap" type="egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO">
         <result property="tenantCode" column="tenant_code"/>
         <result property="companyName" column="company_name"/>
         <result property="businessRegistrationNumber" column="business_registration_number"/>

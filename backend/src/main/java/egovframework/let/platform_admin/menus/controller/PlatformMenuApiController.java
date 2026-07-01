@@ -1,4 +1,4 @@
-package egovframework.let.platforms.menus.controller;
+package egovframework.let.platform_admin.menus.controller;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.platforms.menus.service.PlatformMenuService;
+import egovframework.let.platform_admin.menus.service.PlatformMenuService;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import lombok.RequiredArgsConstructor;
 
