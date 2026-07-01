@@ -20,7 +20,7 @@ import egovframework.com.cmm.service.ResultVO;
 import egovframework.let.organization.authorities.domain.repository.AuthorityDAO;
 import egovframework.let.organization.authorities.service.AuthorityService;
 import egovframework.let.organization.authorities.domain.model.AuthorityMenuSaveRequestVO;
-import egovframework.let.platforms.access.service.PlanAccessService;
+import egovframework.let.platform_admin.access.service.PlanAccessService;
 import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.RoleMenuPermissionVO;

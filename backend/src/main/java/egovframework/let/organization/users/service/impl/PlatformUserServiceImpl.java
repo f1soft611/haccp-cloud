@@ -21,7 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.platforms.access.service.PlanAccessService;
+import egovframework.let.platform_admin.access.service.PlanAccessService;
 import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
 import egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO;
 import egovframework.let.organization.users.domain.model.PlatformUserVO;

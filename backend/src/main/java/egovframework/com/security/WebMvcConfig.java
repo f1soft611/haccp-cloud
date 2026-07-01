@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import egovframework.com.config.HtmlCharacterEscapes;
-import egovframework.let.platforms.access.web.PlanAccessInterceptor;
+import egovframework.let.platform_admin.access.web.PlanAccessInterceptor;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
