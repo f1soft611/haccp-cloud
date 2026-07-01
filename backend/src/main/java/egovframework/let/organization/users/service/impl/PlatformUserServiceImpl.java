@@ -1,4 +1,4 @@
-package egovframework.let.platforms.users.service.impl;
+package egovframework.let.organization.users.service.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,11 +22,11 @@ import org.springframework.web.server.ResponseStatusException;
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.let.platforms.access.service.PlanAccessService;
-import egovframework.let.platforms.users.domain.model.PlatformUserSaveRequestVO;
-import egovframework.let.platforms.users.domain.model.PlatformUserSearchConditionVO;
-import egovframework.let.platforms.users.domain.model.PlatformUserVO;
-import egovframework.let.platforms.users.domain.repository.PlatformUserDAO;
-import egovframework.let.platforms.users.service.PlatformUserService;
+import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
+import egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO;
+import egovframework.let.organization.users.domain.model.PlatformUserVO;
+import egovframework.let.organization.users.domain.repository.PlatformUserDAO;
+import egovframework.let.organization.users.service.PlatformUserService;
 import egovframework.let.utl.sim.service.EgovFileScrty;
 
 @Service("platformUserService")

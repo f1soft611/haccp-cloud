@@ -1,4 +1,4 @@
-package egovframework.let.platforms.users.domain.repository;
+package egovframework.let.organization.users.domain.repository;
 
 import java.util.List;
 import java.util.Map;
@@ -6,8 +6,8 @@ import java.util.Map;
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 import org.springframework.stereotype.Repository;
 
-import egovframework.let.platforms.users.domain.model.PlatformUserSearchConditionVO;
-import egovframework.let.platforms.users.domain.model.PlatformUserVO;
+import egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO;
+import egovframework.let.organization.users.domain.model.PlatformUserVO;
 
 @Repository("platformUserDAO")
 public class PlatformUserEgovDAO extends EgovAbstractMapper implements PlatformUserDAO {

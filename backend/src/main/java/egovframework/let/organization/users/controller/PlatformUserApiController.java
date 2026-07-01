@@ -1,4 +1,4 @@
-package egovframework.let.platforms.users.controller;
+package egovframework.let.organization.users.controller;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,9 +23,9 @@ import org.springframework.web.server.ResponseStatusException;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
-import egovframework.let.platforms.users.domain.model.PlatformUserSaveRequestVO;
-import egovframework.let.platforms.users.domain.model.PlatformUserVO;
-import egovframework.let.platforms.users.service.PlatformUserService;
+import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
+import egovframework.let.organization.users.domain.model.PlatformUserVO;
+import egovframework.let.organization.users.service.PlatformUserService;
 import lombok.RequiredArgsConstructor;
 
 @RestController

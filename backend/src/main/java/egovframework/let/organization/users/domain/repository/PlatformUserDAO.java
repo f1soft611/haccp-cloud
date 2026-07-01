@@ -1,11 +1,11 @@
-package egovframework.let.platforms.users.domain.repository;
+package egovframework.let.organization.users.domain.repository;
 
 import java.util.List;
 import java.util.Map;
 
-import egovframework.let.platforms.users.domain.model.PlatformUserSaveRequestVO;
-import egovframework.let.platforms.users.domain.model.PlatformUserSearchConditionVO;
-import egovframework.let.platforms.users.domain.model.PlatformUserVO;
+import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
+import egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO;
+import egovframework.let.organization.users.domain.model.PlatformUserVO;
 
 public interface PlatformUserDAO {
 

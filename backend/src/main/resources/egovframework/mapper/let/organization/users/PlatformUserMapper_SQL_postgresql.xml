@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="PlatformUserDAO">
 
-    <select id="PlatformUserDAO.selectUserList" parameterType="egovframework.let.platforms.users.domain.model.PlatformUserSearchConditionVO" resultType="egovframework.let.platforms.users.domain.model.PlatformUserVO">
+    <select id="PlatformUserDAO.selectUserList" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultType="egovframework.let.organization.users.domain.model.PlatformUserVO">
         SELECT
             u.user_id AS userId,
             la.login_id AS loginId,
@@ -32,7 +32,7 @@
         ORDER BY u.created_at DESC, u.user_id DESC
     </select>
 
-    <select id="PlatformUserDAO.selectUserPagedList" parameterType="egovframework.let.platforms.users.domain.model.PlatformUserSearchConditionVO" resultType="egovframework.let.platforms.users.domain.model.PlatformUserVO">
+    <select id="PlatformUserDAO.selectUserPagedList" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultType="egovframework.let.organization.users.domain.model.PlatformUserVO">
         SELECT *
         FROM (
             SELECT
@@ -80,7 +80,7 @@
         ORDER BY rn
     </select>
 
-    <select id="PlatformUserDAO.selectUserPagedCount" parameterType="egovframework.let.platforms.users.domain.model.PlatformUserSearchConditionVO" resultType="int">
+    <select id="PlatformUserDAO.selectUserPagedCount" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultType="int">
         SELECT COUNT(1)
         FROM (
             SELECT 1
@@ -109,7 +109,7 @@
         ) counted
     </select>
 
-    <select id="PlatformUserDAO.selectUserDetail" parameterType="map" resultType="egovframework.let.platforms.users.domain.model.PlatformUserVO">
+    <select id="PlatformUserDAO.selectUserDetail" parameterType="map" resultType="egovframework.let.organization.users.domain.model.PlatformUserVO">
         SELECT
             u.user_id AS userId,
             la.login_id AS loginId,

@@ -1,4 +1,4 @@
-package egovframework.let.platforms.users.domain.model;
+package egovframework.let.organization.users.domain.model;
 
 import java.io.Serializable;
 import java.util.List;

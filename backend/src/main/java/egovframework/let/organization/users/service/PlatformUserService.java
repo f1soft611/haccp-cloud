@@ -1,10 +1,10 @@
-package egovframework.let.platforms.users.service;
+package egovframework.let.organization.users.service;
 
 import java.util.List;
 
 import egovframework.com.cmm.service.ResultVO;
-import egovframework.let.platforms.users.domain.model.PlatformUserSaveRequestVO;
-import egovframework.let.platforms.users.domain.model.PlatformUserVO;
+import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
+import egovframework.let.organization.users.domain.model.PlatformUserVO;
 
 /**
  * 플랫폼 사용자 서비스
