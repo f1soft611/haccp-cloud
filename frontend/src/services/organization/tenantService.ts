@@ -127,6 +127,8 @@ export type TenantOnboardingCompleteRequest = {
 };
 
 type IssueTenantCodePayload = Partial<IssueTenantCodeResponse> & {
+  tenantCode?: string;
+  tenant_code?: string;
   tenantNm?: string;
   tenant_nm?: string;
   companyName?: string;
