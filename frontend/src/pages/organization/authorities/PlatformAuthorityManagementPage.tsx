@@ -19,6 +19,7 @@ import {
 } from '../../../services/platform-admin/platformRoleService';
 import {
   getPlatformRoleMenuMapping,
+  listRoleMenuCandidatesByTenant,
   savePlatformRoleMenuMapping,
 } from '../../../services/platform-admin/platformRoleMenuService';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
@@ -109,6 +110,14 @@ export function PlatformAuthorityManagementPage() {
     retry: false,
   });
 
+  const resolvedTenantCode = tenantCode?.trim().toUpperCase() || 'PLATFORM';
+
+  const menuCandidatesQuery = useQuery({
+    queryKey: ['platform-admin', 'role-menu-candidates', resolvedTenantCode],
+    queryFn: () => listRoleMenuCandidatesByTenant(resolvedTenantCode),
+    retry: false,
+  });
+
   const effectiveRoleIdentifier = selectedRole?.id ?? '';
 
   const mappingQuery = useQuery({
@@ -129,10 +138,26 @@ export function PlatformAuthorityManagementPage() {
     [rolesQuery.data?.items],
   );
 
-  const selectedMenuIds = useMemo(
-    () => draftMenuIds ?? mappingQuery.data?.menuIds ?? [],
-    [draftMenuIds, mappingQuery.data?.menuIds],
+  const candidateCodeSet = useMemo(
+    () => new Set(menuCandidatesQuery.data ?? []),
+    [menuCandidatesQuery.data],
   );
+
+  const filteredMenus = useMemo(
+    () =>
+      (menusQuery.data ?? []).filter((menu) => {
+        const menuCode = menu.menuCode?.trim().toUpperCase() || '';
+        return menuCode.length > 0 && candidateCodeSet.has(menuCode);
+      }),
+    [candidateCodeSet, menusQuery.data],
+  );
+
+  const selectedMenuIds = useMemo(() => {
+    const base = draftMenuIds ?? mappingQuery.data?.menuIds ?? [];
+    return base
+      .map((menuId) => menuId.trim().toUpperCase())
+      .filter((menuId) => candidateCodeSet.has(menuId));
+  }, [candidateCodeSet, draftMenuIds, mappingQuery.data?.menuIds]);
 
   const currentPageMenu = useMemo(
     () =>
@@ -449,11 +474,15 @@ export function PlatformAuthorityManagementPage() {
       <PlatformAuthorityMenuMappingDialog
         open={mappingModalOpen}
         role={selectedRole}
-        menus={menusQuery.data ?? []}
+        menus={filteredMenus}
         selectedMenuIds={selectedMenuIds}
-        loading={mappingQuery.isLoading || menusQuery.isLoading}
+        loading={
+          mappingQuery.isLoading ||
+          menusQuery.isLoading ||
+          menuCandidatesQuery.isLoading
+        }
         saving={saveMutation.isPending}
-        error={mappingQuery.isError}
+        error={mappingQuery.isError || menuCandidatesQuery.isError}
         onChangeSelected={setDraftMenuIds}
         onSave={handleSaveMapping}
         onClose={handleCloseMappingModal}

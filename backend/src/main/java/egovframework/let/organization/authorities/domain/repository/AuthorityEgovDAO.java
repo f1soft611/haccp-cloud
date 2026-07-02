@@ -42,6 +42,11 @@ public class AuthorityEgovDAO extends EgovAbstractMapper implements AuthorityDAO
         return count == null ? 0 : count;
     }
 
+    @Override
+    public RoleInfoVO selectRoleById(Long roleId) throws Exception {
+        return selectOne("AuthorityDAO.selectRoleById", roleId);
+    }
+
     /**
      * 역할을 등록한다.
      */

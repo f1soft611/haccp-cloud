@@ -8,6 +8,7 @@ const {
   listPlatformRolesMock,
   listCommonPlatformMenusMock,
   getPlatformRoleMenuMappingMock,
+  listRoleMenuCandidatesByTenantMock,
   savePlatformRoleMenuMappingMock,
 } = vi.hoisted(() => ({
   listPlatformRolesMock: vi.fn(async () => [
@@ -43,6 +44,9 @@ const {
     roleCode: roleIdentifier,
     menuIds: ['MENU_AUTHORITY_MANAGEMENT'],
   })),
+  listRoleMenuCandidatesByTenantMock: vi.fn(async () => [
+    'MENU_AUTHORITY_MANAGEMENT',
+  ]),
   savePlatformRoleMenuMappingMock: vi.fn(async (payload) => payload),
 }));
 
@@ -56,6 +60,7 @@ vi.mock('../services/platform-admin/platformMenuService', () => ({
 
 vi.mock('../services/platform-admin/platformRoleMenuService', () => ({
   getPlatformRoleMenuMapping: getPlatformRoleMenuMappingMock,
+  listRoleMenuCandidatesByTenant: listRoleMenuCandidatesByTenantMock,
   savePlatformRoleMenuMapping: savePlatformRoleMenuMappingMock,
 }));
 
@@ -87,16 +92,18 @@ describe('PlatformRoleMenuManagementPage', () => {
     listPlatformRolesMock.mockClear();
     listCommonPlatformMenusMock.mockClear();
     getPlatformRoleMenuMappingMock.mockClear();
+    listRoleMenuCandidatesByTenantMock.mockClear();
     savePlatformRoleMenuMappingMock.mockClear();
   });
 
-  it('uses the common menu endpoint and role ids for mapping selection', async () => {
+  it('uses tenant plan menu candidates and role ids for mapping selection', async () => {
     renderPage();
 
     expect(
       await screen.findByRole('button', { name: '플랫폼 관리자' }),
     ).toBeInTheDocument();
     expect(listCommonPlatformMenusMock).toHaveBeenCalledTimes(1);
+    expect(listRoleMenuCandidatesByTenantMock).toHaveBeenCalledWith('000001');
     expect(getPlatformRoleMenuMappingMock).toHaveBeenCalledWith(
       'PR-1',
       '000001',

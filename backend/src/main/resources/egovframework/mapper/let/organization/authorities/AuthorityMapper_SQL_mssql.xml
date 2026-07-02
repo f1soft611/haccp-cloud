@@ -15,7 +15,10 @@
                 ELSE 3
             END AS roleLevel,
             'Y' AS tenantScoped,
+            'PLATFORM' AS tenantCode,
             r.use_at AS useAt,
+            ISNULL(r.is_system_role, 'N') AS systemRoleYn,
+            CASE WHEN ISNULL(r.is_system_role, 'N') = 'Y' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS systemRole,
             r.created_at AS frstRegistPnttm,
             'SYSTEM' AS frstRegisterId,
             r.updated_at AS lastUpdtPnttm,
@@ -37,7 +40,10 @@
                 ELSE 3
             END AS roleLevel,
             'Y' AS tenantScoped,
+            'PLATFORM' AS tenantCode,
             r.use_at AS useAt,
+            ISNULL(r.is_system_role, 'N') AS systemRoleYn,
+            CASE WHEN ISNULL(r.is_system_role, 'N') = 'Y' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS systemRole,
             r.created_at AS frstRegistPnttm,
             'SYSTEM' AS frstRegisterId,
             r.updated_at AS lastUpdtPnttm,
@@ -88,6 +94,31 @@
         </if>
     </select>
 
+    <select id="AuthorityDAO.selectRoleById" parameterType="long" resultType="egovframework.let.uss.auth.service.RoleInfoVO">
+        SELECT TOP 1
+            r.role_id AS roleId,
+            r.role_code AS roleCode,
+            r.role_nm AS roleNm,
+            CAST(NULL AS varchar) AS roleDc,
+            CASE
+                WHEN r.role_code = 'PLATFORM_ADMIN' THEN 1
+                WHEN r.role_code = 'TENANT_ADMIN' THEN 2
+                ELSE 3
+            END AS roleLevel,
+            'Y' AS tenantScoped,
+            'PLATFORM' AS tenantCode,
+            r.use_at AS useAt,
+            ISNULL(r.is_system_role, 'N') AS systemRoleYn,
+            CASE WHEN ISNULL(r.is_system_role, 'N') = 'Y' THEN CAST(1 AS bit) ELSE CAST(0 AS bit) END AS systemRole,
+            r.created_at AS frstRegistPnttm,
+            'SYSTEM' AS frstRegisterId,
+            r.updated_at AS lastUpdtPnttm,
+            'SYSTEM' AS lastUpdusrId
+        FROM tb_role r
+        WHERE r.role_id = #{value}
+        ORDER BY r.role_id
+    </select>
+
     <!-- 권한 등록 -->
     <insert id="AuthorityDAO.insertRole" parameterType="egovframework.let.uss.auth.service.RoleInfoVO">
         INSERT INTO tb_role (
@@ -95,6 +126,7 @@
             role_code,
             role_nm,
             use_at,
+            is_system_role,
             created_at,
             updated_at
         ) VALUES (
@@ -102,6 +134,7 @@
             #{roleCode},
             #{roleNm},
             #{useAt},
+            ISNULL(#{systemRoleYn}, 'N'),
             GETDATE(),
             GETDATE()
         )

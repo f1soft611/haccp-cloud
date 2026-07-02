@@ -17,6 +17,7 @@ const {
   updatePlatformRoleStatusMock,
   listPlatformRolesPagedMock,
   listCommonPlatformMenusMock,
+  listRoleMenuCandidatesByTenantMock,
   getPlatformRoleMenuMappingMock,
   savePlatformRoleMenuMappingMock,
 } = vi.hoisted(() => ({
@@ -54,6 +55,7 @@ const {
         code: 'PLATFORM_ADMIN',
         name: '플랫폼 관리자',
         description: '플랫폼 운영 권한',
+        systemRole: true,
         active: true,
         updatedBy: 'platform_admin',
         updatedAt: '2026-06-18T09:00:00.000Z',
@@ -63,6 +65,7 @@ const {
         code: 'TENANT_ADMIN',
         name: '업체 관리자',
         description: '업체 운영 권한',
+        systemRole: false,
         active: true,
         updatedBy: 'platform_admin',
         updatedAt: '2026-06-18T09:00:00.000Z',
@@ -140,6 +143,10 @@ const {
         ? ['MENU_LOGIN_HISTORY']
         : ['MENU_DASHBOARD', 'MENU_DASHBOARD_STATS'],
   })),
+  listRoleMenuCandidatesByTenantMock: vi.fn(async () => [
+    'MENU_DASHBOARD',
+    'MENU_DASHBOARD_STATS',
+  ]),
   savePlatformRoleMenuMappingMock: vi.fn(async (payload) => payload),
 }));
 
@@ -155,6 +162,7 @@ vi.mock('../services/platform-admin/platformMenuService', () => ({
 }));
 
 vi.mock('../services/platform-admin/platformRoleMenuService', () => ({
+  listRoleMenuCandidatesByTenant: listRoleMenuCandidatesByTenantMock,
   getPlatformRoleMenuMapping: getPlatformRoleMenuMappingMock,
   savePlatformRoleMenuMapping: savePlatformRoleMenuMappingMock,
 }));
@@ -196,6 +204,7 @@ describe('PlatformAuthorityManagementPage', () => {
           code: 'PLATFORM_ADMIN',
           name: '플랫폼 관리자',
           description: '플랫폼 운영 권한',
+          systemRole: true,
           active: true,
           updatedBy: 'platform_admin',
           updatedAt: '2026-06-18T09:00:00.000Z',
@@ -205,6 +214,7 @@ describe('PlatformAuthorityManagementPage', () => {
           code: 'TENANT_ADMIN',
           name: '업체 관리자',
           description: '업체 운영 권한',
+          systemRole: false,
           active: true,
           updatedBy: 'platform_admin',
           updatedAt: '2026-06-18T09:00:00.000Z',
@@ -223,6 +233,12 @@ describe('PlatformAuthorityManagementPage', () => {
             : ['MENU_DASHBOARD', 'MENU_DASHBOARD_STATS'],
       }),
     );
+
+    listRoleMenuCandidatesByTenantMock.mockReset();
+    listRoleMenuCandidatesByTenantMock.mockResolvedValue([
+      'MENU_DASHBOARD',
+      'MENU_DASHBOARD_STATS',
+    ]);
   });
 
   it('renders authority rows and opens create/edit dialogs', async () => {
@@ -287,7 +303,15 @@ describe('PlatformAuthorityManagementPage', () => {
       ).not.toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: '권한 수정' })[0]);
+    expect(
+      screen.getAllByRole('button', { name: '권한 수정' })[0],
+    ).toBeDisabled();
+
+    await waitFor(() => {
+      expect(screen.getAllByText('시스템').length).toBeGreaterThan(0);
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: '권한 수정' })[1]);
     expect(await screen.findByText('권한 수정')).toBeInTheDocument();
     const editDialog = screen.getByRole('dialog', { name: /권한 수정/ });
     const editTextboxes = within(editDialog).getAllByRole('textbox');
@@ -300,8 +324,8 @@ describe('PlatformAuthorityManagementPage', () => {
     await waitFor(() => {
       expect(updatePlatformRoleMock.mock.calls[0]?.[0]).toEqual(
         expect.objectContaining({
-          id: 'PR-1',
-          code: 'PLATFORM_ADMIN',
+          id: 'PR-2',
+          code: 'TENANT_ADMIN',
           name: '플랫폼 총괄 관리자',
         }),
       );
@@ -332,9 +356,19 @@ describe('PlatformAuthorityManagementPage', () => {
 
     expect(await screen.findByText('권한별 메뉴 매핑')).toBeInTheDocument();
 
+    await waitFor(() => {
+      expect(listRoleMenuCandidatesByTenantMock).toHaveBeenCalledWith('000001');
+    });
+
     const mappingDialog = screen.getByRole('dialog', {
       name: /권한별 메뉴 매핑/,
     });
+
+    expect(
+      within(mappingDialog).queryByRole('checkbox', {
+        name: '로그인 이력 (/platform/login-history)',
+      }),
+    ).not.toBeInTheDocument();
     const dashboardParentCheckbox = await within(mappingDialog).findByRole(
       'checkbox',
       {
@@ -368,11 +402,14 @@ describe('PlatformAuthorityManagementPage', () => {
           menuIds: expect.arrayContaining([
             'MENU_DASHBOARD',
             'MENU_DASHBOARD_STATS',
-            'MENU_LOGIN_HISTORY',
           ]),
         }),
       );
     });
+
+    expect(
+      savePlatformRoleMenuMappingMock.mock.calls[0]?.[0].menuIds,
+    ).not.toContain('MENU_LOGIN_HISTORY');
   });
 
   it('applies page size to the paged role query', async () => {

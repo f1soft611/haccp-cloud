@@ -5,12 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Properties;
 
 import javax.mail.Session;
@@ -25,6 +29,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import egovframework.let.organization.authorities.domain.model.AuthorityMenuSaveRequestVO;
+import egovframework.let.organization.authorities.service.AuthorityService;
+import egovframework.let.organization.users.domain.repository.PlatformUserDAO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantOnboardingCompleteRequestVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantAuthTokenVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVerificationResponseVO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantAuthTokenDAO;
@@ -52,6 +60,12 @@ class TenantOnboardingServiceImplTest {
 
     @MockBean
     private PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private PlatformUserDAO platformUserDAO;
+
+    @MockBean
+    private AuthorityService authorityService;
 
     @DisplayName("정상적으로 인증 이메일을 발송하면 토큰 저장, 상태 업데이트, 메일 발송이 수행된다")
     @Test
@@ -169,4 +183,63 @@ class TenantOnboardingServiceImplTest {
         verify(tenantInfoDAO, times(1)).updateOnboardingStatusByTenantCode(tenantCode, "EMAIL_SENT");
         verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
+
+        @DisplayName("온보딩 완료 시 테넌트 관리자 권한/메뉴를 자동 구성한다")
+        @Test
+        void completeOnboarding_ProvisionsTenantAdminAuthorityAndPlanMenus() throws Exception {
+        // Given
+        String tenantCode = "TEST_TENANT";
+        String authToken = "token-value";
+        Long loginAccountId = 101L;
+        Long tenantId = 100L;
+
+        TenantAuthTokenVO tokenVO = TenantAuthTokenVO.builder()
+            .authToken(authToken)
+            .tenantCode(tenantCode)
+            .loginAccountId(loginAccountId)
+            .expiresAt(LocalDateTime.now().plusHours(1))
+            .usedAt(null)
+            .build();
+
+        TenantOnboardingCompleteRequestVO requestVO = new TenantOnboardingCompleteRequestVO();
+        requestVO.setTenantCode(tenantCode);
+        requestVO.setAuthToken(authToken);
+        requestVO.setPassword("Welcome123!");
+
+        when(tenantAuthTokenDAO.selectTokenByValue(authToken)).thenReturn(tokenVO);
+        when(tenantInfoDAO.selectTenantIdByCode(tenantCode)).thenReturn(tenantId);
+        when(tenantInfoDAO.selectLoginCodeByLoginAccountId(loginAccountId)).thenReturn("tenant.admin");
+        when(tenantInfoDAO.updateLoginAccountPasswordAndActivate(
+            eq(loginAccountId),
+            any(String.class),
+            eq("SHA-512"),
+            eq("Y"),
+            eq("FIRST_SETUP_COMPLETED")))
+            .thenReturn(1);
+
+        when(tenantInfoDAO.selectAdminEmailByTenantCode(tenantCode)).thenReturn("admin@test.com");
+        when(tenantInfoDAO.selectTenantNameByCode(tenantCode)).thenReturn("테스트업체");
+
+        when(platformUserDAO.selectRoleIdByCode(anyMap()))
+            .thenReturn(11L, 12L);
+        when(platformUserDAO.selectUserIdByLoginId(any(HashMap.class))).thenReturn(null);
+
+        when(authorityService.listAllowedMenuCodesByTenantPlan(tenantCode))
+            .thenReturn(Arrays.asList("MENU_TENANT_DOCUMENTS", "MENU_TENANT_DEPARTMENTS"));
+        when(authorityService.replaceRoleMenus(eq("TENANT_ADMIN"), eq(tenantCode), any(AuthorityMenuSaveRequestVO.class)))
+            .thenReturn(new HashMap<String, Object>());
+        when(authorityService.replaceRoleMenus(eq("TENANT_USER"), eq(tenantCode), any(AuthorityMenuSaveRequestVO.class)))
+            .thenReturn(new HashMap<String, Object>());
+
+        // When
+        tenantOnboardingService.completeOnboarding(requestVO);
+
+        // Then
+        verify(platformUserDAO, times(1)).insertUser(any(HashMap.class));
+        verify(platformUserDAO, times(1)).deleteLoginAccountRolesByLoginId(loginAccountId);
+        verify(platformUserDAO, times(1)).insertLoginAccountRole(any(HashMap.class));
+        verify(authorityService, times(1)).replaceRoleMenus(eq("TENANT_ADMIN"), eq(tenantCode), any(AuthorityMenuSaveRequestVO.class));
+        verify(authorityService, times(1)).replaceRoleMenus(eq("TENANT_USER"), eq(tenantCode), any(AuthorityMenuSaveRequestVO.class));
+        verify(authorityService, never()).createRole(any());
+        }
 }

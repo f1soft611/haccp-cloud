@@ -7,6 +7,7 @@ import { listCommonPlatformMenus } from '../../../services/platform-admin/platfo
 import { listPlatformRoles } from '../../../services/platform-admin/platformRoleService';
 import {
   getPlatformRoleMenuMapping,
+  listRoleMenuCandidatesByTenant,
   savePlatformRoleMenuMapping,
 } from '../../../services/platform-admin/platformRoleMenuService';
 import { useAuthStore } from '../../../shared/store/authStore';
@@ -27,6 +28,13 @@ export function PlatformRoleMenuManagementPage() {
     queryFn: listCommonPlatformMenus,
   });
 
+  const resolvedTenantCode = tenantCode?.trim().toUpperCase() || 'PLATFORM';
+
+  const menuCandidatesQuery = useQuery({
+    queryKey: ['platform-admin', 'role-menu-candidates', resolvedTenantCode],
+    queryFn: () => listRoleMenuCandidatesByTenant(resolvedTenantCode),
+  });
+
   const effectiveRoleId = selectedRoleId || rolesQuery.data?.[0]?.id || '';
 
   const mappingQuery = useQuery({
@@ -36,6 +44,12 @@ export function PlatformRoleMenuManagementPage() {
   });
 
   const selectedMenuIds = draftMenuIds ?? mappingQuery.data?.menuIds ?? [];
+
+  const candidateCodeSet = new Set(menuCandidatesQuery.data ?? []);
+  const filteredMenus = (menusQuery.data ?? []).filter((menu) => {
+    const menuCode = menu.menuCode?.trim().toUpperCase() || '';
+    return menuCode.length > 0 && candidateCodeSet.has(menuCode);
+  });
 
   const saveMutation = useMutation({
     mutationFn: savePlatformRoleMenuMapping,
@@ -81,7 +95,7 @@ export function PlatformRoleMenuManagementPage() {
 
       <RoleMenuMappingPanel
         roles={rolesQuery.data ?? []}
-        menus={menusQuery.data ?? []}
+        menus={filteredMenus}
         selectedRoleId={effectiveRoleId}
         selectedMenuIds={selectedMenuIds}
         submitting={saveMutation.isPending}

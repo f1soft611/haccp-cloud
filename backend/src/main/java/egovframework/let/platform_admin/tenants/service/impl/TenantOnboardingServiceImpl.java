@@ -1,6 +1,10 @@
 package egovframework.let.platform_admin.tenants.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +24,10 @@ import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
 import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 import egovframework.let.platform_admin.tenants.service.exception.MailAuthenticationFailureException;
 import egovframework.let.platform_admin.tenants.service.exception.MailConfigurationException;
+import egovframework.let.organization.authorities.domain.model.AuthorityMenuSaveRequestVO;
+import egovframework.let.organization.authorities.service.AuthorityService;
+import egovframework.let.organization.users.domain.repository.PlatformUserDAO;
+import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.utl.sim.service.EgovFileScrty;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,6 +46,12 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
 
     @Autowired
     private TenantInfoDAO tenantInfoDAO;
+
+    @Autowired
+    private PlatformUserDAO platformUserDAO;
+
+    @Autowired
+    private AuthorityService authorityService;
 
     @Autowired(required = false)
     private JavaMailSender javaMailSender;
@@ -162,7 +176,7 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             throw new IllegalArgumentException("필수 항목이 누락되었습니다");
         }
 
-        String tenantCode = requestVO.getTenantCode().trim();
+        String tenantCode = normalizeStorageTenantCode(requestVO.getTenantCode());
         String authToken = requestVO.getAuthToken().trim();
         String password = requestVO.getPassword();
         String loginDomain = normalizeDomain(requestVO.getLoginDomain());
@@ -216,6 +230,8 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             throw new IllegalStateException("로그인 계정이 존재하지 않습니다");
         }
 
+        provisionTenantAuthorityForOnboarding(tenantCode, tenantId, loginAccountId);
+
         if (requestVO.getPhoneNumber() != null) {
             tenantInfoDAO.updateUserMobileNoByLoginAccountId(loginAccountId, requestVO.getPhoneNumber());
         }
@@ -237,6 +253,144 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         tenantAuthTokenDAO.markTokenAsUsed(authToken);
 
         log.info("온보딩 완료: tenantCode={}, loginAccountId={}", tenantCode, loginAccountId);
+    }
+
+    private void provisionTenantAuthorityForOnboarding(String tenantCode, Long tenantId, Long loginAccountId) {
+        String adminEmail = tenantInfoDAO.selectAdminEmailByTenantCode(tenantCode);
+        String tenantNm = tenantInfoDAO.selectTenantNameByCode(tenantCode);
+
+        Long tenantAdminRoleId = ensureTenantRole(tenantId, tenantCode, "TENANT_ADMIN", "업체 관리자");
+        ensureTenantRole(tenantId, tenantCode, "TENANT_USER", "업체 사용자");
+
+        ensureTenantAdminUser(tenantId, loginAccountId, adminEmail, tenantNm);
+        replaceLoginAccountRole(loginAccountId, tenantAdminRoleId);
+
+        List<String> allowedMenuCodes = resolveAllowedMenuCodesByPlan(tenantCode);
+        replaceRoleMenusByCode("TENANT_ADMIN", tenantCode, allowedMenuCodes);
+        replaceRoleMenusByCode("TENANT_USER", tenantCode, new ArrayList<String>());
+    }
+
+    private Long ensureTenantRole(Long tenantId, String tenantCode, String roleCode, String roleName) {
+        Long roleId = findRoleId(tenantId, roleCode);
+        if (roleId != null) {
+            return roleId;
+        }
+
+        RoleInfoVO payload = new RoleInfoVO();
+        payload.setTenantCode(tenantCode);
+        payload.setRoleCode(roleCode);
+        payload.setRoleNm(roleName);
+        payload.setUseAt("Y");
+        payload.setSystemRoleYn("Y");
+        payload.setFrstRegisterId("system");
+        payload.setLastUpdusrId("system");
+
+        try {
+            authorityService.createRole(payload);
+        } catch (Exception ex) {
+            throw new IllegalStateException("기본 권한 생성 중 오류가 발생했습니다. roleCode=" + roleCode, ex);
+        }
+
+        Long createdRoleId = findRoleId(tenantId, roleCode);
+        if (createdRoleId == null) {
+            throw new IllegalStateException("기본 권한 생성 결과를 확인할 수 없습니다. roleCode=" + roleCode);
+        }
+        return createdRoleId;
+    }
+
+    private Long findRoleId(Long tenantId, String roleCode) {
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantId", tenantId);
+        condition.put("roleCode", roleCode);
+        try {
+            return platformUserDAO.selectRoleIdByCode(condition);
+        } catch (Exception ex) {
+            throw new IllegalStateException("권한 조회 중 오류가 발생했습니다. roleCode=" + roleCode, ex);
+        }
+    }
+
+    private void ensureTenantAdminUser(Long tenantId, Long loginAccountId, String adminEmail, String tenantNm) {
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantId", tenantId);
+        condition.put("loginId", loginAccountId);
+
+        Long userId;
+        try {
+            userId = platformUserDAO.selectUserIdByLoginId(condition);
+        } catch (Exception ex) {
+            throw new IllegalStateException("관리자 사용자 조회 중 오류가 발생했습니다.", ex);
+        }
+
+        if (userId != null) {
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<String, Object>();
+        payload.put("tenantId", tenantId);
+        payload.put("loginId", loginAccountId);
+        payload.put("userNm", buildDefaultAdminName(adminEmail, tenantNm));
+        payload.put("emailAddr", isBlank(adminEmail) ? null : adminEmail.trim());
+        payload.put("departmentId", null);
+        payload.put("useAt", "Y");
+
+        try {
+            platformUserDAO.insertUser(payload);
+        } catch (Exception ex) {
+            throw new IllegalStateException("관리자 사용자 생성 중 오류가 발생했습니다.", ex);
+        }
+    }
+
+    private String buildDefaultAdminName(String adminEmail, String tenantNm) {
+        if (!isBlank(adminEmail)) {
+            String trimmed = adminEmail.trim();
+            int atIndex = trimmed.indexOf('@');
+            if (atIndex > 0) {
+                String local = trimmed.substring(0, atIndex).trim();
+                if (!local.isEmpty()) {
+                    return local;
+                }
+            }
+            return trimmed;
+        }
+
+        if (!isBlank(tenantNm)) {
+            return tenantNm.trim() + " 관리자";
+        }
+
+        return "업체 관리자";
+    }
+
+    private void replaceLoginAccountRole(Long loginAccountId, Long roleId) {
+        try {
+            platformUserDAO.deleteLoginAccountRolesByLoginId(loginAccountId);
+
+            Map<String, Object> payload = new HashMap<String, Object>();
+            payload.put("loginId", loginAccountId);
+            payload.put("roleId", roleId);
+            platformUserDAO.insertLoginAccountRole(payload);
+        } catch (Exception ex) {
+            throw new IllegalStateException("관리자 권한 매핑 중 오류가 발생했습니다.", ex);
+        }
+    }
+
+    private List<String> resolveAllowedMenuCodesByPlan(String tenantCode) {
+        try {
+            return authorityService.listAllowedMenuCodesByTenantPlan(tenantCode);
+        } catch (Exception ex) {
+            throw new IllegalStateException("플랜별 메뉴 조회 중 오류가 발생했습니다.", ex);
+        }
+    }
+
+    private void replaceRoleMenusByCode(String roleCode, String tenantCode, List<String> menuCodes) {
+        AuthorityMenuSaveRequestVO payload = new AuthorityMenuSaveRequestVO();
+        payload.setRoleCode(roleCode);
+        payload.setMenuIds(menuCodes == null ? new ArrayList<String>() : menuCodes);
+
+        try {
+            authorityService.replaceRoleMenus(roleCode, tenantCode, payload);
+        } catch (Exception ex) {
+            throw new IllegalStateException("권한-메뉴 매핑 저장 중 오류가 발생했습니다. roleCode=" + roleCode, ex);
+        }
     }
 
     private void validateDomainAvailability(String loginDomain, Long tenantId) {

@@ -38,6 +38,14 @@ public interface AuthorityDAO {
     int selectRolePagedCount(RoleInfoVO condition) throws Exception;
 
     /**
+     * 역할 ID로 단건 조회한다.
+     * @param roleId 역할 ID
+     * @return 역할 정보
+     * @throws Exception
+     */
+    RoleInfoVO selectRoleById(Long roleId) throws Exception;
+
+    /**
      * 역할을 등록한다.
      * @param payload 등록 정보
      * @throws Exception

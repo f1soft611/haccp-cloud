@@ -1,6 +1,7 @@
 package egovframework.let.organization.authorities.service.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,6 +37,8 @@ public class AuthorityServiceImpl implements AuthorityService {
 
     private static final String DEFAULT_PERMISSION_ID = "PERM_WRITE";
     private static final String SYSTEM_USER_ID = "system";
+            private static final Set<String> IMMUTABLE_SYSTEM_ROLE_CODES =
+                new LinkedHashSet<String>(Arrays.asList("TENANT_ADMIN", "TENANT_USER", "TENENT_USER"));
 
     @Resource(name = "authorityDAO")
     private AuthorityDAO authorityDAO;
@@ -102,6 +105,7 @@ public class AuthorityServiceImpl implements AuthorityService {
         payload.setRoleCode(toUpper(payload.getRoleCode()));
         payload.setUseAt("Y");
         payload.setTenantCode(hasText(payload.getTenantCode()) ? toUpper(payload.getTenantCode()) : "PLATFORM");
+        payload.setSystemRoleYn(hasText(payload.getSystemRoleYn()) ? toUpper(payload.getSystemRoleYn()) : "N");
 
         if (!hasText(payload.getFrstRegisterId())) {
             payload.setFrstRegisterId(SYSTEM_USER_ID);
@@ -119,6 +123,12 @@ public class AuthorityServiceImpl implements AuthorityService {
         if (payload == null || !hasText(payload.getUseAt())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt 값은 필수입니다.");
         }
+
+        RoleInfoVO persisted = authorityDAO.selectRoleById(roleId);
+        if (persisted == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "역할을 찾을 수 없습니다.");
+        }
+        validateImmutableSystemRole(persisted);
 
         payload.setRoleId(roleId);
         if (hasText(payload.getRoleCode())) {
@@ -140,6 +150,12 @@ public class AuthorityServiceImpl implements AuthorityService {
         if (payload == null || !hasText(payload.getRoleNm())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleNm 값은 필수입니다.");
         }
+
+        RoleInfoVO persisted = authorityDAO.selectRoleById(roleId);
+        if (persisted == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "역할을 찾을 수 없습니다.");
+        }
+        validateImmutableSystemRole(persisted);
 
         payload.setRoleId(roleId);
         if (hasText(payload.getRoleCode())) {
@@ -283,6 +299,22 @@ public class AuthorityServiceImpl implements AuthorityService {
             return Long.valueOf(trimmed);
         } catch (NumberFormatException ex) {
             return null;
+        }
+    }
+
+    private void validateImmutableSystemRole(RoleInfoVO roleInfo) {
+        if (roleInfo == null) {
+            return;
+        }
+
+        String systemRoleYn = toUpper(roleInfo.getSystemRoleYn());
+        if ("Y".equals(systemRoleYn) || Boolean.TRUE.equals(roleInfo.getSystemRole())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "시스템 권한은 수정하거나 삭제할 수 없습니다.");
+        }
+
+        String normalizedRoleCode = toUpper(roleInfo.getRoleCode());
+        if (IMMUTABLE_SYSTEM_ROLE_CODES.contains(normalizedRoleCode)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "시스템 권한은 수정하거나 삭제할 수 없습니다.");
         }
     }
 }

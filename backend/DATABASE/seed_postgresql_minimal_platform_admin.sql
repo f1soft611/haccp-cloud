@@ -61,12 +61,14 @@ INSERT INTO tb_role (
     tenant_id,
     role_code,
     role_nm,
+    is_system_role,
     use_at
 )
 SELECT
     t.tenant_id,
     v.role_code,
     v.role_nm,
+    'Y',
     'Y'
 FROM tb_tenant t
 CROSS JOIN (
@@ -78,6 +80,7 @@ CROSS JOIN (
 WHERE t.tenant_code = 'PLATFORM'
 ON CONFLICT (tenant_id, role_code) DO UPDATE
 SET role_nm = EXCLUDED.role_nm,
+    is_system_role = EXCLUDED.is_system_role,
     use_at = 'Y';
 
 -- 3) Menu permissions

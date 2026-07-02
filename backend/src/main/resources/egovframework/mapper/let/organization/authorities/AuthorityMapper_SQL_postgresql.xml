@@ -17,6 +17,8 @@
             'Y' AS tenantScoped,
             t.tenant_code AS tenantCode,
             r.use_at AS useAt,
+            COALESCE(r.is_system_role, 'N') AS systemRoleYn,
+            CASE WHEN COALESCE(r.is_system_role, 'N') = 'Y' THEN TRUE ELSE FALSE END AS systemRole,
             r.created_at AS frstRegistPnttm,
             'SYSTEM' AS frstRegisterId,
             r.updated_at AS lastUpdtPnttm,
@@ -45,6 +47,8 @@
             'Y' AS tenantScoped,
             t.tenant_code AS tenantCode,
             r.use_at AS useAt,
+            COALESCE(r.is_system_role, 'N') AS systemRoleYn,
+            CASE WHEN COALESCE(r.is_system_role, 'N') = 'Y' THEN TRUE ELSE FALSE END AS systemRole,
             r.created_at AS frstRegistPnttm,
             'SYSTEM' AS frstRegisterId,
             r.updated_at AS lastUpdtPnttm,
@@ -103,6 +107,32 @@
         </if>
     </select>
 
+    <select id="AuthorityDAO.selectRoleById" parameterType="long" resultType="egovframework.let.uss.auth.service.RoleInfoVO">
+        SELECT
+            r.role_id AS roleId,
+            r.role_code AS roleCode,
+            r.role_nm AS roleNm,
+            NULL::varchar AS roleDc,
+            CASE
+                WHEN r.role_code = 'PLATFORM_ADMIN' THEN 1
+                WHEN r.role_code = 'TENANT_ADMIN' THEN 2
+                ELSE 3
+            END AS roleLevel,
+            'Y' AS tenantScoped,
+            t.tenant_code AS tenantCode,
+            r.use_at AS useAt,
+            COALESCE(r.is_system_role, 'N') AS systemRoleYn,
+            CASE WHEN COALESCE(r.is_system_role, 'N') = 'Y' THEN TRUE ELSE FALSE END AS systemRole,
+            r.created_at AS frstRegistPnttm,
+            'SYSTEM' AS frstRegisterId,
+            r.updated_at AS lastUpdtPnttm,
+            'SYSTEM' AS lastUpdusrId
+        FROM tb_role r
+            INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
+        WHERE r.role_id = #{value}
+        LIMIT 1
+    </select>
+
     <!-- 권한 등록 -->
     <insert id="AuthorityDAO.insertRole" parameterType="egovframework.let.uss.auth.service.RoleInfoVO">
         INSERT INTO tb_role (
@@ -110,6 +140,7 @@
             role_code,
             role_nm,
             use_at,
+            is_system_role,
             created_at,
             updated_at
         ) VALUES (
@@ -117,6 +148,7 @@
             #{roleCode},
             #{roleNm},
             #{useAt},
+            COALESCE(#{systemRoleYn}, 'N'),
             now(),
             now()
         )

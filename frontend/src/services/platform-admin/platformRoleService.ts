@@ -20,6 +20,10 @@ type PlatformRoleApiItem = {
   lastUpdusrId?: string;
   lastUpdtPnttm?: string;
   tenantCode?: string;
+  systemRole?: boolean;
+  isSystemRole?: boolean;
+  systemRoleYn?: string;
+  is_system_role?: string;
 };
 
 export type PlatformRoleItem = {
@@ -28,6 +32,7 @@ export type PlatformRoleItem = {
   name: string;
   description: string;
   tenantCode?: string;
+  systemRole: boolean;
   active: boolean;
   updatedBy: string;
   updatedAt: string;
@@ -81,12 +86,23 @@ function normalizePlatformRoleItem(
 ): PlatformRoleItem {
   const code = item.code ?? item.roleCode ?? item.authorityCode ?? '';
   const normalizedId = item.id ?? item.roleId ?? item.authorityId;
+  const normalizedSystemRoleYn = String(
+    item.systemRoleYn ?? item.is_system_role ?? '',
+  )
+    .trim()
+    .toUpperCase();
+  const systemRole =
+    item.systemRole === true ||
+    item.isSystemRole === true ||
+    normalizedSystemRoleYn === 'Y';
+
   return {
     id: normalizedId == null ? code : String(normalizedId),
     code,
     name: item.name ?? item.roleNm ?? item.authorityNm ?? code,
     description: item.description ?? item.roleDc ?? item.authorityDc ?? '',
     tenantCode: item.tenantCode,
+    systemRole,
     active: item.active ?? item.useAt !== 'N',
     updatedBy: item.updatedBy ?? item.lastUpdusrId ?? '',
     updatedAt: item.updatedAt ?? item.lastUpdtPnttm ?? '',

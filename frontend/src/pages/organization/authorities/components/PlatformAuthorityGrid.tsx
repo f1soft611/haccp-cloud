@@ -95,7 +95,14 @@ export function PlatformAuthorityGrid(props: {
           ? rows.map((role) => (
               <TableRow key={role.id} hover>
                 <TableCell>{role.code}</TableCell>
-                <TableCell>{role.name || '-'}</TableCell>
+                <TableCell>
+                  <Stack direction="row" spacing={0.75} alignItems="center">
+                    <span>{role.name || '-'}</span>
+                    {role.systemRole ? (
+                      <Chip size="small" color="warning" label="시스템" />
+                    ) : null}
+                  </Stack>
+                </TableCell>
                 <TableCell>{role.description || '-'}</TableCell>
                 <TableCell align="center">
                   <Chip
@@ -127,6 +134,7 @@ export function PlatformAuthorityGrid(props: {
                     <IconButton
                       size="small"
                       aria-label="권한 수정"
+                      disabled={role.systemRole}
                       onClick={() => onEdit(role)}
                       sx={{
                         color: isDarkMode ? '#fbbf24' : '#1f4f8f',
@@ -144,6 +152,7 @@ export function PlatformAuthorityGrid(props: {
                     </IconButton>
                     <IconButton
                       size="small"
+                      disabled={role.systemRole}
                       aria-label={
                         role.active
                           ? APP_LABELS.action.deactivate
