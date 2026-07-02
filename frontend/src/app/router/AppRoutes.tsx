@@ -3,24 +3,28 @@ import { AppLayout } from '../../shared/components/layout/AppLayout';
 import { LoginPage } from '../../pages/auth/LoginPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardPage } from '../../pages/DashboardPage';
-import { OnboardingPage } from '../../pages/tenant-management/onboarding/OnboardingPage';
-import { UsersPage } from '../../pages/tenant-management/users/UsersPage';
-import { DepartmentsPage } from '../../pages/tenant-management/departments/DepartmentsPage';
-import { DocumentsPage } from '../../pages/tenant-management/documents/DocumentsPage';
-import { DocumentHistoryPage } from '../../pages/tenant-management/documents/DocumentHistoryPage';
+import { OnboardingPage } from '../../pages/platform-admin/tenants/OnboardingPage';
+import { UsersPage } from '../../pages/organization/users/UsersPage';
+import { DepartmentsPage } from '../../pages/organization/departments/DepartmentsPage';
+import { DocumentsPage } from '../../pages/documents/DocumentsPage';
+import { DocumentHistoryPage } from '../../pages/documents/DocumentHistoryPage';
 import { NotFoundPage } from '../../pages/NotFoundPage';
-import { TenantFirstLoginSetupPage } from '../../pages/tenant-management/onboarding/TenantFirstLoginSetupPage';
-import { LoginHistoryPage } from '../../pages/admin/LoginHistoryPage';
+import { TenantFirstLoginSetupPage } from '../../pages/platform-admin/tenants/TenantFirstLoginSetupPage';
+import { LoginHistoryPage } from '../../pages/platform-admin/login-history/LoginHistoryPage';
 import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
-import { PlatformAuthorityManagementPage } from '../../pages/platform-admin/authorities/PlatformAuthorityManagementPage';
+import { PlatformAuthorityManagementPage } from '../../pages/organization/authorities/PlatformAuthorityManagementPage';
 import { PlatformTenantManagementPage } from '../../pages/platform-admin/tenants/PlatformTenantManagementPage';
+import { PlatformTenantDetailPage } from '../../pages/platform-admin/tenants/PlatformTenantDetailPage';
 import { PlatformPlanManagementPage } from '../../pages/platform-admin/plans/PlatformPlanManagementPage';
 import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
+import { OnboardingVerifyPage } from '../../pages/platform-admin/tenants/OnboardingVerifyPage';
 import { useAuthStore } from '../../shared/store/authStore';
+import { resolveDashboardLandingPath } from '../../shared/utils/dashboardRouting';
 
 function DefaultHomeRoute() {
   const role = useAuthStore((state) => state.role);
-  const defaultPath = role === 'PLATFORM_ADMIN' ? '/platform' : '/dashboard';
+  const planCode = useAuthStore((state) => state.planCode);
+  const defaultPath = resolveDashboardLandingPath({ role, planCode });
 
   return <Navigate to={defaultPath} replace />;
 }
@@ -30,6 +34,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/login/:domain" element={<LoginPage />} />
+      <Route path="/onboarding/verify" element={<OnboardingVerifyPage />} />
       <Route
         path="/login/platform"
         element={<Navigate to="/login" replace />}
@@ -47,7 +52,7 @@ export function AppRoutes() {
         <Route
           path="/platform/onboarding"
           element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+            <ProtectedRoute enforceMenuAccess>
               <OnboardingPage />
             </ProtectedRoute>
           }
@@ -55,8 +60,16 @@ export function AppRoutes() {
         <Route
           path="/platform/tenants"
           element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+            <ProtectedRoute enforceMenuAccess>
               <PlatformTenantManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/tenants/:tenantCode"
+          element={
+            <ProtectedRoute enforceMenuAccess>
+              <PlatformTenantDetailPage />
             </ProtectedRoute>
           }
         />
@@ -64,10 +77,11 @@ export function AppRoutes() {
           path="/onboarding"
           element={<Navigate to="/platform/onboarding" replace />}
         />
+        <Route path="/users" element={<Navigate to="/org/users" replace />} />
         <Route
-          path="/users"
+          path="/org/users"
           element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
+            <ProtectedRoute enforceMenuAccess>
               <UsersPage />
             </ProtectedRoute>
           }
@@ -82,8 +96,12 @@ export function AppRoutes() {
         />
         <Route
           path="/departments"
+          element={<Navigate to="/org/departments" replace />}
+        />
+        <Route
+          path="/org/departments"
           element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
+            <ProtectedRoute enforceMenuAccess>
               <DepartmentsPage />
             </ProtectedRoute>
           }
@@ -91,7 +109,7 @@ export function AppRoutes() {
         <Route
           path="/platform/login-history"
           element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+            <ProtectedRoute enforceMenuAccess>
               <LoginHistoryPage />
             </ProtectedRoute>
           }
@@ -99,7 +117,7 @@ export function AppRoutes() {
         <Route
           path="/platform/menus"
           element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+            <ProtectedRoute enforceMenuAccess>
               <PlatformMenuManagementPage />
             </ProtectedRoute>
           }
@@ -107,15 +125,16 @@ export function AppRoutes() {
         <Route
           path="/platform/plans"
           element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+            <ProtectedRoute enforceMenuAccess>
               <PlatformPlanManagementPage />
             </ProtectedRoute>
           }
         />
+        <Route path="/roles" element={<Navigate to="/org/roles" replace />} />
         <Route
           path="/org/roles"
           element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
+            <ProtectedRoute enforceMenuAccess>
               <PlatformAuthorityManagementPage />
             </ProtectedRoute>
           }

@@ -184,5 +184,5 @@ public interface EgovAuthManageService {
      * @return String 권한레벨 (read/write/none)
      * @throws Exception
      */
-    String checkUserMenuPermission(String roleCode, String menuUrl) throws Exception;
+    String checkUserMenuPermission(String roleCode, Long tenantId, String menuUrl) throws Exception;
 }

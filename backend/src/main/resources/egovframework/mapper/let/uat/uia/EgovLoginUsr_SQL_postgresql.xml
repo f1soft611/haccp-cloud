@@ -18,6 +18,7 @@
 <result property="groupId" column="groupId"/>
 <result property="groupNm" column="groupNm"/>
 <result property="roleCode" column="roleCode"/>
+<result property="roleId" column="roleId"/>
 </resultMap>
 
 <resultMap id="id" type="egovframework.com.cmm.LoginVO">
@@ -39,7 +40,7 @@ li.password_hash   AS password,
 NULL               AS ihidNum,
 u.email_addr       AS email,
 CASE
-WHEN r.role_code = 'PLATFORM_ADMIN' THEN 'ADM'
+WHEN sr.role_code = 'PLATFORM_ADMIN' THEN 'ADM'
 ELSE 'USR'
 END                AS userSe,
 u.department_id    AS orgnztId,
@@ -47,34 +48,52 @@ u.user_id::text    AS uniqId,
 u.department_id    AS groupId,
 COALESCE(d.department_nm, u.department_id::text) AS groupCode,
 CASE
-WHEN r.role_code = 'PLATFORM_ADMIN' THEN 'ROLE_ADMIN'
-WHEN r.role_code = 'TENANT_ADMIN' THEN 'ROLE_TENANT_ADMIN'
+WHEN sr.role_code = 'PLATFORM_ADMIN' THEN 'ROLE_ADMIN'
+WHEN sr.role_code = 'TENANT_ADMIN' THEN 'ROLE_TENANT_ADMIN'
 ELSE 'ROLE_USER'
 END                AS groupNm,
-r.role_code        AS roleCode
+sr.role_code       AS roleCode,
+sr.role_id         AS roleId
 FROM tb_login_account li
 JOIN tb_user u
   ON u.login_id = li.login_id
 JOIN tb_tenant t
   ON t.tenant_id = li.tenant_id
-JOIN tb_login_account_role lr
-  ON lr.login_id = li.login_id
-JOIN tb_role r
-  ON r.role_id = lr.role_id
+JOIN LATERAL (
+  SELECT
+    r.role_code,
+    r.use_at,
+    lr.role_id
+  FROM tb_login_account_role lr
+  JOIN tb_role r
+    ON r.role_id = lr.role_id
+  WHERE lr.login_id = li.login_id
+    AND r.tenant_id = li.tenant_id
+    <if test="roleCode != null and roleCode != ''">
+    AND r.role_code = #{roleCode}
+    </if>
+  ORDER BY
+    CASE
+      WHEN r.role_code NOT IN ('PLATFORM_ADMIN', 'TENANT_ADMIN', 'TENANT_USER') THEN 1
+      WHEN r.role_code = 'TENANT_USER' THEN 2
+      WHEN r.role_code = 'TENANT_ADMIN' THEN 3
+      WHEN r.role_code = 'PLATFORM_ADMIN' THEN 4
+      ELSE 5
+    END,
+    lr.role_id DESC
+  LIMIT 1
+) sr ON TRUE
 LEFT JOIN tb_department d
   ON d.department_id = u.department_id
 WHERE
 (li.login_code = #{id} OR u.email_addr = #{id})
   AND li.password_hash = #{password}
   AND li.tenant_id = #{tenantId}
-  <if test="roleCode != null and roleCode != ''">
-  AND r.role_code = #{roleCode}
-  </if>
   AND COALESCE(li.use_at, 'Y') = 'Y'
   AND COALESCE(u.use_at, 'Y') = 'Y'
   AND COALESCE(d.use_at, 'Y') = 'Y'
   AND COALESCE(t.use_at, 'Y') = 'Y'
-  AND COALESCE(r.use_at, 'Y') = 'Y'
+  AND COALESCE(sr.use_at, 'Y') = 'Y'
 </select>
 
 <select id="searchId" resultMap="id">

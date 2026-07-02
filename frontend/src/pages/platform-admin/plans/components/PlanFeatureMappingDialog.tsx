@@ -14,7 +14,7 @@ import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import type {
   PlanFeatureItem,
   PlanSummary,
-} from '../../../../services/plan/planAccessService';
+} from '../../../../services/platform-admin/planAccessService';
 
 export function PlanFeatureMappingDialog(props: {
   open: boolean;

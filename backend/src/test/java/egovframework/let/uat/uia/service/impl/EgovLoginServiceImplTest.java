@@ -10,9 +10,9 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 
 import egovframework.com.cmm.LoginVO;
-import egovframework.let.platforms.tenants.context.TenantContextHolder;
-import egovframework.let.platforms.tenants.domain.model.TenantVO;
-import egovframework.let.platforms.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
+import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
+import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

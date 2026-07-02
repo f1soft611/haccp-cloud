@@ -16,7 +16,7 @@ import { APP_LABELS } from '../shared/constants/labels';
 
 const mockListAccessibleMenuPaths = vi.fn<() => Promise<string[]>>();
 
-vi.mock('../services/platform/platformUserMenuService', () => ({
+vi.mock('../services/platform-admin/platformUserMenuService', () => ({
   listAccessibleMenuPaths: () => mockListAccessibleMenuPaths(),
 }));
 
@@ -110,6 +110,14 @@ const renderLayoutWithRole = (
               <Route
                 path="/users"
                 element={<div data-testid="users-stub">users</div>}
+              />
+              <Route
+                path="/org/users"
+                element={<div data-testid="org-users-stub">org users</div>}
+              />
+              <Route
+                path="/org"
+                element={<div data-testid="org-root-stub">org root</div>}
               />
               <Route
                 path="/documents"
@@ -262,6 +270,35 @@ describe('WorkMenuBar role-based visibility', () => {
         screen.queryByRole('button', { name: APP_LABELS.menu.platformGroup }),
       ).not.toBeInTheDocument();
     });
+  });
+
+  it('redirects to a child route instead of a group root path', async () => {
+    renderLayoutWithRole('TENANT_ADMIN', '/dashboard', [
+      '/org',
+      '/org/users',
+      '/documents',
+    ]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('org-users-stub')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId('dashboard-stub')).not.toBeInTheDocument();
+  });
+
+  it('keeps /dashboard as the landing page even when menu paths start with /org', async () => {
+    renderLayoutWithRole('TENANT_ADMIN', '/dashboard', [
+      '/org',
+      '/org/users',
+      '/documents',
+    ]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('dashboard-stub')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId('org-root-stub')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('org-users-stub')).not.toBeInTheDocument();
   });
 
   it('work-menu-bar has segmented nav variant marker', async () => {

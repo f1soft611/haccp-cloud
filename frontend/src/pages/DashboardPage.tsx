@@ -18,11 +18,11 @@ import { NavLink } from 'react-router-dom';
 import {
   listDocuments,
   type DocumentTemplate,
-} from '../services/common/documentsService';
-import { getDashboardConfigByRole } from './dashboard/roleDashboardConfig';
+} from '../services/documents/documentsService';
+import { getDashboardConfigByContext } from './dashboard/roleDashboardConfig';
 import { PlatformAdminDashboard } from './dashboard/platformAdmin/PlatformAdminDashboard';
 import { useAuthStore } from '../shared/store/authStore';
-import { getDashboardMetrics } from '../services/common/dashboardService';
+import { getDashboardMetrics } from '../services/documents/dashboardService';
 import { APP_LABELS, getRoleLabel } from '../shared/constants/labels';
 import { dashboardThemeTokens } from '../app/theme';
 
@@ -133,7 +133,8 @@ export function DashboardPage() {
   const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
   const userId = useAuthStore((state) => state.userId || '-');
   const role = useAuthStore((state) => state.role);
-  const dashboardConfig = getDashboardConfigByRole(role);
+  const planCode = useAuthStore((state) => state.planCode);
+  const dashboardConfig = getDashboardConfigByContext({ role, planCode });
   const isPlatformAdminView = dashboardConfig.view === 'platformAdmin';
 
   const {
@@ -323,12 +324,12 @@ export function DashboardPage() {
                       {APP_LABELS.dashboard.hubs.admin}
                     </Typography>
                     <Stack direction="row" spacing={0.75} flexWrap="wrap">
-                      <Button component={NavLink} to="/users" size="small">
+                      <Button component={NavLink} to="/org/users" size="small">
                         {APP_LABELS.dashboard.hubs.users}
                       </Button>
                       <Button
                         component={NavLink}
-                        to="/departments"
+                        to="/org/departments"
                         size="small"
                       >
                         {APP_LABELS.dashboard.hubs.departments}

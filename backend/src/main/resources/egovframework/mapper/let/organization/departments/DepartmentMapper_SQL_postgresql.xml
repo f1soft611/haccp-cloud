@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DepartmentDAO">
+
+    <!-- 부서 목록 조회 (계층 포함) -->
+    <select id="DepartmentDAO.selectDepartmentList"
+            parameterType="egovframework.let.organization.departments.domain.model.DepartmentSearchConditionVO"
+            resultType="egovframework.let.organization.departments.domain.model.DepartmentVO">
+        SELECT
+            d.department_id                     AS departmentId,
+            t.tenant_code                       AS tenantCode,
+            d.department_nm                     AS name,
+            d.parent_department_id              AS parentId,
+            pd.department_nm                    AS parentName,
+            COALESCE(d.sort_order, 0)           AS sortOrder,
+            CASE WHEN d.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            CASE WHEN EXISTS (
+                SELECT 1 FROM tb_department cd
+                WHERE cd.parent_department_id = d.department_id
+            ) THEN TRUE ELSE FALSE END          AS hasChildren
+        FROM tb_department d
+        JOIN tb_tenant t ON t.tenant_id = d.tenant_id
+        LEFT JOIN tb_department pd ON pd.department_id = d.parent_department_id
+        WHERE d.tenant_id = (
+            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
+        )
+        <if test="name != null and name != ''">
+            AND LOWER(d.department_nm) LIKE '%' || LOWER(#{name}) || '%'
+        </if>
+        <if test="active != null and active == 'Y'">
+            AND d.use_at = 'Y'
+        </if>
+        <if test="active != null and active == 'N'">
+            AND d.use_at = 'N'
+        </if>
+        ORDER BY d.parent_department_id NULLS FIRST, COALESCE(d.sort_order, 0), d.department_id
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="DepartmentDAO.selectDepartmentById"
+            parameterType="map"
+            resultType="egovframework.let.organization.departments.domain.model.DepartmentVO">
+        SELECT
+            d.department_id                     AS departmentId,
+            t.tenant_code                       AS tenantCode,
+            d.department_nm                     AS name,
+            d.parent_department_id              AS parentId,
+            pd.department_nm                    AS parentName,
+            COALESCE(d.sort_order, 0)           AS sortOrder,
+            CASE WHEN d.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            CASE WHEN EXISTS (
+                SELECT 1 FROM tb_department cd
+                WHERE cd.parent_department_id = d.department_id
+            ) THEN TRUE ELSE FALSE END          AS hasChildren
+        FROM tb_department d
+        JOIN tb_tenant t ON t.tenant_id = d.tenant_id
+        LEFT JOIN tb_department pd ON pd.department_id = d.parent_department_id
+        WHERE d.department_id = #{departmentId}
+          AND t.tenant_code   = #{tenantCode}
+    </select>
+
+    <!-- 테넌트 ID 조회 -->
+    <select id="DepartmentDAO.selectTenantIdByCode"
+            parameterType="string"
+            resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+        LIMIT 1
+    </select>
+
+    <!-- 부서 등록 (PostgreSQL RETURNING으로 신규 ID 반환) -->
+    <select id="DepartmentDAO.insertDepartment"
+            parameterType="map"
+            resultType="long">
+        INSERT INTO tb_department (
+            tenant_id,
+            department_nm,
+            parent_department_id,
+            sort_order,
+            use_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{tenantId},
+            #{departmentNm},
+            #{parentDepartmentId, jdbcType=BIGINT},
+            #{sortOrder},
+            'Y',
+            CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP
+        )
+        RETURNING department_id
+    </select>
+
+    <!-- 부서 수정 -->
+    <update id="DepartmentDAO.updateDepartment"
+            parameterType="map">
+        UPDATE tb_department
+        SET
+            department_nm        = #{departmentNm},
+            parent_department_id = #{parentDepartmentId, jdbcType=BIGINT},
+            sort_order           = #{sortOrder},
+            use_at               = #{useAt},
+            updated_at           = CURRENT_TIMESTAMP
+        WHERE department_id = #{departmentId}
+          AND tenant_id     = #{tenantId}
+    </update>
+
+    <!-- 부서 삭제 -->
+    <delete id="DepartmentDAO.deleteDepartment"
+            parameterType="map">
+        DELETE FROM tb_department
+        WHERE department_id = #{departmentId}
+          AND tenant_id     = #{tenantId}
+    </delete>
+
+    <!-- 하위 부서 수 조회 (삭제 전 검증) -->
+    <select id="DepartmentDAO.countChildDepartments"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM tb_department
+        WHERE parent_department_id = #{departmentId}
+          AND tenant_id            = #{tenantId}
+    </select>
+
+</mapper>

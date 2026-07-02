@@ -27,6 +27,7 @@ class EgovJwtTokenUtilTest {
         loginVO.setUniqId("testUniqId");
         loginVO.setGroupNm("ROLE_USER");
         loginVO.setRoleCode("TENANT_USER");
+        loginVO.setRoleId(101L);
         loginVO.setFactoryCode("FAC001");
 
         String token = jwtTokenUtil.generateToken(loginVO);
@@ -43,6 +44,7 @@ class EgovJwtTokenUtilTest {
         assertEquals("testUniqId", result.getUniqId());
         assertEquals("ROLE_USER", result.getGroupNm());
         assertEquals("TENANT_USER", result.getRoleCode());
+        assertEquals(101L, result.getRoleId());
         assertEquals("FAC001", result.getFactoryCode());
     }
 

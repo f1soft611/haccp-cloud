@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Box } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { TopGovBar } from './TopGovBar';
 import { PageShell } from './PageShell';
 import { PortalFooter } from './PortalFooter';
@@ -13,26 +13,21 @@ import {
 import {
   listAccessibleMenuPaths,
   type AccessibleMenuMeta,
-} from '../../../services/platform/platformUserMenuService';
-import * as userMenuService from '../../../services/platform/platformUserMenuService';
-import { getCurrentPlanAccess } from '../../../services/plan/planAccessService';
+} from '../../../services/platform-admin/platformUserMenuService';
+import * as userMenuService from '../../../services/platform-admin/platformUserMenuService';
+import { getCurrentPlanAccess } from '../../../services/platform-admin/planAccessService';
 import {
   isFeatureAllowed,
   resolveFeatureCodeByPath,
-} from '../../../services/plan/featureCatalog';
+} from '../../../services/platform-admin/featureCatalog';
 import { useAuthStore } from '../../store/authStore';
-import { UserMenuMetadataProvider } from './userMenuMetadataContext';
-
-const ALWAYS_ALLOWED_PATHS = [
-  '/account/password',
-  '/onboarding',
-  '/platform/onboarding',
-  '/tenant-first-setup',
-];
+import {
+  CurrentMenuGroupLabelProvider,
+  UserMenuMetadataProvider,
+} from './userMenuMetadataContext';
 
 export function AppLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
 
   let listAccessibleMenusFn: (() => Promise<AccessibleMenuMeta[]>) | undefined;
 
@@ -164,55 +159,28 @@ export function AppLayout() {
     role,
   ]);
 
-  const fallbackRedirectPath = useMemo(() => {
-    return featureFilteredAllowedPaths[0];
-  }, [featureFilteredAllowedPaths]);
-
-  useEffect(() => {
-    if (accessibleMenuQuery.isPending) {
-      return;
-    }
-
-    if (
-      ALWAYS_ALLOWED_PATHS.some((path) => location.pathname.startsWith(path))
-    ) {
-      return;
-    }
-
-    if (featureFilteredAllowedPaths.length === 0) {
-      return;
-    }
-
-    if (!fallbackRedirectPath) {
-      return;
-    }
-
-    const isAllowed = featureFilteredAllowedPaths.some((path) =>
-      location.pathname.startsWith(path),
+  const currentMenuGroupLabel = useMemo(() => {
+    const matchedGroup = menuGroups.find((group) =>
+      group.items.some((item) => location.pathname.startsWith(item.path)),
     );
-    if (!isAllowed) {
-      navigate(fallbackRedirectPath, { replace: true });
-    }
-  }, [
-    accessibleMenuQuery.isPending,
-    featureFilteredAllowedPaths,
-    fallbackRedirectPath,
-    location.pathname,
-    navigate,
-  ]);
+
+    return matchedGroup?.label;
+  }, [location.pathname, menuGroups]);
 
   return (
     <UserMenuMetadataProvider value={menuMetadataByPath}>
-      <Box
-        sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
-      >
-        <TopGovBar />
-        <WorkMenuBar menuGroups={menuGroups} role={role} />
-        <PageShell>
-          <Outlet />
-        </PageShell>
-        <PortalFooter />
-      </Box>
+      <CurrentMenuGroupLabelProvider value={currentMenuGroupLabel}>
+        <Box
+          sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+        >
+          <TopGovBar />
+          <WorkMenuBar menuGroups={menuGroups} role={role} />
+          <PageShell>
+            <Outlet />
+          </PageShell>
+          <PortalFooter />
+        </Box>
+      </CurrentMenuGroupLabelProvider>
     </UserMenuMetadataProvider>
   );
 }

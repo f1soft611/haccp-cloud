@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listDocuments } from '../services/common/documentsService';
+import { listDocuments } from '../services/documents/documentsService';
 
 describe('documentsService', () => {
   it('provides enough tenant sample documents for dashboard panels', async () => {

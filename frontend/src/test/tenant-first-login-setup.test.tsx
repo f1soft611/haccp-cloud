@@ -4,7 +4,7 @@ import { ThemeProvider } from '@mui/material';
 import { http, HttpResponse } from 'msw';
 import { appTheme } from '../app/theme';
 import { server } from '../mocks/server';
-import { TenantFirstLoginSetupPage } from '../pages/tenant-management/onboarding/TenantFirstLoginSetupPage';
+import { TenantFirstLoginSetupPage } from '../pages/platform-admin/tenants/TenantFirstLoginSetupPage';
 import { useAuthStore } from '../shared/store/authStore';
 import { APP_LABELS } from '../shared/constants/labels';
 
@@ -328,19 +328,39 @@ describe('Tenant first login setup page', () => {
     expect(await screen.findByText('사용자 0 / 1')).toBeInTheDocument();
     expect(await screen.findByText('부서 0 / 1')).toBeInTheDocument();
 
-    fireEvent.click(
+    expect(
       screen.getByRole('button', {
         name: APP_LABELS.action.completeFirstSetup,
       }),
-    );
-
-    expect(
-      await screen.findByText('사용자 1명 이상, 부서 1개 이상이 필요합니다.'),
-    ).toBeInTheDocument();
+    ).toBeDisabled();
     expect(
       screen.queryByText(APP_LABELS.message.tenantFirstSetupCompleted),
     ).not.toBeInTheDocument();
     expect(useAuthStore.getState().onboardingRequired).toBe(true);
     expect(useAuthStore.getState().onboardingStatus).toBe('NOT_STARTED');
+  });
+
+  it('keeps completion disabled until user and department counts are both 1', async () => {
+    server.use(
+      http.get(/.*\/api\/first-login-setup\/status$/, () =>
+        HttpResponse.json({
+          tenantCode: 'TENANT-Z',
+          userCount: 0,
+          departmentCount: 0,
+          onboardingRequired: true,
+          onboardingStatus: 'NOT_STARTED',
+        }),
+      ),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText('사용자 0 / 1')).toBeInTheDocument();
+    expect(await screen.findByText('부서 0 / 1')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: APP_LABELS.action.completeFirstSetup,
+      }),
+    ).toBeDisabled();
   });
 });

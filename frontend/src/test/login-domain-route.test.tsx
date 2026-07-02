@@ -7,8 +7,8 @@ import { AppRoutes } from '../app/router/AppRoutes';
 import { appTheme } from '../app/theme';
 import { FeedbackProvider } from '../shared/providers/FeedbackProvider';
 
-vi.mock('../services/tenant/tenantService', async () => {
-  const actual = await vi.importActual('../services/tenant/tenantService');
+vi.mock('../services/organization/tenantService', async () => {
+  const actual = await vi.importActual('../services/organization/tenantService');
 
   return {
     ...actual,

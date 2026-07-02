@@ -3,7 +3,7 @@ package egovframework.com.security;
 import egovframework.com.cmm.filter.HTMLTagFilter;
 import egovframework.com.jwt.JwtAuthenticationEntryPoint;
 import egovframework.com.jwt.JwtAuthenticationFilter;
-import egovframework.let.platforms.tenants.context.TenantContextFilter;
+import egovframework.let.platform_admin.tenants.context.TenantContextFilter;
 
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.context.annotation.Bean;
@@ -64,6 +64,7 @@ public class SecurityConfig {
             "/",
             "/login/**",
             "/api/tenants/**", // 도메인 기반 로그인 페이지 테넌트 정보 조회
+            "/api/v1/tenants/onboarding/**", // 온보딩 인증/완료 API
             "/auth/login-jwt", // JWT 로그인
             "/auth/login-jwt/admin", // 플랫폼 관리자 JWT 로그인
             "/auth/login", // 일반 로그인

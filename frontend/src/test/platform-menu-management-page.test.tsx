@@ -43,7 +43,7 @@ const DEFAULT_MENUS = [
   },
 ];
 
-vi.mock('../services/platform/platformMenuService', () => ({
+vi.mock('../services/platform-admin/platformMenuService', () => ({
   listPlatformMenus: listPlatformMenusMock,
   listPlatformMenusPaged: listPlatformMenusPagedMock,
   createPlatformMenu: createPlatformMenuMock,

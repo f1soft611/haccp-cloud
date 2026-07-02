@@ -1,7 +1,10 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useUserMenuMetadata } from './userMenuMetadataContext';
+import {
+  useCurrentMenuGroupLabel,
+  useUserMenuMetadata,
+} from './userMenuMetadataContext';
 
 export type PageHeaderProps = {
   title: string;
@@ -15,6 +18,7 @@ export function PageHeader({
   description,
 }: PageHeaderProps) {
   const location = useLocation();
+  const currentMenuGroupLabel = useCurrentMenuGroupLabel();
   const menuMetadataByPath = useUserMenuMetadata();
 
   const currentMetadata = useMemo(() => {
@@ -32,6 +36,7 @@ export function PageHeader({
 
   const resolvedTitle = currentMetadata?.menuNm || title;
   const resolvedDescription = currentMetadata?.menuDc || description;
+  const resolvedGroupLabel = currentMenuGroupLabel || groupLabel;
 
   return (
     <Box
@@ -41,7 +46,7 @@ export function PageHeader({
         borderColor: 'primary.main',
       }}
     >
-      {groupLabel ? (
+      {resolvedGroupLabel ? (
         <Stack
           direction="row"
           alignItems="center"
@@ -49,7 +54,7 @@ export function PageHeader({
           sx={{ mb: 0.4 }}
         >
           <Typography variant="caption" color="text.secondary">
-            {groupLabel}
+            {resolvedGroupLabel}
           </Typography>
           <Typography variant="caption" color="text.disabled">
             /

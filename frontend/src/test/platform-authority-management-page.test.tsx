@@ -8,7 +8,7 @@ import {
 } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
-import { PlatformAuthorityManagementPage } from '../pages/platform-admin/authorities/PlatformAuthorityManagementPage';
+import { PlatformAuthorityManagementPage } from '../pages/organization/authorities/PlatformAuthorityManagementPage';
 import { useAuthStore } from '../shared/store/authStore';
 
 const {
@@ -16,7 +16,8 @@ const {
   updatePlatformRoleMock,
   updatePlatformRoleStatusMock,
   listPlatformRolesPagedMock,
-  listPlatformMenusMock,
+  listCommonPlatformMenusMock,
+  listRoleMenuCandidatesByTenantMock,
   getPlatformRoleMenuMappingMock,
   savePlatformRoleMenuMappingMock,
 } = vi.hoisted(() => ({
@@ -54,6 +55,7 @@ const {
         code: 'PLATFORM_ADMIN',
         name: '플랫폼 관리자',
         description: '플랫폼 운영 권한',
+        systemRole: true,
         active: true,
         updatedBy: 'platform_admin',
         updatedAt: '2026-06-18T09:00:00.000Z',
@@ -63,6 +65,7 @@ const {
         code: 'TENANT_ADMIN',
         name: '업체 관리자',
         description: '업체 운영 권한',
+        systemRole: false,
         active: true,
         updatedBy: 'platform_admin',
         updatedAt: '2026-06-18T09:00:00.000Z',
@@ -70,12 +73,13 @@ const {
     ],
     totalCount: 2,
   })),
-  listPlatformMenusMock: vi.fn(async () => [
+  listCommonPlatformMenusMock: vi.fn(async () => [
     {
       menuId: 'PM-0',
       menuCode: 'MENU_ROLE_PAGE',
       menuNm: '권한/메뉴 관리 커스텀 타이틀',
       menuDc: '권한 페이지 헤더 타이틀 테스트용',
+      parentMenuNm: '조직 관리',
       parentMenuId: null,
       menuOrdr: 0,
       menuUrl: '/platform/roles',
@@ -132,28 +136,33 @@ const {
       lastUpdusrId: '',
     },
   ]),
-  getPlatformRoleMenuMappingMock: vi.fn(async (roleCode: string) => ({
-    roleCode,
+  getPlatformRoleMenuMappingMock: vi.fn(async (roleIdentifier: string) => ({
+    roleCode: roleIdentifier,
     menuIds:
-      roleCode === 'TENANT_ADMIN'
+      roleIdentifier === 'PR-2' || roleIdentifier === 'TENANT_ADMIN'
         ? ['MENU_LOGIN_HISTORY']
         : ['MENU_DASHBOARD', 'MENU_DASHBOARD_STATS'],
   })),
+  listRoleMenuCandidatesByTenantMock: vi.fn(async () => [
+    'MENU_DASHBOARD',
+    'MENU_DASHBOARD_STATS',
+  ]),
   savePlatformRoleMenuMappingMock: vi.fn(async (payload) => payload),
 }));
 
-vi.mock('../services/platform/platformRoleService', () => ({
+vi.mock('../services/platform-admin/platformRoleService', () => ({
   listPlatformRolesPaged: listPlatformRolesPagedMock,
   createPlatformRole: createPlatformRoleMock,
   updatePlatformRole: updatePlatformRoleMock,
   updatePlatformRoleStatus: updatePlatformRoleStatusMock,
 }));
 
-vi.mock('../services/platform/platformMenuService', () => ({
-  listPlatformMenus: listPlatformMenusMock,
+vi.mock('../services/platform-admin/platformMenuService', () => ({
+  listCommonPlatformMenus: listCommonPlatformMenusMock,
 }));
 
-vi.mock('../services/platform/platformRoleMenuService', () => ({
+vi.mock('../services/platform-admin/platformRoleMenuService', () => ({
+  listRoleMenuCandidatesByTenant: listRoleMenuCandidatesByTenantMock,
   getPlatformRoleMenuMapping: getPlatformRoleMenuMappingMock,
   savePlatformRoleMenuMapping: savePlatformRoleMenuMappingMock,
 }));
@@ -195,6 +204,7 @@ describe('PlatformAuthorityManagementPage', () => {
           code: 'PLATFORM_ADMIN',
           name: '플랫폼 관리자',
           description: '플랫폼 운영 권한',
+          systemRole: true,
           active: true,
           updatedBy: 'platform_admin',
           updatedAt: '2026-06-18T09:00:00.000Z',
@@ -204,6 +214,7 @@ describe('PlatformAuthorityManagementPage', () => {
           code: 'TENANT_ADMIN',
           name: '업체 관리자',
           description: '업체 운영 권한',
+          systemRole: false,
           active: true,
           updatedBy: 'platform_admin',
           updatedAt: '2026-06-18T09:00:00.000Z',
@@ -214,14 +225,20 @@ describe('PlatformAuthorityManagementPage', () => {
 
     getPlatformRoleMenuMappingMock.mockReset();
     getPlatformRoleMenuMappingMock.mockImplementation(
-      async (roleCode: string) => ({
-        roleCode,
+      async (roleIdentifier: string) => ({
+        roleCode: roleIdentifier,
         menuIds:
-          roleCode === 'TENANT_ADMIN'
+          roleIdentifier === 'PR-2' || roleIdentifier === 'TENANT_ADMIN'
             ? ['MENU_LOGIN_HISTORY']
             : ['MENU_DASHBOARD', 'MENU_DASHBOARD_STATS'],
       }),
     );
+
+    listRoleMenuCandidatesByTenantMock.mockReset();
+    listRoleMenuCandidatesByTenantMock.mockResolvedValue([
+      'MENU_DASHBOARD',
+      'MENU_DASHBOARD_STATS',
+    ]);
   });
 
   it('renders authority rows and opens create/edit dialogs', async () => {
@@ -244,6 +261,7 @@ describe('PlatformAuthorityManagementPage', () => {
     expect(
       await screen.findByRole('columnheader', { name: '권한 코드' }),
     ).toBeInTheDocument();
+    expect(await screen.findByText('조직 관리')).toBeInTheDocument();
     expect(await screen.findByText('PLATFORM_ADMIN')).toBeInTheDocument();
     await waitFor(() => {
       expect(listPlatformRolesPagedMock).toHaveBeenCalledWith(
@@ -285,7 +303,15 @@ describe('PlatformAuthorityManagementPage', () => {
       ).not.toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: '권한 수정' })[0]);
+    expect(
+      screen.getAllByRole('button', { name: '권한 수정' })[0],
+    ).toBeDisabled();
+
+    await waitFor(() => {
+      expect(screen.getAllByText('시스템').length).toBeGreaterThan(0);
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: '권한 수정' })[1]);
     expect(await screen.findByText('권한 수정')).toBeInTheDocument();
     const editDialog = screen.getByRole('dialog', { name: /권한 수정/ });
     const editTextboxes = within(editDialog).getAllByRole('textbox');
@@ -298,8 +324,8 @@ describe('PlatformAuthorityManagementPage', () => {
     await waitFor(() => {
       expect(updatePlatformRoleMock.mock.calls[0]?.[0]).toEqual(
         expect.objectContaining({
-          id: 'PR-1',
-          code: 'PLATFORM_ADMIN',
+          id: 'PR-2',
+          code: 'TENANT_ADMIN',
           name: '플랫폼 총괄 관리자',
         }),
       );
@@ -307,6 +333,20 @@ describe('PlatformAuthorityManagementPage', () => {
   }, 15000);
 
   it('opens menu mapping and saves selected menus', async () => {
+    act(() => {
+      useAuthStore.setState({
+        isAuthenticated: true,
+        tenantCode: '000001',
+        userId: 'platform_admin',
+        role: 'PLATFORM_ADMIN',
+        accessToken: 'token',
+        refreshToken: 'refresh',
+        loginHistoryId: 1,
+        onboardingRequired: false,
+        onboardingStatus: 'COMPLETED',
+      });
+    });
+
     renderPage();
 
     const mappingButtons = await screen.findAllByRole('button', {
@@ -316,9 +356,19 @@ describe('PlatformAuthorityManagementPage', () => {
 
     expect(await screen.findByText('권한별 메뉴 매핑')).toBeInTheDocument();
 
+    await waitFor(() => {
+      expect(listRoleMenuCandidatesByTenantMock).toHaveBeenCalledWith('000001');
+    });
+
     const mappingDialog = screen.getByRole('dialog', {
       name: /권한별 메뉴 매핑/,
     });
+
+    expect(
+      within(mappingDialog).queryByRole('checkbox', {
+        name: '로그인 이력 (/platform/login-history)',
+      }),
+    ).not.toBeInTheDocument();
     const dashboardParentCheckbox = await within(mappingDialog).findByRole(
       'checkbox',
       {
@@ -347,15 +397,19 @@ describe('PlatformAuthorityManagementPage', () => {
     await waitFor(() => {
       expect(savePlatformRoleMenuMappingMock.mock.calls[0]?.[0]).toEqual(
         expect.objectContaining({
-          roleCode: 'TENANT_ADMIN',
+          roleCode: 'PR-2',
+          tenantCode: '000001',
           menuIds: expect.arrayContaining([
             'MENU_DASHBOARD',
             'MENU_DASHBOARD_STATS',
-            'MENU_LOGIN_HISTORY',
           ]),
         }),
       );
     });
+
+    expect(
+      savePlatformRoleMenuMappingMock.mock.calls[0]?.[0].menuIds,
+    ).not.toContain('MENU_LOGIN_HISTORY');
   });
 
   it('applies page size to the paged role query', async () => {
@@ -376,5 +430,35 @@ describe('PlatformAuthorityManagementPage', () => {
         }),
       );
     });
+  });
+
+  it('renders when the current page menu has no URL', async () => {
+    listCommonPlatformMenusMock.mockResolvedValueOnce([
+      {
+        menuId: 'PM-0',
+        menuCode: 'MENU_ROLE_PAGE',
+        menuNm: '권한/메뉴 관리 커스텀 타이틀',
+        menuDc: '권한 페이지 헤더 타이틀 테스트용',
+        parentMenuNm: '조직 관리',
+        parentMenuId: null,
+        menuOrdr: 0,
+        menuUrl: null as unknown as string,
+        iconNm: 'Security',
+        useAt: 'Y',
+        frstRegistPnttm: '',
+        frstRegisterId: '',
+        lastUpdtPnttm: '',
+        lastUpdusrId: '',
+      },
+    ]);
+
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', {
+        name: '플랫폼 권한/메뉴 관리',
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('플랫폼 관리')).toBeInTheDocument();
   });
 });

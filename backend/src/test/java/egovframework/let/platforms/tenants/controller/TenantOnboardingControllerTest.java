@@ -1,9 +1,11 @@
-package egovframework.let.platforms.tenants.controller;
+package egovframework.let.platform_admin.tenants.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import egovframework.let.platforms.tenants.domain.model.TenantOnboardingCompleteRequestVO;
-import egovframework.let.platforms.tenants.domain.model.TenantVerificationResponseVO;
-import egovframework.let.platforms.tenants.service.TenantOnboardingService;
+import egovframework.let.platform_admin.tenants.domain.model.TenantOnboardingCompleteRequestVO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantVerificationResponseVO;
+import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
+import egovframework.let.platform_admin.tenants.service.exception.MailAuthenticationFailureException;
+import egovframework.let.platform_admin.tenants.service.exception.MailConfigurationException;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.property.EgovPropertyService;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -121,4 +124,60 @@ class TenantOnboardingControllerTest {
                 .andExpect(jsonPath("$.code").value("200"))
                 .andExpect(jsonPath("$.message").value("온보딩이 완료되었습니다"));
     }
+
+        @Test
+        void dispatchVerificationEmail_ReturnsOk() throws Exception {
+                String tenantCode = "TENANT_000001";
+
+                doNothing().when(tenantOnboardingService).dispatchVerificationEmail(tenantCode);
+
+                mockMvc.perform(post("/api/v1/tenants/onboarding/dispatch-verification-email")
+                                                .param("tenantCode", tenantCode))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value("200"))
+                                .andExpect(jsonPath("$.message").value("인증 이메일 발송이 완료되었습니다"));
+        }
+
+        @Test
+        void resendVerificationEmail_ReturnsOk() throws Exception {
+                String tenantCode = "TENANT_000001";
+
+                doNothing().when(tenantOnboardingService).resendVerificationEmail(tenantCode);
+
+                mockMvc.perform(post("/api/v1/tenants/onboarding/resend-verification-email")
+                                                .param("tenantCode", tenantCode))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value("200"))
+                                .andExpect(jsonPath("$.message").value("인증 이메일 재발송이 완료되었습니다"));
+        }
+
+                    @Test
+                    void dispatchVerificationEmail_WhenMailConfigError_Returns503() throws Exception {
+                        String tenantCode = "TENANT_000001";
+
+                        doThrow(new MailConfigurationException("SMTP 인증 정보가 누락되었습니다."))
+                                .when(tenantOnboardingService)
+                                .dispatchVerificationEmail(tenantCode);
+
+                        mockMvc.perform(post("/api/v1/tenants/onboarding/dispatch-verification-email")
+                                        .param("tenantCode", tenantCode))
+                                .andExpect(status().isServiceUnavailable())
+                                .andExpect(jsonPath("$.code").value("503"))
+                                .andExpect(jsonPath("$.errorCode").value("MAIL_CONFIG_ERROR"));
+                    }
+
+                    @Test
+                    void dispatchVerificationEmail_WhenMailAuthError_Returns502() throws Exception {
+                        String tenantCode = "TENANT_000001";
+
+                        doThrow(new MailAuthenticationFailureException("SMTP 인증 실패"))
+                                .when(tenantOnboardingService)
+                                .dispatchVerificationEmail(tenantCode);
+
+                        mockMvc.perform(post("/api/v1/tenants/onboarding/dispatch-verification-email")
+                                        .param("tenantCode", tenantCode))
+                                .andExpect(status().isBadGateway())
+                                .andExpect(jsonPath("$.code").value("502"))
+                                .andExpect(jsonPath("$.errorCode").value("MAIL_AUTH_ERROR"));
+                    }
 }

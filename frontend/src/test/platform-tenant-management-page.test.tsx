@@ -10,9 +10,12 @@ const { listPlatformTenantsMock } = vi.hoisted(() => ({
   listPlatformTenantsMock: vi.fn(),
 }));
 
-vi.mock('../services/platform/platformTenantManagementService', () => ({
-  listPlatformTenants: listPlatformTenantsMock,
-}));
+vi.mock(
+  '../services/platform-admin/tenants/platformTenantManagementService',
+  () => ({
+    listPlatformTenants: listPlatformTenantsMock,
+  }),
+);
 
 function renderPage(initialPath = '/platform/tenants') {
   const client = new QueryClient({

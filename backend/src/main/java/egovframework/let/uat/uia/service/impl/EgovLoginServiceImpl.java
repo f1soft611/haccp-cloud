@@ -1,9 +1,9 @@
 package egovframework.let.uat.uia.service.impl;
 
 import egovframework.com.cmm.LoginVO;
-import egovframework.let.platforms.tenants.domain.model.TenantVO;
-import egovframework.let.platforms.tenants.domain.repository.TenantInfoDAO;
-import egovframework.let.platforms.tenants.context.TenantContextHolder;
+import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
+import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
 import egovframework.let.uat.uia.service.EgovLoginService;
 import egovframework.let.utl.fcc.service.EgovNumberUtil;
 import egovframework.let.utl.fcc.service.EgovStringUtil;
@@ -14,6 +14,7 @@ import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import javax.annotation.Resource;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -72,6 +73,12 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 			throw new IllegalStateException("업체 도메인 경로로 접속했는지 확인해주세요.");
 		}
 		vo.setTenantId(tenantId);
+		if (!StringUtils.hasText(vo.getTenantCode())) {
+			TenantVO tenant = tenantInfoDAO.selectById(tenantId);
+			if (tenant != null && StringUtils.hasText(tenant.getTenantCode())) {
+				vo.setTenantCode(tenant.getTenantCode());
+			}
+		}
 
 		// 2. 입력한 비밀번호를 암호화한다.
 		String enpassword = EgovFileScrty.encryptPassword(plainPassword, vo.getId());

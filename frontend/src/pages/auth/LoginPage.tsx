@@ -13,11 +13,12 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { appTheme } from '../../app/theme';
 import { login } from '../../services/auth/authService';
+import { getCurrentPlanAccess } from '../../services/platform-admin/planAccessService';
 import { extractApiErrorMessage } from '../../services/api/errorMessage';
 import {
   getTenantByDomain,
   type TenantDomainInfo,
-} from '../../services/tenant/tenantService';
+} from '../../services/organization/tenantService';
 import { useAuthStore } from '../../shared/store/authStore';
 import { APP_LABELS } from '../../shared/constants/labels';
 import {
@@ -25,6 +26,7 @@ import {
   normalizeLoginDomain,
   persistLastLoginDomain,
 } from '../../shared/utils/loginDomainRouting';
+import { resolveDashboardLandingPath } from '../../shared/utils/dashboardRouting';
 
 type TenantBrandCache = {
   tenantNm: string;
@@ -325,8 +327,21 @@ export function LoginPage() {
         tenantCode,
       });
 
+      let planCode: string | undefined;
+      try {
+        const currentPlanAccess = await getCurrentPlanAccess({
+          accessToken: result.accessToken,
+          tenantCode: result.tenantCode,
+        });
+        planCode =
+          currentPlanAccess.planCode?.trim().toUpperCase() || undefined;
+      } catch {
+        console.warn('Failed to resolve current plan after login.');
+      }
+
       setAuth({
         tenantCode: result.tenantCode,
+        planCode,
         userId: result.userId,
         displayName: result.displayName,
         role: result.role,
@@ -351,7 +366,7 @@ export function LoginPage() {
           persistLastLoginUserId(domainToPersist, localPart);
         }
       }
-      navigate(result.role === 'PLATFORM_ADMIN' ? '/platform' : '/dashboard', {
+      navigate(resolveDashboardLandingPath({ role: result.role, planCode }), {
         replace: true,
       });
     } catch (err) {

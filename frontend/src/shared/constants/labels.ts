@@ -1,4 +1,4 @@
-import type { DocumentStatus } from '../../services/common/documentsService';
+import type { DocumentStatus } from '../../services/documents/documentsService';
 import type { UserRole } from '../store/authStore';
 
 export type DocumentStatusCode = DocumentStatus;
@@ -28,6 +28,7 @@ export const APP_LABELS = {
     loginHistory: '로그인이력',
     users: '사용자',
     departments: '부서',
+    authorities: '권한',
     documents: '문서',
     history: '문서이력',
     logout: '로그아웃',
@@ -54,6 +55,7 @@ export const APP_LABELS = {
     user: '사용자',
     password: '비밀번호',
     companyName: '업체명',
+    planCode: '플랜 코드',
     businessRegistrationNumber: '사업자번호',
     corporateNumber: '법인번호',
     representativeName: '대표자명',
@@ -122,7 +124,10 @@ export const APP_LABELS = {
     onboardingFailed: '업체 코드 발급에 실패했습니다. 입력값을 확인하세요.',
     onboardingDuplicateBrn:
       '이미 등록된 사업자번호입니다. 사업자번호를 확인하고 수정해주세요.',
+    onboardingDuplicateAdminEmail:
+      '이미 등록된 업체 관리자 이메일입니다. 이메일을 확인하고 수정해주세요.',
     onboardingBrnFormatError: '사업자번호 형식: 000-00-00000',
+    onboardingCorporateNumberFormatError: '법인번호는 숫자 13자리 형식입니다.',
     tenantFirstSetupGuide:
       '사용자 1명 이상과 부서 1개 이상을 생성한 뒤 초기 설정 완료를 진행하세요.',
     tenantFirstSetupStatusError:

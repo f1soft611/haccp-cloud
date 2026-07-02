@@ -12,7 +12,7 @@ import {
   type PlatformAdminCcpDocuments,
   type PlatformAdminTenantList,
   type TenantCodeIssuanceSummary,
-} from '../services/common/dashboardService';
+} from '../services/documents/dashboardService';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {

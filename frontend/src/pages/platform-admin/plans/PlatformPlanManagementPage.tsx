@@ -12,8 +12,8 @@ import {
   savePlanMenuCodes,
   type PlanFeatureItem,
   type PlanSummary,
-} from '../../../services/plan/planAccessService';
-import { listPlatformMenus } from '../../../services/platform/platformMenuService';
+} from '../../../services/platform-admin/planAccessService';
+import { listPlatformMenus } from '../../../services/platform-admin/platformMenuService';
 import {
   PlatformPlanSearchBar,
   type PlanSearchBarValue,

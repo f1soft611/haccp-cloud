@@ -20,7 +20,7 @@ import type {
   PlatformAdminDashboardKpis,
   PlatformAdminTenantList,
   TenantCodeIssuanceSummary,
-} from '../../../services/common/dashboardService';
+} from '../../../services/documents/dashboardService';
 import type { UserRole } from '../../../shared/store/authStore';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { PlatformAdminDashboardTopSection } from './PlatformAdminDashboardTopSection';

@@ -44,6 +44,12 @@ public class RoleInfoVO implements Serializable {
     @Schema(description = "사용여부")
     private String useAt = "Y";
 
+    @Schema(description = "시스템 권한 여부(Y/N)")
+    private String systemRoleYn = "N";
+
+    @Schema(description = "시스템 권한 여부")
+    private Boolean systemRole = Boolean.FALSE;
+
     @Schema(description = "최초등록일시")
     private Date frstRegistPnttm;
 

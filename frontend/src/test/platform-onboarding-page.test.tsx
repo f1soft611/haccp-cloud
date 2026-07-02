@@ -2,10 +2,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
-import { http, HttpResponse } from 'msw';
-import { OnboardingPage } from '../pages/tenant-management/onboarding/OnboardingPage';
+import { OnboardingPage } from '../pages/platform-admin/tenants/OnboardingPage';
+import * as tenantService from '../services/organization/tenantService';
+import * as planAccessService from '../services/platform-admin/planAccessService';
 import { appTheme } from '../app/theme';
-import { server } from '../mocks/server';
 import { APP_LABELS } from '../shared/constants/labels';
 
 function renderPage() {
@@ -24,7 +24,7 @@ function renderPage() {
   );
 }
 
-function fillStep1({
+async function fillStep1({
   companyName = '테스트푸드',
   brn = '123-45-12345',
   corporateNumber = '110111-1234567',
@@ -33,6 +33,15 @@ function fillStep1({
   adminName = '홍길동',
   adminEmail = 'admin@testfood.com',
 } = {}) {
+  await screen.findByRole('option', { name: '기본 플랜' });
+
+  fireEvent.change(
+    screen.getByLabelText(new RegExp(APP_LABELS.field.planCode)),
+    {
+      target: { value: 'BASIC' },
+    },
+  );
+
   if (companyName) {
     fireEvent.change(
       screen.getByLabelText(new RegExp(APP_LABELS.field.companyName)),
@@ -92,6 +101,23 @@ function fillStep1({
 }
 
 describe('Platform onboarding page wizard', () => {
+  beforeEach(() => {
+    vi.spyOn(planAccessService, 'listPlanSummaries').mockResolvedValue([
+      {
+        planCode: 'BASIC',
+        planName: '기본 플랜',
+        planDesc: '',
+        useAt: 'Y',
+        featureCount: 0,
+        menuCount: 0,
+      },
+    ]);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('shows step 1 form initially', () => {
     renderPage();
     expect(
@@ -114,7 +140,7 @@ describe('Platform onboarding page wizard', () => {
 
   it('shows BRN format error for invalid format', async () => {
     renderPage();
-    fillStep1({ brn: '12345' });
+    await fillStep1({ brn: '12345' });
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -125,7 +151,7 @@ describe('Platform onboarding page wizard', () => {
 
   it('advances to step 2 with valid inputs', async () => {
     renderPage();
-    fillStep1();
+    await fillStep1();
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -139,7 +165,7 @@ describe('Platform onboarding page wizard', () => {
 
   it('goes back to step 1 when edit button clicked', async () => {
     renderPage();
-    fillStep1();
+    await fillStep1();
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -153,24 +179,17 @@ describe('Platform onboarding page wizard', () => {
   });
 
   it('issues tenant code and shows step 3 on success', async () => {
-    server.use(
-      http.post('/api/tenants/issue-code', () =>
-        HttpResponse.json(
-          {
-            tenantCode: 'TENANT_2606220001',
-            companyName: '테스트푸드',
-            businessRegistrationNumber: '123-45-12345',
-            adminEmail: 'admin@testfood.com',
-            createdAt: '2026-06-22T10:00:00.000Z',
-            mailDispatchStatus: 'QUEUED',
-          },
-          { status: 201 },
-        ),
-      ),
-    );
+    vi.spyOn(tenantService, 'issueTenantCode').mockResolvedValueOnce({
+      tenantCode: 'TENANT_2606220001',
+      companyName: '테스트푸드',
+      businessRegistrationNumber: '123-45-12345',
+      adminEmail: 'admin@testfood.com',
+      createdAt: '2026-06-22T10:00:00.000Z',
+      mailDispatchStatus: 'QUEUED',
+    });
 
     renderPage();
-    fillStep1();
+    await fillStep1();
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -187,17 +206,19 @@ describe('Platform onboarding page wizard', () => {
   });
 
   it('shows duplicate BRN error on 409 response', async () => {
-    server.use(
-      http.post('/api/tenants/issue-code', () =>
-        HttpResponse.json(
-          { code: 'DUPLICATE_BRN', message: '이미 등록된 사업자번호입니다.' },
-          { status: 409 },
-        ),
-      ),
-    );
+    vi.spyOn(tenantService, 'listSampleTenants').mockResolvedValueOnce([]);
+    vi.spyOn(tenantService, 'issueTenantCode').mockRejectedValueOnce({
+      response: {
+        status: 409,
+        data: {
+          code: 'DUPLICATE_BRN',
+          message: '이미 등록된 사업자번호입니다.',
+        },
+      },
+    });
 
     renderPage();
-    fillStep1();
+    await fillStep1();
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
     );
@@ -205,16 +226,55 @@ describe('Platform onboarding page wizard', () => {
     fireEvent.click(
       screen.getByRole('button', { name: APP_LABELS.action.issueTenantCode }),
     );
-    expect(
-      await screen.findByText(
-        new RegExp(
-          `${APP_LABELS.message.onboardingDuplicateBrn}|${APP_LABELS.message.onboardingFailed}`,
-        ),
-      ),
-    ).toBeInTheDocument();
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(APP_LABELS.message.onboardingDuplicateBrn);
+  });
+
+  it('shows a refined message when admin email unique constraint is returned', async () => {
+    vi.spyOn(tenantService, 'listSampleTenants').mockResolvedValueOnce([]);
+    vi.spyOn(tenantService, 'issueTenantCode').mockRejectedValueOnce({
+      response: {
+        status: 500,
+        data: {
+          message:
+            'Caused by: org.postgresql.util.PSQLException: 오류: 중복된 키 값이 "tb_tenant_admin_email_key" 고유 제약 조건을 위반함',
+        },
+      },
+    });
+
+    renderPage();
+    await fillStep1();
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
+    );
+    await screen.findByText(APP_LABELS.onboarding.confirmTitle);
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.issueTenantCode }),
+    );
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(
+      APP_LABELS.message.onboardingDuplicateAdminEmail,
+    );
   });
 
   it('renders issued tenant history table', async () => {
+    vi.spyOn(tenantService, 'listSampleTenants').mockResolvedValueOnce([
+      {
+        tenantCode: 'TENANT-SAMPLE-01',
+        companyName: '샘플푸드 1호',
+        adminEmail: 'admin1@samplefood.com',
+        issuedAt: '2026-06-10T09:00:00.000Z',
+      },
+      {
+        tenantCode: 'TENANT-SAMPLE-02',
+        companyName: '샘플푸드 2호',
+        adminEmail: 'admin2@samplefood.com',
+        issuedAt: '2026-06-10T09:30:00.000Z',
+      },
+    ]);
+
     renderPage();
     expect(
       await screen.findByText(APP_LABELS.onboarding.sampleTenantListTitle),
@@ -223,18 +283,14 @@ describe('Platform onboarding page wizard', () => {
   });
 
   it('renders tenant history with metadata columns', async () => {
-    server.use(
-      http.get('/api/tenants/samples', () =>
-        HttpResponse.json([
-          {
-            tenantCode: 'TENANT-META',
-            companyName: '샘플푸드 메타',
-            adminEmail: 'meta@sample.com',
-            issuedAt: '2026-06-11T10:00:00.000Z',
-          },
-        ]),
-      ),
-    );
+    vi.spyOn(tenantService, 'listSampleTenants').mockResolvedValueOnce([
+      {
+        tenantCode: 'TENANT-META',
+        companyName: '샘플푸드 메타',
+        adminEmail: 'meta@sample.com',
+        issuedAt: '2026-06-11T10:00:00.000Z',
+      },
+    ]);
 
     renderPage();
     expect(await screen.findByText('TENANT-META')).toBeInTheDocument();

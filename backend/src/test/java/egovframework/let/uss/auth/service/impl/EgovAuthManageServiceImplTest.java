@@ -2,6 +2,7 @@ package egovframework.let.uss.auth.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -37,5 +38,29 @@ class EgovAuthManageServiceImplTest {
         inOrder.verify(authManageDAO).deleteRoleMenuPermissionsByMenuId("MENU_1");
         inOrder.verify(authManageDAO).deleteMenu(menuInfoVO);
         verifyNoMoreInteractions(authManageDAO);
+    }
+
+    @DisplayName("메뉴 권한 확인 시 tenantId를 함께 전달한다")
+    @Test
+    void checkUserMenuPermission_passesTenantId() throws Exception {
+        EgovAuthManageServiceImpl service = new EgovAuthManageServiceImpl();
+        AuthManageDAO authManageDAO = mock(AuthManageDAO.class);
+        ReflectionTestUtils.setField(service, "authManageDAO", authManageDAO);
+
+        when(authManageDAO.checkUserMenuPermission(any())).thenReturn("write");
+
+        String permission = service.checkUserMenuPermission("TENANT_ADMIN", 101L, "/org/roles");
+
+        assertEquals("write", permission);
+        org.mockito.Mockito.verify(authManageDAO).checkUserMenuPermission(argThat((Object param) -> {
+            if (!(param instanceof java.util.Map)) {
+                return false;
+            }
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> map = (java.util.Map<String, Object>) param;
+            return "TENANT_ADMIN".equals(map.get("roleCode"))
+                    && Long.valueOf(101L).equals(map.get("tenantId"))
+                    && "/org/roles".equals(map.get("menuUrl"));
+        }));
     }
 }

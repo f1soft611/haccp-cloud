@@ -1,4 +1,4 @@
-package egovframework.let.platforms.tenants.service.impl;
+package egovframework.let.platform_admin.tenants.service.impl;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -4,7 +4,7 @@ import {
   listPlatformRolesPaged,
   listPlatformRoles,
   updatePlatformRole,
-} from '../services/platform/platformRoleService';
+} from '../services/platform-admin/platformRoleService';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {

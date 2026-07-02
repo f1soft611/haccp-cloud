@@ -24,6 +24,8 @@ import egovframework.com.cmm.service.EgovCmmUseService;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.com.jwt.EgovJwtTokenUtil;
+import egovframework.let.platform_admin.access.web.PlanAccessLevel;
+import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
 import egovframework.let.uss.umt.service.EgovMberManageService;
 import egovframework.let.uss.umt.service.MberManageVO;
 import egovframework.let.uss.umt.service.UserDefaultVO;
@@ -81,6 +83,11 @@ public class EgovMberManageApiController {
 			@ApiResponse(responseCode = "200", description = "조회 성공"),
 			@ApiResponse(responseCode = "403", description = "인가된 사용자가 아님")
 	})
+	@PlanAccessPolicy(
+			menuUrl = "/users",
+			featureCode = "FEATURE_TENANT_USER_MGMT",
+			requiredPermissionLevel = PlanAccessLevel.READ
+	)
 	@GetMapping(value = "/members")
 	public ResultVO selectMberList(
 			@RequestParam(value = "pageIndex", required = false, defaultValue = "1") Integer pageIndex,
@@ -167,6 +174,11 @@ public class EgovMberManageApiController {
 			@ApiResponse(responseCode = "200", description = "조회 성공"),
 			@ApiResponse(responseCode = "403", description = "인가된 사용자가 아님")
 	})
+	@PlanAccessPolicy(
+			menuUrl = "/users",
+			featureCode = "FEATURE_TENANT_USER_MGMT",
+			requiredPermissionLevel = PlanAccessLevel.READ
+	)
 	@GetMapping("/members/insert")
 	public ResultVO insertMberView(UserDefaultVO userSearchVO, MberManageVO mberManageVO)
 			throws Exception {
@@ -203,6 +215,12 @@ public class EgovMberManageApiController {
 			@ApiResponse(responseCode = "403", description = "인가된 사용자가 아님"),
 			@ApiResponse(responseCode = "900", description = "입력값 무결성 오류")
 	})
+	@PlanAccessPolicy(
+			menuUrl = "/members",
+			featureCode = "FEATURE_TENANT_USER_MGMT",
+			requiredPermissionLevel = PlanAccessLevel.WRITE,
+			limitFeatureCode = "LIMIT_USER_COUNT"
+	)
 	@PostMapping("/members/insert")
 	public ResultVO insertMber(@RequestBody MberManageVO mberManageVO, BindingResult bindingResult) throws Exception {
 		Map<String, Object> resultMap = new HashMap<String, Object>();
@@ -247,6 +265,11 @@ public class EgovMberManageApiController {
 			@ApiResponse(responseCode = "200", description = "조회 성공"),
 			@ApiResponse(responseCode = "403", description = "인가된 사용자가 아님")
 	})
+	@PlanAccessPolicy(
+			menuUrl = "/users",
+			featureCode = "FEATURE_TENANT_USER_MGMT",
+			requiredPermissionLevel = PlanAccessLevel.READ
+	)
 	@GetMapping("/members/update/{uniqId}")
 	public ResultVO updateMberView(@PathVariable("uniqId") String uniqId, UserDefaultVO userSearchVO) throws Exception {
 		Map<String, Object> resultMap = new HashMap<String, Object>();
@@ -290,6 +313,11 @@ public class EgovMberManageApiController {
 			@ApiResponse(responseCode = "403", description = "인가된 사용자가 아님"),
 			@ApiResponse(responseCode = "900", description = "입력값 무결성 오류")
 	})
+	@PlanAccessPolicy(
+			menuUrl = "/users",
+			featureCode = "FEATURE_TENANT_USER_MGMT",
+			requiredPermissionLevel = PlanAccessLevel.WRITE
+	)
 	@PutMapping("/members/update")
 	public ResultVO updateMber(@RequestBody MberManageVO mberManageVO, BindingResult bindingResult) throws Exception {
 		Map<String, Object> resultMap = new HashMap<String, Object>();

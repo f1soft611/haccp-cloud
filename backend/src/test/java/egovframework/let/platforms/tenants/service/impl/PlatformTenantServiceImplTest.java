@@ -1,4 +1,4 @@
-package egovframework.let.platforms.tenants.service.impl;
+package egovframework.let.platform_admin.tenants.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,15 +9,17 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-import egovframework.let.platforms.tenants.domain.model.TenantRegistrationRequestVO;
-import egovframework.let.platforms.tenants.domain.model.TenantRegistrationResultVO;
-import egovframework.let.platforms.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationRequestVO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
+import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platform_admin.tenants.service.impl.PlatformTenantServiceImpl;
 
 class PlatformTenantServiceImplTest {
 
@@ -103,5 +105,37 @@ class PlatformTenantServiceImplTest {
         requestVO.setTenantNm("  ");
 
         assertThrows(IllegalArgumentException.class, () -> service.registerTenant(requestVO));
+    }
+
+    @DisplayName("중복 키 오류는 같은 트랜잭션 안에서 재시도하지 않고 그대로 전파한다")
+    @Test
+    void registerTenant_propagatesDuplicateKeyFailure() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+
+        String datePrefix = TENANT_CODE_DATE_FORMATTER.format(LocalDate.now(BUSINESS_ZONE));
+        String nextCode = datePrefix + "0008";
+
+        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumber("1234567890")).thenReturn(0);
+        when(tenantInfoDAO.selectMaxTenantCodeByDatePrefix(datePrefix)).thenReturn(datePrefix + "0007");
+        when(tenantInfoDAO.insertTenant(
+                eq(nextCode),
+                eq("테스트업체"),
+                eq("admin@test.com"),
+                eq("123-45-67890"),
+                eq("식품제조"),
+                eq("즉석조리식품")))
+            .thenThrow(new DuplicateKeyException("duplicate tenant code"));
+
+        TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
+        requestVO.setTenantNm("테스트업체");
+        requestVO.setAdminEmail("admin@test.com");
+        requestVO.setCorporateNumber("123-45-67890");
+        requestVO.setBusinessType("식품제조");
+        requestVO.setBusinessCategory("즉석조리식품");
+
+        assertThrows(DuplicateKeyException.class, () -> service.registerTenant(requestVO));
+        verify(tenantInfoDAO).selectMaxTenantCodeByDatePrefix(datePrefix);
     }
 }

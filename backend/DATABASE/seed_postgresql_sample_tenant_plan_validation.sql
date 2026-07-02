@@ -50,6 +50,12 @@ ON CONFLICT (tenant_id, role_code) DO UPDATE
 SET role_nm = EXCLUDED.role_nm,
     use_at = 'Y';
 
+UPDATE tb_role
+SET is_system_role = 'Y',
+    updated_at = NOW()
+WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'TENANT_SAMPLE')
+  AND role_code IN ('TENANT_ADMIN', 'TENANT_USER', 'TENENT_USER');
+
 -- 4) Permissions
 INSERT INTO tb_permission (tenant_id, permission_code, permission_nm, use_at, created_at)
 SELECT t.tenant_id, p.permission_code, p.permission_nm, 'Y', NOW()
