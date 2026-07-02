@@ -28,6 +28,7 @@ export const APP_LABELS = {
     loginHistory: '로그인이력',
     users: '사용자',
     departments: '부서',
+    authorities: '권한',
     documents: '문서',
     history: '문서이력',
     logout: '로그아웃',

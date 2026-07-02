@@ -26,14 +26,6 @@ import {
   UserMenuMetadataProvider,
 } from './userMenuMetadataContext';
 
-const ALWAYS_ALLOWED_PATHS = [
-  '/dashboard',
-  '/account/password',
-  '/onboarding',
-  '/platform/onboarding',
-  '/tenant-first-setup',
-];
-
 export function AppLayout() {
   const location = useLocation();
 

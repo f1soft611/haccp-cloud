@@ -126,39 +126,28 @@ export type TenantOnboardingCompleteRequest = {
   logoImage?: string;
 };
 
+type IssueTenantCodePayload = Partial<IssueTenantCodeResponse> & {
+  tenantNm?: string;
+  tenant_nm?: string;
+  companyName?: string;
+  company_name?: string;
+  businessRegistrationNumber?: string;
+  business_registration_number?: string;
+  corporateNumber?: string;
+  corporate_number?: string;
+  adminEmail?: string;
+  admin_email?: string;
+  createdAt?: string;
+  created_at?: string;
+  mailDispatchStatus?: MailDispatchStatus | string;
+  mail_dispatch_status?: MailDispatchStatus | string;
+};
+
 type IssueTenantCodeEnvelope = {
   resultCode?: number | string;
   resultMessage?: string;
-  result?: Partial<IssueTenantCodeResponse> & {
-    tenantNm?: string;
-    companyName?: string;
-    company_name?: string;
-    businessRegistrationNumber?: string;
-    business_registration_number?: string;
-    corporateNumber?: string;
-    corporate_number?: string;
-    adminEmail?: string;
-    admin_email?: string;
-    createdAt?: string;
-    created_at?: string;
-    mailDispatchStatus?: MailDispatchStatus | string;
-    mail_dispatch_status?: MailDispatchStatus | string;
-  };
-  resultData?: Partial<IssueTenantCodeResponse> & {
-    tenantNm?: string;
-    companyName?: string;
-    company_name?: string;
-    businessRegistrationNumber?: string;
-    business_registration_number?: string;
-    corporateNumber?: string;
-    corporate_number?: string;
-    adminEmail?: string;
-    admin_email?: string;
-    createdAt?: string;
-    created_at?: string;
-    mailDispatchStatus?: MailDispatchStatus | string;
-    mail_dispatch_status?: MailDispatchStatus | string;
-  };
+  result?: IssueTenantCodePayload;
+  resultData?: IssueTenantCodePayload;
   tenantCode?: string;
   companyName?: string;
   company_name?: string;
@@ -177,10 +166,10 @@ type IssueTenantCodeEnvelope = {
 function normalizeIssueTenantCodeResponse(
   data: IssueTenantCodeEnvelope | IssueTenantCodeResponse,
 ): IssueTenantCodeResponse {
-  const payload =
+  const payload: IssueTenantCodePayload =
     (data as IssueTenantCodeEnvelope).result ??
     (data as IssueTenantCodeEnvelope).resultData ??
-    data;
+    (data as IssueTenantCodePayload);
 
   const mailDispatchStatus = String(
     payload.mailDispatchStatus ?? payload.mail_dispatch_status ?? '',

@@ -108,7 +108,6 @@ export function TenantFirstLoginSetupPage() {
       email: trimmedEmail,
       department: trimmedDepartment,
       roleCode: 'TENANT_USER',
-      roleCodes: ['TENANT_USER'],
     });
   };
 
