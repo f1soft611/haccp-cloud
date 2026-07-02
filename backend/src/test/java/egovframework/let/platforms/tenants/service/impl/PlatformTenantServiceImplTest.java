@@ -37,13 +37,13 @@ class PlatformTenantServiceImplTest {
         String previousCode = datePrefix + "0007";
         String nextCode = datePrefix + "0008";
 
-        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumber("001")).thenReturn(0);
+        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumber("1234561234567")).thenReturn(0);
         when(tenantInfoDAO.selectMaxTenantCodeByDatePrefix(datePrefix)).thenReturn(previousCode);
         when(tenantInfoDAO.insertTenant(
                 eq(nextCode),
                 eq("테스트업체"),
                 eq("admin@test.com"),
-                eq("CORP-001"),
+                eq("123456-1234567"),
                 eq("식품제조"),
                 eq("즉석조리식품")))
             .thenReturn(1);
@@ -52,7 +52,7 @@ class PlatformTenantServiceImplTest {
         TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
         requestVO.setTenantNm("테스트업체");
         requestVO.setAdminEmail("admin@test.com");
-        requestVO.setCorporateNumber("CORP-001");
+        requestVO.setCorporateNumber("123456-1234567");
         requestVO.setBusinessType("식품제조");
         requestVO.setBusinessCategory("즉석조리식품");
 
@@ -60,16 +60,16 @@ class PlatformTenantServiceImplTest {
 
         assertEquals(124L, result.getTenantId());
         assertEquals("TENANT_" + nextCode, result.getTenantCode());
-        assertEquals("CORP-001", result.getCorporateNumber());
+        assertEquals("123456-1234567", result.getCorporateNumber());
         assertEquals("식품제조", result.getBusinessType());
         assertEquals("즉석조리식품", result.getBusinessCategory());
 
-        verify(tenantInfoDAO).selectActiveTenantCountByCorporateNumber("001");
+        verify(tenantInfoDAO).selectActiveTenantCountByCorporateNumber("1234561234567");
         verify(tenantInfoDAO).insertTenant(
             eq(nextCode),
                 eq("테스트업체"),
                 eq("admin@test.com"),
-                eq("CORP-001"),
+                eq("123456-1234567"),
                 eq("식품제조"),
                 eq("즉석조리식품"));
     }
@@ -84,11 +84,11 @@ class PlatformTenantServiceImplTest {
         TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
         requestVO.setTenantNm("테스트업체");
         requestVO.setAdminEmail("admin@test.com");
-        requestVO.setCorporateNumber("123-45-67890");
+        requestVO.setCorporateNumber("123456-1234567");
         requestVO.setBusinessType("식품제조");
         requestVO.setBusinessCategory("즉석조리식품");
 
-        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumber("1234567890")).thenReturn(1);
+        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumber("1234561234567")).thenReturn(1);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> service.registerTenant(requestVO));
         assertEquals("이미 등록된 활성 업체의 사업자번호입니다", ex.getMessage());
@@ -117,13 +117,13 @@ class PlatformTenantServiceImplTest {
         String datePrefix = TENANT_CODE_DATE_FORMATTER.format(LocalDate.now(BUSINESS_ZONE));
         String nextCode = datePrefix + "0008";
 
-        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumber("1234567890")).thenReturn(0);
+        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumber("1234561234567")).thenReturn(0);
         when(tenantInfoDAO.selectMaxTenantCodeByDatePrefix(datePrefix)).thenReturn(datePrefix + "0007");
         when(tenantInfoDAO.insertTenant(
                 eq(nextCode),
                 eq("테스트업체"),
                 eq("admin@test.com"),
-                eq("123-45-67890"),
+                eq("123456-1234567"),
                 eq("식품제조"),
                 eq("즉석조리식품")))
             .thenThrow(new DuplicateKeyException("duplicate tenant code"));
@@ -131,7 +131,7 @@ class PlatformTenantServiceImplTest {
         TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
         requestVO.setTenantNm("테스트업체");
         requestVO.setAdminEmail("admin@test.com");
-        requestVO.setCorporateNumber("123-45-67890");
+        requestVO.setCorporateNumber("123456-1234567");
         requestVO.setBusinessType("식품제조");
         requestVO.setBusinessCategory("즉석조리식품");
 

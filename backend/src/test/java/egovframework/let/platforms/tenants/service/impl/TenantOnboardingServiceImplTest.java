@@ -43,7 +43,13 @@ import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 /**
  * 테넌트 온보딩 서비스 통합 테스트
  */
-@SpringBootTest(classes = TenantOnboardingServiceImpl.class, properties = "mail.from.address=test@haccpcloud.com")
+@SpringBootTest(
+    classes = TenantOnboardingServiceImpl.class,
+    properties = {
+        "mail.from.address=test@haccpcloud.com",
+        "spring.mail.username=test-user",
+        "spring.mail.password=test-password"
+    })
 class TenantOnboardingServiceImplTest {
 
     @Autowired
