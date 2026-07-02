@@ -8,7 +8,6 @@ import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.internet.MimeMessage;
@@ -21,6 +20,7 @@ import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
 import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 import egovframework.let.platform_admin.tenants.service.exception.MailAuthenticationFailureException;
 import egovframework.let.platform_admin.tenants.service.exception.MailConfigurationException;
+import egovframework.let.utl.sim.service.EgovFileScrty;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -30,6 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TenantOnboardingServiceImpl implements TenantOnboardingService {
 
+    private static final String DOMAIN_PATTERN = "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$";
+    private static final int MAX_LOGO_IMAGE_LENGTH = 4_000_000;
+
     @Autowired
     private TenantAuthTokenDAO tenantAuthTokenDAO;
 
@@ -38,9 +41,6 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
 
     @Autowired(required = false)
     private JavaMailSender javaMailSender;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
     @Value("${mail.from.address:no-reply@haccpcloud.local}")
     private String fromEmail;
@@ -125,20 +125,20 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             throw new IllegalStateException("유효하지 않은 토큰입니다");
         }
 
-        tenantAuthTokenDAO.markTokenAsUsed(authToken);
-
         if (tokenVO.getLoginAccountId() != null) {
             tenantInfoDAO.updateLoginAccountOnboardingStatus(tokenVO.getLoginAccountId(), "EMAIL_VERIFIED");
         }
 
         String tenantNm = tenantInfoDAO.selectTenantNameByCode(tokenVO.getTenantCode());
         String adminEmail = tenantInfoDAO.selectAdminEmailByLoginAccountId(tokenVO.getLoginAccountId());
+        String adminLoginCode = tenantInfoDAO.selectLoginCodeByLoginAccountId(tokenVO.getLoginAccountId());
 
         TenantVerificationResponseVO responseVO = TenantVerificationResponseVO.builder()
                 .tenantCode(tokenVO.getTenantCode())
                 .tenantNm(tenantNm)
                 .adminEmail(adminEmail)
                 .loginAccountId(tokenVO.getLoginAccountId())
+            .adminLoginCode(adminLoginCode)
                 .verified(true)
                 .message("이메일 인증이 완료되었습니다")
                 .build();
@@ -165,6 +165,8 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         String tenantCode = requestVO.getTenantCode().trim();
         String authToken = requestVO.getAuthToken().trim();
         String password = requestVO.getPassword();
+        String loginDomain = normalizeDomain(requestVO.getLoginDomain());
+        String logoImage = normalizeLogoImage(requestVO.getLogoImage());
 
         TenantAuthTokenVO tokenVO = tenantAuthTokenDAO.selectTokenByValue(authToken);
         if (tokenVO == null) {
@@ -184,11 +186,30 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             throw new IllegalStateException("로그인 계정이 존재하지 않습니다");
         }
 
-        String encodedPassword = passwordEncoder.encode(password);
+        Long tenantId = tenantInfoDAO.selectTenantIdByCode(tenantCode);
+        if (tenantId == null) {
+            throw new IllegalStateException("테넌트가 존재하지 않습니다");
+        }
+
+        if (!isBlank(loginDomain)) {
+            validateDomainAvailability(loginDomain, tenantId);
+        }
+
+        String loginCode = tenantInfoDAO.selectLoginCodeByLoginAccountId(loginAccountId);
+        if (isBlank(loginCode)) {
+            throw new IllegalStateException("로그인 계정 정보를 찾을 수 없습니다");
+        }
+
+        String encodedPassword;
+        try {
+            encodedPassword = EgovFileScrty.encryptPassword(password, loginCode);
+        } catch (Exception e) {
+            throw new IllegalStateException("비밀번호 암호화에 실패했습니다", e);
+        }
         int updatedLoginAccountCount = tenantInfoDAO.updateLoginAccountPasswordAndActivate(
                 loginAccountId,
                 encodedPassword,
-                "BCRYPT",
+            "SHA-512",
                 "Y",
                 "FIRST_SETUP_COMPLETED");
         if (updatedLoginAccountCount <= 0) {
@@ -199,13 +220,68 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             tenantInfoDAO.updateUserMobileNoByLoginAccountId(loginAccountId, requestVO.getPhoneNumber());
         }
 
-        if (tenantInfoDAO.selectTenantIdByCode(tenantCode) != null) {
-            tenantInfoDAO.updateOnboardingStatusByTenantCode(tenantCode, "ACTIVE");
+        if (!isBlank(loginDomain)) {
+            tenantInfoDAO.demotePrimaryDomainByTenantId(tenantId);
+            int updated = tenantInfoDAO.activateTenantDomain(tenantId, loginDomain);
+            if (updated <= 0) {
+                tenantInfoDAO.insertTenantDomain(tenantId, loginDomain);
+            }
         }
+
+        if (logoImage != null) {
+            tenantInfoDAO.updateLogoImage(tenantId, logoImage);
+        }
+
+        tenantInfoDAO.updateOnboardingStatusByTenantCode(tenantCode, "ACTIVE");
 
         tenantAuthTokenDAO.markTokenAsUsed(authToken);
 
         log.info("온보딩 완료: tenantCode={}, loginAccountId={}", tenantCode, loginAccountId);
+    }
+
+    private void validateDomainAvailability(String loginDomain, Long tenantId) {
+        if (!loginDomain.matches(DOMAIN_PATTERN)) {
+            throw new IllegalArgumentException("유효한 도메인 형식이 아닙니다");
+        }
+
+        Long existingTenantId = tenantInfoDAO.selectTenantIdByEmailDomain(loginDomain);
+        if (existingTenantId != null && !existingTenantId.equals(tenantId)) {
+            throw new IllegalStateException("이미 사용 중인 도메인입니다");
+        }
+    }
+
+    private String normalizeDomain(String domain) {
+        if (domain == null) {
+            return null;
+        }
+
+        String normalized = domain.trim().toLowerCase();
+        if (normalized.startsWith("http://")) {
+            normalized = normalized.substring(7);
+        } else if (normalized.startsWith("https://")) {
+            normalized = normalized.substring(8);
+        }
+
+        if (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+
+        return normalized;
+    }
+
+    private String normalizeLogoImage(String logoImage) {
+        if (logoImage == null) {
+            return null;
+        }
+
+        String normalized = logoImage.trim();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+        if (normalized.length() > MAX_LOGO_IMAGE_LENGTH) {
+            throw new IllegalArgumentException("로고 이미지 크기가 너무 큽니다");
+        }
+        return normalized;
     }
 
     /**
@@ -236,7 +312,19 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             adminEmail = tenantInfoDAO.selectAdminEmailByLoginAccountId(loginAccountId);
         }
 
-        if (loginAccountId == null || adminEmail == null) {
+        if (loginAccountId == null) {
+            loginAccountId = tenantInfoDAO.selectLatestLoginAccountIdByTenantCode(normalizedTenantCode);
+        }
+
+        if (adminEmail == null && loginAccountId != null) {
+            adminEmail = tenantInfoDAO.selectAdminEmailByLoginAccountId(loginAccountId);
+        }
+
+        if (isBlank(adminEmail)) {
+            adminEmail = tenantInfoDAO.selectAdminEmailByTenantCode(normalizedTenantCode);
+        }
+
+        if (loginAccountId == null || isBlank(adminEmail)) {
             throw new IllegalStateException("로그인 계정 정보를 찾을 수 없습니다. tenantCode=" + tenantCode);
         }
 

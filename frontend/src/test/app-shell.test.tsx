@@ -30,6 +30,7 @@ type AuthTestState = Pick<
   ReturnType<typeof useAuthStore.getState>,
   | 'isAuthenticated'
   | 'tenantCode'
+  | 'planCode'
   | 'userId'
   | 'role'
   | 'accessToken'
@@ -100,7 +101,9 @@ describe('App shell', () => {
       '/platform/roles',
       '/platform/role-menus',
       '/platform/login-history',
-      '/users',
+      '/org/users',
+      '/org/departments',
+      '/org/roles',
       '/documents',
     ]);
 
@@ -126,7 +129,9 @@ describe('App shell', () => {
         path: '/platform/login-history',
         menuNm: APP_LABELS.menu.loginHistory,
       },
-      { path: '/users', menuNm: APP_LABELS.menu.users },
+      { path: '/org/users', menuNm: APP_LABELS.menu.users },
+      { path: '/org/departments', menuNm: APP_LABELS.menu.departments },
+      { path: '/org/roles', menuNm: APP_LABELS.menu.authorities },
       { path: '/documents', menuNm: APP_LABELS.menu.documents },
     ]);
 
@@ -512,6 +517,7 @@ describe('App shell', () => {
       tenantCode: 'TENANT-A',
       userId: 'platform_admin',
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
     });
 
     renderAppRoutesAt('/platform');
@@ -564,6 +570,7 @@ describe('App shell', () => {
       tenantCode: 'TENANT-A',
       userId: 'PLATFORM_ADMIN',
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
     });
@@ -583,6 +590,7 @@ describe('App shell', () => {
       tenantCode: 'TENANT-A',
       userId: 'PLATFORM_ADMIN',
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
     });
@@ -667,6 +675,7 @@ describe('App shell', () => {
       tenantCode: '000001',
       userId: 'platform_admin',
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
     });
 
     const queryClient = new QueryClient();
@@ -731,6 +740,29 @@ describe('App shell', () => {
       tenantCode: '000001',
       userId: 'platform_admin',
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
+    });
+
+    renderAppRoutesAt('/platform/menus');
+
+    expect(
+      await screen.findByTestId('platform-menu-management-page'),
+    ).toBeInTheDocument();
+  });
+
+  it('allows TENANT_ADMIN with menu access to open platform menu management route', async () => {
+    vi.spyOn(
+      platformUserMenuService,
+      'listAccessibleMenuPaths',
+    ).mockResolvedValue(['/dashboard', '/platform/menus']);
+
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+      onboardingRequired: false,
+      onboardingStatus: 'COMPLETED',
     });
 
     renderAppRoutesAt('/platform/menus');
@@ -746,6 +778,7 @@ describe('App shell', () => {
       tenantCode: '000001',
       userId: 'platform_admin',
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
     });
 
     renderAppRoutesAt('/platform/tenants');
@@ -756,6 +789,11 @@ describe('App shell', () => {
   });
 
   it('redirects TENANT_ADMIN from platform menu management route to /dashboard', async () => {
+    vi.spyOn(
+      platformUserMenuService,
+      'listAccessibleMenuPaths',
+    ).mockResolvedValue(['/dashboard']);
+
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -781,6 +819,7 @@ describe('App shell', () => {
       tenantCode: '000001',
       userId: 'platform_admin',
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
     });
@@ -805,6 +844,10 @@ describe('App shell', () => {
   });
 
   it('redirects USER from /users to /dashboard', async () => {
+    vi.mocked(
+      platformUserMenuService.listAccessibleMenuPaths,
+    ).mockResolvedValueOnce(['/dashboard', '/documents']);
+
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -818,6 +861,24 @@ describe('App shell', () => {
     expect(
       screen.queryByRole('heading', { name: APP_LABELS.pageTitle.users }),
     ).not.toBeInTheDocument();
+  });
+
+  it('allows TENANT_ADMIN to open users page through legacy /users route', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+      onboardingRequired: false,
+      onboardingStatus: 'COMPLETED',
+    });
+
+    renderAppRoutesAt('/users');
+
+    expect(
+      await screen.findByRole('heading', { name: APP_LABELS.pageTitle.users }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
   });
 
   it('shows the menu-group breadcrumb for tenant admin users page', async () => {
@@ -864,7 +925,34 @@ describe('App shell', () => {
     ).toBeInTheDocument();
   });
 
+  it('allows TENANT_ADMIN to open authority page through legacy /roles route', async () => {
+    vi.spyOn(
+      platformUserMenuService,
+      'listAccessibleMenuPaths',
+    ).mockResolvedValue(['/dashboard', '/org/roles']);
+
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+      onboardingRequired: false,
+      onboardingStatus: 'COMPLETED',
+    });
+
+    renderAppRoutesAt('/roles');
+
+    expect(
+      await screen.findByTestId('platform-authority-management-page'),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
+  });
+
   it('redirects USER from /departments to /dashboard', async () => {
+    vi.mocked(
+      platformUserMenuService.listAccessibleMenuPaths,
+    ).mockResolvedValueOnce(['/dashboard', '/documents']);
+
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -902,6 +990,7 @@ describe('App shell', () => {
       tenantCode: '000001',
       userId: 'platform_admin',
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
     });
 
     renderAppRoutesAt('/platform/login-history');
@@ -910,6 +999,11 @@ describe('App shell', () => {
   });
 
   it('redirects TENANT_ADMIN from /platform/login-history to /dashboard', async () => {
+    vi.spyOn(
+      platformUserMenuService,
+      'listAccessibleMenuPaths',
+    ).mockResolvedValue(['/dashboard']);
+
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -1024,6 +1118,7 @@ describe('App shell', () => {
       tenantCode: 'TENANT-A',
       userId: 'platform_admin',
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
     });
@@ -1065,6 +1160,11 @@ describe('App shell', () => {
   });
 
   it('redirects USER from /platform/menus to /dashboard', async () => {
+    vi.spyOn(
+      platformUserMenuService,
+      'listAccessibleMenuPaths',
+    ).mockResolvedValue(['/dashboard', '/documents']);
+
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',

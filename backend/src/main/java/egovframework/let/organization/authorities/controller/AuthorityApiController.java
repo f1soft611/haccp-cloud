@@ -169,15 +169,10 @@ public class AuthorityApiController {
     }
 
     /**
-     * 현재 로그인 사용자의 권한에 따른 접근 가능 메뉴 목록 조회
-     * JWT 토큰의 roleCode를 SecurityContext에서 읽어 권한 확정
+     * 현재 로그인 사용자의 접근 가능 메뉴 목록 조회
+     * 로그인 계정(login_code) + tenant_id 기준으로 실제 role_id 매핑을 조회한다.
      */
     @GetMapping("/user-menus/me")
-    @PlanAccessPolicy(
-        menuUrl = "/org/roles",
-        featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
-        requiredPermissionLevel = PlanAccessLevel.READ
-    )
     public List<MenuInfoVO> listCurrentUserMenus() throws Exception {
         Object userDetails = egovframework.com.cmm.util.EgovUserDetailsHelper.getAuthenticatedUser();
         if (!(userDetails instanceof egovframework.com.cmm.LoginVO)) {
@@ -185,13 +180,18 @@ public class AuthorityApiController {
         }
 
         egovframework.com.cmm.LoginVO loginVO = (egovframework.com.cmm.LoginVO) userDetails;
-        String roleCode = loginVO.getRoleCode();
+        String loginId = loginVO.getId();
+        Long tenantId = loginVO.getTenantId();
 
-        if (!StringUtils.hasText(roleCode)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자 권한 정보가 없습니다.");
+        if (!StringUtils.hasText(loginId)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 사용자 아이디 정보가 없습니다.");
         }
 
-        return authorityService.listUserMenus(roleCode.trim().toUpperCase());
+        if (tenantId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자 테넌트 정보가 없습니다.");
+        }
+
+        return authorityService.listUserMenus(loginId.trim(), tenantId);
     }
 
     private void validatePage(int pageIndex, int pageSize) {

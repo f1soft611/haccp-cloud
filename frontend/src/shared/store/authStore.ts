@@ -22,6 +22,7 @@ function normalizeUserRole(value: unknown): UserRole {
 type AuthState = {
   isAuthenticated: boolean;
   tenantCode: string;
+  planCode?: string;
   userId: string;
   displayName: string;
   role: UserRole;
@@ -32,6 +33,7 @@ type AuthState = {
   onboardingStatus: OnboardingStatus;
   login: (payload: {
     tenantCode: string;
+    planCode?: string;
     userId: string;
     displayName?: string;
     role: UserRole;
@@ -89,6 +91,7 @@ function clearPersistedState(): void {
 const initialState = {
   isAuthenticated: false,
   tenantCode: '',
+  planCode: undefined,
   userId: '',
   displayName: '',
   role: 'USER' as UserRole,
@@ -115,6 +118,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   ...loadPersistedState(),
   login: ({
     tenantCode,
+    planCode,
     userId,
     displayName,
     role,
@@ -133,6 +137,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     const nextState = {
       isAuthenticated: true,
       tenantCode,
+      planCode: planCode?.trim().toUpperCase() || undefined,
       userId,
       displayName: (displayName ?? '').trim(),
       role: normalizeUserRole(role),

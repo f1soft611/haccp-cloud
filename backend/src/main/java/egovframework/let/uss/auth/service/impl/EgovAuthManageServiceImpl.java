@@ -196,9 +196,10 @@ public class EgovAuthManageServiceImpl extends EgovAbstractServiceImpl implement
      * 특정 메뉴에 대한 사용자 권한을 확인한다.
      */
     @Override
-    public String checkUserMenuPermission(String roleCode, String menuUrl) throws Exception {
+    public String checkUserMenuPermission(String roleCode, Long tenantId, String menuUrl) throws Exception {
         Map<String, Object> params = new HashMap<>();
         params.put("roleCode", roleCode);
+        params.put("tenantId", tenantId);
         params.put("menuUrl", menuUrl);
         
         String permission = authManageDAO.checkUserMenuPermission(params);

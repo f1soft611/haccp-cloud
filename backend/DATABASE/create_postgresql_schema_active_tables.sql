@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS tb_tenant (
     tenant_code VARCHAR(50) UNIQUE NOT NULL,
     tenant_nm VARCHAR(200) NOT NULL,
     admin_email VARCHAR(100) UNIQUE NOT NULL,
+    logo_image TEXT,
+    onboarding_status VARCHAR(50) DEFAULT 'EMAIL_QUEUED' NOT NULL,
     use_at CHAR(1) DEFAULT 'Y' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

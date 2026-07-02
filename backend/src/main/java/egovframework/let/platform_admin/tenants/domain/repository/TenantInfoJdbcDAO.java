@@ -59,6 +59,16 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
     }
 
     @Override
+    public String selectLoginCodeByLoginAccountId(Long loginAccountId) {
+        return selectOne("TenantInfoDAO.selectLoginCodeByLoginAccountId", loginAccountId);
+    }
+
+    @Override
+    public Long selectTenantIdByEmailDomain(String emailDomain) {
+        return selectOne("TenantInfoDAO.selectTenantIdByEmailDomain", emailDomain);
+    }
+
+    @Override
     public String selectAdminEmailByTenantCode(String tenantCode) {
         return selectOne("TenantInfoDAO.selectAdminEmailByTenantCode", tenantCode);
     }
@@ -106,6 +116,27 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
         param.put("loginAccountId", loginAccountId);
         param.put("mobileNo", mobileNo);
         return update("TenantInfoDAO.updateUserMobileNoByLoginAccountId", param);
+    }
+
+    @Override
+    public int demotePrimaryDomainByTenantId(Long tenantId) {
+        return update("TenantInfoDAO.demotePrimaryDomainByTenantId", tenantId);
+    }
+
+    @Override
+    public int activateTenantDomain(Long tenantId, String emailDomain) {
+        Map<String, Object> param = new HashMap<String, Object>();
+        param.put("tenantId", tenantId);
+        param.put("emailDomain", emailDomain);
+        return update("TenantInfoDAO.activateTenantDomain", param);
+    }
+
+    @Override
+    public int insertTenantDomain(Long tenantId, String emailDomain) {
+        Map<String, Object> param = new HashMap<String, Object>();
+        param.put("tenantId", tenantId);
+        param.put("emailDomain", emailDomain);
+        return insert("TenantInfoDAO.insertTenantDomain", param);
     }
 
     @Override

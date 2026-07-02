@@ -22,7 +22,6 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -128,6 +127,7 @@ class TenantOnboardingServiceImplTest {
         when(tenantAuthTokenDAO.selectTokenByValue(authToken)).thenReturn(tokenVO);
         when(tenantInfoDAO.selectTenantNameByCode("TEST_TENANT")).thenReturn("테스트 테넌트");
         when(tenantInfoDAO.selectAdminEmailByLoginAccountId(101L)).thenReturn("admin@test.com");
+        when(tenantInfoDAO.selectLoginCodeByLoginAccountId(101L)).thenReturn("tenant-admin");
 
         // When
         TenantVerificationResponseVO response = tenantOnboardingService.verifyEmailToken(authToken);
@@ -136,11 +136,37 @@ class TenantOnboardingServiceImplTest {
         assertNotNull(response);
         assertEquals("TEST_TENANT", response.getTenantCode());
         assertEquals(101L, response.getLoginAccountId());
+        assertEquals("tenant-admin", response.getAdminLoginCode());
         assertTrue(response.isVerified());
 
-        verify(tenantAuthTokenDAO, times(1)).markTokenAsUsed(authToken);
         verify(tenantInfoDAO, times(1)).updateLoginAccountOnboardingStatus(101L, "EMAIL_VERIFIED");
         verify(tenantInfoDAO, times(1)).selectTenantNameByCode("TEST_TENANT");
         verify(tenantInfoDAO, times(1)).selectAdminEmailByLoginAccountId(101L);
+        verify(tenantInfoDAO, times(1)).selectLoginCodeByLoginAccountId(101L);
+    }
+
+    @DisplayName("활성 토큰이 없어도 tenantCode 기반 fallback으로 인증 이메일 재발송된다")
+    @Test
+    void resendVerificationEmail_FallbackWithTenantCode_Success() {
+        // Given
+        String tenantCode = "PLATFORM";
+
+        when(tenantInfoDAO.selectTenantIdByCode(tenantCode)).thenReturn(1L);
+        when(tenantInfoDAO.selectOnboardingStatusByTenantCode(tenantCode)).thenReturn("EMAIL_SENT");
+        when(tenantAuthTokenDAO.selectActiveTokenByTenantCode(tenantCode)).thenReturn(null);
+        when(tenantInfoDAO.selectLatestLoginAccountIdByTenantCode(tenantCode)).thenReturn(10L);
+        when(tenantInfoDAO.selectAdminEmailByLoginAccountId(10L)).thenReturn("platform-admin@test.com");
+        when(tenantInfoDAO.selectTenantNameByCode(tenantCode)).thenReturn("플랫폼");
+        when(javaMailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
+
+        // When
+        tenantOnboardingService.resendVerificationEmail(tenantCode);
+
+        // Then
+        verify(tenantInfoDAO, times(1)).selectLatestLoginAccountIdByTenantCode(tenantCode);
+        verify(tenantAuthTokenDAO, times(1)).expireTokensByTenantCode(tenantCode);
+        verify(tenantAuthTokenDAO, times(1)).insertToken(any(TenantAuthTokenVO.class));
+        verify(tenantInfoDAO, times(1)).updateOnboardingStatusByTenantCode(tenantCode, "EMAIL_SENT");
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
     }
 }

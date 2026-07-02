@@ -30,6 +30,10 @@ public interface TenantInfoDAO {
 
         String selectAdminEmailByLoginAccountId(Long loginAccountId);
 
+        String selectLoginCodeByLoginAccountId(Long loginAccountId);
+
+        Long selectTenantIdByEmailDomain(String emailDomain);
+
         String selectAdminEmailByTenantCode(String tenantCode);
 
         Long selectLatestLoginAccountIdByTenantCode(String tenantCode);
@@ -46,6 +50,12 @@ public interface TenantInfoDAO {
             String onboardingStatus);
 
         int updateUserMobileNoByLoginAccountId(Long loginAccountId, String mobileNo);
+
+        int demotePrimaryDomainByTenantId(Long tenantId);
+
+        int activateTenantDomain(Long tenantId, String emailDomain);
+
+        int insertTenantDomain(Long tenantId, String emailDomain);
 
     int selectActiveTenantCountByCorporateNumber(String normalizedCorporateNumber);
 

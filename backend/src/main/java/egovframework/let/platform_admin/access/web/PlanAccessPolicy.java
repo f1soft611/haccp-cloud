@@ -15,5 +15,7 @@ public @interface PlanAccessPolicy {
 
     PlanAccessLevel requiredPermissionLevel();
 
+    boolean skipRolePermissionCheck() default false;
+
     String limitFeatureCode() default "";
 }

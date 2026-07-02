@@ -19,6 +19,11 @@ export type CurrentPlanAccess = {
   features: FeatureAccessMap;
 };
 
+type PlanAccessAuthContext = {
+  accessToken?: string;
+  tenantCode?: string;
+};
+
 export type PlanSummary = {
   planCode: string;
   planName: string;
@@ -186,9 +191,28 @@ function normalizeFeatureItems(data: {
   });
 }
 
-export async function getCurrentPlanAccess(): Promise<CurrentPlanAccess> {
+export function getCurrentPlanAccess(): Promise<CurrentPlanAccess>;
+export function getCurrentPlanAccess(
+  authContext: PlanAccessAuthContext,
+): Promise<CurrentPlanAccess>;
+export async function getCurrentPlanAccess(
+  authContext?: PlanAccessAuthContext,
+): Promise<CurrentPlanAccess> {
+  const headers: Record<string, string> = {};
+
+  const normalizedAccessToken = authContext?.accessToken?.trim();
+  if (normalizedAccessToken) {
+    headers.Authorization = `Bearer ${normalizedAccessToken}`;
+  }
+
+  const normalizedTenantCode = authContext?.tenantCode?.trim();
+  if (normalizedTenantCode) {
+    headers['x-tenant-code'] = normalizedTenantCode;
+  }
+
   const { data } = await apiClient.get<RawCurrentPlanAccess>(
     '/platform-admin/plan-access/me',
+    Object.keys(headers).length > 0 ? { headers } : undefined,
   );
 
   return {

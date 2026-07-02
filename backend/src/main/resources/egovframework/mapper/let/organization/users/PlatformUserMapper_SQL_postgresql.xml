@@ -10,7 +10,23 @@
             u.user_nm AS userNm,
             u.email_addr AS emailAddr,
             COALESCE(d.department_nm, '') AS departmentNm,
-            COALESCE(string_agg(DISTINCT r.role_code, ',' ORDER BY r.role_code), '') AS roleCodesText,
+            COALESCE(
+                (
+                    SELECT r1.role_code
+                    FROM tb_login_account_role lar1
+                    JOIN tb_role r1 ON r1.role_id = lar1.role_id
+                    WHERE lar1.login_id = la.login_id
+                    ORDER BY CASE
+                        WHEN r1.role_code = 'PLATFORM_ADMIN' THEN 1
+                        WHEN r1.role_code = 'TENANT_ADMIN' THEN 2
+                        WHEN r1.role_code = 'TENANT_USER' THEN 3
+                        ELSE 99
+                    END,
+                    r1.role_id
+                    LIMIT 1
+                ),
+                ''
+            ) AS roleCode,
             CASE
                 WHEN COALESCE(u.use_at, 'N') = 'Y' AND COALESCE(la.use_at, 'N') = 'Y' THEN TRUE
                 ELSE FALSE
@@ -22,13 +38,10 @@
         JOIN tb_login_account la ON la.login_id = u.login_id
         JOIN tb_tenant t ON t.tenant_id = u.tenant_id
         LEFT JOIN tb_department d ON d.department_id = u.department_id
-        LEFT JOIN tb_login_account_role lar ON lar.login_id = la.login_id
-        LEFT JOIN tb_role r ON r.role_id = lar.role_id
         WHERE 1 = 1
         <if test="tenantCode != null and tenantCode != ''">
             AND t.tenant_code = #{tenantCode}
         </if>
-        GROUP BY u.user_id, la.login_id, t.tenant_code, u.user_nm, u.email_addr, d.department_nm, u.use_at, la.use_at, la.login_code, u.created_at
         ORDER BY u.created_at DESC, u.user_id DESC
     </select>
 
@@ -42,7 +55,23 @@
                 u.user_nm AS userNm,
                 u.email_addr AS emailAddr,
                 COALESCE(d.department_nm, '') AS departmentNm,
-                COALESCE(string_agg(DISTINCT r.role_code, ',' ORDER BY r.role_code), '') AS roleCodesText,
+                COALESCE(
+                    (
+                        SELECT r1.role_code
+                        FROM tb_login_account_role lar1
+                        JOIN tb_role r1 ON r1.role_id = lar1.role_id
+                        WHERE lar1.login_id = la.login_id
+                        ORDER BY CASE
+                            WHEN r1.role_code = 'PLATFORM_ADMIN' THEN 1
+                            WHEN r1.role_code = 'TENANT_ADMIN' THEN 2
+                            WHEN r1.role_code = 'TENANT_USER' THEN 3
+                            ELSE 99
+                        END,
+                        r1.role_id
+                        LIMIT 1
+                    ),
+                    ''
+                ) AS roleCode,
                 CASE
                     WHEN COALESCE(u.use_at, 'N') = 'Y' AND COALESCE(la.use_at, 'N') = 'Y' THEN TRUE
                     ELSE FALSE
@@ -55,8 +84,6 @@
             JOIN tb_login_account la ON la.login_id = u.login_id
             JOIN tb_tenant t ON t.tenant_id = u.tenant_id
             LEFT JOIN tb_department d ON d.department_id = u.department_id
-            LEFT JOIN tb_login_account_role lar ON lar.login_id = la.login_id
-            LEFT JOIN tb_role r ON r.role_id = lar.role_id
             WHERE 1 = 1
             <if test="tenantCode != null and tenantCode != ''">
                 AND t.tenant_code = #{tenantCode}
@@ -74,7 +101,6 @@
             <if test='filterActive != null and filterActive == "N"'>
                 AND NOT (COALESCE(u.use_at, 'N') = 'Y' AND COALESCE(la.use_at, 'N') = 'Y')
             </if>
-            GROUP BY u.user_id, la.login_id, t.tenant_code, u.user_nm, u.email_addr, d.department_nm, u.use_at, la.use_at, la.login_code, u.created_at
         ) user_query
         WHERE rn BETWEEN #{firstIndex} AND #{lastIndex}
         ORDER BY rn
@@ -82,31 +108,27 @@
 
     <select id="PlatformUserDAO.selectUserPagedCount" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultType="int">
         SELECT COUNT(1)
-        FROM (
-            SELECT 1
-            FROM tb_user u
-            JOIN tb_login_account la ON la.login_id = u.login_id
-            JOIN tb_tenant t ON t.tenant_id = u.tenant_id
-            LEFT JOIN tb_department d ON d.department_id = u.department_id
-            WHERE 1 = 1
-            <if test="tenantCode != null and tenantCode != ''">
-                AND t.tenant_code = #{tenantCode}
-            </if>
-            <if test="keyword != null and keyword != ''">
-                AND (
-                    LOWER(u.user_nm) LIKE '%' || LOWER(#{keyword}) || '%'
-                    OR LOWER(u.email_addr) LIKE '%' || LOWER(#{keyword}) || '%'
-                    OR LOWER(COALESCE(d.department_nm, '')) LIKE '%' || LOWER(#{keyword}) || '%'
-                )
-            </if>
-            <if test='filterActive != null and filterActive == "Y"'>
-                AND COALESCE(u.use_at, 'N') = 'Y' AND COALESCE(la.use_at, 'N') = 'Y'
-            </if>
-            <if test='filterActive != null and filterActive == "N"'>
-                AND NOT (COALESCE(u.use_at, 'N') = 'Y' AND COALESCE(la.use_at, 'N') = 'Y')
-            </if>
-            GROUP BY u.user_id, la.login_id, t.tenant_code, u.user_nm, u.email_addr, d.department_nm, u.use_at, la.use_at, la.login_code, u.created_at
-        ) counted
+        FROM tb_user u
+        JOIN tb_login_account la ON la.login_id = u.login_id
+        JOIN tb_tenant t ON t.tenant_id = u.tenant_id
+        LEFT JOIN tb_department d ON d.department_id = u.department_id
+        WHERE 1 = 1
+        <if test="tenantCode != null and tenantCode != ''">
+            AND t.tenant_code = #{tenantCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                LOWER(u.user_nm) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(u.email_addr) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(COALESCE(d.department_nm, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+            )
+        </if>
+        <if test='filterActive != null and filterActive == "Y"'>
+            AND COALESCE(u.use_at, 'N') = 'Y' AND COALESCE(la.use_at, 'N') = 'Y'
+        </if>
+        <if test='filterActive != null and filterActive == "N"'>
+            AND NOT (COALESCE(u.use_at, 'N') = 'Y' AND COALESCE(la.use_at, 'N') = 'Y')
+        </if>
     </select>
 
     <select id="PlatformUserDAO.selectUserDetail" parameterType="map" resultType="egovframework.let.organization.users.domain.model.PlatformUserVO">
@@ -117,7 +139,23 @@
             u.user_nm AS userNm,
             u.email_addr AS emailAddr,
             COALESCE(d.department_nm, '') AS departmentNm,
-            COALESCE(string_agg(DISTINCT r.role_code, ',' ORDER BY r.role_code), '') AS roleCodesText,
+            COALESCE(
+                (
+                    SELECT r1.role_code
+                    FROM tb_login_account_role lar1
+                    JOIN tb_role r1 ON r1.role_id = lar1.role_id
+                    WHERE lar1.login_id = la.login_id
+                    ORDER BY CASE
+                        WHEN r1.role_code = 'PLATFORM_ADMIN' THEN 1
+                        WHEN r1.role_code = 'TENANT_ADMIN' THEN 2
+                        WHEN r1.role_code = 'TENANT_USER' THEN 3
+                        ELSE 99
+                    END,
+                    r1.role_id
+                    LIMIT 1
+                ),
+                ''
+            ) AS roleCode,
             CASE
                 WHEN COALESCE(u.use_at, 'N') = 'Y' AND COALESCE(la.use_at, 'N') = 'Y' THEN TRUE
                 ELSE FALSE
@@ -129,11 +167,8 @@
         JOIN tb_login_account la ON la.login_id = u.login_id
         JOIN tb_tenant t ON t.tenant_id = u.tenant_id
         LEFT JOIN tb_department d ON d.department_id = u.department_id
-        LEFT JOIN tb_login_account_role lar ON lar.login_id = la.login_id
-        LEFT JOIN tb_role r ON r.role_id = lar.role_id
         WHERE u.tenant_id = #{tenantId}
           AND u.user_id = #{userId}
-        GROUP BY u.user_id, la.login_id, t.tenant_code, u.user_nm, u.email_addr, d.department_nm, u.use_at, la.use_at, la.login_code
     </select>
 
     <select id="PlatformUserDAO.selectTenantIdByCode" parameterType="string" resultType="long">

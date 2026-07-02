@@ -66,6 +66,9 @@
                AND pm.use_at = 'Y'
         WHERE r.role_code = #{roleCode}
           AND m.menu_url = #{menuUrl}
+                <if test="tenantId != null">
+                    AND r.tenant_id = #{tenantId}
+                </if>
           AND m.use_at = 'Y'
           AND p.use_at = 'Y'
     </select>

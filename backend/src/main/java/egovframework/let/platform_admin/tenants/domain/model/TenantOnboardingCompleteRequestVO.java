@@ -22,4 +22,10 @@ public class TenantOnboardingCompleteRequestVO {
 
     @Schema(description = "전화번호")
     private String phoneNumber;
+
+    @Schema(description = "회사 로그인 도메인 (예: f1soft.co.kr)")
+    private String loginDomain;
+
+    @Schema(description = "회사 로고 이미지(Base64)")
+    private String logoImage;
 }

@@ -33,7 +33,8 @@ public class PlanAccessApiController {
         @PlanAccessPolicy(
             menuUrl = "/platform/plans",
             featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
-            requiredPermissionLevel = PlanAccessLevel.READ
+            requiredPermissionLevel = PlanAccessLevel.READ,
+            skipRolePermissionCheck = true
         )
     @GetMapping("/me")
     public Map<String, Object> getCurrentTenantPlanAccess() {

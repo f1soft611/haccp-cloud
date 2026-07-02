@@ -82,9 +82,10 @@ public interface AuthorityDAO {
 
     /**
      * 사용자 접근 가능 메뉴 목록을 조회한다.
-     * @param roleCode 역할 코드
+     * @param loginId 로그인 아이디(login_code)
+     * @param tenantId 테넌트 ID
      * @return 메뉴 목록
      * @throws Exception
      */
-    List<MenuInfoVO> selectUserAccessibleMenus(String roleCode) throws Exception;
+    List<MenuInfoVO> selectUserAccessibleMenus(String loginId, Long tenantId) throws Exception;
 }

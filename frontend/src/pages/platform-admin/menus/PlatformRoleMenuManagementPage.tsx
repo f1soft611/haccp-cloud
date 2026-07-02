@@ -3,16 +3,18 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
-import { listPlatformMenus } from '../../../services/platform-admin/platformMenuService';
+import { listCommonPlatformMenus } from '../../../services/platform-admin/platformMenuService';
 import { listPlatformRoles } from '../../../services/platform-admin/platformRoleService';
 import {
   getPlatformRoleMenuMapping,
   savePlatformRoleMenuMapping,
 } from '../../../services/platform-admin/platformRoleMenuService';
+import { useAuthStore } from '../../../shared/store/authStore';
 import { RoleMenuMappingPanel } from './components/RoleMenuMappingPanel';
 
 export function PlatformRoleMenuManagementPage() {
-  const [selectedRoleCode, setSelectedRoleCode] = useState('');
+  const tenantCode = useAuthStore((state) => state.tenantCode);
+  const [selectedRoleId, setSelectedRoleId] = useState('');
   const [draftMenuIds, setDraftMenuIds] = useState<string[] | null>(null);
 
   const rolesQuery = useQuery({
@@ -22,16 +24,15 @@ export function PlatformRoleMenuManagementPage() {
 
   const menusQuery = useQuery({
     queryKey: ['platform-admin', 'menus'],
-    queryFn: listPlatformMenus,
+    queryFn: listCommonPlatformMenus,
   });
 
-  const effectiveRoleCode =
-    selectedRoleCode || rolesQuery.data?.[0]?.code || '';
+  const effectiveRoleId = selectedRoleId || rolesQuery.data?.[0]?.id || '';
 
   const mappingQuery = useQuery({
-    queryKey: ['platform-admin', 'role-menus', effectiveRoleCode],
-    queryFn: () => getPlatformRoleMenuMapping(effectiveRoleCode),
-    enabled: effectiveRoleCode.length > 0,
+    queryKey: ['platform-admin', 'role-menus', effectiveRoleId, tenantCode],
+    queryFn: () => getPlatformRoleMenuMapping(effectiveRoleId, tenantCode),
+    enabled: effectiveRoleId.length > 0,
   });
 
   const selectedMenuIds = draftMenuIds ?? mappingQuery.data?.menuIds ?? [];
@@ -40,8 +41,8 @@ export function PlatformRoleMenuManagementPage() {
     mutationFn: savePlatformRoleMenuMapping,
   });
 
-  const handleSelectRole = (code: string) => {
-    setSelectedRoleCode(code);
+  const handleSelectRole = (id: string) => {
+    setSelectedRoleId(id);
     setDraftMenuIds(null);
   };
 
@@ -55,9 +56,10 @@ export function PlatformRoleMenuManagementPage() {
   };
 
   const handleSave = () => {
-    if (!effectiveRoleCode) return;
+    if (!effectiveRoleId) return;
     saveMutation.mutate({
-      roleCode: effectiveRoleCode,
+      roleCode: effectiveRoleId,
+      tenantCode,
       menuIds: selectedMenuIds,
     });
   };
@@ -80,7 +82,7 @@ export function PlatformRoleMenuManagementPage() {
       <RoleMenuMappingPanel
         roles={rolesQuery.data ?? []}
         menus={menusQuery.data ?? []}
-        selectedRoleCode={effectiveRoleCode}
+        selectedRoleId={effectiveRoleId}
         selectedMenuIds={selectedMenuIds}
         submitting={saveMutation.isPending}
         onSelectRole={handleSelectRole}
@@ -90,4 +92,3 @@ export function PlatformRoleMenuManagementPage() {
     </Stack>
   );
 }
-

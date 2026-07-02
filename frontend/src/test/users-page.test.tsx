@@ -31,4 +31,24 @@ describe('UsersPage', () => {
       2,
     );
   });
+
+  it('shows authority names from role data in the grid', async () => {
+    useAuthStore.setState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+    });
+
+    render(
+      <AppProviders>
+        <UsersPage />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByText('업체 관리자')).toBeInTheDocument();
+    expect(await screen.findByText('총 2건')).toBeInTheDocument();
+
+    expect(await screen.findByText('업체 사용자')).toBeInTheDocument();
+  });
 });

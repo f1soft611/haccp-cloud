@@ -97,9 +97,10 @@ public interface AuthorityService {
 
     /**
      * 사용자 접근 가능 메뉴를 조회한다.
-     * @param roleCode 역할 코드
+     * @param loginId 로그인 아이디(login_code)
+     * @param tenantId 테넌트 ID
      * @return 메뉴 목록
      * @throws Exception
      */
-    List<MenuInfoVO> listUserMenus(String roleCode) throws Exception;
+    List<MenuInfoVO> listUserMenus(String loginId, Long tenantId) throws Exception;
 }

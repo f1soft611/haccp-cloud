@@ -16,18 +16,33 @@ import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 
 type UsersGridProps = {
   rows: UserItem[];
+  roleNameByCode?: Record<string, string>;
   loading?: boolean;
   onEdit: (user: UserItem) => void;
   onToggle: (user: UserItem) => void;
 };
 
-function roleLabel(roleCode: string) {
-  if (roleCode === 'PLATFORM_ADMIN') return '플랫폼관리자';
-  if (roleCode === 'TENANT_ADMIN') return '업체관리자';
-  return '일반사용자';
+function roleLabel(roleCode: string, roleNameByCode?: Record<string, string>) {
+  const normalizedCode = String(roleCode ?? '')
+    .trim()
+    .toUpperCase();
+  const mappedName = roleNameByCode?.[normalizedCode];
+  if (mappedName) {
+    return mappedName;
+  }
+
+  if (normalizedCode === 'PLATFORM_ADMIN') return '플랫폼 관리자';
+  if (normalizedCode === 'TENANT_ADMIN') return '업체 관리자';
+  return '업체 사용자';
 }
 
-export function UsersGrid({ rows, loading, onEdit, onToggle }: UsersGridProps) {
+export function UsersGrid({
+  rows,
+  roleNameByCode,
+  loading,
+  onEdit,
+  onToggle,
+}: UsersGridProps) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
 
@@ -95,7 +110,7 @@ export function UsersGrid({ rows, loading, onEdit, onToggle }: UsersGridProps) {
                 <TableCell>{row.name}</TableCell>
                 <TableCell>{row.email}</TableCell>
                 <TableCell>{row.department || '-'}</TableCell>
-                <TableCell>{roleLabel(row.roleCode)}</TableCell>
+                <TableCell>{roleLabel(row.roleCode, roleNameByCode)}</TableCell>
                 <TableCell align="center">
                   <Chip
                     size="small"

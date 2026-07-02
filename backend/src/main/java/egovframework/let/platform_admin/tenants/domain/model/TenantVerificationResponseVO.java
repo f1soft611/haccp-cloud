@@ -29,6 +29,9 @@ public class TenantVerificationResponseVO {
     @Schema(description = "로그인 계정 ID")
     private Long loginAccountId;
 
+    @Schema(description = "관리자 로그인 아이디")
+    private String adminLoginCode;
+
     @Schema(description = "검증 성공 여부")
     private boolean verified;
 

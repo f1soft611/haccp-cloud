@@ -57,6 +57,22 @@ function normalizeMenuPath(menuUrl: string): string {
 
   const normalizedPath = trimmed.replace(/\/+$/, '');
 
+  if (normalizedPath === '/org') {
+    return '';
+  }
+
+  if (normalizedPath === '/users') {
+    return '/org/users';
+  }
+
+  if (normalizedPath === '/departments') {
+    return '/org/departments';
+  }
+
+  if (normalizedPath === '/roles') {
+    return '/org/roles';
+  }
+
   // Keep backward compatibility while platform onboarding moves to tenant management list.
   if (
     normalizedPath === '/onboarding' ||

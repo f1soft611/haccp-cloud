@@ -77,6 +77,19 @@
         WHERE li.login_id = #{value}
     </select>
 
+    <select id="TenantInfoDAO.selectLoginCodeByLoginAccountId" parameterType="long" resultType="string">
+        SELECT login_code
+        FROM tb_login_account
+        WHERE login_id = #{value}
+    </select>
+
+    <select id="TenantInfoDAO.selectTenantIdByEmailDomain" parameterType="string" resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant_domain
+        WHERE email_domain = #{value}
+        LIMIT 1
+    </select>
+
     <select id="TenantInfoDAO.selectAdminEmailByTenantCode" parameterType="string" resultType="string">
         SELECT admin_email
         FROM tb_tenant
@@ -111,7 +124,7 @@
     <update id="TenantInfoDAO.updateLoginAccountPasswordAndActivate" parameterType="map">
         UPDATE tb_login_account
         SET password_hash = #{passwordHash},
-            password_algo = #{passwordAlgo},
+--             password_algo = 'BCRYPT',
             use_at = #{useAt},
             updated_at = now()
         WHERE login_id = #{loginAccountId}
@@ -127,6 +140,41 @@
             WHERE login_id = #{loginAccountId}
         )
     </update>
+
+    <update id="TenantInfoDAO.demotePrimaryDomainByTenantId" parameterType="long">
+        UPDATE tb_tenant_domain
+        SET is_primary = 'N',
+            updated_at = now()
+        WHERE tenant_id = #{value}
+          AND is_primary = 'Y'
+    </update>
+
+    <update id="TenantInfoDAO.activateTenantDomain" parameterType="map">
+        UPDATE tb_tenant_domain
+        SET is_primary = 'Y',
+            use_at = 'Y',
+            updated_at = now()
+        WHERE tenant_id = #{tenantId}
+          AND email_domain = #{emailDomain}
+    </update>
+
+    <insert id="TenantInfoDAO.insertTenantDomain" parameterType="map">
+        INSERT INTO tb_tenant_domain (
+            tenant_id,
+            email_domain,
+            is_primary,
+            use_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{tenantId},
+            #{emailDomain},
+            'Y',
+            'Y',
+            now(),
+            now()
+        )
+    </insert>
 
     <select id="TenantInfoDAO.selectActiveTenantCountByCorporateNumber" parameterType="string" resultType="int">
                 SELECT 0
@@ -282,7 +330,7 @@
                         NULL AS corporate_number,
                         NULL AS business_type,
                         NULL AS business_category,
-                        NULL AS logo_image,
+                        t.logo_image,
                         COALESCE(NULLIF(TRIM(t.onboarding_status), ''), 'EMAIL_QUEUED') AS onboarding_status,
                         t.created_at,
                         t.updated_at,
@@ -307,7 +355,7 @@
             NULL AS corporate_number,
             NULL AS business_type,
             NULL AS business_category,
-            NULL AS logo_image,
+            logo_image,
             COALESCE(NULLIF(TRIM(onboarding_status), ''), 'EMAIL_QUEUED') AS onboarding_status,
             created_at,
             updated_at,
@@ -320,7 +368,8 @@
     <!-- 테넌트 로고 이미지 업데이트 -->
     <update id="TenantInfoDAO.updateLogoImage" parameterType="map">
         UPDATE tb_tenant
-        SET updated_at = now()
+        SET logo_image = #{logoImage},
+            updated_at = now()
         WHERE tenant_id = #{tenantId}
     </update>
 

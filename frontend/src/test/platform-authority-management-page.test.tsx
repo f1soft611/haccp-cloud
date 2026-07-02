@@ -16,7 +16,7 @@ const {
   updatePlatformRoleMock,
   updatePlatformRoleStatusMock,
   listPlatformRolesPagedMock,
-  listPlatformMenusMock,
+  listCommonPlatformMenusMock,
   getPlatformRoleMenuMappingMock,
   savePlatformRoleMenuMappingMock,
 } = vi.hoisted(() => ({
@@ -70,7 +70,7 @@ const {
     ],
     totalCount: 2,
   })),
-  listPlatformMenusMock: vi.fn(async () => [
+  listCommonPlatformMenusMock: vi.fn(async () => [
     {
       menuId: 'PM-0',
       menuCode: 'MENU_ROLE_PAGE',
@@ -133,10 +133,10 @@ const {
       lastUpdusrId: '',
     },
   ]),
-  getPlatformRoleMenuMappingMock: vi.fn(async (roleCode: string) => ({
-    roleCode,
+  getPlatformRoleMenuMappingMock: vi.fn(async (roleIdentifier: string) => ({
+    roleCode: roleIdentifier,
     menuIds:
-      roleCode === 'TENANT_ADMIN'
+      roleIdentifier === 'PR-2' || roleIdentifier === 'TENANT_ADMIN'
         ? ['MENU_LOGIN_HISTORY']
         : ['MENU_DASHBOARD', 'MENU_DASHBOARD_STATS'],
   })),
@@ -151,7 +151,7 @@ vi.mock('../services/platform-admin/platformRoleService', () => ({
 }));
 
 vi.mock('../services/platform-admin/platformMenuService', () => ({
-  listPlatformMenus: listPlatformMenusMock,
+  listCommonPlatformMenus: listCommonPlatformMenusMock,
 }));
 
 vi.mock('../services/platform-admin/platformRoleMenuService', () => ({
@@ -215,10 +215,10 @@ describe('PlatformAuthorityManagementPage', () => {
 
     getPlatformRoleMenuMappingMock.mockReset();
     getPlatformRoleMenuMappingMock.mockImplementation(
-      async (roleCode: string) => ({
-        roleCode,
+      async (roleIdentifier: string) => ({
+        roleCode: roleIdentifier,
         menuIds:
-          roleCode === 'TENANT_ADMIN'
+          roleIdentifier === 'PR-2' || roleIdentifier === 'TENANT_ADMIN'
             ? ['MENU_LOGIN_HISTORY']
             : ['MENU_DASHBOARD', 'MENU_DASHBOARD_STATS'],
       }),
@@ -309,6 +309,20 @@ describe('PlatformAuthorityManagementPage', () => {
   }, 15000);
 
   it('opens menu mapping and saves selected menus', async () => {
+    act(() => {
+      useAuthStore.setState({
+        isAuthenticated: true,
+        tenantCode: '000001',
+        userId: 'platform_admin',
+        role: 'PLATFORM_ADMIN',
+        accessToken: 'token',
+        refreshToken: 'refresh',
+        loginHistoryId: 1,
+        onboardingRequired: false,
+        onboardingStatus: 'COMPLETED',
+      });
+    });
+
     renderPage();
 
     const mappingButtons = await screen.findAllByRole('button', {
@@ -349,7 +363,8 @@ describe('PlatformAuthorityManagementPage', () => {
     await waitFor(() => {
       expect(savePlatformRoleMenuMappingMock.mock.calls[0]?.[0]).toEqual(
         expect.objectContaining({
-          roleCode: 'TENANT_ADMIN',
+          roleCode: 'PR-2',
+          tenantCode: '000001',
           menuIds: expect.arrayContaining([
             'MENU_DASHBOARD',
             'MENU_DASHBOARD_STATS',
@@ -381,7 +396,7 @@ describe('PlatformAuthorityManagementPage', () => {
   });
 
   it('renders when the current page menu has no URL', async () => {
-    listPlatformMenusMock.mockResolvedValueOnce([
+    listCommonPlatformMenusMock.mockResolvedValueOnce([
       {
         menuId: 'PM-0',
         menuCode: 'MENU_ROLE_PAGE',

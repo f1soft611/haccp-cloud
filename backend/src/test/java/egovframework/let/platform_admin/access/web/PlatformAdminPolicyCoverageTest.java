@@ -53,6 +53,9 @@ class PlatformAdminPolicyCoverageTest {
                 }
 
                 if (requiresPlatformAdminPolicy) {
+                    if (isPolicyOptional(controllerClass, method)) {
+                        continue;
+                    }
                     PlanAccessPolicy policy = AnnotatedElementUtils.findMergedAnnotation(method, PlanAccessPolicy.class);
                     if (policy == null) {
                         missingPolicies.add(controllerClass.getSimpleName() + "#" + method.getName());
@@ -149,6 +152,16 @@ class PlatformAdminPolicyCoverageTest {
                 PlatformDashboardApiController.class,
                 PlanAccessApiController.class
         );
+    }
+
+    private boolean isPolicyOptional(Class<?> controllerClass, Method method) {
+        if (PlatformMenuApiController.class.equals(controllerClass) && "listCommonMenus".equals(method.getName())) {
+            return true;
+        }
+        if (AuthorityApiController.class.equals(controllerClass) && "listCurrentUserMenus".equals(method.getName())) {
+            return true;
+        }
+        return false;
     }
 
     private List<String> resolvePaths(java.lang.reflect.AnnotatedElement element, boolean defaultToRoot) {

@@ -160,13 +160,18 @@ public class AuthorityServiceImpl implements AuthorityService {
     @Override
     public Map<String, Object> getRoleMenus(String roleCode, String tenantCode) throws Exception {
         String normalizedRoleCode = toUpper(roleCode);
+        Long roleId = parseLong(roleCode);
         String normalizedTenantCode = hasText(tenantCode) ? toUpper(tenantCode) : "PLATFORM";
         if (!hasText(normalizedRoleCode)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleCode는 필수입니다.");
         }
 
         RoleMenuPermissionVO condition = new RoleMenuPermissionVO();
-        condition.setRoleCode(normalizedRoleCode);
+        if (roleId != null) {
+            condition.setRoleId(roleId);
+        } else {
+            condition.setRoleCode(normalizedRoleCode);
+        }
         condition.setTenantCode(normalizedTenantCode);
         List<RoleMenuPermissionVO> permissions = authorityDAO.selectRoleMenuPermissionList(condition);
 
@@ -178,7 +183,7 @@ public class AuthorityServiceImpl implements AuthorityService {
         }
 
         Map<String, Object> response = new HashMap<String, Object>();
-        response.put("roleCode", normalizedRoleCode);
+        response.put("roleCode", roleId != null ? String.valueOf(roleId) : normalizedRoleCode);
         response.put("tenantCode", normalizedTenantCode);
         response.put("menuIds", new ArrayList<String>(menuCodeSet));
         return response;
@@ -197,6 +202,8 @@ public class AuthorityServiceImpl implements AuthorityService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleCode는 필수입니다.");
         }
 
+        Long roleId = parseLong(payload.getRoleCode());
+        String normalizedRoleCode = toUpper(payload.getRoleCode());
         String normalizedTenantCode = hasText(tenantCode) ? toUpper(tenantCode) : "PLATFORM";
         List<String> allowedMenuCodes = listAllowedMenuCodesByTenantPlan(normalizedTenantCode);
         Set<String> allowedSet = new LinkedHashSet<String>(allowedMenuCodes);
@@ -206,14 +213,22 @@ public class AuthorityServiceImpl implements AuthorityService {
                 .collect(Collectors.toList());
 
         Map<String, Object> deleteCondition = new HashMap<String, Object>();
-        deleteCondition.put("roleCode", payload.getRoleCode());
+        if (roleId != null) {
+            deleteCondition.put("roleId", roleId);
+        } else {
+            deleteCondition.put("roleCode", normalizedRoleCode);
+        }
         deleteCondition.put("tenantCode", normalizedTenantCode);
 
         authorityDAO.deleteRoleMenuPermissionsByRoleCode(deleteCondition);
 
         for (String menuCode : filteredMenuIds) {
             RoleMenuPermissionVO item = new RoleMenuPermissionVO();
-            item.setRoleCode(payload.getRoleCode());
+            if (roleId != null) {
+                item.setRoleId(roleId);
+            } else {
+                item.setRoleCode(normalizedRoleCode);
+            }
             item.setTenantCode(normalizedTenantCode);
             item.setMenuCode(menuCode);
             item.setPermissionCode(DEFAULT_PERMISSION_ID);
@@ -224,7 +239,7 @@ public class AuthorityServiceImpl implements AuthorityService {
         }
 
         Map<String, Object> response = new HashMap<String, Object>();
-        response.put("roleCode", payload.getRoleCode());
+        response.put("roleCode", roleId != null ? String.valueOf(roleId) : normalizedRoleCode);
         response.put("tenantCode", normalizedTenantCode);
         response.put("menuIds", filteredMenuIds);
         return response;
@@ -244,11 +259,30 @@ public class AuthorityServiceImpl implements AuthorityService {
     }
 
     @Override
-    public List<MenuInfoVO> listUserMenus(String roleCode) throws Exception {
-        return authorityDAO.selectUserAccessibleMenus(roleCode);
+    public List<MenuInfoVO> listUserMenus(String loginId, Long tenantId) throws Exception {
+        return authorityDAO.selectUserAccessibleMenus(loginId, tenantId);
     }
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    private Long parseLong(String value) {
+        if (!hasText(value)) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        for (int index = 0; index < trimmed.length(); index++) {
+            if (!Character.isDigit(trimmed.charAt(index))) {
+                return null;
+            }
+        }
+
+        try {
+            return Long.valueOf(trimmed);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

@@ -12,6 +12,7 @@ import {
   updateUserStatus,
   type UserItem,
 } from '../../../services/organization/usersService';
+import { listDepartments } from '../../../services/organization/departmentsService';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { listPlatformRoles } from '../../../services/platform-admin/platformRoleService';
 import {
@@ -70,6 +71,16 @@ export function UsersPage() {
     retry: false,
   });
 
+  const departmentsQuery = useQuery({
+    queryKey: ['departments', tenantCode || ''],
+    queryFn: () =>
+      listDepartments({
+        tenantCode: tenantCode || '',
+      }),
+    enabled: Boolean(tenantCode),
+    retry: false,
+  });
+
   const roleOptions = useMemo(() => {
     return (rolesQuery.data ?? [])
       .filter((item) => item.active)
@@ -78,6 +89,20 @@ export function UsersPage() {
         name: item.name,
       }));
   }, [rolesQuery.data]);
+
+  const roleNameByCode = useMemo(() => {
+    return roleOptions.reduce<Record<string, string>>((acc, item) => {
+      acc[item.code.trim().toUpperCase()] = item.name;
+      return acc;
+    }, {});
+  }, [roleOptions]);
+
+  const departmentOptions = useMemo(() => {
+    return (departmentsQuery.data ?? [])
+      .filter((item) => item.active)
+      .map((item) => item.name)
+      .filter((item) => item.length > 0);
+  }, [departmentsQuery.data]);
 
   const createMutation = useMutation({
     mutationFn: createUser,
@@ -139,7 +164,6 @@ export function UsersPage() {
       email: value.email,
       department: value.department,
       roleCode: value.roleCode,
-      roleCodes: [value.roleCode],
       active: value.active,
     };
 
@@ -188,6 +212,7 @@ export function UsersPage() {
 
       <UsersGrid
         rows={usersQuery.data?.items ?? []}
+        roleNameByCode={roleNameByCode}
         loading={usersQuery.isLoading}
         onEdit={handleOpenEdit}
         onToggle={(user) => setStatusTarget(user)}
@@ -205,6 +230,7 @@ export function UsersPage() {
         open={formOpen}
         mode={editingUser ? 'edit' : 'create'}
         saving={createMutation.isPending || updateMutation.isPending}
+        departmentOptions={departmentOptions}
         roleOptions={roleOptions}
         initialValue={
           editingUser

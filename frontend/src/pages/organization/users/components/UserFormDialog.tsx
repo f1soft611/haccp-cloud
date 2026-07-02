@@ -20,6 +20,7 @@ export type UserFormValue = {
 type UserFormDialogProps = {
   open: boolean;
   mode: 'create' | 'edit';
+  departmentOptions: string[];
   roleOptions: Array<{ code: string; name: string }>;
   initialValue?: UserFormValue;
   saving?: boolean;
@@ -38,6 +39,7 @@ const EMPTY_VALUE: UserFormValue = {
 export function UserFormDialog({
   open,
   mode,
+  departmentOptions,
   roleOptions,
   initialValue,
   saving,
@@ -52,10 +54,25 @@ export function UserFormDialog({
     }
 
     return [
-      { code: 'TENANT_ADMIN', name: '업체관리자' },
-      { code: 'TENANT_USER', name: '일반사용자' },
+      { code: 'TENANT_ADMIN', name: '업체 관리자' },
+      { code: 'TENANT_USER', name: '업체 사용자' },
     ];
   }, [roleOptions]);
+
+  const normalizedDepartmentOptions = useMemo(() => {
+    const merged = [
+      ...departmentOptions,
+      ...(initialValue?.department ? [initialValue.department] : []),
+    ];
+
+    return Array.from(
+      new Set(
+        merged
+          .map((item) => String(item ?? '').trim())
+          .filter((item) => item.length > 0),
+      ),
+    );
+  }, [departmentOptions, initialValue?.department]);
 
   useEffect(() => {
     if (!open) {
@@ -103,9 +120,6 @@ export function UserFormDialog({
       maxWidth="sm"
       actions={
         <>
-          <Button onClick={onClose} disabled={saving}>
-            취소
-          </Button>
           <Button
             variant="contained"
             onClick={handleSubmit}
@@ -113,42 +127,52 @@ export function UserFormDialog({
           >
             저장
           </Button>
+          <Button onClick={onClose} disabled={saving}>
+            취소
+          </Button>
         </>
       }
     >
-      <Stack spacing={1.2} sx={{ mt: 0.5 }}>
+      <Stack spacing={2} sx={{ mt: 0.5 }}>
         <TextField
-          size="small"
           label="이름"
           value={value.name}
           onChange={(event) =>
             setValue((prev) => ({ ...prev, name: event.target.value }))
           }
+          fullWidth
         />
         <TextField
-          size="small"
           label="이메일"
           value={value.email}
           onChange={(event) =>
             setValue((prev) => ({ ...prev, email: event.target.value }))
           }
+          fullWidth
         />
         <TextField
-          size="small"
+          select
           label="부서"
           value={value.department}
           onChange={(event) =>
             setValue((prev) => ({ ...prev, department: event.target.value }))
           }
-        />
+          fullWidth
+        >
+          {normalizedDepartmentOptions.map((departmentName) => (
+            <MenuItem key={departmentName} value={departmentName}>
+              {departmentName}
+            </MenuItem>
+          ))}
+        </TextField>
         <TextField
           select
-          size="small"
           label="권한"
           value={value.roleCode}
           onChange={(event) =>
             setValue((prev) => ({ ...prev, roleCode: event.target.value }))
           }
+          fullWidth
         >
           {normalizedRoleOptions.map((role) => (
             <MenuItem key={role.code} value={role.code}>

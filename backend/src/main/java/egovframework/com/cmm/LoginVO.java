@@ -94,6 +94,9 @@ public class LoginVO implements Serializable{
 	@Schema(description = "역할코드", allowableValues = {"PLATFORM_ADMIN", "TENANT_ADMIN", "TENANT_USER"})
 	private String roleCode;
 
+	@Schema(description = "역할ID")
+	private Long roleId;
+
 	@Deprecated
 	public String getFactoryCode() {
 		return tenantCode;

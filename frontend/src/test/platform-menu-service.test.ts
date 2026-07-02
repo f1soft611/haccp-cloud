@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../services/api/apiClient';
 import {
   createPlatformMenu,
+  listCommonPlatformMenus,
   listPlatformMenus,
   listPlatformMenusPaged,
   updatePlatformMenu,
@@ -92,6 +93,33 @@ describe('platformMenuService', () => {
 
     expect(items[0].menuId).toBe('101');
     expect(items[0].parentMenuId).toBe('100');
+  });
+
+  it('calls the common menu endpoint without platform menu permissions', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: [
+        {
+          menuId: 'MENU_1',
+          menuCode: 'MENU_AUTHORITY_MANAGEMENT',
+          menuNm: '권한 관리',
+          menuDc: '권한 관리 메뉴',
+          parentMenuId: null,
+          menuOrdr: 1,
+          menuUrl: '/platform/roles',
+          iconNm: 'Security',
+          useAt: 'Y',
+          frstRegistPnttm: '',
+          frstRegisterId: '',
+          lastUpdtPnttm: '',
+          lastUpdusrId: '',
+        },
+      ],
+    });
+
+    const items = await listCommonPlatformMenus();
+
+    expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/menus/common');
+    expect(items[0].menuCode).toBe('MENU_AUTHORITY_MANAGEMENT');
   });
 
   it('sends parentMenuId when creating menu', async () => {

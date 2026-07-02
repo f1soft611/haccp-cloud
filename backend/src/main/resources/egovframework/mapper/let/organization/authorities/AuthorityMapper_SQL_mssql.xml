@@ -175,6 +175,9 @@
             LEFT JOIN tb_menu m ON rmp.menu_id = m.menu_id
             LEFT JOIN tb_permission p ON rmp.permission_id = p.permission_id
         WHERE 1 = 1
+        <if test="roleId != null">
+            AND r.role_id = #{roleId}
+        </if>
         <if test="roleCode != null and roleCode != ''">
             AND r.role_code = #{roleCode}
         </if>
@@ -195,43 +198,79 @@
             permission_id,
             created_at
         ) VALUES (
-            (
-                SELECT TOP 1 r.role_id
-                FROM tb_role r
-                WHERE r.role_code = #{roleCode}
-                ORDER BY r.role_id
-            ),
+            <choose>
+                <when test="roleId != null">
+                    (
+                        SELECT TOP 1 r.role_id
+                        FROM tb_role r
+                        WHERE r.role_id = #{roleId}
+                        ORDER BY r.role_id
+                    )
+                </when>
+                <otherwise>
+                    (
+                        SELECT TOP 1 r.role_id
+                        FROM tb_role r
+                        WHERE r.role_code = #{roleCode}
+                        ORDER BY r.role_id
+                    )
+                </otherwise>
+            </choose>,
             (
                 SELECT TOP 1 m.menu_id
                 FROM tb_menu m
                 WHERE m.menu_code = #{menuCode}
                 ORDER BY m.menu_id
             ),
-            (
-                SELECT TOP 1 p.permission_id
-                FROM tb_permission p
-                INNER JOIN tb_role r ON r.tenant_id = p.tenant_id
-                WHERE r.role_code = #{roleCode}
-                  AND p.permission_code = #{permissionCode}
-                ORDER BY p.permission_id
-            ),
+            <choose>
+                <when test="roleId != null">
+                    (
+                        SELECT TOP 1 p.permission_id
+                        FROM tb_permission p
+                        INNER JOIN tb_role r ON r.tenant_id = p.tenant_id
+                        WHERE r.role_id = #{roleId}
+                          AND p.permission_code = #{permissionCode}
+                        ORDER BY p.permission_id
+                    )
+                </when>
+                <otherwise>
+                    (
+                        SELECT TOP 1 p.permission_id
+                        FROM tb_permission p
+                        INNER JOIN tb_role r ON r.tenant_id = p.tenant_id
+                        WHERE r.role_code = #{roleCode}
+                          AND p.permission_code = #{permissionCode}
+                        ORDER BY p.permission_id
+                    )
+                </otherwise>
+            </choose>,
             GETDATE()
         )
     </insert>
 
     <!-- 역할코드 기준 권한-메뉴 권한 삭제 -->
-    <delete id="AuthorityDAO.deleteRoleMenuPermissionsByRoleCode" parameterType="string">
+    <delete id="AuthorityDAO.deleteRoleMenuPermissionsByRoleCode" parameterType="map">
         DELETE FROM tb_role_menu_permission
         WHERE role_id = (
-            SELECT TOP 1 role_id
-            FROM tb_role
-            WHERE role_code = #{value}
-            ORDER BY role_id
+            <choose>
+                <when test="roleId != null">
+                    SELECT TOP 1 role_id
+                    FROM tb_role
+                    WHERE role_id = #{roleId}
+                    ORDER BY role_id
+                </when>
+                <otherwise>
+                    SELECT TOP 1 role_id
+                    FROM tb_role
+                    WHERE role_code = #{value}
+                    ORDER BY role_id
+                </otherwise>
+            </choose>
         )
     </delete>
 
     <!-- 사용자 접근 가능 메뉴 목록 조회 -->
-    <select id="AuthorityDAO.selectUserAccessibleMenus" parameterType="string" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
+    <select id="AuthorityDAO.selectUserAccessibleMenus" parameterType="map" resultType="egovframework.let.uss.auth.service.MenuInfoVO">
         SELECT
             m.menu_id AS menuId,
             m.menu_code AS menuCode,
@@ -247,17 +286,16 @@
         FROM tb_menu m
             INNER JOIN tb_role_menu_permission rmp ON m.menu_id = rmp.menu_id
             INNER JOIN tb_permission p ON rmp.permission_id = p.permission_id
-            INNER JOIN tb_role r ON rmp.role_id = r.role_id
-            INNER JOIN tb_tenant_subscription ts
-                ON ts.tenant_id = r.tenant_id
-               AND ts.subscription_status = 'ACTIVE'
-            INNER JOIN tb_plan_menu pm
-                ON pm.plan_id = ts.plan_id
-               AND pm.menu_code = m.menu_code
-               AND pm.use_at = 'Y'
+            INNER JOIN tb_login_account_role lar ON lar.role_id = rmp.role_id
+            INNER JOIN tb_login_account la ON la.login_id = lar.login_id
+            INNER JOIN tb_role r ON r.role_id = lar.role_id
         WHERE m.use_at = 'Y'
           AND p.use_at = 'Y'
-          AND r.role_code = #{value}
+          AND la.login_code = #{loginId}
+          AND la.tenant_id = #{tenantId}
+          AND r.tenant_id = #{tenantId}
+          AND ISNULL(la.use_at, 'Y') = 'Y'
+          AND ISNULL(r.use_at, 'Y') = 'Y'
         GROUP BY m.menu_id, m.menu_code, m.menu_nm, m.menu_dc, m.parent_menu_id, m.menu_order, m.menu_url, m.icon_nm, m.use_at
         ORDER BY m.parent_menu_id, m.menu_order, m.menu_id
     </select>

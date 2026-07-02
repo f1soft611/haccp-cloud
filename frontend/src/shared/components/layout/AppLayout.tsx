@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Box } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { TopGovBar } from './TopGovBar';
 import { PageShell } from './PageShell';
 import { PortalFooter } from './PortalFooter';
@@ -27,6 +27,7 @@ import {
 } from './userMenuMetadataContext';
 
 const ALWAYS_ALLOWED_PATHS = [
+  '/dashboard',
   '/account/password',
   '/onboarding',
   '/platform/onboarding',
@@ -35,7 +36,6 @@ const ALWAYS_ALLOWED_PATHS = [
 
 export function AppLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
 
   let listAccessibleMenusFn: (() => Promise<AccessibleMenuMeta[]>) | undefined;
 
@@ -174,43 +174,6 @@ export function AppLayout() {
 
     return matchedGroup?.label;
   }, [location.pathname, menuGroups]);
-
-  const fallbackRedirectPath = useMemo(() => {
-    return featureFilteredAllowedPaths[0];
-  }, [featureFilteredAllowedPaths]);
-
-  useEffect(() => {
-    if (accessibleMenuQuery.isPending) {
-      return;
-    }
-
-    if (
-      ALWAYS_ALLOWED_PATHS.some((path) => location.pathname.startsWith(path))
-    ) {
-      return;
-    }
-
-    if (featureFilteredAllowedPaths.length === 0) {
-      return;
-    }
-
-    if (!fallbackRedirectPath) {
-      return;
-    }
-
-    const isAllowed = featureFilteredAllowedPaths.some((path) =>
-      location.pathname.startsWith(path),
-    );
-    if (!isAllowed) {
-      navigate(fallbackRedirectPath, { replace: true });
-    }
-  }, [
-    accessibleMenuQuery.isPending,
-    featureFilteredAllowedPaths,
-    fallbackRedirectPath,
-    location.pathname,
-    navigate,
-  ]);
 
   return (
     <UserMenuMetadataProvider value={menuMetadataByPath}>

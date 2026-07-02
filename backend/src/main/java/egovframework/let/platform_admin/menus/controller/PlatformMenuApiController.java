@@ -36,6 +36,13 @@ public class PlatformMenuApiController {
     @Resource(name = "platformMenuService")
     private PlatformMenuService platformMenuService;
 
+    @GetMapping("/common")
+    public List<MenuInfoVO> listCommonMenus(
+            @RequestParam(required = false) String menuNm,
+            @RequestParam(required = false) Long parentMenuId) throws Exception {
+        return platformMenuService.listMenus(menuNm, parentMenuId);
+    }
+
         @PlanAccessPolicy(
             menuUrl = "/platform/menus",
             featureCode = "FEATURE_PLATFORM_MENU_MGMT",

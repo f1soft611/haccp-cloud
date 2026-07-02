@@ -32,7 +32,6 @@ export type CreateUserRequest = {
   email: string;
   department: string;
   roleCode?: string;
-  roleCodes?: string[];
   active?: boolean;
 };
 
@@ -43,32 +42,44 @@ export type UpdateUserRequest = {
   email: string;
   department: string;
   roleCode?: string;
-  roleCodes?: string[];
   active?: boolean;
 };
 
-function normalizeRoleCodes(input: {
+function normalizeRoleCode(input: {
   roleCode?: string;
   roleCodes?: string[];
+  roleCodesText?: string;
   role?: string;
-}): string[] {
-  const merged = [
-    ...(input.roleCodes ?? []),
-    input.roleCode ?? '',
-    input.role ?? '',
-  ];
+}): string {
+  const fromRoleCode = String(input.roleCode ?? '')
+    .trim()
+    .toUpperCase();
+  if (fromRoleCode.length > 0) {
+    return fromRoleCode;
+  }
 
-  return Array.from(
-    new Set(
-      merged
-        .map((item) =>
-          String(item ?? '')
-            .trim()
-            .toUpperCase(),
-        )
-        .filter((item) => item.length > 0),
-    ),
-  );
+  const fromRoleCodes = (input.roleCodes ?? [])
+    .map((item) =>
+      String(item ?? '')
+        .trim()
+        .toUpperCase(),
+    )
+    .find((item) => item.length > 0);
+  if (fromRoleCodes) {
+    return fromRoleCodes;
+  }
+
+  const fromRoleCodesText = String(input.roleCodesText ?? '')
+    .split(',')
+    .map((item) => item.trim().toUpperCase())
+    .find((item) => item.length > 0);
+  if (fromRoleCodesText) {
+    return fromRoleCodesText;
+  }
+
+  return String(input.role ?? '')
+    .trim()
+    .toUpperCase();
 }
 
 function normalizeUserItem(raw: {
@@ -83,11 +94,12 @@ function normalizeUserItem(raw: {
   departmentNm?: string;
   roleCode?: string;
   roleCodes?: string[];
+  roleCodesText?: string;
   role?: string;
   active?: boolean;
 }): UserItem {
-  const roleCodes = normalizeRoleCodes(raw);
-  const roleCode = roleCodes[0] ?? 'USER';
+  const roleCode = normalizeRoleCode(raw) || 'USER';
+  const roleCodes = roleCode ? [roleCode] : [];
 
   return {
     id: String(raw.id ?? raw.userId ?? ''),
@@ -164,18 +176,13 @@ export async function listUsersPaged(
 export async function createUser(
   payload: CreateUserRequest,
 ): Promise<UserItem> {
-  const roleCodes =
-    normalizeRoleCodes({
-      roleCode: payload.roleCode,
-      roleCodes: payload.roleCodes,
-    }) || [];
+  const roleCode = normalizeRoleCode({ roleCode: payload.roleCode });
 
   const { data } = await apiClient.post('/users', {
     name: payload.name,
     email: payload.email,
     department: payload.department,
-    roleCode: roleCodes[0] ?? 'TENANT_USER',
-    roleCodes,
+    roleCode: roleCode || 'TENANT_USER',
     active: payload.active ?? true,
   });
   return normalizeUserItem(data as Parameters<typeof normalizeUserItem>[0]);
@@ -184,17 +191,13 @@ export async function createUser(
 export async function updateUser(
   payload: UpdateUserRequest,
 ): Promise<UserItem> {
-  const roleCodes = normalizeRoleCodes({
-    roleCode: payload.roleCode,
-    roleCodes: payload.roleCodes,
-  });
+  const roleCode = normalizeRoleCode({ roleCode: payload.roleCode });
 
   const { data } = await apiClient.put(`/users/${payload.id}`, {
     name: payload.name,
     email: payload.email,
     department: payload.department,
-    roleCode: roleCodes[0] ?? 'TENANT_USER',
-    roleCodes,
+    roleCode: roleCode || 'TENANT_USER',
     active: payload.active,
   });
   return normalizeUserItem(data as Parameters<typeof normalizeUserItem>[0]);

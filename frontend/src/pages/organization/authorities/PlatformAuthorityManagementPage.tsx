@@ -7,7 +7,7 @@ import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import {
-  listPlatformMenus,
+  listCommonPlatformMenus,
   type PlatformMenuItem,
 } from '../../../services/platform-admin/platformMenuService';
 import {
@@ -105,16 +105,22 @@ export function PlatformAuthorityManagementPage() {
 
   const menusQuery = useQuery<PlatformMenuItem[]>({
     queryKey: ['platform-admin', 'menus'],
-    queryFn: listPlatformMenus,
+    queryFn: listCommonPlatformMenus,
     retry: false,
   });
 
-  const effectiveRoleCode = selectedRole?.code ?? '';
+  const effectiveRoleIdentifier = selectedRole?.id ?? '';
 
   const mappingQuery = useQuery({
-    queryKey: ['platform-admin', 'role-menus', effectiveRoleCode, tenantCode],
-    queryFn: () => getPlatformRoleMenuMapping(effectiveRoleCode),
-    enabled: mappingModalOpen && effectiveRoleCode.length > 0,
+    queryKey: [
+      'platform-admin',
+      'role-menus',
+      effectiveRoleIdentifier,
+      tenantCode,
+    ],
+    queryFn: () =>
+      getPlatformRoleMenuMapping(effectiveRoleIdentifier, tenantCode),
+    enabled: mappingModalOpen && effectiveRoleIdentifier.length > 0,
     retry: false,
   });
 
@@ -332,7 +338,7 @@ export function PlatformAuthorityManagementPage() {
   };
 
   const handleSaveMapping = () => {
-    if (!selectedRole || !effectiveRoleCode) {
+    if (!selectedRole || !effectiveRoleIdentifier) {
       return;
     }
 
@@ -342,7 +348,8 @@ export function PlatformAuthorityManagementPage() {
       confirmText: '저장',
       action: () => {
         saveMutation.mutate({
-          roleCode: effectiveRoleCode,
+          roleCode: effectiveRoleIdentifier,
+          tenantCode,
           menuIds: selectedMenuIds,
         });
       },

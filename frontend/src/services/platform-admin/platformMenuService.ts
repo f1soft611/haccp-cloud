@@ -144,6 +144,13 @@ export async function listPlatformMenus(): Promise<PlatformMenuItem[]> {
   return extractMenuList(data).map(normalizeMenuItem);
 }
 
+export async function listCommonPlatformMenus(): Promise<PlatformMenuItem[]> {
+  const { data } = await apiClient.get<MenuListApiResponse>(
+    '/platform-admin/menus/common',
+  );
+  return extractMenuList(data).map(normalizeMenuItem);
+}
+
 export async function listPlatformMenusPaged(
   params: ListPlatformMenusPagedParams,
 ): Promise<{

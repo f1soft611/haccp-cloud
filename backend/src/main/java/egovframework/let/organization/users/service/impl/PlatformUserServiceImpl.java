@@ -1,14 +1,10 @@
 package egovframework.let.organization.users.service.impl;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.LinkedHashSet;
-import java.util.Collections;
 
 import javax.annotation.Resource;
 
@@ -114,7 +110,7 @@ public class PlatformUserServiceImpl implements PlatformUserService {
         userPayload.put("useAt", toUseAt(payload.getActive(), true));
         platformUserDAO.insertUser(userPayload);
 
-        replaceRoleMappings(tenantId, loginId, resolveRoleCodes(payload));
+        replaceRoleMappings(tenantId, loginId, resolveRoleCode(payload));
         Long userId = resolveUserIdByLoginId(tenantId, loginId);
         if (userId == null) {
             throw new IllegalStateException("사용자를 생성할 수 없습니다.");
@@ -146,7 +142,7 @@ public class PlatformUserServiceImpl implements PlatformUserService {
             platformUserDAO.updateUserStatus(statusPayload);
         }
 
-        replaceRoleMappings(tenantId, loginId, resolveRoleCodes(payload));
+        replaceRoleMappings(tenantId, loginId, resolveRoleCode(payload));
         return getUserById(tenantId, userId, payload.getTenantCode());
     }
 
@@ -286,48 +282,48 @@ public class PlatformUserServiceImpl implements PlatformUserService {
         if (!StringUtils.hasText(payload.getDepartment())) {
             throw new IllegalArgumentException("부서는 필수입니다.");
         }
-        if (resolveRoleCodes(payload).isEmpty()) {
-            throw new IllegalArgumentException("최소 1개 roleCode가 필요합니다.");
+        if (!StringUtils.hasText(resolveRoleCode(payload))) {
+            throw new IllegalArgumentException("roleCode는 필수입니다.");
         }
     }
 
-    private List<String> resolveRoleCodes(PlatformUserSaveRequestVO payload) {
-        List<String> roleCodes = new ArrayList<String>();
+    private String resolveRoleCode(PlatformUserSaveRequestVO payload) {
+        if (StringUtils.hasText(payload.getRoleCode())) {
+            return payload.getRoleCode().trim().toUpperCase(Locale.ROOT);
+        }
+
         if (payload.getRoleCodes() != null) {
             for (String code : payload.getRoleCodes()) {
                 if (StringUtils.hasText(code)) {
-                    roleCodes.add(code.trim().toUpperCase(Locale.ROOT));
+                    return code.trim().toUpperCase(Locale.ROOT);
                 }
             }
         }
-        if (StringUtils.hasText(payload.getRoleCode())) {
-            roleCodes.add(payload.getRoleCode().trim().toUpperCase(Locale.ROOT));
-        }
 
-        Set<String> deduped = new LinkedHashSet<String>(roleCodes);
-        return new ArrayList<String>(deduped);
+        return "";
     }
 
-    private void replaceRoleMappings(Long tenantId, Long loginId, List<String> roleCodes) throws Exception {
+    private void replaceRoleMappings(Long tenantId, Long loginId, String roleCode) throws Exception {
         if (loginId == null) {
             throw new IllegalArgumentException("login account is required");
         }
+        if (!StringUtils.hasText(roleCode)) {
+            throw new IllegalArgumentException("roleCode는 필수입니다.");
+        }
 
         platformUserDAO.deleteLoginAccountRolesByLoginId(loginId);
-        for (String roleCode : roleCodes) {
-            Map<String, Object> condition = new HashMap<String, Object>();
-            condition.put("tenantId", tenantId);
-            condition.put("roleCode", roleCode);
-            Long roleId = platformUserDAO.selectRoleIdByCode(condition);
-            if (roleId == null) {
-                continue;
-            }
-
-            Map<String, Object> payload = new HashMap<String, Object>();
-            payload.put("loginId", loginId);
-            payload.put("roleId", roleId);
-            platformUserDAO.insertLoginAccountRole(payload);
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantId", tenantId);
+        condition.put("roleCode", roleCode);
+        Long roleId = platformUserDAO.selectRoleIdByCode(condition);
+        if (roleId == null) {
+            throw new IllegalArgumentException("유효하지 않은 roleCode입니다.");
         }
+
+        Map<String, Object> payload = new HashMap<String, Object>();
+        payload.put("loginId", loginId);
+        payload.put("roleId", roleId);
+        platformUserDAO.insertLoginAccountRole(payload);
     }
 
     private String normalizeTenantCode(String tenantCode) {

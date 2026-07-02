@@ -84,12 +84,12 @@ describe('Dashboard page', () => {
 
     expect(
       screen.getByRole('link', { name: APP_LABELS.dashboard.hubs.users }),
-    ).toHaveAttribute('href', '/users');
+    ).toHaveAttribute('href', '/org/users');
     expect(
       screen.getByRole('link', {
         name: APP_LABELS.dashboard.hubs.departments,
       }),
-    ).toHaveAttribute('href', '/departments');
+    ).toHaveAttribute('href', '/org/departments');
 
     expect(
       screen.queryByTestId('platform-admin-dashboard'),
@@ -144,6 +144,7 @@ describe('Dashboard page', () => {
   it('shows platform admin management KPIs and sections', async () => {
     useAuthStore.setState({
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       userId: 'platform_admin',
     });
 
@@ -209,6 +210,7 @@ describe('Dashboard page', () => {
   it('renders redesigned platform admin top section without title and without userId exposure', async () => {
     useAuthStore.setState({
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       userId: 'platform_admin',
       displayName: '플랫폼관리자',
     });
@@ -242,6 +244,7 @@ describe('Dashboard page', () => {
   it('hides legacy haccp operations blocks for PLATFORM_ADMIN', async () => {
     useAuthStore.setState({
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       userId: 'platform_admin',
     });
 
@@ -271,6 +274,7 @@ describe('Dashboard page', () => {
 
     useAuthStore.setState({
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       userId: 'platform_admin',
     });
 
@@ -281,7 +285,7 @@ describe('Dashboard page', () => {
     );
 
     expect(
-      await screen.findByText('업체 목록 데이터를 불러오지 못했습니다.'),
+      await screen.findByText(/업체 목록\s*데이터를 불러오지 못했습니다\./),
     ).toBeInTheDocument();
 
     expect(
@@ -344,6 +348,7 @@ describe('Dashboard page', () => {
 
     useAuthStore.setState({
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       userId: 'platform_admin',
     });
 
@@ -397,6 +402,7 @@ describe('Dashboard page', () => {
 
     useAuthStore.setState({
       role: 'PLATFORM_ADMIN',
+      planCode: 'P',
       userId: 'platform_admin',
     });
 
@@ -410,13 +416,13 @@ describe('Dashboard page', () => {
       await screen.findByText('업체 목록 데이터를 불러오지 못했습니다.'),
     ).toBeInTheDocument();
 
-    const retryButton = screen.getByRole('button', {
+    const retryButtons = screen.getAllByRole('button', {
       name: APP_LABELS.action.retry,
     });
-    expect(retryButton).toBeInTheDocument();
+    expect(retryButtons.length).toBeGreaterThan(0);
 
     shouldFailTenantList = false;
-    fireEvent.click(retryButton);
+    fireEvent.click(retryButtons[0]);
 
     await screen
       .findByText('업체 목록 데이터를 불러오지 못했습니다.', undefined, {

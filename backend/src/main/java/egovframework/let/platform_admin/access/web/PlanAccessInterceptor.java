@@ -68,9 +68,11 @@ public class PlanAccessInterceptor implements HandlerInterceptor {
                 ? LEVEL_WRITE
                 : LEVEL_READ;
 
-        if (!hasRolePermission(roleCode, policy.menuUrl(), requiredPermissionLevel)) {
-            writeError(response, HttpServletResponse.SC_FORBIDDEN, "ROLE_NOT_ALLOWED", "현재 역할에서 허용되지 않은 기능입니다.");
-            return false;
+        if (!policy.skipRolePermissionCheck()) {
+            if (!hasRolePermission(roleCode, tenantId, policy.menuUrl(), requiredPermissionLevel)) {
+                writeError(response, HttpServletResponse.SC_FORBIDDEN, "ROLE_NOT_ALLOWED", "현재 역할에서 허용되지 않은 기능입니다.");
+                return false;
+            }
         }
 
         if (StringUtils.hasText(policy.limitFeatureCode())
@@ -126,9 +128,9 @@ public class PlanAccessInterceptor implements HandlerInterceptor {
         return null;
     }
 
-    private boolean hasRolePermission(String roleCode, String menuUrl, String requiredPermissionLevel) {
+    private boolean hasRolePermission(String roleCode, Long tenantId, String menuUrl, String requiredPermissionLevel) {
         try {
-            String permission = egovAuthManageService.checkUserMenuPermission(roleCode, menuUrl);
+            String permission = egovAuthManageService.checkUserMenuPermission(roleCode, tenantId, menuUrl);
             if (!StringUtils.hasText(permission) || "none".equalsIgnoreCase(permission)) {
                 return false;
             }

@@ -10,7 +10,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import egovframework.com.config.HtmlCharacterEscapes;
-import egovframework.let.platform_admin.access.web.PlanAccessInterceptor;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -30,7 +29,6 @@ import java.util.List;
 public class WebMvcConfig implements WebMvcConfigurer {
 	
 	private final ObjectMapper objectMapper;
-    private final PlanAccessInterceptor planAccessInterceptor;
 	
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
@@ -39,14 +37,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(org.springframework.web.servlet.config.annotation.InterceptorRegistry registry) {
-        registry.addInterceptor(planAccessInterceptor)
-            .addPathPatterns("/api/**", "/members/**")
-            .excludePathPatterns(
-                "/api/auth/**",
-                "/api/v1/tenants/onboarding/**",
-                "/api/tenants/onboarding/**",
-                "/api/first-login-setup/**"
-            );
+        // Temporary hold: disable PlanAccessPolicy enforcement until policy mapping is finalized.
     }
     
     @Bean

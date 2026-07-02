@@ -9,18 +9,23 @@ import { APP_LABELS } from '../../../../shared/constants/labels';
 
 export function RoleMenuMappingPanel(props: {
   roles: { id: string; code: string; name: string }[];
-  menus: { menuId: string; menuNm: string; menuUrl: string }[];
-  selectedRoleCode: string;
+  menus: {
+    menuId: string;
+    menuCode?: string;
+    menuNm: string;
+    menuUrl: string;
+  }[];
+  selectedRoleId: string;
   selectedMenuIds: string[];
   submitting?: boolean;
-  onSelectRole: (code: string) => void;
+  onSelectRole: (id: string) => void;
   onToggleMenu: (menuId: string) => void;
   onSave: () => void;
 }) {
   const {
     roles,
     menus,
-    selectedRoleCode,
+    selectedRoleId,
     selectedMenuIds,
     submitting = false,
     onSelectRole,
@@ -34,9 +39,9 @@ export function RoleMenuMappingPanel(props: {
         {roles.map((role) => (
           <Button
             key={role.id}
-            variant={selectedRoleCode === role.code ? 'contained' : 'outlined'}
+            variant={selectedRoleId === role.id ? 'contained' : 'outlined'}
             size="small"
-            onClick={() => onSelectRole(role.code)}
+            onClick={() => onSelectRole(role.id)}
           >
             {role.name}
           </Button>
@@ -46,11 +51,11 @@ export function RoleMenuMappingPanel(props: {
       <Stack spacing={0.5}>
         {menus.map((menu) => (
           <FormControlLabel
-            key={menu.menuId}
+            key={menu.menuCode || menu.menuId}
             control={
               <Checkbox
-                checked={selectedMenuIds.includes(menu.menuId)}
-                onChange={() => onToggleMenu(menu.menuId)}
+                checked={selectedMenuIds.includes(menu.menuCode || menu.menuId)}
+                onChange={() => onToggleMenu(menu.menuCode || menu.menuId)}
               />
             }
             label={`${menu.menuNm} (${menu.menuUrl})`}
@@ -62,7 +67,7 @@ export function RoleMenuMappingPanel(props: {
         variant="contained"
         sx={{ mt: 1.5 }}
         onClick={onSave}
-        disabled={submitting || !selectedRoleCode}
+        disabled={submitting || !selectedRoleId}
       >
         {APP_LABELS.action.save}
       </Button>

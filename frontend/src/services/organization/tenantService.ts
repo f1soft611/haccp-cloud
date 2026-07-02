@@ -112,8 +112,18 @@ export type TenantVerificationResult = {
   tenantNm: string;
   adminEmail: string;
   loginAccountId: number;
+  adminLoginCode: string;
   verified: boolean;
   message: string;
+};
+
+export type TenantOnboardingCompleteRequest = {
+  tenantCode: string;
+  authToken: string;
+  password: string;
+  phoneNumber?: string;
+  loginDomain?: string;
+  logoImage?: string;
 };
 
 type IssueTenantCodeEnvelope = {
@@ -231,9 +241,16 @@ export async function verifyTenantEmail(
     tenantNm: String(payload.tenantNm ?? '').trim(),
     adminEmail: String(payload.adminEmail ?? '').trim(),
     loginAccountId: Number(payload.loginAccountId ?? 0),
+    adminLoginCode: String(payload.adminLoginCode ?? '').trim(),
     verified: payload.verified === true,
     message: String(payload.message ?? data.message ?? '').trim(),
   };
+}
+
+export async function completeTenantOnboarding(
+  payload: TenantOnboardingCompleteRequest,
+): Promise<void> {
+  await apiClient.post('/v1/tenants/onboarding/complete', payload);
 }
 
 export async function getTenantByDomain(

@@ -87,7 +87,9 @@ public class EgovJwtTokenUtil implements Serializable{
         claims.put("type", subject);
         claims.put("groupNm", loginVO.getGroupNm());//권한그룹으로 시프링시큐리티 사용
         claims.put("roleCode", loginVO.getRoleCode());//역할코드로 3역할 구분
+		claims.put("roleId", loginVO.getRoleId());//역할 ID
 		claims.put("tenantCode", loginVO.getTenantCode());//테넌트 코드
+		claims.put("tenantId", loginVO.getTenantId());//테넌트 ID
 
     	log.debug("===>>> secret = "+SECRET_KEY);
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
@@ -107,7 +109,9 @@ public class EgovJwtTokenUtil implements Serializable{
         claims.put("type", subject);
         claims.put("groupNm", loginVO.getGroupNm());//권한그룹으로 시프링시큐리티 사용
         claims.put("roleCode", loginVO.getRoleCode());//역할코드로 3역할 구분
+		claims.put("roleId", loginVO.getRoleId());//역할 ID
 		claims.put("tenantCode", loginVO.getTenantCode());//테넌트 코드
+		claims.put("tenantId", loginVO.getTenantId());//테넌트 ID
 
     	log.debug("===>>> refresh token secret = "+SECRET_KEY);
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
@@ -126,11 +130,30 @@ public class EgovJwtTokenUtil implements Serializable{
 			loginVO.setUniqId(getInfoFromToken("uniqId", token));
             loginVO.setGroupNm(getInfoFromToken("groupNm", token));
             loginVO.setRoleCode(getRoleCodeFromToken(token));
+			Object roleIdValue = getClaimFromToken(token).get("roleId");
+			if (roleIdValue instanceof Number) {
+				loginVO.setRoleId(((Number) roleIdValue).longValue());
+			} else if (roleIdValue instanceof String) {
+				String roleIdText = ((String) roleIdValue).trim();
+				if (!roleIdText.isEmpty()) {
+					loginVO.setRoleId(Long.valueOf(roleIdText));
+				}
+			}
 			String tenantCode = getInfoFromToken("tenantCode", token);
 			if (tenantCode == null) {
 				tenantCode = getInfoFromToken("factoryCode", token);
 			}
 			loginVO.setTenantCode(tenantCode);
+
+			Object tenantIdValue = getClaimFromToken(token).get("tenantId");
+			if (tenantIdValue instanceof Number) {
+				loginVO.setTenantId(((Number) tenantIdValue).longValue());
+			} else if (tenantIdValue instanceof String) {
+				String tenantIdText = ((String) tenantIdValue).trim();
+				if (!tenantIdText.isEmpty()) {
+					loginVO.setTenantId(Long.valueOf(tenantIdText));
+				}
+			}
 
             if(loginVO.getId() == null) throw new InvalidJwtException("Missing id in token");
         } catch (IllegalArgumentException | ExpiredJwtException |

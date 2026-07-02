@@ -1,6 +1,8 @@
 package egovframework.let.organization.authorities.domain.repository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 import org.springframework.stereotype.Repository;
@@ -92,7 +94,10 @@ public class AuthorityEgovDAO extends EgovAbstractMapper implements AuthorityDAO
      * 사용자 접근 가능한 메뉴를 조회한다.
      */
     @Override
-    public List<MenuInfoVO> selectUserAccessibleMenus(String roleCode) throws Exception {
-        return selectList("AuthorityDAO.selectUserAccessibleMenus", roleCode);
+    public List<MenuInfoVO> selectUserAccessibleMenus(String loginId, Long tenantId) throws Exception {
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("loginId", loginId);
+        condition.put("tenantId", tenantId);
+        return selectList("AuthorityDAO.selectUserAccessibleMenus", condition);
     }
 }
