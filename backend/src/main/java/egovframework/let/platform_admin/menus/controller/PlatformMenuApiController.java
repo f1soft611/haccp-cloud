@@ -4,6 +4,12 @@ import java.util.List;
 
 import javax.annotation.Resource;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,9 +31,23 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 플랫폼 관리자 메뉴 관리 API
+ * @author SHMT-MES
+ * @since 2026.07.03
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.07.03 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "PlatformMenuApiController", description = "플랫폼 메뉴 관리")
 @RequestMapping("/api/platform-admin/menus")
 public class PlatformMenuApiController {
 
@@ -36,13 +56,38 @@ public class PlatformMenuApiController {
     @Resource(name = "platformMenuService")
     private PlatformMenuService platformMenuService;
 
+        /**
+         * 공통 메뉴 목록을 조회한다.
+         */
+        @Operation(
+            summary = "공통 메뉴 목록 조회",
+            description = "플랜/권한 정책 적용 전 공통 메뉴 목록을 조회",
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"PlatformMenuApiController"}
+        )
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공")
+        })
     @GetMapping("/common")
     public List<MenuInfoVO> listCommonMenus(
-            @RequestParam(required = false) String menuNm,
-            @RequestParam(required = false) Long parentMenuId) throws Exception {
+            @Parameter(description = "메뉴명") @RequestParam(required = false) String menuNm,
+            @Parameter(description = "상위 메뉴 ID") @RequestParam(required = false) Long parentMenuId) throws Exception {
         return platformMenuService.listMenus(menuNm, parentMenuId);
     }
 
+        /**
+         * 메뉴 목록을 조회한다.
+         */
+        @Operation(
+            summary = "메뉴 목록 조회",
+            description = "권한 기반 메뉴 목록을 조회",
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"PlatformMenuApiController"}
+        )
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "403", description = "인가 실패")
+        })
         @PlanAccessPolicy(
             menuUrl = "/platform/menus",
             featureCode = "FEATURE_PLATFORM_MENU_MGMT",
@@ -50,11 +95,25 @@ public class PlatformMenuApiController {
         )
     @GetMapping
     public List<MenuInfoVO> listMenus(
-            @RequestParam(required = false) String menuNm,
-            @RequestParam(required = false) Long parentMenuId) throws Exception {
+            @Parameter(description = "메뉴명") @RequestParam(required = false) String menuNm,
+            @Parameter(description = "상위 메뉴 ID") @RequestParam(required = false) Long parentMenuId) throws Exception {
         return platformMenuService.listMenus(menuNm, parentMenuId);
     }
 
+        /**
+         * 메뉴 목록(페이징)을 조회한다.
+         */
+        @Operation(
+            summary = "메뉴 목록(페이징) 조회",
+            description = "검색 조건 기반 메뉴 페이징 목록을 조회",
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"PlatformMenuApiController"}
+        )
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "입력값 오류"),
+            @ApiResponse(responseCode = "403", description = "인가 실패")
+        })
         @PlanAccessPolicy(
             menuUrl = "/platform/menus",
             featureCode = "FEATURE_PLATFORM_MENU_MGMT",
@@ -62,11 +121,11 @@ public class PlatformMenuApiController {
         )
     @GetMapping("/paged")
     public ResultVO listMenusPaged(
-            @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) String searchField,
-            @RequestParam(required = false) String searchKeyword,
-            @RequestParam(required = false, defaultValue = "all") String useAt) throws Exception {
+            @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "1") int pageIndex,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int pageSize,
+            @Parameter(description = "검색 필드") @RequestParam(required = false) String searchField,
+            @Parameter(description = "검색어") @RequestParam(required = false) String searchKeyword,
+            @Parameter(description = "사용 여부") @RequestParam(required = false, defaultValue = "all") String useAt) throws Exception {
         validatePage(pageIndex, pageSize);
         validateSearchField(searchField);
         validateUseAt(useAt);
@@ -80,6 +139,20 @@ public class PlatformMenuApiController {
         );
     }
 
+        /**
+         * 메뉴를 등록한다.
+         */
+        @Operation(
+            summary = "메뉴 등록",
+            description = "신규 메뉴를 등록",
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"PlatformMenuApiController"}
+        )
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "등록 성공"),
+            @ApiResponse(responseCode = "400", description = "입력값 오류"),
+            @ApiResponse(responseCode = "403", description = "인가 실패")
+        })
     @PlanAccessPolicy(
             menuUrl = "/platform/menus",
             featureCode = "FEATURE_PLATFORM_MENU_MGMT",
@@ -92,26 +165,53 @@ public class PlatformMenuApiController {
         return platformMenuService.createMenu(menuInfoVO);
     }
 
+        /**
+         * 메뉴를 수정한다.
+         */
+        @Operation(
+            summary = "메뉴 수정",
+            description = "기존 메뉴를 수정",
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"PlatformMenuApiController"}
+        )
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "수정 성공"),
+            @ApiResponse(responseCode = "400", description = "입력값 오류"),
+            @ApiResponse(responseCode = "403", description = "인가 실패")
+        })
     @PlanAccessPolicy(
             menuUrl = "/platform/menus",
             featureCode = "FEATURE_PLATFORM_MENU_MGMT",
             requiredPermissionLevel = PlanAccessLevel.WRITE
     )
     @PatchMapping("/{menuId}")
-    public MenuInfoVO updateMenu(@PathVariable Long menuId, @RequestBody MenuInfoVO menuInfoVO) throws Exception {
+        public MenuInfoVO updateMenu(@Parameter(description = "메뉴 ID") @PathVariable Long menuId, @RequestBody MenuInfoVO menuInfoVO) throws Exception {
         menuInfoVO.setMenuId(menuId);
         normalizePayload(menuInfoVO);
         validateForCreateOrUpdate(menuInfoVO, menuId);
         return platformMenuService.updateMenu(menuId, menuInfoVO);
     }
 
+        /**
+         * 메뉴를 삭제한다.
+         */
+        @Operation(
+            summary = "메뉴 삭제",
+            description = "메뉴를 삭제",
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"PlatformMenuApiController"}
+        )
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "403", description = "인가 실패")
+        })
     @PlanAccessPolicy(
             menuUrl = "/platform/menus",
             featureCode = "FEATURE_PLATFORM_MENU_MGMT",
             requiredPermissionLevel = PlanAccessLevel.WRITE
     )
     @DeleteMapping("/{menuId}")
-    public void deleteMenu(@PathVariable Long menuId) throws Exception {
+        public void deleteMenu(@Parameter(description = "메뉴 ID") @PathVariable Long menuId) throws Exception {
         platformMenuService.deleteMenu(menuId);
     }
 

@@ -211,6 +211,8 @@ public class AuthorityServiceImpl implements AuthorityService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
 
+        ensureTenantPermissions(tenantCode);
+
         payload.setRoleCode(roleCode);
         payload.normalize();
 
@@ -239,6 +241,11 @@ public class AuthorityServiceImpl implements AuthorityService {
         authorityDAO.deleteRoleMenuPermissionsByRoleCode(deleteCondition);
 
         for (String menuCode : filteredMenuIds) {
+            Long menuId = authorityDAO.selectMenuIdByCode(menuCode);
+            if (menuId == null) {
+                continue;
+            }
+
             RoleMenuPermissionVO item = new RoleMenuPermissionVO();
             if (roleId != null) {
                 item.setRoleId(roleId);
@@ -246,6 +253,7 @@ public class AuthorityServiceImpl implements AuthorityService {
                 item.setRoleCode(normalizedRoleCode);
             }
             item.setTenantCode(normalizedTenantCode);
+            item.setMenuId(menuId);
             item.setMenuCode(menuCode);
             item.setPermissionCode(DEFAULT_PERMISSION_ID);
             item.setUseAt("Y");
@@ -259,6 +267,20 @@ public class AuthorityServiceImpl implements AuthorityService {
         response.put("tenantCode", normalizedTenantCode);
         response.put("menuIds", filteredMenuIds);
         return response;
+    }
+
+    private void ensureTenantPermissions(String tenantCode) throws Exception {
+        if (!hasText(tenantCode)) {
+            return;
+        }
+
+        Long tenantId = planAccessService.resolveTenantIdByTenantCode(tenantCode);
+        if (tenantId == null) {
+            return;
+        }
+
+        authorityDAO.upsertPermissionType(tenantId, "PERM_READ", "조회");
+        authorityDAO.upsertPermissionType(tenantId, "PERM_WRITE", "등록/수정");
     }
 
     @Override

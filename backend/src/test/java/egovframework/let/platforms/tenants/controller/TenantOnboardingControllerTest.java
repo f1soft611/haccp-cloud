@@ -58,15 +58,17 @@ class TenantOnboardingControllerTest {
         String tenantCode = "TEST_TENANT";
         String loginAccountId = "admin";
         String adminEmail = "admin@test.com";
+        String adminName = "홍길동";
 
         doNothing().when(tenantOnboardingService)
-                .createAndSendVerificationEmail(tenantCode, loginAccountId, adminEmail);
+                .createAndSendVerificationEmail(tenantCode, loginAccountId, adminEmail, adminName);
 
         // When & Then
         mockMvc.perform(post("/api/v1/tenants/onboarding/send-verification-email")
                         .param("tenantCode", tenantCode)
                         .param("loginAccountId", loginAccountId)
-                        .param("adminEmail", adminEmail))
+                        .param("adminEmail", adminEmail)
+                        .param("adminName", adminName))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("200"))
                 .andExpect(jsonPath("$.message").value("인증 이메일 발송이 완료되었습니다"));
@@ -129,7 +131,7 @@ class TenantOnboardingControllerTest {
         void dispatchVerificationEmail_ReturnsOk() throws Exception {
                 String tenantCode = "TENANT_000001";
 
-                doNothing().when(tenantOnboardingService).dispatchVerificationEmail(tenantCode);
+                doNothing().when(tenantOnboardingService).dispatchVerificationEmail(tenantCode, null);
 
                 mockMvc.perform(post("/api/v1/tenants/onboarding/dispatch-verification-email")
                                                 .param("tenantCode", tenantCode))
@@ -157,7 +159,7 @@ class TenantOnboardingControllerTest {
 
                         doThrow(new MailConfigurationException("SMTP 인증 정보가 누락되었습니다."))
                                 .when(tenantOnboardingService)
-                                .dispatchVerificationEmail(tenantCode);
+                                .dispatchVerificationEmail(tenantCode, null);
 
                         mockMvc.perform(post("/api/v1/tenants/onboarding/dispatch-verification-email")
                                         .param("tenantCode", tenantCode))
@@ -172,7 +174,7 @@ class TenantOnboardingControllerTest {
 
                         doThrow(new MailAuthenticationFailureException("SMTP 인증 실패"))
                                 .when(tenantOnboardingService)
-                                .dispatchVerificationEmail(tenantCode);
+                                .dispatchVerificationEmail(tenantCode, null);
 
                         mockMvc.perform(post("/api/v1/tenants/onboarding/dispatch-verification-email")
                                         .param("tenantCode", tenantCode))

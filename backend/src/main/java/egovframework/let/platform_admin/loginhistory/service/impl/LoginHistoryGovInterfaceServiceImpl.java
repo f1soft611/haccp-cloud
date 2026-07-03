@@ -27,6 +27,19 @@ import java.util.Map;
 
 /**
  * 로그인 이력 정부 로그 API(JSON) 전송 서비스
+ * @author SHMT-MES
+ * @since 2026.07.03
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.07.03 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @Slf4j
 @Service("loginHistoryGovInterfaceService")

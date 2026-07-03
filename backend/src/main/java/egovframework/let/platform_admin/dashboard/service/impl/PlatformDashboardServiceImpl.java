@@ -19,9 +19,19 @@ import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashb
 
 /**
  * 플랫폼 대시보드 서비스 구현체
- * @author AI Assistant
+ * @author SHMT-MES
  * @since 2026.06.22
  * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.06.22 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @Service("platformDashboardService")
 public class PlatformDashboardServiceImpl implements PlatformDashboardService {

@@ -12,6 +12,22 @@ import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashb
 import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 
+/**
+ * 플랫폼 테넌트 DAO
+ * @author SHMT-MES
+ * @since 2026.06.22
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.06.22 SHMT-MES          최초 생성
+ *
+ * </pre>
+ */
 @Repository("tenantInfoDAO")
 public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoDAO {
 
@@ -76,6 +92,19 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
     @Override
     public Long selectLatestLoginAccountIdByTenantCode(String tenantCode) {
         return selectOne("TenantInfoDAO.selectLatestLoginAccountIdByTenantCode", tenantCode);
+    }
+
+    @Override
+    public int expireActiveTenantSubscription(Long tenantId) {
+        return update("TenantInfoDAO.expireActiveTenantSubscription", tenantId);
+    }
+
+    @Override
+    public int insertActiveTenantSubscriptionByPlanCode(Long tenantId, String planCode) {
+        Map<String, Object> param = new HashMap<String, Object>();
+        param.put("tenantId", tenantId);
+        param.put("planCode", planCode);
+        return insert("TenantInfoDAO.insertActiveTenantSubscriptionByPlanCode", param);
     }
 
     @Override

@@ -242,14 +242,14 @@
 
     <insert id="PlatformUserDAO.insertUser" parameterType="map">
         INSERT INTO tb_user (tenant_id, login_id, user_nm, email_addr, department_id, use_at, created_at, updated_at)
-        VALUES (#{tenantId}, #{loginId}, #{userNm}, #{emailAddr}, #{departmentId}, #{useAt}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        VALUES (#{tenantId}, #{loginId}, #{userNm}, #{emailAddr}, #{departmentId, jdbcType=BIGINT}, #{useAt}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     </insert>
 
     <update id="PlatformUserDAO.updateUser" parameterType="map">
         UPDATE tb_user
         SET user_nm = #{userNm},
             email_addr = #{emailAddr},
-            department_id = #{departmentId},
+            department_id = #{departmentId, jdbcType=BIGINT},
             use_at = #{useAt},
             updated_at = CURRENT_TIMESTAMP
         WHERE tenant_id = #{tenantId}

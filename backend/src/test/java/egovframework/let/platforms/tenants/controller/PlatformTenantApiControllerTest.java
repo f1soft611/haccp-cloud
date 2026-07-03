@@ -3,6 +3,7 @@ package egovframework.let.platform_admin.tenants.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -27,20 +28,24 @@ import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashb
 import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
 import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
+import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 
 class PlatformTenantApiControllerTest {
 
     private MockMvc mockMvc;
     private PlatformTenantService platformTenantService;
+    private TenantOnboardingService tenantOnboardingService;
     private ResultVoHelper resultVoHelper;
 
     @BeforeEach
     void setUp() {
         PlatformTenantApiController controller = new PlatformTenantApiController();
         platformTenantService = mock(PlatformTenantService.class);
+        tenantOnboardingService = mock(TenantOnboardingService.class);
         resultVoHelper = mock(ResultVoHelper.class);
 
         ReflectionTestUtils.setField(controller, "platformTenantService", platformTenantService);
+        ReflectionTestUtils.setField(controller, "tenantOnboardingService", tenantOnboardingService);
         ReflectionTestUtils.setField(controller, "resultVoHelper", resultVoHelper);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
 
@@ -62,6 +67,7 @@ class PlatformTenantApiControllerTest {
         created.setTenantCode("TENANT_000001");
         created.setTenantNm("테스트업체");
         created.setAdminEmail("admin@test.com");
+        created.setAdminName("홍길동");
         created.setCorporateNumber("CORP-001");
         created.setCreatedAt("2026-06-22T10:00:00Z");
 
@@ -74,6 +80,8 @@ class PlatformTenantApiControllerTest {
             .andExpect(jsonPath("$.result.tenantCode").value("TENANT_000001"))
             .andExpect(jsonPath("$.result.companyName").value("테스트업체"))
             .andExpect(jsonPath("$.result.mailDispatchStatus").value("SENT"));
+
+        verify(tenantOnboardingService).dispatchVerificationEmail("TENANT_000001", null);
     }
 
     @Test

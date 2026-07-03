@@ -33,6 +33,19 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 테넌트 온보딩 서비스 구현체
+ * @author SHMT-MES
+ * @since 2026.06.23
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.06.23 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @Service("tenantOnboardingService")
 @Slf4j
@@ -69,7 +82,7 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
      * Task 11: 이메일 인증 토큰 생성 및 발송
      */
     @Override
-    public void createAndSendVerificationEmail(String tenantCode, String loginAccountId, String adminEmail) {
+    public void createAndSendVerificationEmail(String tenantCode, String loginAccountId, String adminEmail, String adminName) {
         String normalizedTenantCode = normalizeStorageTenantCode(tenantCode);
         Long tenantId = tenantInfoDAO.selectTenantIdByCode(normalizedTenantCode);
         if (tenantId == null) {
@@ -103,7 +116,7 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
 
     @Override
     @Transactional
-    public void dispatchVerificationEmail(String tenantCode) {
+    public void dispatchVerificationEmail(String tenantCode, String adminName) {
         String normalizedTenantCode = normalizeStorageTenantCode(tenantCode);
         String adminEmail = tenantInfoDAO.selectAdminEmailByTenantCode(normalizedTenantCode);
         Long loginAccountId = tenantInfoDAO.selectLatestLoginAccountIdByTenantCode(normalizedTenantCode);
@@ -112,10 +125,130 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             throw new IllegalStateException("관리자 이메일 정보를 찾을 수 없습니다. tenantCode=" + tenantCode);
         }
         if (loginAccountId == null) {
-            throw new IllegalStateException("로그인 계정 정보를 찾을 수 없습니다. tenantCode=" + tenantCode);
+            loginAccountId = ensureBootstrapLoginAccount(normalizedTenantCode, adminEmail, adminName);
         }
 
-        createAndSendVerificationEmail(normalizedTenantCode, String.valueOf(loginAccountId), adminEmail);
+        createAndSendVerificationEmail(normalizedTenantCode, String.valueOf(loginAccountId), adminEmail, adminName);
+    }
+
+    private Long ensureBootstrapLoginAccount(String tenantCode, String adminEmail, String adminName) {
+        Long tenantId = tenantInfoDAO.selectTenantIdByCode(tenantCode);
+        if (tenantId == null) {
+            throw new IllegalStateException("테넌트가 존재하지 않습니다. tenantCode=" + tenantCode);
+        }
+
+        String baseLoginCode = buildBootstrapLoginCodeBase(adminEmail);
+        for (int attempt = 0; attempt < 10; attempt++) {
+            String loginCode = buildBootstrapLoginCodeCandidate(baseLoginCode, attempt);
+            Map<String, Object> condition = new HashMap<String, Object>();
+            condition.put("tenantId", tenantId);
+            condition.put("loginCode", loginCode);
+
+            Long existingLoginId;
+            try {
+                existingLoginId = platformUserDAO.selectLoginIdByLoginCode(condition);
+            } catch (Exception ex) {
+                throw new IllegalStateException("로그인 계정 조회 중 오류가 발생했습니다.", ex);
+            }
+            if (existingLoginId != null) {
+                return existingLoginId;
+            }
+
+            Map<String, Object> loginPayload = new HashMap<String, Object>();
+            loginPayload.put("tenantId", tenantId);
+            loginPayload.put("loginCode", loginCode);
+            loginPayload.put("passwordHash", buildBootstrapPasswordHash(loginCode));
+            // 인증 완료 전에는 로그인 불가 상태로 계정을 미리 생성한다.
+            loginPayload.put("useAt", "N");
+
+            try {
+                platformUserDAO.insertLoginAccount(loginPayload);
+                Long createdLoginId = platformUserDAO.selectLoginIdByLoginCode(condition);
+                if (createdLoginId != null) {
+                    ensureBootstrapAdminUser(tenantId, createdLoginId, adminEmail, adminName);
+                    return createdLoginId;
+                }
+            } catch (Exception ex) {
+                log.warn("부트스트랩 로그인 계정 생성 충돌: tenantCode={}, loginCode={}, reason={}",
+                        tenantCode,
+                        loginCode,
+                        ex.getMessage());
+            }
+        }
+
+        throw new IllegalStateException("로그인 계정 정보를 찾을 수 없습니다. tenantCode=" + tenantCode);
+    }
+
+    private void ensureBootstrapAdminUser(Long tenantId, Long loginAccountId, String adminEmail, String adminName) {
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantId", tenantId);
+        condition.put("loginId", loginAccountId);
+
+        Long userId;
+        try {
+            userId = platformUserDAO.selectUserIdByLoginId(condition);
+        } catch (Exception ex) {
+            throw new IllegalStateException("관리자 사용자 조회 중 오류가 발생했습니다.", ex);
+        }
+
+        Map<String, Object> payload = new HashMap<String, Object>();
+        payload.put("tenantId", tenantId);
+        payload.put("loginId", loginAccountId);
+        payload.put("userNm", resolveBootstrapAdminName(adminName, adminEmail));
+        payload.put("emailAddr", isBlank(adminEmail) ? null : adminEmail.trim());
+        payload.put("departmentId", null);
+        payload.put("useAt", "Y");
+
+        try {
+            if (userId == null) {
+                platformUserDAO.insertUser(payload);
+            } else {
+                payload.put("userId", userId);
+                platformUserDAO.updateUser(payload);
+            }
+        } catch (Exception ex) {
+            throw new IllegalStateException("관리자 사용자 저장 중 오류가 발생했습니다.", ex);
+        }
+    }
+
+    private String buildBootstrapPasswordHash(String loginCode) {
+        String tempPassword = TenantAuthTokenGenerator.generateToken();
+        try {
+            return EgovFileScrty.encryptPassword(tempPassword, loginCode);
+        } catch (Exception ex) {
+            throw new IllegalStateException("부트스트랩 비밀번호 생성에 실패했습니다.", ex);
+        }
+    }
+
+    private String buildBootstrapLoginCodeBase(String adminEmail) {
+        if (isBlank(adminEmail)) {
+            return "tenant.admin";
+        }
+
+        String trimmed = adminEmail.trim();
+        int atIndex = trimmed.indexOf('@');
+        String localPart = atIndex > 0 ? trimmed.substring(0, atIndex) : trimmed;
+        String normalized = localPart.toLowerCase().replaceAll("[^a-z0-9._-]", "");
+        if (normalized.isEmpty()) {
+            return "tenant.admin";
+        }
+        if (normalized.length() > 90) {
+            return normalized.substring(0, 90);
+        }
+        return normalized;
+    }
+
+    private String buildBootstrapLoginCodeCandidate(String baseLoginCode, int attempt) {
+        if (attempt <= 0) {
+            return baseLoginCode;
+        }
+
+        String suffix = "." + attempt;
+        int maxBaseLength = 100 - suffix.length();
+        String adjustedBase = baseLoginCode.length() > maxBaseLength
+                ? baseLoginCode.substring(0, maxBaseLength)
+                : baseLoginCode;
+        return adjustedBase + suffix;
     }
 
     /**
@@ -328,7 +461,7 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         Map<String, Object> payload = new HashMap<String, Object>();
         payload.put("tenantId", tenantId);
         payload.put("loginId", loginAccountId);
-        payload.put("userNm", buildDefaultAdminName(adminEmail, tenantNm));
+        payload.put("userNm", resolveBootstrapAdminName(null, adminEmail));
         payload.put("emailAddr", isBlank(adminEmail) ? null : adminEmail.trim());
         payload.put("departmentId", null);
         payload.put("useAt", "Y");
@@ -340,7 +473,11 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         }
     }
 
-    private String buildDefaultAdminName(String adminEmail, String tenantNm) {
+    private String resolveBootstrapAdminName(String adminName, String adminEmail) {
+        if (!isBlank(adminName)) {
+            return adminName.trim();
+        }
+
         if (!isBlank(adminEmail)) {
             String trimmed = adminEmail.trim();
             int atIndex = trimmed.indexOf('@');
@@ -351,10 +488,6 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
                 }
             }
             return trimmed;
-        }
-
-        if (!isBlank(tenantNm)) {
-            return tenantNm.trim() + " 관리자";
         }
 
         return "업체 관리자";

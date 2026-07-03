@@ -26,6 +26,19 @@ import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
 
 /**
  * 플랫폼 테넌트 서비스 구현체
+ * @author SHMT-MES
+ * @since 2026.06.22
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.06.22 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @Service("platformTenantService")
 public class PlatformTenantServiceImpl implements PlatformTenantService {
@@ -45,6 +58,7 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
 
         String tenantNm = requestVO.getTenantNm().trim();
         String adminEmail = emptyToNull(requestVO.getAdminEmail());
+        String adminName = emptyToNull(requestVO.getAdminName());
         String corporateNumber = emptyToNull(requestVO.getCorporateNumber());
         String normalizedCorporateNumber = normalizeCorporateNumber(corporateNumber);
         String businessType = emptyToNull(requestVO.getBusinessType());
@@ -73,11 +87,21 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
                 businessCategory
         );
 
+        Long tenantId = tenantInfoDAO.selectTenantIdByCode(tenantSerialCode);
+        if (tenantId != null && planCode != null) {
+            tenantInfoDAO.expireActiveTenantSubscription(tenantId);
+            int inserted = tenantInfoDAO.insertActiveTenantSubscriptionByPlanCode(tenantId, planCode.trim().toUpperCase());
+            if (inserted <= 0) {
+                throw new IllegalStateException("유효하지 않은 플랜 코드입니다");
+            }
+        }
+
         TenantRegistrationResultVO resultVO = new TenantRegistrationResultVO();
-        resultVO.setTenantId(tenantInfoDAO.selectTenantIdByCode(tenantSerialCode));
+        resultVO.setTenantId(tenantId);
         resultVO.setTenantCode(tenantCode);
         resultVO.setTenantNm(tenantNm);
         resultVO.setAdminEmail(adminEmail);
+        resultVO.setAdminName(adminName);
         resultVO.setCorporateNumber(corporateNumber);
         resultVO.setBusinessType(businessType);
         resultVO.setBusinessCategory(businessCategory);

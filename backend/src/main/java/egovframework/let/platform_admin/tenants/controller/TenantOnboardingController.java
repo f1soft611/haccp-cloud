@@ -3,7 +3,6 @@ package egovframework.let.platform_admin.tenants.controller;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,18 +19,34 @@ import egovframework.let.platform_admin.tenants.service.exception.MailConfigurat
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * 테넌트 온보딩 API 컨트롤러
+ * @author SHMT-MES
+ * @since 2026.07.03
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.07.03 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @RestController
 @RequestMapping("/api/v1/tenants/onboarding")
+@Tag(name = "TenantOnboardingController", description = "테넌트 온보딩 관리")
+@RequiredArgsConstructor
 @Slf4j
 public class TenantOnboardingController {
 
-    @Autowired
-    private TenantOnboardingService tenantOnboardingService;
+    private final TenantOnboardingService tenantOnboardingService;
 
     /**
      * 인증 이메일 발송 API
@@ -52,10 +67,11 @@ public class TenantOnboardingController {
     public ResponseEntity<?> sendVerificationEmail(
             @RequestParam(required = true) String tenantCode,
             @RequestParam(required = true) String loginAccountId,
-            @RequestParam(required = true) String adminEmail) {
+            @RequestParam(required = true) String adminEmail,
+            @RequestParam(required = false) String adminName) {
 
         try {
-            tenantOnboardingService.createAndSendVerificationEmail(tenantCode, loginAccountId, adminEmail);
+            tenantOnboardingService.createAndSendVerificationEmail(tenantCode, loginAccountId, adminEmail, adminName);
 
             Map<String, Object> response = new HashMap<String, Object>();
             response.put("code", "200");
@@ -95,7 +111,7 @@ public class TenantOnboardingController {
             description = "테넌트 코드로 관리자 이메일과 로그인 계정을 찾아 인증 메일을 발송")
     public ResponseEntity<?> dispatchVerificationEmail(@RequestParam(required = true) String tenantCode) {
         try {
-            tenantOnboardingService.dispatchVerificationEmail(tenantCode);
+            tenantOnboardingService.dispatchVerificationEmail(tenantCode, null);
 
             Map<String, Object> response = new HashMap<String, Object>();
             response.put("code", "200");

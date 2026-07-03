@@ -27,12 +27,31 @@ import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationR
 import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
+import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 플랫폼 테넌트 API 컨트롤러
+ * @author SHMT-MES
+ * @since 2026.07.03
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.07.03 SHMT-MES          최초 생성
+ *
+ * </pre>
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
@@ -46,16 +65,23 @@ public class PlatformTenantApiController {
     @Resource(name = "resultVoHelper")
     private ResultVoHelper resultVoHelper;
 
+    @Resource(name = "tenantOnboardingService")
+    private TenantOnboardingService tenantOnboardingService;
+
     @Operation(
             summary = "테넌트 등록 및 코드 부여",
             description = "tb_tenant에 테넌트를 등록하고 테넌트 코드를 발급한다.",
             security = {@SecurityRequirement(name = "Authorization")}
     )
-        @PlanAccessPolicy(
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "등록 성공"),
+            @ApiResponse(responseCode = "403", description = "인가 실패")
+    })
+    @PlanAccessPolicy(
             menuUrl = "/platform/tenants",
             featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
             requiredPermissionLevel = PlanAccessLevel.WRITE
-        )
+    )
     @PostMapping({"/admin/tenants", "/platform-admin/tenants"})
     public ResultVO registerTenant(@RequestBody TenantRegistrationRequestVO requestVO) {
         TenantRegistrationResultVO resultVO = platformTenantService.registerTenant(requestVO);
@@ -67,19 +93,24 @@ public class PlatformTenantApiController {
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
+        @Operation(
+            summary = "테넌트 코드 발급",
+            description = "요청 기반으로 테넌트를 생성하고 인증 메일을 발송"
+        )
     @PostMapping("/tenants/issue-code")
     public ResultVO issueTenantCode(@RequestBody TenantIssueCodeRequestVO requestVO) {
         try {
             TenantRegistrationRequestVO serviceRequest = new TenantRegistrationRequestVO();
             serviceRequest.setTenantNm(requestVO.getCompanyName());
             serviceRequest.setAdminEmail(requestVO.getAdminEmail());
+            serviceRequest.setAdminName(requestVO.getAdminName());
             serviceRequest.setCorporateNumber(requestVO.getCorporateNumber());
             serviceRequest.setBusinessType(requestVO.getBusinessType());
             serviceRequest.setBusinessCategory(requestVO.getBusinessCategory());
             serviceRequest.setPlanCode(requestVO.getPlanCode());
 
             TenantRegistrationResultVO created = platformTenantService.registerTenant(serviceRequest);
-            platformTenantService.updateOnboardingStatusByTenantCode(created.getTenantCode(), "EMAIL_SENT");
+            tenantOnboardingService.dispatchVerificationEmail(created.getTenantCode(), requestVO.getAdminName());
 
             TenantIssueCodeResponseVO response = new TenantIssueCodeResponseVO();
             response.setTenantCode(created.getTenantCode());
@@ -107,9 +138,19 @@ public class PlatformTenantApiController {
             errorMap.put("errorMessage", ex.getMessage());
             errorMap.put("resultMsg", "error.tenant.duplicate");
             return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
+        } catch (RuntimeException ex) {
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("errorCode", "MAIL_DISPATCH_FAILED");
+            errorMap.put("errorMessage", ex.getMessage());
+            errorMap.put("resultMsg", "error.tenant.mail.dispatch");
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
         }
     }
 
+        @Operation(
+            summary = "온보딩 상태 EMAIL_VERIFIED 변경",
+            description = "테넌트 온보딩 상태를 EMAIL_VERIFIED로 변경"
+        )
     @PostMapping("/tenants/onboarding/email-verified")
     public Map<String, Object> markEmailVerified(@RequestBody Map<String, String> requestBody) {
         String tenantCode = requestBody == null ? null : requestBody.get("tenantCode");
@@ -122,6 +163,10 @@ public class PlatformTenantApiController {
         return result;
     }
 
+        @Operation(
+            summary = "온보딩 상태 EMAIL_SENT 변경",
+            description = "테넌트 온보딩 상태를 EMAIL_SENT로 변경"
+        )
     @PostMapping("/tenants/onboarding/mail-sent")
     public Map<String, Object> markMailSent(@RequestBody Map<String, String> requestBody) {
         String tenantCode = requestBody == null ? null : requestBody.get("tenantCode");
@@ -134,6 +179,10 @@ public class PlatformTenantApiController {
         return result;
     }
 
+        @Operation(
+            summary = "첫 로그인 설정 완료",
+            description = "첫 로그인 설정 완료 처리"
+        )
     @PostMapping("/first-login-setup/complete")
     public Map<String, Object> completeFirstLoginSetup(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantCode) {
@@ -210,11 +259,24 @@ public class PlatformTenantApiController {
         return result;
     }
 
+        @Operation(
+            summary = "샘플 테넌트 목록 조회",
+            description = "최근 샘플 테넌트 목록을 조회"
+        )
     @GetMapping("/tenants/samples")
     public List<SampleTenantVO> listSampleTenants() {
         return platformTenantService.listRecentTenants(5);
     }
 
+        @Operation(
+            summary = "테넌트 상세 조회",
+            description = "테넌트 코드 기준 상세 정보를 조회",
+            security = {@SecurityRequirement(name = "Authorization")}
+        )
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "403", description = "인가 실패")
+        })
     @PlanAccessPolicy(
             menuUrl = "/platform/tenants",
             featureCode = "FEATURE_PLATFORM_TENANT_MGMT",

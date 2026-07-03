@@ -85,7 +85,7 @@ class TenantOnboardingServiceImplTest {
         when(javaMailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
 
         // When
-        tenantOnboardingService.createAndSendVerificationEmail(tenantCode, loginAccountId, adminEmail);
+        tenantOnboardingService.createAndSendVerificationEmail(tenantCode, loginAccountId, adminEmail, "홍길동");
 
         // Then
         ArgumentCaptor<TenantAuthTokenVO> tokenCaptor = ArgumentCaptor.forClass(TenantAuthTokenVO.class);
@@ -120,7 +120,8 @@ class TenantOnboardingServiceImplTest {
                 () -> tenantOnboardingService.createAndSendVerificationEmail(
                         nonExistentTenantCode,
                         loginAccountId,
-                        adminEmail));
+                    adminEmail,
+                    "홍길동"));
 
         // Then
         assertTrue(exception.getMessage().contains("테넌트가 존재하지 않습니다"));
@@ -185,6 +186,39 @@ class TenantOnboardingServiceImplTest {
         // Then
         verify(tenantInfoDAO, times(1)).selectLatestLoginAccountIdByTenantCode(tenantCode);
         verify(tenantAuthTokenDAO, times(1)).expireTokensByTenantCode(tenantCode);
+        verify(tenantAuthTokenDAO, times(1)).insertToken(any(TenantAuthTokenVO.class));
+        verify(tenantInfoDAO, times(1)).updateOnboardingStatusByTenantCode(tenantCode, "EMAIL_SENT");
+        verify(javaMailSender, times(1)).send(any(MimeMessage.class));
+    }
+
+    @DisplayName("dispatch 발송 시 로그인 계정이 없으면 부트스트랩 계정을 생성하고 메일을 발송한다")
+    @Test
+    void dispatchVerificationEmail_CreatesBootstrapLoginAccount_WhenLoginAccountMissing() throws Exception {
+        // Given
+        String tenantCode = "2607010002";
+        Long tenantId = 200L;
+        String adminEmail = "ops@f1soft.co.kr";
+
+        when(tenantInfoDAO.selectAdminEmailByTenantCode(tenantCode)).thenReturn(adminEmail);
+        when(tenantInfoDAO.selectLatestLoginAccountIdByTenantCode(tenantCode)).thenReturn(null);
+        when(tenantInfoDAO.selectTenantIdByCode(tenantCode)).thenReturn(tenantId);
+        when(platformUserDAO.selectLoginIdByLoginCode(anyMap())).thenReturn(null, 301L);
+        when(platformUserDAO.selectUserIdByLoginId(anyMap())).thenReturn(null);
+        when(tenantInfoDAO.selectTenantNameByCode(tenantCode)).thenReturn("에프원소프트");
+        when(javaMailSender.createMimeMessage()).thenReturn(new MimeMessage(Session.getInstance(new Properties())));
+
+        // When
+        tenantOnboardingService.dispatchVerificationEmail(tenantCode, "홍길동");
+
+        // Then
+        ArgumentCaptor<HashMap> loginPayloadCaptor = ArgumentCaptor.forClass(HashMap.class);
+        verify(platformUserDAO, times(1)).insertLoginAccount(loginPayloadCaptor.capture());
+        ArgumentCaptor<HashMap> userPayloadCaptor = ArgumentCaptor.forClass(HashMap.class);
+        verify(platformUserDAO, times(1)).insertUser(userPayloadCaptor.capture());
+        assertEquals("N", loginPayloadCaptor.getValue().get("useAt"));
+        assertEquals("홍길동", userPayloadCaptor.getValue().get("userNm"));
+        assertEquals("ops@f1soft.co.kr", userPayloadCaptor.getValue().get("emailAddr"));
+        verify(platformUserDAO, times(2)).selectLoginIdByLoginCode(anyMap());
         verify(tenantAuthTokenDAO, times(1)).insertToken(any(TenantAuthTokenVO.class));
         verify(tenantInfoDAO, times(1)).updateOnboardingStatusByTenantCode(tenantCode, "EMAIL_SENT");
         verify(javaMailSender, times(1)).send(any(MimeMessage.class));
