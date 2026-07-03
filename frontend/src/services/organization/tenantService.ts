@@ -315,7 +315,9 @@ export async function completeTenantOnboarding(
   payload: TenantOnboardingCompleteRequest,
 ): Promise<void> {
   const normalizedTenantCode = payload.tenantCode.trim();
-  await apiClient.post(
+  const { data } = await apiClient.post<
+    Record<string, unknown> | ResultEnvelope<Record<string, unknown>>
+  >(
     `/v1/platform-admin/tenants/${encodeURIComponent(normalizedTenantCode)}/onboarding/completions`,
     {
       authToken: payload.authToken,
@@ -325,6 +327,8 @@ export async function completeTenantOnboarding(
       logoImage: payload.logoImage,
     },
   );
+
+  unwrapResult(data);
 }
 
 export async function getTenantByDomain(
