@@ -35,7 +35,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/platform-admin")
+@RequestMapping("/api/v1/platform-admin")
 public class AuthorityApiController {
 
     private static final String DEFAULT_PERMISSION_ID = "PERM_WRITE";

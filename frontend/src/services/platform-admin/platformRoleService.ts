@@ -111,7 +111,7 @@ function normalizePlatformRoleItem(
 
 export async function listPlatformRoles(): Promise<PlatformRoleItem[]> {
   const { data } = await apiClient.get<PlatformRoleApiItem[]>(
-    '/platform-admin/roles',
+    '/v1/platform-admin/roles',
   );
   return data.map(normalizePlatformRoleItem);
 }
@@ -128,7 +128,7 @@ export async function listPlatformRolesPaged(
   };
 }> {
   const { data } = await apiClient.get<PlatformRolesPagedResponse>(
-    '/platform-admin/roles/paged',
+    '/v1/platform-admin/roles/paged',
     {
       params: {
         ...params,
@@ -148,7 +148,7 @@ export async function createPlatformRole(
   payload: CreatePlatformRoleRequest,
 ): Promise<PlatformRoleItem> {
   const { data } = await apiClient.post<PlatformRoleApiItem>(
-    '/platform-admin/roles',
+    '/v1/platform-admin/roles',
     {
       roleCode: payload.code,
       roleNm: payload.name,
@@ -176,7 +176,7 @@ export async function updatePlatformRoleStatus(
   }
 
   const { data } = await apiClient.patch<PlatformRoleApiItem>(
-    `/platform-admin/roles/${roleIdentifier}`,
+    `/v1/platform-admin/roles/${roleIdentifier}`,
     {
       active: payload.active,
       useAt: payload.active ? 'Y' : 'N',
@@ -194,7 +194,7 @@ export async function updatePlatformRole(
   }
 
   const { data } = await apiClient.put<PlatformRoleApiItem>(
-    `/platform-admin/roles/${roleIdentifier}`,
+    `/v1/platform-admin/roles/${roleIdentifier}`,
     {
       roleCode: payload.code,
       roleNm: payload.name,

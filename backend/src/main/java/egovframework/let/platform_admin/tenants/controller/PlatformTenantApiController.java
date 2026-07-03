@@ -28,6 +28,8 @@ import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationR
 import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
 import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
+import egovframework.let.platform_admin.tenants.service.exception.MailAuthenticationFailureException;
+import egovframework.let.platform_admin.tenants.service.exception.MailConfigurationException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -54,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/api/v1/platform-admin/tenants")
 @Tag(name = "PlatformTenantApiController", description = "플랫폼 테넌트 관리")
 @Slf4j
 public class PlatformTenantApiController {
@@ -82,7 +84,7 @@ public class PlatformTenantApiController {
             featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
             requiredPermissionLevel = PlanAccessLevel.WRITE
     )
-    @PostMapping({"/admin/tenants", "/platform-admin/tenants"})
+    @PostMapping
     public ResultVO registerTenant(@RequestBody TenantRegistrationRequestVO requestVO) {
         TenantRegistrationResultVO resultVO = platformTenantService.registerTenant(requestVO);
 
@@ -97,7 +99,7 @@ public class PlatformTenantApiController {
             summary = "테넌트 코드 발급",
             description = "요청 기반으로 테넌트를 생성하고 인증 메일을 발송"
         )
-    @PostMapping("/tenants/issue-code")
+    @PostMapping("/issue-code")
     public ResultVO issueTenantCode(@RequestBody TenantIssueCodeRequestVO requestVO) {
         try {
             TenantRegistrationRequestVO serviceRequest = new TenantRegistrationRequestVO();
@@ -134,16 +136,28 @@ public class PlatformTenantApiController {
             return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
         } catch (IllegalStateException ex) {
             Map<String, Object> errorMap = new HashMap<String, Object>();
-            errorMap.put("errorCode", "DUPLICATE_CORPORATE_NUMBER");
+            errorMap.put("errorCode", "TENANT_ISSUE_CONFLICT");
             errorMap.put("errorMessage", ex.getMessage());
-            errorMap.put("resultMsg", "error.tenant.duplicate");
+            errorMap.put("resultMsg", "error.tenant.issue.conflict");
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
+        } catch (MailConfigurationException ex) {
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("errorCode", "MAIL_CONFIG_ERROR");
+            errorMap.put("errorMessage", ex.getMessage());
+            errorMap.put("resultMsg", "error.tenant.mail.config");
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
+        } catch (MailAuthenticationFailureException ex) {
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("errorCode", "MAIL_AUTH_ERROR");
+            errorMap.put("errorMessage", ex.getMessage());
+            errorMap.put("resultMsg", "error.tenant.mail.auth");
             return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
         } catch (RuntimeException ex) {
             Map<String, Object> errorMap = new HashMap<String, Object>();
-            errorMap.put("errorCode", "MAIL_DISPATCH_FAILED");
+            errorMap.put("errorCode", "TENANT_ISSUE_FAILED");
             errorMap.put("errorMessage", ex.getMessage());
-            errorMap.put("resultMsg", "error.tenant.mail.dispatch");
-            return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
+            errorMap.put("resultMsg", "error.tenant.issue");
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -151,32 +165,56 @@ public class PlatformTenantApiController {
             summary = "온보딩 상태 EMAIL_VERIFIED 변경",
             description = "테넌트 온보딩 상태를 EMAIL_VERIFIED로 변경"
         )
-    @PostMapping("/tenants/onboarding/email-verified")
-    public Map<String, Object> markEmailVerified(@RequestBody Map<String, String> requestBody) {
+    @PostMapping("/onboarding/email-verified")
+    @PlanAccessPolicy(
+            menuUrl = "/platform/tenants",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
+    public ResultVO markEmailVerified(@RequestBody Map<String, String> requestBody) {
         String tenantCode = requestBody == null ? null : requestBody.get("tenantCode");
+        if (!hasText(tenantCode)) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("errorCode", "INVALID_TENANT_CODE");
+            error.put("errorMessage", "tenantCode는 필수입니다.");
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+        }
+        tenantCode = tenantCode.trim();
         platformTenantService.updateOnboardingStatusByTenantCode(tenantCode, "EMAIL_VERIFIED");
 
         Map<String, Object> result = new HashMap<String, Object>();
         result.put("tenantCode", tenantCode);
         result.put("onboardingStatus", "EMAIL_VERIFIED");
         result.put("updated", true);
-        return result;
+        return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
     }
 
         @Operation(
             summary = "온보딩 상태 EMAIL_SENT 변경",
             description = "테넌트 온보딩 상태를 EMAIL_SENT로 변경"
         )
-    @PostMapping("/tenants/onboarding/mail-sent")
-    public Map<String, Object> markMailSent(@RequestBody Map<String, String> requestBody) {
+    @PostMapping("/onboarding/mail-sent")
+    @PlanAccessPolicy(
+            menuUrl = "/platform/tenants",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
+    public ResultVO markMailSent(@RequestBody Map<String, String> requestBody) {
         String tenantCode = requestBody == null ? null : requestBody.get("tenantCode");
+        if (!hasText(tenantCode)) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("errorCode", "INVALID_TENANT_CODE");
+            error.put("errorMessage", "tenantCode는 필수입니다.");
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+        }
+        tenantCode = tenantCode.trim();
         platformTenantService.updateOnboardingStatusByTenantCode(tenantCode, "EMAIL_SENT");
 
         Map<String, Object> result = new HashMap<String, Object>();
         result.put("tenantCode", tenantCode);
         result.put("onboardingStatus", "EMAIL_SENT");
         result.put("updated", true);
-        return result;
+        return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
     }
 
         @Operation(
@@ -184,19 +222,31 @@ public class PlatformTenantApiController {
             description = "첫 로그인 설정 완료 처리"
         )
     @PostMapping("/first-login-setup/complete")
-    public Map<String, Object> completeFirstLoginSetup(
+    @PlanAccessPolicy(
+            menuUrl = "/platform/tenants",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
+    public ResultVO completeFirstLoginSetup(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantCode) {
+        if (!hasText(tenantCode)) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("errorCode", "INVALID_TENANT_CODE");
+            error.put("errorMessage", "x-tenant-code 헤더는 필수입니다.");
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+        }
+        tenantCode = tenantCode.trim();
         platformTenantService.updateOnboardingStatusByTenantCode(tenantCode, "FIRST_SETUP_COMPLETED");
 
         Map<String, Object> result = new HashMap<String, Object>();
         result.put("tenantCode", tenantCode);
         result.put("completed", true);
         result.put("onboardingRequired", false);
-        result.put("onboardingStatus", "COMPLETED");
-        return result;
+        result.put("onboardingStatus", "FIRST_SETUP_COMPLETED");
+        return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
     }
 
-    @GetMapping("/tenants/{domain}")
+    @GetMapping("/domains/{domain}")
     @Operation(
             summary = "도메인으로 테넌트 정보 조회",
             description = "테넌트 도메인 매핑(예: f1soft.co.kr)으로 테넌트 정보를 조회한다. 로그인 페이지에서 로고 및 회사명을 표시하기 위해 사용된다."
@@ -229,12 +279,12 @@ public class PlatformTenantApiController {
         }
     }
 
-    @GetMapping("/tenants/{domain}/logo")
+    @GetMapping("/domains/{domain}/logo")
     @Operation(
             summary = "테넌트 로고 이미지 조회",
             description = "도메인을 기반으로 테넌트의 로고 이미지(Base64)를 조회한다."
     )
-    public Map<String, Object> getTenantLogo(@PathVariable String domain) {
+    public ResultVO getTenantLogo(@PathVariable String domain) {
         Map<String, Object> result = new HashMap<String, Object>();
         try {
             TenantVO tenant = platformTenantService.findByAdminEmailDomain(domain);
@@ -245,27 +295,33 @@ public class PlatformTenantApiController {
             result.put("success", true);
             
             log.info("getTenantLogo: domain={}, logoPresent={}", domain, tenant.getLogoImage() != null && !tenant.getLogoImage().isEmpty());
+            return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
         } catch (IllegalArgumentException ex) {
             log.warn("getTenantLogo: tenant not found for domain={}", domain);
             result.put("success", false);
             result.put("errorCode", "TENANT_NOT_FOUND");
             result.put("errorMessage", "테넌트를 찾을 수 없습니다.");
+            return resultVoHelper.buildFromMap(result, ResponseCode.BUSINESS_ERROR);
         } catch (Exception ex) {
             log.error("getTenantLogo: unexpected error for domain={}", domain, ex);
             result.put("success", false);
             result.put("errorCode", "INTERNAL_ERROR");
             result.put("errorMessage", "서버 오류가 발생했습니다.");
+            return resultVoHelper.buildFromMap(result, ResponseCode.INTERNAL_SERVER_ERROR);
         }
-        return result;
     }
 
         @Operation(
             summary = "샘플 테넌트 목록 조회",
             description = "최근 샘플 테넌트 목록을 조회"
         )
-    @GetMapping("/tenants/samples")
-    public List<SampleTenantVO> listSampleTenants() {
-        return platformTenantService.listRecentTenants(5);
+    @GetMapping("/samples")
+    public ResultVO listSampleTenants() {
+        List<SampleTenantVO> items = platformTenantService.listRecentTenants(5);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("items", items);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
         @Operation(
@@ -282,7 +338,7 @@ public class PlatformTenantApiController {
             featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
             requiredPermissionLevel = PlanAccessLevel.READ
     )
-    @GetMapping("/platform-admin/tenants/{tenantCode}")
+    @GetMapping("/{tenantCode}")
     public ResultVO getTenantDetail(@PathVariable String tenantCode) {
         PlatformTenantDashboardItemVO item = platformTenantService.findDashboardTenantByCode(tenantCode);
         if (item == null) {
@@ -302,5 +358,9 @@ public class PlatformTenantApiController {
             return "";
         }
         return value.trim();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

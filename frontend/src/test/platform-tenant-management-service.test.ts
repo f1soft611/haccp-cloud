@@ -69,7 +69,7 @@ describe('platformTenantManagementService', () => {
     const detail = await getPlatformTenantByCode('TENANT-A');
 
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/platform-admin/tenants/TENANT-A',
+      '/v1/platform-admin/tenants/TENANT-A',
     );
     expect(detail?.tenantCode).toBe('TENANT-A');
     expect(detail?.onboardingStatus).toBe('EMAIL_SENT');

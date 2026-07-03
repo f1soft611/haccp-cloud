@@ -55,6 +55,12 @@ type DashboardTenantEnvelope = {
   items?: PlatformTenantManagementItem[];
 };
 
+type ResultEnvelope<T> = {
+  result?: {
+    data?: T;
+  };
+};
+
 type TenantDetailEnvelope = {
   result?: {
     tenant?: PlatformTenantManagementItem;
@@ -66,9 +72,12 @@ type TenantDetailEnvelope = {
 };
 
 function normalizeTenantDetail(
-  data: TenantDetailEnvelope,
+  data: TenantDetailEnvelope | ResultEnvelope<TenantDetailEnvelope>,
 ): PlatformTenantManagementItem | null {
-  const item = data.result?.tenant ?? data.resultData?.tenant ?? data.tenant;
+  const payload = ((data as ResultEnvelope<TenantDetailEnvelope>)?.result
+    ?.data ?? data) as TenantDetailEnvelope;
+  const item =
+    payload.result?.tenant ?? payload.resultData?.tenant ?? payload.tenant;
   return item ?? null;
 }
 
@@ -77,28 +86,28 @@ export async function listPlatformTenants(
 ): Promise<ListPlatformTenantsResult> {
   const backendPageIndex = Math.max(0, params.pageIndex - 1);
 
-  const { data } = await apiClient.get<DashboardTenantEnvelope>(
-    '/platform-admin/dashboard/tenants',
-    {
-      params: {
-        pageIndex: backendPageIndex,
-        pageSize: params.pageSize,
-        searchField: params.searchField,
-        searchKeyword: params.searchKeyword,
-        status: params.status === 'all' ? undefined : params.status,
-        onboardingStatus:
-          params.onboardingStatus === 'all'
-            ? undefined
-            : params.onboardingStatus,
-      },
+  const { data } = await apiClient.get<
+    DashboardTenantEnvelope | ResultEnvelope<DashboardTenantEnvelope>
+  >('/v1/platform-admin/dashboard/tenants', {
+    params: {
+      pageIndex: backendPageIndex,
+      pageSize: params.pageSize,
+      searchField: params.searchField,
+      searchKeyword: params.searchKeyword,
+      status: params.status === 'all' ? undefined : params.status,
+      onboardingStatus:
+        params.onboardingStatus === 'all' ? undefined : params.onboardingStatus,
     },
-  );
+  });
+
+  const payload = ((data as ResultEnvelope<DashboardTenantEnvelope>)?.result
+    ?.data ?? data) as DashboardTenantEnvelope;
 
   return {
-    items: data.items ?? [],
-    total: data.summary?.total ?? 0,
-    active: data.summary?.active ?? 0,
-    inactive: data.summary?.inactive ?? 0,
+    items: payload.items ?? [],
+    total: payload.summary?.total ?? 0,
+    active: payload.summary?.active ?? 0,
+    inactive: payload.summary?.inactive ?? 0,
   };
 }
 
@@ -110,9 +119,9 @@ export async function getPlatformTenantByCode(
     return null;
   }
 
-  const { data } = await apiClient.get<TenantDetailEnvelope>(
-    `/platform-admin/tenants/${encodeURIComponent(normalized)}`,
-  );
+  const { data } = await apiClient.get<
+    TenantDetailEnvelope | ResultEnvelope<TenantDetailEnvelope>
+  >(`/v1/platform-admin/tenants/${encodeURIComponent(normalized)}`);
 
   return normalizeTenantDetail(data);
 }
@@ -120,23 +129,19 @@ export async function getPlatformTenantByCode(
 export async function dispatchTenantVerificationEmail(
   tenantCode: string,
 ): Promise<void> {
+  const normalizedTenantCode = tenantCode.trim();
   await apiClient.post(
-    '/v1/tenants/onboarding/dispatch-verification-email',
-    null,
-    {
-      params: { tenantCode },
-    },
+    `/v1/platform-admin/tenants/${encodeURIComponent(normalizedTenantCode)}/onboarding/verification-emails`,
+    {},
   );
 }
 
 export async function resendTenantVerificationEmail(
   tenantCode: string,
 ): Promise<void> {
+  const normalizedTenantCode = tenantCode.trim();
   await apiClient.post(
-    '/v1/tenants/onboarding/resend-verification-email',
-    null,
-    {
-      params: { tenantCode },
-    },
+    `/v1/platform-admin/tenants/${encodeURIComponent(normalizedTenantCode)}/onboarding/verification-emails`,
+    {},
   );
 }

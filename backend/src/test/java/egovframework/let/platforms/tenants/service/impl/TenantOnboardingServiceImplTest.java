@@ -151,7 +151,7 @@ class TenantOnboardingServiceImplTest {
         when(tenantInfoDAO.selectLoginCodeByLoginAccountId(101L)).thenReturn("tenant-admin");
 
         // When
-        TenantVerificationResponseVO response = tenantOnboardingService.verifyEmailToken(authToken);
+        TenantVerificationResponseVO response = tenantOnboardingService.verifyEmailToken("TEST_TENANT", authToken);
 
         // Then
         assertNotNull(response);

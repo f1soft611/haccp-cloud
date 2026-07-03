@@ -47,7 +47,7 @@ public interface TenantOnboardingService {
      * @throws IllegalArgumentException 입력값이 유효하지 않거나 토큰이 존재하지 않는 경우
      * @throws IllegalStateException 토큰이 만료되었거나 이미 사용된 경우
      */
-    TenantVerificationResponseVO verifyEmailToken(String authToken);
+    TenantVerificationResponseVO verifyEmailToken(String tenantCode, String authToken);
 
     /**
      * 온보딩 완료 (비밀번호, 전화번호 설정 및 활성화)

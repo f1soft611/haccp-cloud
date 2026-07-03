@@ -62,6 +62,17 @@ export type ListPlatformMenusPagedParams = {
 type MenuPagedApiResponse = {
   result?: {
     menuList?: RawPlatformMenuItem[];
+    items?: RawPlatformMenuItem[];
+    data?: {
+      menuList?: RawPlatformMenuItem[];
+      items?: RawPlatformMenuItem[];
+      totalCount?: number;
+      paginationInfo?: {
+        currentPageNo?: number;
+        recordCountPerPage?: number;
+        totalRecordCount?: number;
+      };
+    };
     totalCount?: number;
     paginationInfo?: {
       currentPageNo?: number;
@@ -83,8 +94,14 @@ type MenuListApiResponse =
   | {
       result?: {
         menuList?: RawPlatformMenuItem[];
+        items?: RawPlatformMenuItem[];
+        data?: {
+          menuList?: RawPlatformMenuItem[];
+          items?: RawPlatformMenuItem[];
+        };
       };
       menuList?: RawPlatformMenuItem[];
+      items?: RawPlatformMenuItem[];
     };
 
 type MenuItemApiResponse =
@@ -133,20 +150,53 @@ function extractMenuList(data: MenuListApiResponse): RawPlatformMenuItem[] {
     return data;
   }
 
-  const items = data.result?.menuList ?? data.menuList ?? [];
+  const items =
+    data.result?.menuList ??
+    data.result?.items ??
+    data.result?.data?.menuList ??
+    data.result?.data?.items ??
+    data.menuList ??
+    data.items ??
+    [];
   return items;
+}
+
+function extractPagedMenuList(
+  data: MenuPagedApiResponse,
+): RawPlatformMenuItem[] {
+  return (
+    data.result?.menuList ??
+    data.result?.items ??
+    data.result?.data?.menuList ??
+    data.result?.data?.items ??
+    []
+  );
+}
+
+function extractPagedTotalCount(data: MenuPagedApiResponse): number {
+  return data.result?.totalCount ?? data.result?.data?.totalCount ?? 0;
+}
+
+function extractPagedPaginationInfo(data: MenuPagedApiResponse):
+  | {
+      currentPageNo?: number;
+      recordCountPerPage?: number;
+      totalRecordCount?: number;
+    }
+  | undefined {
+  return data.result?.paginationInfo ?? data.result?.data?.paginationInfo;
 }
 
 export async function listPlatformMenus(): Promise<PlatformMenuItem[]> {
   const { data } = await apiClient.get<MenuListApiResponse>(
-    '/platform-admin/menus',
+    '/v1/platform-admin/menus',
   );
   return extractMenuList(data).map(normalizeMenuItem);
 }
 
 export async function listCommonPlatformMenus(): Promise<PlatformMenuItem[]> {
   const { data } = await apiClient.get<MenuListApiResponse>(
-    '/platform-admin/menus/common',
+    '/v1/platform-admin/menus/common',
   );
   return extractMenuList(data).map(normalizeMenuItem);
 }
@@ -163,14 +213,14 @@ export async function listPlatformMenusPaged(
   };
 }> {
   const { data } = await apiClient.get<MenuPagedApiResponse>(
-    '/platform-admin/menus/paged',
+    '/v1/platform-admin/menus/paged',
     { params },
   );
 
   return {
-    items: (data.result?.menuList ?? []).map(normalizeMenuItem),
-    totalCount: data.result?.totalCount ?? 0,
-    paginationInfo: data.result?.paginationInfo,
+    items: extractPagedMenuList(data).map(normalizeMenuItem),
+    totalCount: extractPagedTotalCount(data),
+    paginationInfo: extractPagedPaginationInfo(data),
   };
 }
 
@@ -190,7 +240,7 @@ export async function createPlatformMenu(
   };
 
   await apiClient.post<MenuItemApiResponse>(
-    '/platform-admin/menus',
+    '/v1/platform-admin/menus',
     requestBody,
   );
 }
@@ -210,11 +260,11 @@ export async function updatePlatformMenu(
   };
 
   await apiClient.patch<MenuItemApiResponse>(
-    `/platform-admin/menus/${menuId}`,
+    `/v1/platform-admin/menus/${menuId}`,
     requestBody,
   );
 }
 
 export async function deletePlatformMenu(menuId: string): Promise<void> {
-  await apiClient.delete(`/platform-admin/menus/${menuId}`);
+  await apiClient.delete(`/v1/platform-admin/menus/${menuId}`);
 }

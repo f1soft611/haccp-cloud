@@ -3,6 +3,7 @@ package egovframework.let.platform_admin.loginhistory.controller;
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
+import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.platform_admin.access.web.PlanAccessLevel;
 import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
 import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistory;
@@ -43,12 +44,15 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/platform-admin/login-history")
+@RequestMapping("/api/v1/platform-admin/login-history")
 @Tag(name = "LoginHistoryApiController", description = "로그인 이력 관리")
 public class LoginHistoryApiController {
 
 	@Resource(name = "loginHistoryService")
 	private LoginHistoryService loginHistoryService;
+
+	@Resource(name = "resultVoHelper")
+	private ResultVoHelper resultVoHelper;
 
 	/**
 	 * 로그인 이력 목록을 조회한다.
@@ -71,8 +75,6 @@ public class LoginHistoryApiController {
 	public ResultVO selectLoginHistoryList(
 			@ModelAttribute LoginHistoryVO loginHistoryVO,
 			@Parameter(hidden = true) @AuthenticationPrincipal LoginVO user) throws Exception {
-
-		ResultVO resultVO = new ResultVO();
 
 		try {
 			boolean isPlatformAdmin = user != null
@@ -114,22 +116,22 @@ public class LoginHistoryApiController {
 
 			paginationInfo.setTotalRecordCount(totalCount);
 
-			Map<String, Object> resultMap = new HashMap<>();
-			resultMap.put("loginHistoryList", loginHistoryList);
-			resultMap.put("paginationInfo", paginationInfo);
-			resultMap.put("totalCount", totalCount);
+			Map<String, Object> dataMap = new HashMap<>();
+			dataMap.put("loginHistoryList", loginHistoryList);
+			dataMap.put("paginationInfo", paginationInfo);
+			dataMap.put("totalCount", totalCount);
 
-			resultVO.setResult(resultMap);
-			resultVO.setResultCode(ResponseCode.SUCCESS.getCode());
-			resultVO.setResultMessage(ResponseCode.SUCCESS.getMessage());
+			Map<String, Object> resultMap = new HashMap<>();
+			resultMap.put("data", dataMap);
+			return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
 
 		} catch (Exception e) {
 			log.error("로그인 이력 목록 조회 실패", e);
-			resultVO.setResultCode(ResponseCode.INTERNAL_SERVER_ERROR.getCode());
-			resultVO.setResultMessage("로그인 이력 목록 조회에 실패했습니다: " + e.getMessage());
+			Map<String, Object> errorMap = new HashMap<>();
+			errorMap.put("errorCode", "LOGIN_HISTORY_LIST_FETCH_FAILED");
+			errorMap.put("errorMessage", "로그인 이력 목록 조회에 실패했습니다.");
+			return resultVoHelper.buildFromMap(errorMap, ResponseCode.INTERNAL_SERVER_ERROR);
 		}
-
-		return resultVO;
 	}
 
 	/**
@@ -149,29 +151,27 @@ public class LoginHistoryApiController {
 			featureCode = "FEATURE_AUDIT_LOG",
 			requiredPermissionLevel = PlanAccessLevel.READ
 	)
-	@GetMapping("/{loginHistoryId}")
+	@GetMapping("/{loginHistoryId:\\d+}")
 	public ResultVO selectLoginHistoryDetail(
 			@PathVariable Long loginHistoryId,
 			@Parameter(hidden = true) @AuthenticationPrincipal LoginVO user) throws Exception {
 
-		ResultVO resultVO = new ResultVO();
-
 		try {
 			LoginHistory loginHistory = loginHistoryService.selectLoginHistoryDetail(loginHistoryId);
 
-			Map<String, Object> resultMap = new HashMap<>();
-			resultMap.put("loginHistory", loginHistory);
+			Map<String, Object> dataMap = new HashMap<>();
+			dataMap.put("loginHistory", loginHistory);
 
-			resultVO.setResult(resultMap);
-			resultVO.setResultCode(ResponseCode.SUCCESS.getCode());
-			resultVO.setResultMessage(ResponseCode.SUCCESS.getMessage());
+			Map<String, Object> resultMap = new HashMap<>();
+			resultMap.put("data", dataMap);
+			return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
 
 		} catch (Exception e) {
 			log.error("로그인 이력 상세 조회 실패", e);
-			resultVO.setResultCode(ResponseCode.INTERNAL_SERVER_ERROR.getCode());
-			resultVO.setResultMessage("로그인 이력 상세 조회에 실패했습니다: " + e.getMessage());
+			Map<String, Object> errorMap = new HashMap<>();
+			errorMap.put("errorCode", "LOGIN_HISTORY_DETAIL_FETCH_FAILED");
+			errorMap.put("errorMessage", "로그인 이력 상세 조회에 실패했습니다.");
+			return resultVoHelper.buildFromMap(errorMap, ResponseCode.INTERNAL_SERVER_ERROR);
 		}
-
-		return resultVO;
 	}
 }

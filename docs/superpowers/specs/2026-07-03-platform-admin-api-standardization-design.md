@@ -10,7 +10,7 @@ This design standardizes platform_admin APIs with the following fixed decisions:
 - Compatibility: breaking changes are allowed
 - Response contract: ResultVO only
 - Update semantics: strict PUT (full replace) vs PATCH (partial update)
-- Versioning and base path: /api/v1/platform-admin/*
+- Versioning and base path: /api/v1/platform-admin/\*
 - Migration strategy: domain-batch rollout (menus -> tenants -> dashboard/login-history/access)
 
 ## 2. Design Principles
@@ -19,9 +19,9 @@ This design standardizes platform_admin APIs with the following fixed decisions:
 
 All platform_admin endpoints must use:
 
-- /api/v1/platform-admin/*
+- /api/v1/platform-admin/\*
 
-Any mixed paths like /api/* or /api/platform-admin/* are migrated.
+Any mixed paths like /api/_ or /api/platform-admin/_ are migrated.
 
 ### 2.2 Resource-Oriented URI
 
@@ -91,9 +91,9 @@ Legacy action routes outside /platform-admin are removed in this migration.
 
 These domains are normalized after menus and tenants, using the same standards:
 
-- /api/v1/platform-admin/dashboard/*
-- /api/v1/platform-admin/login-history/*
-- /api/v1/platform-admin/plan-access/*
+- /api/v1/platform-admin/dashboard/\*
+- /api/v1/platform-admin/login-history/\*
+- /api/v1/platform-admin/plan-access/\*
 
 ## 4. Error Handling Standard
 
@@ -127,7 +127,7 @@ OpenAPI annotations must match:
 
 ### Batch 2: Tenants
 
-- Migrate tenant and onboarding routes into /api/v1/platform-admin/tenants/*
+- Migrate tenant and onboarding routes into /api/v1/platform-admin/tenants/\*
 - Replace ResponseEntity body patterns with ResultVO + ResultVoHelper
 - Preserve business errors in standardized ResultVO format
 
@@ -140,7 +140,7 @@ OpenAPI annotations must match:
 
 A batch is complete only when all items pass:
 
-1. All endpoints are under /api/v1/platform-admin/*
+1. All endpoints are under /api/v1/platform-admin/\*
 2. Controller responses are ResultVO-only
 3. PUT vs PATCH semantics are explicit and documented
 4. Swagger paths and responses match runtime behavior
@@ -163,7 +163,7 @@ A batch is complete only when all items pass:
 
 For all new or changed platform_admin APIs, PR merge requires a checklist pass:
 
-1. URI rule: /api/v1/platform-admin/* and resource naming
+1. URI rule: /api/v1/platform-admin/\* and resource naming
 2. Method rule: PUT vs PATCH semantics are correct
 3. Response rule: ResultVO-only
 4. Error rule: standardized code/message keys

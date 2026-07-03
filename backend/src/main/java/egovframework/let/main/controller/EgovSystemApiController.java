@@ -26,7 +26,7 @@ import java.util.Map;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/system")
+@RequestMapping("/api/v1/system")
 @Tag(name = "EgovSystemApiController", description = "시스템 관리")
 public class EgovSystemApiController {
 

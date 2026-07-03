@@ -1,7 +1,12 @@
 package egovframework.let.platform_admin.dashboard.controller;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
+import java.util.Map;
 
+import egovframework.com.cmm.ResponseCode;
+import egovframework.com.cmm.service.ResultVO;
+import egovframework.com.cmm.util.ResultVoHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,11 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import egovframework.let.platform_admin.access.web.PlanAccessLevel;
 import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
 import egovframework.let.platform_admin.dashboard.service.PlatformDashboardService;
-import egovframework.let.platform_admin.dashboard.domain.model.PlatformDashboardCcpDocumentsVO;
-import egovframework.let.platform_admin.dashboard.domain.model.PlatformDashboardKpisVO;
-import egovframework.let.platform_admin.dashboard.domain.model.PlatformDashboardTenantCodeIssuanceVO;
 import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardQueryVO;
-import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardResultVO;
 
 /**
  * 플랫폼 대시보드 API 컨트롤러
@@ -40,11 +41,14 @@ import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashb
  */
 @RestController
 @Tag(name = "PlatformDashboardApiController", description = "플랫폼 대시보드 관리")
-@RequestMapping("/api/platform-admin/dashboard")
+@RequestMapping("/api/v1/platform-admin/dashboard")
 public class PlatformDashboardApiController {
 
     @Resource(name = "platformDashboardService")
     private PlatformDashboardService platformDashboardService;
+
+        @Resource(name = "resultVoHelper")
+        private ResultVoHelper resultVoHelper;
 
     /**
      * 대시보드 KPI 정보를 조회한다.
@@ -65,8 +69,10 @@ public class PlatformDashboardApiController {
             requiredPermissionLevel = PlanAccessLevel.READ
     )
     @GetMapping("/kpis")
-    public PlatformDashboardKpisVO getDashboardKpis() {
-        return platformDashboardService.getDashboardKpis();
+        public ResultVO getDashboardKpis() {
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                resultMap.put("data", platformDashboardService.getDashboardKpis());
+                return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     /**
@@ -88,8 +94,10 @@ public class PlatformDashboardApiController {
             requiredPermissionLevel = PlanAccessLevel.READ
     )
     @GetMapping("/tenant-code-issuance")
-    public PlatformDashboardTenantCodeIssuanceVO getTenantCodeIssuance() {
-        return platformDashboardService.getTenantCodeIssuance();
+        public ResultVO getTenantCodeIssuance() {
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                resultMap.put("data", platformDashboardService.getTenantCodeIssuance());
+                return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     /**
@@ -111,7 +119,7 @@ public class PlatformDashboardApiController {
             requiredPermissionLevel = PlanAccessLevel.READ
     )
     @GetMapping("/tenants")
-    public PlatformTenantDashboardResultVO listDashboardTenants(
+        public ResultVO listDashboardTenants(
             @Parameter(description = "페이지 인덱스") @RequestParam(defaultValue = "0") int pageIndex,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int pageSize,
             @Parameter(description = "검색 필드") @RequestParam(required = false) String searchField,
@@ -125,7 +133,9 @@ public class PlatformDashboardApiController {
         queryVO.setSearchKeyword(searchKeyword);
         queryVO.setStatus(status);
         queryVO.setOnboardingStatus(onboardingStatus);
-        return platformDashboardService.listDashboardTenants(queryVO);
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                resultMap.put("data", platformDashboardService.listDashboardTenants(queryVO));
+                return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
         /**
@@ -147,7 +157,9 @@ public class PlatformDashboardApiController {
             requiredPermissionLevel = PlanAccessLevel.READ
     )
     @GetMapping("/ccp-documents")
-    public PlatformDashboardCcpDocumentsVO getCcpDocuments() {
-        return platformDashboardService.getCcpDocuments();
+        public ResultVO getCcpDocuments() {
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                resultMap.put("data", platformDashboardService.getCcpDocuments());
+                return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 }

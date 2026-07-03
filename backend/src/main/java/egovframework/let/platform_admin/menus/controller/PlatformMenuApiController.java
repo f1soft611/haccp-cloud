@@ -1,6 +1,8 @@
 package egovframework.let.platform_admin.menus.controller;
 
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.annotation.Resource;
 
@@ -16,13 +18,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
+import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.platform_admin.access.web.PlanAccessLevel;
 import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
 import egovframework.let.platform_admin.menus.service.PlatformMenuService;
@@ -48,13 +53,16 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "PlatformMenuApiController", description = "플랫폼 메뉴 관리")
-@RequestMapping("/api/platform-admin/menus")
+@RequestMapping("/api/v1/platform-admin/menus")
 public class PlatformMenuApiController {
 
     private static final int[] ALLOWED_PAGE_SIZES = {10, 20, 50};
 
     @Resource(name = "platformMenuService")
     private PlatformMenuService platformMenuService;
+
+    @Resource(name = "resultVoHelper")
+    private ResultVoHelper resultVoHelper;
 
         /**
          * 공통 메뉴 목록을 조회한다.
@@ -69,10 +77,13 @@ public class PlatformMenuApiController {
             @ApiResponse(responseCode = "200", description = "조회 성공")
         })
     @GetMapping("/common")
-    public List<MenuInfoVO> listCommonMenus(
+    public ResultVO listCommonMenus(
             @Parameter(description = "메뉴명") @RequestParam(required = false) String menuNm,
             @Parameter(description = "상위 메뉴 ID") @RequestParam(required = false) Long parentMenuId) throws Exception {
-        return platformMenuService.listMenus(menuNm, parentMenuId);
+        List<MenuInfoVO> menus = platformMenuService.listMenus(menuNm, parentMenuId);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("items", menus);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
         /**
@@ -94,10 +105,13 @@ public class PlatformMenuApiController {
             requiredPermissionLevel = PlanAccessLevel.READ
         )
     @GetMapping
-    public List<MenuInfoVO> listMenus(
+    public ResultVO listMenus(
             @Parameter(description = "메뉴명") @RequestParam(required = false) String menuNm,
             @Parameter(description = "상위 메뉴 ID") @RequestParam(required = false) Long parentMenuId) throws Exception {
-        return platformMenuService.listMenus(menuNm, parentMenuId);
+        List<MenuInfoVO> menus = platformMenuService.listMenus(menuNm, parentMenuId);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("items", menus);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
         /**
@@ -159,10 +173,13 @@ public class PlatformMenuApiController {
             requiredPermissionLevel = PlanAccessLevel.WRITE
     )
     @PostMapping
-    public MenuInfoVO createMenu(@RequestBody MenuInfoVO menuInfoVO) throws Exception {
+    public ResultVO createMenu(@RequestBody MenuInfoVO menuInfoVO) throws Exception {
         normalizePayload(menuInfoVO);
         validateForCreateOrUpdate(menuInfoVO, null);
-        return platformMenuService.createMenu(menuInfoVO);
+        MenuInfoVO created = platformMenuService.createMenu(menuInfoVO);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("menu", created);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
         /**
@@ -184,12 +201,31 @@ public class PlatformMenuApiController {
             featureCode = "FEATURE_PLATFORM_MENU_MGMT",
             requiredPermissionLevel = PlanAccessLevel.WRITE
     )
-    @PatchMapping("/{menuId}")
-        public MenuInfoVO updateMenu(@Parameter(description = "메뉴 ID") @PathVariable Long menuId, @RequestBody MenuInfoVO menuInfoVO) throws Exception {
+    @PutMapping("/{menuId}")
+    public ResultVO replaceMenu(@Parameter(description = "메뉴 ID") @PathVariable Long menuId, @RequestBody MenuInfoVO menuInfoVO) throws Exception {
         menuInfoVO.setMenuId(menuId);
         normalizePayload(menuInfoVO);
         validateForCreateOrUpdate(menuInfoVO, menuId);
-        return platformMenuService.updateMenu(menuId, menuInfoVO);
+        MenuInfoVO updated = platformMenuService.updateMenu(menuId, menuInfoVO);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("menu", updated);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @PlanAccessPolicy(
+            menuUrl = "/platform/menus",
+            featureCode = "FEATURE_PLATFORM_MENU_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
+    @PatchMapping("/{menuId}")
+    public ResultVO patchMenu(@Parameter(description = "메뉴 ID") @PathVariable Long menuId, @RequestBody MenuInfoVO menuInfoVO) throws Exception {
+        menuInfoVO.setMenuId(menuId);
+        normalizePayloadForPatch(menuInfoVO);
+        validateForPatch(menuInfoVO, menuId);
+        MenuInfoVO patched = platformMenuService.patchMenu(menuId, menuInfoVO);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("menu", patched);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
         /**
@@ -211,8 +247,11 @@ public class PlatformMenuApiController {
             requiredPermissionLevel = PlanAccessLevel.WRITE
     )
     @DeleteMapping("/{menuId}")
-        public void deleteMenu(@Parameter(description = "메뉴 ID") @PathVariable Long menuId) throws Exception {
+    public ResultVO deleteMenu(@Parameter(description = "메뉴 ID") @PathVariable Long menuId) throws Exception {
         platformMenuService.deleteMenu(menuId);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("menuId", menuId);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     private void validateForCreateOrUpdate(MenuInfoVO menuInfoVO, Long selfMenuId) throws Exception {
@@ -282,6 +321,57 @@ public class PlatformMenuApiController {
 
         if (!hasText(menuInfoVO.getLastUpdusrId())) {
             menuInfoVO.setLastUpdusrId("system");
+        }
+    }
+
+    private void normalizePayloadForPatch(MenuInfoVO menuInfoVO) {
+        if (hasText(menuInfoVO.getMenuCode())) {
+            menuInfoVO.setMenuCode(menuInfoVO.getMenuCode().trim().toUpperCase());
+        }
+        if (menuInfoVO.getMenuNm() != null) {
+            menuInfoVO.setMenuNm(menuInfoVO.getMenuNm().trim());
+        }
+        if (menuInfoVO.getMenuDc() != null) {
+            menuInfoVO.setMenuDc(menuInfoVO.getMenuDc().trim());
+        }
+        if (menuInfoVO.getMenuUrl() != null) {
+            menuInfoVO.setMenuUrl(menuInfoVO.getMenuUrl().trim());
+        }
+        if (menuInfoVO.getUseAt() != null) {
+            menuInfoVO.setUseAt(menuInfoVO.getUseAt().trim());
+        }
+        if (menuInfoVO.getIconNm() != null) {
+            menuInfoVO.setIconNm(menuInfoVO.getIconNm().trim());
+        }
+        if (!hasText(menuInfoVO.getLastUpdusrId())) {
+            menuInfoVO.setLastUpdusrId("system");
+        }
+    }
+
+    private void validateForPatch(MenuInfoVO menuInfoVO, Long selfMenuId) throws Exception {
+        if (hasText(menuInfoVO.getMenuCode())) {
+            MenuInfoVO current = platformMenuService.getMenuDetail(selfMenuId);
+            if (current != null && hasText(current.getMenuCode())) {
+                String incomingCode = menuInfoVO.getMenuCode().trim().toUpperCase();
+                String currentCode = current.getMenuCode().trim().toUpperCase();
+                if (!incomingCode.equals(currentCode)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "메뉴 코드는 수정할 수 없습니다.");
+                }
+            }
+        }
+
+        Long parentMenuId = menuInfoVO.getParentMenuId();
+        if (parentMenuId == null) {
+            return;
+        }
+
+        if (selfMenuId.equals(parentMenuId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "상위 메뉴는 자기 자신으로 지정할 수 없습니다.");
+        }
+
+        MenuInfoVO parent = platformMenuService.getMenuDetail(parentMenuId);
+        if (parent == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "상위 메뉴가 존재하지 않습니다.");
         }
     }
 

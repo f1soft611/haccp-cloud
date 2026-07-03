@@ -34,13 +34,44 @@ type LoginHistoryListResponse = {
       recordCountPerPage?: number;
       totalRecordCount?: number;
     };
+    data?: {
+      loginHistoryList?: LoginHistoryItem[];
+      totalCount?: number;
+      paginationInfo?: {
+        currentPageNo?: number;
+        recordCountPerPage?: number;
+        totalRecordCount?: number;
+      };
+    };
   };
 };
 
 const LOGIN_HISTORY_LIST_ENDPOINTS = [
-  '/platform-admin/login-history/list',
-  '/platform-admin/login-history',
+  '/v1/platform-admin/login-history',
+  '/v1/platform-admin/login-history/list',
 ] as const;
+
+function extractLoginHistoryItems(
+  data: LoginHistoryListResponse,
+): LoginHistoryItem[] {
+  return (
+    data.result?.loginHistoryList ?? data.result?.data?.loginHistoryList ?? []
+  );
+}
+
+function extractTotalCount(data: LoginHistoryListResponse): number {
+  return data.result?.totalCount ?? data.result?.data?.totalCount ?? 0;
+}
+
+function extractPaginationInfo(data: LoginHistoryListResponse):
+  | {
+      currentPageNo?: number;
+      recordCountPerPage?: number;
+      totalRecordCount?: number;
+    }
+  | undefined {
+  return data.result?.paginationInfo ?? data.result?.data?.paginationInfo;
+}
 
 export async function getLoginHistoryList(
   params: LoginHistoryListParams,
@@ -60,9 +91,9 @@ export async function getLoginHistoryList(
       });
 
       return {
-        items: data.result?.loginHistoryList ?? [],
-        totalCount: data.result?.totalCount ?? 0,
-        paginationInfo: data.result?.paginationInfo,
+        items: extractLoginHistoryItems(data),
+        totalCount: extractTotalCount(data),
+        paginationInfo: extractPaginationInfo(data),
       };
     } catch (error) {
       const status =

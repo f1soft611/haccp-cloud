@@ -68,6 +68,15 @@ public interface PlatformMenuService {
     MenuInfoVO updateMenu(Long menuId, MenuInfoVO menuInfoVO) throws Exception;
 
     /**
+     * 메뉴를 부분 수정한다.
+     * @param menuId 메뉴 ID
+     * @param menuInfoVO 수정 정보
+     * @return 수정된 메뉴
+     * @throws Exception
+     */
+    MenuInfoVO patchMenu(Long menuId, MenuInfoVO menuInfoVO) throws Exception;
+
+    /**
      * 메뉴를 삭제한다.
      * @param menuId 메뉴 ID
      * @throws Exception

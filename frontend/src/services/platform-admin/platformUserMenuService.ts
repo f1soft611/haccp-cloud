@@ -98,7 +98,7 @@ function extractUserMenuList(data: UserMenuResponse): UserMenuListEntry[] {
 
 export async function listAccessibleMenuPaths(): Promise<string[]> {
   const { data } = await apiClient.get<UserMenuResponse>(
-    '/platform-admin/user-menus/me',
+    '/v1/platform-admin/user-menus/me',
   );
 
   const menuList = extractUserMenuList(data);
@@ -112,7 +112,7 @@ export async function listAccessibleMenuPaths(): Promise<string[]> {
 
 export async function listAccessibleMenus(): Promise<AccessibleMenuMeta[]> {
   const { data } = await apiClient.get<UserMenuResponse>(
-    '/platform-admin/user-menus/me',
+    '/v1/platform-admin/user-menus/me',
   );
 
   const menuList = extractUserMenuList(data);

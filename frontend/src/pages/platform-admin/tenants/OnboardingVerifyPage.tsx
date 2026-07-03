@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   completeTenantOnboarding,
+  getTenantByDomain,
   verifyTenantEmail,
 } from '../../../services/organization/tenantService';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
@@ -62,14 +63,46 @@ export function OnboardingVerifyPage() {
   const [loginDomainInput, setLoginDomainInput] = useState('');
   const [logoImage, setLogoImage] = useState<string | undefined>(undefined);
   const [validationMessage, setValidationMessage] = useState('');
+  const [tenantCodeFromDomain, setTenantCodeFromDomain] = useState('');
 
   const authToken = useMemo(
     () => searchParams.get('token')?.trim() ?? '',
     [searchParams],
   );
+  const domainParam = useMemo(
+    () => searchParams.get('domain')?.trim() ?? '',
+    [searchParams],
+  );
+
+  useEffect(() => {
+    if (!domainParam || tenantCodeFromDomain) {
+      return;
+    }
+
+    let disposed = false;
+
+    const loadTenantCode = async () => {
+      try {
+        const tenantInfo = await getTenantByDomain(domainParam);
+        if (!disposed) {
+          setTenantCodeFromDomain(tenantInfo?.tenantCode ?? '');
+        }
+      } catch {
+        if (!disposed) {
+          setTenantCodeFromDomain('');
+        }
+      }
+    };
+
+    void loadTenantCode();
+
+    return () => {
+      disposed = true;
+    };
+  }, [domainParam, tenantCodeFromDomain]);
 
   const verifyMutation = useMutation({
-    mutationFn: () => verifyTenantEmail(authToken),
+    mutationFn: () => verifyTenantEmail(tenantCodeFromDomain, authToken),
   });
 
   const completeMutation = useMutation({
@@ -90,7 +123,7 @@ export function OnboardingVerifyPage() {
   });
 
   useEffect(() => {
-    if (!authToken) {
+    if (!authToken || !tenantCodeFromDomain) {
       return;
     }
     if (verifyMutation.status !== 'idle') {
@@ -98,7 +131,7 @@ export function OnboardingVerifyPage() {
     }
 
     verifyMutation.mutate();
-  }, [authToken, verifyMutation]);
+  }, [authToken, tenantCodeFromDomain, verifyMutation]);
 
   useEffect(() => {
     if (!verifyMutation.data?.adminEmail || loginDomainInput.trim()) {

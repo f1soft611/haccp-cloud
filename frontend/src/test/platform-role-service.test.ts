@@ -64,7 +64,7 @@ describe('platformRoleService', () => {
     });
 
     expect(apiClient.put).toHaveBeenCalledWith(
-      '/platform-admin/roles/9',
+      '/v1/platform-admin/roles/9',
       expect.objectContaining({
         description: '품질 승인 권한',
         authorityDc: '품질 승인 권한',
@@ -97,15 +97,18 @@ describe('platformRoleService', () => {
       useAt: 'Y',
     });
 
-    expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/roles/paged', {
-      params: {
-        pageIndex: 2,
-        pageSize: 20,
-        searchField: 'name',
-        searchKeyword: '관리자',
-        useAt: 'Y',
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/v1/platform-admin/roles/paged',
+      {
+        params: {
+          pageIndex: 2,
+          pageSize: 20,
+          searchField: 'name',
+          searchKeyword: '관리자',
+          useAt: 'Y',
+        },
       },
-    });
+    );
     expect(response.totalCount).toBe(7);
     expect(response.items[0]).toMatchObject({
       code: 'TENANT_ADMIN',
