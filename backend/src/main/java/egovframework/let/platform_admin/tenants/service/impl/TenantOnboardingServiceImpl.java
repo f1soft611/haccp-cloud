@@ -261,13 +261,19 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
     @Transactional
     public TenantVerificationResponseVO verifyEmailToken(String tenantCode, String authToken) {
         String normalizedTenantCode = normalizeStorageTenantCode(tenantCode);
+        TenantVerificationResponseVO responseVO = verifyEmailToken(authToken);
+        if (!normalizedTenantCode.equals(responseVO.getTenantCode())) {
+            throw new IllegalArgumentException("요청 테넌트와 인증 토큰의 테넌트가 일치하지 않습니다");
+        }
+        return responseVO;
+    }
+
+    @Override
+    @Transactional
+    public TenantVerificationResponseVO verifyEmailToken(String authToken) {
         TenantAuthTokenVO tokenVO = tenantAuthTokenDAO.selectTokenByValue(authToken);
         if (tokenVO == null) {
             throw new IllegalArgumentException("토큰이 존재하지 않습니다: " + authToken);
-        }
-
-        if (!normalizedTenantCode.equals(tokenVO.getTenantCode())) {
-            throw new IllegalArgumentException("요청 테넌트와 인증 토큰의 테넌트가 일치하지 않습니다");
         }
 
         if (!tokenVO.isValid()) {
@@ -299,7 +305,7 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
                 .build();
 
         log.info("이메일 인증 완료: tenantCode={}, loginAccountId={}",
-            normalizedTenantCode, tokenVO.getLoginAccountId());
+            tokenVO.getTenantCode(), tokenVO.getLoginAccountId());
 
         return responseVO;
     }

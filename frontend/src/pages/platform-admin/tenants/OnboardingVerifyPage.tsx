@@ -14,7 +14,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   completeTenantOnboarding,
   getTenantByDomain,
-  verifyTenantEmail,
+  verifyTenantEmailByToken,
 } from '../../../services/organization/tenantService';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 
@@ -102,7 +102,7 @@ export function OnboardingVerifyPage() {
   }, [domainParam, tenantCodeFromDomain]);
 
   const verifyMutation = useMutation({
-    mutationFn: () => verifyTenantEmail(tenantCodeFromDomain, authToken),
+    mutationFn: () => verifyTenantEmailByToken(authToken),
   });
 
   const completeMutation = useMutation({
@@ -123,7 +123,7 @@ export function OnboardingVerifyPage() {
   });
 
   useEffect(() => {
-    if (!authToken || !tenantCodeFromDomain) {
+    if (!authToken) {
       return;
     }
     if (verifyMutation.status !== 'idle') {
@@ -131,7 +131,7 @@ export function OnboardingVerifyPage() {
     }
 
     verifyMutation.mutate();
-  }, [authToken, tenantCodeFromDomain, verifyMutation]);
+  }, [authToken, verifyMutation]);
 
   useEffect(() => {
     if (!verifyMutation.data?.adminEmail || loginDomainInput.trim()) {

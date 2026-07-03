@@ -6,13 +6,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { appTheme } from '../app/theme';
 import { OnboardingVerifyPage } from '../pages/platform-admin/tenants/OnboardingVerifyPage';
 
-const { verifyTenantEmailMock, getTenantByDomainMock } = vi.hoisted(() => ({
-  verifyTenantEmailMock: vi.fn(),
-  getTenantByDomainMock: vi.fn(),
-}));
+const { verifyTenantEmailByTokenMock, getTenantByDomainMock } = vi.hoisted(
+  () => ({
+    verifyTenantEmailByTokenMock: vi.fn(),
+    getTenantByDomainMock: vi.fn(),
+  }),
+);
 
 vi.mock('../services/organization/tenantService', () => ({
-  verifyTenantEmail: verifyTenantEmailMock,
+  verifyTenantEmailByToken: verifyTenantEmailByTokenMock,
   getTenantByDomain: getTenantByDomainMock,
 }));
 
@@ -50,7 +52,7 @@ describe('OnboardingVerifyPage', () => {
   });
 
   it('verifies token automatically and shows success state', async () => {
-    verifyTenantEmailMock.mockResolvedValueOnce({
+    verifyTenantEmailByTokenMock.mockResolvedValueOnce({
       tenantCode: 'TENANT-A',
       tenantNm: '테스트푸드',
       adminEmail: 'admin@test.com',
@@ -64,9 +66,27 @@ describe('OnboardingVerifyPage', () => {
     expect(
       await screen.findByText('이메일 인증이 완료되었습니다'),
     ).toBeInTheDocument();
-    expect(verifyTenantEmailMock).toHaveBeenCalledWith(
-      'TENANT-A',
-      'test-token',
+    expect(verifyTenantEmailByTokenMock).toHaveBeenCalledWith('test-token');
+  });
+
+  it('verifies token automatically even without domain query', async () => {
+    verifyTenantEmailByTokenMock.mockResolvedValueOnce({
+      tenantCode: 'TENANT-B',
+      tenantNm: '샘플업체',
+      adminEmail: 'owner@sample.com',
+      loginAccountId: 22,
+      adminLoginCode: 'tenant.owner',
+      verified: true,
+      message: '이메일 인증이 완료되었습니다',
+    });
+
+    renderPage('/onboarding/verify?token=test-token-only');
+
+    expect(
+      await screen.findByText('이메일 인증이 완료되었습니다'),
+    ).toBeInTheDocument();
+    expect(verifyTenantEmailByTokenMock).toHaveBeenCalledWith(
+      'test-token-only',
     );
   });
 

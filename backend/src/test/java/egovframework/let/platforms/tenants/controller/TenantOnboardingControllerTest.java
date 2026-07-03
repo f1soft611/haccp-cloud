@@ -186,6 +186,29 @@ class TenantOnboardingControllerTest {
                 .andExpect(jsonPath("$.result.errorCode").value("INVALID_AUTH_TOKEN"));
     }
 
+    @Test
+    void verifyEmailTokenByTokenOnly_ReturnsOk() throws Exception {
+        String authToken = "token-only-1";
+
+        TenantVerificationResponseVO responseVO = TenantVerificationResponseVO.builder()
+                .tenantCode("TENANT_A")
+                .tenantNm("Test Company")
+                .adminEmail("admin@test.com")
+                .loginAccountId(1L)
+                .verified(true)
+                .message("이메일 인증이 완료되었습니다")
+                .build();
+
+        when(tenantOnboardingService.verifyEmailToken(authToken)).thenReturn(responseVO);
+
+        mockMvc.perform(post("/api/v1/platform-admin/tenants/onboarding/verifications")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"authToken\":\"" + authToken + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value(200))
+                .andExpect(jsonPath("$.result.verification.tenantCode").value("TENANT_A"));
+    }
+
         @Test
         void verifyEmailToken_WhenServiceReturnsNull_ReturnsBusinessError() throws Exception {
                 when(tenantOnboardingService.verifyEmailToken(eq("TENANT_A"), eq("token-null"))).thenReturn(null);
