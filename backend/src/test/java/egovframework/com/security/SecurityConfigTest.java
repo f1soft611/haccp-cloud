@@ -19,5 +19,6 @@ class SecurityConfigTest {
         String[] whitelist = (String[]) field.get(new SecurityConfig());
 
         assertTrue(Arrays.asList(whitelist).contains("/api/v1/tenants/onboarding/**"));
+        assertTrue(Arrays.asList(whitelist).contains("/api/v1/platform-admin/tenants/domains/**"));
     }
 }
