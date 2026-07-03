@@ -78,6 +78,9 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
     @Value("${spring.mail.password:}")
     private String mailPassword;
 
+    @Value("${onboarding.verify.base-url:https://haccp-cloud.vercel.app}")
+    private String onboardingVerifyBaseUrl;
+
     /**
      * Task 11: 이메일 인증 토큰 생성 및 발송
      */
@@ -660,7 +663,7 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
                 throw new MailConfigurationException("발신자 메일 주소가 누락되었습니다. MAIL_FROM_ADDRESS를 설정해주세요.");
             }
 
-            String verificationUrl = "https://app.haccpcloud.com/onboarding/verify?token=" + authToken;
+            String verificationUrl = buildVerificationUrl(authToken);
             String htmlBody = buildVerificationEmailHtml(tenantCode, tenantNm, verificationUrl);
 
             MimeMessage message = javaMailSender.createMimeMessage();
@@ -723,6 +726,19 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
                 + "</table>"
                 + "</body>"
                 + "</html>";
+    }
+
+    private String buildVerificationUrl(String authToken) {
+        String baseUrl = onboardingVerifyBaseUrl == null ? "" : onboardingVerifyBaseUrl.trim();
+        if (baseUrl.isEmpty()) {
+            baseUrl = "https://haccp-cloud.vercel.app";
+        }
+
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        }
+
+        return baseUrl + "/onboarding/verify?token=" + authToken;
     }
 
     private String escapeHtml(String value) {
