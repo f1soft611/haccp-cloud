@@ -208,6 +208,73 @@ public class TenantOnboardingController {
     }
 
     /**
+     * 이메일 인증 토큰 검증 API (토큰 단독)
+     *
+     * @param body 인증 토큰 요청 바디
+     * @return 처리 결과 응답
+     */
+    @PostMapping("/onboarding/verifications")
+    @Operation(summary = "이메일 인증(토큰 단독)",
+            description = "인증 토큰만으로 이메일 검증")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "이메일 인증 성공"),
+            @ApiResponse(responseCode = "400", description = "토큰 누락 또는 미존재"),
+            @ApiResponse(responseCode = "410", description = "토큰 만료 또는 이미 사용"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResultVO verifyEmailTokenByTokenOnly(@RequestBody(required = false) Map<String, String> body) {
+        String authToken = body == null ? null : body.get("authToken");
+        if (!hasText(authToken)) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            error.put("errorCode", "INVALID_AUTH_TOKEN");
+            error.put("errorMessage", "authToken은 필수입니다.");
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+        }
+
+        authToken = authToken.trim();
+        try {
+            TenantVerificationResponseVO verification = tenantOnboardingService.verifyEmailToken(authToken);
+            if (verification == null) {
+                Map<String, Object> error = new HashMap<String, Object>();
+                error.put("statusCode", "400");
+                error.put("errorCode", "INVALID_AUTH_TOKEN");
+                error.put("errorMessage", "유효하지 않은 인증 토큰입니다.");
+                return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+            }
+
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("tenantCode", verification.getTenantCode());
+            result.put("verification", verification);
+            result.put("message", "이메일 인증이 완료되었습니다");
+            return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
+
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            error.put("errorCode", "INVALID_AUTH_TOKEN");
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+
+        } catch (IllegalStateException e) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "410");
+            error.put("errorCode", "AUTH_TOKEN_EXPIRED");
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+
+        } catch (Exception e) {
+            log.error("이메일 인증(토큰 단독) 중 오류 발생", e);
+
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "500");
+            error.put("errorCode", "INTERNAL_SERVER_ERROR");
+            error.put("errorMessage", "서버 오류가 발생했습니다");
+            return resultVoHelper.buildFromMap(error, ResponseCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Task 17에서 구현 예정: 온보딩 완료 API
      *
      * @param requestVO 온보딩 완료 요청 바디

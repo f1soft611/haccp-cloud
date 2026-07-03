@@ -265,6 +265,31 @@ export async function verifyTenantEmail(
   };
 }
 
+export async function verifyTenantEmailByToken(
+  authToken: string,
+): Promise<TenantVerificationResult> {
+  const { data } = await apiClient.post<
+    TenantVerificationPayload | ResultEnvelope<TenantVerificationPayload>
+  >('/v1/platform-admin/tenants/onboarding/verifications', {
+    authToken,
+  });
+
+  const payload = unwrapResult(data);
+  const verification = payload.verification ?? {};
+
+  return {
+    tenantCode: String(
+      payload.tenantCode ?? verification.tenantCode ?? '',
+    ).trim(),
+    tenantNm: String(verification.tenantNm ?? '').trim(),
+    adminEmail: String(verification.adminEmail ?? '').trim(),
+    loginAccountId: Number(verification.loginAccountId ?? 0),
+    adminLoginCode: String(verification.adminLoginCode ?? '').trim(),
+    verified: verification.verified === true,
+    message: String(payload.message ?? verification.message ?? '').trim(),
+  };
+}
+
 export async function completeTenantOnboarding(
   payload: TenantOnboardingCompleteRequest,
 ): Promise<void> {

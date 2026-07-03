@@ -50,6 +50,14 @@ public interface TenantOnboardingService {
     TenantVerificationResponseVO verifyEmailToken(String tenantCode, String authToken);
 
     /**
+     * 이메일 인증 토큰 검증 (토큰 단독)
+     *
+     * @param authToken 인증 토큰
+     * @return 검증 결과 VO
+     */
+    TenantVerificationResponseVO verifyEmailToken(String authToken);
+
+    /**
      * 온보딩 완료 (비밀번호, 전화번호 설정 및 활성화)
      *
      * @param requestVO 완료 요청 VO (tenantCode, authToken, password, phoneNumber)
