@@ -165,6 +165,20 @@ type IssueTenantCodeEnvelope = {
   mail_dispatch_status?: MailDispatchStatus | string;
 };
 
+type ResultEnvelope<T> = {
+  result?: T;
+};
+
+type TenantVerificationPayload = {
+  tenantCode?: string;
+  verification?: Partial<TenantVerificationResult>;
+  message?: string;
+};
+
+function unwrapResult<T>(payload: T | ResultEnvelope<T>): T {
+  return ((payload as ResultEnvelope<T>)?.result ?? payload) as T;
+}
+
 function normalizeIssueTenantCodeResponse(
   data: IssueTenantCodeEnvelope | IssueTenantCodeResponse,
 ): IssueTenantCodeResponse {
@@ -202,46 +216,69 @@ function normalizeIssueTenantCodeResponse(
 export async function issueTenantCode(
   payload: IssueTenantCodeRequest,
 ): Promise<IssueTenantCodeResponse> {
-  const { data } = await apiClient.post<IssueTenantCodeEnvelope>(
-    '/tenants/issue-code',
-    payload,
-  );
-  return normalizeIssueTenantCodeResponse(data);
+  const { data } = await apiClient.post<
+    IssueTenantCodeEnvelope | ResultEnvelope<IssueTenantCodeEnvelope>
+  >('/v1/platform-admin/tenants/issue-code', payload);
+  return normalizeIssueTenantCodeResponse(unwrapResult(data));
 }
 
 export async function listSampleTenants(): Promise<SampleTenantItem[]> {
-  const { data } = await apiClient.get<SampleTenantItem[]>('/tenants/samples');
-  return data;
+  const { data } = await apiClient.get<
+    SampleTenantItem[] | ResultEnvelope<{ items?: SampleTenantItem[] }>
+  >('/v1/platform-admin/tenants/samples');
+  const unwrapped = unwrapResult<
+    { items?: SampleTenantItem[] } | SampleTenantItem[]
+  >(data);
+  if (Array.isArray(unwrapped)) {
+    return unwrapped;
+  }
+  return unwrapped.items ?? [];
 }
 
 export async function verifyTenantEmail(
+  tenantCode: string,
   authToken: string,
 ): Promise<TenantVerificationResult> {
-  const { data } = await apiClient.post<{
-    code?: string;
-    message?: string;
-    data?: Partial<TenantVerificationResult>;
-  }>('/v1/tenants/onboarding/verify-email', null, {
-    params: { authToken },
-  });
+  const normalizedTenantCode = String(tenantCode ?? '').trim();
+  const { data } = await apiClient.post<
+    TenantVerificationPayload | ResultEnvelope<TenantVerificationPayload>
+  >(
+    `/v1/platform-admin/tenants/${encodeURIComponent(normalizedTenantCode)}/onboarding/verifications`,
+    {
+      authToken,
+    },
+  );
 
-  const payload = data.data ?? {};
+  const payload = unwrapResult(data);
+  const verification = payload.verification ?? {};
 
   return {
-    tenantCode: String(payload.tenantCode ?? '').trim(),
-    tenantNm: String(payload.tenantNm ?? '').trim(),
-    adminEmail: String(payload.adminEmail ?? '').trim(),
-    loginAccountId: Number(payload.loginAccountId ?? 0),
-    adminLoginCode: String(payload.adminLoginCode ?? '').trim(),
-    verified: payload.verified === true,
-    message: String(payload.message ?? data.message ?? '').trim(),
+    tenantCode: String(
+      payload.tenantCode ?? verification.tenantCode ?? '',
+    ).trim(),
+    tenantNm: String(verification.tenantNm ?? '').trim(),
+    adminEmail: String(verification.adminEmail ?? '').trim(),
+    loginAccountId: Number(verification.loginAccountId ?? 0),
+    adminLoginCode: String(verification.adminLoginCode ?? '').trim(),
+    verified: verification.verified === true,
+    message: String(payload.message ?? verification.message ?? '').trim(),
   };
 }
 
 export async function completeTenantOnboarding(
   payload: TenantOnboardingCompleteRequest,
 ): Promise<void> {
-  await apiClient.post('/v1/tenants/onboarding/complete', payload);
+  const normalizedTenantCode = payload.tenantCode.trim();
+  await apiClient.post(
+    `/v1/platform-admin/tenants/${encodeURIComponent(normalizedTenantCode)}/onboarding/completions`,
+    {
+      authToken: payload.authToken,
+      password: payload.password,
+      phoneNumber: payload.phoneNumber,
+      loginDomain: payload.loginDomain,
+      logoImage: payload.logoImage,
+    },
+  );
 }
 
 export async function getTenantByDomain(
@@ -253,7 +290,7 @@ export async function getTenantByDomain(
   }
 
   const { data } = await apiClient.get<TenantByDomainEnvelope>(
-    `/tenants/${encodeURIComponent(normalizedDomain)}`,
+    `/v1/platform-admin/tenants/domains/${encodeURIComponent(normalizedDomain)}`,
   );
 
   const resultCode = String(data.resultCode ?? data.result_code ?? '').trim();

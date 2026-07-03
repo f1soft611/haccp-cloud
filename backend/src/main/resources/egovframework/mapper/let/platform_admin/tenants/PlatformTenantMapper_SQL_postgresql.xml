@@ -52,24 +52,28 @@
         )
     </insert>
 
+    <!-- 테넌트 코드 기준 테넌트 ID 조회 -->
     <select id="TenantInfoDAO.selectTenantIdByCode" parameterType="string" resultType="long">
         SELECT tenant_id
         FROM tb_tenant
         WHERE tenant_code = #{value}
     </select>
 
+    <!-- 테넌트 코드 기준 온보딩 상태 조회 -->
     <select id="TenantInfoDAO.selectOnboardingStatusByTenantCode" parameterType="string" resultType="string">
         SELECT COALESCE(NULLIF(TRIM(onboarding_status), ''), 'EMAIL_QUEUED')
         FROM tb_tenant
         WHERE tenant_code = #{value}
     </select>
 
+    <!-- 테넌트 코드 기준 테넌트명 조회 -->
     <select id="TenantInfoDAO.selectTenantNameByCode" parameterType="string" resultType="string">
         SELECT tenant_nm
         FROM tb_tenant
         WHERE tenant_code = #{value}
     </select>
 
+    <!-- 로그인 계정 ID 기준 관리자 이메일 조회 -->
     <select id="TenantInfoDAO.selectAdminEmailByLoginAccountId" parameterType="long" resultType="string">
         SELECT u.email_addr
         FROM tb_login_account li
@@ -77,12 +81,14 @@
         WHERE li.login_id = #{value}
     </select>
 
+    <!-- 로그인 계정 ID 기준 로그인 코드 조회 -->
     <select id="TenantInfoDAO.selectLoginCodeByLoginAccountId" parameterType="long" resultType="string">
         SELECT login_code
         FROM tb_login_account
         WHERE login_id = #{value}
     </select>
 
+    <!-- 이메일 도메인 기준 테넌트 ID 조회 -->
     <select id="TenantInfoDAO.selectTenantIdByEmailDomain" parameterType="string" resultType="long">
         SELECT tenant_id
         FROM tb_tenant_domain
@@ -90,12 +96,14 @@
         LIMIT 1
     </select>
 
+    <!-- 테넌트 코드 기준 관리자 이메일 조회 -->
     <select id="TenantInfoDAO.selectAdminEmailByTenantCode" parameterType="string" resultType="string">
         SELECT admin_email
         FROM tb_tenant
         WHERE tenant_code = #{value}
     </select>
 
+    <!-- 테넌트 코드 기준 최신 로그인 계정 ID 조회 -->
     <select id="TenantInfoDAO.selectLatestLoginAccountIdByTenantCode" parameterType="string" resultType="long">
         SELECT MAX(la.login_id)
         FROM tb_login_account la
@@ -103,6 +111,45 @@
         WHERE t.tenant_code = #{value}
     </select>
 
+    <!-- 활성 구독 만료 처리 -->
+    <update id="TenantInfoDAO.expireActiveTenantSubscription" parameterType="long">
+        UPDATE tb_tenant_subscription
+        SET subscription_status = 'EXPIRED',
+            ends_at = COALESCE(ends_at, now()),
+            updated_at = now()
+        WHERE tenant_id = #{value}
+          AND subscription_status = 'ACTIVE'
+    </update>
+
+    <!-- 플랜 코드 기반 활성 구독 생성 -->
+    <insert id="TenantInfoDAO.insertActiveTenantSubscriptionByPlanCode" parameterType="map">
+        INSERT INTO tb_tenant_subscription (
+            tenant_id,
+            plan_id,
+            subscription_status,
+            starts_at,
+            ends_at,
+            auto_renew,
+            created_by,
+            created_at,
+            updated_at
+        )
+        SELECT
+            #{tenantId},
+            p.plan_id,
+            'ACTIVE',
+            now(),
+            NULL,
+            'Y',
+            NULL,
+            now(),
+            now()
+        FROM tb_plan p
+        WHERE p.plan_code = #{planCode}
+          AND p.use_at = 'Y'
+    </insert>
+
+    <!-- 테넌트 온보딩 상태 갱신 -->
     <update id="TenantInfoDAO.updateOnboardingStatusByTenantCode" parameterType="map">
         UPDATE tb_tenant
         SET onboarding_status = #{onboardingStatus},
@@ -110,6 +157,7 @@
         WHERE tenant_code = #{tenantCode}
     </update>
 
+    <!-- 로그인 계정 기준 테넌트 온보딩 상태 갱신 -->
     <update id="TenantInfoDAO.updateLoginAccountOnboardingStatus" parameterType="map">
         UPDATE tb_tenant
         SET onboarding_status = #{onboardingStatus},
@@ -121,6 +169,7 @@
         )
     </update>
 
+    <!-- 로그인 계정 비밀번호/활성 상태 갱신 -->
     <update id="TenantInfoDAO.updateLoginAccountPasswordAndActivate" parameterType="map">
         UPDATE tb_login_account
         SET password_hash = #{passwordHash},
@@ -130,6 +179,7 @@
         WHERE login_id = #{loginAccountId}
     </update>
 
+    <!-- 로그인 계정 기준 사용자 휴대폰번호 갱신 -->
     <update id="TenantInfoDAO.updateUserMobileNoByLoginAccountId" parameterType="map">
         UPDATE tb_user
         SET mobile_no = #{mobileNo},
@@ -141,6 +191,7 @@
         )
     </update>
 
+    <!-- 테넌트 기본 도메인 해제 -->
     <update id="TenantInfoDAO.demotePrimaryDomainByTenantId" parameterType="long">
         UPDATE tb_tenant_domain
         SET is_primary = 'N',
@@ -149,6 +200,7 @@
           AND is_primary = 'Y'
     </update>
 
+    <!-- 테넌트 도메인 활성화 -->
     <update id="TenantInfoDAO.activateTenantDomain" parameterType="map">
         UPDATE tb_tenant_domain
         SET is_primary = 'Y',
@@ -158,6 +210,7 @@
           AND email_domain = #{emailDomain}
     </update>
 
+    <!-- 테넌트 도메인 등록 -->
     <insert id="TenantInfoDAO.insertTenantDomain" parameterType="map">
         INSERT INTO tb_tenant_domain (
             tenant_id,
@@ -176,6 +229,7 @@
         )
     </insert>
 
+    <!-- 사업자번호 기준 활성 테넌트 건수 조회 -->
     <select id="TenantInfoDAO.selectActiveTenantCountByCorporateNumber" parameterType="string" resultType="int">
                 SELECT 0
     </select>
@@ -270,6 +324,7 @@
         OFFSET (#{pageIndex} * #{pageSize})
     </select>
 
+    <!-- 테넌트 코드 기준 대시보드 항목 조회 -->
     <select id="TenantInfoDAO.selectDashboardTenantItemByCode" parameterType="string" resultMap="platformTenantDashboardItemResultMap">
         SELECT
             t.tenant_id,

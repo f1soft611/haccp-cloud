@@ -267,7 +267,7 @@ describe('Dashboard page', () => {
 
   it('shows independent section warning when tenant list API fails', async () => {
     server.use(
-      http.get('/api/platform-admin/dashboard/tenants', () =>
+      http.get('/api/v1/platform-admin/dashboard/tenants', () =>
         HttpResponse.json({ message: 'error' }, { status: 500 }),
       ),
     );
@@ -301,7 +301,7 @@ describe('Dashboard page', () => {
 
   it('shows loading skeleton while platform admin dashboard data is pending', async () => {
     server.use(
-      http.get('/api/platform-admin/dashboard/kpis', async () => {
+      http.get('/api/v1/platform-admin/dashboard/kpis', async () => {
         await delay(300);
         return HttpResponse.json({
           activeTenants: 0,
@@ -311,7 +311,7 @@ describe('Dashboard page', () => {
         });
       }),
       http.get(
-        '/api/platform-admin/dashboard/tenant-code-issuance',
+        '/api/v1/platform-admin/dashboard/tenant-code-issuance',
         async () => {
           await delay(300);
           return HttpResponse.json({
@@ -322,7 +322,7 @@ describe('Dashboard page', () => {
           });
         },
       ),
-      http.get('/api/platform-admin/dashboard/tenants', async () => {
+      http.get('/api/v1/platform-admin/dashboard/tenants', async () => {
         await delay(300);
         return HttpResponse.json({
           summary: {
@@ -333,7 +333,7 @@ describe('Dashboard page', () => {
           items: [],
         });
       }),
-      http.get('/api/platform-admin/dashboard/ccp-documents', async () => {
+      http.get('/api/v1/platform-admin/dashboard/ccp-documents', async () => {
         await delay(300);
         return HttpResponse.json({
           overall: {
@@ -367,7 +367,7 @@ describe('Dashboard page', () => {
     let shouldFailTenantList = true;
 
     server.use(
-      http.get('/api/platform-admin/dashboard/tenants', () => {
+      http.get('/api/v1/platform-admin/dashboard/tenants', () => {
         if (shouldFailTenantList) {
           return HttpResponse.json({ message: 'error' }, { status: 500 });
         }

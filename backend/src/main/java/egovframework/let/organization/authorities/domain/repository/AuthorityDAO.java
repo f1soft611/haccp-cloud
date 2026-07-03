@@ -89,6 +89,23 @@ public interface AuthorityDAO {
     void insertRoleMenuPermission(RoleMenuPermissionVO item) throws Exception;
 
     /**
+     * 메뉴 코드로 메뉴 ID를 조회한다.
+     * @param menuCode 메뉴 코드
+     * @return 메뉴 ID
+     * @throws Exception
+     */
+    Long selectMenuIdByCode(String menuCode) throws Exception;
+
+    /**
+     * 테넌트 권한 유형을 생성 또는 갱신한다.
+     * @param tenantId 테넌트 ID
+     * @param permissionCode 권한 코드
+     * @param permissionNm 권한명
+     * @throws Exception
+     */
+    void upsertPermissionType(Long tenantId, String permissionCode, String permissionNm) throws Exception;
+
+    /**
      * 사용자 접근 가능 메뉴 목록을 조회한다.
      * @param loginId 로그인 아이디(login_code)
      * @param tenantId 테넌트 ID

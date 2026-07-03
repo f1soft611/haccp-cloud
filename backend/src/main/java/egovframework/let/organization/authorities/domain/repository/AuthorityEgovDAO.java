@@ -95,6 +95,20 @@ public class AuthorityEgovDAO extends EgovAbstractMapper implements AuthorityDAO
         insert("AuthorityDAO.insertRoleMenuPermission", item);
     }
 
+    @Override
+    public Long selectMenuIdByCode(String menuCode) throws Exception {
+        return selectOne("AuthorityDAO.selectMenuIdByCode", menuCode);
+    }
+
+    @Override
+    public void upsertPermissionType(Long tenantId, String permissionCode, String permissionNm) throws Exception {
+        Map<String, Object> payload = new HashMap<String, Object>();
+        payload.put("tenantId", tenantId);
+        payload.put("permissionCode", permissionCode);
+        payload.put("permissionNm", permissionNm);
+        insert("AuthorityDAO.upsertPermissionType", payload);
+    }
+
     /**
      * 사용자 접근 가능한 메뉴를 조회한다.
      */

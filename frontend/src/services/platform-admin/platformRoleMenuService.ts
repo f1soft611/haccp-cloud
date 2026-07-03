@@ -25,7 +25,7 @@ export async function getPlatformRoleMenuMapping(
 ): Promise<PlatformRoleMenuMapping> {
   const normalizedRoleCode = normalizeRoleCode(roleCode);
   const { data } = await apiClient.get<PlatformRoleMenuMapping>(
-    '/platform-admin/role-menus',
+    '/v1/platform-admin/role-menus',
     {
       params: {
         roleCode: normalizedRoleCode,
@@ -47,7 +47,7 @@ export async function savePlatformRoleMenuMapping(payload: {
   const roleCode = normalizeRoleCode(payload.roleCode);
   const menuIds = normalizeMenuIds(payload.menuIds);
   const { data } = await apiClient.put<PlatformRoleMenuMapping>(
-    `/platform-admin/role-menus/${roleCode}`,
+    `/v1/platform-admin/role-menus/${roleCode}`,
     { menuIds },
     {
       params: {
@@ -66,7 +66,7 @@ export async function listRoleMenuCandidatesByTenant(
 ): Promise<string[]> {
   const normalizedTenantCode = tenantCode.trim().toUpperCase();
   const { data } = await apiClient.get<{ menuCodes?: string[] }>(
-    '/platform-admin/role-menu-candidates',
+    '/v1/platform-admin/role-menu-candidates',
     {
       params: { tenantCode: normalizedTenantCode },
     },

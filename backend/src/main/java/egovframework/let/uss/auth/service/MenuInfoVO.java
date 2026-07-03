@@ -41,6 +41,9 @@ public class MenuInfoVO implements Serializable {
     @Schema(description = "메뉴 순서")
     private int menuOrdr = 0;
 
+    @Schema(description = "PATCH에서 menuOrdr 전달 여부")
+    private boolean menuOrdrSpecified = false;
+
     @Schema(description = "메뉴 URL")
     private String menuUrl = "";
 
@@ -95,4 +98,9 @@ public class MenuInfoVO implements Serializable {
 
     @Schema(description = "레코드 개수")
     private int recordCountPerPage = 10;
+
+    public void setMenuOrdr(int menuOrdr) {
+        this.menuOrdr = menuOrdr;
+        this.menuOrdrSpecified = true;
+    }
 }

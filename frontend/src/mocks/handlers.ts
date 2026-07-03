@@ -1006,7 +1006,7 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/platform-admin/login-history', ({ request }) => {
+  http.get('/api/v1/platform-admin/login-history', ({ request }) => {
     const url = new URL(request.url);
     const pageIndex = Number(url.searchParams.get('pageIndex') ?? '1');
     const pageSize = Number(url.searchParams.get('pageSize') ?? '10');
@@ -1079,7 +1079,7 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/platform-admin/login-history/list', ({ request }) => {
+  http.get('/api/v1/platform-admin/login-history/list', ({ request }) => {
     const url = new URL(request.url);
     const pageIndex = Number(url.searchParams.get('pageIndex') ?? '1');
     const pageSize = Number(url.searchParams.get('pageSize') ?? '10');
@@ -1319,12 +1319,12 @@ export const handlers = [
     });
   }),
 
-  http.get(/.*\/api\/users$/, ({ request }) => {
+  http.get(/.*\/api\/v1\/users$/, ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     return HttpResponse.json(tenantScoped(users, tenantCode));
   }),
 
-  http.get(/.*\/api\/users\/paged$/, ({ request }) => {
+  http.get(/.*\/api\/v1\/users\/paged$/, ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const url = new URL(request.url);
     const pageIndex = Number(url.searchParams.get('pageIndex') ?? '1');
@@ -1358,7 +1358,7 @@ export const handlers = [
     });
   }),
 
-  http.post(/.*\/api\/users$/, async ({ request }) => {
+  http.post(/.*\/api\/v1\/users$/, async ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const payload = (await request.json()) as {
       name?: string;
@@ -1411,7 +1411,7 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  http.put(/.*\/api\/users\/([^/]+)$/, async ({ params, request }) => {
+  http.put(/.*\/api\/v1\/users\/([^/]+)$/, async ({ params, request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const targetId = String(params[0] ?? '');
     const payload = (await request.json()) as {
@@ -1468,7 +1468,7 @@ export const handlers = [
     return HttpResponse.json(target);
   }),
 
-  http.patch(/.*\/api\/users\/([^/]+)$/, async ({ params, request }) => {
+  http.patch(/.*\/api\/v1\/users\/([^/]+)$/, async ({ params, request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const targetId = String(params[0] ?? '');
     const payload = (await request.json()) as { active?: boolean };
@@ -1484,12 +1484,12 @@ export const handlers = [
     return HttpResponse.json(target);
   }),
 
-  http.get(/.*\/api\/departments$/, ({ request }) => {
+  http.get(/.*\/api\/v1\/departments$/, ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     return HttpResponse.json(tenantScoped(departments, tenantCode));
   }),
 
-  http.post(/.*\/api\/departments$/, async ({ request }) => {
+  http.post(/.*\/api\/v1\/departments$/, async ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const payload = (await request.json()) as {
       name?: string;
@@ -1524,7 +1524,7 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  http.put(/.*\/api\/departments\/:id/, async ({ params, request }) => {
+  http.put(/.*\/api\/v1\/departments\/:id/, async ({ params, request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const payload = (await request.json()) as {
       name?: string;
@@ -1555,7 +1555,7 @@ export const handlers = [
     return HttpResponse.json(target);
   }),
 
-  http.delete(/.*\/api\/departments\/:id/, ({ params, request }) => {
+  http.delete(/.*\/api\/v1\/departments\/:id/, ({ params, request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const target = departments.find(
       (item) => item.id === params.id && item.tenantCode === tenantCode,
@@ -1579,7 +1579,7 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  http.patch('/api/departments/:id', async ({ params, request }) => {
+  http.patch('/api/v1/departments/:id', async ({ params, request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const payload = (await request.json()) as { active?: boolean };
 
@@ -1654,7 +1654,7 @@ export const handlers = [
     return HttpResponse.json(tenantScoped(histories, tenantCode));
   }),
 
-  http.get('/api/platform-admin/dashboard/kpis', () => {
+  http.get('/api/v1/platform-admin/dashboard/kpis', () => {
     const today = new Date();
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 7);
@@ -1695,7 +1695,7 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/platform-admin/dashboard/tenant-code-issuance', () => {
+  http.get('/api/v1/platform-admin/dashboard/tenant-code-issuance', () => {
     const recentIssues = [...tenants]
       .sort(
         (a, b) =>
@@ -1726,7 +1726,7 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/platform-admin/dashboard/tenants', () => {
+  http.get('/api/v1/platform-admin/dashboard/tenants', () => {
     const items = tenants.map((tenant) => {
       const tenantAdmin = users.find(
         (user) =>
@@ -1755,7 +1755,7 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/platform-admin/dashboard/ccp-documents', () => {
+  http.get('/api/v1/platform-admin/dashboard/ccp-documents', () => {
     const items = tenants.map((tenant) => {
       const tenantDocs = documents.filter(
         (item) => item.tenantCode === tenant.tenantCode,
@@ -1803,7 +1803,7 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/platform-admin/menus/paged', ({ request }) => {
+  http.get('/api/v1/platform-admin/menus/paged', ({ request }) => {
     const url = new URL(request.url);
     const pageIndex = Number(url.searchParams.get('pageIndex') ?? '1');
     const pageSize = Number(url.searchParams.get('pageSize') ?? '10');
@@ -1871,13 +1871,13 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/platform-admin/menus', () => {
+  http.get('/api/v1/platform-admin/menus', () => {
     return HttpResponse.json(
       [...platformMenus].sort((a, b) => a.menuOrdr - b.menuOrdr),
     );
   }),
 
-  http.post('/api/platform-admin/menus', async ({ request }) => {
+  http.post('/api/v1/platform-admin/menus', async ({ request }) => {
     const payload = (await request.json()) as {
       menuCode?: string;
       menuNm?: string;
@@ -1917,49 +1917,52 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  http.patch('/api/platform-admin/menus/:id', async ({ params, request }) => {
-    const payload = (await request.json()) as {
-      menuNm?: string;
-      menuDc?: string;
-      menuUrl?: string;
-      parentMenuId?: string | null;
-      menuOrdr?: number;
-      iconNm?: string;
-      useAt?: 'Y' | 'N';
-    };
+  http.patch(
+    '/api/v1/platform-admin/menus/:id',
+    async ({ params, request }) => {
+      const payload = (await request.json()) as {
+        menuNm?: string;
+        menuDc?: string;
+        menuUrl?: string;
+        parentMenuId?: string | null;
+        menuOrdr?: number;
+        iconNm?: string;
+        useAt?: 'Y' | 'N';
+      };
 
-    const target = platformMenus.find((item) => item.menuId === params.id);
-    if (!target) {
-      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
-    }
+      const target = platformMenus.find((item) => item.menuId === params.id);
+      if (!target) {
+        return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+      }
 
-    // Check if menu has children
-    const hasChildren = platformMenus.some(
-      (item) => item.parentMenuId === params.id,
-    );
-    if (hasChildren && payload.parentMenuId !== target.parentMenuId) {
-      return HttpResponse.json(
-        { message: 'Cannot change parent menu when menu has children' },
-        { status: 400 },
+      // Check if menu has children
+      const hasChildren = platformMenus.some(
+        (item) => item.parentMenuId === params.id,
       );
-    }
+      if (hasChildren && payload.parentMenuId !== target.parentMenuId) {
+        return HttpResponse.json(
+          { message: 'Cannot change parent menu when menu has children' },
+          { status: 400 },
+        );
+      }
 
-    target.menuNm = payload.menuNm ?? target.menuNm;
-    target.menuDc = payload.menuDc ?? target.menuDc;
-    target.menuUrl = payload.menuUrl ?? target.menuUrl;
-    if (Object.prototype.hasOwnProperty.call(payload, 'parentMenuId')) {
-      target.parentMenuId = payload.parentMenuId ?? null;
-    }
-    target.menuOrdr = payload.menuOrdr ?? target.menuOrdr;
-    target.iconNm = payload.iconNm ?? target.iconNm;
-    target.useAt = payload.useAt ?? target.useAt;
-    target.lastUpdtPnttm = new Date().toISOString();
-    target.lastUpdusrId = 'platform_admin';
+      target.menuNm = payload.menuNm ?? target.menuNm;
+      target.menuDc = payload.menuDc ?? target.menuDc;
+      target.menuUrl = payload.menuUrl ?? target.menuUrl;
+      if (Object.prototype.hasOwnProperty.call(payload, 'parentMenuId')) {
+        target.parentMenuId = payload.parentMenuId ?? null;
+      }
+      target.menuOrdr = payload.menuOrdr ?? target.menuOrdr;
+      target.iconNm = payload.iconNm ?? target.iconNm;
+      target.useAt = payload.useAt ?? target.useAt;
+      target.lastUpdtPnttm = new Date().toISOString();
+      target.lastUpdusrId = 'platform_admin';
 
-    return HttpResponse.json(target);
-  }),
+      return HttpResponse.json(target);
+    },
+  ),
 
-  http.delete('/api/platform-admin/menus/:id', async ({ params }) => {
+  http.delete('/api/v1/platform-admin/menus/:id', async ({ params }) => {
     const target = platformMenus.find((item) => item.menuId === params.id);
     if (!target) {
       return HttpResponse.json({ message: 'Not found' }, { status: 404 });
@@ -1980,7 +1983,7 @@ export const handlers = [
     return HttpResponse.json({ message: 'Deleted' });
   }),
 
-  http.get('/api/platform-admin/roles', ({ request }) => {
+  http.get('/api/v1/platform-admin/roles', ({ request }) => {
     const requestUrl = new URL(request.url);
     const tenantCode = (requestUrl.searchParams.get('tenantCode') ?? '')
       .trim()
@@ -1993,7 +1996,7 @@ export const handlers = [
     return HttpResponse.json([...items]);
   }),
 
-  http.post('/api/platform-admin/roles', async ({ request }) => {
+  http.post('/api/v1/platform-admin/roles', async ({ request }) => {
     const payload = (await request.json()) as {
       code?: string;
       name?: string;
@@ -2032,26 +2035,29 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  http.patch('/api/platform-admin/roles/:id', async ({ params, request }) => {
-    const payload = (await request.json()) as { active?: boolean };
+  http.patch(
+    '/api/v1/platform-admin/roles/:id',
+    async ({ params, request }) => {
+      const payload = (await request.json()) as { active?: boolean };
 
-    const targetId = String(params.id ?? '');
-    const normalizedTargetCode = normalizeAuthorityCode(targetId);
-    const target = platformRoles.find(
-      (item) =>
-        item.id === targetId ||
-        normalizeAuthorityCode(item.code) === normalizedTargetCode,
-    );
-    if (!target) {
-      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
-    }
+      const targetId = String(params.id ?? '');
+      const normalizedTargetCode = normalizeAuthorityCode(targetId);
+      const target = platformRoles.find(
+        (item) =>
+          item.id === targetId ||
+          normalizeAuthorityCode(item.code) === normalizedTargetCode,
+      );
+      if (!target) {
+        return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+      }
 
-    target.active = payload.active ?? target.active;
-    target.updatedAt = new Date().toISOString();
-    return HttpResponse.json(target);
-  }),
+      target.active = payload.active ?? target.active;
+      target.updatedAt = new Date().toISOString();
+      return HttpResponse.json(target);
+    },
+  ),
 
-  http.put('/api/platform-admin/roles/:id', async ({ params, request }) => {
+  http.put('/api/v1/platform-admin/roles/:id', async ({ params, request }) => {
     const payload = (await request.json()) as {
       name?: string;
       description?: string;
@@ -2076,7 +2082,7 @@ export const handlers = [
     return HttpResponse.json(target);
   }),
 
-  http.get('/api/platform-admin/role-menus', ({ request }) => {
+  http.get('/api/v1/platform-admin/role-menus', ({ request }) => {
     const requestUrl = new URL(request.url);
     const roleCode = normalizeAuthorityCode(
       requestUrl.searchParams.get('roleCode') ?? '',
@@ -2095,7 +2101,7 @@ export const handlers = [
   }),
 
   http.put(
-    '/api/platform-admin/role-menus/:roleCode',
+    '/api/v1/platform-admin/role-menus/:roleCode',
     async ({ params, request }) => {
       const payload = (await request.json()) as { menuIds?: string[] };
       const roleCode = normalizeAuthorityCode(String(params.roleCode));
@@ -2108,7 +2114,7 @@ export const handlers = [
     },
   ),
 
-  http.get('/api/platform-admin/role-features', ({ request }) => {
+  http.get('/api/v1/platform-admin/role-features', ({ request }) => {
     const requestUrl = new URL(request.url);
     const roleCode = normalizeAuthorityCode(
       requestUrl.searchParams.get('roleCode') ?? '',
@@ -2121,7 +2127,7 @@ export const handlers = [
   }),
 
   http.put(
-    '/api/platform-admin/role-features/:roleCode',
+    '/api/v1/platform-admin/role-features/:roleCode',
     async ({ params, request }) => {
       const payload = (await request.json()) as {
         features?: Array<{
@@ -2153,7 +2159,7 @@ export const handlers = [
     },
   ),
 
-  http.get('/api/platform-admin/role-menu-candidates', ({ request }) => {
+  http.get('/api/v1/platform-admin/role-menu-candidates', ({ request }) => {
     const requestUrl = new URL(request.url);
     const tenantCode = (requestUrl.searchParams.get('tenantCode') ?? 'PLATFORM')
       .trim()
@@ -2175,7 +2181,7 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/platform-admin/user-menus/:authorityCode', ({ params }) => {
+  http.get('/api/v1/platform-admin/user-menus/:authorityCode', ({ params }) => {
     const authorityCode = normalizeAuthorityCode(String(params.authorityCode));
     const menuList = accessibleMenuPathsByAuthorityCode[authorityCode].map(
       (menuUrl) => ({ menuUrl }),
@@ -2184,7 +2190,7 @@ export const handlers = [
     return HttpResponse.json({ result: { menuList } });
   }),
 
-  http.get('/api/platform-admin/plan-access/me', ({ request }) => {
+  http.get('/api/v1/platform-admin/plan-access/me', ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
 
     const features: Record<string, boolean> = {
@@ -2204,7 +2210,7 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/platform-admin/plan-access/plans', () => {
+  http.get('/api/v1/platform-admin/plan-access/plans', () => {
     return HttpResponse.json([
       {
         planCode: 'A',
@@ -2242,7 +2248,7 @@ export const handlers = [
   }),
 
   http.get(
-    '/api/platform-admin/plan-access/plans/:planCode/features',
+    '/api/v1/platform-admin/plan-access/plans/:planCode/features',
     ({ params }) => {
       const planCode = String(params.planCode ?? 'C')
         .trim()
@@ -2366,7 +2372,7 @@ export const handlers = [
   ),
 
   http.put(
-    '/api/platform-admin/plan-access/plans/:planCode/features',
+    '/api/v1/platform-admin/plan-access/plans/:planCode/features',
     async ({ params, request }) => {
       const planCode = String(params.planCode ?? 'C')
         .trim()
@@ -2389,7 +2395,7 @@ export const handlers = [
   ),
 
   http.get(
-    '/api/platform-admin/plan-access/plans/:planCode/menus',
+    '/api/v1/platform-admin/plan-access/plans/:planCode/menus',
     ({ params }) => {
       const planCode = String(params.planCode ?? 'C')
         .trim()
@@ -2409,7 +2415,7 @@ export const handlers = [
   ),
 
   http.put(
-    '/api/platform-admin/plan-access/plans/:planCode/menus',
+    '/api/v1/platform-admin/plan-access/plans/:planCode/menus',
     async ({ params, request }) => {
       const planCode = String(params.planCode ?? 'C')
         .trim()
@@ -2423,7 +2429,7 @@ export const handlers = [
   ),
 
   http.get(
-    '/api/platform-admin/plan-access/tenant-plan-menus',
+    '/api/v1/platform-admin/plan-access/tenant-plan-menus',
     ({ request }) => {
       const requestUrl = new URL(request.url);
       const tenantCode = (

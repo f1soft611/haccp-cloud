@@ -12,6 +12,19 @@ import egovframework.let.platform_admin.dashboard.domain.model.PlatformDashboard
 
 /**
  * 플랫폼 대시보드 DAO
+ * @author SHMT-MES
+ * @since 2026.06.22
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.06.22 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @Repository("platformDashboardDAO")
 public class PlatformDashboardEgovDAO extends EgovAbstractMapper implements PlatformDashboardDAO {

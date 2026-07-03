@@ -15,6 +15,15 @@ import java.util.Map;
  * @since 2026.01.08
  * @version 1.0
  * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.01.08 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @Repository("loginHistoryDAO")
 public class LoginHistoryDAO extends EgovAbstractMapper {

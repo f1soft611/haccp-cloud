@@ -39,7 +39,7 @@ describe('departmentsService', () => {
       tenantCode: 'TENANT_A',
     });
 
-    expect(apiClient.get).toHaveBeenCalledWith('/departments', {
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/departments', {
       headers: { 'x-tenant-code': 'TENANT_A' },
       params: {
         name: undefined,
@@ -77,7 +77,7 @@ describe('departmentsService', () => {
     });
 
     expect(apiClient.post).toHaveBeenCalledWith(
-      '/departments',
+      '/v1/departments',
       {
         name: '생산1팀',
         parentId: '300',

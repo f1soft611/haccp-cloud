@@ -120,4 +120,39 @@ class EgovLoginServiceImplTest {
 		verify(loginDAO, times(2)).actionLogin(eq(requestVO));
 		verify(loginDAO).selectLoginCodeByTenantIdAndEmail(1L, "socra710@f1soft.co.kr");
 	}
+
+	@DisplayName("테넌트 도메인 이메일 ID 로그인 실패 시 local-part login_code로 재시도해 로그인할 수 있다")
+	@Test
+	void actionLogin_retriesWithLocalPartLoginCodeWhenTenantDomainLoginUsesDifferentUserEmail() throws Exception {
+		LoginDAO loginDAO = mock(LoginDAO.class);
+		TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+		EgovLoginServiceImpl service = new EgovLoginServiceImpl();
+		ReflectionTestUtils.setField(service, "loginDAO", loginDAO);
+		ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+
+		TenantVO tenant = new TenantVO();
+		tenant.setTenantId(3L);
+		when(tenantInfoDAO.selectByAdminEmailDomain("onbording4.co.kr")).thenReturn(tenant);
+		when(loginDAO.selectLoginCodeByTenantIdAndEmail(3L, "socra710@onbording4.co.kr")).thenReturn(null);
+
+		LoginVO storedLoginVO = new LoginVO();
+		storedLoginVO.setId("socra710");
+		storedLoginVO.setPassword("encoded-password");
+		storedLoginVO.setTenantCode("2607030003");
+
+		when(loginDAO.actionLogin(any(LoginVO.class))).thenReturn(null, storedLoginVO);
+
+		LoginVO requestVO = new LoginVO();
+		requestVO.setId("socra710@onbording4.co.kr");
+		requestVO.setPassword("f1soft@611");
+
+		LoginVO result = service.actionLogin(requestVO);
+
+		assertNotNull(result);
+		assertEquals("socra710", result.getId());
+		assertEquals(Long.valueOf(3L), requestVO.getTenantId());
+		assertEquals("socra710", requestVO.getId());
+		verify(loginDAO, times(2)).actionLogin(eq(requestVO));
+		verify(loginDAO).selectLoginCodeByTenantIdAndEmail(3L, "socra710@onbording4.co.kr");
+	}
 }

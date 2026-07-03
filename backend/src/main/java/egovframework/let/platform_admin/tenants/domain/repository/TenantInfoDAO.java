@@ -9,6 +9,19 @@ import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 
 /**
  * 플랫폼 테넌트 DAO
+ * @author SHMT-MES
+ * @since 2026.06.22
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.06.22 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 public interface TenantInfoDAO {
 
@@ -24,38 +37,42 @@ public interface TenantInfoDAO {
 
     Long selectTenantIdByCode(String tenantCode);
 
-        String selectOnboardingStatusByTenantCode(String tenantCode);
+    String selectOnboardingStatusByTenantCode(String tenantCode);
 
-        String selectTenantNameByCode(String tenantCode);
+    String selectTenantNameByCode(String tenantCode);
 
-        String selectAdminEmailByLoginAccountId(Long loginAccountId);
+    String selectAdminEmailByLoginAccountId(Long loginAccountId);
 
-        String selectLoginCodeByLoginAccountId(Long loginAccountId);
+    String selectLoginCodeByLoginAccountId(Long loginAccountId);
 
-        Long selectTenantIdByEmailDomain(String emailDomain);
+    Long selectTenantIdByEmailDomain(String emailDomain);
 
-        String selectAdminEmailByTenantCode(String tenantCode);
+    String selectAdminEmailByTenantCode(String tenantCode);
 
-        Long selectLatestLoginAccountIdByTenantCode(String tenantCode);
+    Long selectLatestLoginAccountIdByTenantCode(String tenantCode);
+
+    int expireActiveTenantSubscription(Long tenantId);
+
+    int insertActiveTenantSubscriptionByPlanCode(Long tenantId, String planCode);
 
     int updateOnboardingStatusByTenantCode(String tenantCode, String onboardingStatus);
 
-        int updateLoginAccountOnboardingStatus(Long loginAccountId, String onboardingStatus);
+    int updateLoginAccountOnboardingStatus(Long loginAccountId, String onboardingStatus);
 
-        int updateLoginAccountPasswordAndActivate(
-            Long loginAccountId,
-            String passwordHash,
-            String passwordAlgo,
-            String useAt,
-            String onboardingStatus);
+    int updateLoginAccountPasswordAndActivate(
+        Long loginAccountId,
+        String passwordHash,
+        String passwordAlgo,
+        String useAt,
+        String onboardingStatus);
 
-        int updateUserMobileNoByLoginAccountId(Long loginAccountId, String mobileNo);
+    int updateUserMobileNoByLoginAccountId(Long loginAccountId, String mobileNo);
 
-        int demotePrimaryDomainByTenantId(Long tenantId);
+    int demotePrimaryDomainByTenantId(Long tenantId);
 
-        int activateTenantDomain(Long tenantId, String emailDomain);
+    int activateTenantDomain(Long tenantId, String emailDomain);
 
-        int insertTenantDomain(Long tenantId, String emailDomain);
+    int insertTenantDomain(Long tenantId, String emailDomain);
 
     int selectActiveTenantCountByCorporateNumber(String normalizedCorporateNumber);
 

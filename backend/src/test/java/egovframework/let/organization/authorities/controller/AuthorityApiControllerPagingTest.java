@@ -37,7 +37,7 @@ class AuthorityApiControllerPagingTest {
 
     @Test
     void listRolesPaged_rejectsPageIndexLessThanOne() throws Exception {
-        mockMvc.perform(get("/api/platform-admin/roles/paged")
+        mockMvc.perform(get("/api/v1/platform-admin/roles/paged")
                 .param("pageIndex", "0")
                 .param("pageSize", "10"))
             .andExpect(status().isBadRequest());
@@ -52,7 +52,7 @@ class AuthorityApiControllerPagingTest {
         result.setResult(payload);
         when(authorityService.listRolesPaged(1, 20, "name", "관리자", "PLATFORM", "all")).thenReturn(result);
 
-        mockMvc.perform(get("/api/platform-admin/roles/paged")
+        mockMvc.perform(get("/api/v1/platform-admin/roles/paged")
                 .param("pageIndex", "1")
                 .param("pageSize", "20")
                 .param("searchField", "name")

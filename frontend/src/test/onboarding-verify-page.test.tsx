@@ -6,15 +6,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { appTheme } from '../app/theme';
 import { OnboardingVerifyPage } from '../pages/platform-admin/tenants/OnboardingVerifyPage';
 
-const { verifyTenantEmailMock } = vi.hoisted(() => ({
+const { verifyTenantEmailMock, getTenantByDomainMock } = vi.hoisted(() => ({
   verifyTenantEmailMock: vi.fn(),
+  getTenantByDomainMock: vi.fn(),
 }));
 
 vi.mock('../services/organization/tenantService', () => ({
   verifyTenantEmail: verifyTenantEmailMock,
+  getTenantByDomain: getTenantByDomainMock,
 }));
 
-function renderPage(initialPath = '/onboarding/verify?token=test-token') {
+function renderPage(
+  initialPath = '/onboarding/verify?token=test-token&domain=test.com',
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -38,6 +42,11 @@ function renderPage(initialPath = '/onboarding/verify?token=test-token') {
 describe('OnboardingVerifyPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getTenantByDomainMock.mockResolvedValue({
+      tenantCode: 'TENANT-A',
+      tenantId: 1,
+      tenantNm: '테스트푸드',
+    });
   });
 
   it('verifies token automatically and shows success state', async () => {
@@ -55,7 +64,10 @@ describe('OnboardingVerifyPage', () => {
     expect(
       await screen.findByText('이메일 인증이 완료되었습니다'),
     ).toBeInTheDocument();
-    expect(verifyTenantEmailMock).toHaveBeenCalledWith('test-token');
+    expect(verifyTenantEmailMock).toHaveBeenCalledWith(
+      'TENANT-A',
+      'test-token',
+    );
   });
 
   it('shows missing token message when token is absent', async () => {

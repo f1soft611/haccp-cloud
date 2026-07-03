@@ -36,7 +36,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "SchedulerConfigApiController", description = "스케쥴러 설정 관리")
-@RequestMapping("/api/schedulers")
+@RequestMapping("/api/v1/schedulers")
 public class SchedulerConfigApiController {
 
     public static final String HEADER_STRING = "Authorization";

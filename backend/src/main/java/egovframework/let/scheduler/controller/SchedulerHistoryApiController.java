@@ -32,7 +32,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "SchedulerHistoryApiController", description = "스케쥴러 실행 이력 관리")
-@RequestMapping("/api/scheduler-history")
+@RequestMapping("/api/v1/scheduler-history")
 public class SchedulerHistoryApiController {
 
     public static final String HEADER_STRING = "Authorization";

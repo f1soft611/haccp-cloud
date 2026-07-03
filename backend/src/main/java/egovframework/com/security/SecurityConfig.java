@@ -70,7 +70,7 @@ public class SecurityConfig {
             "/auth/login", // 일반 로그인
             "/auth/logout", // 로그아웃
             "/auth/refresh", // 토큰 갱신
-            "/api/system/server-time", // 서버 시간 조회 (인증 불필요)
+            "/api/v1/system/server-time", // 서버 시간 조회 (인증 불필요)
             "/file", // 파일 다운로드
             "/etc/**", // 사용자단의 회원약관,회원가입,사용자아이디 중복여부체크 URL허용
 

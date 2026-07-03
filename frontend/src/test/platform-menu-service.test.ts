@@ -54,15 +54,18 @@ describe('platformMenuService', () => {
       useAt: 'Y',
     });
 
-    expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/menus/paged', {
-      params: {
-        pageIndex: 2,
-        pageSize: 10,
-        searchField: 'menuNm',
-        searchKeyword: '관리',
-        useAt: 'Y',
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/v1/platform-admin/menus/paged',
+      {
+        params: {
+          pageIndex: 2,
+          pageSize: 10,
+          searchField: 'menuNm',
+          searchKeyword: '관리',
+          useAt: 'Y',
+        },
       },
-    });
+    );
     expect(response.totalCount).toBe(23);
     expect(response.items[0].parentMenuId).toBeNull();
   });
@@ -95,6 +98,37 @@ describe('platformMenuService', () => {
     expect(items[0].parentMenuId).toBe('100');
   });
 
+  it('parses ResultVO items response for menu list', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: {
+        result: {
+          items: [
+            {
+              menuId: 'MENU_101',
+              menuCode: 'MENU_PLAN_MANAGEMENT',
+              menuNm: '플랜 관리',
+              menuDc: '플랜 관리 메뉴',
+              parentMenuId: 'MENU_PLATFORM_ROOT',
+              menuOrdr: 2,
+              menuUrl: '/platform/plans',
+              iconNm: 'Folder',
+              useAt: 'Y',
+              frstRegistPnttm: '',
+              frstRegisterId: '',
+              lastUpdtPnttm: '',
+              lastUpdusrId: '',
+            },
+          ],
+        },
+      },
+    });
+
+    const items = await listPlatformMenus();
+
+    expect(items).toHaveLength(1);
+    expect(items[0].menuCode).toBe('MENU_PLAN_MANAGEMENT');
+  });
+
   it('calls the common menu endpoint without platform menu permissions', async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       data: [
@@ -118,7 +152,9 @@ describe('platformMenuService', () => {
 
     const items = await listCommonPlatformMenus();
 
-    expect(apiClient.get).toHaveBeenCalledWith('/platform-admin/menus/common');
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/v1/platform-admin/menus/common',
+    );
     expect(items[0].menuCode).toBe('MENU_AUTHORITY_MANAGEMENT');
   });
 
@@ -136,7 +172,7 @@ describe('platformMenuService', () => {
       useAt: 'Y',
     });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/platform-admin/menus', {
+    expect(apiClient.post).toHaveBeenCalledWith('/v1/platform-admin/menus', {
       menuCode: 'MENU_NEW_CODE',
       menuNm: '신규 메뉴',
       menuDc: '설명',
@@ -162,14 +198,17 @@ describe('platformMenuService', () => {
       useAt: 'Y',
     });
 
-    expect(apiClient.patch).toHaveBeenCalledWith('/platform-admin/menus/101', {
-      menuNm: '메뉴 관리(수정)',
-      menuDc: '설명',
-      menuUrl: '/platform/menus',
-      parentMenuId: '100',
-      menuOrdr: 10,
-      iconNm: 'Settings',
-      useAt: 'Y',
-    });
+    expect(apiClient.patch).toHaveBeenCalledWith(
+      '/v1/platform-admin/menus/101',
+      {
+        menuNm: '메뉴 관리(수정)',
+        menuDc: '설명',
+        menuUrl: '/platform/menus',
+        parentMenuId: '100',
+        menuOrdr: 10,
+        iconNm: 'Settings',
+        useAt: 'Y',
+      },
+    );
   });
 });
