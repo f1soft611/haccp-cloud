@@ -97,4 +97,23 @@ describe('OnboardingVerifyPage', () => {
       expect(screen.getByText('인증 토큰이 없습니다.')).toBeInTheDocument();
     });
   });
+
+  it('shows invalid token message when api returns strict token error code', async () => {
+    verifyTenantEmailByTokenMock.mockRejectedValueOnce({
+      response: {
+        data: {
+          statusCode: '400',
+          errorCode: 'INVALID_AUTH_TOKEN',
+          errorMessage: '토큰이 존재하지 않습니다: invalid-token',
+        },
+      },
+    });
+
+    renderPage('/onboarding/verify?token=invalid-token');
+
+    expect(
+      await screen.findByText('인증 링크가 유효하지 않습니다.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('이메일 인증')).toBeInTheDocument();
+  });
 });

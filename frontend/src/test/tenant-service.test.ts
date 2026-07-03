@@ -4,6 +4,7 @@ import {
   issueTenantCode,
   listSampleTenants,
   verifyTenantEmail,
+  verifyTenantEmailByToken,
   completeTenantOnboarding,
 } from '../services/organization/tenantService';
 
@@ -130,5 +131,59 @@ describe('tenantService', () => {
         logoImage: undefined,
       },
     );
+  });
+
+  it('throws when token-only verification returns business error envelope', async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({
+      data: {
+        resultCode: 600,
+        resultMessage: '처리할 수 없는 상태입니다.',
+        result: {
+          statusCode: '400',
+          errorCode: 'INVALID_AUTH_TOKEN',
+          errorMessage: '토큰이 존재하지 않습니다: invalid-token',
+        },
+      },
+    });
+
+    await expect(
+      verifyTenantEmailByToken('invalid-token'),
+    ).rejects.toMatchObject({
+      response: {
+        data: {
+          statusCode: '400',
+          errorCode: 'INVALID_AUTH_TOKEN',
+        },
+      },
+    });
+  });
+
+  it('throws when onboarding completion returns business error envelope', async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({
+      data: {
+        resultCode: 600,
+        resultMessage: '처리할 수 없는 상태입니다.',
+        result: {
+          statusCode: '410',
+          errorCode: 'AUTH_TOKEN_EXPIRED',
+          errorMessage: '만료된 토큰입니다',
+        },
+      },
+    });
+
+    await expect(
+      completeTenantOnboarding({
+        tenantCode: 'TENANT-A',
+        authToken: 'expired-token',
+        password: 'password123',
+      }),
+    ).rejects.toMatchObject({
+      response: {
+        data: {
+          statusCode: '410',
+          errorCode: 'AUTH_TOKEN_EXPIRED',
+        },
+      },
+    });
   });
 });

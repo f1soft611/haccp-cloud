@@ -166,7 +166,10 @@ type IssueTenantCodeEnvelope = {
 };
 
 type ResultEnvelope<T> = {
+  resultCode?: number | string;
+  resultMessage?: string;
   result?: T;
+  resultData?: T;
 };
 
 type TenantVerificationPayload = {
@@ -176,7 +179,25 @@ type TenantVerificationPayload = {
 };
 
 function unwrapResult<T>(payload: T | ResultEnvelope<T>): T {
-  return ((payload as ResultEnvelope<T>)?.result ?? payload) as T;
+  const envelope = payload as ResultEnvelope<T>;
+  const resultCode = String(envelope?.resultCode ?? '').trim();
+  const numericResultCode = Number(resultCode);
+  if (
+    resultCode &&
+    Number.isFinite(numericResultCode) &&
+    numericResultCode !== 200
+  ) {
+    const errorPayload = envelope.result ?? envelope.resultData ?? payload;
+    throw {
+      response: {
+        data: errorPayload,
+      },
+      message:
+        (envelope?.resultMessage ?? '') || '요청 처리 중 오류가 발생했습니다.',
+    };
+  }
+
+  return (envelope?.result ?? envelope?.resultData ?? payload) as T;
 }
 
 function normalizeIssueTenantCodeResponse(
