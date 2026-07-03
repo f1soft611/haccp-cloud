@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/haccp-cloud/auth/:path*",
-      "destination": "http://218.155.74.34/haccp-cloud/auth/:path*"
+      "destination": "http://218.155.74.34/auth/:path*"
     },
     {
       "source": "/haccp-cloud/api/:path*",
-      "destination": "http://218.155.74.34/haccp-cloud/api/:path*"
+      "destination": "http://218.155.74.34/api/:path*"
     },
     {
       "source": "/(.*)",
