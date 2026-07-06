@@ -93,6 +93,16 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 				vo.setPassword(retryHash);
 				loginVO = loginDAO.actionLogin(vo);
 			}
+
+			if (!isValidLogin(loginVO)) {
+				String localPartLoginCode = extractLocalPart(vo.getId());
+				if (localPartLoginCode != null) {
+					String retryHash = EgovFileScrty.encryptPassword(plainPassword, localPartLoginCode);
+					vo.setId(localPartLoginCode);
+					vo.setPassword(retryHash);
+					loginVO = loginDAO.actionLogin(vo);
+				}
+			}
 		}
 
 		// 4. 결과를 리턴한다.
@@ -117,6 +127,23 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 
 	private boolean isEmailFormat(String value) {
 		return value != null && value.contains("@") && value.indexOf('@') > 0 && value.indexOf('@') < value.length() - 1;
+	}
+
+	private String extractLocalPart(String value) {
+		if (!isEmailFormat(value)) {
+			return null;
+		}
+
+		int atIndex = value.indexOf('@');
+		if (atIndex <= 0) {
+			return null;
+		}
+
+		String localPart = value.substring(0, atIndex).trim();
+		if (localPart.isEmpty()) {
+			return null;
+		}
+		return localPart;
 	}
 
 	private boolean isPlatformAdminLogin(LoginVO vo) {

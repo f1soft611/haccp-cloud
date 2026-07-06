@@ -42,7 +42,7 @@ class PlatformAdminPolicyCoverageTest {
                 for (String classPath : classPaths) {
                     for (String methodPath : methodPaths) {
                         String fullPath = joinPaths(classPath, methodPath);
-                        if (fullPath.startsWith("/api/platform-admin")) {
+                        if (isPlatformAdminPath(fullPath)) {
                             requiresPlatformAdminPolicy = true;
                             break;
                         }
@@ -93,7 +93,7 @@ class PlatformAdminPolicyCoverageTest {
                 for (String classPath : classPaths) {
                     for (String methodPath : methodPaths) {
                         String fullPath = joinPaths(classPath, methodPath);
-                        if (fullPath.startsWith("/api/platform-admin") || fullPath.startsWith("/members")) {
+                        if (isPlatformAdminPath(fullPath) || fullPath.startsWith("/members")) {
                             trackedEndpoint = true;
                             break;
                         }
@@ -161,7 +161,18 @@ class PlatformAdminPolicyCoverageTest {
         if (AuthorityApiController.class.equals(controllerClass) && "listCurrentUserMenus".equals(method.getName())) {
             return true;
         }
+        if (PlatformTenantApiController.class.equals(controllerClass)
+                && ("issueTenantCode".equals(method.getName())
+                || "getTenantByDomain".equals(method.getName())
+                || "getTenantLogo".equals(method.getName())
+                || "listSampleTenants".equals(method.getName()))) {
+            return true;
+        }
         return false;
+    }
+
+    private boolean isPlatformAdminPath(String fullPath) {
+        return fullPath.startsWith("/api/v1/platform-admin") || fullPath.startsWith("/api/platform-admin");
     }
 
     private List<String> resolvePaths(java.lang.reflect.AnnotatedElement element, boolean defaultToRoot) {

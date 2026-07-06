@@ -38,7 +38,7 @@ class TenantContextFilterTest {
     @DisplayName("공개 온보딩 검증 API는 테넌트 컨텍스트 필터를 건너뛴다")
     @Test
     void publicOnboardingVerificationApiIsSkipped() throws Exception {
-        request.setRequestURI("/api/v1/tenants/onboarding/verify-email");
+        request.setRequestURI("/api/v1/platform-admin/tenants/onboarding/verifications");
 
         filter.doFilter(request, response, filterChain);
 

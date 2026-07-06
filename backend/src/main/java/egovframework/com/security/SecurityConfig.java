@@ -64,13 +64,15 @@ public class SecurityConfig {
             "/",
             "/login/**",
             "/api/tenants/**", // 도메인 기반 로그인 페이지 테넌트 정보 조회
-            "/api/v1/tenants/onboarding/**", // 온보딩 인증/완료 API
+            "/api/v1/platform-admin/tenants/domains/**", // 로그인 페이지 도메인 기반 테넌트 조회
+            "/api/v1/platform-admin/tenants/onboarding/**", // 토큰 단독 온보딩 인증 API
+            "/api/v1/platform-admin/tenants/*/onboarding/**", // 테넌트 코드 기반 온보딩 인증/완료 API
             "/auth/login-jwt", // JWT 로그인
             "/auth/login-jwt/admin", // 플랫폼 관리자 JWT 로그인
             "/auth/login", // 일반 로그인
             "/auth/logout", // 로그아웃
             "/auth/refresh", // 토큰 갱신
-            "/api/system/server-time", // 서버 시간 조회 (인증 불필요)
+            "/api/v1/system/server-time", // 서버 시간 조회 (인증 불필요)
             "/file", // 파일 다운로드
             "/etc/**", // 사용자단의 회원약관,회원가입,사용자아이디 중복여부체크 URL허용
 

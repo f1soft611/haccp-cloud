@@ -76,7 +76,7 @@ function normalizeDepartmentItem(raw: RawDepartmentItem): DepartmentItem {
 export async function listDepartments(
   params: DepartmentSearchParams,
 ): Promise<DepartmentItem[]> {
-  const { data } = await apiClient.get<RawDepartmentItem[]>('/departments', {
+  const { data } = await apiClient.get<RawDepartmentItem[]>('/v1/departments', {
     headers: { 'x-tenant-code': params.tenantCode },
     params: {
       name: params.name || undefined,
@@ -93,7 +93,7 @@ export async function createDepartment(payload: {
   sortOrder: number;
 }): Promise<DepartmentItem> {
   const { data } = await apiClient.post<RawDepartmentItem>(
-    '/departments',
+    '/v1/departments',
     {
       name: payload.name,
       parentId: normalizeNullableId(payload.parentId),
@@ -113,7 +113,7 @@ export async function updateDepartment(payload: {
   active: boolean;
 }): Promise<DepartmentItem> {
   const { data } = await apiClient.put<RawDepartmentItem>(
-    `/departments/${payload.id}`,
+    `/v1/departments/${payload.id}`,
     {
       name: payload.name,
       parentId: normalizeNullableId(payload.parentId),
@@ -129,7 +129,7 @@ export async function deleteDepartment(payload: {
   tenantCode: string;
   id: string;
 }): Promise<void> {
-  await apiClient.delete(`/departments/${payload.id}`, {
+  await apiClient.delete(`/v1/departments/${payload.id}`, {
     headers: { 'x-tenant-code': payload.tenantCode },
   });
 }
@@ -140,7 +140,7 @@ export async function updateDepartmentStatus(payload: {
   active: boolean;
 }): Promise<DepartmentItem> {
   const { data } = await apiClient.patch<RawDepartmentItem>(
-    `/departments/${payload.id}`,
+    `/v1/departments/${payload.id}`,
     { active: payload.active },
     { headers: { 'x-tenant-code': payload.tenantCode } },
   );

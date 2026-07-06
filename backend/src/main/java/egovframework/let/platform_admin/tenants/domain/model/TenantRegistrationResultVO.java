@@ -6,7 +6,21 @@ import lombok.Setter;
 
 /**
  * 플랫폼 테넌트 등록 결과 VO
+ * @author SHMT-MES
+ * @since 2026.06.23
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.06.23 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
+@Schema(description = "플랫폼 테넌트 등록 결과 VO")
 @Getter
 @Setter
 public class TenantRegistrationResultVO {
@@ -22,6 +36,9 @@ public class TenantRegistrationResultVO {
 
     @Schema(description = "관리자 이메일")
     private String adminEmail;
+
+    @Schema(description = "관리자명")
+    private String adminName;
 
     @Schema(description = "법인번호")
     private String corporateNumber;

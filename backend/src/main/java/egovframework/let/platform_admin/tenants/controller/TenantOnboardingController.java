@@ -3,15 +3,17 @@ package egovframework.let.platform_admin.tenants.controller;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import javax.annotation.Resource;
+
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import egovframework.com.cmm.ResponseCode;
+import egovframework.com.cmm.service.ResultVO;
+import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.platform_admin.tenants.domain.model.TenantOnboardingCompleteRequestVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVerificationResponseVO;
 import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
@@ -20,159 +22,104 @@ import egovframework.let.platform_admin.tenants.service.exception.MailConfigurat
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * 테넌트 온보딩 API 컨트롤러
+ * @author SHMT-MES
+ * @since 2026.07.03
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.07.03 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @RestController
-@RequestMapping("/api/v1/tenants/onboarding")
+@RequestMapping("/api/v1/platform-admin/tenants")
+@Tag(name = "TenantOnboardingController", description = "테넌트 온보딩 관리")
+@RequiredArgsConstructor
 @Slf4j
 public class TenantOnboardingController {
 
-    @Autowired
-    private TenantOnboardingService tenantOnboardingService;
+    private final TenantOnboardingService tenantOnboardingService;
+
+    @Resource(name = "resultVoHelper")
+    private ResultVoHelper resultVoHelper;
 
     /**
      * 인증 이메일 발송 API
      *
      * @param tenantCode 테넌트 코드
-     * @param loginAccountId 로그인 계정 ID
-     * @param adminEmail 관리자 이메일
      * @return 처리 결과 응답
      */
-    @PostMapping("/send-verification-email")
+    @PostMapping("/{tenantCode}/onboarding/verification-emails")
     @Operation(summary = "인증 이메일 발송",
             description = "테넌트 온보딩 시 인증 이메일 발송")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "이메일 발송 성공"),
             @ApiResponse(responseCode = "400", description = "요청 파라미터 오류"),
+            @ApiResponse(responseCode = "502", description = "메일 인증 오류"),
+            @ApiResponse(responseCode = "503", description = "메일 설정 오류"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<?> sendVerificationEmail(
-            @RequestParam(required = true) String tenantCode,
-            @RequestParam(required = true) String loginAccountId,
-            @RequestParam(required = true) String adminEmail) {
+    public ResultVO dispatchVerificationEmail(
+            @PathVariable String tenantCode,
+            @RequestBody(required = false) Map<String, String> body) {
+        if (!hasText(tenantCode)) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            error.put("errorCode", "INVALID_TENANT_CODE");
+            error.put("errorMessage", "tenantCode는 필수입니다.");
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+        }
+
+        tenantCode = tenantCode.trim();
+        String adminName = body == null ? null : body.get("adminName");
 
         try {
-            tenantOnboardingService.createAndSendVerificationEmail(tenantCode, loginAccountId, adminEmail);
+            tenantOnboardingService.dispatchVerificationEmail(tenantCode, adminName);
 
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "200");
-            response.put("message", "인증 이메일 발송이 완료되었습니다");
-            response.put("data", null);
-
-            return ResponseEntity.ok(response);
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("tenantCode", tenantCode);
+            result.put("message", "인증 이메일 발송이 완료되었습니다");
+            return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
 
         } catch (IllegalArgumentException e) {
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "400");
-            response.put("message", e.getMessage());
-            response.put("data", null);
-
-            return ResponseEntity.badRequest().body(response);
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            error.put("errorCode", "INVALID_REQUEST");
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
 
         } catch (MailConfigurationException e) {
             return buildMailConfigErrorResponse(e.getMessage());
 
         } catch (MailAuthenticationFailureException e) {
             return buildMailAuthErrorResponse(e.getMessage());
+
+        } catch (IllegalStateException e) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "409");
+            error.put("errorCode", "ONBOARDING_CONFLICT");
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
 
         } catch (Exception e) {
             log.error("인증 이메일 발송 중 오류 발생", e);
 
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "500");
-            response.put("message", "서버 오류가 발생했습니다");
-            response.put("data", null);
-
-            return ResponseEntity.internalServerError().body(response);
-        }
-    }
-
-    @PostMapping("/dispatch-verification-email")
-    @Operation(summary = "테넌트 코드 기반 인증 이메일 발송",
-            description = "테넌트 코드로 관리자 이메일과 로그인 계정을 찾아 인증 메일을 발송")
-    public ResponseEntity<?> dispatchVerificationEmail(@RequestParam(required = true) String tenantCode) {
-        try {
-            tenantOnboardingService.dispatchVerificationEmail(tenantCode);
-
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "200");
-            response.put("message", "인증 이메일 발송이 완료되었습니다");
-            response.put("data", null);
-
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "400");
-            response.put("message", e.getMessage());
-            response.put("data", null);
-
-            return ResponseEntity.badRequest().body(response);
-        } catch (MailConfigurationException e) {
-            return buildMailConfigErrorResponse(e.getMessage());
-        } catch (MailAuthenticationFailureException e) {
-            return buildMailAuthErrorResponse(e.getMessage());
-        } catch (IllegalStateException e) {
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "409");
-            response.put("message", e.getMessage());
-            response.put("data", null);
-
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-        } catch (Exception e) {
-            log.error("인증 이메일 발송(tenantCode) 중 오류 발생", e);
-
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "500");
-            response.put("message", "서버 오류가 발생했습니다");
-            response.put("data", null);
-
-            return ResponseEntity.internalServerError().body(response);
-        }
-    }
-
-    @PostMapping("/resend-verification-email")
-    @Operation(summary = "인증 이메일 재발송",
-            description = "온보딩 진행 업체의 인증 메일 재발송")
-    public ResponseEntity<?> resendVerificationEmail(@RequestParam(required = true) String tenantCode) {
-        try {
-            tenantOnboardingService.resendVerificationEmail(tenantCode);
-
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "200");
-            response.put("message", "인증 이메일 재발송이 완료되었습니다");
-            response.put("data", null);
-
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "400");
-            response.put("message", e.getMessage());
-            response.put("data", null);
-
-            return ResponseEntity.badRequest().body(response);
-        } catch (MailConfigurationException e) {
-            return buildMailConfigErrorResponse(e.getMessage());
-        } catch (MailAuthenticationFailureException e) {
-            return buildMailAuthErrorResponse(e.getMessage());
-        } catch (IllegalStateException e) {
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "409");
-            response.put("message", e.getMessage());
-            response.put("data", null);
-
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-        } catch (Exception e) {
-            log.error("인증 이메일 재발송 중 오류 발생", e);
-
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "500");
-            response.put("message", "서버 오류가 발생했습니다");
-            response.put("data", null);
-
-            return ResponseEntity.internalServerError().body(response);
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "500");
+            error.put("errorCode", "INTERNAL_SERVER_ERROR");
+            error.put("errorMessage", "서버 오류가 발생했습니다");
+            return resultVoHelper.buildFromMap(error, ResponseCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -182,7 +129,7 @@ public class TenantOnboardingController {
      * @param authToken 인증 토큰
      * @return 처리 결과 응답
      */
-    @PostMapping("/verify-email")
+    @PostMapping("/{tenantCode}/onboarding/verifications")
     @Operation(summary = "이메일 인증",
             description = "인증 토큰으로 이메일 검증")
     @ApiResponses(value = {
@@ -191,42 +138,139 @@ public class TenantOnboardingController {
             @ApiResponse(responseCode = "410", description = "토큰 만료 또는 이미 사용"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<?> verifyEmailToken(@RequestParam(required = true) String authToken) {
+    public ResultVO verifyEmailToken(
+            @PathVariable String tenantCode,
+            @RequestBody(required = false) Map<String, String> body) {
+        if (!hasText(tenantCode)) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            error.put("errorCode", "INVALID_TENANT_CODE");
+            error.put("errorMessage", "tenantCode는 필수입니다.");
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+        }
+
+        String authToken = body == null ? null : body.get("authToken");
+        if (!hasText(authToken)) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            error.put("errorCode", "INVALID_AUTH_TOKEN");
+            error.put("errorMessage", "authToken은 필수입니다.");
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+        }
+
+        tenantCode = tenantCode.trim();
+        authToken = authToken.trim();
         try {
-            TenantVerificationResponseVO result = tenantOnboardingService.verifyEmailToken(authToken);
+            TenantVerificationResponseVO verification = tenantOnboardingService.verifyEmailToken(tenantCode, authToken);
+            if (verification == null) {
+                Map<String, Object> error = new HashMap<String, Object>();
+                error.put("statusCode", "400");
+                error.put("errorCode", "INVALID_AUTH_TOKEN");
+                error.put("errorMessage", "유효하지 않은 인증 토큰입니다.");
+                return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+            }
 
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "200");
-            response.put("message", "이메일 인증이 완료되었습니다");
-            response.put("data", result);
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("tenantCode", tenantCode);
+            result.put("verification", verification);
+            result.put("message", "이메일 인증이 완료되었습니다");
 
-            return ResponseEntity.ok(response);
+            return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
 
         } catch (IllegalArgumentException e) {
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "400");
-            response.put("message", e.getMessage());
-            response.put("data", null);
-
-            return ResponseEntity.badRequest().body(response);
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            String message = e.getMessage();
+            if (hasText(message) && message.contains("일치하지")) {
+                error.put("errorCode", "TENANT_MISMATCH");
+            } else {
+                error.put("errorCode", "INVALID_AUTH_TOKEN");
+            }
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
 
         } catch (IllegalStateException e) {
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "410");
-            response.put("message", e.getMessage());
-            response.put("data", null);
-
-            return ResponseEntity.status(HttpStatus.GONE).body(response);
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "410");
+            error.put("errorCode", "AUTH_TOKEN_EXPIRED");
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
 
         } catch (Exception e) {
             log.error("이메일 인증 중 오류 발생", e);
 
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "500");
-            response.put("message", "서버 오류가 발생했습니다");
-            response.put("data", null);
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "500");
+            error.put("errorCode", "INTERNAL_SERVER_ERROR");
+            error.put("errorMessage", "서버 오류가 발생했습니다");
+            return resultVoHelper.buildFromMap(error, ResponseCode.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-            return ResponseEntity.internalServerError().body(response);
+    /**
+     * 이메일 인증 토큰 검증 API (토큰 단독)
+     *
+     * @param body 인증 토큰 요청 바디
+     * @return 처리 결과 응답
+     */
+    @PostMapping("/onboarding/verifications")
+    @Operation(summary = "이메일 인증(토큰 단독)",
+            description = "인증 토큰만으로 이메일 검증")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "이메일 인증 성공"),
+            @ApiResponse(responseCode = "400", description = "토큰 누락 또는 미존재"),
+            @ApiResponse(responseCode = "410", description = "토큰 만료 또는 이미 사용"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    public ResultVO verifyEmailTokenByTokenOnly(@RequestBody(required = false) Map<String, String> body) {
+        String authToken = body == null ? null : body.get("authToken");
+        if (!hasText(authToken)) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            error.put("errorCode", "INVALID_AUTH_TOKEN");
+            error.put("errorMessage", "authToken은 필수입니다.");
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+        }
+
+        authToken = authToken.trim();
+        try {
+            TenantVerificationResponseVO verification = tenantOnboardingService.verifyEmailToken(authToken);
+            if (verification == null) {
+                Map<String, Object> error = new HashMap<String, Object>();
+                error.put("statusCode", "400");
+                error.put("errorCode", "INVALID_AUTH_TOKEN");
+                error.put("errorMessage", "유효하지 않은 인증 토큰입니다.");
+                return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+            }
+
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("tenantCode", verification.getTenantCode());
+            result.put("verification", verification);
+            result.put("message", "이메일 인증이 완료되었습니다");
+            return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
+
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            error.put("errorCode", "INVALID_AUTH_TOKEN");
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+
+        } catch (IllegalStateException e) {
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "410");
+            error.put("errorCode", "AUTH_TOKEN_EXPIRED");
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+
+        } catch (Exception e) {
+            log.error("이메일 인증(토큰 단독) 중 오류 발생", e);
+
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "500");
+            error.put("errorCode", "INTERNAL_SERVER_ERROR");
+            error.put("errorMessage", "서버 오류가 발생했습니다");
+            return resultVoHelper.buildFromMap(error, ResponseCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -236,7 +280,7 @@ public class TenantOnboardingController {
      * @param requestVO 온보딩 완료 요청 바디
      * @return 처리 결과 응답
      */
-    @PostMapping("/complete")
+    @PostMapping("/{tenantCode}/onboarding/completions")
     @Operation(summary = "온보딩 완료",
             description = "비밀번호, 전화번호 설정 및 활성화")
     @ApiResponses(value = {
@@ -245,72 +289,83 @@ public class TenantOnboardingController {
             @ApiResponse(responseCode = "410", description = "토큰 유효하지 않음"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public ResponseEntity<?> completeOnboarding(@RequestBody TenantOnboardingCompleteRequestVO requestVO) {
+    public ResultVO completeOnboarding(
+            @PathVariable String tenantCode,
+            @RequestBody(required = false) TenantOnboardingCompleteRequestVO requestVO) {
         try {
-            if (requestVO == null || requestVO.getTenantCode() == null
-                    || requestVO.getAuthToken() == null || requestVO.getPassword() == null) {
-                Map<String, Object> response = new HashMap<String, Object>();
-                response.put("code", "400");
-                response.put("message", "필수 항목이 누락되었습니다");
-                response.put("data", null);
-
-                return ResponseEntity.badRequest().body(response);
+            if (!hasText(tenantCode)) {
+                Map<String, Object> error = new HashMap<String, Object>();
+                error.put("statusCode", "400");
+                error.put("errorCode", "INVALID_TENANT_CODE");
+                error.put("errorMessage", "tenantCode는 필수입니다.");
+                return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
             }
+
+            if (requestVO == null
+                    || !hasText(requestVO.getAuthToken()) || !hasText(requestVO.getPassword())) {
+                Map<String, Object> error = new HashMap<String, Object>();
+                error.put("statusCode", "400");
+                error.put("errorCode", "MISSING_REQUIRED_FIELDS");
+                error.put("errorMessage", "필수 항목이 누락되었습니다");
+                return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+            }
+
+            tenantCode = tenantCode.trim();
+            requestVO.setAuthToken(requestVO.getAuthToken().trim());
+            requestVO.setPassword(requestVO.getPassword().trim());
+            requestVO.setTenantCode(tenantCode);
 
             tenantOnboardingService.completeOnboarding(requestVO);
 
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "200");
-            response.put("message", "온보딩이 완료되었습니다");
-            response.put("data", null);
+            Map<String, Object> result = new HashMap<String, Object>();
+            result.put("tenantCode", tenantCode);
+            result.put("completed", true);
+            result.put("message", "온보딩이 완료되었습니다");
 
-            return ResponseEntity.ok(response);
+            return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
 
         } catch (IllegalArgumentException e) {
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "400");
-            response.put("message", e.getMessage());
-            response.put("data", null);
-
-            return ResponseEntity.badRequest().body(response);
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "400");
+            error.put("errorCode", "INVALID_REQUEST");
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
 
         } catch (IllegalStateException e) {
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "410");
-            response.put("message", e.getMessage());
-            response.put("data", null);
-
-            return ResponseEntity.status(HttpStatus.GONE).body(response);
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "410");
+            error.put("errorCode", "INVALID_ONBOARDING_STATE");
+            error.put("errorMessage", e.getMessage());
+            return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
 
         } catch (Exception e) {
             log.error("온보딩 완료 중 오류 발생", e);
 
-            Map<String, Object> response = new HashMap<String, Object>();
-            response.put("code", "500");
-            response.put("message", "서버 오류가 발생했습니다");
-            response.put("data", null);
-
-            return ResponseEntity.internalServerError().body(response);
+            Map<String, Object> error = new HashMap<String, Object>();
+            error.put("statusCode", "500");
+            error.put("errorCode", "INTERNAL_SERVER_ERROR");
+            error.put("errorMessage", "서버 오류가 발생했습니다");
+            return resultVoHelper.buildFromMap(error, ResponseCode.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private ResponseEntity<Map<String, Object>> buildMailConfigErrorResponse(String message) {
-        Map<String, Object> response = new HashMap<String, Object>();
-        response.put("code", "503");
-        response.put("errorCode", "MAIL_CONFIG_ERROR");
-        response.put("message", message);
-        response.put("data", null);
-
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+    private ResultVO buildMailConfigErrorResponse(String message) {
+        Map<String, Object> error = new HashMap<String, Object>();
+        error.put("statusCode", "503");
+        error.put("errorCode", "MAIL_CONFIG_ERROR");
+        error.put("errorMessage", message);
+        return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
     }
 
-    private ResponseEntity<Map<String, Object>> buildMailAuthErrorResponse(String message) {
-        Map<String, Object> response = new HashMap<String, Object>();
-        response.put("code", "502");
-        response.put("errorCode", "MAIL_AUTH_ERROR");
-        response.put("message", message);
-        response.put("data", null);
+    private ResultVO buildMailAuthErrorResponse(String message) {
+        Map<String, Object> error = new HashMap<String, Object>();
+        error.put("statusCode", "502");
+        error.put("errorCode", "MAIL_AUTH_ERROR");
+        error.put("errorMessage", message);
+        return resultVoHelper.buildFromMap(error, ResponseCode.BUSINESS_ERROR);
+    }
 
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

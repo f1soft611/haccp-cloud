@@ -333,6 +333,34 @@
         ON CONFLICT (role_id, menu_id, permission_id) DO NOTHING
     </insert>
 
+    <!-- 메뉴 코드로 메뉴 ID 조회 -->
+    <select id="AuthorityDAO.selectMenuIdByCode" parameterType="string" resultType="long">
+        SELECT m.menu_id
+        FROM tb_menu m
+        WHERE m.menu_code = #{value}
+        LIMIT 1
+    </select>
+
+    <!-- 테넌트 권한 유형 생성 또는 갱신 -->
+    <insert id="AuthorityDAO.upsertPermissionType" parameterType="map">
+        INSERT INTO tb_permission (
+            tenant_id,
+            permission_code,
+            permission_nm,
+            use_at,
+            created_at
+        ) VALUES (
+            #{tenantId},
+            #{permissionCode},
+            #{permissionNm},
+            'Y',
+            now()
+        )
+        ON CONFLICT (tenant_id, permission_code) DO UPDATE
+        SET permission_nm = EXCLUDED.permission_nm,
+            use_at = 'Y'
+    </insert>
+
     <!-- 권한코드 기준 권한-메뉴 권한 삭제 -->
     <delete id="AuthorityDAO.deleteRoleMenuPermissionsByRoleCode" parameterType="map">
         DELETE FROM tb_role_menu_permission

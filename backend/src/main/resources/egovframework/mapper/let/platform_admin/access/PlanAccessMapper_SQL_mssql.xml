@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PlanAccessDAO">
+
+    <!-- 플랜 스키마 필수 테이블 존재 건수 조회 -->
+    <select id="PlanAccessDAO.selectPlanSchemaTableCount" resultType="int">
+        SELECT COUNT(DISTINCT table_name)
+        FROM information_schema.tables
+        WHERE table_schema = 'dbo'
+          AND table_name IN ('tb_plan', 'tb_plan_feature', 'tb_tenant_subscription')
+    </select>
+
+    <!-- 테넌트 구독 기준 기능 활성 여부 조회 -->
+    <select id="PlanAccessDAO.selectLatestFeatureEnabledAt" parameterType="map" resultType="string">
+        SELECT TOP 1 pf.enabled_at
+        FROM tb_tenant_subscription s
+            JOIN tb_plan_feature pf ON pf.plan_id = s.plan_id
+        WHERE s.tenant_id = #{tenantId}
+          AND s.subscription_status = #{subscriptionStatus}
+          AND s.starts_at &lt;= GETDATE()
+          AND (s.ends_at IS NULL OR s.ends_at &gt; GETDATE())
+          AND pf.feature_code = #{featureCode}
+        ORDER BY s.starts_at DESC
+    </select>
+
+    <!-- 테넌트 구독 기준 기능 제한값 조회 -->
+    <select id="PlanAccessDAO.selectLatestFeatureLimitValue" parameterType="map" resultType="long">
+        SELECT TOP 1 pf.limit_value
+        FROM tb_tenant_subscription s
+            JOIN tb_plan_feature pf ON pf.plan_id = s.plan_id
+        WHERE s.tenant_id = #{tenantId}
+          AND s.subscription_status = #{subscriptionStatus}
+          AND s.starts_at &lt;= GETDATE()
+          AND (s.ends_at IS NULL OR s.ends_at &gt; GETDATE())
+          AND pf.feature_code = #{featureCode}
+          AND pf.feature_type = #{featureType}
+          AND pf.enabled_at = #{enabledAt}
+        ORDER BY s.starts_at DESC
+    </select>
+
+    <!-- 테넌트 활성 플랜 코드 조회 -->
+    <select id="PlanAccessDAO.selectActivePlanCode" parameterType="map" resultType="string">
+        SELECT TOP 1 p.plan_code
+        FROM tb_tenant_subscription s
+            JOIN tb_plan p ON p.plan_id = s.plan_id
+        WHERE s.tenant_id = #{tenantId}
+          AND s.subscription_status = #{subscriptionStatus}
+          AND s.starts_at &lt;= GETDATE()
+          AND (s.ends_at IS NULL OR s.ends_at &gt; GETDATE())
+        ORDER BY s.starts_at DESC
+    </select>
+
+    <!-- 테넌트 코드 기준 테넌트 ID 조회 -->
+    <select id="PlanAccessDAO.selectTenantIdByTenantCode" parameterType="string" resultType="long">
+        SELECT TOP 1 tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+    </select>
+
+    <!-- 테넌트별 활성 기능 목록 조회 -->
+    <select id="PlanAccessDAO.selectFeatureEnabledListByTenantId" parameterType="map" resultType="egovframework.let.platform_admin.access.domain.model.PlanFeatureStatusVO">
+        SELECT pf.feature_code AS featureCode,
+               pf.enabled_at AS enabledAt
+        FROM tb_tenant_subscription s
+            JOIN tb_plan_feature pf ON pf.plan_id = s.plan_id
+        WHERE s.tenant_id = #{tenantId}
+          AND s.subscription_status = #{subscriptionStatus}
+          AND s.starts_at &lt;= GETDATE()
+          AND (s.ends_at IS NULL OR s.ends_at &gt; GETDATE())
+        ORDER BY pf.feature_code
+    </select>
+
+    <!-- 플랜 목록/기능수/메뉴수 조회 -->
+    <select id="PlanAccessDAO.selectPlanList" resultType="egovframework.let.platform_admin.access.domain.model.PlanSummaryVO">
+        SELECT p.plan_code AS planCode,
+               p.plan_nm AS planName,
+               p.plan_desc AS planDesc,
+               p.use_at AS useAt,
+               COUNT(DISTINCT pf.plan_feature_id) AS featureCount,
+               COUNT(DISTINCT pm.plan_menu_id) AS menuCount
+        FROM tb_plan p
+            LEFT JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id
+            LEFT JOIN tb_plan_menu pm ON pm.plan_id = p.plan_id AND pm.use_at = 'Y'
+        GROUP BY p.plan_code, p.plan_nm, p.plan_desc, p.use_at
+        ORDER BY p.plan_code
+    </select>
+
+    <!-- 플랜 코드 기준 활성 기능 목록 조회 -->
+    <select id="PlanAccessDAO.selectFeatureEnabledListByPlanCode" parameterType="string" resultType="egovframework.let.platform_admin.access.domain.model.PlanFeatureStatusVO">
+        SELECT pf.feature_code AS featureCode,
+               pf.enabled_at AS enabledAt
+        FROM tb_plan p
+            JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id
+        WHERE p.plan_code = #{value}
+        ORDER BY pf.feature_code
+    </select>
+
+    <!-- 플랜 코드 기준 기능 상세 목록 조회 -->
+    <select id="PlanAccessDAO.selectPlanFeatureItems" parameterType="string" resultType="egovframework.let.platform_admin.access.domain.model.PlanFeatureItemVO">
+        SELECT pf.feature_code AS featureCode,
+               pf.feature_nm AS featureName,
+               pf.feature_type AS featureType,
+               pf.enabled_at AS enabledAt,
+               pf.limit_value AS limitValue
+        FROM tb_plan p
+            JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id
+        WHERE p.plan_code = #{value}
+        ORDER BY pf.feature_code
+    </select>
+
+    <!-- 플랜 코드 기준 메뉴 코드 목록 조회 -->
+    <select id="PlanAccessDAO.selectPlanMenuCodes" parameterType="string" resultType="string">
+        SELECT pm.menu_code
+        FROM tb_plan_menu pm
+            JOIN tb_plan p ON p.plan_id = pm.plan_id
+        WHERE p.plan_code = #{value}
+          AND pm.use_at = 'Y'
+        ORDER BY pm.menu_code
+    </select>
+
+    <!-- 플랜 코드 기준 메뉴 매핑 삭제 -->
+    <delete id="PlanAccessDAO.deletePlanMenusByPlanCode" parameterType="string">
+        DELETE pm
+        FROM tb_plan_menu pm
+            INNER JOIN tb_plan p ON p.plan_id = pm.plan_id
+        WHERE p.plan_code = #{value}
+    </delete>
+
+    <!-- 플랜-메뉴 매핑 등록 -->
+    <insert id="PlanAccessDAO.upsertPlanMenu" parameterType="map">
+        INSERT INTO tb_plan_menu (plan_id, menu_code, use_at, created_at, updated_at)
+        SELECT p.plan_id,
+               #{menuCode},
+               'Y',
+               GETDATE(),
+               GETDATE()
+        FROM tb_plan p
+        WHERE p.plan_code = #{planCode}
+    </insert>
+
+    <!-- 테넌트 활성 사용자 수 조회 -->
+    <select id="PlanAccessDAO.selectActiveUserCountByTenantId" parameterType="long" resultType="long">
+        SELECT COUNT(1)
+        FROM tb_user
+        WHERE tenant_id = #{value}
+          AND use_at = 'Y'
+    </select>
+</mapper>

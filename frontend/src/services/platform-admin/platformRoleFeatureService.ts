@@ -117,7 +117,7 @@ export async function getPlatformRoleFeatures(
           limitValue?: unknown;
           featureValue?: unknown;
         }>;
-  }>('/platform-admin/role-features', {
+  }>('/v1/platform-admin/role-features', {
     params: {
       roleCode: normalizedRoleCode,
       tenantCode: tenantCode?.trim().toUpperCase(),
@@ -158,7 +158,7 @@ export async function savePlatformRoleFeatures(payload: {
           featureValue?: unknown;
         }>;
   }>(
-    `/platform-admin/role-features/${roleCode}`,
+    `/v1/platform-admin/role-features/${roleCode}`,
     {
       features,
     },

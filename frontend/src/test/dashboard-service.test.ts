@@ -38,7 +38,7 @@ describe('dashboardService', () => {
 
     expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/platform-admin/dashboard/kpis',
+      '/v1/platform-admin/dashboard/kpis',
     );
     expect(result.activeTenants).toBe(12);
   });
@@ -73,7 +73,7 @@ describe('dashboardService', () => {
 
     expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/platform-admin/dashboard/tenant-code-issuance',
+      '/v1/platform-admin/dashboard/tenant-code-issuance',
     );
   });
 
@@ -90,7 +90,7 @@ describe('dashboardService', () => {
 
     expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/platform-admin/dashboard/tenant-code-issuance',
+      '/v1/platform-admin/dashboard/tenant-code-issuance',
     );
     expect(result.totalIssued).toBe(101);
   });
@@ -106,7 +106,7 @@ describe('dashboardService', () => {
 
     expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/platform-admin/dashboard/tenants',
+      '/v1/platform-admin/dashboard/tenants',
     );
   });
 
@@ -127,7 +127,7 @@ describe('dashboardService', () => {
 
     expect(apiClient.get).toHaveBeenCalledTimes(1);
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/platform-admin/dashboard/ccp-documents',
+      '/v1/platform-admin/dashboard/ccp-documents',
     );
   });
 
@@ -135,25 +135,25 @@ describe('dashboardService', () => {
     [
       'KPI',
       () => getPlatformAdminDashboardKpis(),
-      '/platform-admin/dashboard/kpis',
+      '/v1/platform-admin/dashboard/kpis',
       { hasError: true, activeTenants: 0 },
     ],
     [
       'tenant code issuance summary',
       () => listPlatformAdminTenantCodeIssuanceSummary(),
-      '/platform-admin/dashboard/tenant-code-issuance',
+      '/v1/platform-admin/dashboard/tenant-code-issuance',
       { hasError: true, totalIssued: 0 },
     ],
     [
       'tenant list',
       () => listPlatformAdminTenants(),
-      '/platform-admin/dashboard/tenants',
+      '/v1/platform-admin/dashboard/tenants',
       { hasError: true, items: [] },
     ],
     [
       'CCP documents',
       () => listPlatformAdminCcpDocuments(),
-      '/platform-admin/dashboard/ccp-documents',
+      '/v1/platform-admin/dashboard/ccp-documents',
       { hasError: true, items: [] },
     ],
   ])(

@@ -138,7 +138,7 @@ export async function listUsers(tenantCode?: string): Promise<UserItem[]> {
       role?: string;
       active?: boolean;
     }>
-  >('/users', {
+  >('/v1/users', {
     headers,
   });
   return (data ?? []).map(normalizeUserItem);
@@ -154,7 +154,7 @@ export async function listUsersPaged(
   const { data } = await apiClient.get<{
     items?: Array<Parameters<typeof normalizeUserItem>[0]>;
     totalCount?: number;
-  }>('/users/paged', {
+  }>('/v1/users/paged', {
     headers,
     params: {
       pageIndex: params.pageIndex,
@@ -178,7 +178,7 @@ export async function createUser(
 ): Promise<UserItem> {
   const roleCode = normalizeRoleCode({ roleCode: payload.roleCode });
 
-  const { data } = await apiClient.post('/users', {
+  const { data } = await apiClient.post('/v1/users', {
     name: payload.name,
     email: payload.email,
     department: payload.department,
@@ -193,7 +193,7 @@ export async function updateUser(
 ): Promise<UserItem> {
   const roleCode = normalizeRoleCode({ roleCode: payload.roleCode });
 
-  const { data } = await apiClient.put(`/users/${payload.id}`, {
+  const { data } = await apiClient.put(`/v1/users/${payload.id}`, {
     name: payload.name,
     email: payload.email,
     department: payload.department,
@@ -213,7 +213,7 @@ export async function updateUserStatus(payload: {
     : undefined;
 
   const { data } = await apiClient.patch(
-    `/users/${payload.id}`,
+    `/v1/users/${payload.id}`,
     { active: payload.active },
     { headers },
   );

@@ -48,7 +48,7 @@ class AuthorityApiControllerUserMenusTest {
             new UsernamePasswordAuthenticationToken(loginVO, null, new ArrayList<>())
         );
 
-        mockMvc.perform(get("/api/platform-admin/user-menus/me"))
+        mockMvc.perform(get("/api/v1/platform-admin/user-menus/me"))
             .andExpect(status().isOk());
 
         verify(authorityService).listUserMenus("tenant.admin", 10L);
@@ -69,7 +69,7 @@ class AuthorityApiControllerUserMenusTest {
             new UsernamePasswordAuthenticationToken(loginVO, null, new ArrayList<>())
         );
 
-        mockMvc.perform(get("/api/platform-admin/user-menus/me"))
+        mockMvc.perform(get("/api/v1/platform-admin/user-menus/me"))
             .andExpect(status().isUnauthorized());
     }
 }

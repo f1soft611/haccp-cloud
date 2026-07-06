@@ -21,9 +21,19 @@ import egovframework.let.uss.auth.service.MenuInfoVO;
 
 /**
  * 플랫폼 메뉴 서비스 구현체
- * @author AI Assistant
+ * @author SHMT-MES
  * @since 2026.06.22
  * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.06.22 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 @Service("platformMenuService")
 public class PlatformMenuServiceImpl implements PlatformMenuService {
@@ -118,6 +128,17 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
     }
 
     @Override
+    public MenuInfoVO patchMenu(Long menuId, MenuInfoVO menuInfoVO) throws Exception {
+        MenuInfoVO before = getMenuDetail(menuId);
+        if (before == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "수정할 메뉴가 존재하지 않습니다.");
+        }
+
+        MenuInfoVO merged = mergePatch(before, menuInfoVO);
+        return updateMenu(menuId, merged);
+    }
+
+    @Override
     public void deleteMenu(Long menuId) throws Exception {
         MenuInfoVO existing = getMenuDetail(menuId);
         if (existing == null) {
@@ -164,6 +185,49 @@ public class PlatformMenuServiceImpl implements PlatformMenuService {
 
     private String generateMenuCode() {
         return "MENU_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+    }
+
+    private MenuInfoVO mergePatch(MenuInfoVO before, MenuInfoVO patch) {
+        MenuInfoVO merged = new MenuInfoVO();
+
+        merged.setMenuId(before.getMenuId());
+        merged.setMenuCode(before.getMenuCode());
+        merged.setMenuNm(before.getMenuNm());
+        merged.setMenuDc(before.getMenuDc());
+        merged.setParentMenuId(before.getParentMenuId());
+        merged.setMenuOrdr(before.getMenuOrdr());
+        merged.setMenuUrl(before.getMenuUrl());
+        merged.setIconNm(before.getIconNm());
+        merged.setUseAt(before.getUseAt());
+        merged.setFrstRegisterId(before.getFrstRegisterId());
+        merged.setLastUpdusrId(before.getLastUpdusrId());
+
+        if (patch.getParentMenuId() != null) {
+            merged.setParentMenuId(patch.getParentMenuId());
+        }
+        if (patch.isMenuOrdrSpecified()) {
+            merged.setMenuOrdr(patch.getMenuOrdr());
+        }
+        if (hasText(patch.getMenuNm())) {
+            merged.setMenuNm(patch.getMenuNm().trim());
+        }
+        if (hasText(patch.getMenuDc())) {
+            merged.setMenuDc(patch.getMenuDc().trim());
+        }
+        if (hasText(patch.getMenuUrl())) {
+            merged.setMenuUrl(patch.getMenuUrl().trim());
+        }
+        if (hasText(patch.getIconNm())) {
+            merged.setIconNm(patch.getIconNm().trim());
+        }
+        if (hasText(patch.getUseAt())) {
+            merged.setUseAt(patch.getUseAt().trim().toUpperCase());
+        }
+        if (hasText(patch.getLastUpdusrId())) {
+            merged.setLastUpdusrId(patch.getLastUpdusrId().trim());
+        }
+
+        return merged;
     }
 
     private boolean hasText(String value) {

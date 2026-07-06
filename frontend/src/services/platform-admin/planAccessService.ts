@@ -40,6 +40,51 @@ type RawCurrentPlanAccess = {
   features?: Record<string, unknown>;
 };
 
+type RawPlanSummary = Partial<PlanSummary> & {
+  planCd?: string;
+  planNm?: string;
+  planDesc?: string;
+  planDc?: string;
+  plan_desc?: string;
+  plan_dc?: string;
+  useAt?: 'Y' | 'N';
+  use_at?: 'Y' | 'N';
+  featureCount?: number;
+  feature_count?: number;
+  menuCount?: number;
+  menu_count?: number;
+};
+
+type RawPlanFeaturesResponse = {
+  planCode?: string;
+  features?:
+    | Record<string, unknown>
+    | Array<{
+        featureCode?: unknown;
+        featureName?: unknown;
+        featureType?: unknown;
+        enabled?: unknown;
+        useAt?: unknown;
+        limitValue?: unknown;
+        featureValue?: unknown;
+      }>;
+};
+
+type RawPlanMenusResponse = {
+  planCode?: string;
+  menuCodes?: unknown[];
+};
+
+type ResultEnvelope<T> = {
+  result?: {
+    data?: T;
+  };
+};
+
+function unwrapResultData<T>(payload: T | ResultEnvelope<T>): T {
+  return ((payload as ResultEnvelope<T>)?.result?.data ?? payload) as T;
+}
+
 function normalizeFeatures(
   features?: Record<string, unknown>,
 ): FeatureAccessMap {
@@ -210,40 +255,29 @@ export async function getCurrentPlanAccess(
     headers['x-tenant-code'] = normalizedTenantCode;
   }
 
-  const { data } = await apiClient.get<RawCurrentPlanAccess>(
-    '/platform-admin/plan-access/me',
+  const { data } = await apiClient.get<
+    RawCurrentPlanAccess | ResultEnvelope<RawCurrentPlanAccess>
+  >(
+    '/v1/platform-admin/plan-access/me',
     Object.keys(headers).length > 0 ? { headers } : undefined,
   );
+  const normalized = unwrapResultData(data);
 
   return {
-    tenantId: data.tenantId,
-    tenantCode: data.tenantCode,
-    planCode: data.planCode,
-    features: normalizeFeatures(data.features),
+    tenantId: normalized.tenantId,
+    tenantCode: normalized.tenantCode,
+    planCode: normalized.planCode,
+    features: normalizeFeatures(normalized.features),
   };
 }
 
 export async function listPlanSummaries(): Promise<PlanSummary[]> {
   const { data } = await apiClient.get<
-    Array<
-      Partial<PlanSummary> & {
-        planCd?: string;
-        planNm?: string;
-        planDesc?: string;
-        planDc?: string;
-        plan_desc?: string;
-        plan_dc?: string;
-        useAt?: 'Y' | 'N';
-        use_at?: 'Y' | 'N';
-        featureCount?: number;
-        feature_count?: number;
-        menuCount?: number;
-        menu_count?: number;
-      }
-    >
-  >('/platform-admin/plan-access/plans');
+    RawPlanSummary[] | ResultEnvelope<RawPlanSummary[]>
+  >('/v1/platform-admin/plan-access/plans');
+  const normalized = unwrapResultData(data) ?? [];
 
-  return (data ?? []).map((item) => ({
+  return normalized.map((item) => ({
     planCode: String(item.planCode ?? item.planCd ?? '').trim(),
     planName: String(item.planName ?? item.planNm ?? '').trim(),
     planDesc: String(
@@ -258,22 +292,12 @@ export async function listPlanSummaries(): Promise<PlanSummary[]> {
 export async function getPlanFeatures(
   planCode: string,
 ): Promise<PlanFeatureItem[]> {
-  const { data } = await apiClient.get<{
-    planCode?: string;
-    features?:
-      | Record<string, unknown>
-      | Array<{
-          featureCode?: unknown;
-          featureName?: unknown;
-          featureType?: unknown;
-          enabled?: unknown;
-          useAt?: unknown;
-          limitValue?: unknown;
-          featureValue?: unknown;
-        }>;
-  }>(`/platform-admin/plan-access/plans/${planCode}/features`);
+  const { data } = await apiClient.get<
+    RawPlanFeaturesResponse | ResultEnvelope<RawPlanFeaturesResponse>
+  >(`/v1/platform-admin/plan-access/plans/${planCode}/features`);
+  const normalized = unwrapResultData(data);
 
-  return normalizeFeatureItems(data);
+  return normalizeFeatureItems(normalized);
 }
 
 export async function savePlanFeatures(payload: {
@@ -292,35 +316,24 @@ export async function savePlanFeatures(payload: {
       limitValue: item.featureType === 'LIMIT' ? item.limitValue : null,
     }));
 
-  const { data } = await apiClient.put<{
-    planCode?: string;
-    features?:
-      | Record<string, unknown>
-      | Array<{
-          featureCode?: unknown;
-          featureName?: unknown;
-          featureType?: unknown;
-          enabled?: unknown;
-          useAt?: unknown;
-          limitValue?: unknown;
-          featureValue?: unknown;
-        }>;
-  }>(`/platform-admin/plan-access/plans/${normalizedPlanCode}/features`, {
+  const { data } = await apiClient.put<
+    RawPlanFeaturesResponse | ResultEnvelope<RawPlanFeaturesResponse>
+  >(`/v1/platform-admin/plan-access/plans/${normalizedPlanCode}/features`, {
     features: normalizedFeatures,
   });
 
-  return normalizeFeatureItems(data);
+  return normalizeFeatureItems(unwrapResultData(data));
 }
 
 export async function getPlanMenuCodes(planCode: string): Promise<string[]> {
-  const { data } = await apiClient.get<{
-    planCode?: string;
-    menuCodes?: unknown[];
-  }>(`/platform-admin/plan-access/plans/${planCode}/menus`);
+  const { data } = await apiClient.get<
+    RawPlanMenusResponse | ResultEnvelope<RawPlanMenusResponse>
+  >(`/v1/platform-admin/plan-access/plans/${planCode}/menus`);
+  const normalized = unwrapResultData(data);
 
   return Array.from(
     new Set(
-      (data.menuCodes ?? [])
+      (normalized.menuCodes ?? [])
         .map((value) => String(value ?? '').trim())
         .filter((value) => value.length > 0),
     ),
@@ -340,16 +353,16 @@ export async function savePlanMenuCodes(payload: {
     ),
   );
 
-  const { data } = await apiClient.put<{
-    planCode?: string;
-    menuCodes?: unknown[];
-  }>(`/platform-admin/plan-access/plans/${normalizedPlanCode}/menus`, {
+  const { data } = await apiClient.put<
+    RawPlanMenusResponse | ResultEnvelope<RawPlanMenusResponse>
+  >(`/v1/platform-admin/plan-access/plans/${normalizedPlanCode}/menus`, {
     menuCodes: normalizedMenuCodes,
   });
+  const normalized = unwrapResultData(data);
 
   return Array.from(
     new Set(
-      (data.menuCodes ?? [])
+      (normalized.menuCodes ?? [])
         .map((value) => String(value ?? '').trim())
         .filter((value) => value.length > 0),
     ),
@@ -360,16 +373,16 @@ export async function getTenantPlanMenuCodes(
   tenantCode: string,
 ): Promise<string[]> {
   const normalizedTenantCode = tenantCode.trim().toUpperCase();
-  const { data } = await apiClient.get<{
-    tenantCode?: string;
-    menuCodes?: unknown[];
-  }>('/platform-admin/plan-access/tenant-plan-menus', {
+  const { data } = await apiClient.get<
+    RawPlanMenusResponse | ResultEnvelope<RawPlanMenusResponse>
+  >('/v1/platform-admin/plan-access/tenant-plan-menus', {
     params: { tenantCode: normalizedTenantCode },
   });
+  const normalized = unwrapResultData(data);
 
   return Array.from(
     new Set(
-      (data.menuCodes ?? [])
+      (normalized.menuCodes ?? [])
         .map((value) => String(value ?? '').trim())
         .filter((value) => value.length > 0),
     ),

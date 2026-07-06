@@ -281,6 +281,33 @@
         )
     </insert>
 
+    <!-- 메뉴 코드로 메뉴 ID 조회 -->
+    <select id="AuthorityDAO.selectMenuIdByCode" parameterType="string" resultType="long">
+        SELECT TOP 1 m.menu_id
+        FROM tb_menu m
+        WHERE m.menu_code = #{value}
+        ORDER BY m.menu_id
+    </select>
+
+    <!-- 테넌트 권한 유형 생성 또는 갱신 -->
+    <insert id="AuthorityDAO.upsertPermissionType" parameterType="map">
+        MERGE tb_permission AS target
+        USING (
+            SELECT
+                #{tenantId} AS tenant_id,
+                #{permissionCode} AS permission_code,
+                #{permissionNm} AS permission_nm
+        ) AS source
+        ON (target.tenant_id = source.tenant_id AND target.permission_code = source.permission_code)
+        WHEN MATCHED THEN
+            UPDATE SET permission_nm = source.permission_nm,
+                       use_at = 'Y',
+                       updated_at = GETDATE()
+        WHEN NOT MATCHED THEN
+            INSERT (tenant_id, permission_code, permission_nm, use_at, created_at)
+            VALUES (source.tenant_id, source.permission_code, source.permission_nm, 'Y', GETDATE());
+    </insert>
+
     <!-- 역할코드 기준 권한-메뉴 권한 삭제 -->
     <delete id="AuthorityDAO.deleteRoleMenuPermissionsByRoleCode" parameterType="map">
         DELETE FROM tb_role_menu_permission

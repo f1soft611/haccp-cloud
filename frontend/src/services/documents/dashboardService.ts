@@ -1,5 +1,15 @@
 import { apiClient } from '../api/apiClient';
 
+type ResultEnvelope<T> = {
+  result?: {
+    data?: T;
+  };
+};
+
+function unwrapResultData<T>(payload: T | ResultEnvelope<T>): T {
+  return ((payload as ResultEnvelope<T>)?.result?.data ?? payload) as T;
+}
+
 export type DashboardMetrics = {
   totalDocuments: number;
   draftTemplates: number;
@@ -74,15 +84,16 @@ export async function getDashboardMetrics(
 
 export async function getPlatformAdminDashboardKpis(): Promise<PlatformAdminDashboardKpis> {
   try {
-    const { data } = await apiClient.get<PlatformAdminDashboardKpis>(
-      '/platform-admin/dashboard/kpis',
-    );
+    const { data } = await apiClient.get<
+      PlatformAdminDashboardKpis | ResultEnvelope<PlatformAdminDashboardKpis>
+    >('/v1/platform-admin/dashboard/kpis');
+    const normalized = unwrapResultData(data);
     return {
-      activeTenants: data?.activeTenants ?? 0,
-      newTenantsLast7Days: data?.newTenantsLast7Days ?? 0,
-      ccpDocCompletionRate: data?.ccpDocCompletionRate ?? 0,
-      tenantsWithoutCcpDocs: data?.tenantsWithoutCcpDocs ?? 0,
-      hasError: data?.hasError,
+      activeTenants: normalized?.activeTenants ?? 0,
+      newTenantsLast7Days: normalized?.newTenantsLast7Days ?? 0,
+      ccpDocCompletionRate: normalized?.ccpDocCompletionRate ?? 0,
+      tenantsWithoutCcpDocs: normalized?.tenantsWithoutCcpDocs ?? 0,
+      hasError: normalized?.hasError,
     };
   } catch {
     return {
@@ -97,15 +108,16 @@ export async function getPlatformAdminDashboardKpis(): Promise<PlatformAdminDash
 
 export async function listPlatformAdminTenantCodeIssuanceSummary(): Promise<TenantCodeIssuanceSummary> {
   try {
-    const { data } = await apiClient.get<TenantCodeIssuanceSummary>(
-      '/platform-admin/dashboard/tenant-code-issuance',
-    );
+    const { data } = await apiClient.get<
+      TenantCodeIssuanceSummary | ResultEnvelope<TenantCodeIssuanceSummary>
+    >('/v1/platform-admin/dashboard/tenant-code-issuance');
+    const normalized = unwrapResultData(data);
     return {
-      totalIssued: data?.totalIssued ?? 0,
-      issuedThisMonth: data?.issuedThisMonth ?? 0,
-      issuedThisWeek: data?.issuedThisWeek ?? 0,
-      hasError: data?.hasError,
-      recentIssues: data?.recentIssues ?? [],
+      totalIssued: normalized?.totalIssued ?? 0,
+      issuedThisMonth: normalized?.issuedThisMonth ?? 0,
+      issuedThisWeek: normalized?.issuedThisWeek ?? 0,
+      hasError: normalized?.hasError,
+      recentIssues: normalized?.recentIssues ?? [],
     };
   } catch {
     return {
@@ -123,17 +135,18 @@ export const listPlatformAdminTenantCodeIssuance =
 
 export async function listPlatformAdminTenants(): Promise<PlatformAdminTenantList> {
   try {
-    const { data } = await apiClient.get<PlatformAdminTenantList>(
-      '/platform-admin/dashboard/tenants',
-    );
+    const { data } = await apiClient.get<
+      PlatformAdminTenantList | ResultEnvelope<PlatformAdminTenantList>
+    >('/v1/platform-admin/dashboard/tenants');
+    const normalized = unwrapResultData(data);
     return {
-      hasError: data?.hasError,
+      hasError: normalized?.hasError,
       summary: {
-        total: data?.summary?.total ?? 0,
-        active: data?.summary?.active ?? 0,
-        inactive: data?.summary?.inactive ?? 0,
+        total: normalized?.summary?.total ?? 0,
+        active: normalized?.summary?.active ?? 0,
+        inactive: normalized?.summary?.inactive ?? 0,
       },
-      items: data?.items ?? [],
+      items: normalized?.items ?? [],
     };
   } catch {
     return {
@@ -150,17 +163,18 @@ export async function listPlatformAdminTenants(): Promise<PlatformAdminTenantLis
 
 export async function listPlatformAdminCcpDocuments(): Promise<PlatformAdminCcpDocuments> {
   try {
-    const { data } = await apiClient.get<PlatformAdminCcpDocuments>(
-      '/platform-admin/dashboard/ccp-documents',
-    );
+    const { data } = await apiClient.get<
+      PlatformAdminCcpDocuments | ResultEnvelope<PlatformAdminCcpDocuments>
+    >('/v1/platform-admin/dashboard/ccp-documents');
+    const normalized = unwrapResultData(data);
     return {
-      hasError: data?.hasError,
+      hasError: normalized?.hasError,
       overall: {
-        completionRate: data?.overall?.completionRate ?? 0,
-        completedTenants: data?.overall?.completedTenants ?? 0,
-        totalTenants: data?.overall?.totalTenants ?? 0,
+        completionRate: normalized?.overall?.completionRate ?? 0,
+        completedTenants: normalized?.overall?.completedTenants ?? 0,
+        totalTenants: normalized?.overall?.totalTenants ?? 0,
       },
-      items: data?.items ?? [],
+      items: normalized?.items ?? [],
     };
   } catch {
     return {

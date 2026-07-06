@@ -29,14 +29,14 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 부서 관리 API 컨트롤러
- * - GET    /api/departments           목록 조회 (검색 파라미터: name, active)
- * - POST   /api/departments           부서 등록
- * - PUT    /api/departments/{id}      부서 수정
- * - DELETE /api/departments/{id}      부서 삭제
+ * - GET    /api/v1/departments           목록 조회 (검색 파라미터: name, active)
+ * - POST   /api/v1/departments           부서 등록
+ * - PUT    /api/v1/departments/{id}      부서 수정
+ * - DELETE /api/v1/departments/{id}      부서 삭제
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/departments")
+@RequestMapping("/api/v1/departments")
 public class DepartmentApiController {
 
     @Resource(name = "departmentService")

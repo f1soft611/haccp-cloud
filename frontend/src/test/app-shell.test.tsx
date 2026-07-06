@@ -347,7 +347,7 @@ describe('App shell', () => {
           },
         });
       }),
-      http.get('/api/platform-admin/user-menus/me', () => {
+      http.get('/api/v1/platform-admin/user-menus/me', () => {
         const menuList = [
           '/dashboard',
           '/platform/tenants',
@@ -361,7 +361,7 @@ describe('App shell', () => {
 
         return HttpResponse.json(menuList);
       }),
-      http.get('/api/platform-admin/plan-access/me', () => {
+      http.get('/api/v1/platform-admin/plan-access/me', () => {
         return HttpResponse.json({
           tenantId: 1,
           tenantCode: 'TENANT-A',
@@ -384,7 +384,7 @@ describe('App shell', () => {
       http.get('/api/documents', () => {
         return HttpResponse.json([]);
       }),
-      http.get('/api/platform-admin/dashboard/kpis', () => {
+      http.get('/api/v1/platform-admin/dashboard/kpis', () => {
         return HttpResponse.json({
           activeTenants: 5,
           newTenantsLast7Days: 1,
@@ -392,7 +392,7 @@ describe('App shell', () => {
           tenantsWithoutCcpDocs: 1,
         });
       }),
-      http.get('/api/platform-admin/dashboard/tenant-code-issuance', () => {
+      http.get('/api/v1/platform-admin/dashboard/tenant-code-issuance', () => {
         return HttpResponse.json({
           totalIssued: 5,
           issuedThisMonth: 2,
@@ -400,7 +400,7 @@ describe('App shell', () => {
           recentIssues: [],
         });
       }),
-      http.get('/api/platform-admin/dashboard/tenants', () => {
+      http.get('/api/v1/platform-admin/dashboard/tenants', () => {
         return HttpResponse.json({
           summary: {
             total: 5,
@@ -410,7 +410,7 @@ describe('App shell', () => {
           items: [],
         });
       }),
-      http.get('/api/platform-admin/dashboard/ccp-documents', () => {
+      http.get('/api/v1/platform-admin/dashboard/ccp-documents', () => {
         return HttpResponse.json({
           overall: {
             completionRate: 80,
@@ -421,7 +421,7 @@ describe('App shell', () => {
         });
       }),
       http.get(
-        '/api/platform-admin/user-menus/:authorityCode',
+        '/api/v1/platform-admin/user-menus/:authorityCode',
         ({ params }) => {
           const authorityCode = String(
             params.authorityCode ?? '',
@@ -447,7 +447,7 @@ describe('App shell', () => {
           return HttpResponse.json({ result: { menuList } });
         },
       ),
-      http.get('/platform-admin/user-menus/:authorityCode', ({ params }) => {
+      http.get('/v1/platform-admin/user-menus/:authorityCode', ({ params }) => {
         const authorityCode = String(params.authorityCode ?? '').toUpperCase();
 
         const menuPathsByAuthority: Record<string, string[]> = {

@@ -58,6 +58,7 @@
         )
     </insert>
 
+    <!-- 테넌트 온보딩 상태 갱신 -->
     <update id="TenantInfoDAO.updateOnboardingStatusByTenantCode" parameterType="map">
         UPDATE tb_tenant
         SET onboarding_status = #{onboardingStatus},
@@ -65,24 +66,65 @@
         WHERE tenant_code = #{tenantCode}
     </update>
 
+    <!-- 테넌트 코드 기준 테넌트 ID 조회 -->
     <select id="TenantInfoDAO.selectTenantIdByCode" parameterType="string" resultType="long">
         SELECT tenant_id
         FROM tb_tenant
         WHERE tenant_code = #{value}
     </select>
 
+    <!-- 테넌트 코드 기준 관리자 이메일 조회 -->
     <select id="TenantInfoDAO.selectAdminEmailByTenantCode" parameterType="string" resultType="string">
         SELECT admin_email
         FROM tb_tenant
         WHERE tenant_code = #{value}
     </select>
 
+    <!-- 테넌트 코드 기준 최신 로그인 계정 ID 조회 -->
     <select id="TenantInfoDAO.selectLatestLoginAccountIdByTenantCode" parameterType="string" resultType="long">
         SELECT MAX(la.login_id)
         FROM tb_login_account la
         JOIN tb_tenant t ON t.tenant_id = la.tenant_id
         WHERE t.tenant_code = #{value}
     </select>
+
+    <!-- 활성 구독 만료 처리 -->
+    <update id="TenantInfoDAO.expireActiveTenantSubscription" parameterType="long">
+        UPDATE tb_tenant_subscription
+        SET subscription_status = 'EXPIRED',
+            ends_at = ISNULL(ends_at, GETDATE()),
+            updated_at = GETDATE()
+        WHERE tenant_id = #{value}
+          AND subscription_status = 'ACTIVE'
+    </update>
+
+    <!-- 플랜 코드 기반 활성 구독 생성 -->
+    <insert id="TenantInfoDAO.insertActiveTenantSubscriptionByPlanCode" parameterType="map">
+        INSERT INTO tb_tenant_subscription (
+            tenant_id,
+            plan_id,
+            subscription_status,
+            starts_at,
+            ends_at,
+            auto_renew,
+            created_by,
+            created_at,
+            updated_at
+        )
+        SELECT
+            #{tenantId},
+            p.plan_id,
+            'ACTIVE',
+            GETDATE(),
+            NULL,
+            'Y',
+            NULL,
+            GETDATE(),
+            GETDATE()
+        FROM tb_plan p
+        WHERE p.plan_code = #{planCode}
+          AND p.use_at = 'Y'
+    </insert>
 
     <!-- 조건별 테넌트 건수 조회 -->
     <select id="TenantInfoDAO.selectTenantCount" parameterType="map" resultType="int">
@@ -167,6 +209,7 @@
         FETCH NEXT #{pageSize} ROWS ONLY
     </select>
 
+    <!-- 테넌트 코드 기준 대시보드 항목 조회 -->
     <select id="TenantInfoDAO.selectDashboardTenantItemByCode" parameterType="string" resultMap="platformTenantDashboardItemResultMap">
         SELECT TOP 1
             t.tenant_id,

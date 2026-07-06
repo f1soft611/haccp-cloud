@@ -13,7 +13,8 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   completeTenantOnboarding,
-  verifyTenantEmail,
+  getTenantByDomain,
+  verifyTenantEmailByToken,
 } from '../../../services/organization/tenantService';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 
@@ -37,6 +38,36 @@ function normalizeDomainInput(value: string): string {
 }
 
 function resolveVerificationErrorMessage(error: unknown): string {
+  const responseData = (
+    error as {
+      response?: {
+        data?: {
+          statusCode?: unknown;
+          errorCode?: unknown;
+          result?: {
+            statusCode?: unknown;
+            errorCode?: unknown;
+          };
+        };
+      };
+    }
+  )?.response?.data;
+
+  const payload = responseData?.result ?? responseData;
+
+  const statusCode = Number(payload?.statusCode ?? 0);
+  const errorCode = String(payload?.errorCode ?? '')
+    .trim()
+    .toUpperCase();
+
+  if (statusCode === 400 && errorCode === 'INVALID_AUTH_TOKEN') {
+    return '인증 링크가 유효하지 않습니다.';
+  }
+
+  if (statusCode === 410 && errorCode === 'AUTH_TOKEN_EXPIRED') {
+    return '인증 링크가 만료되었습니다. 관리자에게 다시 발송을 요청해주세요.';
+  }
+
   const rawMessage = extractApiErrorMessage(
     error,
     '이메일 인증에 실패했습니다.',
@@ -62,14 +93,46 @@ export function OnboardingVerifyPage() {
   const [loginDomainInput, setLoginDomainInput] = useState('');
   const [logoImage, setLogoImage] = useState<string | undefined>(undefined);
   const [validationMessage, setValidationMessage] = useState('');
+  const [tenantCodeFromDomain, setTenantCodeFromDomain] = useState('');
 
   const authToken = useMemo(
     () => searchParams.get('token')?.trim() ?? '',
     [searchParams],
   );
+  const domainParam = useMemo(
+    () => searchParams.get('domain')?.trim() ?? '',
+    [searchParams],
+  );
+
+  useEffect(() => {
+    if (!domainParam || tenantCodeFromDomain) {
+      return;
+    }
+
+    let disposed = false;
+
+    const loadTenantCode = async () => {
+      try {
+        const tenantInfo = await getTenantByDomain(domainParam);
+        if (!disposed) {
+          setTenantCodeFromDomain(tenantInfo?.tenantCode ?? '');
+        }
+      } catch {
+        if (!disposed) {
+          setTenantCodeFromDomain('');
+        }
+      }
+    };
+
+    void loadTenantCode();
+
+    return () => {
+      disposed = true;
+    };
+  }, [domainParam, tenantCodeFromDomain]);
 
   const verifyMutation = useMutation({
-    mutationFn: () => verifyTenantEmail(authToken),
+    mutationFn: () => verifyTenantEmailByToken(authToken),
   });
 
   const completeMutation = useMutation({

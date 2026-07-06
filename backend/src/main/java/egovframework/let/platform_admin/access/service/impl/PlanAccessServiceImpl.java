@@ -2,19 +2,40 @@ package egovframework.let.platform_admin.access.service.impl;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 
 import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import egovframework.let.platform_admin.access.domain.repository.PlanAccessDAO;
+import egovframework.let.platform_admin.access.domain.model.PlanFeatureItemVO;
+import egovframework.let.platform_admin.access.domain.model.PlanFeatureStatusVO;
+import egovframework.let.platform_admin.access.domain.model.PlanSummaryVO;
 import egovframework.let.platform_admin.access.service.PlanAccessService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 플랜 접근 제어 서비스 구현체
+ * @author SHMT-MES
+ * @since 2026.07.03
+ * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.07.03 SHMT-MES          최초 생성
+ *
+ * </pre>
+ */
 @Slf4j
 @Service("planAccessService")
 @RequiredArgsConstructor
@@ -24,7 +45,7 @@ public class PlanAccessServiceImpl implements PlanAccessService {
     private static final String FEATURE_TYPE_LIMIT = "LIMIT";
     private static final String ENABLED = "Y";
 
-    private final JdbcTemplate jdbcTemplate;
+    private final PlanAccessDAO planAccessDAO;
 
     @Override
     public boolean isFeatureEnabled(Long tenantId, String featureCode) {
@@ -37,30 +58,21 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            String sql = "" +
-                    "SELECT pf.enabled_at " +
-                    "FROM tb_tenant_subscription s " +
-                    "JOIN tb_plan_feature pf ON pf.plan_id = s.plan_id " +
-                    "WHERE s.tenant_id = ? " +
-                    "  AND s.subscription_status = ? " +
-                    "  AND s.starts_at <= CURRENT_TIMESTAMP " +
-                    "  AND (s.ends_at IS NULL OR s.ends_at > CURRENT_TIMESTAMP) " +
-                    "  AND pf.feature_code = ? " +
-                    "ORDER BY s.starts_at DESC " +
-                    "LIMIT 1";
+            String enabledAt = planAccessDAO.selectLatestFeatureEnabledAt(
+                    tenantId,
+                    ACTIVE_STATUS,
+                    featureCode.trim());
 
-            List<String> values = jdbcTemplate.query(
-                    sql,
-                    new Object[]{tenantId, ACTIVE_STATUS, featureCode.trim()},
-                    (rs, rowNum) -> rs.getString("enabled_at")
-            );
-
-            if (values.isEmpty()) {
+            if (!StringUtils.hasText(enabledAt)) {
                 return false;
             }
 
-            return ENABLED.equalsIgnoreCase(values.get(0));
+            return ENABLED.equalsIgnoreCase(enabledAt);
         } catch (DataAccessException ex) {
+            log.warn("Plan feature check fallback to allow. tenantId={}, featureCode={}, reason={}",
+                    tenantId, featureCode, ex.getMessage());
+            return true;
+        } catch (Exception ex) {
             log.warn("Plan feature check fallback to allow. tenantId={}, featureCode={}, reason={}",
                     tenantId, featureCode, ex.getMessage());
             return true;
@@ -78,34 +90,24 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            String sql = "" +
-                    "SELECT pf.limit_value " +
-                    "FROM tb_tenant_subscription s " +
-                    "JOIN tb_plan_feature pf ON pf.plan_id = s.plan_id " +
-                    "WHERE s.tenant_id = ? " +
-                    "  AND s.subscription_status = ? " +
-                    "  AND s.starts_at <= CURRENT_TIMESTAMP " +
-                    "  AND (s.ends_at IS NULL OR s.ends_at > CURRENT_TIMESTAMP) " +
-                    "  AND pf.feature_code = ? " +
-                    "  AND pf.feature_type = ? " +
-                    "  AND pf.enabled_at = ? " +
-                    "ORDER BY s.starts_at DESC " +
-                    "LIMIT 1";
+            Long limitValue = planAccessDAO.selectLatestFeatureLimitValue(
+                    tenantId,
+                    ACTIVE_STATUS,
+                    featureCode.trim(),
+                    FEATURE_TYPE_LIMIT,
+                    ENABLED);
 
-            List<Long> limits = jdbcTemplate.query(
-                    sql,
-                    new Object[]{tenantId, ACTIVE_STATUS, featureCode.trim(), FEATURE_TYPE_LIMIT, ENABLED},
-                    (rs, rowNum) -> rs.getLong("limit_value")
-            );
-
-            if (limits.isEmpty()) {
+            if (limitValue == null) {
                 return true;
             }
 
-            Long limitValue = limits.get(0);
             long currentUsage = resolveCurrentUsage(tenantId, featureCode.trim());
             return currentUsage < limitValue;
         } catch (DataAccessException ex) {
+            log.warn("Plan limit check fallback to allow. tenantId={}, featureCode={}, reason={}",
+                    tenantId, featureCode, ex.getMessage());
+            return true;
+        } catch (Exception ex) {
             log.warn("Plan limit check fallback to allow. tenantId={}, featureCode={}, reason={}",
                     tenantId, featureCode, ex.getMessage());
             return true;
@@ -123,25 +125,11 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            String sql = "" +
-                    "SELECT p.plan_code " +
-                    "FROM tb_tenant_subscription s " +
-                    "JOIN tb_plan p ON p.plan_id = s.plan_id " +
-                    "WHERE s.tenant_id = ? " +
-                    "  AND s.subscription_status = ? " +
-                    "  AND s.starts_at <= CURRENT_TIMESTAMP " +
-                    "  AND (s.ends_at IS NULL OR s.ends_at > CURRENT_TIMESTAMP) " +
-                    "ORDER BY s.starts_at DESC " +
-                    "LIMIT 1";
-
-            List<String> planCodes = jdbcTemplate.query(
-                    sql,
-                    new Object[]{tenantId, ACTIVE_STATUS},
-                    (rs, rowNum) -> rs.getString("plan_code")
-            );
-
-            return planCodes.isEmpty() ? null : planCodes.get(0);
+            return planAccessDAO.selectActivePlanCode(tenantId, ACTIVE_STATUS);
         } catch (DataAccessException ex) {
+            log.warn("Failed to resolve plan code. tenantId={}, reason={}", tenantId, ex.getMessage());
+            return null;
+        } catch (Exception ex) {
             log.warn("Failed to resolve plan code. tenantId={}, reason={}", tenantId, ex.getMessage());
             return null;
         }
@@ -154,14 +142,11 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            String sql = "SELECT tenant_id FROM tb_tenant WHERE tenant_code = ? LIMIT 1";
-            List<Long> rows = jdbcTemplate.query(
-                    sql,
-                    new Object[]{tenantCode.trim()},
-                    (rs, rowNum) -> rs.getLong("tenant_id")
-            );
-            return rows.isEmpty() ? null : rows.get(0);
+            return planAccessDAO.selectTenantIdByTenantCode(tenantCode.trim());
         } catch (DataAccessException ex) {
+            log.warn("Failed to resolve tenant id by code. tenantCode={}, reason={}", tenantCode, ex.getMessage());
+            return null;
+        } catch (Exception ex) {
             log.warn("Failed to resolve tenant id by code. tenantCode={}, reason={}", tenantCode, ex.getMessage());
             return null;
         }
@@ -174,57 +159,34 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            String sql = "" +
-                    "SELECT pf.feature_code, pf.enabled_at " +
-                    "FROM tb_tenant_subscription s " +
-                    "JOIN tb_plan_feature pf ON pf.plan_id = s.plan_id " +
-                    "WHERE s.tenant_id = ? " +
-                    "  AND s.subscription_status = ? " +
-                    "  AND s.starts_at <= CURRENT_TIMESTAMP " +
-                    "  AND (s.ends_at IS NULL OR s.ends_at > CURRENT_TIMESTAMP)";
-
             Map<String, Boolean> featureMap = new LinkedHashMap<String, Boolean>();
-            jdbcTemplate.query(sql, new Object[]{tenantId, ACTIVE_STATUS}, rs -> {
-                String featureCode = rs.getString("feature_code");
-                String enabledAt = rs.getString("enabled_at");
-                featureMap.put(featureCode, ENABLED.equalsIgnoreCase(enabledAt));
-            });
+            List<PlanFeatureStatusVO> rows = planAccessDAO.selectFeatureEnabledListByTenantId(tenantId, ACTIVE_STATUS);
+            for (PlanFeatureStatusVO row : rows) {
+                featureMap.put(row.getFeatureCode(), ENABLED.equalsIgnoreCase(row.getEnabledAt()));
+            }
 
             return featureMap;
         } catch (DataAccessException ex) {
+            log.warn("Failed to resolve feature map. tenantId={}, reason={}", tenantId, ex.getMessage());
+            return Collections.emptyMap();
+        } catch (Exception ex) {
             log.warn("Failed to resolve feature map. tenantId={}, reason={}", tenantId, ex.getMessage());
             return Collections.emptyMap();
         }
     }
 
     @Override
-    public List<Map<String, Object>> listPlans() {
+    public List<PlanSummaryVO> listPlans() {
         if (!isPlanSchemaReady()) {
             return Collections.emptyList();
         }
 
         try {
-            String sql = "" +
-                    "SELECT p.plan_code, p.plan_nm, p.plan_desc, p.use_at, " +
-                    "       COUNT(DISTINCT pf.plan_feature_id) AS feature_count, " +
-                    "       COUNT(DISTINCT pm.plan_menu_id) AS menu_count " +
-                    "FROM tb_plan p " +
-                    "LEFT JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id " +
-                    "LEFT JOIN tb_plan_menu pm ON pm.plan_id = p.plan_id AND pm.use_at = 'Y' " +
-                    "GROUP BY p.plan_code, p.plan_nm, p.plan_desc, p.use_at " +
-                    "ORDER BY p.plan_code";
-
-            return jdbcTemplate.query(sql, (rs, rowNum) -> {
-                Map<String, Object> row = new LinkedHashMap<String, Object>();
-                row.put("planCode", rs.getString("plan_code"));
-                row.put("planName", rs.getString("plan_nm"));
-                row.put("planDesc", rs.getString("plan_desc"));
-                row.put("useAt", rs.getString("use_at"));
-                row.put("featureCount", rs.getInt("feature_count"));
-                row.put("menuCount", rs.getInt("menu_count"));
-                return row;
-            });
+            return planAccessDAO.selectPlanList();
         } catch (DataAccessException ex) {
+            log.warn("Failed to list plans. reason={}", ex.getMessage());
+            return Collections.emptyList();
+        } catch (Exception ex) {
             log.warn("Failed to list plans. reason={}", ex.getMessage());
             return Collections.emptyList();
         }
@@ -237,50 +199,37 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            String sql = "" +
-                    "SELECT pf.feature_code, pf.enabled_at " +
-                    "FROM tb_plan p " +
-                    "JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id " +
-                    "WHERE p.plan_code = ? " +
-                    "ORDER BY pf.feature_code";
-
             Map<String, Boolean> featureMap = new LinkedHashMap<String, Boolean>();
-            jdbcTemplate.query(sql, new Object[]{planCode.trim().toUpperCase()}, rs -> {
-                String featureCode = rs.getString("feature_code");
-                String enabledAt = rs.getString("enabled_at");
-                featureMap.put(featureCode, ENABLED.equalsIgnoreCase(enabledAt));
-            });
+            List<PlanFeatureStatusVO> rows = planAccessDAO.selectFeatureEnabledListByPlanCode(planCode.trim().toUpperCase());
+            for (PlanFeatureStatusVO row : rows) {
+                featureMap.put(row.getFeatureCode(), ENABLED.equalsIgnoreCase(row.getEnabledAt()));
+            }
             return featureMap;
         } catch (DataAccessException ex) {
+            log.warn("Failed to resolve plan feature map. planCode={}, reason={}", planCode, ex.getMessage());
+            return Collections.emptyMap();
+        } catch (Exception ex) {
             log.warn("Failed to resolve plan feature map. planCode={}, reason={}", planCode, ex.getMessage());
             return Collections.emptyMap();
         }
     }
 
     @Override
-    public List<Map<String, Object>> resolvePlanFeatureItems(String planCode) {
+    public List<PlanFeatureItemVO> resolvePlanFeatureItems(String planCode) {
         if (!StringUtils.hasText(planCode) || !isPlanSchemaReady()) {
             return Collections.emptyList();
         }
 
         try {
-            String sql = "" +
-                    "SELECT pf.feature_code, pf.feature_nm, pf.feature_type, pf.enabled_at, pf.limit_value " +
-                    "FROM tb_plan p " +
-                    "JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id " +
-                    "WHERE p.plan_code = ? " +
-                    "ORDER BY pf.feature_code";
-
-            return jdbcTemplate.query(sql, new Object[]{planCode.trim().toUpperCase()}, (rs, rowNum) -> {
-                Map<String, Object> row = new LinkedHashMap<String, Object>();
-                row.put("featureCode", rs.getString("feature_code"));
-                row.put("featureName", rs.getString("feature_nm"));
-                row.put("featureType", rs.getString("feature_type"));
-                row.put("enabled", ENABLED.equalsIgnoreCase(rs.getString("enabled_at")));
-                row.put("limitValue", rs.getObject("limit_value"));
-                return row;
-            });
+            List<PlanFeatureItemVO> rows = planAccessDAO.selectPlanFeatureItems(planCode.trim().toUpperCase());
+            for (PlanFeatureItemVO row : rows) {
+                row.setEnabled(ENABLED.equalsIgnoreCase(row.getEnabledAt()));
+            }
+            return rows;
         } catch (DataAccessException ex) {
+            log.warn("Failed to resolve plan feature items. planCode={}, reason={}", planCode, ex.getMessage());
+            return Collections.emptyList();
+        } catch (Exception ex) {
             log.warn("Failed to resolve plan feature items. planCode={}, reason={}", planCode, ex.getMessage());
             return Collections.emptyList();
         }
@@ -293,19 +242,11 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            String sql = "" +
-                    "SELECT pm.menu_code " +
-                    "FROM tb_plan_menu pm " +
-                    "JOIN tb_plan p ON p.plan_id = pm.plan_id " +
-                    "WHERE p.plan_code = ? " +
-                    "  AND pm.use_at = 'Y' " +
-                    "ORDER BY pm.menu_code";
-
-            return jdbcTemplate.query(
-                    sql,
-                    new Object[]{planCode.trim().toUpperCase()},
-                    (rs, rowNum) -> rs.getString("menu_code"));
+            return planAccessDAO.selectPlanMenuCodes(planCode.trim().toUpperCase());
         } catch (DataAccessException ex) {
+            log.warn("Failed to resolve plan menus. planCode={}, reason={}", planCode, ex.getMessage());
+            return Collections.emptyList();
+        } catch (Exception ex) {
             log.warn("Failed to resolve plan menus. planCode={}, reason={}", planCode, ex.getMessage());
             return Collections.emptyList();
         }
@@ -331,49 +272,47 @@ public class PlanAccessServiceImpl implements PlanAccessService {
     }
 
     @Override
+    @Transactional
     public void replacePlanMenus(String planCode, List<String> menuCodes) {
         if (!StringUtils.hasText(planCode) || !isPlanSchemaReady()) {
             return;
         }
 
         String normalizedPlanCode = planCode.trim().toUpperCase();
-        List<String> normalizedMenuCodes = new ArrayList<String>();
+        LinkedHashSet<String> normalizedMenuCodeSet = new LinkedHashSet<String>();
         if (menuCodes != null) {
             for (String menuCode : menuCodes) {
                 if (StringUtils.hasText(menuCode)) {
-                    normalizedMenuCodes.add(menuCode.trim().toUpperCase());
+                    normalizedMenuCodeSet.add(menuCode.trim().toUpperCase());
                 }
             }
         }
+        List<String> normalizedMenuCodes = new ArrayList<String>(normalizedMenuCodeSet);
 
         try {
-            String deleteSql = "" +
-                    "DELETE FROM tb_plan_menu " +
-                    "WHERE plan_id = (SELECT plan_id FROM tb_plan WHERE plan_code = ? LIMIT 1)";
-            jdbcTemplate.update(deleteSql, normalizedPlanCode);
-
-            String insertSql = "" +
-                    "INSERT INTO tb_plan_menu (plan_id, menu_code, use_at, created_at, updated_at) " +
-                    "SELECT p.plan_id, ?, 'Y', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP " +
-                    "FROM tb_plan p " +
-                    "WHERE p.plan_code = ? " +
-                    "ON CONFLICT (plan_id, menu_code) DO UPDATE " +
-                    "SET use_at = 'Y', updated_at = CURRENT_TIMESTAMP";
+            planAccessDAO.deletePlanMenusByPlanCode(normalizedPlanCode);
 
             for (String menuCode : normalizedMenuCodes) {
-                jdbcTemplate.update(insertSql, menuCode, normalizedPlanCode);
+                planAccessDAO.upsertPlanMenu(normalizedPlanCode, menuCode);
             }
         } catch (DataAccessException ex) {
             log.warn("Failed to replace plan menus. planCode={}, reason={}", planCode, ex.getMessage());
             throw ex;
+        } catch (Exception ex) {
+            log.warn("Failed to replace plan menus. planCode={}, reason={}", planCode, ex.getMessage());
+            throw new RuntimeException(ex);
         }
     }
 
     private long resolveCurrentUsage(Long tenantId, String featureCode) {
         if ("LIMIT_USER_COUNT".equals(featureCode)) {
-            String sql = "SELECT COUNT(1) FROM tb_user WHERE tenant_id = ? AND use_at = 'Y'";
-            Long count = jdbcTemplate.queryForObject(sql, Long.class, tenantId);
-            return count == null ? 0L : count;
+            try {
+                return planAccessDAO.selectActiveUserCountByTenantId(tenantId);
+            } catch (Exception ex) {
+                log.warn("Failed to resolve current usage. tenantId={}, featureCode={}, reason={}",
+                        tenantId, featureCode, ex.getMessage());
+                return 0L;
+            }
         }
 
         return 0L;
@@ -381,15 +320,10 @@ public class PlanAccessServiceImpl implements PlanAccessService {
 
     private boolean isPlanSchemaReady() {
         try {
-            String sql = "" +
-                    "SELECT COUNT(1) " +
-                    "FROM information_schema.tables " +
-                    "WHERE table_schema = 'public' " +
-                    "  AND table_name IN ('tb_plan', 'tb_plan_feature', 'tb_tenant_subscription')";
-
-            Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
-            return count != null && count >= 3;
+            return planAccessDAO.selectPlanSchemaTableCount() >= 3;
         } catch (DataAccessException ex) {
+            return false;
+        } catch (Exception ex) {
             return false;
         }
     }

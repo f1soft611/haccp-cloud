@@ -15,11 +15,6 @@ import {
   type AccessibleMenuMeta,
 } from '../../../services/platform-admin/platformUserMenuService';
 import * as userMenuService from '../../../services/platform-admin/platformUserMenuService';
-import { getCurrentPlanAccess } from '../../../services/platform-admin/planAccessService';
-import {
-  isFeatureAllowed,
-  resolveFeatureCodeByPath,
-} from '../../../services/platform-admin/featureCatalog';
 import { useAuthStore } from '../../store/authStore';
 import {
   CurrentMenuGroupLabelProvider,
@@ -55,12 +50,6 @@ export function AppLayout() {
     retry: false,
   });
 
-  const planAccessQuery = useQuery({
-    queryKey: ['current-plan-access'],
-    queryFn: getCurrentPlanAccess,
-    retry: false,
-  });
-
   const role = useAuthStore((state) => state.role);
   const hasAccessibleMenuMetaApi = typeof listAccessibleMenusFn === 'function';
 
@@ -68,14 +57,6 @@ export function AppLayout() {
     () => (accessibleMenuQuery.isError ? [] : (accessibleMenuQuery.data ?? [])),
     [accessibleMenuQuery.data, accessibleMenuQuery.isError],
   );
-
-  const featureFilteredAllowedPaths = useMemo(() => {
-    const features = planAccessQuery.data?.features;
-
-    return allowedPaths.filter((path) =>
-      isFeatureAllowed(features, resolveFeatureCodeByPath(path)),
-    );
-  }, [allowedPaths, planAccessQuery.data?.features]);
 
   const menuMetadataByPath = useMemo(() => {
     const metadataMap: Record<
@@ -103,7 +84,7 @@ export function AppLayout() {
       return [];
     }
 
-    return featureFilteredAllowedPaths.map((path) => ({
+    return allowedPaths.map((path) => ({
       path,
       menuNm: menuMetadataByPath[path]?.menuNm,
       menuDc: menuMetadataByPath[path]?.menuDc,
@@ -113,7 +94,7 @@ export function AppLayout() {
   }, [
     accessibleMenuMetaQuery.data,
     accessibleMenuMetaQuery.isPending,
-    featureFilteredAllowedPaths,
+    allowedPaths,
     hasAccessibleMenuMetaApi,
     menuMetadataByPath,
   ]);
@@ -132,7 +113,7 @@ export function AppLayout() {
     const dynamicGroups = buildMenuGroupsFromAccessibleMenus(
       role,
       effectiveAccessibleMenus,
-      featureFilteredAllowedPaths,
+      allowedPaths,
     );
 
     return dynamicGroups.map((group) => ({
@@ -152,7 +133,7 @@ export function AppLayout() {
       }),
     }));
   }, [
-    featureFilteredAllowedPaths,
+    allowedPaths,
     isInitialMenuLoading,
     effectiveAccessibleMenus,
     menuMetadataByPath,

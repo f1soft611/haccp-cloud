@@ -8,9 +8,19 @@ import egovframework.let.uss.auth.service.MenuInfoVO;
 
 /**
  * 플랫폼 메뉴 서비스
- * @author AI Assistant
+ * @author SHMT-MES
  * @since 2026.06.22
  * @version 1.0
+ * @see
+ *
+ * <pre>
+ * << 개정이력(Modification Information) >>
+ *
+ *   수정일      수정자           수정내용
+ *  -------    --------    ---------------------------
+ *   2026.06.22 SHMT-MES          최초 생성
+ *
+ * </pre>
  */
 public interface PlatformMenuService {
 
@@ -56,6 +66,15 @@ public interface PlatformMenuService {
      * @throws Exception
      */
     MenuInfoVO updateMenu(Long menuId, MenuInfoVO menuInfoVO) throws Exception;
+
+    /**
+     * 메뉴를 부분 수정한다.
+     * @param menuId 메뉴 ID
+     * @param menuInfoVO 수정 정보
+     * @return 수정된 메뉴
+     * @throws Exception
+     */
+    MenuInfoVO patchMenu(Long menuId, MenuInfoVO menuInfoVO) throws Exception;
 
     /**
      * 메뉴를 삭제한다.

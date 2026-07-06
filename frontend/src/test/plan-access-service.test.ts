@@ -31,7 +31,7 @@ describe('planAccessService', () => {
     });
 
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/platform-admin/plan-access/me',
+      '/v1/platform-admin/plan-access/me',
       {
         headers: {
           Authorization: 'Bearer token-platform-admin',
