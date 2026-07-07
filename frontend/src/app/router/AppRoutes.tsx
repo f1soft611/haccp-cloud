@@ -18,6 +18,10 @@ import { PlatformTenantDetailPage } from '../../pages/platform-admin/tenants/Pla
 import { PlatformPlanManagementPage } from '../../pages/platform-admin/plans/PlatformPlanManagementPage';
 import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
 import { OnboardingVerifyPage } from '../../pages/platform-admin/tenants/OnboardingVerifyPage';
+import { HaccpBaseManagementPage } from '../../pages/documents/haccp-base/HaccpBaseManagementPage';
+import { HaccpBaseAssigneePage } from '../../pages/documents/haccp-base/HaccpBaseAssigneePage';
+import { HaccpBaseEditorPage } from '../../pages/documents/haccp-base/HaccpBaseEditorPage';
+import { HaccpBaseCategoryManagementPage } from '../../pages/documents/haccp-base/HaccpBaseCategoryManagementPage';
 import { useAuthStore } from '../../shared/store/authStore';
 import { resolveDashboardLandingPath } from '../../shared/utils/dashboardRouting';
 
@@ -141,6 +145,38 @@ export function AppRoutes() {
         />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/document-history" element={<DocumentHistoryPage />} />
+        <Route
+          path="/docs/haccp-base"
+          element={
+            <ProtectedRoute enforceMenuAccess>
+              <HaccpBaseManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/docs/haccp-base/assignees/:baseId"
+          element={
+            <ProtectedRoute enforceMenuAccess>
+              <HaccpBaseAssigneePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/docs/haccp-base/editor/:baseId"
+          element={
+            <ProtectedRoute enforceMenuAccess>
+              <HaccpBaseEditorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/docs/haccp-base/categories"
+          element={
+            <ProtectedRoute enforceMenuAccess>
+              <HaccpBaseCategoryManagementPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/account/password" element={<AccountPasswordPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
