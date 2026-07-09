@@ -17,7 +17,6 @@ import {
   updateHaccpBaseWork,
   type HaccpBaseWorkItem,
 } from '../../../services/documents/haccpBaseWorkService';
-import { getWorkDocumentState } from '../../../services/documents/haccpBaseWorkUiStateService';
 import { listUsers } from '../../../services/organization/usersService';
 import { HaccpBaseCreateDialog } from './components/HaccpBaseCreateDialog';
 import { HaccpBaseGrid } from './components/HaccpBaseGrid';
@@ -69,8 +68,6 @@ function toCategoryOption(item: HaccpBaseCategoryItem): HaccpCategoryOption {
 }
 
 function toRow(item: HaccpBaseWorkItem, index: number): HaccpBaseRow {
-  const documentState = getWorkDocumentState(item.id);
-
   return {
     id: item.id,
     no: index + 1,
@@ -89,7 +86,7 @@ function toRow(item: HaccpBaseWorkItem, index: number): HaccpBaseRow {
     approverId: item.approverId || '',
     approverName: item.approverName || '-',
     assigneeMapped: item.assigneeMapped,
-    hasDocument: Boolean(documentState?.created),
+    hasDocument: item.hasDocument,
     useAt: item.active ? 'Y' : 'N',
   };
 }

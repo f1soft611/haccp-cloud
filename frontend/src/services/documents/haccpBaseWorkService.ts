@@ -22,6 +22,7 @@ export type HaccpBaseWorkItem = {
   assigneeMapped: boolean;
   templateJson?: string;
   templateHtml?: string;
+  hasDocument: boolean;
 };
 
 type RawHaccpBaseWorkItem = {
@@ -56,6 +57,8 @@ type RawHaccpBaseWorkItem = {
   templateHtml?: string | null;
   template_json?: string | null;
   template_html?: string | null;
+  hasDocument?: boolean | string | null;
+  has_document?: boolean | string | null;
 };
 
 type ResultEnvelope<T> = {
@@ -120,6 +123,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     assigneeMapped: normalizeBoolean(raw.assigneeMapped),
     templateJson: normalizeText(raw.templateJson ?? raw.template_json),
     templateHtml: normalizeText(raw.templateHtml ?? raw.template_html),
+    hasDocument: normalizeBoolean(raw.hasDocument ?? raw.has_document),
   };
 }
 

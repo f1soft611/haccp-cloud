@@ -25,6 +25,7 @@
         <result property="assigneeMapped" column="assignee_mapped"/>
         <result property="templateJson" column="template_json"/>
         <result property="templateHtml" column="template_html"/>
+        <result property="hasDocument" column="has_document"/>
     </resultMap>
 
     <select id="HaccpBaseWorkDAO.selectWorkList"
@@ -58,7 +59,13 @@
               ELSE FALSE
             END AS assignee_mapped,
             CAST(w.drafting_work_template_json AS text) AS template_json,
-            w.drafting_work_template_html AS template_html
+            w.drafting_work_template_html AS template_html,
+            CASE
+              WHEN w.drafting_work_template_json IS NOT NULL
+                OR NULLIF(TRIM(COALESCE(w.drafting_work_template_html, '')), '') IS NOT NULL
+              THEN TRUE
+              ELSE FALSE
+            END AS has_document
         FROM tb_drafting_work_category w
         JOIN tb_tenant t ON t.tenant_id = w.tenant_id
         LEFT JOIN tb_drafting_work_category_group g
@@ -137,7 +144,13 @@
               ELSE FALSE
             END AS assignee_mapped,
             CAST(w.drafting_work_template_json AS text) AS template_json,
-            w.drafting_work_template_html AS template_html
+            w.drafting_work_template_html AS template_html,
+            CASE
+              WHEN w.drafting_work_template_json IS NOT NULL
+                OR NULLIF(TRIM(COALESCE(w.drafting_work_template_html, '')), '') IS NOT NULL
+              THEN TRUE
+              ELSE FALSE
+            END AS has_document
         FROM tb_drafting_work_category w
         JOIN tb_tenant t ON t.tenant_id = w.tenant_id
         LEFT JOIN tb_drafting_work_category_group g
