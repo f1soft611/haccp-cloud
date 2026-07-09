@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/core';
@@ -27,7 +27,24 @@ import { setWorkDocumentState } from '../../../services/documents/haccpBaseWorkU
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { NotionLikeEditor } from '../../../editor/components/NotionLikeEditor';
-import { useEditorDocument } from '../../../editor/hooks/useEditorDocument';
+import { hasVisibleContent } from '../../../editor/utils/documentStorage';
+
+const EMPTY_DOC: JSONContent = {
+  type: 'doc',
+  content: [{ type: 'paragraph' }],
+};
+
+function parseTemplateJson(value: string | undefined): JSONContent {
+  if (!value || value.trim().length === 0) {
+    return EMPTY_DOC;
+  }
+
+  try {
+    return JSON.parse(value) as JSONContent;
+  } catch {
+    return EMPTY_DOC;
+  }
+}
 
 export function HaccpBaseEditorPage() {
   const navigate = useNavigate();
@@ -48,14 +65,24 @@ export function HaccpBaseEditorPage() {
     [worksQuery.data, baseId],
   );
 
-  const { content, setContent, saveDocument, isCreated, canEdit } =
-    useEditorDocument({
-      docId: baseId ?? '',
-    });
+  const [content, setContent] = useState<JSONContent>(EMPTY_DOC);
+  const [contentHtml, setContentHtml] = useState('');
+  const canEdit = useMemo(() => (baseId ?? '').trim().length > 0, [baseId]);
+  const isCreated = useMemo(() => hasVisibleContent(content), [content]);
 
   const [isSaving, setIsSaving] = useState(false);
-  const [contentHtml, setContentHtml] = useState('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    if (!targetWork) {
+      setContent(EMPTY_DOC);
+      setContentHtml('');
+      return;
+    }
+
+    setContent(parseTemplateJson(targetWork.templateJson));
+    setContentHtml(targetWork.templateHtml ?? '');
+  }, [targetWork]);
 
   const handleChangeContent = (nextContent: JSONContent, nextHtml: string) => {
     setContent(nextContent);
@@ -76,7 +103,6 @@ export function HaccpBaseEditorPage() {
         templateHtml: contentHtml,
       });
 
-      saveDocument(content);
       setWorkDocumentState(baseId, isCreated);
       showSuccess(
         isCreated

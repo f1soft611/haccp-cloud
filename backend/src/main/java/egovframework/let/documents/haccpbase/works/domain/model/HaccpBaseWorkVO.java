@@ -75,4 +75,10 @@ public class HaccpBaseWorkVO implements Serializable {
 
     @Schema(description = "담당자 세팅 여부")
     private boolean assigneeMapped;
+
+    @Schema(description = "업무 템플릿 JSON 문자열")
+    private String templateJson;
+
+    @Schema(description = "업무 템플릿 HTML 문자열")
+    private String templateHtml;
 }

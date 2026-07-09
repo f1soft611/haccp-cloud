@@ -20,6 +20,8 @@ export type HaccpBaseWorkItem = {
   approverId?: string;
   approverName?: string;
   assigneeMapped: boolean;
+  templateJson?: string;
+  templateHtml?: string;
 };
 
 type RawHaccpBaseWorkItem = {
@@ -50,6 +52,10 @@ type RawHaccpBaseWorkItem = {
   approverId?: number | string | null;
   approverName?: string | null;
   assigneeMapped?: boolean | string | null;
+  templateJson?: string | null;
+  templateHtml?: string | null;
+  template_json?: string | null;
+  template_html?: string | null;
 };
 
 type ResultEnvelope<T> = {
@@ -67,6 +73,19 @@ function normalizeText(value: unknown): string {
     return '';
   }
   return String(value).trim();
+}
+
+function decodeHtmlEntities(value: string): string {
+  if (!value) {
+    return value;
+  }
+
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
 }
 
 function normalizeBoolean(value: unknown): boolean {
@@ -90,6 +109,13 @@ function normalizeStringArrayFromCsv(value: unknown): string[] {
 }
 
 function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
+  const normalizedTemplateJson = decodeHtmlEntities(
+    normalizeText(raw.templateJson ?? raw.template_json),
+  );
+  const normalizedTemplateHtml = decodeHtmlEntities(
+    normalizeText(raw.templateHtml ?? raw.template_html),
+  );
+
   return {
     id: normalizeText(raw.id ?? raw.draftingWorkCategoryId),
     tenantCode: normalizeText(raw.tenantCode),
@@ -112,6 +138,8 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     approverId: normalizeText(raw.approverId),
     approverName: normalizeText(raw.approverName),
     assigneeMapped: normalizeBoolean(raw.assigneeMapped),
+    templateJson: normalizedTemplateJson,
+    templateHtml: normalizedTemplateHtml,
   };
 }
 
