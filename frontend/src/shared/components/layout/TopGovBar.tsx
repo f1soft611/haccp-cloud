@@ -19,7 +19,10 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { logout as logoutApi } from '../../../services/auth/logoutService';
 import { useAuthStore } from '../../store/authStore';
 import { APP_LABELS } from '../../constants/labels';
-import { resolveLoginPathWithLastDomain } from '../../utils/loginDomainRouting';
+import {
+  loadLastLoginDomain,
+  resolveLoginPathWithLastDomain,
+} from '../../utils/loginDomainRouting';
 import {
   getStoredThemeMode,
   storeThemeMode,
@@ -41,6 +44,41 @@ type FontSizeOptionKey = (typeof FONT_SIZE_OPTIONS)[number]['key'];
 
 const isFontSizeOptionKey = (value: string): value is FontSizeOptionKey =>
   FONT_SIZE_OPTIONS.some((option) => option.key === value);
+
+type TenantBrandCache = {
+  tenantNm?: string;
+  logoImage?: string;
+};
+
+function resolveTenantBrandStorageKey(domain: string): string {
+  return `haccp.tenant-brand.${domain}`;
+}
+
+function resolveSafeLogoSrc(logoImage?: string): string {
+  const value = (logoImage ?? '').trim();
+  if (!value) {
+    return '';
+  }
+
+  if (value.startsWith('data:image/')) {
+    return value;
+  }
+
+  if (value.startsWith('https://')) {
+    return value;
+  }
+
+  if (value.startsWith('http://')) {
+    return import.meta.env.PROD ? '' : value;
+  }
+
+  if (/^[a-z0-9+/=\r\n]+$/i.test(value) && value.length >= 32) {
+    const compact = value.replace(/\s+/g, '');
+    return `data:image/png;base64,${compact}`;
+  }
+
+  return '';
+}
 
 export function TopGovBar() {
   const theme = useTheme();
@@ -74,6 +112,35 @@ export function TopGovBar() {
     useState<ThemeModePreference>(
       () => getStoredThemeMode(themeStorageUserId) ?? 'light',
     );
+  const tenantBrand = (() => {
+    if (typeof window === 'undefined') {
+      return { logoSrc: '', logoAlt: '업체 로고' };
+    }
+
+    const domain = loadLastLoginDomain();
+    if (!domain) {
+      return { logoSrc: '', logoAlt: '업체 로고' };
+    }
+
+    try {
+      const raw = window.sessionStorage.getItem(
+        resolveTenantBrandStorageKey(domain),
+      );
+      if (!raw) {
+        return { logoSrc: '', logoAlt: '업체 로고' };
+      }
+
+      const parsed = JSON.parse(raw) as TenantBrandCache;
+      const safeSrc = resolveSafeLogoSrc(parsed.logoImage);
+      const tenantName = (parsed.tenantNm ?? '').trim();
+      return {
+        logoSrc: safeSrc,
+        logoAlt: tenantName ? `${tenantName} 로고` : '업체 로고',
+      };
+    } catch {
+      return { logoSrc: '', logoAlt: '업체 로고' };
+    }
+  })();
 
   const selectedFontSize = useMemo(
     () =>
@@ -190,13 +257,28 @@ export function TopGovBar() {
               },
             }}
           >
-            <Typography
-              variant="h6"
-              fontWeight={800}
-              sx={{ letterSpacing: 0.2, textAlign: 'left' }}
-            >
-              {APP_LABELS.appTitle} {APP_LABELS.appSubtitle}
-            </Typography>
+            {tenantBrand.logoSrc ? (
+              <Box
+                component="img"
+                src={tenantBrand.logoSrc}
+                alt={tenantBrand.logoAlt}
+                sx={{
+                  display: 'block',
+                  width: 163,
+                  height: 28,
+                  objectFit: 'contain',
+                  imageRendering: '-webkit-optimize-contrast',
+                }}
+              />
+            ) : (
+              <Typography
+                variant="subtitle1"
+                fontWeight={800}
+                sx={{ letterSpacing: 0.1, textAlign: 'left' }}
+              >
+                업체 포털
+              </Typography>
+            )}
           </Link>
 
           <Stack

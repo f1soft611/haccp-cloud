@@ -1,6 +1,13 @@
 import { Box, Stack, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 export function PortalFooter() {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+  const footerLogoSrc = isDarkMode
+    ? '/f1foodlink_wh.png'
+    : '/f1foodlink_midd.png';
+
   return (
     <Box
       component="footer"
@@ -22,9 +29,23 @@ export function PortalFooter() {
         <Typography variant="caption" color="text.secondary">
           HACCP Cloud Portal
         </Typography>
-        <Typography variant="caption" color="text.secondary">
-          문의 quality@haccp.local | v1.0.0
-        </Typography>
+        <Stack direction="row" spacing={1.2} alignItems="center">
+          {/* <Typography variant="caption" color="text.secondary">
+            문의 quality@haccp.local | v1.0.0
+          </Typography> */}
+          <Box
+            component="img"
+            src={footerLogoSrc}
+            alt="F1FoodLink"
+            sx={{
+              display: 'block',
+              width: 84,
+              height: 14,
+              objectFit: 'contain',
+              imageRendering: '-webkit-optimize-contrast',
+            }}
+          />
+        </Stack>
       </Stack>
     </Box>
   );
