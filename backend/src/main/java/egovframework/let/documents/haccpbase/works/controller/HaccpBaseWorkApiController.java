@@ -80,6 +80,33 @@ public class HaccpBaseWorkApiController {
     }
 
     @Operation(
+            summary = "업무 단건 조회",
+            description = "HACCP 양식 업무 단건을 조회한다",
+            security = { @SecurityRequirement(name = "Authorization") },
+            tags = { "HaccpBaseWorkApiController" }
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "403", description = "인가된 사용자가 아님"),
+            @ApiResponse(responseCode = "404", description = "업무를 찾을 수 없음")
+    })
+    @GetMapping("/{id}")
+    public ResultVO getWorkById(
+            @PathVariable Long id,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        HaccpBaseWorkVO item = haccpBaseWorkService.getWorkById(id, tenantCode);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("item", item);
+        resultMap.put("user", user);
+
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @Operation(
             summary = "업무 등록",
             description = "HACCP 양식 업무를 등록한다",
             security = { @SecurityRequirement(name = "Authorization") },

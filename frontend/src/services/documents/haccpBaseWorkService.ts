@@ -20,6 +20,8 @@ export type HaccpBaseWorkItem = {
   approverId?: string;
   approverName?: string;
   assigneeMapped: boolean;
+  templateJson?: string;
+  templateHtml?: string;
 };
 
 type RawHaccpBaseWorkItem = {
@@ -50,6 +52,10 @@ type RawHaccpBaseWorkItem = {
   approverId?: number | string | null;
   approverName?: string | null;
   assigneeMapped?: boolean | string | null;
+  templateJson?: string | null;
+  templateHtml?: string | null;
+  template_json?: string | null;
+  template_html?: string | null;
 };
 
 type ResultEnvelope<T> = {
@@ -112,6 +118,8 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     approverId: normalizeText(raw.approverId),
     approverName: normalizeText(raw.approverName),
     assigneeMapped: normalizeBoolean(raw.assigneeMapped),
+    templateJson: normalizeText(raw.templateJson ?? raw.template_json),
+    templateHtml: normalizeText(raw.templateHtml ?? raw.template_html),
   };
 }
 
@@ -128,6 +136,24 @@ export async function listHaccpBaseWorks(params: {
 
   const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
   return items.map(normalizeItem);
+}
+
+export async function getHaccpBaseWorkById(params: {
+  tenantCode: string;
+  id: string;
+}): Promise<HaccpBaseWorkItem> {
+  const { data } = await apiClient.get<
+    RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
+  >(`/v1/haccp-base/works/${params.id}`, {
+    headers: { 'x-tenant-code': params.tenantCode },
+  });
+
+  const item = Array.isArray(data)
+    ? data[0]
+    : ((data as ResultEnvelope<RawHaccpBaseWorkItem>)?.result?.item ??
+      (data as RawHaccpBaseWorkItem));
+
+  return normalizeItem(item ?? {});
 }
 
 export async function createHaccpBaseWork(payload: {

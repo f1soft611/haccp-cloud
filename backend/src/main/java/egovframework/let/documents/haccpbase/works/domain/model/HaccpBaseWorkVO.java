@@ -2,6 +2,9 @@ package egovframework.let.documents.haccpbase.works.domain.model;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import egovframework.com.jackson.RawStringPreserveSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -75,4 +78,12 @@ public class HaccpBaseWorkVO implements Serializable {
 
     @Schema(description = "담당자 세팅 여부")
     private boolean assigneeMapped;
+
+    @Schema(description = "업무 템플릿 JSON 문자열")
+    @JsonSerialize(using = RawStringPreserveSerializer.class)
+    private String templateJson;
+
+    @Schema(description = "업무 템플릿 HTML 문자열")
+    @JsonSerialize(using = RawStringPreserveSerializer.class)
+    private String templateHtml;
 }
