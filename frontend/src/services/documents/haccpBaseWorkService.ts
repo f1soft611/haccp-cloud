@@ -138,6 +138,24 @@ export async function listHaccpBaseWorks(params: {
   return items.map(normalizeItem);
 }
 
+export async function getHaccpBaseWorkById(params: {
+  tenantCode: string;
+  id: string;
+}): Promise<HaccpBaseWorkItem> {
+  const { data } = await apiClient.get<
+    RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
+  >(`/v1/haccp-base/works/${params.id}`, {
+    headers: { 'x-tenant-code': params.tenantCode },
+  });
+
+  const item = Array.isArray(data)
+    ? data[0]
+    : ((data as ResultEnvelope<RawHaccpBaseWorkItem>)?.result?.item ??
+      (data as RawHaccpBaseWorkItem));
+
+  return normalizeItem(item ?? {});
+}
+
 export async function createHaccpBaseWork(payload: {
   tenantCode: string;
   categoryGroupId: string;

@@ -18,7 +18,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/core';
 import {
-  listHaccpBaseWorks,
+  getHaccpBaseWorkById,
   saveHaccpBaseWorkTemplate,
 } from '../../../services/documents/haccpBaseWorkService';
 import { useAuthStore } from '../../../shared/store/authStore';
@@ -54,16 +54,18 @@ export function HaccpBaseEditorPage() {
   const isDarkMode = theme.palette.mode === 'dark';
   const tenantCode = useAuthStore((state) => state.tenantCode || 'PLATFORM');
 
-  const worksQuery = useQuery({
-    queryKey: ['haccp-base-works', tenantCode],
-    queryFn: () => listHaccpBaseWorks({ tenantCode }),
+  const workDetailQuery = useQuery({
+    queryKey: ['haccp-base-work-detail', tenantCode, baseId],
+    queryFn: () =>
+      getHaccpBaseWorkById({
+        tenantCode,
+        id: baseId ?? '',
+      }),
+    enabled: Boolean(baseId),
     retry: false,
   });
 
-  const targetWork = useMemo(
-    () => (worksQuery.data ?? []).find((item) => item.id === (baseId ?? '')),
-    [worksQuery.data, baseId],
-  );
+  const targetWork = workDetailQuery.data;
 
   const [content, setContent] = useState<JSONContent>(EMPTY_DOC);
   const [contentHtml, setContentHtml] = useState('');

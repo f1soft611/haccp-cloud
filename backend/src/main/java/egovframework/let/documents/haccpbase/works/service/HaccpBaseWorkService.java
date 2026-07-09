@@ -16,11 +16,17 @@ public interface HaccpBaseWorkService {
 
     public List<HaccpBaseWorkVO> listWorks(String tenantCode, String active) throws Exception;
 
+    public HaccpBaseWorkVO getWorkById(Long id, String tenantCode) throws Exception;
+
     public HaccpBaseWorkVO createWork(HaccpBaseWorkSaveRequestVO payload, String actorLoginCode) throws Exception;
 
     public HaccpBaseWorkVO updateWork(Long id, HaccpBaseWorkSaveRequestVO payload, String actorLoginCode)
             throws Exception;
 
-        public HaccpBaseWorkVO saveWorkTemplate(Long id, String tenantCode, HaccpBaseWorkTemplateSaveRequestVO payload,
-            String actorLoginCode) throws Exception;
+    public HaccpBaseWorkVO saveWorkTemplate(
+            Long id,
+            String tenantCode,
+            HaccpBaseWorkTemplateSaveRequestVO payload,
+            String actorLoginCode
+    ) throws Exception;
 }

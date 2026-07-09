@@ -42,6 +42,20 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
     }
 
     @Override
+    public HaccpBaseWorkVO getWorkById(Long id, String tenantCode) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("id", id);
+        params.put("tenantCode", normalizeTenantCode(tenantCode));
+
+        HaccpBaseWorkVO item = haccpBaseWorkDAO.selectWorkById(params);
+        if (item == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "업무를 찾을 수 없습니다.");
+        }
+
+        return item;
+    }
+
+    @Override
     @Transactional
     public HaccpBaseWorkVO createWork(HaccpBaseWorkSaveRequestVO payload, String actorLoginCode) throws Exception {
         String tenantCode = normalizeTenantCode(payload.getTenantCode());
