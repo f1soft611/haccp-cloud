@@ -86,4 +86,7 @@ public class HaccpBaseWorkVO implements Serializable {
     @Schema(description = "업무 템플릿 HTML 문자열")
     @JsonSerialize(using = RawStringPreserveSerializer.class)
     private String templateHtml;
+
+    @Schema(description = "문서 템플릿 저장 여부")
+    private boolean hasDocument;
 }

@@ -23,7 +23,6 @@ import {
 } from '../../../services/documents/haccpBaseWorkService';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
-import { setWorkDocumentState } from '../../../services/documents/haccpBaseWorkUiStateService';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { NotionLikeEditor } from '../../../editor/components/NotionLikeEditor';
@@ -105,7 +104,6 @@ export function HaccpBaseEditorPage() {
         templateHtml: contentHtml,
       });
 
-      setWorkDocumentState(baseId, isCreated);
       showSuccess(
         isCreated
           ? '문서 생성 상태로 저장되었습니다.'
