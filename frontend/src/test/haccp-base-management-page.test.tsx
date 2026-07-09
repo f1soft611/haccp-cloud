@@ -124,17 +124,17 @@ describe('HaccpBaseManagementPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders document status chip without editor icon button', async () => {
+  it('opens editor page when document status icon is clicked', async () => {
     render(
       <AppProviders>
         <HaccpBaseManagementPage />
       </AppProviders>,
     );
 
-    expect(await screen.findByText('미생성')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: '문서생성/편집' }),
-    ).not.toBeInTheDocument();
+    fireEvent.click(
+      await screen.findByRole('button', { name: '문서 생성 페이지 이동' }),
+    );
+    expect(navigateMock).toHaveBeenCalledWith('/docs/haccp-base/editor/1');
   });
 
   it('opens edit dialog from grid action', async () => {

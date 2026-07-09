@@ -1,24 +1,16 @@
-import {
-  Alert,
-  Button,
-  FormControlLabel,
-  Paper,
-  Stack,
-  Switch,
-  Typography,
-} from '@mui/material';
+import { Alert, Button, Paper, Stack, Typography } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import type { JSONContent } from '@tiptap/core';
 import { listHaccpBaseWorks } from '../../../services/documents/haccpBaseWorkService';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
-import {
-  getWorkDocumentState,
-  setWorkDocumentState,
-} from '../../../services/documents/haccpBaseWorkUiStateService';
+import { setWorkDocumentState } from '../../../services/documents/haccpBaseWorkUiStateService';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
+import { NotionLikeEditor } from '../../../editor/components/NotionLikeEditor';
+import { useEditorDocument } from '../../../editor/hooks/useEditorDocument';
 
 export function HaccpBaseEditorPage() {
   const navigate = useNavigate();
@@ -37,21 +29,31 @@ export function HaccpBaseEditorPage() {
     [worksQuery.data, baseId],
   );
 
-  const initialDocumentState = baseId ? getWorkDocumentState(baseId) : null;
-  const [created, setCreated] = useState(
-    Boolean(initialDocumentState?.created),
-  );
+  const { content, setContent, saveDocument, isCreated, canEdit } =
+    useEditorDocument({
+      docId: baseId ?? '',
+    });
 
-  const save = () => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleChangeContent = (nextContent: JSONContent) => {
+    setContent(nextContent);
+  };
+
+  const save = async () => {
     if (!baseId) {
       return;
     }
-    setWorkDocumentState(baseId, created);
+
+    setIsSaving(true);
+    saveDocument(content);
+    setWorkDocumentState(baseId, isCreated);
     showSuccess(
-      created
+      isCreated
         ? '문서 생성 상태로 저장되었습니다.'
         : '문서 미생성 상태로 저장되었습니다.',
     );
+    setIsSaving(false);
     navigate('/docs/haccp-base');
   };
 
@@ -60,7 +62,7 @@ export function HaccpBaseEditorPage() {
       <PageHeader
         groupLabel={APP_LABELS.menu.documentGroup}
         title="문서생성/편집"
-        description="내용이 많은 부가 기능을 모달이 아닌 전용 페이지에서 작업합니다."
+        description="1~3단계: 기본 에디터, 툴바/버블 메뉴, 슬래시 명령을 적용한 문서 편집 페이지입니다."
       />
 
       <Paper sx={{ p: 3 }}>
@@ -79,22 +81,21 @@ export function HaccpBaseEditorPage() {
             <Alert severity="warning">대상 업무를 찾을 수 없습니다.</Alert>
           ) : null}
 
-          <FormControlLabel
-            control={
-              <Switch
-                checked={created}
-                onChange={(event) => setCreated(event.target.checked)}
-                disabled={!baseId || !targetWork}
-              />
-            }
-            label={created ? '문서 생성됨' : '문서 미생성'}
+          <NotionLikeEditor
+            content={content}
+            editable={canEdit && Boolean(targetWork)}
+            onChange={handleChangeContent}
           />
+
+          <Typography variant="caption" color="text.secondary">
+            안내: '/' 입력 시 슬래시 명령 메뉴를 사용할 수 있습니다.
+          </Typography>
 
           <Stack direction="row" spacing={1}>
             <Button
               variant="contained"
               onClick={save}
-              disabled={!baseId || !targetWork}
+              disabled={!baseId || !targetWork || isSaving}
             >
               저장
             </Button>

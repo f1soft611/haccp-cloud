@@ -319,7 +319,13 @@ export function HaccpBaseManagementPage() {
         onCategorySettings={() => navigate('/docs/haccp-base/categories')}
       />
 
-      <HaccpBaseGrid rows={filteredRows} onEdit={handleOpenEdit} />
+      <HaccpBaseGrid
+        rows={filteredRows}
+        onEdit={handleOpenEdit}
+        onOpenEditorPage={(rowId) =>
+          navigate(`/docs/haccp-base/editor/${rowId}`)
+        }
+      />
 
       <HaccpBaseCreateDialog
         open={createOpen}

@@ -10,6 +10,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useTheme } from '@mui/material/styles';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
@@ -18,10 +19,11 @@ import type { HaccpBaseRow } from '../types';
 export function HaccpBaseGrid(props: {
   rows: HaccpBaseRow[];
   onEdit: (row: HaccpBaseRow) => void;
+  onOpenEditorPage: (rowId: string) => void;
 }) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
-  const { rows, onEdit } = props;
+  const { rows, onEdit, onOpenEditorPage } = props;
 
   const actionIconSx = {
     color: isDarkMode ? '#fbbf24' : '#1f4f8f',
@@ -60,6 +62,25 @@ export function HaccpBaseGrid(props: {
     };
   };
 
+  const getDocumentIconSx = (hasDocument: boolean) => ({
+    fontSize: 20,
+    color: hasDocument
+      ? isDarkMode
+        ? '#e2e8f0'
+        : '#0f172a'
+      : isDarkMode
+        ? '#94a3b8'
+        : '#9ca3af',
+    bgcolor: hasDocument
+      ? isDarkMode
+        ? 'rgba(226, 232, 240, 0.18)'
+        : 'rgba(15, 23, 42, 0.1)'
+      : isDarkMode
+        ? 'rgba(148, 163, 184, 0.16)'
+        : 'rgba(156, 163, 175, 0.16)',
+    borderRadius: 1.5,
+  });
+
   return (
     <AdminGrid ariaLabel="HACCP 양식 목록">
       <TableHead>
@@ -81,7 +102,9 @@ export function HaccpBaseGrid(props: {
           <TableCell align="center">사용</TableCell>
           <TableCell align="center">검토/승인</TableCell>
           <TableCell align="center">담당자</TableCell>
-          <TableCell align="center">문서</TableCell>
+          <TableCell width={70} align="center">
+            문서
+          </TableCell>
           <TableCell align="center">수정</TableCell>
         </TableRow>
       </TableHead>
@@ -172,11 +195,27 @@ export function HaccpBaseGrid(props: {
               </Typography>
             </TableCell>
             <TableCell align="center">
-              <Chip
-                size="small"
-                label={row.hasDocument ? '생성됨' : '미생성'}
-                color={row.hasDocument ? 'primary' : 'default'}
-              />
+              <Tooltip
+                title={
+                  row.hasDocument
+                    ? '생성된 문서 내역 보기'
+                    : '문서 생성 페이지로 이동'
+                }
+              >
+                <IconButton
+                  size="small"
+                  aria-label={
+                    row.hasDocument ? '문서 내역 보기' : '문서 생성 페이지 이동'
+                  }
+                  onClick={() => onOpenEditorPage(row.id)}
+                  sx={{ p: 0 }}
+                >
+                  <DescriptionOutlinedIcon
+                    fontSize="small"
+                    sx={getDocumentIconSx(row.hasDocument)}
+                  />
+                </IconButton>
+              </Tooltip>
             </TableCell>
             <TableCell align="center">
               <Stack direction="row" justifyContent="center">
