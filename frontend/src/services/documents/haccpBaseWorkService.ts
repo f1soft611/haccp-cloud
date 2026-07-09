@@ -202,3 +202,21 @@ export async function updateHaccpBaseWork(payload: {
 
   return normalizeItem(item ?? {});
 }
+
+export async function saveHaccpBaseWorkTemplate(payload: {
+  tenantCode: string;
+  id: string;
+  templateJson: string;
+  templateHtml: string;
+}): Promise<void> {
+  await apiClient.put(
+    `/v1/haccp-base/works/${payload.id}/template`,
+    {
+      templateJson: payload.templateJson,
+      templateHtml: payload.templateHtml,
+    },
+    {
+      headers: { 'x-tenant-code': payload.tenantCode },
+    },
+  );
+}

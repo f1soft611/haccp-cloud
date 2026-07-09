@@ -27,6 +27,7 @@ import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkSaveRequestVO;
+import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkTemplateSaveRequestVO;
 import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkVO;
 import egovframework.let.documents.haccpbase.works.service.HaccpBaseWorkService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -139,6 +140,43 @@ public class HaccpBaseWorkApiController {
             Map<String, Object> errorMap = new HashMap<String, Object>();
             errorMap.put("message", ex.getMessage());
             return resultVoHelper.buildFromMap(errorMap, ResponseCode.INPUT_CHECK_ERROR);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        }
+    }
+
+    @Operation(
+            summary = "업무 템플릿 저장",
+            description = "HACCP 양식 업무 템플릿(JSON/HTML)을 저장한다",
+            security = { @SecurityRequirement(name = "Authorization") },
+            tags = { "HaccpBaseWorkApiController" }
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "저장 성공"),
+            @ApiResponse(responseCode = "403", description = "인가된 사용자가 아님")
+    })
+    @PutMapping("/{id}/template")
+    public ResultVO saveWorkTemplate(
+            @PathVariable Long id,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @RequestBody HaccpBaseWorkTemplateSaveRequestVO payload,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+
+        try {
+            HaccpBaseWorkVO item = haccpBaseWorkService.saveWorkTemplate(
+                    id,
+                    tenantCode,
+                    payload,
+                    resolveLoginCode(user)
+            );
+
+            Map<String, Object> resultMap = new HashMap<String, Object>();
+            resultMap.put("item", item);
+            resultMap.put("message", "템플릿이 저장되었습니다.");
+            resultMap.put("user", user);
+            return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
         } catch (ResponseStatusException ex) {
             throw ex;
         }

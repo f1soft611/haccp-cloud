@@ -254,6 +254,23 @@
           AND COALESCE(delete_status, 'N') != 'Y'
     </update>
 
+        <update id="HaccpBaseWorkDAO.updateWorkTemplate"
+            parameterType="map">
+          UPDATE tb_drafting_work_category
+          SET
+            drafting_work_template_json =
+              CASE
+                WHEN #{templateJson, jdbcType=VARCHAR} IS NULL THEN NULL
+                ELSE CAST(#{templateJson, jdbcType=VARCHAR} AS jsonb)
+              END,
+            drafting_work_template_html = #{templateHtml, jdbcType=LONGVARCHAR},
+            updated_by = #{updatedBy, jdbcType=BIGINT},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE drafting_work_category_id = #{id}
+            AND tenant_id = #{tenantId}
+            AND COALESCE(delete_status, 'N') != 'Y'
+        </update>
+
       <delete id="HaccpBaseWorkDAO.deleteWorkAuthorityMappings"
           parameterType="map">
         DELETE

@@ -109,11 +109,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: color-mix(
-    in srgb,
-    var(--editor-active-text, #1f4f8f) 18%,
-    transparent
-  );
+  background: transparent;
   pointer-events: none;
 }
 

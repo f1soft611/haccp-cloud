@@ -42,6 +42,10 @@ public class HaccpBaseWorkDAO extends EgovAbstractMapper {
         update("HaccpBaseWorkDAO.updateWork", payload);
     }
 
+    public int updateWorkTemplate(Map<String, Object> payload) throws Exception {
+        return update("HaccpBaseWorkDAO.updateWorkTemplate", payload);
+    }
+
     public void deleteWorkAuthorityMappings(Map<String, Object> payload) throws Exception {
         delete("HaccpBaseWorkDAO.deleteWorkAuthorityMappings", payload);
     }

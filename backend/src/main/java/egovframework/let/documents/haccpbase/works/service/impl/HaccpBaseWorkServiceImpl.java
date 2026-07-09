@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkSaveRequestVO;
 import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkSearchConditionVO;
+import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkTemplateSaveRequestVO;
 import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkVO;
 import egovframework.let.documents.haccpbase.works.domain.repository.HaccpBaseWorkDAO;
 import egovframework.let.documents.haccpbase.works.service.HaccpBaseWorkService;
@@ -113,6 +114,41 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         if (item == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "업무를 찾을 수 없습니다.");
         }
+        return item;
+    }
+
+    @Override
+    @Transactional
+    public HaccpBaseWorkVO saveWorkTemplate(
+            Long id,
+            String tenantCode,
+            HaccpBaseWorkTemplateSaveRequestVO payload,
+            String actorLoginCode
+    ) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("id", id);
+        params.put("tenantId", tenantId);
+        params.put("templateJson", StringUtils.hasText(payload.getTemplateJson()) ? payload.getTemplateJson() : null);
+        params.put("templateHtml", StringUtils.hasText(payload.getTemplateHtml()) ? payload.getTemplateHtml() : null);
+        params.put("updatedBy", actorLoginId);
+
+        int updatedCount = haccpBaseWorkDAO.updateWorkTemplate(params);
+        if (updatedCount == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "업무를 찾을 수 없습니다.");
+        }
+
+        Map<String, Object> lookupParams = new HashMap<String, Object>();
+        lookupParams.put("id", id);
+        lookupParams.put("tenantCode", normalizedTenantCode);
+        HaccpBaseWorkVO item = haccpBaseWorkDAO.selectWorkById(lookupParams);
+        if (item == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "업무를 찾을 수 없습니다.");
+        }
+
         return item;
     }
 

@@ -3,6 +3,7 @@ package egovframework.let.documents.haccpbase.works.service;
 import java.util.List;
 
 import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkSaveRequestVO;
+import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkTemplateSaveRequestVO;
 import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkVO;
 
 /**
@@ -19,4 +20,7 @@ public interface HaccpBaseWorkService {
 
     public HaccpBaseWorkVO updateWork(Long id, HaccpBaseWorkSaveRequestVO payload, String actorLoginCode)
             throws Exception;
+
+        public HaccpBaseWorkVO saveWorkTemplate(Long id, String tenantCode, HaccpBaseWorkTemplateSaveRequestVO payload,
+            String actorLoginCode) throws Exception;
 }
