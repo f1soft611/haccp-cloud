@@ -19,7 +19,6 @@ import { PlatformPlanManagementPage } from '../../pages/platform-admin/plans/Pla
 import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
 import { OnboardingVerifyPage } from '../../pages/platform-admin/tenants/OnboardingVerifyPage';
 import { HaccpBaseManagementPage } from '../../pages/documents/haccp-base/HaccpBaseManagementPage';
-import { HaccpBaseAssigneePage } from '../../pages/documents/haccp-base/HaccpBaseAssigneePage';
 import { HaccpBaseEditorPage } from '../../pages/documents/haccp-base/HaccpBaseEditorPage';
 import { HaccpBaseCategoryManagementPage } from '../../pages/documents/haccp-base/HaccpBaseCategoryManagementPage';
 import { useAuthStore } from '../../shared/store/authStore';
@@ -150,14 +149,6 @@ export function AppRoutes() {
           element={
             <ProtectedRoute enforceMenuAccess>
               <HaccpBaseManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/docs/haccp-base/assignees/:baseId"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <HaccpBaseAssigneePage />
             </ProtectedRoute>
           }
         />

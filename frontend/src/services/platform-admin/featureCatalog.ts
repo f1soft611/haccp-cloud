@@ -25,7 +25,6 @@ const PATH_FEATURE_CODE_MAP: Record<string, string> = {
   '/documents': FEATURE_CODES.DOCUMENT_WORKFLOW,
   '/document-history': FEATURE_CODES.DOCUMENT_WORKFLOW,
   '/docs/haccp-base': FEATURE_CODES.DOCUMENT_WORKFLOW,
-  '/docs/haccp-base/assignees': FEATURE_CODES.DOCUMENT_WORKFLOW,
   '/docs/haccp-base/editor': FEATURE_CODES.DOCUMENT_WORKFLOW,
 };
 

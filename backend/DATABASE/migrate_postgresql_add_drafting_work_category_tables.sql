@@ -86,6 +86,39 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
         ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS tb_drafting_work_category_authority (
+    drafting_work_category_authority_id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    drafting_work_category_id BIGINT NOT NULL,
+    cata_type_code VARCHAR(3) NOT NULL,
+    employee_no VARCHAR(10) NOT NULL,
+    use_at CHAR(1) NOT NULL DEFAULT 'Y',
+    delete_status VARCHAR(10) NOT NULL DEFAULT 'N',
+    created_by BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by BIGINT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_drafting_work_category_authority_tenant
+        FOREIGN KEY (tenant_id)
+        REFERENCES tb_tenant(tenant_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_drafting_work_category_authority_work_category
+        FOREIGN KEY (drafting_work_category_id)
+        REFERENCES tb_drafting_work_category(drafting_work_category_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_drafting_work_category_authority_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES tb_login_account(login_id)
+        ON DELETE SET NULL,
+    CONSTRAINT fk_drafting_work_category_authority_updated_by
+        FOREIGN KEY (updated_by)
+        REFERENCES tb_login_account(login_id)
+        ON DELETE SET NULL,
+    CONSTRAINT uq_drafting_work_category_authority_mapping
+        UNIQUE (tenant_id, drafting_work_category_id, employee_no)
+);
+
 CREATE INDEX IF NOT EXISTS idx_drafting_work_category_group_tenant
     ON tb_drafting_work_category_group(tenant_id);
 
@@ -109,5 +142,17 @@ CREATE INDEX IF NOT EXISTS idx_drafting_work_category_cata_type
 
 CREATE INDEX IF NOT EXISTS idx_drafting_work_category_use_at
     ON tb_drafting_work_category(use_at);
+
+CREATE INDEX IF NOT EXISTS idx_drafting_work_category_authority_tenant
+    ON tb_drafting_work_category_authority(tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_drafting_work_category_authority_work_category
+    ON tb_drafting_work_category_authority(drafting_work_category_id);
+
+CREATE INDEX IF NOT EXISTS idx_drafting_work_category_authority_employee_no
+    ON tb_drafting_work_category_authority(employee_no);
+
+CREATE INDEX IF NOT EXISTS idx_drafting_work_category_authority_use_at
+    ON tb_drafting_work_category_authority(use_at);
 
 COMMIT;
