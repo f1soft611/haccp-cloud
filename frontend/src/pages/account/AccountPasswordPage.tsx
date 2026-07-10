@@ -47,7 +47,10 @@ export function AccountPasswordPage() {
           <Button variant="contained" disabled>
             {APP_LABELS.action.save}
           </Button>
-          <Button variant="outlined" onClick={() => navigate('/dashboard')}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/account/my-page')}
+          >
             취소
           </Button>
         </Stack>

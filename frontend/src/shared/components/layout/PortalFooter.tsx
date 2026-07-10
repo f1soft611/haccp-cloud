@@ -27,7 +27,7 @@ export function PortalFooter() {
         justifyContent="space-between"
       >
         <Typography variant="caption" color="text.secondary">
-          HACCP Cloud Portal
+          FoodLink Cloud Portal
         </Typography>
         <Stack direction="row" spacing={1.2} alignItems="center">
           {/* <Typography variant="caption" color="text.secondary">

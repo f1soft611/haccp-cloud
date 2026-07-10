@@ -25,6 +25,11 @@ type AuthState = {
   planCode?: string;
   userId: string;
   displayName: string;
+  email?: string;
+  departmentName?: string;
+  profileImage?: string;
+  signatureImage?: string;
+  stampImage?: string;
   role: UserRole;
   accessToken: string;
   refreshToken: string;
@@ -36,6 +41,11 @@ type AuthState = {
     planCode?: string;
     userId: string;
     displayName?: string;
+    email?: string;
+    departmentName?: string;
+    profileImage?: string;
+    signatureImage?: string;
+    stampImage?: string;
     role: UserRole;
     accessToken?: string;
     refreshToken?: string;
@@ -94,6 +104,11 @@ const initialState = {
   planCode: undefined,
   userId: '',
   displayName: '',
+  email: undefined,
+  departmentName: undefined,
+  profileImage: undefined,
+  signatureImage: undefined,
+  stampImage: undefined,
   role: 'USER' as UserRole,
   accessToken: '',
   refreshToken: '',
@@ -121,6 +136,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     planCode,
     userId,
     displayName,
+    email,
+    departmentName,
+    profileImage,
+    signatureImage,
+    stampImage,
     role,
     accessToken,
     refreshToken,
@@ -140,6 +160,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       planCode: planCode?.trim().toUpperCase() || undefined,
       userId,
       displayName: (displayName ?? '').trim(),
+      email: (email ?? '').trim() || undefined,
+      departmentName: (departmentName ?? '').trim() || undefined,
+      profileImage: (profileImage ?? '').trim() || undefined,
+      signatureImage: (signatureImage ?? '').trim() || undefined,
+      stampImage: (stampImage ?? '').trim() || undefined,
       role: normalizeUserRole(role),
       accessToken: accessToken ?? '',
       refreshToken: refreshToken ?? '',
