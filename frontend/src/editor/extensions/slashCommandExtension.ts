@@ -57,12 +57,12 @@ const SLASH_OPTIONS: SlashCommandOption[] = [
   //   description: '이미지 블록 확장 전 임시 영역을 넣습니다.',
   //   searchTerms: ['image', 'img', 'photo'],
   // },
-  {
-    key: 'code',
-    title: '코드 블록',
-    description: '코드 블록을 삽입합니다.',
-    searchTerms: ['code', 'snippet'],
-  },
+  // {
+  //   key: 'code',
+  //   title: '코드 블록',
+  //   description: '코드 블록을 삽입합니다.',
+  //   searchTerms: ['code', 'snippet'],
+  // },
   {
     key: 'divider',
     title: '구분선',
