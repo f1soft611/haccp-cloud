@@ -20,7 +20,10 @@ type SlashCommandKey =
   | 'code'
   | 'divider'
   | 'quote'
-  | 'todo';
+  | 'todo'
+  | 'documentFieldCreatedAt'
+  | 'documentFieldDepartment'
+  | 'documentFieldAuthor';
 
 type SlashCommandOption = {
   key: SlashCommandKey;
@@ -45,38 +48,56 @@ const SLASH_OPTIONS: SlashCommandOption[] = [
   {
     key: 'table',
     title: '표',
-    description: '3x3 기본 표를 삽입합니다.',
+    description: '4x4 기본 표를 삽입합니다.',
     searchTerms: ['table', 'grid'],
   },
-  {
-    key: 'image',
-    title: '이미지 자리표시자',
-    description: '이미지 블록 확장 전 임시 영역을 넣습니다.',
-    searchTerms: ['image', 'img', 'photo'],
-  },
-  {
-    key: 'code',
-    title: '코드 블록',
-    description: '코드 블록을 삽입합니다.',
-    searchTerms: ['code', 'snippet'],
-  },
+  // {
+  //   key: 'image',
+  //   title: '이미지 자리표시자',
+  //   description: '이미지 블록 확장 전 임시 영역을 넣습니다.',
+  //   searchTerms: ['image', 'img', 'photo'],
+  // },
+  // {
+  //   key: 'code',
+  //   title: '코드 블록',
+  //   description: '코드 블록을 삽입합니다.',
+  //   searchTerms: ['code', 'snippet'],
+  // },
   {
     key: 'divider',
     title: '구분선',
     description: '수평선을 추가합니다.',
     searchTerms: ['divider', 'hr', 'line'],
   },
-  {
-    key: 'quote',
-    title: '인용문',
-    description: '인용문 블록을 추가합니다.',
-    searchTerms: ['quote', 'blockquote'],
-  },
+  // {
+  //   key: 'quote',
+  //   title: '인용문',
+  //   description: '인용문 블록을 추가합니다.',
+  //   searchTerms: ['quote', 'blockquote'],
+  // },
   {
     key: 'todo',
     title: '할 일 목록',
     description: '체크 가능한 Todo 리스트를 추가합니다.',
     searchTerms: ['todo', 'task', 'checklist'],
+  },
+  {
+    key: 'documentFieldCreatedAt',
+    title: '문서필드: 작성일자',
+    description: '현재 문서의 작성일자를 자동 표시합니다.',
+    searchTerms: ['문서필드', '작성일자', '날짜', 'createdAt'],
+  },
+  {
+    key: 'documentFieldDepartment',
+    title: '문서필드: 부서',
+    description: '현재 로그인 사용자의 부서를 자동 표시합니다.',
+    searchTerms: ['문서필드', '부서', 'department'],
+  },
+  {
+    key: 'documentFieldAuthor',
+    title: '문서필드: 작성자',
+    description: '현재 로그인 사용자를 자동 표시합니다.',
+    searchTerms: ['문서필드', '작성자', 'author', 'user'],
   },
 ];
 
@@ -125,6 +146,36 @@ function runSlashCommand(editor: Editor, range: Range, key: SlashCommandKey) {
         },
         { type: 'paragraph' },
       ])
+      .run();
+    return;
+  }
+
+  if (key === 'documentFieldCreatedAt') {
+    editor
+      .chain()
+      .focus()
+      .deleteRange(range)
+      .insertDocumentField('createdAt')
+      .run();
+    return;
+  }
+
+  if (key === 'documentFieldDepartment') {
+    editor
+      .chain()
+      .focus()
+      .deleteRange(range)
+      .insertDocumentField('department')
+      .run();
+    return;
+  }
+
+  if (key === 'documentFieldAuthor') {
+    editor
+      .chain()
+      .focus()
+      .deleteRange(range)
+      .insertDocumentField('author')
       .run();
     return;
   }

@@ -425,21 +425,23 @@ export function LoginPage() {
         backgroundColor: '#f3f4f6',
       }}
     >
-      <Box
-        component="img"
-        src={appLogoSrc}
-        alt="F1FoodLink"
-        sx={{
-          position: 'absolute',
-          top: 12,
-          left: { xs: 16, md: 'calc(50% - 470px)' },
-          display: 'block',
-          width: 163,
-          height: 28,
-          objectFit: 'contain',
-          imageRendering: '-webkit-optimize-contrast',
-        }}
-      />
+      {!isDomainScopedLogin && (
+        <Box
+          component="img"
+          src={appLogoSrc}
+          alt="F1FoodLink"
+          sx={{
+            position: 'absolute',
+            top: 12,
+            left: { xs: 16, md: 'calc(50% - 470px)' },
+            display: 'block',
+            width: 148,
+            height: 25,
+            objectFit: 'contain',
+            imageRendering: '-webkit-optimize-contrast',
+          }}
+        />
+      )}
 
       <Box
         sx={{
@@ -777,9 +779,10 @@ export function LoginPage() {
       <Typography
         data-testid="login-footer-copyright"
         sx={{
-          pb: 1.2,
+          pb: 3.2,
           textAlign: 'center',
-          fontSize: 12,
+          fontSize: 14,
+          fontWeight: 600,
           letterSpacing: '0',
           color: 'rgba(100,116,139,0.52)',
           fontFamily: 'Pretendard, SUIT, Noto Sans KR, sans-serif',

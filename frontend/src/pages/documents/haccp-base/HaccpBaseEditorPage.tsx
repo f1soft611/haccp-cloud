@@ -15,43 +15,122 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/core';
 import {
   getHaccpBaseWorkById,
   saveHaccpBaseWorkTemplate,
 } from '../../../services/documents/haccpBaseWorkService';
+import { listUsers } from '../../../services/organization/usersService';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
+import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { NotionLikeEditor } from '../../../editor/components/NotionLikeEditor';
 import { hasVisibleContent } from '../../../editor/utils/documentStorage';
+import { resolveDocumentFieldValues } from '../../../editor/utils/documentFieldValues';
+import { resolveDocumentFieldPreviewHtml } from '../../../editor/utils/documentFieldHtml';
 
 const EMPTY_DOC: JSONContent = {
   type: 'doc',
   content: [{ type: 'paragraph' }],
 };
 
+function decodeHtmlEntities(value: string): string {
+  if (!value) {
+    return value;
+  }
+
+  let current = value;
+  for (let i = 0; i < 3; i += 1) {
+    const next = current
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>');
+
+    if (next === current) {
+      break;
+    }
+    current = next;
+  }
+
+  return current;
+}
+
+function isDocContent(value: unknown): value is JSONContent {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const maybeDoc = value as { type?: unknown };
+  return typeof maybeDoc.type === 'string';
+}
+
 function parseTemplateJson(value: string | undefined): JSONContent {
   if (!value || value.trim().length === 0) {
     return EMPTY_DOC;
   }
 
-  try {
-    return JSON.parse(value) as JSONContent;
-  } catch {
-    return EMPTY_DOC;
+  const candidates = [value, decodeHtmlEntities(value)];
+
+  for (const candidate of candidates) {
+    let current = candidate;
+
+    for (let depth = 0; depth < 3; depth += 1) {
+      try {
+        const parsed = JSON.parse(current) as unknown;
+
+        if (isDocContent(parsed)) {
+          return parsed;
+        }
+
+        if (typeof parsed === 'string' && parsed.trim().length > 0) {
+          current = parsed;
+          continue;
+        }
+      } catch {
+        // Try next candidate.
+      }
+
+      break;
+    }
   }
+
+  try {
+    const parsedDecoded = JSON.parse(decodeHtmlEntities(value)) as unknown;
+    if (isDocContent(parsedDecoded)) {
+      return parsedDecoded;
+    }
+  } catch {
+    try {
+      const parsedNested = JSON.parse(
+        JSON.parse(decodeHtmlEntities(value)) as string,
+      ) as unknown;
+
+      if (isDocContent(parsedNested)) {
+        return parsedNested;
+      }
+    } catch {
+      return EMPTY_DOC;
+    }
+  }
+
+  return EMPTY_DOC;
 }
 
 export function HaccpBaseEditorPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { baseId } = useParams();
   const { showSuccess } = useFeedback();
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const tenantCode = useAuthStore((state) => state.tenantCode || 'PLATFORM');
+  const userId = useAuthStore((state) => state.userId || '');
+  const displayName = useAuthStore((state) => state.displayName || '');
 
   const workDetailQuery = useQuery({
     queryKey: ['haccp-base-work-detail', tenantCode, baseId],
@@ -61,6 +140,17 @@ export function HaccpBaseEditorPage() {
         id: baseId ?? '',
       }),
     enabled: Boolean(baseId),
+    retry: false,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+
+  const usersQuery = useQuery({
+    queryKey: ['users', tenantCode, 'haccp-base-editor'],
+    queryFn: () => listUsers(tenantCode),
+    enabled: Boolean(tenantCode),
     retry: false,
   });
 
@@ -73,17 +163,61 @@ export function HaccpBaseEditorPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+
+  const currentUserProfile = useMemo(() => {
+    const fromUsers = (usersQuery.data ?? []).find((user) => {
+      return user.id === userId || user.name === displayName;
+    });
+
+    return {
+      userId,
+      displayName: fromUsers?.name || displayName,
+      department: fromUsers?.department || '',
+    };
+  }, [displayName, userId, usersQuery.data]);
+
+  const documentFieldValues = useMemo(() => {
+    return resolveDocumentFieldValues({
+      now: new Date(),
+      user: currentUserProfile,
+    });
+  }, [currentUserProfile]);
+
+  const previewHtml = useMemo(() => {
+    return resolveDocumentFieldPreviewHtml(contentHtml, documentFieldValues);
+  }, [contentHtml, documentFieldValues]);
 
   useEffect(() => {
-    if (!targetWork) {
+    if (!baseId) {
+      return;
+    }
+
+    void queryClient.fetchQuery({
+      queryKey: ['haccp-base-work-detail', tenantCode, baseId],
+      queryFn: () =>
+        getHaccpBaseWorkById({
+          tenantCode,
+          id: baseId,
+        }),
+      staleTime: 0,
+    });
+  }, [baseId, tenantCode, queryClient]);
+
+  useEffect(() => {
+    if (!baseId) {
       setContent(EMPTY_DOC);
       setContentHtml('');
       return;
     }
 
+    if (!targetWork) {
+      return;
+    }
+
     setContent(parseTemplateJson(targetWork.templateJson));
-    setContentHtml(targetWork.templateHtml ?? '');
-  }, [targetWork]);
+    setContentHtml(decodeHtmlEntities(targetWork.templateHtml ?? ''));
+  }, [targetWork, baseId]);
 
   const handleChangeContent = (nextContent: JSONContent, nextHtml: string) => {
     setContent(nextContent);
@@ -97,12 +231,26 @@ export function HaccpBaseEditorPage() {
 
     setIsSaving(true);
     try {
-      await saveHaccpBaseWorkTemplate({
+      const savedItem = await saveHaccpBaseWorkTemplate({
         tenantCode,
         id: baseId,
         templateJson: JSON.stringify(content),
         templateHtml: contentHtml,
       });
+
+      queryClient.setQueryData(
+        ['haccp-base-work-detail', tenantCode, baseId],
+        savedItem,
+      );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-base-work-detail', tenantCode, baseId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-base-works', tenantCode],
+        }),
+      ]);
 
       showSuccess(
         isCreated
@@ -113,6 +261,14 @@ export function HaccpBaseEditorPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleOpenSaveConfirm = () => {
+    if (!baseId || !targetWork || isSaving) {
+      return;
+    }
+
+    setIsSaveConfirmOpen(true);
   };
 
   return (
@@ -135,15 +291,21 @@ export function HaccpBaseEditorPage() {
             </Typography>
           ) : null}
 
-          {!baseId || !targetWork ? (
+          {workDetailQuery.isError ||
+          (workDetailQuery.isSuccess && !targetWork) ? (
             <Alert severity="warning">대상 업무를 찾을 수 없습니다.</Alert>
           ) : null}
 
-          <NotionLikeEditor
-            content={content}
-            editable={canEdit && Boolean(targetWork)}
-            onChange={handleChangeContent}
-          />
+          {!baseId ? (
+            <Alert severity="info">편집할 문서를 선택해 주세요.</Alert>
+          ) : (
+            <NotionLikeEditor
+              content={content}
+              editable={canEdit}
+              onChange={handleChangeContent}
+              documentFieldValues={documentFieldValues}
+            />
+          )}
 
           <Stack
             direction={{ xs: 'column', md: 'row' }}
@@ -158,7 +320,7 @@ export function HaccpBaseEditorPage() {
             <Stack direction="row" spacing={1}>
               <Button
                 variant="contained"
-                onClick={save}
+                onClick={handleOpenSaveConfirm}
                 disabled={!baseId || !targetWork || isSaving}
               >
                 저장
@@ -196,7 +358,7 @@ export function HaccpBaseEditorPage() {
       >
         <DialogTitle>문서 미리보기</DialogTitle>
         <DialogContent dividers>
-          {contentHtml.trim().length > 0 ? (
+          {previewHtml.trim().length > 0 ? (
             <Box
               sx={{
                 p: { xs: 1, md: 2 },
@@ -284,7 +446,7 @@ export function HaccpBaseEditorPage() {
             >
               <Box
                 className="tiptap"
-                dangerouslySetInnerHTML={{ __html: contentHtml }}
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
               />
             </Box>
           ) : (
@@ -295,6 +457,18 @@ export function HaccpBaseEditorPage() {
           <Button onClick={() => setIsPreviewOpen(false)}>닫기</Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={isSaveConfirmOpen}
+        title="문서 저장 확인"
+        description="현재 편집한 내용을 저장하시겠습니까?"
+        confirmText="저장"
+        loading={isSaving}
+        onConfirm={() => {
+          void save();
+        }}
+        onClose={() => setIsSaveConfirmOpen(false)}
+      />
     </Stack>
   );
 }

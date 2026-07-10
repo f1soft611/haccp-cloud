@@ -13,11 +13,13 @@ import TableRow from '@tiptap/extension-table-row';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { FontSize } from '../extensions/fontSizeExtension';
+import { DocumentFieldExtension } from '../extensions/documentFieldExtension';
 import { SlashCommandExtension } from '../extensions/slashCommandExtension';
 import {
   StyledTableCell,
   StyledTableHeader,
 } from '../extensions/tableCellStyleExtensions';
+import type { DocumentFieldValues } from '../utils/documentFieldValues';
 import { ResetEditorToolbar } from './reset/ResetEditorToolbar';
 import './slashCommand.css';
 
@@ -25,10 +27,11 @@ type NotionLikeEditorProps = {
   content: JSONContent;
   editable?: boolean;
   onChange: (content: JSONContent, html: string) => void;
+  documentFieldValues: DocumentFieldValues;
 };
 
 export function NotionLikeEditor(props: NotionLikeEditorProps) {
-  const { content, editable = true, onChange } = props;
+  const { content, editable = true, onChange, documentFieldValues } = props;
   const lastSerializedContentRef = useRef<string>('');
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
@@ -52,6 +55,9 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
         types: ['heading', 'paragraph', 'tableCell', 'tableHeader'],
       }),
       FontSize,
+      DocumentFieldExtension.configure({
+        resolveFieldValue: (fieldKey) => documentFieldValues[fieldKey],
+      }),
       TaskList,
       TaskItem.configure({
         nested: false,
@@ -59,6 +65,10 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       SlashCommandExtension,
       Table.configure({
         resizable: true,
+        allowTableNodeSelection: true,
+        cellMinWidth: 25,
+        lastColumnResizable: true,
+        handleWidth: 8,
       }),
       TableRow,
       StyledTableHeader,
@@ -79,7 +89,6 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
 
     const initialContent = editor.getJSON();
     lastSerializedContentRef.current = JSON.stringify(initialContent);
-    onChange(initialContent, editor.getHTML());
 
     editor.setEditable(editable);
   }, [editor, editable]);
@@ -91,11 +100,6 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
 
     const nextJson = JSON.stringify(content);
     if (nextJson === lastSerializedContentRef.current) {
-      return;
-    }
-
-    // Avoid replacing focused content with stale parent snapshots while typing.
-    if (editor.isFocused) {
       return;
     }
 
@@ -111,7 +115,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
     <Paper
       sx={{
         borderRadius: 0,
-        overflow: 'hidden',
+        overflow: 'visible',
         border: '1px solid',
         borderColor: 'divider',
       }}
@@ -192,10 +196,15 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             my: 2,
             tableLayout: 'fixed',
           },
+          '& .tiptap .tableWrapper': {
+            overflowX: 'auto',
+          },
           '& .tiptap th, & .tiptap td': {
             border: '1px solid',
             borderColor: tableBorderColor,
             p: 1,
+            minWidth: '1em',
+            boxSizing: 'border-box',
             verticalAlign: 'top',
             position: 'relative',
           },
@@ -211,15 +220,49 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             borderColor: 'primary.main',
             pointerEvents: 'none',
           },
+          '& .tiptap .document-field-token': {
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            px: 1,
+            py: 0.35,
+            mx: 0.25,
+            borderRadius: 1.5,
+            border: '1px solid',
+            borderColor: isDarkMode
+              ? 'rgba(96, 165, 250, 0.45)'
+              : 'primary.main',
+            bgcolor: isDarkMode
+              ? 'rgba(30, 41, 59, 0.9)'
+              : 'rgba(239, 246, 255, 0.95)',
+            color: isDarkMode ? '#e2e8f0' : 'primary.dark',
+            fontSize: 13,
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            verticalAlign: 'middle',
+          },
+          '& .tiptap .document-field-token__group': {
+            opacity: 0.72,
+            fontWeight: 700,
+          },
+          '& .tiptap .document-field-token__label': {
+            fontWeight: 700,
+          },
           '& .tiptap .column-resize-handle': {
             position: 'absolute',
             right: -2,
             top: 0,
             bottom: 0,
             width: 4,
-            bgcolor: 'primary.main',
+            bgcolor: '#aad2ff',
             opacity: 0.35,
             pointerEvents: 'none',
+          },
+          '& .tiptap.resize-cursor': {
+            cursor: 'col-resize',
+          },
+          '& .tiptap.resize-cursor *': {
+            cursor: 'col-resize !important',
           },
         }}
       >
