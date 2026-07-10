@@ -17,6 +17,11 @@ export type LoginResponse = {
   tenantCode: string;
   userId: string;
   displayName?: string;
+  email?: string;
+  departmentName?: string;
+  profileImage?: string;
+  signatureImage?: string;
+  stampImage?: string;
   role: UserRole;
   accessToken: string;
   refreshToken?: string;

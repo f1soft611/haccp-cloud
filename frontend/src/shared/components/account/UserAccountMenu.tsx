@@ -1,5 +1,4 @@
 import { type MouseEvent, useMemo, useState } from 'react';
-import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
