@@ -17,6 +17,7 @@ import { PlatformTenantManagementPage } from '../../pages/platform-admin/tenants
 import { PlatformTenantDetailPage } from '../../pages/platform-admin/tenants/PlatformTenantDetailPage';
 import { PlatformPlanManagementPage } from '../../pages/platform-admin/plans/PlatformPlanManagementPage';
 import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
+import { MyPage } from '../../pages/account/MyPage';
 import { OnboardingVerifyPage } from '../../pages/platform-admin/tenants/OnboardingVerifyPage';
 import { HaccpBaseManagementPage } from '../../pages/documents/haccp-base/HaccpBaseManagementPage';
 import { HaccpBaseEditorPage } from '../../pages/documents/haccp-base/HaccpBaseEditorPage';
@@ -31,7 +32,6 @@ function DefaultHomeRoute() {
 
   return <Navigate to={defaultPath} replace />;
 }
-
 export function AppRoutes() {
   return (
     <Routes>
@@ -168,6 +168,11 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/account"
+          element={<Navigate to="/account/my-page" replace />}
+        />
+        <Route path="/account/my-page" element={<MyPage />} />
         <Route path="/account/password" element={<AccountPasswordPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

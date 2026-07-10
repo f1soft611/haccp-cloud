@@ -15,19 +15,16 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { logout as logoutApi } from '../../../services/auth/logoutService';
+import { Link as RouterLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { APP_LABELS } from '../../constants/labels';
-import {
-  loadLastLoginDomain,
-  resolveLoginPathWithLastDomain,
-} from '../../utils/loginDomainRouting';
+import { loadLastLoginDomain } from '../../utils/loginDomainRouting';
 import {
   getStoredThemeMode,
   storeThemeMode,
   type ThemeModePreference,
 } from '../../theme/themePreference';
+import { UserAccountMenu } from '../account/UserAccountMenu';
 
 const ROOT_FONT_SIZE_PX = 16;
 const FONT_SIZE_STORAGE_KEY = 'haccp-ui-font-size';
@@ -83,12 +80,8 @@ function resolveSafeLogoSrc(logoImage?: string): string {
 export function TopGovBar() {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
-  const navigate = useNavigate();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const role = useAuthStore((state) => state.role);
   const userId = useAuthStore((state) => state.userId);
-  const loginHistoryId = useAuthStore((state) => state.loginHistoryId);
-  const clearAuth = useAuthStore((state) => state.logout);
   const themeStorageUserId = isAuthenticated ? userId : undefined;
   const [fontSizeMenuAnchor, setFontSizeMenuAnchor] =
     useState<null | HTMLElement>(null);
@@ -163,17 +156,6 @@ export function TopGovBar() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedThemeMode(getStoredThemeMode(themeStorageUserId) ?? 'light');
   }, [themeStorageUserId, isDarkMode]);
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi(loginHistoryId);
-    } catch {
-      // Force local logout even if backend call fails.
-    } finally {
-      clearAuth();
-      navigate(resolveLoginPathWithLastDomain(), { replace: true });
-    }
-  };
 
   const handleFontSizeMenuOpen = (event: MouseEvent<HTMLElement>) => {
     setFontSizeMenuAnchor(event.currentTarget);
@@ -364,18 +346,7 @@ export function TopGovBar() {
               {APP_LABELS.header.fontSizeAction}
             </Button>
 
-            {isAuthenticated && role !== 'PLATFORM_ADMIN' ? (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => {
-                  void handleLogout();
-                }}
-                sx={{ minWidth: 96, fontWeight: 700, borderRadius: 999 }}
-              >
-                {APP_LABELS.action.logout}
-              </Button>
-            ) : null}
+            <UserAccountMenu />
           </Stack>
         </Stack>
       </Container>

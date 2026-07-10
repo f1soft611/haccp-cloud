@@ -23,7 +23,7 @@ import { getDashboardConfigByContext } from './dashboard/roleDashboardConfig';
 import { PlatformAdminDashboard } from './dashboard/platformAdmin/PlatformAdminDashboard';
 import { useAuthStore } from '../shared/store/authStore';
 import { getDashboardMetrics } from '../services/documents/dashboardService';
-import { APP_LABELS, getRoleLabel } from '../shared/constants/labels';
+import { APP_LABELS } from '../shared/constants/labels';
 import { dashboardThemeTokens } from '../app/theme';
 
 type PortalSectionKey = 'selected' | 'ha' | 'others';
@@ -131,7 +131,6 @@ function KpiCard({
 export function DashboardPage() {
   const theme = useTheme();
   const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
-  const userId = useAuthStore((state) => state.userId || '-');
   const role = useAuthStore((state) => state.role);
   const planCode = useAuthStore((state) => state.planCode);
   const dashboardConfig = getDashboardConfigByContext({ role, planCode });
@@ -166,7 +165,6 @@ export function DashboardPage() {
       : Math.round((activeDocuments / totalDocuments) * 100);
   const uncheckedCount = Math.max(totalDocuments - updatedToday, 0);
   const todayActionCount = uncheckedCount + draftDocuments;
-  const isAdminRole = role === 'PLATFORM_ADMIN' || role === 'TENANT_ADMIN';
   const isPlatformAdmin = role === 'PLATFORM_ADMIN';
   const [portalSearch, setPortalSearch] = useState<
     Record<PortalSectionKey, string>
@@ -286,100 +284,34 @@ export function DashboardPage() {
           >
             <Stack spacing={1.5}>
               <Typography variant="h6" fontWeight={700}>
-                {APP_LABELS.dashboard.blocks.loginPanel}
+                {APP_LABELS.dashboard.hubs.admin}
               </Typography>
-              <Stack
-                direction={{ xs: 'column', md: 'row' }}
-                spacing={1}
-                alignItems={{ xs: 'flex-start', md: 'center' }}
-                justifyContent="space-between"
-              >
-                <Stack direction="row" spacing={0.75}>
-                  <Chip
+              <Stack direction="row" spacing={0.75} flexWrap="wrap">
+                <Button component={NavLink} to="/org/users" size="small">
+                  {APP_LABELS.dashboard.hubs.users}
+                </Button>
+                <Button component={NavLink} to="/org/departments" size="small">
+                  {APP_LABELS.dashboard.hubs.departments}
+                </Button>
+                {isPlatformAdmin ? (
+                  <Button
+                    component={NavLink}
+                    to="/platform/onboarding"
                     size="small"
-                    color="primary"
-                    label={`업체 ${tenantCode}`}
-                  />
-                  <Chip
+                  >
+                    {APP_LABELS.dashboard.hubs.onboarding}
+                  </Button>
+                ) : null}
+                {isPlatformAdmin ? (
+                  <Button
+                    component={NavLink}
+                    to="/platform/login-history"
                     size="small"
-                    variant="outlined"
-                    label={`사용자 ${userId}`}
-                  />
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={getRoleLabel(role)}
-                  />
-                </Stack>
+                  >
+                    {APP_LABELS.dashboard.hubs.loginHistory}
+                  </Button>
+                ) : null}
               </Stack>
-              <Divider />
-              {isAdminRole ? (
-                <Paper
-                  data-testid="dashboard-admin-hub"
-                  variant="outlined"
-                  sx={{ p: 1.25, borderRadius: 2 }}
-                >
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {APP_LABELS.dashboard.hubs.admin}
-                    </Typography>
-                    <Stack direction="row" spacing={0.75} flexWrap="wrap">
-                      <Button component={NavLink} to="/org/users" size="small">
-                        {APP_LABELS.dashboard.hubs.users}
-                      </Button>
-                      <Button
-                        component={NavLink}
-                        to="/org/departments"
-                        size="small"
-                      >
-                        {APP_LABELS.dashboard.hubs.departments}
-                      </Button>
-                      {isPlatformAdmin ? (
-                        <Button
-                          component={NavLink}
-                          to="/platform/onboarding"
-                          size="small"
-                        >
-                          {APP_LABELS.dashboard.hubs.onboarding}
-                        </Button>
-                      ) : null}
-                      {isPlatformAdmin ? (
-                        <Button
-                          component={NavLink}
-                          to="/platform/login-history"
-                          size="small"
-                        >
-                          {APP_LABELS.dashboard.hubs.loginHistory}
-                        </Button>
-                      ) : null}
-                    </Stack>
-                  </Stack>
-                </Paper>
-              ) : (
-                <Paper
-                  data-testid="dashboard-user-hub"
-                  variant="outlined"
-                  sx={{ p: 1.25, borderRadius: 2 }}
-                >
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {APP_LABELS.dashboard.hubs.user}
-                    </Typography>
-                    <Stack direction="row" spacing={0.75} flexWrap="wrap">
-                      <Button component={NavLink} to="/documents" size="small">
-                        {APP_LABELS.dashboard.hubs.documents}
-                      </Button>
-                      <Button
-                        component={NavLink}
-                        to="/document-history"
-                        size="small"
-                      >
-                        {APP_LABELS.dashboard.hubs.history}
-                      </Button>
-                    </Stack>
-                  </Stack>
-                </Paper>
-              )}
               <Typography variant="subtitle1" fontWeight={700}>
                 {APP_LABELS.dashboard.blocks.todos}
               </Typography>

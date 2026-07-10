@@ -37,8 +37,6 @@ type PlatformAdminPanelsProps = {
   onRetryTenantList: () => void;
   onRetryCcpDocuments: () => void;
   loginRole: UserRole;
-  displayName?: string;
-  onLogout: () => void;
   isLoading?: boolean;
 };
 
@@ -145,8 +143,6 @@ export function PlatformAdminPanels({
   onRetryTenantList,
   onRetryCcpDocuments,
   loginRole,
-  displayName,
-  onLogout,
   isLoading = false,
 }: PlatformAdminPanelsProps) {
   const safeTenantSummary = tenantList?.summary ?? {
@@ -170,11 +166,7 @@ export function PlatformAdminPanels({
 
   return (
     <Stack spacing={2.5}>
-      <PlatformAdminDashboardTopSection
-        loginRole={loginRole}
-        displayName={displayName}
-        onLogout={onLogout}
-      />
+      <PlatformAdminDashboardTopSection loginRole={loginRole} />
 
       {/* 데이터 영역: 로딩 중이면 스켈레톤, 완료 후 실제 데이터 */}
       {isLoading ? (

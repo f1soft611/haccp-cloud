@@ -1,8 +1,8 @@
 import { Button, Grid, Paper, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import type { UserRole } from '../../../shared/store/authStore';
-import { APP_LABELS, getRoleLabel } from '../../../shared/constants/labels';
+import { APP_LABELS } from '../../../shared/constants/labels';
 
 type QuickMenuItem = {
   label: string;
@@ -53,23 +53,17 @@ const QUICK_MENUS: Record<UserRole, QuickMenuItem[]> = {
 
 type PlatformAdminDashboardTopSectionProps = {
   loginRole: UserRole;
-  displayName?: string;
-  onLogout: () => void;
 };
 
 export function PlatformAdminDashboardTopSection({
   loginRole,
-  displayName,
-  onLogout,
 }: PlatformAdminDashboardTopSectionProps) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
-  const navigate = useNavigate();
-  const visibleName = (displayName ?? '').trim() || APP_LABELS.field.user;
 
   return (
     <Grid container spacing={2} alignItems="stretch">
-      <Grid size={{ xs: 12, lg: 8 }}>
+      <Grid size={{ xs: 12 }}>
         <Paper
           sx={{
             p: 2,
@@ -116,52 +110,6 @@ export function PlatformAdminDashboardTopSection({
                   {item.label}
                 </Button>
               ))}
-          </Stack>
-        </Paper>
-      </Grid>
-
-      <Grid size={{ xs: 12, lg: 4 }}>
-        <Paper
-          sx={{
-            p: 2,
-            borderRadius: 3,
-            border: '1px solid',
-            borderColor: isDarkMode ? 'rgba(148,163,184,0.38)' : 'divider',
-            bgcolor: isDarkMode ? 'rgba(15,23,42,0.78)' : 'background.paper',
-            height: '100%',
-          }}
-        >
-          <Typography
-            variant="caption"
-            color={isDarkMode ? 'rgba(148,163,184,0.96)' : 'text.secondary'}
-          >
-            {APP_LABELS.dashboard.platformAdmin.topbar.loginInfoLabel}
-          </Typography>
-          <Typography
-            variant="h6"
-            fontWeight={800}
-            sx={{ mt: 0.6, color: isDarkMode ? '#f8fafc' : 'text.primary' }}
-          >
-            {visibleName}
-          </Typography>
-          <Typography
-            variant="body2"
-            color={isDarkMode ? 'rgba(203,213,225,0.96)' : 'text.secondary'}
-            sx={{ mb: 1.25 }}
-          >
-            {getRoleLabel(loginRole)}
-          </Typography>
-          <Stack direction="row" spacing={1}>
-            <Button
-              size="small"
-              variant="contained"
-              onClick={() => navigate('/account/password')}
-            >
-              {APP_LABELS.action.changePassword}
-            </Button>
-            <Button size="small" variant="outlined" onClick={onLogout}>
-              {APP_LABELS.action.logout}
-            </Button>
           </Stack>
         </Paper>
       </Grid>
