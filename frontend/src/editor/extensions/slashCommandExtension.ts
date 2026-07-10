@@ -20,7 +20,10 @@ type SlashCommandKey =
   | 'code'
   | 'divider'
   | 'quote'
-  | 'todo';
+  | 'todo'
+  | 'documentFieldCreatedAt'
+  | 'documentFieldDepartment'
+  | 'documentFieldAuthor';
 
 type SlashCommandOption = {
   key: SlashCommandKey;
@@ -78,6 +81,24 @@ const SLASH_OPTIONS: SlashCommandOption[] = [
     description: '체크 가능한 Todo 리스트를 추가합니다.',
     searchTerms: ['todo', 'task', 'checklist'],
   },
+  {
+    key: 'documentFieldCreatedAt',
+    title: '문서필드: 작성일자',
+    description: '현재 문서의 작성일자를 자동 표시합니다.',
+    searchTerms: ['문서필드', '작성일자', '날짜', 'createdAt'],
+  },
+  {
+    key: 'documentFieldDepartment',
+    title: '문서필드: 부서',
+    description: '현재 로그인 사용자의 부서를 자동 표시합니다.',
+    searchTerms: ['문서필드', '부서', 'department'],
+  },
+  {
+    key: 'documentFieldAuthor',
+    title: '문서필드: 작성자',
+    description: '현재 로그인 사용자를 자동 표시합니다.',
+    searchTerms: ['문서필드', '작성자', 'author', 'user'],
+  },
 ];
 
 function runSlashCommand(editor: Editor, range: Range, key: SlashCommandKey) {
@@ -125,6 +146,36 @@ function runSlashCommand(editor: Editor, range: Range, key: SlashCommandKey) {
         },
         { type: 'paragraph' },
       ])
+      .run();
+    return;
+  }
+
+  if (key === 'documentFieldCreatedAt') {
+    editor
+      .chain()
+      .focus()
+      .deleteRange(range)
+      .insertDocumentField('createdAt')
+      .run();
+    return;
+  }
+
+  if (key === 'documentFieldDepartment') {
+    editor
+      .chain()
+      .focus()
+      .deleteRange(range)
+      .insertDocumentField('department')
+      .run();
+    return;
+  }
+
+  if (key === 'documentFieldAuthor') {
+    editor
+      .chain()
+      .focus()
+      .deleteRange(range)
+      .insertDocumentField('author')
       .run();
     return;
   }

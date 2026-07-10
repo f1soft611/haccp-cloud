@@ -21,6 +21,7 @@ import {
   getHaccpBaseWorkById,
   saveHaccpBaseWorkTemplate,
 } from '../../../services/documents/haccpBaseWorkService';
+import { listUsers } from '../../../services/organization/usersService';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
@@ -28,6 +29,8 @@ import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { NotionLikeEditor } from '../../../editor/components/NotionLikeEditor';
 import { hasVisibleContent } from '../../../editor/utils/documentStorage';
+import { resolveDocumentFieldValues } from '../../../editor/utils/documentFieldValues';
+import { resolveDocumentFieldPreviewHtml } from '../../../editor/utils/documentFieldHtml';
 
 const EMPTY_DOC: JSONContent = {
   type: 'doc',
@@ -126,6 +129,8 @@ export function HaccpBaseEditorPage() {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const tenantCode = useAuthStore((state) => state.tenantCode || 'PLATFORM');
+  const userId = useAuthStore((state) => state.userId || '');
+  const displayName = useAuthStore((state) => state.displayName || '');
 
   const workDetailQuery = useQuery({
     queryKey: ['haccp-base-work-detail', tenantCode, baseId],
@@ -142,6 +147,13 @@ export function HaccpBaseEditorPage() {
     refetchOnWindowFocus: true,
   });
 
+  const usersQuery = useQuery({
+    queryKey: ['users', tenantCode, 'haccp-base-editor'],
+    queryFn: () => listUsers(tenantCode),
+    enabled: Boolean(tenantCode),
+    retry: false,
+  });
+
   const targetWork = workDetailQuery.data;
 
   const [content, setContent] = useState<JSONContent>(EMPTY_DOC);
@@ -152,6 +164,29 @@ export function HaccpBaseEditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+
+  const currentUserProfile = useMemo(() => {
+    const fromUsers = (usersQuery.data ?? []).find((user) => {
+      return user.id === userId || user.name === displayName;
+    });
+
+    return {
+      userId,
+      displayName: fromUsers?.name || displayName,
+      department: fromUsers?.department || '',
+    };
+  }, [displayName, userId, usersQuery.data]);
+
+  const documentFieldValues = useMemo(() => {
+    return resolveDocumentFieldValues({
+      now: new Date(),
+      user: currentUserProfile,
+    });
+  }, [currentUserProfile]);
+
+  const previewHtml = useMemo(() => {
+    return resolveDocumentFieldPreviewHtml(contentHtml, documentFieldValues);
+  }, [contentHtml, documentFieldValues]);
 
   useEffect(() => {
     if (!baseId) {
@@ -268,6 +303,7 @@ export function HaccpBaseEditorPage() {
               content={content}
               editable={canEdit}
               onChange={handleChangeContent}
+              documentFieldValues={documentFieldValues}
             />
           )}
 
@@ -322,7 +358,7 @@ export function HaccpBaseEditorPage() {
       >
         <DialogTitle>문서 미리보기</DialogTitle>
         <DialogContent dividers>
-          {contentHtml.trim().length > 0 ? (
+          {previewHtml.trim().length > 0 ? (
             <Box
               sx={{
                 p: { xs: 1, md: 2 },
@@ -410,7 +446,7 @@ export function HaccpBaseEditorPage() {
             >
               <Box
                 className="tiptap"
-                dangerouslySetInnerHTML={{ __html: contentHtml }}
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
               />
             </Box>
           ) : (
