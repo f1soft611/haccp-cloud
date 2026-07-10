@@ -318,6 +318,7 @@ export function HaccpBaseManagementPage() {
 
       <HaccpBaseGrid
         rows={filteredRows}
+        loading={worksQuery.isLoading}
         onEdit={handleOpenEdit}
         onOpenEditorPage={(rowId) =>
           navigate(`/docs/haccp-base/editor/${rowId}`)

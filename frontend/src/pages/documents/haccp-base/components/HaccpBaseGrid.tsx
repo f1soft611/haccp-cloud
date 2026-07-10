@@ -2,6 +2,7 @@ import {
   Box,
   Chip,
   IconButton,
+  Skeleton,
   Stack,
   TableBody,
   TableCell,
@@ -18,12 +19,13 @@ import type { HaccpBaseRow } from '../types';
 
 export function HaccpBaseGrid(props: {
   rows: HaccpBaseRow[];
+  loading: boolean;
   onEdit: (row: HaccpBaseRow) => void;
   onOpenEditorPage: (rowId: string) => void;
 }) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
-  const { rows, onEdit, onOpenEditorPage } = props;
+  const { rows, loading, onEdit, onOpenEditorPage } = props;
 
   const actionIconSx = {
     color: isDarkMode ? '#fbbf24' : '#1f4f8f',
@@ -109,7 +111,75 @@ export function HaccpBaseGrid(props: {
         </TableRow>
       </TableHead>
       <TableBody>
-        {rows.length === 0 ? (
+        {loading
+          ? Array.from({ length: 5 }).map((_, index) => (
+              <TableRow
+                key={`haccp-base-grid-skeleton-${index}`}
+                data-testid={`haccp-base-grid-skeleton-row-${index}`}
+              >
+                <TableCell align="center">
+                  <Skeleton variant="text" width={24} sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="72%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="64%" />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={52}
+                    height={24}
+                    sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton variant="text" width="70%" sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton variant="text" width="72%" sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={52}
+                    height={24}
+                    sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={120}
+                    height={54}
+                    sx={{ mx: 'auto', borderRadius: 2 }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton variant="text" width="62%" sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={28}
+                    height={28}
+                    sx={{ mx: 'auto', borderRadius: 1.5 }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={28}
+                    height={28}
+                    sx={{ mx: 'auto', borderRadius: 1.5 }}
+                  />
+                </TableCell>
+              </TableRow>
+            ))
+          : null}
+
+        {!loading && rows.length === 0 ? (
           <TableRow>
             <TableCell colSpan={11} align="center">
               조회된 양식이 없습니다.
@@ -117,122 +187,126 @@ export function HaccpBaseGrid(props: {
           </TableRow>
         ) : null}
 
-        {rows.map((row) => (
-          <TableRow key={row.id} hover>
-            <TableCell align="center">{row.no}</TableCell>
-            <TableCell>
-              {row.divisionCode}.{row.divisionName}
-            </TableCell>
-            <TableCell>{row.categoryName}</TableCell>
-            <TableCell align="center">
-              <Chip
-                size="small"
-                label={row.cycle}
-                sx={getCycleChipSx(row.cycle)}
-              />
-            </TableCell>
-            <TableCell align="center">{row.createdBy}</TableCell>
-            <TableCell align="center">{row.createdAt}</TableCell>
-            <TableCell align="center">
-              <Chip
-                size="small"
-                label={row.useAt === 'Y' ? '사용' : '미사용'}
-                color={row.useAt === 'Y' ? 'success' : 'default'}
-              />
-            </TableCell>
-            <TableCell align="center">
-              <Stack
-                spacing={0.75}
-                sx={{
-                  px: 1.25,
-                  py: 1,
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: isDarkMode
-                    ? 'rgba(148, 163, 184, 0.3)'
-                    : 'rgba(148, 163, 184, 0.35)',
-                  bgcolor: isDarkMode
-                    ? 'rgba(148, 163, 184, 0.08)'
-                    : 'rgba(248, 250, 252, 0.9)',
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: '42px 1fr',
-                    columnGap: 0.75,
-                    rowGap: 0.3,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    검토
-                  </Typography>
+        {!loading
+          ? rows.map((row) => (
+              <TableRow key={row.id} hover>
+                <TableCell align="center">{row.no}</TableCell>
+                <TableCell>
+                  {row.divisionCode}.{row.divisionName}
+                </TableCell>
+                <TableCell>{row.categoryName}</TableCell>
+                <TableCell align="center">
                   <Chip
                     size="small"
-                    label={row.reviewerName || '-'}
-                    variant="outlined"
-                    color="info"
-                    sx={{ justifySelf: 'start', fontWeight: 600 }}
+                    label={row.cycle}
+                    sx={getCycleChipSx(row.cycle)}
                   />
-
-                  <Typography variant="caption" color="text.secondary">
-                    승인
-                  </Typography>
+                </TableCell>
+                <TableCell align="center">{row.createdBy}</TableCell>
+                <TableCell align="center">{row.createdAt}</TableCell>
+                <TableCell align="center">
                   <Chip
                     size="small"
-                    label={row.approverName || '-'}
-                    variant="outlined"
-                    color="warning"
-                    sx={{ justifySelf: 'start', fontWeight: 600 }}
+                    label={row.useAt === 'Y' ? '사용' : '미사용'}
+                    color={row.useAt === 'Y' ? 'success' : 'default'}
                   />
-                </Box>
-              </Stack>
-            </TableCell>
-            <TableCell align="center">
-              <Typography variant="body2" fontWeight={600}>
-                {row.assigneeSummary || '-'}
-              </Typography>
-            </TableCell>
-            <TableCell align="center">
-              <Tooltip
-                title={
-                  row.hasDocument
-                    ? '생성된 문서 내역 보기'
-                    : '문서 생성 페이지로 이동'
-                }
-              >
-                <IconButton
-                  size="small"
-                  aria-label={
-                    row.hasDocument ? '문서 내역 보기' : '문서 생성 페이지 이동'
-                  }
-                  onClick={() => onOpenEditorPage(row.id)}
-                  sx={{ p: 0 }}
-                >
-                  <DescriptionOutlinedIcon
-                    fontSize="small"
-                    sx={getDocumentIconSx(row.hasDocument)}
-                  />
-                </IconButton>
-              </Tooltip>
-            </TableCell>
-            <TableCell align="center">
-              <Stack direction="row" justifyContent="center">
-                <Tooltip title="업무 수정">
-                  <IconButton
-                    size="small"
-                    aria-label="업무 수정"
-                    onClick={() => onEdit(row)}
-                    sx={actionIconSx}
+                </TableCell>
+                <TableCell align="center">
+                  <Stack
+                    spacing={0.75}
+                    sx={{
+                      px: 1.25,
+                      py: 1,
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: isDarkMode
+                        ? 'rgba(148, 163, 184, 0.3)'
+                        : 'rgba(148, 163, 184, 0.35)',
+                      bgcolor: isDarkMode
+                        ? 'rgba(148, 163, 184, 0.08)'
+                        : 'rgba(248, 250, 252, 0.9)',
+                    }}
                   >
-                    <EditOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </TableCell>
-          </TableRow>
-        ))}
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '42px 1fr',
+                        columnGap: 0.75,
+                        rowGap: 0.3,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary">
+                        검토
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={row.reviewerName || '-'}
+                        variant="outlined"
+                        color="info"
+                        sx={{ justifySelf: 'start', fontWeight: 600 }}
+                      />
+
+                      <Typography variant="caption" color="text.secondary">
+                        승인
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={row.approverName || '-'}
+                        variant="outlined"
+                        color="warning"
+                        sx={{ justifySelf: 'start', fontWeight: 600 }}
+                      />
+                    </Box>
+                  </Stack>
+                </TableCell>
+                <TableCell align="center">
+                  <Typography variant="body2" fontWeight={600}>
+                    {row.assigneeSummary || '-'}
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Tooltip
+                    title={
+                      row.hasDocument
+                        ? '생성된 문서 내역 보기'
+                        : '문서 생성 페이지로 이동'
+                    }
+                  >
+                    <IconButton
+                      size="small"
+                      aria-label={
+                        row.hasDocument
+                          ? '문서 내역 보기'
+                          : '문서 생성 페이지 이동'
+                      }
+                      onClick={() => onOpenEditorPage(row.id)}
+                      sx={{ p: 0 }}
+                    >
+                      <DescriptionOutlinedIcon
+                        fontSize="small"
+                        sx={getDocumentIconSx(row.hasDocument)}
+                      />
+                    </IconButton>
+                  </Tooltip>
+                </TableCell>
+                <TableCell align="center">
+                  <Stack direction="row" justifyContent="center">
+                    <Tooltip title="업무 수정">
+                      <IconButton
+                        size="small"
+                        aria-label="업무 수정"
+                        onClick={() => onEdit(row)}
+                        sx={actionIconSx}
+                      >
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ))
+          : null}
       </TableBody>
     </AdminGrid>
   );

@@ -53,9 +53,9 @@ type RawHaccpBaseWorkItem = {
   approverId?: number | string | null;
   approverName?: string | null;
   assigneeMapped?: boolean | string | null;
-  templateJson?: string | null;
+  templateJson?: unknown;
   templateHtml?: string | null;
-  template_json?: string | null;
+  template_json?: unknown;
   template_html?: string | null;
   hasDocument?: boolean | string | null;
   has_document?: boolean | string | null;
@@ -98,6 +98,25 @@ function normalizeStringArrayFromCsv(value: unknown): string[] {
     .filter((item) => item.length > 0);
 }
 
+function normalizeTemplateJson(value: unknown): string {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (value == null) {
+    return '';
+  }
+
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '';
+    }
+  }
+
+  return String(value).trim();
+}
+
 function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
   return {
     id: normalizeText(raw.id ?? raw.draftingWorkCategoryId),
@@ -121,7 +140,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     approverId: normalizeText(raw.approverId),
     approverName: normalizeText(raw.approverName),
     assigneeMapped: normalizeBoolean(raw.assigneeMapped),
-    templateJson: normalizeText(raw.templateJson ?? raw.template_json),
+    templateJson: normalizeTemplateJson(raw.templateJson ?? raw.template_json),
     templateHtml: normalizeText(raw.templateHtml ?? raw.template_html),
     hasDocument: normalizeBoolean(raw.hasDocument ?? raw.has_document),
   };
@@ -152,9 +171,11 @@ export async function getHaccpBaseWorkById(params: {
     headers: { 'x-tenant-code': params.tenantCode },
   });
 
+  const envelope = data as ResultEnvelope<RawHaccpBaseWorkItem>;
   const item = Array.isArray(data)
     ? data[0]
-    : ((data as ResultEnvelope<RawHaccpBaseWorkItem>)?.result?.item ??
+    : (envelope?.result?.item ??
+      envelope?.result?.resultList?.[0] ??
       (data as RawHaccpBaseWorkItem));
 
   return normalizeItem(item ?? {});
@@ -238,8 +259,10 @@ export async function saveHaccpBaseWorkTemplate(payload: {
   id: string;
   templateJson: string;
   templateHtml: string;
-}): Promise<void> {
-  await apiClient.put(
+}): Promise<HaccpBaseWorkItem> {
+  const { data } = await apiClient.put<
+    RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
+  >(
     `/v1/haccp-base/works/${payload.id}/template`,
     {
       templateJson: payload.templateJson,
@@ -249,4 +272,13 @@ export async function saveHaccpBaseWorkTemplate(payload: {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
   );
+
+  const envelope = data as ResultEnvelope<RawHaccpBaseWorkItem>;
+  const item = Array.isArray(data)
+    ? data[0]
+    : (envelope?.result?.item ??
+      envelope?.result?.resultList?.[0] ??
+      (data as RawHaccpBaseWorkItem));
+
+  return normalizeItem(item ?? {});
 }

@@ -59,6 +59,10 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       SlashCommandExtension,
       Table.configure({
         resizable: true,
+        allowTableNodeSelection: true,
+        cellMinWidth: 25,
+        lastColumnResizable: true,
+        handleWidth: 8,
       }),
       TableRow,
       StyledTableHeader,
@@ -79,7 +83,6 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
 
     const initialContent = editor.getJSON();
     lastSerializedContentRef.current = JSON.stringify(initialContent);
-    onChange(initialContent, editor.getHTML());
 
     editor.setEditable(editable);
   }, [editor, editable]);
@@ -91,11 +94,6 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
 
     const nextJson = JSON.stringify(content);
     if (nextJson === lastSerializedContentRef.current) {
-      return;
-    }
-
-    // Avoid replacing focused content with stale parent snapshots while typing.
-    if (editor.isFocused) {
       return;
     }
 
@@ -111,7 +109,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
     <Paper
       sx={{
         borderRadius: 0,
-        overflow: 'hidden',
+        overflow: 'visible',
         border: '1px solid',
         borderColor: 'divider',
       }}
@@ -192,10 +190,15 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             my: 2,
             tableLayout: 'fixed',
           },
+          '& .tiptap .tableWrapper': {
+            overflowX: 'auto',
+          },
           '& .tiptap th, & .tiptap td': {
             border: '1px solid',
             borderColor: tableBorderColor,
             p: 1,
+            minWidth: '1em',
+            boxSizing: 'border-box',
             verticalAlign: 'top',
             position: 'relative',
           },
@@ -217,9 +220,15 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             top: 0,
             bottom: 0,
             width: 4,
-            bgcolor: 'primary.main',
+            bgcolor: '#aad2ff',
             opacity: 0.35,
             pointerEvents: 'none',
+          },
+          '& .tiptap.resize-cursor': {
+            cursor: 'col-resize',
+          },
+          '& .tiptap.resize-cursor *': {
+            cursor: 'col-resize !important',
           },
         }}
       >

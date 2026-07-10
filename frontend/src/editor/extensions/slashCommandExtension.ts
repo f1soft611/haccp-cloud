@@ -45,15 +45,15 @@ const SLASH_OPTIONS: SlashCommandOption[] = [
   {
     key: 'table',
     title: '표',
-    description: '3x3 기본 표를 삽입합니다.',
+    description: '4x4 기본 표를 삽입합니다.',
     searchTerms: ['table', 'grid'],
   },
-  {
-    key: 'image',
-    title: '이미지 자리표시자',
-    description: '이미지 블록 확장 전 임시 영역을 넣습니다.',
-    searchTerms: ['image', 'img', 'photo'],
-  },
+  // {
+  //   key: 'image',
+  //   title: '이미지 자리표시자',
+  //   description: '이미지 블록 확장 전 임시 영역을 넣습니다.',
+  //   searchTerms: ['image', 'img', 'photo'],
+  // },
   {
     key: 'code',
     title: '코드 블록',
@@ -66,12 +66,12 @@ const SLASH_OPTIONS: SlashCommandOption[] = [
     description: '수평선을 추가합니다.',
     searchTerms: ['divider', 'hr', 'line'],
   },
-  {
-    key: 'quote',
-    title: '인용문',
-    description: '인용문 블록을 추가합니다.',
-    searchTerms: ['quote', 'blockquote'],
-  },
+  // {
+  //   key: 'quote',
+  //   title: '인용문',
+  //   description: '인용문 블록을 추가합니다.',
+  //   searchTerms: ['quote', 'blockquote'],
+  // },
   {
     key: 'todo',
     title: '할 일 목록',
