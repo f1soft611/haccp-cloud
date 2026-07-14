@@ -53,6 +53,11 @@ type AuthState = {
     onboardingRequired?: boolean;
     onboardingStatus?: OnboardingStatus;
   }) => void;
+  updateUserImages: (payload: {
+    profileImage?: string;
+    signatureImage?: string;
+    stampImage?: string;
+  }) => void;
   updateAccessToken: (accessToken: string) => void;
   markOnboardingCompleted: () => void;
   logout: () => void;
@@ -178,6 +183,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     set(nextState);
     persistState(nextState);
+  },
+  updateUserImages: ({ profileImage, signatureImage, stampImage }) => {
+    set((state) => {
+      const nextState = {
+        ...state,
+        profileImage: (profileImage ?? '').trim() || undefined,
+        signatureImage: (signatureImage ?? '').trim() || undefined,
+        stampImage: (stampImage ?? '').trim() || undefined,
+      };
+
+      persistState(nextState);
+      return nextState;
+    });
   },
   updateAccessToken: (accessToken) => {
     set((state) => {

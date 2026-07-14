@@ -13,7 +13,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import egovframework.com.cmm.service.ResultVO;
 import egovframework.let.organization.authorities.service.AuthorityService;
 
 /**
@@ -45,12 +44,10 @@ class AuthorityApiControllerPagingTest {
 
     @Test
     void listRolesPaged_returnsPagedResponse() throws Exception {
-        ResultVO result = new ResultVO();
         java.util.Map<String, Object> payload = new java.util.HashMap<String, Object>();
         payload.put("totalCount", 7);
         payload.put("paginationInfo", java.util.Collections.singletonMap("currentPageNo", 1));
-        result.setResult(payload);
-        when(authorityService.listRolesPaged(1, 20, "name", "관리자", "PLATFORM", "all")).thenReturn(result);
+        when(authorityService.listRolesPaged(1, 20, "name", "관리자", "PLATFORM", "all")).thenReturn(payload);
 
         mockMvc.perform(get("/api/v1/platform-admin/roles/paged")
                 .param("pageIndex", "1")

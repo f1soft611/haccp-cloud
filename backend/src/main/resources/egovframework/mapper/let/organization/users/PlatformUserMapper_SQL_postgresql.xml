@@ -2,7 +2,27 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="PlatformUserDAO">
 
-    <select id="PlatformUserDAO.selectUserList" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultType="egovframework.let.organization.users.domain.model.PlatformUserVO">
+    <!-- 사용자 정보 resultMap -->
+    <resultMap id="platformUserResult"
+               type="egovframework.let.organization.users.domain.model.PlatformUserVO">
+        <id property="userId" column="userId"/>
+        <result property="loginId" column="loginId"/>
+        <result property="tenantCode" column="tenantCode"/>
+        <result property="userNm" column="userNm"/>
+        <result property="emailAddr" column="emailAddr"/>
+        <result property="departmentNm" column="departmentNm"/>
+        <result property="roleCode" column="roleCode"/>
+        <result property="active" column="active"/>
+        <result property="loginCode" column="loginCode"/>
+        <result property="profileImage" column="profileImage"/>
+        <result property="signatureImage" column="signatureImage"/>
+        <result property="stampImage" column="stampImage"/>
+        <result property="useAt" column="useAt"/>
+        <result property="loginUseAt" column="loginUseAt"/>
+    </resultMap>
+
+    <!-- 사용자 목록 조회 -->
+    <select id="PlatformUserDAO.selectUserList" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultMap="platformUserResult">
         SELECT
             u.user_id AS userId,
             la.login_id AS loginId,
@@ -32,6 +52,9 @@
                 ELSE FALSE
             END AS active,
             la.login_code AS loginCode,
+            la.profile_image AS profileImage,
+            la.stamp_image AS signatureImage,
+            la.stamp_image AS stampImage,
             COALESCE(u.use_at, 'N') AS useAt,
             COALESCE(la.use_at, 'N') AS loginUseAt
         FROM tb_user u
@@ -45,7 +68,8 @@
         ORDER BY u.created_at DESC, u.user_id DESC
     </select>
 
-    <select id="PlatformUserDAO.selectUserPagedList" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultType="egovframework.let.organization.users.domain.model.PlatformUserVO">
+    <!-- 사용자 페이징 목록 조회 -->
+    <select id="PlatformUserDAO.selectUserPagedList" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultMap="platformUserResult">
         SELECT *
         FROM (
             SELECT
@@ -77,6 +101,9 @@
                     ELSE FALSE
                 END AS active,
                 la.login_code AS loginCode,
+                la.profile_image AS profileImage,
+                la.stamp_image AS signatureImage,
+                la.stamp_image AS stampImage,
                 COALESCE(u.use_at, 'N') AS useAt,
                 COALESCE(la.use_at, 'N') AS loginUseAt,
                 ROW_NUMBER() OVER (ORDER BY u.created_at DESC, u.user_id DESC) AS rn
@@ -106,6 +133,7 @@
         ORDER BY rn
     </select>
 
+    <!-- 사용자 페이징 개수 조회 -->
     <select id="PlatformUserDAO.selectUserPagedCount" parameterType="egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO" resultType="int">
         SELECT COUNT(1)
         FROM tb_user u
@@ -131,7 +159,8 @@
         </if>
     </select>
 
-    <select id="PlatformUserDAO.selectUserDetail" parameterType="map" resultType="egovframework.let.organization.users.domain.model.PlatformUserVO">
+    <!-- 사용자 단건 조회 -->
+    <select id="PlatformUserDAO.selectUserDetail" parameterType="map" resultMap="platformUserResult">
         SELECT
             u.user_id AS userId,
             la.login_id AS loginId,
@@ -161,6 +190,9 @@
                 ELSE FALSE
             END AS active,
             la.login_code AS loginCode,
+            la.profile_image AS profileImage,
+            la.stamp_image AS signatureImage,
+            la.stamp_image AS stampImage,
             COALESCE(u.use_at, 'N') AS useAt,
             COALESCE(la.use_at, 'N') AS loginUseAt
         FROM tb_user u
@@ -171,6 +203,65 @@
           AND u.user_id = #{userId}
     </select>
 
+    <!-- 마이페이지 사용자 조회 -->
+    <select id="PlatformUserDAO.selectUserByTenantCodeAndLoginCode" parameterType="map" resultMap="platformUserResult">
+        SELECT
+            u.user_id AS userId,
+            la.login_id AS loginId,
+            t.tenant_code AS tenantCode,
+            u.user_nm AS userNm,
+            u.email_addr AS emailAddr,
+            COALESCE(d.department_nm, '') AS departmentNm,
+            COALESCE(
+                (
+                    SELECT r1.role_code
+                    FROM tb_login_account_role lar1
+                    JOIN tb_role r1 ON r1.role_id = lar1.role_id
+                    WHERE lar1.login_id = la.login_id
+                    ORDER BY CASE
+                        WHEN r1.role_code = 'PLATFORM_ADMIN' THEN 1
+                        WHEN r1.role_code = 'TENANT_ADMIN' THEN 2
+                        WHEN r1.role_code = 'TENANT_USER' THEN 3
+                        ELSE 99
+                    END,
+                    r1.role_id
+                    LIMIT 1
+                ),
+                ''
+            ) AS roleCode,
+            CASE
+                WHEN COALESCE(u.use_at, 'N') = 'Y' AND COALESCE(la.use_at, 'N') = 'Y' THEN TRUE
+                ELSE FALSE
+            END AS active,
+            la.login_code AS loginCode,
+            la.profile_image AS profileImage,
+            la.stamp_image AS signatureImage,
+            la.stamp_image AS stampImage,
+            COALESCE(u.use_at, 'N') AS useAt,
+            COALESCE(la.use_at, 'N') AS loginUseAt
+        FROM tb_user u
+        JOIN tb_login_account la ON la.login_id = u.login_id
+        JOIN tb_tenant t ON t.tenant_id = u.tenant_id
+        LEFT JOIN tb_department d ON d.department_id = u.department_id
+        WHERE t.tenant_code = #{tenantCode}
+          AND la.login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <!-- 비밀번호 변경용 로그인 계정 조회 -->
+    <select id="PlatformUserDAO.selectLoginAccountForPasswordChange" parameterType="map" resultType="map">
+        SELECT
+            la.login_id AS "loginId",
+            la.password_hash AS "passwordHash",
+            COALESCE(la.use_at, 'N') AS "useAt"
+        FROM tb_login_account la
+        JOIN tb_tenant t ON t.tenant_id = la.tenant_id
+        WHERE t.tenant_code = #{tenantCode}
+          AND la.login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <!-- 테넌트 ID 조회 -->
     <select id="PlatformUserDAO.selectTenantIdByCode" parameterType="string" resultType="long">
         SELECT tenant_id
         FROM tb_tenant
@@ -178,6 +269,7 @@
         LIMIT 1
     </select>
 
+    <!-- 부서 ID 조회 -->
     <select id="PlatformUserDAO.selectDepartmentId" parameterType="map" resultType="long">
         SELECT department_id
         FROM tb_department
@@ -187,11 +279,13 @@
         LIMIT 1
     </select>
 
+    <!-- 부서 등록 -->
     <insert id="PlatformUserDAO.insertDepartment" parameterType="map" useGeneratedKeys="false">
         INSERT INTO tb_department (tenant_id, department_nm, use_at, created_at, updated_at)
         VALUES (#{tenantId}, #{departmentNm}, 'Y', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     </insert>
 
+    <!-- 로그인 ID 조회(사용자 ID 기준) -->
     <select id="PlatformUserDAO.selectLoginIdByUserId" parameterType="map" resultType="long">
         SELECT login_id
         FROM tb_user
@@ -200,22 +294,25 @@
         LIMIT 1
     </select>
 
-        <select id="PlatformUserDAO.selectLoginIdByLoginCode" parameterType="map" resultType="long">
-                SELECT login_id
-                FROM tb_login_account
-                WHERE tenant_id = #{tenantId}
-                    AND login_code = #{loginCode}
-                LIMIT 1
-        </select>
+    <!-- 로그인 ID 조회(로그인 코드 기준) -->
+    <select id="PlatformUserDAO.selectLoginIdByLoginCode" parameterType="map" resultType="long">
+        SELECT login_id
+        FROM tb_login_account
+        WHERE tenant_id = #{tenantId}
+          AND login_code = #{loginCode}
+        LIMIT 1
+    </select>
 
-        <select id="PlatformUserDAO.selectUserIdByLoginId" parameterType="map" resultType="long">
-                SELECT user_id
-                FROM tb_user
-                WHERE tenant_id = #{tenantId}
-                    AND login_id = #{loginId}
-                LIMIT 1
-        </select>
+    <!-- 사용자 ID 조회(로그인 ID 기준) -->
+    <select id="PlatformUserDAO.selectUserIdByLoginId" parameterType="map" resultType="long">
+        SELECT user_id
+        FROM tb_user
+        WHERE tenant_id = #{tenantId}
+          AND login_id = #{loginId}
+        LIMIT 1
+    </select>
 
+    <!-- 권한 ID 조회 -->
     <select id="PlatformUserDAO.selectRoleIdByCode" parameterType="map" resultType="long">
         SELECT role_id
         FROM tb_role
@@ -224,27 +321,32 @@
         LIMIT 1
     </select>
 
+    <!-- 로그인 계정-권한 매핑 삭제 -->
     <delete id="PlatformUserDAO.deleteLoginAccountRolesByLoginId" parameterType="long">
         DELETE FROM tb_login_account_role
         WHERE login_id = #{value}
     </delete>
 
+    <!-- 로그인 계정-권한 매핑 등록 -->
     <insert id="PlatformUserDAO.insertLoginAccountRole" parameterType="map">
         INSERT INTO tb_login_account_role (login_id, role_id, created_at)
         VALUES (#{loginId}, #{roleId}, CURRENT_TIMESTAMP)
         ON CONFLICT (login_id, role_id) DO NOTHING
     </insert>
 
+    <!-- 로그인 계정 등록 -->
     <insert id="PlatformUserDAO.insertLoginAccount" parameterType="map">
         INSERT INTO tb_login_account (tenant_id, login_code, password_hash, use_at, created_at, updated_at)
         VALUES (#{tenantId}, #{loginCode}, #{passwordHash}, #{useAt}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     </insert>
 
+    <!-- 사용자 등록 -->
     <insert id="PlatformUserDAO.insertUser" parameterType="map">
         INSERT INTO tb_user (tenant_id, login_id, user_nm, email_addr, department_id, use_at, created_at, updated_at)
         VALUES (#{tenantId}, #{loginId}, #{userNm}, #{emailAddr}, #{departmentId, jdbcType=BIGINT}, #{useAt}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     </insert>
 
+    <!-- 사용자 수정 -->
     <update id="PlatformUserDAO.updateUser" parameterType="map">
         UPDATE tb_user
         SET user_nm = #{userNm},
@@ -256,6 +358,7 @@
           AND user_id = #{userId}
     </update>
 
+    <!-- 사용자/로그인 사용여부 수정 -->
     <update id="PlatformUserDAO.updateUserStatus" parameterType="map">
         <choose>
             <when test="loginId != null">
@@ -272,6 +375,23 @@
                   AND user_id = #{userId}
             </otherwise>
         </choose>
+    </update>
+
+    <!-- 로그인 비밀번호 해시 수정 -->
+    <update id="PlatformUserDAO.updateLoginPasswordHash" parameterType="map">
+        UPDATE tb_login_account
+        SET password_hash = #{passwordHash},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE login_id = #{loginId}
+    </update>
+
+    <!-- 로그인 계정 이미지 수정 -->
+    <update id="PlatformUserDAO.updateLoginImages" parameterType="map">
+        UPDATE tb_login_account
+        SET profile_image = COALESCE(#{profileImage}, profile_image),
+            stamp_image = COALESCE(#{stampImage}, stamp_image),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE login_id = #{loginId}
     </update>
 
 </mapper>

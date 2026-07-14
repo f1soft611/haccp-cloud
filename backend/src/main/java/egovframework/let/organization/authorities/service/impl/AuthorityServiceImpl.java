@@ -11,13 +11,12 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import egovframework.com.cmm.ResponseCode;
-import egovframework.com.cmm.service.ResultVO;
 import egovframework.let.organization.authorities.domain.repository.AuthorityDAO;
 import egovframework.let.organization.authorities.service.AuthorityService;
 import egovframework.let.organization.authorities.domain.model.AuthorityMenuSaveRequestVO;
@@ -27,13 +26,13 @@ import egovframework.let.uss.auth.service.MenuInfoVO;
 import egovframework.let.uss.auth.service.RoleMenuPermissionVO;
 
 /**
- * 플랫폼 역할 서비스 구현체
- * @author AI Assistant
- * @since 2026.06.22
+ * 플랫폼 권한/역할 관리를 위한 서비스 구현 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
  * @version 1.0
  */
 @Service("authorityService")
-public class AuthorityServiceImpl implements AuthorityService {
+public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements AuthorityService {
 
     private static final String DEFAULT_PERMISSION_ID = "PERM_WRITE";
     private static final String SYSTEM_USER_ID = "system";
@@ -56,7 +55,7 @@ public class AuthorityServiceImpl implements AuthorityService {
     }
 
     @Override
-    public ResultVO listRolesPaged(
+    public Map<String, Object> listRolesPaged(
             int pageIndex,
             int pageSize,
             String searchField,
@@ -88,12 +87,7 @@ public class AuthorityServiceImpl implements AuthorityService {
         resultMap.put("roleList", roleList);
         resultMap.put("totalCount", totalCount);
         resultMap.put("paginationInfo", paginationInfo);
-
-        ResultVO resultVO = new ResultVO();
-        resultVO.setResult(resultMap);
-        resultVO.setResultCode(ResponseCode.SUCCESS.getCode());
-        resultVO.setResultMessage(ResponseCode.SUCCESS.getMessage());
-        return resultVO;
+        return resultMap;
     }
 
     @Override

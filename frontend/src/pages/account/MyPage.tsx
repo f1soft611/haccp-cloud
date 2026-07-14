@@ -1,22 +1,18 @@
-import { useMemo, useState, type ChangeEvent } from 'react';
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Grid,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Alert, Grid, Stack } from '@mui/material';
 import { PageHeader } from '../../shared/components/layout/PageHeader';
-import { useAuthStore } from '../../shared/store/authStore';
+import { useAuthStore, type UserRole } from '../../shared/store/authStore';
 import { getRoleLabel } from '../../shared/constants/labels';
+import {
+  changeMyPageImages,
+  getMyPageProfile,
+} from '../../services/organization/usersService';
+import { MyPageProfileCard } from './components/MyPageProfileCard';
+import { MyPageApprovalCard } from './components/MyPageApprovalCard';
+import { MyPageAccountInfoPanel } from './components/MyPageAccountInfoPanel';
 
-type UploadSlot = 'profileImage' | 'signatureImage' | 'stampImage';
+type UploadSlot = 'profileImage' | 'approvalImage';
 
 function readImageFile(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -50,25 +46,66 @@ export function MyPage() {
   const profileImage = useAuthStore((state) => state.profileImage);
   const signatureImage = useAuthStore((state) => state.signatureImage);
   const stampImage = useAuthStore((state) => state.stampImage);
+  const updateUserImages = useAuthStore((state) => state.updateUserImages);
 
-  const [profilePreview, setProfilePreview] = useState(profileImage ?? '');
-  const [signaturePreview, setSignaturePreview] = useState(
-    signatureImage ?? '',
+  const myPageQuery = useQuery({
+    queryKey: ['account', 'my-page'],
+    queryFn: getMyPageProfile,
+    retry: false,
+  });
+
+  const accountProfile = myPageQuery.data;
+
+  const [profilePreview, setProfilePreview] = useState(
+    accountProfile?.profileImage ?? profileImage ?? '',
   );
-  const [stampPreview, setStampPreview] = useState(stampImage ?? '');
+  const [approvalPreview, setApprovalPreview] = useState(
+    accountProfile?.stampImage ??
+      accountProfile?.signatureImage ??
+      signatureImage ??
+      stampImage ??
+      '',
+  );
   const [noticeMessage, setNoticeMessage] = useState(
-    '프로필과 결재 이미지는 현재 화면에서 미리보기만 제공합니다.',
+    '프로필과 결재 서명/도장 이미지는 등록 가능합니다.',
   );
 
-  const visibleName = displayName.trim() || userId.trim() || '사용자';
-  const visibleEmail = email?.trim() || '미등록';
-  const visibleDepartment = departmentName?.trim() || '미등록';
-  const visibleRole = getRoleLabel(role);
+  const resolvedName = accountProfile?.name ?? displayName;
+  const resolvedUserId = accountProfile?.id ?? userId;
+  const resolvedLoginId =
+    userId.trim() || String(accountProfile?.id ?? '').trim();
+  const resolvedEmail = accountProfile?.email ?? email ?? '';
+  const resolvedDepartment = accountProfile?.department ?? departmentName ?? '';
+  const resolvedRole: UserRole = accountProfile?.role ?? role;
+
+  const visibleName = resolvedName.trim() || resolvedUserId.trim() || '사용자';
+  const visibleEmail = resolvedEmail.trim() || '미등록';
+  const visibleDepartment = resolvedDepartment.trim() || '미등록';
+  const visibleRole = getRoleLabel(resolvedRole);
 
   const initials = useMemo(
-    () => resolveInitials(visibleName, userId),
-    [userId, visibleName],
+    () => resolveInitials(visibleName, resolvedUserId),
+    [resolvedUserId, visibleName],
   );
+
+  useEffect(() => {
+    setProfilePreview(accountProfile?.profileImage ?? profileImage ?? '');
+  }, [accountProfile?.profileImage, profileImage]);
+
+  useEffect(() => {
+    setApprovalPreview(
+      accountProfile?.stampImage ??
+        accountProfile?.signatureImage ??
+        signatureImage ??
+        stampImage ??
+        '',
+    );
+  }, [
+    accountProfile?.signatureImage,
+    accountProfile?.stampImage,
+    signatureImage,
+    stampImage,
+  ]);
 
   const handleFileChange = async (
     slot: UploadSlot,
@@ -95,206 +132,88 @@ export function MyPage() {
       const dataUrl = await readImageFile(file);
 
       if (slot === 'profileImage') {
+        const previousProfilePreview = profilePreview;
         setProfilePreview(dataUrl);
+        try {
+          const updated = await changeMyPageImages({ profileImage: dataUrl });
+          updateUserImages({
+            profileImage: updated.profileImage,
+            signatureImage: updated.signatureImage,
+            stampImage: updated.stampImage,
+          });
+          setNoticeMessage('프로필 이미지가 저장되었습니다.');
+          return;
+        } catch {
+          setProfilePreview(previousProfilePreview);
+          throw new Error('프로필 이미지 저장에 실패했습니다.');
+        }
       }
 
-      if (slot === 'signatureImage') {
-        setSignaturePreview(dataUrl);
+      if (slot === 'approvalImage') {
+        const previousApprovalPreview = approvalPreview;
+        setApprovalPreview(dataUrl);
+        try {
+          const updated = await changeMyPageImages({ stampImage: dataUrl });
+          updateUserImages({
+            profileImage: updated.profileImage,
+            signatureImage: updated.signatureImage,
+            stampImage: updated.stampImage,
+          });
+          setNoticeMessage('결재 도장 이미지가 저장되었습니다.');
+          return;
+        } catch {
+          setApprovalPreview(previousApprovalPreview);
+          throw new Error('결재 도장 이미지 저장에 실패했습니다.');
+        }
       }
-
-      if (slot === 'stampImage') {
-        setStampPreview(dataUrl);
-      }
-
-      setNoticeMessage('미리보기 이미지가 업데이트되었습니다.');
     } catch {
-      setNoticeMessage('이미지를 읽는 중 오류가 발생했습니다.');
+      setNoticeMessage('이미지를 저장하는 중 오류가 발생했습니다.');
     }
   };
-
-  const imageField = (
-    label: string,
-    preview: string,
-    slot: UploadSlot,
-    helpText: string,
-  ) => (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2,
-        borderRadius: 3,
-        height: '100%',
-        bgcolor: 'background.paper',
-      }}
-    >
-      <Stack spacing={1.5}>
-        <Typography variant="subtitle1" fontWeight={800}>
-          {label}
-        </Typography>
-        <Box
-          sx={{
-            width: '100%',
-            minHeight: 160,
-            borderRadius: 2.5,
-            border: '1px dashed',
-            borderColor: 'divider',
-            bgcolor: 'rgba(20,184,166,0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-            p: 1,
-          }}
-        >
-          {preview ? (
-            <Box
-              component="img"
-              src={preview}
-              alt={`${label} 미리보기`}
-              sx={{ maxWidth: '100%', maxHeight: 160, objectFit: 'contain' }}
-            />
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              아직 등록된 이미지가 없습니다.
-            </Typography>
-          )}
-        </Box>
-        <Button variant="outlined" component="label">
-          이미지 업로드
-          <input
-            hidden
-            accept="image/*"
-            type="file"
-            onChange={(event) => {
-              void handleFileChange(slot, event);
-            }}
-          />
-        </Button>
-        <Typography variant="caption" color="text.secondary">
-          {helpText}
-        </Typography>
-      </Stack>
-    </Paper>
-  );
 
   return (
     <Stack spacing={2.5} data-testid="account-my-page">
       <PageHeader
         title="내 정보 관리"
-        description="프로필 이미지와 결재 이미지를 관리합니다."
+        description="프로필 이미지와 결재 서명/도장 이미지를 관리합니다."
+        useMenuMetadata={false}
+        showGroupLabel={false}
       />
 
       {noticeMessage ? <Alert severity="info">{noticeMessage}</Alert> : null}
 
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, lg: 4 }}>
-          <Card sx={{ borderRadius: 3, height: '100%' }}>
-            <CardContent>
-              <Stack spacing={2} alignItems="center" sx={{ py: 1 }}>
-                <Avatar
-                  src={profilePreview || undefined}
-                  sx={{ width: 120, height: 120, fontSize: '2.2rem' }}
-                >
-                  {initials}
-                </Avatar>
-                <Stack spacing={0.5} alignItems="center">
-                  <Typography variant="h6" fontWeight={800}>
-                    {visibleName}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {visibleRole}
-                  </Typography>
-                </Stack>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  align="center"
-                >
-                  우측 카드에서 프로필, 결재 싸인, 도장 이미지를 각각 업로드할
-                  수 있습니다.
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
+          <Stack spacing={2}>
+            <MyPageProfileCard
+              profilePreview={profilePreview}
+              initials={initials}
+              visibleName={visibleName}
+              visibleRole={visibleRole}
+              onProfileImageChange={(event) => {
+                void handleFileChange('profileImage', event);
+              }}
+            />
+
+            <MyPageApprovalCard
+              approvalPreview={approvalPreview}
+              onApprovalImageChange={(event) => {
+                void handleFileChange('approvalImage', event);
+              }}
+            />
+          </Stack>
         </Grid>
 
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Paper sx={{ p: 3, borderRadius: 3, height: '100%' }}>
-            <Stack spacing={2.25}>
-              <Typography variant="h6" fontWeight={800}>
-                계정 정보
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    label="이름"
-                    value={visibleName}
-                    fullWidth
-                    InputProps={{ readOnly: true }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    label="이메일"
-                    value={visibleEmail}
-                    fullWidth
-                    InputProps={{ readOnly: true }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    label="부서"
-                    value={visibleDepartment}
-                    fullWidth
-                    InputProps={{ readOnly: true }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    label="권한"
-                    value={visibleRole}
-                    fullWidth
-                    InputProps={{ readOnly: true }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    label="사용자 ID"
-                    value={userId || '미등록'}
-                    fullWidth
-                    InputProps={{ readOnly: true }}
-                  />
-                </Grid>
-              </Grid>
-            </Stack>
-          </Paper>
-        </Grid>
-      </Grid>
-
-      <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, lg: 4 }}>
-          {imageField(
-            '프로필 이미지',
-            profilePreview,
-            'profileImage',
-            '로그인 메뉴와 사용자 정보 카드에 사용할 이미지를 등록합니다.',
-          )}
-        </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
-          {imageField(
-            '결재 싸인 이미지',
-            signaturePreview,
-            'signatureImage',
-            '전자결재 문서에 사용할 싸인 이미지를 등록합니다.',
-          )}
-        </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
-          {imageField(
-            '도장 이미지',
-            stampPreview,
-            'stampImage',
-            '전자결재 문서에 사용할 도장 이미지를 등록합니다.',
-          )}
+          <MyPageAccountInfoPanel
+            visibleName={visibleName}
+            visibleEmail={visibleEmail}
+            visibleDepartment={visibleDepartment}
+            visibleRole={visibleRole}
+            resolvedLoginId={resolvedLoginId}
+            isLoading={myPageQuery.isLoading}
+            isError={myPageQuery.isError}
+          />
         </Grid>
       </Grid>
     </Stack>

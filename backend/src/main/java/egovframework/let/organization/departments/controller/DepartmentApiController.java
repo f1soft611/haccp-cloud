@@ -1,6 +1,8 @@
 package egovframework.let.organization.departments.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -21,18 +23,20 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.LoginVO;
+import egovframework.com.cmm.ResponseCode;
+import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
+import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.organization.departments.domain.model.DepartmentSaveRequestVO;
 import egovframework.let.organization.departments.domain.model.DepartmentVO;
 import egovframework.let.organization.departments.service.DepartmentService;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 부서 관리 API 컨트롤러
- * - GET    /api/v1/departments           목록 조회 (검색 파라미터: name, active)
- * - POST   /api/v1/departments           부서 등록
- * - PUT    /api/v1/departments/{id}      부서 수정
- * - DELETE /api/v1/departments/{id}      부서 삭제
+ * 부서 관리를 위한 컨트롤러 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
+ * @version 1.0
  */
 @Slf4j
 @RestController
@@ -42,52 +46,74 @@ public class DepartmentApiController {
     @Resource(name = "departmentService")
     private DepartmentService departmentService;
 
+    @Resource(name = "resultVoHelper")
+    private ResultVoHelper resultVoHelper;
+
     @GetMapping
-    public List<DepartmentVO> listDepartments(
+    public ResultVO listDepartments(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String active,
             HttpServletRequest request) throws Exception {
         String tenantCode = resolveTenantCode(tenantHeader, request);
-        return departmentService.listDepartments(tenantCode, name, active);
+        List<DepartmentVO> resultList = departmentService.listDepartments(tenantCode, name, active);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("resultList", resultList);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public DepartmentVO createDepartment(
+    public ResultVO createDepartment(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @RequestBody DepartmentSaveRequestVO payload,
             HttpServletRequest request) throws Exception {
         payload.setTenantCode(resolveTenantCode(tenantHeader, request));
         try {
-            return departmentService.createDepartment(payload);
+            DepartmentVO item = departmentService.createDepartment(payload);
+            Map<String, Object> resultMap = new HashMap<String, Object>();
+            resultMap.put("item", item);
+            resultMap.put("message", "부서가 성공적으로 등록되었습니다.");
+            return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
         } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("message", ex.getMessage());
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.INPUT_CHECK_ERROR);
         }
     }
 
     @PutMapping("/{id}")
-    public DepartmentVO updateDepartment(
+    public ResultVO updateDepartment(
             @PathVariable Long id,
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @RequestBody DepartmentSaveRequestVO payload,
             HttpServletRequest request) throws Exception {
         payload.setTenantCode(resolveTenantCode(tenantHeader, request));
         try {
-            return departmentService.updateDepartment(id, payload);
+            DepartmentVO item = departmentService.updateDepartment(id, payload);
+            Map<String, Object> resultMap = new HashMap<String, Object>();
+            resultMap.put("item", item);
+            resultMap.put("message", "부서가 성공적으로 수정되었습니다.");
+            return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
         } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("message", ex.getMessage());
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.INPUT_CHECK_ERROR);
         }
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteDepartment(
+    public ResultVO deleteDepartment(
             @PathVariable Long id,
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             HttpServletRequest request) throws Exception {
         String tenantCode = resolveTenantCode(tenantHeader, request);
         departmentService.deleteDepartment(id, tenantCode);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("message", "부서가 성공적으로 삭제되었습니다.");
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     // ── 헬퍼 ─────────────────────────────────────────

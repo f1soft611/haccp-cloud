@@ -1,5 +1,9 @@
 import { apiClient } from '../api/apiClient';
 
+type ResultEnvelope<T> = {
+  result?: T;
+};
+
 type PlatformRoleApiItem = {
   id?: string | number;
   authorityId?: string | number;
@@ -81,6 +85,14 @@ type PlatformRolesPagedResponse = {
   };
 };
 
+type RoleListResult = {
+  resultList?: PlatformRoleApiItem[];
+};
+
+type RoleItemResult = {
+  item?: PlatformRoleApiItem;
+};
+
 function normalizePlatformRoleItem(
   item: PlatformRoleApiItem,
 ): PlatformRoleItem {
@@ -110,10 +122,10 @@ function normalizePlatformRoleItem(
 }
 
 export async function listPlatformRoles(): Promise<PlatformRoleItem[]> {
-  const { data } = await apiClient.get<PlatformRoleApiItem[]>(
+  const { data } = await apiClient.get<ResultEnvelope<RoleListResult>>(
     '/v1/platform-admin/roles',
   );
-  return data.map(normalizePlatformRoleItem);
+  return (data?.result?.resultList ?? []).map(normalizePlatformRoleItem);
 }
 
 export async function listPlatformRolesPaged(
@@ -147,7 +159,7 @@ export async function listPlatformRolesPaged(
 export async function createPlatformRole(
   payload: CreatePlatformRoleRequest,
 ): Promise<PlatformRoleItem> {
-  const { data } = await apiClient.post<PlatformRoleApiItem>(
+  const { data } = await apiClient.post<ResultEnvelope<RoleItemResult>>(
     '/v1/platform-admin/roles',
     {
       roleCode: payload.code,
@@ -164,7 +176,7 @@ export async function createPlatformRole(
       tenantCode: payload.tenantCode,
     },
   );
-  return normalizePlatformRoleItem(data);
+  return normalizePlatformRoleItem(data?.result?.item ?? {});
 }
 
 export async function updatePlatformRoleStatus(
@@ -175,14 +187,14 @@ export async function updatePlatformRoleStatus(
     throw new Error('role code or id is required');
   }
 
-  const { data } = await apiClient.patch<PlatformRoleApiItem>(
+  const { data } = await apiClient.patch<ResultEnvelope<RoleItemResult>>(
     `/v1/platform-admin/roles/${roleIdentifier}`,
     {
       active: payload.active,
       useAt: payload.active ? 'Y' : 'N',
     },
   );
-  return normalizePlatformRoleItem(data);
+  return normalizePlatformRoleItem(data?.result?.item ?? {});
 }
 
 export async function updatePlatformRole(
@@ -193,7 +205,7 @@ export async function updatePlatformRole(
     throw new Error('role code or id is required');
   }
 
-  const { data } = await apiClient.put<PlatformRoleApiItem>(
+  const { data } = await apiClient.put<ResultEnvelope<RoleItemResult>>(
     `/v1/platform-admin/roles/${roleIdentifier}`,
     {
       roleCode: payload.code,
@@ -209,5 +221,5 @@ export async function updatePlatformRole(
       useAt: payload.active ? 'Y' : 'N',
     },
   );
-  return normalizePlatformRoleItem(data);
+  return normalizePlatformRoleItem(data?.result?.item ?? {});
 }

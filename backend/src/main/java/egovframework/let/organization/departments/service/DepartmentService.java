@@ -6,7 +6,10 @@ import egovframework.let.organization.departments.domain.model.DepartmentSaveReq
 import egovframework.let.organization.departments.domain.model.DepartmentVO;
 
 /**
- * 부서 관리 서비스
+ * 부서 관리를 위한 서비스 인터페이스 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
+ * @version 1.0
  */
 public interface DepartmentService {
 

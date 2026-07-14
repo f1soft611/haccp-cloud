@@ -44,6 +44,15 @@ public class LoginVO implements Serializable{
 	
 	@Schema(description = "이름")
 	private String name;
+
+	@Schema(description = "프로필 이미지")
+	private String profileImage;
+
+	@Schema(description = "결재 서명 이미지")
+	private String signatureImage;
+
+	@Schema(description = "결재 도장 이미지")
+	private String stampImage;
 	
 	@Schema(description = "주민등록번호")
 	private String ihidNum;

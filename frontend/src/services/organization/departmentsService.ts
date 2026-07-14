@@ -1,5 +1,9 @@
 import { apiClient } from '../api/apiClient';
 
+type ResultEnvelope<T> = {
+  result?: T;
+};
+
 export type DepartmentItem = {
   id: string;
   tenantCode: string;
@@ -35,6 +39,14 @@ type RawDepartmentItem = Omit<
   sortOrder?: number | string | null;
 };
 
+type DepartmentListResult = {
+  resultList?: RawDepartmentItem[];
+};
+
+type DepartmentItemResult = {
+  item?: RawDepartmentItem;
+};
+
 function normalizeTextValue(value: unknown): string {
   if (typeof value === 'string') {
     return value.trim();
@@ -58,7 +70,9 @@ function normalizeNumberValue(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function normalizeDepartmentItem(raw: RawDepartmentItem): DepartmentItem {
+function normalizeDepartmentItem(
+  raw: Partial<RawDepartmentItem>,
+): DepartmentItem {
   const id = normalizeTextValue(raw.id ?? raw.departmentId);
   return {
     id,
@@ -76,14 +90,17 @@ function normalizeDepartmentItem(raw: RawDepartmentItem): DepartmentItem {
 export async function listDepartments(
   params: DepartmentSearchParams,
 ): Promise<DepartmentItem[]> {
-  const { data } = await apiClient.get<RawDepartmentItem[]>('/v1/departments', {
-    headers: { 'x-tenant-code': params.tenantCode },
-    params: {
-      name: params.name || undefined,
-      active: params.active || undefined,
+  const { data } = await apiClient.get<ResultEnvelope<DepartmentListResult>>(
+    '/v1/departments',
+    {
+      headers: { 'x-tenant-code': params.tenantCode },
+      params: {
+        name: params.name || undefined,
+        active: params.active || undefined,
+      },
     },
-  });
-  return data.map(normalizeDepartmentItem);
+  );
+  return (data?.result?.resultList ?? []).map(normalizeDepartmentItem);
 }
 
 export async function createDepartment(payload: {
@@ -92,7 +109,7 @@ export async function createDepartment(payload: {
   parentId: string | null;
   sortOrder: number;
 }): Promise<DepartmentItem> {
-  const { data } = await apiClient.post<RawDepartmentItem>(
+  const { data } = await apiClient.post<ResultEnvelope<DepartmentItemResult>>(
     '/v1/departments',
     {
       name: payload.name,
@@ -101,7 +118,7 @@ export async function createDepartment(payload: {
     },
     { headers: { 'x-tenant-code': payload.tenantCode } },
   );
-  return normalizeDepartmentItem(data);
+  return normalizeDepartmentItem(data?.result?.item ?? {});
 }
 
 export async function updateDepartment(payload: {
@@ -112,7 +129,7 @@ export async function updateDepartment(payload: {
   sortOrder: number;
   active: boolean;
 }): Promise<DepartmentItem> {
-  const { data } = await apiClient.put<RawDepartmentItem>(
+  const { data } = await apiClient.put<ResultEnvelope<DepartmentItemResult>>(
     `/v1/departments/${payload.id}`,
     {
       name: payload.name,
@@ -122,7 +139,7 @@ export async function updateDepartment(payload: {
     },
     { headers: { 'x-tenant-code': payload.tenantCode } },
   );
-  return normalizeDepartmentItem(data);
+  return normalizeDepartmentItem(data?.result?.item ?? {});
 }
 
 export async function deleteDepartment(payload: {
