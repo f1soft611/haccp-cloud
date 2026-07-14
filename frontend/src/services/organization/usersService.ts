@@ -282,7 +282,8 @@ export async function getMyPageProfile(): Promise<MyPageProfile> {
   const { data } =
     await apiClient.get<ResultEnvelope<ItemResult>>('/v1/users/me');
 
-  return normalizeUserItem(data?.result?.item ?? {});
+  const result = unwrapResult<ItemResult>(data ?? {});
+  return normalizeUserItem(result?.item ?? {});
 }
 
 export async function changeMyPassword(payload: {
@@ -307,5 +308,6 @@ export async function changeMyPageImages(
     payload,
   );
 
-  return normalizeUserItem(data?.result?.item ?? {});
+  const result = unwrapResult<ItemResult>(data ?? {});
+  return normalizeUserItem(result?.item ?? {});
 }

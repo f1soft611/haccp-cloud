@@ -23,6 +23,8 @@ export function MyPageProfileCard({
   visibleRole,
   onProfileImageChange,
 }: MyPageProfileCardProps) {
+  const hasProfileImage = Boolean(profilePreview);
+
   return (
     <Card sx={{ borderRadius: 3 }}>
       <CardContent>
@@ -34,7 +36,21 @@ export function MyPageProfileCard({
           >
             <Avatar
               src={profilePreview || undefined}
-              sx={{ width: 120, height: 120, fontSize: '2.2rem' }}
+              sx={{
+                width: 120,
+                height: 120,
+                fontSize: '2.2rem',
+                bgcolor: hasProfileImage ? 'transparent' : 'primary.main',
+                color: hasProfileImage ? 'transparent' : 'common.white',
+                img: {
+                  objectFit: 'cover',
+                },
+              }}
+              imgProps={{
+                style: {
+                  objectFit: 'cover',
+                },
+              }}
             >
               {initials}
             </Avatar>

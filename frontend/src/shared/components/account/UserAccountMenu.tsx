@@ -34,11 +34,26 @@ function resolveAvatarLabel(displayName: string, userId: string): string {
   return 'U';
 }
 
+function resolveAvatarSx(size: number, hasImage: boolean) {
+  return {
+    width: size,
+    height: size,
+    bgcolor: hasImage ? 'transparent' : 'primary.main',
+    color: hasImage ? 'transparent' : 'common.white',
+    fontSize: size === 30 ? '0.9rem' : '1rem',
+    fontWeight: 800,
+    img: {
+      objectFit: 'cover',
+    },
+  };
+}
+
 export function UserAccountMenu() {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const displayName = useAuthStore((state) => state.displayName);
   const userId = useAuthStore((state) => state.userId);
+  const profileImage = useAuthStore((state) => state.profileImage);
   const role = useAuthStore((state) => state.role);
   const email = useAuthStore((state) => state.email);
   const loginHistoryId = useAuthStore((state) => state.loginHistoryId);
@@ -107,12 +122,12 @@ export function UserAccountMenu() {
         }}
       >
         <Avatar
-          sx={{
-            width: 30,
-            height: 30,
-            bgcolor: 'primary.main',
-            fontSize: '0.9rem',
-            fontWeight: 800,
+          src={profileImage || undefined}
+          sx={resolveAvatarSx(30, Boolean(profileImage))}
+          imgProps={{
+            style: {
+              objectFit: 'cover',
+            },
           }}
         >
           {avatarLabel}
@@ -141,7 +156,15 @@ export function UserAccountMenu() {
       >
         <Box sx={{ px: 1.2, py: 0.8 }}>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Avatar sx={{ width: 42, height: 42, bgcolor: 'primary.main' }}>
+            <Avatar
+              src={profileImage || undefined}
+              sx={resolveAvatarSx(42, Boolean(profileImage))}
+              imgProps={{
+                style: {
+                  objectFit: 'cover',
+                },
+              }}
+            >
               {avatarLabel}
             </Avatar>
             <Box sx={{ minWidth: 0 }}>
