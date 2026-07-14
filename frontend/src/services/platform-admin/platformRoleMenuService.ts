@@ -1,8 +1,22 @@
 import { apiClient } from '../api/apiClient';
 
+type ResultEnvelope<T> = {
+  result?: T;
+};
+
 export type PlatformRoleMenuMapping = {
   roleCode: string;
   menuIds: string[];
+};
+
+type RoleMenuItemResult = {
+  item?: PlatformRoleMenuMapping;
+};
+
+type RoleMenuCandidatesResult = {
+  item?: {
+    menuCodes?: string[];
+  };
 };
 
 function normalizeRoleCode(roleCode: string): string {
@@ -24,7 +38,7 @@ export async function getPlatformRoleMenuMapping(
   tenantCode?: string,
 ): Promise<PlatformRoleMenuMapping> {
   const normalizedRoleCode = normalizeRoleCode(roleCode);
-  const { data } = await apiClient.get<PlatformRoleMenuMapping>(
+  const { data } = await apiClient.get<ResultEnvelope<RoleMenuItemResult>>(
     '/v1/platform-admin/role-menus',
     {
       params: {
@@ -33,9 +47,10 @@ export async function getPlatformRoleMenuMapping(
       },
     },
   );
+  const item = data?.result?.item;
   return {
-    roleCode: normalizeRoleCode(data.roleCode ?? normalizedRoleCode),
-    menuIds: normalizeMenuIds(data.menuIds ?? []),
+    roleCode: normalizeRoleCode(item?.roleCode ?? normalizedRoleCode),
+    menuIds: normalizeMenuIds(item?.menuIds ?? []),
   };
 }
 
@@ -46,7 +61,7 @@ export async function savePlatformRoleMenuMapping(payload: {
 }): Promise<PlatformRoleMenuMapping> {
   const roleCode = normalizeRoleCode(payload.roleCode);
   const menuIds = normalizeMenuIds(payload.menuIds);
-  const { data } = await apiClient.put<PlatformRoleMenuMapping>(
+  const { data } = await apiClient.put<ResultEnvelope<RoleMenuItemResult>>(
     `/v1/platform-admin/role-menus/${roleCode}`,
     { menuIds },
     {
@@ -55,9 +70,10 @@ export async function savePlatformRoleMenuMapping(payload: {
       },
     },
   );
+  const item = data?.result?.item;
   return {
-    roleCode: normalizeRoleCode(data.roleCode ?? roleCode),
-    menuIds: normalizeMenuIds(data.menuIds ?? menuIds),
+    roleCode: normalizeRoleCode(item?.roleCode ?? roleCode),
+    menuIds: normalizeMenuIds(item?.menuIds ?? menuIds),
   };
 }
 
@@ -65,12 +81,11 @@ export async function listRoleMenuCandidatesByTenant(
   tenantCode: string,
 ): Promise<string[]> {
   const normalizedTenantCode = tenantCode.trim().toUpperCase();
-  const { data } = await apiClient.get<{ menuCodes?: string[] }>(
-    '/v1/platform-admin/role-menu-candidates',
-    {
-      params: { tenantCode: normalizedTenantCode },
-    },
-  );
+  const { data } = await apiClient.get<
+    ResultEnvelope<RoleMenuCandidatesResult>
+  >('/v1/platform-admin/role-menu-candidates', {
+    params: { tenantCode: normalizedTenantCode },
+  });
 
-  return normalizeMenuIds(data.menuCodes ?? []);
+  return normalizeMenuIds(data?.result?.item?.menuCodes ?? []);
 }

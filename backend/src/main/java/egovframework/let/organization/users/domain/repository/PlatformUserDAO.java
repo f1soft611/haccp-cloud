@@ -3,43 +3,103 @@ package egovframework.let.organization.users.domain.repository;
 import java.util.List;
 import java.util.Map;
 
-import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
+import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
+import org.springframework.stereotype.Repository;
+
 import egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO;
 import egovframework.let.organization.users.domain.model.PlatformUserVO;
 
-public interface PlatformUserDAO {
+/**
+ * 플랫폼 사용자 관리를 위한 데이터 접근 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
+ * @version 1.0
+ */
+@Repository("platformUserDAO")
+public class PlatformUserDAO extends EgovAbstractMapper {
 
-    List<PlatformUserVO> selectUserList(PlatformUserSearchConditionVO condition) throws Exception;
+    public List<PlatformUserVO> selectUserList(PlatformUserSearchConditionVO condition) throws Exception {
+        return selectList("PlatformUserDAO.selectUserList", condition);
+    }
 
-    List<PlatformUserVO> selectUserPagedList(PlatformUserSearchConditionVO condition) throws Exception;
+    public List<PlatformUserVO> selectUserPagedList(PlatformUserSearchConditionVO condition) throws Exception {
+        return selectList("PlatformUserDAO.selectUserPagedList", condition);
+    }
 
-    int selectUserPagedCount(PlatformUserSearchConditionVO condition) throws Exception;
+    public int selectUserPagedCount(PlatformUserSearchConditionVO condition) throws Exception {
+        Integer count = selectOne("PlatformUserDAO.selectUserPagedCount", condition);
+        return count == null ? 0 : count.intValue();
+    }
 
-    PlatformUserVO selectUserDetail(Map<String, Object> condition) throws Exception;
+    public PlatformUserVO selectUserDetail(Map<String, Object> condition) throws Exception {
+        return selectOne("PlatformUserDAO.selectUserDetail", condition);
+    }
 
-    void insertLoginAccount(Map<String, Object> payload) throws Exception;
+    public PlatformUserVO selectUserByTenantCodeAndLoginCode(Map<String, Object> condition) throws Exception {
+        return selectOne("PlatformUserDAO.selectUserByTenantCodeAndLoginCode", condition);
+    }
 
-    void insertUser(Map<String, Object> payload) throws Exception;
+    public Map<String, Object> selectLoginAccountForPasswordChange(Map<String, Object> condition) throws Exception {
+        return selectOne("PlatformUserDAO.selectLoginAccountForPasswordChange", condition);
+    }
 
-    void updateUser(Map<String, Object> payload) throws Exception;
+    public void insertLoginAccount(Map<String, Object> payload) throws Exception {
+        insert("PlatformUserDAO.insertLoginAccount", payload);
+    }
 
-    void updateUserStatus(Map<String, Object> payload) throws Exception;
+    public void insertUser(Map<String, Object> payload) throws Exception {
+        insert("PlatformUserDAO.insertUser", payload);
+    }
 
-    Long selectTenantIdByCode(String tenantCode) throws Exception;
+    public void updateUser(Map<String, Object> payload) throws Exception {
+        update("PlatformUserDAO.updateUser", payload);
+    }
 
-    Long selectDepartmentId(Map<String, Object> condition) throws Exception;
+    public void updateUserStatus(Map<String, Object> payload) throws Exception {
+        update("PlatformUserDAO.updateUserStatus", payload);
+    }
 
-    Long insertDepartment(Map<String, Object> payload) throws Exception;
+    public void updateLoginPasswordHash(Map<String, Object> payload) throws Exception {
+        update("PlatformUserDAO.updateLoginPasswordHash", payload);
+    }
 
-    Long selectLoginIdByUserId(Map<String, Object> condition) throws Exception;
+    public void updateLoginImages(Map<String, Object> payload) throws Exception {
+        update("PlatformUserDAO.updateLoginImages", payload);
+    }
 
-    Long selectLoginIdByLoginCode(Map<String, Object> condition) throws Exception;
+    public Long selectTenantIdByCode(String tenantCode) throws Exception {
+        return selectOne("PlatformUserDAO.selectTenantIdByCode", tenantCode);
+    }
 
-    Long selectUserIdByLoginId(Map<String, Object> condition) throws Exception;
+    public Long selectDepartmentId(Map<String, Object> condition) throws Exception {
+        return selectOne("PlatformUserDAO.selectDepartmentId", condition);
+    }
 
-    Long selectRoleIdByCode(Map<String, Object> condition) throws Exception;
+    public Long insertDepartment(Map<String, Object> payload) throws Exception {
+        return selectOne("PlatformUserDAO.insertDepartment", payload);
+    }
 
-    void deleteLoginAccountRolesByLoginId(Long loginId) throws Exception;
+    public Long selectLoginIdByUserId(Map<String, Object> condition) throws Exception {
+        return selectOne("PlatformUserDAO.selectLoginIdByUserId", condition);
+    }
 
-    void insertLoginAccountRole(Map<String, Object> payload) throws Exception;
+    public Long selectLoginIdByLoginCode(Map<String, Object> condition) throws Exception {
+        return selectOne("PlatformUserDAO.selectLoginIdByLoginCode", condition);
+    }
+
+    public Long selectUserIdByLoginId(Map<String, Object> condition) throws Exception {
+        return selectOne("PlatformUserDAO.selectUserIdByLoginId", condition);
+    }
+
+    public Long selectRoleIdByCode(Map<String, Object> condition) throws Exception {
+        return selectOne("PlatformUserDAO.selectRoleIdByCode", condition);
+    }
+
+    public void deleteLoginAccountRolesByLoginId(Long loginId) throws Exception {
+        delete("PlatformUserDAO.deleteLoginAccountRolesByLoginId", loginId);
+    }
+
+    public void insertLoginAccountRole(Map<String, Object> payload) throws Exception {
+        insert("PlatformUserDAO.insertLoginAccountRole", payload);
+    }
 }

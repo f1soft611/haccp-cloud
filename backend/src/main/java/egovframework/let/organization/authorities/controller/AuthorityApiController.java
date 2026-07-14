@@ -3,6 +3,7 @@ package egovframework.let.organization.authorities.controller;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 
 import javax.annotation.Resource;
 
@@ -21,7 +22,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.LoginVO;
+import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
+import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.platform_admin.access.web.PlanAccessLevel;
 import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
 import egovframework.let.organization.authorities.service.AuthorityService;
@@ -31,7 +34,10 @@ import egovframework.let.uss.auth.service.MenuInfoVO;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 플랫폼 관리자 역할/역할-메뉴 통합 API
+ * 플랫폼 권한/역할 관리를 위한 컨트롤러 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
+ * @version 1.0
  */
 @RestController
 @RequiredArgsConstructor
@@ -45,14 +51,20 @@ public class AuthorityApiController {
     @Resource(name = "authorityService")
     private AuthorityService authorityService;
 
+    @Resource(name = "resultVoHelper")
+    private ResultVoHelper resultVoHelper;
+
         @PlanAccessPolicy(
             menuUrl = "/org/roles",
             featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
             requiredPermissionLevel = PlanAccessLevel.READ
         )
     @GetMapping("/roles")
-    public List<RoleInfoVO> listRoles(@RequestParam(required = false) String tenantCode) throws Exception {
-        return authorityService.listRoles(resolveTenantCode(tenantCode));
+    public ResultVO listRoles(@RequestParam(required = false) String tenantCode) throws Exception {
+        List<RoleInfoVO> resultList = authorityService.listRoles(resolveTenantCode(tenantCode));
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("resultList", resultList);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
         @PlanAccessPolicy(
@@ -72,7 +84,7 @@ public class AuthorityApiController {
         validateSearchField(searchField);
         validateUseAt(useAt);
 
-        return authorityService.listRolesPaged(
+        Map<String, Object> resultMap = authorityService.listRolesPaged(
                 pageIndex,
                 pageSize,
                 searchField,
@@ -80,6 +92,7 @@ public class AuthorityApiController {
             resolveTenantCode(tenantCode),
                 useAt
         );
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     @PlanAccessPolicy(
@@ -88,14 +101,18 @@ public class AuthorityApiController {
             requiredPermissionLevel = PlanAccessLevel.WRITE
     )
     @PostMapping("/roles")
-    public RoleInfoVO createRole(@RequestBody RoleInfoVO payload) throws Exception {
+    public ResultVO createRole(@RequestBody RoleInfoVO payload) throws Exception {
         if (payload == null || !StringUtils.hasText(payload.getRoleCode())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "역할 코드는 필수입니다.");
         }
 
         payload.setTenantCode(resolveTenantCode(payload.getTenantCode()));
 
-        return authorityService.createRole(payload);
+        RoleInfoVO item = authorityService.createRole(payload);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("item", item);
+        resultMap.put("message", "권한이 성공적으로 등록되었습니다.");
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     @PlanAccessPolicy(
@@ -104,12 +121,16 @@ public class AuthorityApiController {
             requiredPermissionLevel = PlanAccessLevel.WRITE
     )
     @PatchMapping("/roles/{id}")
-    public RoleInfoVO updateRoleUseAt(@PathVariable Long id, @RequestBody RoleInfoVO payload) throws Exception {
+    public ResultVO updateRoleUseAt(@PathVariable Long id, @RequestBody RoleInfoVO payload) throws Exception {
         if (payload == null || !StringUtils.hasText(payload.getUseAt())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "useAt 값은 필수입니다.");
         }
 
-        return authorityService.updateRoleUseAt(id, payload);
+        RoleInfoVO item = authorityService.updateRoleUseAt(id, payload);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("item", item);
+        resultMap.put("message", "권한 상태가 성공적으로 변경되었습니다.");
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     @PlanAccessPolicy(
@@ -118,12 +139,16 @@ public class AuthorityApiController {
             requiredPermissionLevel = PlanAccessLevel.WRITE
     )
     @PutMapping("/roles/{id}")
-    public RoleInfoVO updateRole(@PathVariable Long id, @RequestBody RoleInfoVO payload) throws Exception {
+    public ResultVO updateRole(@PathVariable Long id, @RequestBody RoleInfoVO payload) throws Exception {
         if (payload == null || !StringUtils.hasText(payload.getRoleNm())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleNm 값은 필수입니다.");
         }
 
-        return authorityService.updateRole(id, payload);
+        RoleInfoVO item = authorityService.updateRole(id, payload);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("item", item);
+        resultMap.put("message", "권한이 성공적으로 수정되었습니다.");
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     @PlanAccessPolicy(
@@ -132,10 +157,13 @@ public class AuthorityApiController {
         requiredPermissionLevel = PlanAccessLevel.READ
     )
     @GetMapping("/role-menus")
-    public Map<String, Object> getRoleMenus(
+    public ResultVO getRoleMenus(
             @RequestParam String roleCode,
             @RequestParam(required = false) String tenantCode) throws Exception {
-        return authorityService.getRoleMenus(roleCode, resolveTenantCode(tenantCode));
+        Map<String, Object> item = authorityService.getRoleMenus(roleCode, resolveTenantCode(tenantCode));
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("item", item);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     @PlanAccessPolicy(
@@ -144,14 +172,18 @@ public class AuthorityApiController {
         requiredPermissionLevel = PlanAccessLevel.WRITE
     )
     @PutMapping("/role-menus/{roleCode}")
-    public Map<String, Object> replaceRoleMenus(@PathVariable String roleCode,
+    public ResultVO replaceRoleMenus(@PathVariable String roleCode,
             @RequestParam(required = false) String tenantCode,
             @RequestBody AuthorityMenuSaveRequestVO payload) throws Exception {
         if (payload == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
 
-        return authorityService.replaceRoleMenus(roleCode, resolveTenantCode(tenantCode), payload);
+        Map<String, Object> item = authorityService.replaceRoleMenus(roleCode, resolveTenantCode(tenantCode), payload);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("item", item);
+        resultMap.put("message", "권한별 메뉴가 저장되었습니다.");
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     @GetMapping("/role-menu-candidates")
@@ -160,20 +192,22 @@ public class AuthorityApiController {
         featureCode = "FEATURE_PLATFORM_ROLE_MGMT",
         requiredPermissionLevel = PlanAccessLevel.READ
     )
-    public Map<String, Object> getRoleMenuCandidates(@RequestParam(required = false) String tenantCode) throws Exception {
+    public ResultVO getRoleMenuCandidates(@RequestParam(required = false) String tenantCode) throws Exception {
         String resolvedTenantCode = resolveTenantCode(tenantCode);
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
-        result.put("tenantCode", resolvedTenantCode);
-        result.put("menuCodes", authorityService.listAllowedMenuCodesByTenantPlan(resolvedTenantCode));
-        return result;
+        Map<String, Object> item = new LinkedHashMap<String, Object>();
+        item.put("tenantCode", resolvedTenantCode);
+        item.put("menuCodes", authorityService.listAllowedMenuCodesByTenantPlan(resolvedTenantCode));
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("item", item);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     /**
-     * 현재 로그인 사용자의 접근 가능 메뉴 목록 조회
-     * 로그인 계정(login_code) + tenant_id 기준으로 실제 role_id 매핑을 조회한다.
+     * 현재 로그인 사용자의 접근 가능 메뉴 목록을 조회한다.
      */
     @GetMapping("/user-menus/me")
-    public List<MenuInfoVO> listCurrentUserMenus() throws Exception {
+    public ResultVO listCurrentUserMenus() throws Exception {
         Object userDetails = egovframework.com.cmm.util.EgovUserDetailsHelper.getAuthenticatedUser();
         if (!(userDetails instanceof egovframework.com.cmm.LoginVO)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 사용자 정보를 찾을 수 없습니다.");
@@ -191,7 +225,10 @@ public class AuthorityApiController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자 테넌트 정보가 없습니다.");
         }
 
-        return authorityService.listUserMenus(loginId.trim(), tenantId);
+        List<MenuInfoVO> resultList = authorityService.listUserMenus(loginId.trim(), tenantId);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("resultList", resultList);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
     private void validatePage(int pageIndex, int pageSize) {

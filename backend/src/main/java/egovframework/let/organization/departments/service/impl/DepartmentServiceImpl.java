@@ -6,6 +6,7 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +20,13 @@ import egovframework.let.organization.departments.domain.repository.DepartmentDA
 import egovframework.let.organization.departments.service.DepartmentService;
 
 /**
- * 부서 관리 서비스 구현
+ * 부서 관리를 위한 서비스 구현 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
+ * @version 1.0
  */
 @Service("departmentService")
-public class DepartmentServiceImpl implements DepartmentService {
+public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements DepartmentService {
 
     @Resource(name = "departmentDAO")
     private DepartmentDAO departmentDAO;

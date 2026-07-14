@@ -8,6 +8,7 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,9 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
-import egovframework.com.cmm.ResponseCode;
-import egovframework.com.cmm.service.ResultVO;
 import egovframework.let.platform_admin.access.service.PlanAccessService;
+import egovframework.let.organization.users.domain.model.PlatformUserImageUpdateRequestVO;
+import egovframework.let.organization.users.domain.model.PlatformUserPasswordChangeRequestVO;
 import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
 import egovframework.let.organization.users.domain.model.PlatformUserSearchConditionVO;
 import egovframework.let.organization.users.domain.model.PlatformUserVO;
@@ -25,8 +26,14 @@ import egovframework.let.organization.users.domain.repository.PlatformUserDAO;
 import egovframework.let.organization.users.service.PlatformUserService;
 import egovframework.let.utl.sim.service.EgovFileScrty;
 
+/**
+ * 플랫폼 사용자 관리를 위한 서비스 구현 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
+ * @version 1.0
+ */
 @Service("platformUserService")
-public class PlatformUserServiceImpl implements PlatformUserService {
+public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements PlatformUserService {
 
     private static final String USER_LIMIT_FEATURE_CODE = "LIMIT_USER_COUNT";
     private static final String DEFAULT_INITIAL_PASSWORD = "Welcome123!";
@@ -45,7 +52,7 @@ public class PlatformUserServiceImpl implements PlatformUserService {
     }
 
     @Override
-    public ResultVO listUsersPaged(int pageIndex, int pageSize, String keyword, String filterActive, String tenantCode) throws Exception {
+    public Map<String, Object> listUsersPaged(int pageIndex, int pageSize, String keyword, String filterActive, String tenantCode) throws Exception {
         PlatformUserSearchConditionVO condition = new PlatformUserSearchConditionVO();
         condition.setPageIndex(pageIndex);
         condition.setPageSize(pageSize);
@@ -70,12 +77,95 @@ public class PlatformUserServiceImpl implements PlatformUserService {
         resultMap.put("userList", userList);
         resultMap.put("totalCount", totalCount);
         resultMap.put("paginationInfo", paginationInfo);
+        return resultMap;
+    }
 
-        ResultVO resultVO = new ResultVO();
-        resultVO.setResultCode(ResponseCode.SUCCESS.getCode());
-        resultVO.setResultMessage(ResponseCode.SUCCESS.getMessage());
-        resultVO.setResult(resultMap);
-        return resultVO;
+    @Override
+    public PlatformUserVO getMyPageUser(String tenantCode, String loginCode) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        String normalizedLoginCode = normalizeNullable(loginCode);
+
+        if (!StringUtils.hasText(normalizedLoginCode)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "로그인 정보를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantCode", normalizedTenantCode);
+        condition.put("loginCode", normalizedLoginCode);
+
+        PlatformUserVO user = platformUserDAO.selectUserByTenantCodeAndLoginCode(condition);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다.");
+        }
+
+        user.setTenantCode(normalizedTenantCode);
+        return user;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void changeMyPassword(String tenantCode, String loginCode, PlatformUserPasswordChangeRequestVO payload) throws Exception {
+        validatePasswordChangePayload(payload);
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        String normalizedLoginCode = normalizeNullable(loginCode);
+        if (!StringUtils.hasText(normalizedLoginCode)) {
+            throw new IllegalArgumentException("로그인 정보를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantCode", normalizedTenantCode);
+        condition.put("loginCode", normalizedLoginCode);
+
+        Map<String, Object> account = platformUserDAO.selectLoginAccountForPasswordChange(condition);
+        if (account == null || account.get("loginId") == null) {
+            throw new IllegalStateException("사용자 계정을 찾을 수 없습니다.");
+        }
+
+        String storedPasswordHash = normalizeNullable(String.valueOf(account.get("passwordHash")));
+        String encryptedCurrentPassword = EgovFileScrty.encryptPassword(payload.getCurrentPassword(), normalizedLoginCode);
+        if (!StringUtils.hasText(storedPasswordHash) || !storedPasswordHash.equals(encryptedCurrentPassword)) {
+            throw new IllegalStateException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        String encryptedNewPassword = EgovFileScrty.encryptPassword(payload.getNewPassword(), normalizedLoginCode);
+        if (encryptedCurrentPassword.equals(encryptedNewPassword)) {
+            throw new IllegalArgumentException("현재 비밀번호와 다른 새 비밀번호를 입력해주세요.");
+        }
+
+        Map<String, Object> updatePayload = new HashMap<String, Object>();
+        updatePayload.put("loginId", account.get("loginId"));
+        updatePayload.put("passwordHash", encryptedNewPassword);
+        platformUserDAO.updateLoginPasswordHash(updatePayload);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PlatformUserVO changeMyImages(String tenantCode, String loginCode, PlatformUserImageUpdateRequestVO payload) throws Exception {
+        validateImageChangePayload(payload);
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        String normalizedLoginCode = normalizeNullable(loginCode);
+        if (!StringUtils.hasText(normalizedLoginCode)) {
+            throw new IllegalArgumentException("로그인 정보를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantCode", normalizedTenantCode);
+        condition.put("loginCode", normalizedLoginCode);
+
+        PlatformUserVO user = platformUserDAO.selectUserByTenantCodeAndLoginCode(condition);
+        if (user == null || user.getLoginId() == null) {
+            throw new IllegalStateException("사용자 계정을 찾을 수 없습니다.");
+        }
+
+        Map<String, Object> updatePayload = new HashMap<String, Object>();
+        updatePayload.put("loginId", user.getLoginId());
+        updatePayload.put("profileImage", normalizeImageValue(payload.getProfileImage()));
+        updatePayload.put("stampImage", normalizeImageValue(payload.getStampImage()));
+        platformUserDAO.updateLoginImages(updatePayload);
+
+        return getMyPageUser(normalizedTenantCode, normalizedLoginCode);
     }
 
     @Override
@@ -326,6 +416,39 @@ public class PlatformUserServiceImpl implements PlatformUserService {
         platformUserDAO.insertLoginAccountRole(payload);
     }
 
+    private void validatePasswordChangePayload(PlatformUserPasswordChangeRequestVO payload) {
+        if (payload == null) {
+            throw new IllegalArgumentException("요청 본문이 필요합니다.");
+        }
+        if (!StringUtils.hasText(payload.getCurrentPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호는 필수입니다.");
+        }
+        if (!StringUtils.hasText(payload.getNewPassword())) {
+            throw new IllegalArgumentException("새 비밀번호는 필수입니다.");
+        }
+        if (!StringUtils.hasText(payload.getConfirmPassword())) {
+            throw new IllegalArgumentException("새 비밀번호 확인은 필수입니다.");
+        }
+        if (!payload.getNewPassword().equals(payload.getConfirmPassword())) {
+            throw new IllegalArgumentException("새 비밀번호와 확인 값이 일치하지 않습니다.");
+        }
+        if (payload.getNewPassword().trim().length() < 8) {
+            throw new IllegalArgumentException("새 비밀번호는 8자 이상이어야 합니다.");
+        }
+    }
+
+    private void validateImageChangePayload(PlatformUserImageUpdateRequestVO payload) {
+        if (payload == null) {
+            throw new IllegalArgumentException("요청 본문이 필요합니다.");
+        }
+
+        boolean hasProfileImage = StringUtils.hasText(normalizeImageValue(payload.getProfileImage()));
+        boolean hasStampImage = StringUtils.hasText(normalizeImageValue(payload.getStampImage()));
+        if (!hasProfileImage && !hasStampImage) {
+            throw new IllegalArgumentException("저장할 이미지가 없습니다.");
+        }
+    }
+
     private String normalizeTenantCode(String tenantCode) {
         if (!StringUtils.hasText(tenantCode)) {
             return "PLATFORM";
@@ -341,6 +464,10 @@ public class PlatformUserServiceImpl implements PlatformUserService {
     }
 
     private String normalizeNullable(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private String normalizeImageValue(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
     }
 

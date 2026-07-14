@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS tb_login_account (
     tenant_id BIGINT NOT NULL,
     login_code VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    profile_image TEXT,
+    stamp_image TEXT,
     login_attempt_count INT DEFAULT 0,
     locked_at TIMESTAMP,
     password_changed_at TIMESTAMP,

@@ -3,15 +3,14 @@ package egovframework.let.organization.authorities.service;
 import java.util.List;
 import java.util.Map;
 
-import egovframework.com.cmm.service.ResultVO;
 import egovframework.let.organization.authorities.domain.model.AuthorityMenuSaveRequestVO;
 import egovframework.let.uss.auth.service.RoleInfoVO;
 import egovframework.let.uss.auth.service.MenuInfoVO;
 
 /**
- * 플랫폼 역할 서비스
- * @author AI Assistant
- * @since 2026.06.22
+ * 플랫폼 권한/역할 관리를 위한 서비스 인터페이스 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
  * @version 1.0
  */
 public interface AuthorityService {
@@ -33,7 +32,7 @@ public interface AuthorityService {
      * @return 조회 결과
      * @throws Exception
      */
-    ResultVO listRolesPaged(
+        Map<String, Object> listRolesPaged(
             int pageIndex,
             int pageSize,
             String searchField,
@@ -41,7 +40,7 @@ public interface AuthorityService {
             String tenantCode,
             String useAt) throws Exception;
 
-    default ResultVO listRolesPaged(
+        default Map<String, Object> listRolesPaged(
             int pageIndex,
             int pageSize,
             String searchField,

@@ -3,25 +3,47 @@ package egovframework.let.organization.departments.domain.repository;
 import java.util.List;
 import java.util.Map;
 
+import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
+import org.springframework.stereotype.Repository;
+
 import egovframework.let.organization.departments.domain.model.DepartmentSearchConditionVO;
 import egovframework.let.organization.departments.domain.model.DepartmentVO;
 
 /**
- * 부서 관리 DAO
+ * 부서 관리를 위한 데이터 접근 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
+ * @version 1.0
  */
-public interface DepartmentDAO {
+@Repository("departmentDAO")
+public class DepartmentDAO extends EgovAbstractMapper {
 
-    List<DepartmentVO> selectDepartmentList(DepartmentSearchConditionVO condition) throws Exception;
+    public List<DepartmentVO> selectDepartmentList(DepartmentSearchConditionVO condition) throws Exception {
+        return selectList("DepartmentDAO.selectDepartmentList", condition);
+    }
 
-    DepartmentVO selectDepartmentById(Map<String, Object> params) throws Exception;
+    public DepartmentVO selectDepartmentById(Map<String, Object> params) throws Exception {
+        return selectOne("DepartmentDAO.selectDepartmentById", params);
+    }
 
-    Long selectTenantIdByCode(String tenantCode) throws Exception;
+    public Long selectTenantIdByCode(String tenantCode) throws Exception {
+        return selectOne("DepartmentDAO.selectTenantIdByCode", tenantCode);
+    }
 
-    Long insertDepartment(Map<String, Object> payload) throws Exception;
+    public Long insertDepartment(Map<String, Object> payload) throws Exception {
+        return selectOne("DepartmentDAO.insertDepartment", payload);
+    }
 
-    void updateDepartment(Map<String, Object> payload) throws Exception;
+    public void updateDepartment(Map<String, Object> payload) throws Exception {
+        update("DepartmentDAO.updateDepartment", payload);
+    }
 
-    void deleteDepartment(Map<String, Object> params) throws Exception;
+    public void deleteDepartment(Map<String, Object> params) throws Exception {
+        delete("DepartmentDAO.deleteDepartment", params);
+    }
 
-    int countChildDepartments(Map<String, Object> params) throws Exception;
+    public int countChildDepartments(Map<String, Object> params) throws Exception {
+        Integer count = selectOne("DepartmentDAO.countChildDepartments", params);
+        return count == null ? 0 : count;
+    }
 }

@@ -16,6 +16,7 @@ type UserMenuListEntry = UserMenuEntry | string;
 type UserMenuEnvelope = {
   result?: {
     menuList?: UserMenuListEntry[];
+    resultList?: UserMenuListEntry[];
   };
   menuList?: UserMenuListEntry[];
 };
@@ -93,7 +94,9 @@ function extractUserMenuList(data: UserMenuResponse): UserMenuListEntry[] {
     return data;
   }
 
-  return data.result?.menuList ?? data.menuList ?? [];
+  return (
+    data.result?.resultList ?? data.result?.menuList ?? data.menuList ?? []
+  );
 }
 
 export async function listAccessibleMenuPaths(): Promise<string[]> {
