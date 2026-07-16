@@ -9,6 +9,7 @@
         <result property="categoryGroupId" column="drafting_work_category_group_id"/>
         <result property="categoryCode" column="cata_code"/>
         <result property="categoryName" column="category_name"/>
+        <result property="categorySortOrder" column="category_sort_order"/>
         <result property="divisionCode" column="cata_type_code"/>
         <result property="divisionName" column="code_name"/>
         <result property="cycle" column="reg_term"/>
@@ -26,7 +27,12 @@
         <result property="templateJson" column="template_json"/>
         <result property="templateHtml" column="template_html"/>
         <result property="hasDocument" column="has_document"/>
+        <result property="todoStatus" column="todo_status"/>
+        <result property="approvalStatusType" column="approval_status_type"/>
+        <result property="approvalStatusTypeName" column="approval_status_type_name"/>
+        <result property="latestStatusAt" column="latest_status_at"/>
     </resultMap>
+
 
     <select id="HaccpBaseWorkDAO.selectWorkList"
             parameterType="egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkSearchConditionVO"
@@ -37,6 +43,7 @@
             w.drafting_work_category_group_id,
             g.cata_code,
             g.cata_name AS category_name,
+            COALESCE(g.view_seq, 0) AS category_sort_order,
             w.cata_type_code,
             w.code_name,
             w.reg_term,
@@ -122,6 +129,7 @@
             w.drafting_work_category_group_id,
             g.cata_code,
             g.cata_name AS category_name,
+            COALESCE(g.view_seq, 0) AS category_sort_order,
             w.cata_type_code,
             w.code_name,
             w.reg_term,
@@ -190,6 +198,7 @@
           AND COALESCE(w.delete_status, 'N') != 'Y'
     </select>
 
+
     <select id="HaccpBaseWorkDAO.selectTenantIdByCode"
             parameterType="string"
             resultType="long">
@@ -206,6 +215,16 @@
         FROM tb_login_account
         WHERE tenant_id = #{tenantId}
           AND login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <select id="HaccpBaseWorkDAO.selectUserIdByTenantAndLoginId"
+            parameterType="map"
+            resultType="long">
+        SELECT user_id
+        FROM tb_user
+        WHERE tenant_id = #{tenantId}
+          AND login_id = #{loginId}
         LIMIT 1
     </select>
 

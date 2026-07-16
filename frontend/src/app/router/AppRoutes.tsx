@@ -22,6 +22,7 @@ import { OnboardingVerifyPage } from '../../pages/platform-admin/tenants/Onboard
 import { HaccpBaseManagementPage } from '../../pages/documents/haccp-base/HaccpBaseManagementPage';
 import { HaccpBaseEditorPage } from '../../pages/documents/haccp-base/HaccpBaseEditorPage';
 import { HaccpBaseCategoryManagementPage } from '../../pages/documents/haccp-base/HaccpBaseCategoryManagementPage';
+import { ApprovalDraftWritePage } from '../../pages/documents/approvals/ApprovalDraftWritePage';
 import { useAuthStore } from '../../shared/store/authStore';
 import { resolveDashboardLandingPath } from '../../shared/utils/dashboardRouting';
 
@@ -165,6 +166,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute enforceMenuAccess>
               <HaccpBaseCategoryManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/approvals/draft/:baseId"
+          element={
+            <ProtectedRoute>
+              <ApprovalDraftWritePage />
             </ProtectedRoute>
           }
         />

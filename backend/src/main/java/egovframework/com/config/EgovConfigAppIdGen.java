@@ -2113,4 +2113,20 @@ public class EgovConfigAppIdGen {
 				.build();
 	}
 
+	/** 전자결재 기안번호 순번 ID Generation Config (4자리 순번)
+	 * @return
+	 */
+	@Bean(destroyMethod = "destroy")
+	public EgovTableIdGnrServiceImpl egovElectronicApprovalExeIdGnrService() {
+		return new EgovIdGnrBuilder().setDataSource(dataSource)
+				.setEgovIdGnrStrategyImpl(new EgovIdGnrStrategyImpl())
+				.setBlockSize(1)
+				.setTable("IDS")
+				.setTableName("EA_EXE_ID")
+				.setPreFix("")
+				.setCipers(SEQUENCE_LENGTH)
+				.setFillChar('0')
+				.build();
+	}
+
 }

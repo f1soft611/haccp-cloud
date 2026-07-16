@@ -2,7 +2,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
 import { useEffect, useRef } from 'react';
 import { Box, Paper } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type SxProps, type Theme } from '@mui/material/styles';
 import StarterKit from '@tiptap/starter-kit';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
@@ -13,7 +13,10 @@ import TableRow from '@tiptap/extension-table-row';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { FontSize } from '../extensions/fontSizeExtension';
-import { DocumentFieldExtension } from '../extensions/documentFieldExtension';
+import {
+  DocumentFieldExtension,
+  type DocumentFieldDisplayMode,
+} from '../extensions/documentFieldExtension';
 import { SlashCommandExtension } from '../extensions/slashCommandExtension';
 import {
   StyledTableCell,
@@ -26,12 +29,29 @@ import './slashCommand.css';
 type NotionLikeEditorProps = {
   content: JSONContent;
   editable?: boolean;
+  showToolbar?: boolean;
+  enableSlashCommand?: boolean;
+  canvasMinHeight?: number;
+  editorMinHeight?: number;
+  documentFieldDisplayMode?: DocumentFieldDisplayMode;
+  paperSx?: SxProps<Theme>;
   onChange: (content: JSONContent, html: string) => void;
   documentFieldValues: DocumentFieldValues;
 };
 
 export function NotionLikeEditor(props: NotionLikeEditorProps) {
-  const { content, editable = true, onChange, documentFieldValues } = props;
+  const {
+    content,
+    editable = true,
+    showToolbar = true,
+    enableSlashCommand = true,
+    canvasMinHeight = 520,
+    editorMinHeight = 420,
+    documentFieldDisplayMode = 'token',
+    paperSx,
+    onChange,
+    documentFieldValues,
+  } = props;
   const lastSerializedContentRef = useRef<string>('');
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
@@ -57,12 +77,13 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       FontSize,
       DocumentFieldExtension.configure({
         resolveFieldValue: (fieldKey) => documentFieldValues[fieldKey],
+        displayMode: documentFieldDisplayMode,
       }),
       TaskList,
       TaskItem.configure({
         nested: false,
       }),
-      SlashCommandExtension,
+      ...(enableSlashCommand ? [SlashCommandExtension] : []),
       Table.configure({
         resizable: true,
         allowTableNodeSelection: true,
@@ -115,20 +136,35 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
     <Paper
       sx={{
         borderRadius: 0,
-        overflow: 'visible',
+        position: 'relative',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
         border: '1px solid',
         borderColor: 'divider',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: 'inherit',
+          pointerEvents: 'none',
+          boxSizing: 'border-box',
+        },
+        ...paperSx,
       }}
     >
-      <ResetEditorToolbar editor={editor} disabled={!editable} />
+      {showToolbar ? (
+        <ResetEditorToolbar editor={editor} disabled={!editable} />
+      ) : null}
       <Box
         sx={{
-          minHeight: 520,
+          ...(canvasMinHeight > 0 ? { minHeight: canvasMinHeight } : {}),
           p: { xs: 2, md: 3 },
           bgcolor: editorCanvasBg,
           '& .tiptap': {
             outline: 'none',
-            minHeight: 420,
+            ...(editorMinHeight > 0 ? { minHeight: editorMinHeight } : {}),
             color: editorTextColor,
             fontSize: 15,
             lineHeight: 1.7,
@@ -240,6 +276,21 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             lineHeight: 1.2,
             whiteSpace: 'nowrap',
             verticalAlign: 'middle',
+          },
+          '& .tiptap .document-field-token--value': {
+            display: 'inline',
+            padding: 0,
+            margin: 0,
+            border: 'none',
+            borderRadius: 0,
+            backgroundColor: 'transparent',
+            color: editorTextColor,
+            fontSize: 'inherit',
+            lineHeight: 'inherit',
+            whiteSpace: 'pre-wrap',
+          },
+          '& .tiptap .document-field-token__value': {
+            fontWeight: 500,
           },
           '& .tiptap .document-field-token__group': {
             opacity: 0.72,

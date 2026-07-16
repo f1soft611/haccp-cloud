@@ -1,0 +1,847 @@
+package egovframework.let.documents.haccpwork.service.impl;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Resource;
+
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
+
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftTempSaveRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
+import egovframework.let.documents.haccpwork.domain.repository.HaccpWorkDAO;
+import egovframework.let.documents.haccpwork.service.HaccpWorkDraftService;
+import egovframework.let.documents.haccpwork.service.HaccpWorkFlowService;
+import lombok.RequiredArgsConstructor;
+
+/**
+ * HACCP 업무 작성~결재 흐름을 위한 서비스 구현 클래스
+ */
+@Service("haccpWorkFlowService")
+@RequiredArgsConstructor
+public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements HaccpWorkFlowService {
+
+    private static final String DEFAULT_EABUS_NO = "001";
+    private static final String DEFAULT_PLANT_CODE = "001";
+    private static final String DEFAULT_LEVEL_NAME = "담당";
+    private static final String DEFAULT_CATA_TYPE_CODE = "000000";
+    private static final String DEFAULT_WEIGHT_TYPE_CODE = "normal";
+    private static final String DEFAULT_WEIGHT_STATUS = "normal";
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HHmm");
+
+    private final HaccpWorkDraftService haccpWorkDraftService;
+    private final HaccpWorkDAO haccpWorkDAO;
+
+    @Resource(name = "egovElectronicApprovalExeIdGnrService")
+    private EgovIdGnrService electronicApprovalExeIdGnrService;
+
+    @Override
+    @Transactional
+    public HaccpWorkVO saveTempDraft(
+            Long workId,
+            String tenantCode,
+            HaccpWorkDraftTempSaveRequestVO payload,
+            String actorLoginCode
+    ) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        if (actorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "임시저장 사용자 정보를 확인할 수 없습니다.");
+        }
+
+        HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
+
+        LocalDateTime now = LocalDateTime.now();
+        String regDate = now.format(DATE_FORMATTER);
+        String twfTime = now.format(TIME_FORMATTER);
+        String title = StringUtils.hasText(payload.getTitle())
+                ? payload.getTitle().trim()
+                : "임시저장 " + regDate;
+        String templateJson = StringUtils.hasText(payload.getTemplateJson()) ? payload.getTemplateJson().trim() : "";
+        String templateHtml = StringUtils.hasText(payload.getTemplateHtml()) ? payload.getTemplateHtml().trim() : "";
+        String eaExeId;
+        Long targetApprovalId;
+        Map<String, Object> actorProfile = selectApprovalActorProfile(tenantId, actorLoginId);
+
+        Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId);
+        if (preApplyApprovalId == null) {
+            eaExeId = buildEaExeId(now.toLocalDate());
+            Map<String, Object> mainParams = new HashMap<String, Object>();
+            mainParams.put("tenantId", tenantId);
+            mainParams.put("workId", workId);
+            mainParams.put("plantCode", DEFAULT_PLANT_CODE);
+            mainParams.put("eabusNo", DEFAULT_EABUS_NO);
+            mainParams.put("eaExeId", eaExeId);
+            mainParams.put("regDate", regDate);
+            mainParams.put("loginId", actorLoginId);
+            mainParams.put("statusType", "pre_apply");
+            mainParams.put("departmentId", getLong(actorProfile, "departmentId"));
+            mainParams.put("levelName", resolveLevelName(actorProfile));
+            mainParams.put("title", title);
+            mainParams.put("twfTime", twfTime);
+            mainParams.put("txtCnt", templateHtml);
+            mainParams.put("txtJson", templateJson);
+            mainParams.put("afterCnt", templateHtml);
+            mainParams.put("afterTxtJson", templateJson);
+            mainParams.put("afterTwfTime", twfTime);
+            mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
+            mainParams.put("endStatus", "pre_apply");
+            mainParams.put("statusTypeName", "미완료");
+            mainParams.put("reportDate", regDate);
+            mainParams.put("settlePlanDate", regDate);
+            mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
+            mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
+            mainParams.put("twfDate", regDate);
+            mainParams.put("afterTwfDate", regDate);
+            mainParams.put("deleteStatus", "N");
+            mainParams.put("createdBy", actorLoginId);
+            mainParams.put("updatedBy", actorLoginId);
+
+            haccpWorkDAO.insertElectronicApprovalMain(mainParams);
+            targetApprovalId = getLong(mainParams, "electronicApprovalId");
+        } else {
+            targetApprovalId = preApplyApprovalId;
+            Map<String, Object> updateParams = new HashMap<String, Object>();
+            updateParams.put("tenantId", tenantId);
+            updateParams.put("approvalId", preApplyApprovalId);
+            updateParams.put("title", title);
+            updateParams.put("txtCnt", templateHtml);
+            updateParams.put("txtJson", templateJson);
+            updateParams.put("afterCnt", templateHtml);
+            updateParams.put("afterTxtJson", templateJson);
+            updateParams.put("statusType", "pre_apply");
+            updateParams.put("statusTypeName", "미완료");
+            updateParams.put("endStatus", "pre_apply");
+            updateParams.put("updatedBy", actorLoginId);
+            updateParams.put("updatedAt", now);
+            haccpWorkDAO.updateElectronicApprovalMainDraftContent(updateParams);
+
+            Map<String, Object> approvalMain = new HashMap<String, Object>();
+            approvalMain.put("tenantId", tenantId);
+            approvalMain.put("approvalId", preApplyApprovalId);
+            Map<String, Object> existingMain = haccpWorkDAO.selectApprovalMainById(approvalMain);
+            eaExeId = trimToEmpty(String.valueOf(existingMain == null ? "" : existingMain.get("eaExeId")));
+            if (!StringUtils.hasText(eaExeId)) {
+                eaExeId = buildEaExeId(now.toLocalDate());
+            }
+        }
+
+        if (targetApprovalId == null) {
+            throw new IllegalStateException("임시저장 결재 문서 키를 확인할 수 없습니다.");
+        }
+
+        if (!StringUtils.hasText(work.getReviewerId() == null ? "" : String.valueOf(work.getReviewerId()))
+            || !StringUtils.hasText(work.getApproverId() == null ? "" : String.valueOf(work.getApproverId()))) {
+            return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
+        }
+
+        List<Long> referenceLoginIds = resolveReferenceLoginIds(
+            tenantId,
+            payload == null ? null : payload.getReferenceIds(),
+            actorLoginId,
+            work.getReviewerId(),
+            work.getApproverId()
+        );
+        Map<String, Object> reviewerProfile = selectApprovalActorProfile(tenantId, work.getReviewerId());
+        Map<String, Object> approverProfile = selectApprovalActorProfile(tenantId, work.getApproverId());
+        rebuildPreApplyApprovalLines(
+            tenantId,
+            targetApprovalId,
+            actorLoginId,
+            work.getReviewerId(),
+            work.getApproverId(),
+            actorProfile,
+            reviewerProfile,
+            approverProfile,
+            referenceLoginIds,
+            now,
+            eaExeId
+        );
+
+        return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
+    }
+
+    @Override
+    @Transactional
+    public Long submitDraft(
+            Long workId,
+            String tenantCode,
+            HaccpWorkDraftSubmitRequestVO payload,
+            String actorLoginCode
+    ) throws Exception {
+        String normalizedTitle = payload == null ? "" : trimToEmpty(payload.getTitle());
+        if (!StringUtils.hasText(normalizedTitle)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "기안 제목은 필수입니다.");
+        }
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        if (actorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재신청 사용자 정보를 확인할 수 없습니다.");
+        }
+
+        HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
+        if (work.getReviewerId() == null || work.getApproverId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "검토자/승인자 지정 후 결재신청할 수 있습니다.");
+        }
+
+        String templateJson = StringUtils.hasText(payload.getTemplateJson())
+                ? payload.getTemplateJson().trim()
+                : trimToEmpty(work.getTemplateJson());
+        String templateHtml = StringUtils.hasText(payload.getTemplateHtml())
+                ? payload.getTemplateHtml().trim()
+                : trimToEmpty(work.getTemplateHtml());
+
+        LocalDateTime now = LocalDateTime.now();
+        String regDate = now.format(DATE_FORMATTER);
+        String twfTime = now.format(TIME_FORMATTER);
+        String eaExeId = buildEaExeId(now.toLocalDate());
+
+        Map<String, Object> actorProfile = selectApprovalActorProfile(tenantId, actorLoginId);
+        Map<String, Object> reviewerProfile = selectApprovalActorProfile(tenantId, work.getReviewerId());
+        Map<String, Object> approverProfile = selectApprovalActorProfile(tenantId, work.getApproverId());
+
+        Map<String, Object> mainParams = new HashMap<String, Object>();
+        mainParams.put("tenantId", tenantId);
+        mainParams.put("workId", workId);
+        mainParams.put("plantCode", DEFAULT_PLANT_CODE);
+        mainParams.put("eabusNo", DEFAULT_EABUS_NO);
+        mainParams.put("eaExeId", eaExeId);
+        mainParams.put("regDate", regDate);
+        mainParams.put("loginId", actorLoginId);
+        mainParams.put("statusType", "in_progress");
+        mainParams.put("departmentId", getLong(actorProfile, "departmentId"));
+        mainParams.put("levelName", resolveLevelName(actorProfile));
+        mainParams.put("title", normalizedTitle);
+        mainParams.put("twfTime", twfTime);
+        mainParams.put("txtCnt", templateHtml);
+        mainParams.put("txtJson", templateJson);
+        mainParams.put("afterCnt", templateHtml);
+        mainParams.put("afterTxtJson", templateJson);
+        mainParams.put("afterTwfTime", twfTime);
+        mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
+        mainParams.put("endStatus", "in_progress");
+        mainParams.put("statusTypeName", "진행중");
+        mainParams.put("reportDate", regDate);
+        mainParams.put("settlePlanDate", regDate);
+        mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
+        mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
+        mainParams.put("twfDate", regDate);
+        mainParams.put("afterTwfDate", regDate);
+        mainParams.put("deleteStatus", "N");
+        mainParams.put("createdBy", actorLoginId);
+        mainParams.put("updatedBy", actorLoginId);
+
+        haccpWorkDAO.insertElectronicApprovalMain(mainParams);
+        Long electronicApprovalId = getLong(mainParams, "electronicApprovalId");
+        if (electronicApprovalId == null) {
+            throw new IllegalStateException("결재 메인 저장 후 키를 확인할 수 없습니다.");
+        }
+
+        insertApprovalLine(
+                tenantId,
+                electronicApprovalId,
+                1,
+                actorLoginId,
+                actorProfile,
+                "기안",
+                "drafted",
+                "approved",
+                "Y",
+                "N",
+            now,
+            now,
+            now,
+                eaExeId
+        );
+        insertApprovalLine(
+                tenantId,
+                electronicApprovalId,
+                2,
+                work.getReviewerId(),
+                reviewerProfile,
+                "검토",
+                "drafted",
+            "",
+                "N",
+                "N",
+                now,
+                null,
+                null,
+                eaExeId
+        );
+        insertApprovalLine(
+                tenantId,
+                electronicApprovalId,
+                3,
+                work.getApproverId(),
+                approverProfile,
+                "승인",
+                "drafted",
+                "",
+                "N",
+                "Y",
+                null,
+                null,
+                null,
+                eaExeId
+        );
+
+        List<Long> referenceLoginIds = resolveReferenceLoginIds(
+            tenantId,
+            payload == null ? null : payload.getReferenceIds(),
+            actorLoginId,
+            work.getReviewerId(),
+            work.getApproverId()
+        );
+        int sequence = 4;
+        for (Long referenceLoginId : referenceLoginIds) {
+            Map<String, Object> referenceProfile = selectApprovalActorProfile(tenantId, referenceLoginId);
+            insertApprovalLine(
+                    tenantId,
+                    electronicApprovalId,
+                    sequence,
+                    referenceLoginId,
+                    referenceProfile,
+                    "참조",
+                    "cooperated",
+                    "",
+                    "N",
+                    "N",
+                        null,
+                        null,
+                        null,
+                    eaExeId
+            );
+            sequence++;
+        }
+
+                insertApprovalLine(
+                    tenantId,
+                    electronicApprovalId,
+                    sequence,
+                    actorLoginId,
+                    actorProfile,
+                    "최종기안",
+                    "drafted",
+                    "",
+                    "N",
+                    "N",
+                    null,
+                    null,
+                    null,
+                    eaExeId
+                );
+
+        return electronicApprovalId;
+    }
+
+    @Override
+    public HaccpWorkVO updateApprovalStatus(
+            Long approvalId,
+            String tenantCode,
+            HaccpWorkApprovalStatusUpdateRequestVO payload,
+            String actorLoginCode
+    ) throws Exception {
+        if (approvalId == null || approvalId.longValue() <= 0L) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재 ID가 올바르지 않습니다.");
+        }
+
+        String eventType = payload == null ? "" : trimToEmpty(payload.getEventType()).toLowerCase();
+        if (!StringUtils.hasText(eventType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재 이벤트 타입은 필수입니다.");
+        }
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        if (actorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재 처리 사용자 정보를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> keyParams = new HashMap<String, Object>();
+        keyParams.put("tenantId", tenantId);
+        keyParams.put("approvalId", approvalId);
+        Map<String, Object> approvalMain = haccpWorkDAO.selectApprovalMainById(keyParams);
+        if (approvalMain == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "결재 문서를 찾을 수 없습니다.");
+        }
+
+        int targetSeq;
+        String lineStatus;
+        String lineOption;
+        String mainStatus;
+        String mainStatusName;
+        String endStatus;
+        boolean isReferenceEvent = false;
+        boolean shouldUpdateMain = true;
+
+        switch (eventType) {
+            case "review_approve":
+                targetSeq = 2;
+                lineStatus = "approved";
+                lineOption = "검토승인";
+                mainStatus = "in_progress";
+                mainStatusName = "진행중";
+                endStatus = "in_progress";
+                break;
+            case "review_return":
+                targetSeq = 2;
+                lineStatus = "returned";
+                lineOption = "반송";
+                mainStatus = "rejected";
+                mainStatusName = "반송";
+                endStatus = "rejected";
+                break;
+            case "final_approve":
+                targetSeq = 3;
+                lineStatus = "approved";
+                lineOption = "최종승인";
+                mainStatus = "approved";
+                mainStatusName = "완료";
+                endStatus = "approved";
+                break;
+            case "reference_confirm":
+                targetSeq = 0;
+                lineStatus = "confirmed";
+                lineOption = "참조확인";
+                mainStatus = "";
+                mainStatusName = "";
+                endStatus = "";
+                isReferenceEvent = true;
+                shouldUpdateMain = false;
+                break;
+            default:
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "지원하지 않는 결재 이벤트입니다: " + eventType);
+        }
+
+        Long expectedActorLoginId;
+        if (isReferenceEvent) {
+            Map<String, Object> referenceOwnerParams = new HashMap<String, Object>();
+            referenceOwnerParams.put("tenantId", tenantId);
+            referenceOwnerParams.put("approvalId", approvalId);
+            referenceOwnerParams.put("loginId", actorLoginId);
+            expectedActorLoginId = haccpWorkDAO.selectApprovalReferenceLoginId(referenceOwnerParams);
+        } else {
+            Map<String, Object> lineOwnerParams = new HashMap<String, Object>();
+            lineOwnerParams.put("tenantId", tenantId);
+            lineOwnerParams.put("approvalId", approvalId);
+            lineOwnerParams.put("exeSeq", targetSeq);
+            expectedActorLoginId = haccpWorkDAO.selectApprovalLineLoginId(lineOwnerParams);
+        }
+        if (expectedActorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재선 정보를 확인할 수 없습니다.");
+        }
+        if (!expectedActorLoginId.equals(actorLoginId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 결재선의 처리 권한이 없습니다.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        int updatedLineCount;
+        if (isReferenceEvent) {
+            Map<String, Object> referenceUpdateParams = new HashMap<String, Object>();
+            referenceUpdateParams.put("tenantId", tenantId);
+            referenceUpdateParams.put("approvalId", approvalId);
+            referenceUpdateParams.put("loginId", actorLoginId);
+            referenceUpdateParams.put("appStatus", lineStatus);
+            referenceUpdateParams.put("optionName", lineOption);
+            referenceUpdateParams.put("updatedAt", now);
+            updatedLineCount = haccpWorkDAO.updateElectronicApprovalReferenceLineStatus(referenceUpdateParams);
+        } else {
+            Map<String, Object> lineUpdateParams = new HashMap<String, Object>();
+            lineUpdateParams.put("tenantId", tenantId);
+            lineUpdateParams.put("approvalId", approvalId);
+            lineUpdateParams.put("exeSeq", targetSeq);
+            lineUpdateParams.put("appStatus", lineStatus);
+            lineUpdateParams.put("optionName", lineOption);
+            lineUpdateParams.put("updatedAt", now);
+            updatedLineCount = haccpWorkDAO.updateElectronicApprovalLineStatus(lineUpdateParams);
+        }
+        if (updatedLineCount <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재선 상태를 갱신하지 못했습니다.");
+        }
+
+        if (shouldUpdateMain) {
+            Map<String, Object> mainUpdateParams = new HashMap<String, Object>();
+            mainUpdateParams.put("tenantId", tenantId);
+            mainUpdateParams.put("approvalId", approvalId);
+            mainUpdateParams.put("statusType", mainStatus);
+            mainUpdateParams.put("statusTypeName", mainStatusName);
+            mainUpdateParams.put("endStatus", endStatus);
+            mainUpdateParams.put("updatedBy", actorLoginId);
+            mainUpdateParams.put("updatedAt", now);
+            haccpWorkDAO.updateElectronicApprovalMainStatus(mainUpdateParams);
+        }
+
+        if ("review_approve".equals(eventType)) {
+            Map<String, Object> nextArrivalParams = new HashMap<String, Object>();
+            nextArrivalParams.put("tenantId", tenantId);
+            nextArrivalParams.put("approvalId", approvalId);
+            nextArrivalParams.put("exeSeq", 3);
+            nextArrivalParams.put("arrivalAt", now);
+            nextArrivalParams.put("optionName", "승인요청");
+            haccpWorkDAO.updateElectronicApprovalLineArrival(nextArrivalParams);
+        }
+
+        if ("final_approve".equals(eventType)) {
+            Map<String, Object> maxSeqParams = new HashMap<String, Object>();
+            maxSeqParams.put("tenantId", tenantId);
+            maxSeqParams.put("approvalId", approvalId);
+            Integer finalDrafterSeq = haccpWorkDAO.selectMaxDraftedExeSeqByApprovalId(maxSeqParams);
+            if (finalDrafterSeq != null && finalDrafterSeq.intValue() > 3) {
+                Map<String, Object> arrivalParams = new HashMap<String, Object>();
+                arrivalParams.put("tenantId", tenantId);
+                arrivalParams.put("approvalId", approvalId);
+                arrivalParams.put("exeSeq", finalDrafterSeq);
+                arrivalParams.put("arrivalAt", now);
+                arrivalParams.put("optionName", "최종기안알림");
+                haccpWorkDAO.updateElectronicApprovalLineArrival(arrivalParams);
+            }
+        }
+
+        return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, approvalId, "approval", actorLoginCode);
+    }
+
+    private Long resolveTenantId(String tenantCode) throws Exception {
+        Long tenantId = haccpWorkDAO.selectTenantIdByCode(tenantCode);
+        if (tenantId == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "테넌트를 찾을 수 없습니다: " + tenantCode);
+        }
+        return tenantId;
+    }
+
+    private Long resolveActorLoginId(Long tenantId, String actorLoginCode) throws Exception {
+        if (!StringUtils.hasText(actorLoginCode)) {
+            return null;
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("loginCode", actorLoginCode.trim());
+        return haccpWorkDAO.selectLoginIdByTenantAndLoginCode(params);
+    }
+
+    private String normalizeTenantCode(String tenantCode) {
+        return StringUtils.hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "";
+    }
+
+    private String trimToEmpty(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String buildEaExeId(LocalDate nowDate) throws Exception {
+        String seqRaw = electronicApprovalExeIdGnrService.getNextStringId();
+        String numericPart = trimToEmpty(seqRaw).replaceAll("[^0-9]", "");
+        if (!StringUtils.hasText(numericPart)) {
+            numericPart = "0";
+        }
+
+        if (numericPart.length() > 4) {
+            numericPart = numericPart.substring(numericPart.length() - 4);
+        }
+
+        while (numericPart.length() < 4) {
+            numericPart = "0" + numericPart;
+        }
+
+        return nowDate.format(DATE_FORMATTER) + numericPart;
+    }
+
+    private Map<String, Object> selectApprovalActorProfile(Long tenantId, Long loginId) throws Exception {
+        if (tenantId == null || loginId == null) {
+            return new HashMap<String, Object>();
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("loginId", loginId);
+        Map<String, Object> profile = haccpWorkDAO.selectApprovalActorProfile(params);
+        if (profile == null) {
+            return new HashMap<String, Object>();
+        }
+        return profile;
+    }
+
+    private String resolveLevelName(Map<String, Object> profile) {
+        String departmentName = profile == null ? "" : trimToEmpty(String.valueOf(profile.getOrDefault("departmentName", "")));
+        if (StringUtils.hasText(departmentName)) {
+            return normalizeCode(departmentName, DEFAULT_LEVEL_NAME, 20);
+        }
+        return DEFAULT_LEVEL_NAME;
+    }
+
+    private Long getLong(Map<String, Object> map, String key) {
+        if (map == null || key == null) {
+            return null;
+        }
+
+        Object value = map.get(key);
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+
+        String text = String.valueOf(value).trim();
+        if (!StringUtils.hasText(text)) {
+            return null;
+        }
+
+        try {
+            return Long.valueOf(text);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private String normalizeCode(String value, String fallback, int maxLength) {
+        String normalized = trimToEmpty(value);
+        if (!StringUtils.hasText(normalized)) {
+            normalized = fallback;
+        }
+
+        if (normalized.length() > maxLength) {
+            return normalized.substring(0, maxLength);
+        }
+
+        return normalized;
+    }
+
+    private void insertApprovalLine(
+            Long tenantId,
+            Long electronicApprovalId,
+            int exeSeq,
+            Long loginId,
+            Map<String, Object> profile,
+            String stageName,
+            String muldecStatus,
+            String appStatus,
+            String lastOwnerStatus,
+            String lastCnfrmerStatus,
+                LocalDateTime arrivalAt,
+                LocalDateTime exeAt,
+                LocalDateTime openAt,
+            String eaExeId
+    ) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("electronicApprovalId", electronicApprovalId);
+        params.put("exeSeq", exeSeq);
+        params.put("loginId", loginId);
+        params.put("departmentId", getLong(profile, "departmentId"));
+        params.put("levelName", resolveLevelName(profile));
+        params.put("appStatus", appStatus);
+        params.put("arbdecStatus", "N");
+        params.put("repdecStatus", "N");
+        params.put("stageName", stageName);
+        params.put("muldecStatus", muldecStatus);
+        params.put("arrivalAt", arrivalAt);
+        params.put("exeAt", exeAt);
+        params.put("optionName", stageName);
+        params.put("openAt", openAt);
+        params.put("approvalType", "drafted");
+        params.put("lastOwnerStatus", lastOwnerStatus);
+        params.put("orderSeq", exeSeq);
+        params.put("lastCnfrmerStatus", lastCnfrmerStatus);
+        params.put("roleName", stageName);
+        params.put("referencerViewStatus", "pre_approved");
+        params.put("connOfficialStatus", "excluded");
+        params.put("eabusNo", DEFAULT_EABUS_NO);
+        params.put("eaExeId", eaExeId);
+        params.put("createdBy", loginId);
+        haccpWorkDAO.insertElectronicApprovalLine(params);
+    }
+
+        private void rebuildPreApplyApprovalLines(
+            Long tenantId,
+            Long electronicApprovalId,
+            Long drafterLoginId,
+            Long reviewerLoginId,
+            Long approverLoginId,
+            Map<String, Object> drafterProfile,
+            Map<String, Object> reviewerProfile,
+            Map<String, Object> approverProfile,
+            List<Long> referenceLoginIds,
+            LocalDateTime now,
+            String eaExeId
+        ) throws Exception {
+        Map<String, Object> deleteParams = new HashMap<String, Object>();
+        deleteParams.put("tenantId", tenantId);
+        deleteParams.put("approvalId", electronicApprovalId);
+        haccpWorkDAO.deleteElectronicApprovalLinesByApprovalId(deleteParams);
+
+        insertApprovalLine(
+            tenantId,
+            electronicApprovalId,
+            1,
+            drafterLoginId,
+            drafterProfile,
+            "기안",
+            "drafted",
+            "",
+            "Y",
+            "N",
+            null,
+            null,
+            null,
+            eaExeId
+        );
+        insertApprovalLine(
+            tenantId,
+            electronicApprovalId,
+            2,
+            reviewerLoginId,
+            reviewerProfile,
+            "검토",
+            "drafted",
+            "",
+            "N",
+            "N",
+            null,
+            null,
+            null,
+            eaExeId
+        );
+        insertApprovalLine(
+            tenantId,
+            electronicApprovalId,
+            3,
+            approverLoginId,
+            approverProfile,
+            "승인",
+            "drafted",
+            "",
+            "N",
+            "Y",
+            null,
+            null,
+            null,
+            eaExeId
+        );
+
+        int sequence = 4;
+        if (referenceLoginIds == null) {
+            return;
+        }
+
+        for (Long referenceLoginId : referenceLoginIds) {
+            Map<String, Object> referenceProfile = selectApprovalActorProfile(tenantId, referenceLoginId);
+            insertApprovalLine(
+                tenantId,
+                electronicApprovalId,
+                sequence,
+                referenceLoginId,
+                referenceProfile,
+                "참조",
+                "cooperated",
+                "",
+                "N",
+                "N",
+                null,
+                null,
+                null,
+                eaExeId
+            );
+            sequence++;
+        }
+
+        insertApprovalLine(
+            tenantId,
+            electronicApprovalId,
+            sequence,
+            drafterLoginId,
+            drafterProfile,
+            "최종기안",
+            "drafted",
+            "",
+            "N",
+            "N",
+            null,
+            null,
+            null,
+            eaExeId
+        );
+        }
+
+    private List<Long> resolveReferenceLoginIds(
+            Long tenantId,
+            List<String> sourceIds,
+            Long drafterLoginId,
+            Long reviewerLoginId,
+            Long approverLoginId
+    ) throws Exception {
+        if (sourceIds == null || sourceIds.isEmpty()) {
+            return new ArrayList<Long>();
+        }
+
+        Set<Long> excluded = new LinkedHashSet<Long>();
+        if (drafterLoginId != null) {
+            excluded.add(drafterLoginId);
+        }
+        if (reviewerLoginId != null) {
+            excluded.add(reviewerLoginId);
+        }
+        if (approverLoginId != null) {
+            excluded.add(approverLoginId);
+        }
+
+        Set<Long> resolved = new LinkedHashSet<Long>();
+        for (String sourceId : sourceIds) {
+            Long loginId = resolveLoginIdCandidate(tenantId, sourceId);
+            if (loginId == null || excluded.contains(loginId)) {
+                continue;
+            }
+            resolved.add(loginId);
+        }
+
+        return new ArrayList<Long>(resolved);
+    }
+
+    private Long resolveLoginIdCandidate(Long tenantId, String sourceId) throws Exception {
+        if (!StringUtils.hasText(sourceId)) {
+            return null;
+        }
+
+        String normalized = sourceId.trim();
+        Long candidateId;
+        try {
+            candidateId = Long.valueOf(normalized);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("candidateId", candidateId);
+        return haccpWorkDAO.selectLoginIdByTenantAndUserOrLoginId(params);
+    }
+
+    private Long findLatestPreApplyApprovalId(Long tenantId, Long workId, Long loginId) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("workId", workId);
+        params.put("loginId", loginId);
+        return haccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(params);
+    }
+}

@@ -34,6 +34,10 @@ public class HaccpBaseWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpBaseWorkDAO.selectLoginIdByTenantAndLoginCode", params);
     }
 
+    public Long selectUserIdByTenantAndLoginId(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpBaseWorkDAO.selectUserIdByTenantAndLoginId", params);
+    }
+
     public Long insertWork(Map<String, Object> payload) throws Exception {
         return selectOne("HaccpBaseWorkDAO.insertWork", payload);
     }

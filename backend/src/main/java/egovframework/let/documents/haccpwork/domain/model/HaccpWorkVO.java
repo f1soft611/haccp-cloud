@@ -1,4 +1,4 @@
-package egovframework.let.documents.haccpbase.works.domain.model;
+package egovframework.let.documents.haccpwork.domain.model;
 
 import java.io.Serializable;
 
@@ -10,20 +10,26 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * HACCP 양식 업무 응답을 위한 VO 클래스
+ * HACCP 업무/기안 템플릿 응답을 위한 VO 클래스
  * @author SHMT-MES
- * @since 2026.07.07
+ * @since 2026.07.16
  * @version 1.0
  */
-@Schema(description = "HACCP 양식 업무 모델")
+@Schema(description = "HACCP 업무/기안 템플릿 모델")
 @Getter
 @Setter
-public class HaccpBaseWorkVO implements Serializable {
+public class HaccpWorkVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "업무 ID")
     private Long draftingWorkCategoryId;
+
+    @Schema(description = "결재 메인 ID")
+    private Long electronicApprovalId;
+
+    @Schema(description = "기안 제목")
+    private String title;
 
     @Schema(description = "테넌트 코드")
     private String tenantCode;
@@ -67,6 +73,9 @@ public class HaccpBaseWorkVO implements Serializable {
     @Schema(description = "업무 담당자 사번 CSV")
     private String assigneeIdsCsv;
 
+    @Schema(description = "참조자 로그인 ID CSV")
+    private String referenceIdsCsv;
+
     @Schema(description = "검토자 로그인 ID")
     private Long reviewerId;
 
@@ -93,7 +102,7 @@ public class HaccpBaseWorkVO implements Serializable {
     @Schema(description = "문서 템플릿 저장 여부")
     private boolean hasDocument;
 
-    @Schema(description = "할일 상태 코드(DRAFT/IN_PROGRESS/ACTIVE)")
+    @Schema(description = "업무 상태 코드(DRAFT/IN_PROGRESS/ACTIVE)")
     private String todoStatus;
 
     @Schema(description = "결재 진행 상태 코드")
@@ -104,4 +113,13 @@ public class HaccpBaseWorkVO implements Serializable {
 
     @Schema(description = "최종 상태 반영 일시")
     private String latestStatusAt;
+
+    @Schema(description = "기안 app_status")
+    private String drafterAppStatus;
+
+    @Schema(description = "검토 app_status")
+    private String reviewerAppStatus;
+
+    @Schema(description = "승인 app_status")
+    private String approverAppStatus;
 }

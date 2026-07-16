@@ -1,4 +1,4 @@
-package egovframework.let.documents.haccpbase.works.domain.model;
+package egovframework.let.dashboard.domain.model;
 
 import java.io.Serializable;
 
@@ -7,23 +7,17 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * HACCP 양식 업무 조회조건을 위한 VO 클래스
- * @author SHMT-MES
- * @since 2026.07.07
- * @version 1.0
+ * 대시보드 조회조건을 위한 VO 클래스
  */
-@Schema(description = "HACCP 양식 업무 검색 조건 모델")
+@Schema(description = "대시보드 검색 조건 모델")
 @Getter
 @Setter
-public class HaccpBaseWorkSearchConditionVO implements Serializable {
+public class DashboardSearchConditionVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "테넌트 코드")
     private String tenantCode;
-
-    @Schema(description = "사용 여부")
-    private String active;
 
     @Schema(description = "요청 사용자 로그인 ID")
     private Long actorLoginId;

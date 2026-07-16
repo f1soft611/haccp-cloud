@@ -2,10 +2,13 @@ import { apiClient } from '../api/apiClient';
 
 export type HaccpBaseWorkItem = {
   id: string;
+  approvalId?: string;
+  title?: string;
   tenantCode: string;
   categoryGroupId: string;
   categoryCode: string;
   categoryName: string;
+  categorySortOrder: number;
   divisionCode: string;
   divisionName: string;
   cycle: string;
@@ -15,6 +18,7 @@ export type HaccpBaseWorkItem = {
   owner?: string;
   assigneeSummary?: string;
   assigneeIds: string[];
+  referenceIds: string[];
   reviewerId?: string;
   reviewerName?: string;
   approverId?: string;
@@ -23,11 +27,27 @@ export type HaccpBaseWorkItem = {
   templateJson?: string;
   templateHtml?: string;
   hasDocument: boolean;
+  todoStatus?: 'DRAFT' | 'IN_PROGRESS' | 'ACTIVE';
+  approvalStatusType?: string;
+  approvalStatusTypeName?: string;
+  latestStatusAt?: string;
+  drafterAppStatus?: string;
+  reviewerAppStatus?: string;
+  approverAppStatus?: string;
+  writtenInCycle?: boolean;
+  pendingApprovalAlert?: boolean;
+  pendingArrivalAt?: string;
 };
 
 type RawHaccpBaseWorkItem = {
   draftingWorkCategoryId?: number | string | null;
   id?: number | string | null;
+  approvalId?: number | string | null;
+  electronicApprovalId?: number | string | null;
+  electronic_approval_id?: number | string | null;
+  title?: string | null;
+  eaTitle?: string | null;
+  ea_title?: string | null;
   tenantCode?: string | null;
   categoryGroupId?: number | string | null;
   draftingWorkCategoryGroupId?: number | string | null;
@@ -35,6 +55,8 @@ type RawHaccpBaseWorkItem = {
   cataCode?: string | null;
   categoryName?: string | null;
   categoryNm?: string | null;
+  categorySortOrder?: number | string | null;
+  category_sort_order?: number | string | null;
   divisionCode?: string | null;
   cataTypeCode?: string | null;
   divisionName?: string | null;
@@ -48,6 +70,8 @@ type RawHaccpBaseWorkItem = {
   owner?: string | null;
   assigneeSummary?: string | null;
   assigneeIdsCsv?: string | null;
+  referenceIdsCsv?: string | null;
+  reference_ids_csv?: string | null;
   reviewerId?: number | string | null;
   reviewerName?: string | null;
   approverId?: number | string | null;
@@ -59,12 +83,33 @@ type RawHaccpBaseWorkItem = {
   template_html?: string | null;
   hasDocument?: boolean | string | null;
   has_document?: boolean | string | null;
+  todoStatus?: string | null;
+  todo_status?: string | null;
+  approvalStatusType?: string | null;
+  approval_status_type?: string | null;
+  approvalStatusTypeName?: string | null;
+  approval_status_type_name?: string | null;
+  latestStatusAt?: string | null;
+  latest_status_at?: string | null;
+  drafterAppStatus?: string | null;
+  drafter_app_status?: string | null;
+  reviewerAppStatus?: string | null;
+  reviewer_app_status?: string | null;
+  approverAppStatus?: string | null;
+  approver_app_status?: string | null;
+  writtenInCycle?: boolean | string | null;
+  written_in_cycle?: boolean | string | null;
+  pendingApprovalAlert?: boolean | string | null;
+  pending_approval_alert?: boolean | string | null;
+  pendingArrivalAt?: string | null;
+  pending_arrival_at?: string | null;
 };
 
 type ResultEnvelope<T> = {
   result?: {
     resultList?: T[];
     item?: T;
+    message?: string;
   };
 };
 
@@ -117,15 +162,35 @@ function normalizeTemplateJson(value: unknown): string {
   return String(value).trim();
 }
 
+function normalizeTodoStatus(
+  value: unknown,
+): 'DRAFT' | 'IN_PROGRESS' | 'ACTIVE' {
+  const normalized = normalizeText(value).toUpperCase();
+  if (normalized === 'ACTIVE') {
+    return 'ACTIVE';
+  }
+  if (normalized === 'IN_PROGRESS') {
+    return 'IN_PROGRESS';
+  }
+  return 'DRAFT';
+}
+
 function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
   return {
     id: normalizeText(raw.id ?? raw.draftingWorkCategoryId),
+    approvalId: normalizeText(
+      raw.approvalId ?? raw.electronicApprovalId ?? raw.electronic_approval_id,
+    ),
+    title: normalizeText(raw.title ?? raw.eaTitle ?? raw.ea_title),
     tenantCode: normalizeText(raw.tenantCode),
     categoryGroupId: normalizeText(
       raw.categoryGroupId ?? raw.draftingWorkCategoryGroupId,
     ),
     categoryCode: normalizeText(raw.categoryCode ?? raw.cataCode),
     categoryName: normalizeText(raw.categoryName ?? raw.categoryNm),
+    categorySortOrder: Number(
+      raw.categorySortOrder ?? raw.category_sort_order ?? 0,
+    ),
     divisionCode: normalizeText(raw.divisionCode ?? raw.cataTypeCode),
     divisionName: normalizeText(raw.divisionName ?? raw.codeName),
     cycle: normalizeText(raw.cycle ?? raw.regTerm),
@@ -135,6 +200,9 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     owner: normalizeText(raw.owner),
     assigneeSummary: normalizeText(raw.assigneeSummary),
     assigneeIds: normalizeStringArrayFromCsv(raw.assigneeIdsCsv),
+    referenceIds: normalizeStringArrayFromCsv(
+      raw.referenceIdsCsv ?? raw.reference_ids_csv,
+    ),
     reviewerId: normalizeText(raw.reviewerId),
     reviewerName: normalizeText(raw.reviewerName),
     approverId: normalizeText(raw.approverId),
@@ -143,6 +211,32 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     templateJson: normalizeTemplateJson(raw.templateJson ?? raw.template_json),
     templateHtml: normalizeText(raw.templateHtml ?? raw.template_html),
     hasDocument: normalizeBoolean(raw.hasDocument ?? raw.has_document),
+    todoStatus: normalizeTodoStatus(raw.todoStatus ?? raw.todo_status),
+    approvalStatusType: normalizeText(
+      raw.approvalStatusType ?? raw.approval_status_type,
+    ),
+    approvalStatusTypeName: normalizeText(
+      raw.approvalStatusTypeName ?? raw.approval_status_type_name,
+    ),
+    latestStatusAt: normalizeText(raw.latestStatusAt ?? raw.latest_status_at),
+    drafterAppStatus: normalizeText(
+      raw.drafterAppStatus ?? raw.drafter_app_status,
+    ),
+    reviewerAppStatus: normalizeText(
+      raw.reviewerAppStatus ?? raw.reviewer_app_status,
+    ),
+    approverAppStatus: normalizeText(
+      raw.approverAppStatus ?? raw.approver_app_status,
+    ),
+    writtenInCycle: normalizeBoolean(
+      raw.writtenInCycle ?? raw.written_in_cycle,
+    ),
+    pendingApprovalAlert: normalizeBoolean(
+      raw.pendingApprovalAlert ?? raw.pending_approval_alert,
+    ),
+    pendingArrivalAt: normalizeText(
+      raw.pendingArrivalAt ?? raw.pending_arrival_at,
+    ),
   };
 }
 
@@ -159,6 +253,56 @@ export async function listHaccpBaseWorks(params: {
 
   const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
   return items.map(normalizeItem);
+}
+
+export async function listHaccpWorkTodos(params: {
+  tenantCode: string;
+}): Promise<HaccpBaseWorkItem[]> {
+  const { data } = await apiClient.get<
+    RawHaccpBaseWorkItem[] | ResultEnvelope<RawHaccpBaseWorkItem>
+  >('/v1/dashboard/todos', {
+    headers: { 'x-tenant-code': params.tenantCode },
+  });
+
+  const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
+  return items.map(normalizeItem);
+}
+
+export async function listHaccpWorkApprovalAlerts(params: {
+  tenantCode: string;
+}): Promise<HaccpBaseWorkItem[]> {
+  const { data } = await apiClient.get<
+    RawHaccpBaseWorkItem[] | ResultEnvelope<RawHaccpBaseWorkItem>
+  >('/v1/dashboard/approval-alerts', {
+    headers: { 'x-tenant-code': params.tenantCode },
+  });
+
+  const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
+  return items.map(normalizeItem);
+}
+
+export async function getHaccpWorkDraftTemplate(params: {
+  tenantCode: string;
+  id: string;
+  idType?: 'work' | 'approval';
+}): Promise<HaccpBaseWorkItem> {
+  const { data } = await apiClient.get<
+    RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
+  >(`/v1/haccp-work/drafts/${params.id}/template`, {
+    headers: { 'x-tenant-code': params.tenantCode },
+    params: {
+      idType: params.idType || 'work',
+    },
+  });
+
+  const envelope = data as ResultEnvelope<RawHaccpBaseWorkItem>;
+  const item = Array.isArray(data)
+    ? data[0]
+    : (envelope?.result?.item ??
+      envelope?.result?.resultList?.[0] ??
+      (data as RawHaccpBaseWorkItem));
+
+  return normalizeItem(item ?? {});
 }
 
 export async function getHaccpBaseWorkById(params: {
@@ -267,6 +411,118 @@ export async function saveHaccpBaseWorkTemplate(payload: {
     {
       templateJson: payload.templateJson,
       templateHtml: payload.templateHtml,
+    },
+    {
+      headers: { 'x-tenant-code': payload.tenantCode },
+    },
+  );
+
+  const envelope = data as ResultEnvelope<RawHaccpBaseWorkItem>;
+  const item = Array.isArray(data)
+    ? data[0]
+    : (envelope?.result?.item ??
+      envelope?.result?.resultList?.[0] ??
+      (data as RawHaccpBaseWorkItem));
+
+  return normalizeItem(item ?? {});
+}
+
+export async function saveHaccpWorkTempDraft(payload: {
+  tenantCode: string;
+  id: string;
+  title?: string;
+  templateJson: string;
+  templateHtml: string;
+  referenceIds?: string[];
+}): Promise<HaccpBaseWorkItem> {
+  const { data } = await apiClient.post<
+    RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
+  >(
+    `/v1/haccp-work/drafts/${payload.id}/temp-save`,
+    {
+      title: payload.title,
+      templateJson: payload.templateJson,
+      templateHtml: payload.templateHtml,
+      referenceIds: payload.referenceIds ?? [],
+    },
+    {
+      headers: { 'x-tenant-code': payload.tenantCode },
+    },
+  );
+
+  const envelope = data as ResultEnvelope<RawHaccpBaseWorkItem>;
+  const item = Array.isArray(data)
+    ? data[0]
+    : (envelope?.result?.item ??
+      envelope?.result?.resultList?.[0] ??
+      (data as RawHaccpBaseWorkItem));
+
+  return normalizeItem(item ?? {});
+}
+
+export async function submitHaccpWorkDraft(payload: {
+  tenantCode: string;
+  id: string;
+  title: string;
+  templateJson: string;
+  templateHtml: string;
+  submitComment?: string;
+  referenceIds?: string[];
+}): Promise<{ message: string; approvalId?: string }> {
+  const { data } = await apiClient.post<
+    | { message?: string; item?: { approvalId?: string | number } }
+    | ResultEnvelope<{
+        message?: string;
+        item?: { approvalId?: string | number };
+      }>
+  >(
+    `/v1/haccp-work/drafts/${payload.id}/submit`,
+    {
+      title: payload.title,
+      templateJson: payload.templateJson,
+      templateHtml: payload.templateHtml,
+      submitComment: payload.submitComment,
+      referenceIds: payload.referenceIds ?? [],
+    },
+    {
+      headers: { 'x-tenant-code': payload.tenantCode },
+    },
+  );
+
+  const envelope = data as ResultEnvelope<{
+    message?: string;
+    item?: { approvalId?: string | number };
+  }>;
+  const directMessage = (
+    data as { message?: string; item?: { approvalId?: string | number } }
+  )?.message;
+  const nestedMessage = envelope?.result?.message;
+  const approvalIdRaw =
+    envelope?.result?.item?.item?.approvalId ??
+    (data as { message?: string; item?: { approvalId?: string | number } })
+      ?.item?.approvalId;
+
+  return {
+    message:
+      normalizeText(directMessage ?? nestedMessage) ||
+      '결재신청이 완료되었습니다.',
+    approvalId: normalizeText(approvalIdRaw),
+  };
+}
+
+export async function updateHaccpWorkApprovalStatus(payload: {
+  tenantCode: string;
+  approvalId: string;
+  eventType: 'review_approve' | 'review_return' | 'final_approve';
+  comment?: string;
+}): Promise<HaccpBaseWorkItem> {
+  const { data } = await apiClient.post<
+    RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
+  >(
+    `/v1/haccp-work/approvals/${payload.approvalId}/status`,
+    {
+      eventType: payload.eventType,
+      comment: payload.comment,
     },
     {
       headers: { 'x-tenant-code': payload.tenantCode },
