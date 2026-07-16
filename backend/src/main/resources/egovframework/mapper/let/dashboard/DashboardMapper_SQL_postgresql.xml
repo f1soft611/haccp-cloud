@@ -6,6 +6,7 @@
                type="egovframework.let.dashboard.domain.model.DashboardTodoVO">
         <result property="draftingWorkCategoryId" column="drafting_work_category_id"/>
       <result property="electronicApprovalId" column="electronic_approval_id"/>
+        <result property="title" column="title"/>
         <result property="tenantCode" column="tenant_code"/>
         <result property="categoryCode" column="cata_code"/>
         <result property="categoryName" column="category_name"/>
@@ -13,6 +14,7 @@
         <result property="divisionCode" column="cata_type_code"/>
         <result property="divisionName" column="code_name"/>
         <result property="cycle" column="reg_term"/>
+        <result property="createdBy" column="created_by"/>
         <result property="owner" column="owner"/>
         <result property="todoStatus" column="todo_status"/>
         <result property="approvalStatusType" column="approval_status_type"/>
@@ -50,6 +52,7 @@
         SELECT
             w.drafting_work_category_id,
           COALESCE(pending.pending_approval_id, appr.route_approval_id) AS electronic_approval_id,
+            COALESCE(NULLIF(TRIM(pending.pending_title), ''), '') AS title,
             t.tenant_code,
             g.cata_code,
             g.cata_name AS category_name,
@@ -57,6 +60,7 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            COALESCE(pending.pending_drafter_name, pending.pending_login_code, CAST(pending.pending_login_id AS varchar), '-') AS created_by,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
               WHEN COALESCE(pending.pending_alert, FALSE) THEN 'IN_PROGRESS'
@@ -108,12 +112,22 @@
         LEFT JOIN LATERAL (
           SELECT
               m.electronic_approval_id AS pending_approval_id,
+              m.ea_title AS pending_title,
+              m.login_id AS pending_login_id,
+              la.login_code AS pending_login_code,
+              COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar)) AS pending_drafter_name,
               MAX(li.arrival_at) AS pending_arrival_at,
               TRUE AS pending_alert
           FROM tb_electronic_approval_main m
           JOIN tb_electronic_approval_line_info li
             ON li.tenant_id = m.tenant_id
            AND li.electronic_approval_id = m.electronic_approval_id
+          LEFT JOIN tb_user pu
+            ON pu.tenant_id = m.tenant_id
+           AND pu.login_id = m.login_id
+          LEFT JOIN tb_login_account la
+            ON la.tenant_id = m.tenant_id
+           AND la.login_id = m.login_id
           WHERE m.tenant_id = w.tenant_id
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
@@ -121,7 +135,7 @@
             AND li.arrival_at IS NOT NULL
             AND li.exe_at IS NULL
             AND COALESCE(m.delete_status, 'N') != 'Y'
-          GROUP BY m.electronic_approval_id
+          GROUP BY m.electronic_approval_id, m.ea_title, m.login_id, la.login_code, COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar))
           ORDER BY MAX(li.arrival_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
         ) pending ON TRUE

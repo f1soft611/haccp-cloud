@@ -48,7 +48,7 @@ export function useTenantDashboardData() {
       const items = await listHaccpWorkTodos({ tenantCode });
       return items.map((item) => ({
         ...item,
-        title: item.divisionName || item.categoryName || '업무',
+        title: item.title || item.divisionName || item.categoryName || '업무',
         category: item.categoryName || '기타문서',
         status: item.todoStatus || 'DRAFT',
         updatedBy: item.owner || item.createdBy || '없음',
@@ -70,7 +70,7 @@ export function useTenantDashboardData() {
       const items = await listHaccpWorkApprovalAlerts({ tenantCode });
       return items.map((item) => ({
         ...item,
-        title: item.divisionName || item.categoryName || '업무',
+        title: item.title || '-',
         category: item.categoryName || '기타문서',
         status: item.todoStatus || 'DRAFT',
         updatedBy: item.owner || item.createdBy || '없음',

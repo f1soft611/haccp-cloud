@@ -70,12 +70,19 @@ export function TenantSidebarSection(props: TenantSidebarSectionProps) {
                     : 'rgba(255,255,255,0.7)',
                 }}
               >
-                <Typography variant="body2" fontWeight={700}>
-                  {item.title}
-                </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  요청자: {item.updatedBy || '없음'} · 요청일:{' '}
-                  {formatDate(item.updatedAt)}
+                  {`${item.divisionName || '-'} - ${item.categoryName || '-'}`}
+                </Typography>
+                <Typography variant="body2" fontWeight={700} sx={{ mt: 0.3 }}>
+                  {item.title || '-'}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mt: 0.25, display: 'block' }}
+                >
+                  요청일: {formatDate(item.updatedAt)} · 기안자:{' '}
+                  {item.createdBy || '-'}
                 </Typography>
               </Box>
             ))
