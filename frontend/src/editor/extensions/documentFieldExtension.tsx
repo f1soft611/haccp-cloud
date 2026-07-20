@@ -17,8 +17,11 @@ declare module '@tiptap/core' {
 
 export type DocumentFieldResolver = (fieldKey: DocumentFieldKey) => string;
 
+export type DocumentFieldDisplayMode = 'token' | 'value';
+
 type DocumentFieldOptions = {
   resolveFieldValue: DocumentFieldResolver;
+  displayMode: DocumentFieldDisplayMode;
 };
 
 function normalizeFieldKey(value: unknown): DocumentFieldKey {
@@ -30,22 +33,35 @@ function normalizeFieldKey(value: unknown): DocumentFieldKey {
 }
 
 function DocumentFieldNodeView(props: NodeViewProps) {
-  const { node } = props;
+  const { node, extension } = props;
   const fieldKey = normalizeFieldKey(node.attrs.fieldKey);
   const definition = getDocumentFieldDefinition(fieldKey);
+  const options = extension.options as DocumentFieldOptions;
+  const displayMode = options.displayMode || 'token';
+  const resolvedValue = options.resolveFieldValue(fieldKey)?.trim();
 
   return (
     <NodeViewWrapper
       as="span"
-      className="document-field-token"
+      className={`document-field-token ${
+        displayMode === 'value' ? 'document-field-token--value' : ''
+      }`}
       contentEditable={false}
     >
-      <span className="document-field-token__group">
-        {definition.groupLabel}
-      </span>
-      <span className="document-field-token__label">
-        {definition.fieldLabel}
-      </span>
+      {displayMode === 'value' ? (
+        <span className="document-field-token__value">
+          {resolvedValue || definition.fieldLabel}
+        </span>
+      ) : (
+        <>
+          <span className="document-field-token__group">
+            {definition.groupLabel}
+          </span>
+          <span className="document-field-token__label">
+            {definition.fieldLabel}
+          </span>
+        </>
+      )}
     </NodeViewWrapper>
   );
 }
@@ -63,6 +79,7 @@ export const DocumentFieldExtension = Node.create<DocumentFieldOptions>({
     return {
       resolveFieldValue: (fieldKey: DocumentFieldKey) =>
         getDocumentFieldDefinition(fieldKey).fieldLabel,
+      displayMode: 'token' as DocumentFieldDisplayMode,
     };
   },
 
