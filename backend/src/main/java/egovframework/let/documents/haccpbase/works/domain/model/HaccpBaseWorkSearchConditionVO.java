@@ -24,4 +24,13 @@ public class HaccpBaseWorkSearchConditionVO implements Serializable {
 
     @Schema(description = "사용 여부")
     private String active;
+
+    @Schema(description = "요청 사용자 로그인 ID")
+    private Long actorLoginId;
+
+    @Schema(description = "요청 사용자 사용자ID")
+    private Long actorUserId;
+
+    @Schema(description = "요청 사용자 로그인 코드")
+    private String actorLoginCode;
 }

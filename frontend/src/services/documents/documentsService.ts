@@ -1,6 +1,6 @@
 import { apiClient } from '../api/apiClient';
 
-export type DocumentStatus = 'DRAFT' | 'ACTIVE';
+export type DocumentStatus = 'DRAFT' | 'IN_PROGRESS' | 'ACTIVE';
 
 export type DocumentTemplate = {
   id: string;

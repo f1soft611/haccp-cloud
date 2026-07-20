@@ -17,7 +17,7 @@ describe('Dashboard page', () => {
     });
   });
 
-  it('renders the tenant admin dashboard shell with shared navigation and actions', async () => {
+  it('renders the tenant admin dashboard with todo, approval alerts, and notices', async () => {
     render(
       <AppProviders>
         <DashboardPage />
@@ -25,21 +25,20 @@ describe('Dashboard page', () => {
     );
 
     expect(await screen.findByTestId('kpi-card-ccp-rate')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '할 일' })).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: '관리자 허브' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: APP_LABELS.dashboard.blocks.todos }),
+      screen.getByRole('heading', { name: '결재 알림' }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: '공지사항' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: APP_LABELS.dashboard.hubs.users }),
-    ).toHaveAttribute('href', '/org/users');
+      screen.queryByRole('heading', { name: '관리자 허브' }),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: APP_LABELS.dashboard.hubs.departments }),
-    ).toHaveAttribute('href', '/org/departments');
+      screen.queryByText('DOCUMENT MANAGEMENT PORTAL'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('최근 변경 이력')).not.toBeInTheDocument();
   });
 
   it('renders the platform admin dashboard top section without the legacy login panel', async () => {

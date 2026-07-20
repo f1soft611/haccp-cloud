@@ -37,6 +37,9 @@ public class HaccpBaseWorkVO implements Serializable {
     @Schema(description = "분류명")
     private String categoryName;
 
+    @Schema(description = "분류 정렬순서")
+    private Integer categorySortOrder;
+
     @Schema(description = "구분코드")
     private String divisionCode;
 
@@ -89,4 +92,16 @@ public class HaccpBaseWorkVO implements Serializable {
 
     @Schema(description = "문서 템플릿 저장 여부")
     private boolean hasDocument;
+
+    @Schema(description = "할일 상태 코드(DRAFT/IN_PROGRESS/ACTIVE)")
+    private String todoStatus;
+
+    @Schema(description = "결재 진행 상태 코드")
+    private String approvalStatusType;
+
+    @Schema(description = "결재 진행 상태명")
+    private String approvalStatusTypeName;
+
+    @Schema(description = "최종 상태 반영 일시")
+    private String latestStatusAt;
 }
