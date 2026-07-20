@@ -2,11 +2,16 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { HaccpDocumentManagementPage } from '../pages/documents/haccp-doc/HaccpDocumentManagementPage';
+import { listHaccpBaseCategories } from '../services/documents/haccpBaseCategoryService';
 import { listHaccpDocuments } from '../services/documents/haccpDocumentService';
 import { useAuthStore } from '../shared/store/authStore';
 
 vi.mock('../services/documents/haccpDocumentService', () => ({
   listHaccpDocuments: vi.fn(),
+}));
+
+vi.mock('../services/documents/haccpBaseCategoryService', () => ({
+  listHaccpBaseCategories: vi.fn(),
 }));
 
 function formatDate(date: Date): string {
@@ -22,6 +27,7 @@ describe('HaccpDocumentManagementPage', () => {
     vi.mocked(listHaccpDocuments).mockResolvedValue([
       {
         id: '1',
+        approvalId: 'APPR-202607-001',
         workType: 'HACCP (HA)',
         draftNumber: 'HA-202607-001',
         title: '원재료 입고 점검일지',
@@ -32,6 +38,7 @@ describe('HaccpDocumentManagementPage', () => {
       },
       {
         id: '2',
+        approvalId: 'APPR-202607-002',
         workType: 'HACCP (선별)',
         draftNumber: 'SE-202607-014',
         title: '선별공정 CCP 점검표',
@@ -39,6 +46,25 @@ describe('HaccpDocumentManagementPage', () => {
         status: '승인',
         draftedAt: '2026-07-16',
         updatedAt: '2026-07-16 15:40',
+      },
+    ]);
+
+    vi.mocked(listHaccpBaseCategories).mockResolvedValue([
+      {
+        id: '10',
+        tenantCode: 'TENANT-A',
+        categoryCode: 'HA',
+        categoryName: 'HACCP (HA)',
+        sortOrder: 1,
+        active: true,
+      },
+      {
+        id: '11',
+        tenantCode: 'TENANT-A',
+        categoryCode: 'SE',
+        categoryName: 'HACCP (선별)',
+        sortOrder: 2,
+        active: true,
       },
     ]);
 
@@ -74,9 +100,12 @@ describe('HaccpDocumentManagementPage', () => {
     expect(screen.getByLabelText('작성자')).toHaveValue('고대성');
     expect(screen.getByLabelText('시작일')).toHaveValue('2026-07-01');
     expect(screen.getByLabelText('종료일')).toHaveValue('2026-07-20');
-    expect(
-      screen.getByRole('combobox', { name: '업무구분' }),
-    ).toHaveTextContent('HACCP (HA)');
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('combobox', { name: '업무분류' }),
+      ).toHaveTextContent('HACCP (HA)');
+    });
 
     await waitFor(() => {
       expect(listHaccpDocuments).toHaveBeenCalledWith({

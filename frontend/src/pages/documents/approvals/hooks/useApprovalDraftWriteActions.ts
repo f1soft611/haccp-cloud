@@ -9,6 +9,11 @@ import {
 } from '../../../../services/documents/haccpBaseWorkService';
 import { extractApiErrorMessage } from '../../../../services/api/errorMessage';
 import { useFeedback } from '../../../../shared/hooks/useFeedback';
+import type { DocumentFieldValues } from '../../../../editor/utils/documentFieldValues';
+import {
+  resolveDocumentFieldSnapshotContent,
+  resolveDocumentFieldSnapshotHtml,
+} from '../../../../editor/utils/documentFieldSnapshot';
 
 type UseApprovalDraftWriteActionsParams = {
   baseId?: string;
@@ -21,6 +26,8 @@ type UseApprovalDraftWriteActionsParams = {
   referenceIds: string[];
   editorContent: JSONContent;
   editorHtml: string;
+  documentFieldValues: DocumentFieldValues;
+  isOwner: boolean;
 };
 
 type UseApprovalDraftWriteActionsResult = {
@@ -49,7 +56,12 @@ export function useApprovalDraftWriteActions(
     referenceIds,
     editorContent,
     editorHtml,
+    documentFieldValues,
+    isOwner,
   } = params;
+
+  // Note: ownership check is based on work.owner (actual draft author),
+  // not work.createdBy (template creator)
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -65,12 +77,21 @@ export function useApprovalDraftWriteActions(
         throw new Error('저장 대상 ID를 찾을 수 없습니다.');
       }
 
+      const snapshotContent = resolveDocumentFieldSnapshotContent(
+        editorContent,
+        documentFieldValues,
+      );
+      const snapshotHtml = resolveDocumentFieldSnapshotHtml(
+        editorHtml,
+        documentFieldValues,
+      );
+
       return saveHaccpWorkTempDraft({
         tenantCode,
         id: targetId,
         title,
-        templateJson: JSON.stringify(editorContent),
-        templateHtml: editorHtml,
+        templateJson: JSON.stringify(snapshotContent),
+        templateHtml: snapshotHtml,
         referenceIds,
       });
     },
@@ -110,12 +131,21 @@ export function useApprovalDraftWriteActions(
         throw new Error('기안 제목은 필수입니다.');
       }
 
+      const snapshotContent = resolveDocumentFieldSnapshotContent(
+        editorContent,
+        documentFieldValues,
+      );
+      const snapshotHtml = resolveDocumentFieldSnapshotHtml(
+        editorHtml,
+        documentFieldValues,
+      );
+
       return submitHaccpWorkDraft({
         tenantCode,
         id: targetId,
         title: normalizedTitle,
-        templateJson: JSON.stringify(editorContent),
-        templateHtml: editorHtml,
+        templateJson: JSON.stringify(snapshotContent),
+        templateHtml: snapshotHtml,
         referenceIds,
       });
     },
@@ -197,10 +227,16 @@ export function useApprovalDraftWriteActions(
     normalizedApprovalStatus === 'in_progress' ||
     normalizedApprovalStatus === 'approved';
   const isStatusPending = Boolean(baseId) && !isStatusResolved;
-  const tempSaveDisabled = !baseId || isStatusPending || isPostSubmitLocked;
+  const tempSaveDisabled =
+    !isOwner || !baseId || isStatusPending || isPostSubmitLocked;
   const submitDisabled =
-    !title.trim() || !baseId || isStatusPending || isPostSubmitLocked;
+    !isOwner ||
+    !title.trim() ||
+    !baseId ||
+    isStatusPending ||
+    isPostSubmitLocked;
   const cancelSubmitDisabled =
+    !isOwner ||
     idType !== 'approval' ||
     isStatusPending ||
     normalizedApprovalStatus !== 'in_progress' ||

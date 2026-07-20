@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { listHaccpBaseCategories } from '../../../../services/documents/haccpBaseCategoryService';
 import { listHaccpDocuments } from '../../../../services/documents/haccpDocumentService';
 import { useAuthStore } from '../../../../shared/store/authStore';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
@@ -88,13 +89,33 @@ export function useHaccpDocumentManagement() {
     retry: false,
   });
 
+  const categoriesQuery = useQuery({
+    queryKey: ['haccp-base-categories', tenantCode],
+    queryFn: () => listHaccpBaseCategories({ tenantCode }),
+    retry: false,
+  });
+
+  const categoryOptions = useMemo(
+    () =>
+      (categoriesQuery.data ?? [])
+        .filter((item) => item.active)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((item) => ({ id: item.id, name: item.categoryName })),
+    [categoriesQuery.data],
+  );
+
   const activeFilterChips = useMemo<HaccpDocFilterChip[]>(() => {
     const chips: HaccpDocFilterChip[] = [];
+
+    chips.push({
+      key: 'dateRange',
+      label: `기간: ${appliedFilters.startDate || '-'} ~ ${appliedFilters.endDate || '-'}`,
+    });
 
     if (appliedFilters.workType && appliedFilters.workType !== '전체') {
       chips.push({
         key: 'workType',
-        label: `업무구분: ${appliedFilters.workType}`,
+        label: `업무분류: ${appliedFilters.workType}`,
       });
     }
     if (appliedFilters.title.trim()) {
@@ -148,6 +169,7 @@ export function useHaccpDocumentManagement() {
     detailOpen,
     setDetailOpen,
     activeFilterChips,
+    categoryOptions,
     documentsQuery,
     rows: documentsQuery.data ?? [],
     handleReset,

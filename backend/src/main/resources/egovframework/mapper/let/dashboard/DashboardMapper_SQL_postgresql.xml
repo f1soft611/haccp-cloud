@@ -73,15 +73,14 @@
               WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN 'in_progress'
               WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN 'approved'
               WHEN COALESCE(appr.latest_status_type, '') = 'rejected' THEN 'rejected'
-              WHEN COALESCE(appr.latest_status_type, '') = 'pre_apply' THEN 'pre_apply'
-              ELSE 'pre_apply'
+              ELSE NULL
             END AS approval_status_type,
             CASE
               WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN '결재중'
               WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN '승인'
               WHEN COALESCE(appr.latest_status_type, '') = 'pre_apply' THEN '임시저장'
               WHEN COALESCE(appr.latest_status_type, '') = 'rejected' THEN '반송'
-              ELSE '미완료'
+              ELSE '미작성'
             END AS approval_status_type_name,
             TO_CHAR(COALESCE(pending.pending_arrival_at, appr.latest_updated_at, w.updated_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
             CAST(w.drafting_work_template_json AS text) AS template_json,

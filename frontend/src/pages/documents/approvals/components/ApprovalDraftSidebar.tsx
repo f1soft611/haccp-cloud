@@ -38,7 +38,8 @@ type ApprovalDraftSidebarProps = {
   approverProfile?: UserItem;
   referenceOptions: UserItem[];
   selectedReferences: UserItem[];
-  onChangeReferences: (next: string[]) => void;
+  onChangeReferences?: (next: string[]) => void;
+  isReadOnly?: boolean;
 };
 
 function normalizeStatus(value: string | undefined): string {
@@ -87,6 +88,7 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
     referenceOptions,
     selectedReferences,
     onChangeReferences,
+    isReadOnly = false,
   } = props;
 
   const signerLine: SignerLineItem[] = [
@@ -276,6 +278,7 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
         <Box sx={{ flex: 1 }}>
           <Autocomplete
             multiple
+            disabled={isReadOnly}
             options={referenceOptions}
             value={selectedReferences}
             getOptionLabel={(option) => option.name}
@@ -283,7 +286,7 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
               option.id === selected.id
             }
             onChange={(_, selected) => {
-              onChangeReferences(selected.map((item) => item.id));
+              onChangeReferences?.(selected.map((item) => item.id));
             }}
             renderInput={(params) => (
               <TextField

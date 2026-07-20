@@ -16,23 +16,24 @@ type ApprovalDraftContentProps = {
   workDetailFetched: boolean;
   work?: HaccpBaseWorkItem;
   title: string;
-  onTitleChange: (next: string) => void;
-  displayName: string;
+  onTitleChange?: (next: string) => void;
+  drafterDisplayName: string;
   userId: string;
   content: JSONContent;
-  onChangeEditor: (nextContent: JSONContent, nextHtml: string) => void;
+  onChangeEditor?: (nextContent: JSONContent, nextHtml: string) => void;
   documentFieldValues: DocumentFieldValues;
   drafterProfile?: UserItem;
   reviewerProfile?: UserItem;
   approverProfile?: UserItem;
   referenceOptions: UserItem[];
   selectedReferences: UserItem[];
-  onChangeReferences: (next: string[]) => void;
+  onChangeReferences?: (next: string[]) => void;
   comments: DraftComment[];
   replyDraftByCommentId: Record<string, string>;
   onChangeReplyDraft: (commentId: string, value: string) => void;
   onAddComment: (value: string) => void;
   onAddReply: (commentId: string) => void;
+  isReadOnly?: boolean;
 };
 
 export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
@@ -45,7 +46,7 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     work,
     title,
     onTitleChange,
-    displayName,
+    drafterDisplayName,
     userId,
     content,
     onChangeEditor,
@@ -61,6 +62,7 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     onChangeReplyDraft,
     onAddComment,
     onAddReply,
+    isReadOnly = false,
   } = props;
 
   return (
@@ -75,25 +77,27 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         work={work}
         title={title}
         onTitleChange={onTitleChange}
-        displayName={displayName}
+        drafterDisplayName={drafterDisplayName}
         userId={userId}
         metadataSection={
           <ApprovalDraftSidebar
             embedded
             isDarkMode={isDarkMode}
             work={work}
-            drafterName={displayName || userId}
+            drafterName={drafterDisplayName || userId}
             drafterProfile={drafterProfile}
             reviewerProfile={reviewerProfile}
             approverProfile={approverProfile}
             referenceOptions={referenceOptions}
             selectedReferences={selectedReferences}
             onChangeReferences={onChangeReferences}
+            isReadOnly={isReadOnly}
           />
         }
         content={content}
         onChangeEditor={onChangeEditor}
         documentFieldValues={documentFieldValues}
+        isReadOnly={isReadOnly}
       />
 
       <ApprovalDraftCommentThread

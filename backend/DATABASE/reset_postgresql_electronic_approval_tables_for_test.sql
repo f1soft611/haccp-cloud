@@ -23,7 +23,7 @@ BEGIN;
 WITH target AS (
     SELECT tenant_id
     FROM tb_tenant
-    WHERE tenant_code = 'TENANT-A'
+    WHERE tenant_code = 'PLATFORM'
 )
 DELETE FROM tb_electronic_approval_open_info
 WHERE tenant_id IN (SELECT tenant_id FROM target);
@@ -31,7 +31,7 @@ WHERE tenant_id IN (SELECT tenant_id FROM target);
 WITH target AS (
     SELECT tenant_id
     FROM tb_tenant
-    WHERE tenant_code = 'TENANT-A'
+    WHERE tenant_code = 'PLATFORM'
 )
 DELETE FROM tb_electronic_approval_history_main
 WHERE tenant_id IN (SELECT tenant_id FROM target);
@@ -39,7 +39,7 @@ WHERE tenant_id IN (SELECT tenant_id FROM target);
 WITH target AS (
     SELECT tenant_id
     FROM tb_tenant
-    WHERE tenant_code = 'TENANT-A'
+    WHERE tenant_code = 'PLATFORM'
 )
 DELETE FROM tb_electronic_approval_line_info
 WHERE tenant_id IN (SELECT tenant_id FROM target);
@@ -47,7 +47,7 @@ WHERE tenant_id IN (SELECT tenant_id FROM target);
 WITH target AS (
     SELECT tenant_id
     FROM tb_tenant
-    WHERE tenant_code = 'TENANT-A'
+    WHERE tenant_code = 'PLATFORM'
 )
 DELETE FROM tb_electronic_approval_main
 WHERE tenant_id IN (SELECT tenant_id FROM target);
@@ -57,19 +57,19 @@ WHERE tenant_id IN (SELECT tenant_id FROM target);
 -- -----------------------------------------------------------------------------
 SELECT 'tb_electronic_approval_main' AS table_name, COUNT(*) AS row_count
 FROM tb_electronic_approval_main
-WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'TENANT-A' LIMIT 1)
+WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1)
 UNION ALL
 SELECT 'tb_electronic_approval_line_info', COUNT(*)
 FROM tb_electronic_approval_line_info
-WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'TENANT-A' LIMIT 1)
+WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1)
 UNION ALL
 SELECT 'tb_electronic_approval_history_main', COUNT(*)
 FROM tb_electronic_approval_history_main
-WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'TENANT-A' LIMIT 1)
+WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1)
 UNION ALL
 SELECT 'tb_electronic_approval_open_info', COUNT(*)
 FROM tb_electronic_approval_open_info
-WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'TENANT-A' LIMIT 1);
+WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1);
 
 COMMIT;
 

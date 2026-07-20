@@ -58,7 +58,7 @@
             w.reg_term,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
-            TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
+            TO_CHAR(COALESCE(pre.updated_at, pre.created_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS created_at,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
               WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
@@ -327,8 +327,11 @@
             w.code_name,
             w.reg_term,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
-            COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
-            TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
+            COALESCE(
+              NULLIF(TRIM(CAST(pre.login_id AS varchar)), ''),
+              CAST(cu.login_id AS varchar)
+            ) AS created_by,
+            TO_CHAR(COALESCE(m.updated_at, m.created_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS created_at,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
               WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
@@ -384,13 +387,13 @@
          AND g.tenant_id = w.tenant_id
         LEFT JOIN tb_user cu
           ON cu.tenant_id = w.tenant_id
-         AND cu.login_id = w.created_by
+         AND CAST(cu.user_id AS varchar) = CAST(w.created_by AS varchar)
         LEFT JOIN tb_user ru
           ON ru.tenant_id = w.tenant_id
-         AND ru.login_id = w.reviewer_id
+         AND CAST(ru.user_id AS varchar) = CAST(w.reviewer_id AS varchar)
         LEFT JOIN tb_user au
           ON au.tenant_id = w.tenant_id
-         AND au.login_id = w.approver_id
+         AND CAST(au.user_id AS varchar) = CAST(w.approver_id AS varchar)
         LEFT JOIN LATERAL (
           SELECT
               COUNT(*) AS assignee_count,
@@ -426,6 +429,7 @@
               m.ea_exe_id,
               m.ea_title,
               m.status_type,
+              m.login_id,
               m.txt_cnt,
               m.txt_json,
               m.after_cnt,
@@ -453,6 +457,27 @@
         WHERE w.drafting_work_category_id = #{id}
           AND t.tenant_code = #{tenantCode}
           AND COALESCE(w.delete_status, 'N') != 'Y'
+          AND (
+            -- 기안서가 있으면 무조건 조회 허용
+            pre.electronic_approval_id IS NOT NULL
+            OR (
+              -- 기안서가 없으면 현재 사용자가 담당자인 경우만 조회 허용
+              pre.electronic_approval_id IS NULL
+              AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+              AND EXISTS (
+                SELECT 1
+                FROM tb_drafting_work_category_authority auth
+                WHERE auth.tenant_id = w.tenant_id
+                  AND auth.drafting_work_category_id = w.drafting_work_category_id
+                  AND (
+                    CAST(auth.employee_no AS bigint) = #{actorLoginId, jdbcType=BIGINT}
+                    OR CAST(auth.employee_no AS varchar) = CAST(#{actorLoginId, jdbcType=BIGINT} AS varchar)
+                  )
+                  AND auth.use_at = 'Y'
+                  AND COALESCE(auth.delete_status, 'N') != 'Y'
+              )
+            )
+          )
     </select>
 
     <select id="HaccpWorkDAO.selectDraftTemplateByApprovalId"
@@ -472,7 +497,10 @@
             w.code_name,
             w.reg_term,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
-            COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
+            COALESCE(
+              NULLIF(TRIM(CAST(m.login_id AS varchar)), ''),
+              CAST(w.created_by AS varchar)
+            ) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
             CONCAT(
               '검토:',
@@ -538,13 +566,13 @@
          AND g.tenant_id = w.tenant_id
         LEFT JOIN tb_user cu
           ON cu.tenant_id = w.tenant_id
-         AND cu.login_id = w.created_by
+         AND CAST(cu.user_id AS varchar) = CAST(w.created_by AS varchar)
         LEFT JOIN tb_user ru
           ON ru.tenant_id = w.tenant_id
-         AND ru.login_id = w.reviewer_id
+         AND CAST(ru.user_id AS varchar) = CAST(w.reviewer_id AS varchar)
         LEFT JOIN tb_user au
           ON au.tenant_id = w.tenant_id
-         AND au.login_id = w.approver_id
+         AND CAST(au.user_id AS varchar) = CAST(w.approver_id AS varchar)
         LEFT JOIN LATERAL (
           SELECT
               COUNT(*) AS assignee_count,

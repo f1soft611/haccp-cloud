@@ -2,6 +2,7 @@ import { apiClient } from '../api/apiClient';
 
 export type HaccpDocumentItem = {
   id: string;
+  approvalId: string;
   workType: string;
   draftNumber: string;
   title: string;
@@ -14,6 +15,8 @@ export type HaccpDocumentItem = {
 type RawHaccpDocumentItem = {
   draftingWorkCategoryId?: number | string | null;
   id?: number | string | null;
+  electronicApprovalId?: number | string | null;
+  electronic_approval_id?: number | string | null;
   categoryName?: string | null;
   categoryNm?: string | null;
   cataName?: string | null;
@@ -65,6 +68,9 @@ function normalizeStatus(value: unknown): HaccpDocumentItem['status'] {
 function normalizeItem(raw: RawHaccpDocumentItem): HaccpDocumentItem {
   return {
     id: normalizeText(raw.id ?? raw.draftingWorkCategoryId),
+    approvalId: normalizeText(
+      raw.electronicApprovalId ?? raw.electronic_approval_id,
+    ),
     workType: normalizeText(raw.categoryName ?? raw.categoryNm ?? raw.cataName),
     draftNumber: normalizeText(raw.eaExeId ?? raw.ea_exe_id),
     title: normalizeText(raw.title ?? raw.eaTitle ?? raw.ea_title),

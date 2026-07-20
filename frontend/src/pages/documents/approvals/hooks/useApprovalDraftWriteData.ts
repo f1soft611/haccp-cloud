@@ -12,6 +12,7 @@ import {
   type DocumentFieldValues,
 } from '../../../../editor/utils/documentFieldValues';
 import { parseTemplateJson } from '../utils/approvalDraftUtils';
+import { isDocumentOwner } from '../../../../shared/utils/ownershipUtils';
 
 type UseApprovalDraftWriteDataResult = {
   baseId?: string;
@@ -19,6 +20,7 @@ type UseApprovalDraftWriteDataResult = {
   tenantCode: string;
   userId: string;
   displayName: string;
+  drafterDisplayName: string;
   title: string;
   setTitle: (next: string) => void;
   referenceIds: string[];
@@ -37,6 +39,8 @@ type UseApprovalDraftWriteDataResult = {
   drafterProfile?: UserItem;
   reviewerProfile?: UserItem;
   approverProfile?: UserItem;
+  isOwner: boolean;
+  isReadOnly: boolean;
 };
 
 export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
@@ -84,6 +88,9 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   useEffect(() => {
     setTitle('');
     setReferenceIds([]);
+    setEditorContent(null);
+    setEditorHtml('');
+    setHasUserEdited(false);
   }, [baseId, idType]);
 
   useEffect(() => {
@@ -169,8 +176,17 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     : (usersQuery.data ?? []).find((user) => user.id === work.approverId);
 
   const drafterProfile = (usersQuery.data ?? []).find((user) => {
+    if (work?.createdBy && user.id === work.createdBy) {
+      return true;
+    }
     return user.id === userId || user.name === displayName;
   });
+
+  const drafterDisplayName =
+    (drafterProfile?.name || '').trim() ||
+    (work?.createdBy || '').trim() ||
+    displayName ||
+    userId;
 
   const handleChangeEditor = (nextContent: JSONContent, nextHtml: string) => {
     void nextHtml;
@@ -183,12 +199,23 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     setEditorHtml(nextHtml);
   };
 
+  const isOwner = useMemo(() => {
+    // 미작성 상태 (기안서 없음): 백엔드가 담당자 확인했으니 편집 가능
+    if (!work?.electronicApprovalId) {
+      return true;
+    }
+    // 작성됨 상태 (기안서 있음): 기안 작성자만 편집 가능
+    return isDocumentOwner(work.createdBy, userId);
+  }, [work?.electronicApprovalId, work?.createdBy, userId]);
+  const isReadOnly = !isOwner;
+
   return {
     baseId,
     idType,
     tenantCode,
     userId,
     displayName,
+    drafterDisplayName,
     title,
     setTitle,
     referenceIds,
@@ -207,5 +234,7 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     drafterProfile,
     reviewerProfile,
     approverProfile,
+    isOwner,
+    isReadOnly,
   };
 }

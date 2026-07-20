@@ -223,42 +223,76 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         Map<String, Object> reviewerProfile = selectApprovalActorProfile(tenantId, work.getReviewerId());
         Map<String, Object> approverProfile = selectApprovalActorProfile(tenantId, work.getApproverId());
 
-        Map<String, Object> mainParams = new HashMap<String, Object>();
-        mainParams.put("tenantId", tenantId);
-        mainParams.put("workId", workId);
-        mainParams.put("plantCode", DEFAULT_PLANT_CODE);
-        mainParams.put("eabusNo", DEFAULT_EABUS_NO);
-        mainParams.put("eaExeId", eaExeId);
-        mainParams.put("regDate", regDate);
-        mainParams.put("loginId", actorLoginId);
-        mainParams.put("statusType", "in_progress");
-        mainParams.put("departmentId", getLong(actorProfile, "departmentId"));
-        mainParams.put("levelName", resolveLevelName(actorProfile));
-        mainParams.put("title", normalizedTitle);
-        mainParams.put("twfTime", twfTime);
-        mainParams.put("txtCnt", templateHtml);
-        mainParams.put("txtJson", templateJson);
-        mainParams.put("afterCnt", templateHtml);
-        mainParams.put("afterTxtJson", templateJson);
-        mainParams.put("afterTwfTime", twfTime);
-        mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
-        mainParams.put("endStatus", "in_progress");
-        mainParams.put("statusTypeName", "진행중");
-        mainParams.put("reportDate", regDate);
-        mainParams.put("settlePlanDate", regDate);
-        mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
-        mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
-        mainParams.put("twfDate", regDate);
-        mainParams.put("afterTwfDate", regDate);
-        mainParams.put("deleteStatus", "N");
-        mainParams.put("createdBy", actorLoginId);
-        mainParams.put("updatedBy", actorLoginId);
+        Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId);
+        Long electronicApprovalId;
+        if (preApplyApprovalId == null) {
+            Map<String, Object> mainParams = new HashMap<String, Object>();
+            mainParams.put("tenantId", tenantId);
+            mainParams.put("workId", workId);
+            mainParams.put("plantCode", DEFAULT_PLANT_CODE);
+            mainParams.put("eabusNo", DEFAULT_EABUS_NO);
+            mainParams.put("eaExeId", eaExeId);
+            mainParams.put("regDate", regDate);
+            mainParams.put("loginId", actorLoginId);
+            mainParams.put("statusType", "in_progress");
+            mainParams.put("departmentId", getLong(actorProfile, "departmentId"));
+            mainParams.put("levelName", resolveLevelName(actorProfile));
+            mainParams.put("title", normalizedTitle);
+            mainParams.put("twfTime", twfTime);
+            mainParams.put("txtCnt", templateHtml);
+            mainParams.put("txtJson", templateJson);
+            mainParams.put("afterCnt", templateHtml);
+            mainParams.put("afterTxtJson", templateJson);
+            mainParams.put("afterTwfTime", twfTime);
+            mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
+            mainParams.put("endStatus", "in_progress");
+            mainParams.put("statusTypeName", "진행중");
+            mainParams.put("reportDate", regDate);
+            mainParams.put("settlePlanDate", regDate);
+            mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
+            mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
+            mainParams.put("twfDate", regDate);
+            mainParams.put("afterTwfDate", regDate);
+            mainParams.put("deleteStatus", "N");
+            mainParams.put("createdBy", actorLoginId);
+            mainParams.put("updatedBy", actorLoginId);
 
-        haccpWorkDAO.insertElectronicApprovalMain(mainParams);
-        Long electronicApprovalId = getLong(mainParams, "electronicApprovalId");
+            haccpWorkDAO.insertElectronicApprovalMain(mainParams);
+            electronicApprovalId = getLong(mainParams, "electronicApprovalId");
+        } else {
+            electronicApprovalId = preApplyApprovalId;
+            Map<String, Object> updateParams = new HashMap<String, Object>();
+            updateParams.put("tenantId", tenantId);
+            updateParams.put("approvalId", preApplyApprovalId);
+            updateParams.put("title", normalizedTitle);
+            updateParams.put("txtCnt", templateHtml);
+            updateParams.put("txtJson", templateJson);
+            updateParams.put("afterCnt", templateHtml);
+            updateParams.put("afterTxtJson", templateJson);
+            updateParams.put("statusType", "in_progress");
+            updateParams.put("statusTypeName", "진행중");
+            updateParams.put("endStatus", "in_progress");
+            updateParams.put("updatedBy", actorLoginId);
+            updateParams.put("updatedAt", now);
+            haccpWorkDAO.updateElectronicApprovalMainDraftContent(updateParams);
+
+            Map<String, Object> approvalMainParams = new HashMap<String, Object>();
+            approvalMainParams.put("tenantId", tenantId);
+            approvalMainParams.put("approvalId", preApplyApprovalId);
+            Map<String, Object> existingMain = haccpWorkDAO.selectApprovalMainById(approvalMainParams);
+            String existingEaExeId = trimToEmpty(String.valueOf(existingMain == null ? "" : existingMain.get("eaExeId")));
+            if (StringUtils.hasText(existingEaExeId)) {
+                eaExeId = existingEaExeId;
+            }
+        }
         if (electronicApprovalId == null) {
             throw new IllegalStateException("결재 메인 저장 후 키를 확인할 수 없습니다.");
         }
+
+        Map<String, Object> deleteLinesParams = new HashMap<String, Object>();
+        deleteLinesParams.put("tenantId", tenantId);
+        deleteLinesParams.put("approvalId", electronicApprovalId);
+        haccpWorkDAO.deleteElectronicApprovalLinesByApprovalId(deleteLinesParams);
 
         insertApprovalLine(
                 tenantId,

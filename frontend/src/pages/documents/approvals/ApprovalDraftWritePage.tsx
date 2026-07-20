@@ -22,6 +22,7 @@ export function ApprovalDraftWritePage() {
     displayName,
     userId,
     title,
+    drafterDisplayName,
     setTitle,
     referenceIds,
     setReferenceIds,
@@ -36,6 +37,8 @@ export function ApprovalDraftWritePage() {
     drafterProfile,
     reviewerProfile,
     approverProfile,
+    isOwner,
+    isReadOnly,
   } = useApprovalDraftWriteData();
   const isStatusResolved = !baseId || workDetailQuery.isFetched;
 
@@ -69,8 +72,10 @@ export function ApprovalDraftWritePage() {
     approvalStatusType: work?.approvalStatusType,
     title,
     referenceIds,
+    documentFieldValues,
     editorContent: resolvedEditorContent,
     editorHtml: resolvedEditorHtml,
+    isOwner,
   });
 
   return (
@@ -114,23 +119,24 @@ export function ApprovalDraftWritePage() {
         workDetailFetched={workDetailQuery.isFetched}
         work={work}
         title={title}
-        onTitleChange={setTitle}
-        displayName={displayName}
+        onTitleChange={isReadOnly ? undefined : setTitle}
+        drafterDisplayName={drafterDisplayName}
         userId={userId}
         content={resolvedEditorContent}
-        onChangeEditor={handleChangeEditor}
+        onChangeEditor={isReadOnly ? undefined : handleChangeEditor}
         documentFieldValues={documentFieldValues}
         drafterProfile={drafterProfile}
         reviewerProfile={reviewerProfile}
         approverProfile={approverProfile}
         referenceOptions={referenceOptions}
         selectedReferences={selectedReferences}
-        onChangeReferences={setReferenceIds}
+        onChangeReferences={isReadOnly ? undefined : setReferenceIds}
         comments={comments}
         replyDraftByCommentId={replyDraftByCommentId}
         onChangeReplyDraft={setReplyDraft}
         onAddComment={addComment}
         onAddReply={addReply}
+        isReadOnly={isReadOnly}
       />
 
       <ConfirmDialog

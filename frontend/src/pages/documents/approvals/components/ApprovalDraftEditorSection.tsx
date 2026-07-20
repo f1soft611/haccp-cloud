@@ -1,56 +1,33 @@
-import { Box, Chip, Divider, Paper, Stack, TextField } from '@mui/material';
-import type { ChipProps } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Chip,
+  Divider,
+  Paper,
+  Stack,
+  TextField,
+} from '@mui/material';
 import type { JSONContent } from '@tiptap/core';
 import type { ReactNode } from 'react';
 import type { HaccpBaseWorkItem } from '../../../../services/documents/haccpBaseWorkService';
 import { NotionLikeEditor } from '../../../../editor/components/NotionLikeEditor';
 import type { DocumentFieldValues } from '../../../../editor/utils/documentFieldValues';
+import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import { formatNow } from '../utils/approvalDraftUtils';
-
-function resolveApprovalStatusLabel(status: string): string {
-  if (status === 'in_progress') {
-    return '결재진행중';
-  }
-  if (status === 'approved') {
-    return '승인';
-  }
-  if (status === 'rejected' || status === 'returned') {
-    return '반려';
-  }
-  if (status === 'pre_apply') {
-    return '임시저장';
-  }
-  return '미작성';
-}
-
-function resolveApprovalStatusColor(status: string): ChipProps['color'] {
-  if (status === 'in_progress') {
-    return 'warning';
-  }
-  if (status === 'approved') {
-    return 'success';
-  }
-  if (status === 'rejected' || status === 'returned') {
-    return 'secondary';
-  }
-  if (status === 'pre_apply') {
-    return 'info';
-  }
-  return 'default';
-}
 
 type ApprovalDraftEditorSectionProps = {
   baseId?: string;
   idType: 'work' | 'approval';
   work?: HaccpBaseWorkItem;
   title: string;
-  onTitleChange: (next: string) => void;
-  displayName: string;
+  onTitleChange?: (next: string) => void;
+  drafterDisplayName: string;
   userId: string;
   metadataSection?: ReactNode;
   content: JSONContent;
-  onChangeEditor: (nextContent: JSONContent, nextHtml: string) => void;
+  onChangeEditor?: (nextContent: JSONContent, nextHtml: string) => void;
   documentFieldValues: DocumentFieldValues;
+  isReadOnly?: boolean;
 };
 
 export function ApprovalDraftEditorSection(
@@ -62,12 +39,13 @@ export function ApprovalDraftEditorSection(
     work,
     title,
     onTitleChange,
-    displayName,
+    drafterDisplayName,
     userId,
     metadataSection,
     content,
     onChangeEditor,
     documentFieldValues,
+    isReadOnly = false,
   } = props;
 
   const templateId =
@@ -78,12 +56,11 @@ export function ApprovalDraftEditorSection(
   const approvalStatus = String(work?.approvalStatusType ?? '')
     .trim()
     .toLowerCase();
-  const statusLabel = resolveApprovalStatusLabel(approvalStatus);
-  const statusColor = resolveApprovalStatusColor(approvalStatus);
-  const draftNumber =
-    approvalStatus && approvalStatus !== 'pre_apply'
-      ? (work?.draftNumber || '').trim()
-      : '';
+  const { label: statusLabel, color: statusColor } = resolveApprovalStatusView({
+    approvalStatusType: approvalStatus,
+  });
+  const draftNumber = (work?.draftNumber || '').trim();
+  const draftDate = (work?.createdAt || '').trim() || formatNow(new Date());
 
   return (
     <Paper
@@ -143,12 +120,18 @@ export function ApprovalDraftEditorSection(
             gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
           }}
         >
+          {isReadOnly && (
+            <Alert severity="info" sx={{ gridColumn: '1 / -1', mb: 1 }}>
+              이 문서의 소유자가 아니므로 편집할 수 없습니다.
+            </Alert>
+          )}
           <TextField
             label="기안 제목"
             placeholder="예: 2026-07-16 품질 점검 기안"
             required
             value={title}
-            onChange={(event) => onTitleChange(event.target.value)}
+            onChange={(event) => onTitleChange?.(event.target.value)}
+            disabled={isReadOnly}
             fullWidth
             sx={{
               minWidth: 0,
@@ -166,13 +149,13 @@ export function ApprovalDraftEditorSection(
 
           <TextField
             label="기안자"
-            value={displayName || userId}
+            value={drafterDisplayName || userId}
             InputProps={{ readOnly: true }}
             sx={{ minWidth: 0 }}
           />
           <TextField
             label="기안일"
-            value={formatNow(new Date())}
+            value={draftDate}
             InputProps={{ readOnly: true }}
             sx={{ minWidth: 0 }}
           />
@@ -188,7 +171,7 @@ export function ApprovalDraftEditorSection(
           <Box sx={{ width: '100%' }}>
             <NotionLikeEditor
               content={content}
-              editable
+              editable={!isReadOnly}
               showToolbar={false}
               enableSlashCommand={false}
               documentFieldDisplayMode="value"
@@ -199,8 +182,11 @@ export function ApprovalDraftEditorSection(
                 border: '1px solid',
                 borderColor: 'divider',
                 boxShadow: 'none',
+                opacity: isReadOnly ? 0.7 : 1,
               }}
-              onChange={onChangeEditor}
+              onChange={(nextContent, nextHtml) =>
+                onChangeEditor?.(nextContent, nextHtml)
+              }
               documentFieldValues={documentFieldValues}
             />
           </Box>

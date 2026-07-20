@@ -98,16 +98,24 @@ export function HaccpBaseGrid(props: {
           <TableCell width={120} align="center">
             등록자
           </TableCell>
-          <TableCell width={290} align="center">
+          <TableCell width={250} align="center">
             등록일
           </TableCell>
-          <TableCell align="center">사용</TableCell>
-          <TableCell align="center">검토/승인</TableCell>
-          <TableCell align="center">담당자</TableCell>
+          <TableCell width={70} align="center">
+            사용
+          </TableCell>
+          <TableCell width={110} align="center">
+            검토/승인
+          </TableCell>
+          <TableCell width={90} align="center">
+            담당자
+          </TableCell>
           <TableCell width={70} align="center">
             문서
           </TableCell>
-          <TableCell align="center">수정</TableCell>
+          <TableCell width={70} align="center">
+            수정
+          </TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
