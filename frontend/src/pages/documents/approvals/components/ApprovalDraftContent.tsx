@@ -10,6 +10,7 @@ import type { DraftComment } from '../types';
 
 type ApprovalDraftContentProps = {
   baseId?: string;
+  idType: 'work' | 'approval';
   isDarkMode: boolean;
   workDetailError: boolean;
   workDetailFetched: boolean;
@@ -37,6 +38,7 @@ type ApprovalDraftContentProps = {
 export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
   const {
     baseId,
+    idType,
     isDarkMode,
     workDetailError,
     workDetailFetched,
@@ -69,6 +71,7 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
 
       <ApprovalDraftEditorSection
         baseId={baseId}
+        idType={idType}
         work={work}
         title={title}
         onTitleChange={onTitleChange}

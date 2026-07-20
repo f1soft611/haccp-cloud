@@ -23,9 +23,9 @@ type SignerLineItem = {
 };
 
 const FALLBACK_STAMP_BY_ROLE: Record<SignerRole, string> = {
-  drafter: '/confirm.png',
-  reviewer: '/approve.png',
-  approver: '/all_approve.png',
+  drafter: '/project.png',
+  reviewer: '/confirm.png',
+  approver: '/approve.png',
 };
 
 type ApprovalDraftSidebarProps = {
@@ -131,11 +131,10 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
   };
 
   const resolveSignerImage = (item: SignerLineItem): string => {
-    return (
-      item.signatureImage ||
-      item.stampImage ||
-      FALLBACK_STAMP_BY_ROLE[item.role]
-    );
+    if (item.signatureImage && item.signatureImage.trim()) {
+      return item.signatureImage;
+    }
+    return FALLBACK_STAMP_BY_ROLE[item.role];
   };
 
   const content = (
@@ -210,11 +209,42 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
                 />
                 {canShowSignerImage(item) ? (
                   <Box
-                    component="img"
-                    src={resolveSignerImage(item)}
-                    alt={`${item.roleLabel} 이미지`}
-                    sx={{ width: 30, height: 30, objectFit: 'contain' }}
-                  />
+                    sx={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: isDarkMode
+                        ? 'rgba(148,163,184,0.32)'
+                        : 'rgba(15,23,42,0.12)',
+                      bgcolor: isDarkMode
+                        ? 'rgba(255,255,255,0.96)'
+                        : 'rgba(255,255,255,0.9)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={resolveSignerImage(item)}
+                      alt={`${item.roleLabel} 이미지`}
+                      onError={(event) => {
+                        const target = event.currentTarget;
+                        const fallback = FALLBACK_STAMP_BY_ROLE[item.role];
+                        if (target.src.endsWith(fallback)) {
+                          return;
+                        }
+                        target.src = fallback;
+                      }}
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        objectFit: 'contain',
+                        display: 'block',
+                      }}
+                    />
+                  </Box>
                 ) : (
                   <Typography variant="caption" color="text.disabled">
                     미결

@@ -15,6 +15,12 @@ export function TenantSidebarSection(props: TenantSidebarSectionProps) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
 
+  const resolveDraftNoWithId = (item: TenantTodoCardItem): string => {
+    const draftNo = (item.draftNumber || '-').trim() || '-';
+    const draftId = (item.approvalId || item.id || '-').trim() || '-';
+    return `${draftNo}/${draftId}`;
+  };
+
   return (
     <Stack spacing={2}>
       <Paper
@@ -70,9 +76,25 @@ export function TenantSidebarSection(props: TenantSidebarSectionProps) {
                     : 'rgba(255,255,255,0.7)',
                 }}
               >
-                <Typography variant="caption" color="text.secondary">
-                  {`${item.divisionName || '-'} - ${item.categoryName || '-'}`}
-                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    {`${item.divisionName || '-'} - ${item.categoryName || '-'}`}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ whiteSpace: 'nowrap', textAlign: 'right' }}
+                  >
+                    {resolveDraftNoWithId(item)}
+                  </Typography>
+                </Box>
                 <Typography variant="body2" fontWeight={700} sx={{ mt: 0.3 }}>
                   {item.title || '-'}
                 </Typography>

@@ -6,6 +6,7 @@
                type="egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO">
         <result property="draftingWorkCategoryId" column="drafting_work_category_id"/>
       <result property="electronicApprovalId" column="electronic_approval_id"/>
+        <result property="eaExeId" column="ea_exe_id"/>
         <result property="title" column="title"/>
         <result property="tenantCode" column="tenant_code"/>
         <result property="categoryGroupId" column="drafting_work_category_group_id"/>
@@ -45,6 +46,7 @@
         SELECT
             w.drafting_work_category_id,
           appr.latest_approval_id AS electronic_approval_id,
+            '' AS ea_exe_id,
             '' AS title,
             t.tenant_code,
             w.drafting_work_category_group_id,
@@ -170,12 +172,151 @@
         ORDER BY COALESCE(appr.latest_updated_at, w.updated_at, w.created_at) DESC, w.drafting_work_category_id DESC
     </select>
 
+    <select id="HaccpWorkDAO.selectDocumentList"
+            parameterType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkSearchConditionVO"
+            resultMap="haccpWorkResult">
+        SELECT
+            w.drafting_work_category_id,
+            m.electronic_approval_id,
+            COALESCE(m.ea_exe_id, '') AS ea_exe_id,
+            COALESCE(m.ea_title, '') AS title,
+            t.tenant_code,
+            w.drafting_work_category_group_id,
+            g.cata_code,
+            g.cata_name AS category_name,
+            COALESCE(g.view_seq, 0) AS category_sort_order,
+            w.cata_type_code,
+            w.code_name,
+            w.reg_term,
+            CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar)) AS created_by,
+            TO_CHAR(
+              COALESCE(
+                CASE
+                  WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
+                  ELSE NULL
+                END,
+                DATE(m.created_at)
+              ),
+              'YYYY-MM-DD'
+            ) AS created_at,
+            CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
+            '' AS assignee_summary,
+            '' AS assignee_ids_csv,
+            '' AS reference_ids_csv,
+            w.reviewer_id,
+            COALESCE(NULLIF(TRIM(ru.user_nm), ''), '') AS reviewer_name,
+            w.approver_id,
+            COALESCE(NULLIF(TRIM(au.user_nm), ''), '') AS approver_name,
+            CASE
+              WHEN w.reviewer_id IS NOT NULL AND w.approver_id IS NOT NULL THEN TRUE
+              ELSE FALSE
+            END AS assignee_mapped,
+            CAST(m.txt_json AS text) AS template_json,
+            m.txt_cnt AS template_html,
+            CASE
+              WHEN m.txt_json IS NOT NULL
+                OR NULLIF(TRIM(COALESCE(m.txt_cnt, '')), '') IS NOT NULL
+              THEN TRUE
+              ELSE FALSE
+            END AS has_document,
+            CASE
+              WHEN COALESCE(m.status_type, '') = 'in_progress' THEN 'IN_PROGRESS'
+              WHEN COALESCE(m.status_type, '') = 'approved' THEN 'ACTIVE'
+              ELSE 'DRAFT'
+            END AS todo_status,
+            COALESCE(m.status_type, '') AS approval_status_type,
+            CASE
+              WHEN COALESCE(m.status_type, '') = 'in_progress' THEN '결재중'
+              WHEN COALESCE(m.status_type, '') = 'approved' THEN '승인'
+              WHEN COALESCE(m.status_type, '') = 'rejected' THEN '반송'
+              ELSE '임시저장'
+            END AS approval_status_type_name,
+            TO_CHAR(COALESCE(m.updated_at, m.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
+            '' AS drafter_app_status,
+            '' AS reviewer_app_status,
+            '' AS approver_app_status
+        FROM tb_electronic_approval_main m
+        JOIN tb_drafting_work_category w
+          ON w.tenant_id = m.tenant_id
+         AND w.drafting_work_category_id = m.drafting_work_category_id
+        JOIN tb_tenant t
+          ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
+         AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_login_account la
+          ON la.tenant_id = m.tenant_id
+         AND la.login_id = m.login_id
+        LEFT JOIN tb_user du
+          ON du.tenant_id = m.tenant_id
+         AND du.login_id = m.login_id
+        LEFT JOIN tb_user ru
+          ON ru.tenant_id = w.tenant_id
+         AND ru.login_id = w.reviewer_id
+        LEFT JOIN tb_user au
+          ON au.tenant_id = w.tenant_id
+         AND au.login_id = w.approver_id
+        WHERE t.tenant_code = #{tenantCode}
+          AND COALESCE(m.delete_status, 'N') != 'Y'
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+          AND (
+                COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
+                OR (
+                  #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                  AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+                )
+                OR (
+                  #{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL
+                  AND la.login_code = #{actorLoginCode, jdbcType=VARCHAR}
+                )
+          )
+          <if test="workType != null and workType != '' and workType != '전체'">
+            AND (
+                  g.cata_name = #{workType}
+                  OR g.cata_code = #{workType}
+            )
+          </if>
+          <if test="draftNumber != null and draftNumber != ''">
+            AND COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{draftNumber}, '%')
+          </if>
+          <if test="title != null and title != ''">
+            AND COALESCE(m.ea_title, '') ILIKE CONCAT('%', #{title}, '%')
+          </if>
+          <if test="writer != null and writer != ''">
+            AND COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{writer}, '%')
+          </if>
+          <if test="statusType != null and statusType != ''">
+            AND COALESCE(m.status_type, '') = #{statusType}
+          </if>
+          <if test="startDate != null and startDate != ''">
+            AND COALESCE(
+                  CASE
+                    WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
+                  DATE(m.created_at)
+                ) >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+          </if>
+          <if test="endDate != null and endDate != ''">
+            AND COALESCE(
+                  CASE
+                    WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
+                  DATE(m.created_at)
+                ) &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+          </if>
+        ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
+    </select>
+
     <select id="HaccpWorkDAO.selectDraftTemplateByWorkId"
             parameterType="map"
             resultMap="haccpWorkResult">
         SELECT
             w.drafting_work_category_id,
             pre.electronic_approval_id,
+          COALESCE(pre.ea_exe_id, '') AS ea_exe_id,
           COALESCE(pre.ea_title, '') AS title,
             t.tenant_code,
             w.drafting_work_category_group_id,
@@ -271,8 +412,18 @@
             AND COALESCE(a.delete_status, 'N') != 'Y'
         ) wa ON TRUE
         LEFT JOIN LATERAL (
+          WITH cycle_base AS (
+            SELECT CASE
+                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
+                  THEN date_trunc('month', CURRENT_TIMESTAMP)
+                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
+                  THEN date_trunc('week', CURRENT_TIMESTAMP)
+                ELSE date_trunc('day', CURRENT_TIMESTAMP)
+              END AS cycle_start
+          )
           SELECT
               m.electronic_approval_id,
+              m.ea_exe_id,
               m.ea_title,
               m.status_type,
               m.txt_cnt,
@@ -282,11 +433,13 @@
               m.created_at,
               m.updated_at
           FROM tb_electronic_approval_main m
+          CROSS JOIN cycle_base cb
           WHERE m.tenant_id = w.tenant_id
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
             AND COALESCE(m.delete_status, 'N') != 'Y'
             AND COALESCE(m.status_type, '') = 'pre_apply'
+            AND COALESCE(m.updated_at, m.created_at) >= cb.cycle_start
           ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
         ) pre ON TRUE
@@ -308,6 +461,7 @@
         SELECT
             w.drafting_work_category_id,
           m.electronic_approval_id,
+            COALESCE(m.ea_exe_id, '') AS ea_exe_id,
             COALESCE(m.ea_title, '') AS title,
             t.tenant_code,
             w.drafting_work_category_group_id,
@@ -320,7 +474,12 @@
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
-            CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
+            CONCAT(
+              '검토:',
+              COALESCE(NULLIF(TRIM(ru_line.user_nm), ''), NULLIF(TRIM(ru.user_nm), ''), '-'),
+              ' / 승인:',
+              COALESCE(NULLIF(TRIM(au_line.user_nm), ''), NULLIF(TRIM(au.user_nm), ''), '-')
+            ) AS owner,
             CASE
               WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
               WHEN wa.assignee_count = 1 THEN wa.first_assignee_name
@@ -328,12 +487,13 @@
             END AS assignee_summary,
             COALESCE(wa.assignee_ids_csv, '') AS assignee_ids_csv,
             COALESCE(ref.reference_ids_csv, '') AS reference_ids_csv,
-            w.reviewer_id,
-            COALESCE(NULLIF(TRIM(ru.user_nm), ''), '') AS reviewer_name,
-            w.approver_id,
-            COALESCE(NULLIF(TRIM(au.user_nm), ''), '') AS approver_name,
+            COALESCE(l2.login_id, w.reviewer_id) AS reviewer_id,
+            COALESCE(NULLIF(TRIM(ru_line.user_nm), ''), NULLIF(TRIM(ru.user_nm), ''), '') AS reviewer_name,
+            COALESCE(l3.login_id, w.approver_id) AS approver_id,
+            COALESCE(NULLIF(TRIM(au_line.user_nm), ''), NULLIF(TRIM(au.user_nm), ''), '') AS approver_name,
             CASE
-              WHEN w.reviewer_id IS NOT NULL AND w.approver_id IS NOT NULL THEN TRUE
+              WHEN COALESCE(l2.login_id, w.reviewer_id) IS NOT NULL
+               AND COALESCE(l3.login_id, w.approver_id) IS NOT NULL THEN TRUE
               ELSE FALSE
             END AS assignee_mapped,
             COALESCE(
@@ -356,6 +516,15 @@
               THEN TRUE
               ELSE FALSE
             END AS has_document,
+            COALESCE(m.status_type, '') AS approval_status_type,
+            CASE
+              WHEN COALESCE(m.status_type, '') = 'in_progress' THEN '진행중'
+              WHEN COALESCE(m.status_type, '') = 'approved' THEN '완료'
+              WHEN COALESCE(m.status_type, '') = 'rejected' THEN '반송'
+              WHEN COALESCE(m.status_type, '') = 'pre_apply' THEN '미완료'
+              ELSE ''
+            END AS approval_status_type_name,
+            TO_CHAR(COALESCE(m.updated_at, m.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
             COALESCE(l1.app_status, '') AS drafter_app_status,
             COALESCE(l2.app_status, '') AS reviewer_app_status,
             COALESCE(l3.app_status, '') AS approver_app_status
@@ -418,6 +587,12 @@
          AND l3.electronic_approval_id = m.electronic_approval_id
          AND l3.exe_seq = 3
          AND COALESCE(l3.muldec_status, '') = 'drafted'
+        LEFT JOIN tb_user ru_line
+          ON ru_line.tenant_id = m.tenant_id
+         AND ru_line.login_id = l2.login_id
+        LEFT JOIN tb_user au_line
+          ON au_line.tenant_id = m.tenant_id
+         AND au_line.login_id = l3.login_id
         WHERE m.electronic_approval_id = #{id}
           AND t.tenant_code = #{tenantCode}
           AND COALESCE(m.delete_status, 'N') != 'Y'
@@ -671,6 +846,29 @@
         AND COALESCE(muldec_status, '') = 'drafted'
     </select>
 
+    <select id="HaccpWorkDAO.selectLatestCompletedDraftedSeqByApprovalId"
+        parameterType="map"
+        resultType="int">
+      SELECT MAX(exe_seq)
+      FROM tb_electronic_approval_line_info
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND COALESCE(muldec_status, '') = 'drafted'
+        AND COALESCE(app_status, '') IN ('approved', 'returned')
+    </select>
+
+    <select id="HaccpWorkDAO.selectLatestCompletedDraftedSeqByApprovalAndLogin"
+        parameterType="map"
+        resultType="int">
+      SELECT MAX(exe_seq)
+      FROM tb_electronic_approval_line_info
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND login_id = #{loginId}
+        AND COALESCE(muldec_status, '') = 'drafted'
+        AND COALESCE(app_status, '') IN ('approved', 'returned')
+    </select>
+
     <select id="HaccpWorkDAO.selectApprovalReferenceLoginId"
         parameterType="map"
         resultType="long">
@@ -703,6 +901,21 @@
       SET
         arrival_at = #{arrivalAt, jdbcType=TIMESTAMP},
         option_name = #{optionName},
+        exe_at = NULL,
+        open_at = NULL
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND exe_seq = #{exeSeq}
+        AND COALESCE(muldec_status, '') = 'drafted'
+    </update>
+
+    <update id="HaccpWorkDAO.updateElectronicApprovalLineToPending"
+        parameterType="map">
+      UPDATE tb_electronic_approval_line_info
+      SET
+        app_status = '',
+        option_name = '대기',
+        arrival_at = NULL,
         exe_at = NULL,
         open_at = NULL
       WHERE tenant_id = #{tenantId}
@@ -748,6 +961,37 @@
         AND login_id = #{loginId}
         AND COALESCE(delete_status, 'N') != 'Y'
         AND COALESCE(status_type, '') = 'pre_apply'
+      ORDER BY COALESCE(updated_at, created_at) DESC, electronic_approval_id DESC
+      LIMIT 1
+    </select>
+
+    <select id="HaccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin"
+        parameterType="map"
+        resultType="map">
+      WITH cycle_base AS (
+        SELECT CASE
+            WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
+              THEN date_trunc('month', CURRENT_TIMESTAMP)
+            WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
+              THEN date_trunc('week', CURRENT_TIMESTAMP)
+            ELSE date_trunc('day', CURRENT_TIMESTAMP)
+          END AS cycle_start
+        FROM tb_drafting_work_category w
+        WHERE w.tenant_id = #{tenantId}
+          AND w.drafting_work_category_id = #{workId}
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+        LIMIT 1
+      )
+      SELECT
+        electronic_approval_id AS approvalId,
+        COALESCE(status_type, '') AS statusType
+      FROM tb_electronic_approval_main
+      CROSS JOIN cycle_base cb
+      WHERE tenant_id = #{tenantId}
+        AND drafting_work_category_id = #{workId}
+        AND login_id = #{loginId}
+        AND COALESCE(delete_status, 'N') != 'Y'
+        AND COALESCE(updated_at, created_at) >= cb.cycle_start
       ORDER BY COALESCE(updated_at, created_at) DESC, electronic_approval_id DESC
       LIMIT 1
     </select>

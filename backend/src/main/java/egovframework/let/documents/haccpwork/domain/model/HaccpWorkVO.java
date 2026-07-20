@@ -28,6 +28,9 @@ public class HaccpWorkVO implements Serializable {
     @Schema(description = "결재 메인 ID")
     private Long electronicApprovalId;
 
+    @Schema(description = "기안번호(ea_exe_id)")
+    private String eaExeId;
+
     @Schema(description = "기안 제목")
     private String title;
 

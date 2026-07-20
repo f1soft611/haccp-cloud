@@ -66,6 +66,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "임시저장 사용자 정보를 확인할 수 없습니다.");
         }
 
+        ensureSubmissionEditableState(tenantId, workId, actorLoginId, "임시저장");
+
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
 
         LocalDateTime now = LocalDateTime.now();
@@ -197,6 +199,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         if (actorLoginId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재신청 사용자 정보를 확인할 수 없습니다.");
         }
+
+        ensureSubmissionEditableState(tenantId, workId, actorLoginId, "결재신청");
 
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
         if (work.getReviewerId() == null || work.getApproverId() == null) {
@@ -419,6 +423,14 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 mainStatusName = "완료";
                 endStatus = "approved";
                 break;
+            case "submit_cancel":
+                targetSeq = -1;
+                lineStatus = "cancelled";
+                lineOption = "상신취소";
+                mainStatus = "";
+                mainStatusName = "";
+                endStatus = "";
+                break;
             case "reference_confirm":
                 targetSeq = 0;
                 lineStatus = "confirmed";
@@ -434,7 +446,19 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         }
 
         Long expectedActorLoginId;
-        if (isReferenceEvent) {
+        if ("submit_cancel".equals(eventType)) {
+            targetSeq = resolveCancelableTargetSeq(tenantId, approvalId, actorLoginId);
+            expectedActorLoginId = actorLoginId;
+            if (targetSeq == 1) {
+                mainStatus = "pre_apply";
+                mainStatusName = "미완료";
+                endStatus = "pre_apply";
+            } else {
+                mainStatus = "in_progress";
+                mainStatusName = "진행중";
+                endStatus = "in_progress";
+            }
+        } else if (isReferenceEvent) {
             Map<String, Object> referenceOwnerParams = new HashMap<String, Object>();
             referenceOwnerParams.put("tenantId", tenantId);
             referenceOwnerParams.put("approvalId", approvalId);
@@ -490,6 +514,15 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainUpdateParams.put("updatedBy", actorLoginId);
             mainUpdateParams.put("updatedAt", now);
             haccpWorkDAO.updateElectronicApprovalMainStatus(mainUpdateParams);
+
+            if ("submit_cancel".equals(eventType)) {
+                if (targetSeq == 1) {
+                    resetDraftedLineToPending(tenantId, approvalId, 2);
+                    resetDraftedLineToPending(tenantId, approvalId, 3);
+                } else if (targetSeq == 2) {
+                    resetDraftedLineToPending(tenantId, approvalId, 3);
+                }
+            }
         }
 
         if ("review_approve".equals(eventType)) {
@@ -843,5 +876,84 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         params.put("workId", workId);
         params.put("loginId", loginId);
         return haccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(params);
+    }
+
+    private int resolveCancelableTargetSeq(Long tenantId, Long approvalId, Long actorLoginId) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("approvalId", approvalId);
+
+        Integer latestCompletedSeq = haccpWorkDAO.selectLatestCompletedDraftedSeqByApprovalId(params);
+        if (latestCompletedSeq == null || latestCompletedSeq.intValue() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "취소 가능한 결재 이력이 없습니다.");
+        }
+
+        params.put("loginId", actorLoginId);
+        Integer actorLatestCompletedSeq = haccpWorkDAO.selectLatestCompletedDraftedSeqByApprovalAndLogin(params);
+        if (actorLatestCompletedSeq == null || actorLatestCompletedSeq.intValue() <= 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인의 결재 처리 이력이 없어 취소할 수 없습니다.");
+        }
+
+        if (!latestCompletedSeq.equals(actorLatestCompletedSeq)) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "최근 결재 처리자부터 순차적으로 취소할 수 있습니다."
+            );
+        }
+
+        return latestCompletedSeq.intValue();
+    }
+
+    private void resetDraftedLineToPending(Long tenantId, Long approvalId, int exeSeq) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("approvalId", approvalId);
+        params.put("exeSeq", exeSeq);
+        haccpWorkDAO.updateElectronicApprovalLineToPending(params);
+    }
+
+    private String resolveMapValueIgnoreCase(Map<String, Object> source, String... keys) {
+        if (source == null || source.isEmpty() || keys == null || keys.length == 0) {
+            return "";
+        }
+
+        for (String key : keys) {
+            if (!StringUtils.hasText(key)) {
+                continue;
+            }
+            if (source.containsKey(key)) {
+                return trimToEmpty(String.valueOf(source.get(key)));
+            }
+        }
+
+        for (Map.Entry<String, Object> entry : source.entrySet()) {
+            String entryKey = entry.getKey();
+            if (!StringUtils.hasText(entryKey)) {
+                continue;
+            }
+            for (String key : keys) {
+                if (StringUtils.hasText(key) && entryKey.equalsIgnoreCase(key)) {
+                    return trimToEmpty(String.valueOf(entry.getValue()));
+                }
+            }
+        }
+
+        return "";
+    }
+
+    private void ensureSubmissionEditableState(Long tenantId, Long workId, Long loginId, String actionLabel) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("workId", workId);
+        params.put("loginId", loginId);
+
+        Map<String, Object> latest = haccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin(params);
+        String latestStatus = trimToEmpty(String.valueOf(latest == null ? "" : latest.get("statusType"))).toLowerCase();
+        if ("in_progress".equals(latestStatus) || "approved".equals(latestStatus)) {
+            throw new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                actionLabel + "은(는) 결재 취소 후에만 가능합니다."
+            );
+        }
     }
 }

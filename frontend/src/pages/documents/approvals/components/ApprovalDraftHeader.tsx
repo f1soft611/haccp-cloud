@@ -3,18 +3,24 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 
 type ApprovalDraftHeaderProps = {
   onBack: () => void;
+  onCancelSubmit?: () => void;
   onTempSave: () => void;
   onSubmitApproval: () => void;
   isSubmitting?: boolean;
+  cancelSubmitDisabled?: boolean;
+  tempSaveDisabled?: boolean;
   submitDisabled?: boolean;
 };
 
 export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
   const {
     onBack,
+    onCancelSubmit,
     onTempSave,
     onSubmitApproval,
     isSubmitting = false,
+    cancelSubmitDisabled = true,
+    tempSaveDisabled = false,
     submitDisabled = false,
   } = props;
 
@@ -55,10 +61,21 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
           </Typography>
 
           <Stack direction="row" spacing={1}>
+            {onCancelSubmit ? (
+              <Button
+                variant="outlined"
+                color="error"
+                disableElevation
+                disabled={cancelSubmitDisabled || isSubmitting}
+                onClick={onCancelSubmit}
+              >
+                결재 취소
+              </Button>
+            ) : null}
             <Button
               variant="contained"
               disableElevation
-              disabled={isSubmitting}
+              disabled={tempSaveDisabled || isSubmitting}
               onClick={onTempSave}
             >
               임시 저장

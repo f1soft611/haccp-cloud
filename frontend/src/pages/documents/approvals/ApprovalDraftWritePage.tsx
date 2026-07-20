@@ -1,4 +1,4 @@
-import { Stack } from '@mui/material';
+import { Alert, Stack } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ export function ApprovalDraftWritePage() {
   const theme = useTheme();
   const navigate = useNavigate();
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const isDarkMode = theme.palette.mode === 'dark';
   const {
     baseId,
@@ -36,6 +37,7 @@ export function ApprovalDraftWritePage() {
     reviewerProfile,
     approverProfile,
   } = useApprovalDraftWriteData();
+  const isStatusResolved = !baseId || workDetailQuery.isFetched;
 
   const {
     comments,
@@ -48,23 +50,44 @@ export function ApprovalDraftWritePage() {
     drafterProfile?.profileImage,
   );
 
-  const { isSubmitting, submitDisabled, handleTempSave, handleSubmitApproval } =
-    useApprovalDraftWriteActions({
-      baseId,
-      idType,
-      tenantCode,
-      workId: work?.id,
-      title,
-      referenceIds,
-      editorContent: resolvedEditorContent,
-      editorHtml: resolvedEditorHtml,
-    });
+  const {
+    isSubmitting,
+    errorMessage,
+    clearErrorMessage,
+    tempSaveDisabled,
+    submitDisabled,
+    cancelSubmitDisabled,
+    handleCancelSubmit,
+    handleTempSave,
+    handleSubmitApproval,
+  } = useApprovalDraftWriteActions({
+    baseId,
+    idType,
+    tenantCode,
+    workId: work?.id,
+    isStatusResolved,
+    approvalStatusType: work?.approvalStatusType,
+    title,
+    referenceIds,
+    editorContent: resolvedEditorContent,
+    editorHtml: resolvedEditorHtml,
+  });
 
   return (
     <Stack spacing={2.25}>
       <ApprovalDraftHeader
         onBack={() => navigate('/dashboard')}
         onTempSave={handleTempSave}
+        onCancelSubmit={
+          cancelSubmitDisabled
+            ? undefined
+            : () => {
+                if (isSubmitting) {
+                  return;
+                }
+                setCancelConfirmOpen(true);
+              }
+        }
         onSubmitApproval={() => {
           if (submitDisabled || isSubmitting) {
             return;
@@ -72,11 +95,20 @@ export function ApprovalDraftWritePage() {
           setSubmitConfirmOpen(true);
         }}
         isSubmitting={isSubmitting}
+        tempSaveDisabled={tempSaveDisabled}
         submitDisabled={submitDisabled}
+        cancelSubmitDisabled={cancelSubmitDisabled}
       />
+
+      {errorMessage ? (
+        <Alert severity="error" onClose={clearErrorMessage}>
+          {errorMessage}
+        </Alert>
+      ) : null}
 
       <ApprovalDraftContent
         baseId={baseId}
+        idType={idType}
         isDarkMode={isDarkMode}
         workDetailError={workDetailQuery.isError}
         workDetailFetched={workDetailQuery.isFetched}
@@ -113,6 +145,20 @@ export function ApprovalDraftWritePage() {
           handleSubmitApproval();
         }}
         onClose={() => setSubmitConfirmOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={cancelConfirmOpen}
+        title="결재 취소 확인"
+        description="현재 결재 진행을 취소하시겠습니까?"
+        confirmText="결재 취소"
+        confirmColor="error"
+        loading={isSubmitting}
+        onConfirm={() => {
+          setCancelConfirmOpen(false);
+          handleCancelSubmit();
+        }}
+        onClose={() => setCancelConfirmOpen(false)}
       />
     </Stack>
   );

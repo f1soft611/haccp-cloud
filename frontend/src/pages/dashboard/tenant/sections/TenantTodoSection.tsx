@@ -17,13 +17,30 @@ import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { APP_LABELS } from '../../../../shared/constants/labels';
 import type { TenantTodoSectionModel } from '../hooks/useTenantDashboardData';
-import { formatDate, getWorkCycleLabel, getWorkCycleSx } from '../utils';
+import { getWorkCycleLabel, getWorkCycleSx } from '../utils';
 
 type TenantTodoSectionProps = {
   isLoading: boolean;
   isError: boolean;
   sections: TenantTodoSectionModel[];
 };
+
+function formatDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getCurrentMonthDateRange(today: Date = new Date()): {
+  startDate: string;
+  endDate: string;
+} {
+  return {
+    startDate: formatDate(new Date(today.getFullYear(), today.getMonth(), 1)),
+    endDate: formatDate(today),
+  };
+}
 
 export function TenantTodoSection(props: TenantTodoSectionProps) {
   const { isLoading, isError, sections } = props;
@@ -198,14 +215,12 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                                       ...getWorkCycleSx(cycleLabel),
                                     }}
                                   />
-                                  {item.status === 'ACTIVE' ? (
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                    >
-                                      완료일 {formatDate(item.updatedAt)}
-                                    </Typography>
-                                  ) : null}
+                                  <Chip
+                                    size="small"
+                                    label={statusLabel}
+                                    color={statusColor}
+                                    sx={{ height: 20, fontWeight: 700 }}
+                                  />
                                 </Stack>
                               );
                             })()}
@@ -215,27 +230,10 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                               alignItems="center"
                               justifyContent="space-between"
                               spacing={1}
-                            >
-                              <Typography variant="body2" fontWeight={700}>
-                                {item.category || 'HACCP'}
-                              </Typography>
-                              <Chip
-                                size="small"
-                                label={statusLabel}
-                                color={statusColor}
-                                sx={{ height: 20, fontWeight: 700 }}
-                              />
-                            </Stack>
-
-                            <Stack
-                              direction="row"
-                              alignItems="center"
-                              justifyContent="space-between"
-                              spacing={1}
                               sx={{ mt: 0.6 }}
                             >
                               <Typography variant="body2" fontWeight={600}>
-                                {item.title}
+                                {item.divisionName || item.title || '-'}
                               </Typography>
 
                               <Stack
@@ -265,9 +263,19 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                                   size="small"
                                   variant="outlined"
                                   endIcon={<ArrowForwardRoundedIcon />}
-                                  onClick={() => navigate('/docs/haccp-base')}
+                                  onClick={() => {
+                                    const range = getCurrentMonthDateRange();
+                                    const query = new URLSearchParams({
+                                      workType: section.label,
+                                      startDate: range.startDate,
+                                      endDate: range.endDate,
+                                    });
+                                    navigate(
+                                      `/docs/haccp-doc?${query.toString()}`,
+                                    );
+                                  }}
                                 >
-                                  현황 이동
+                                  이동
                                 </Button>
                               </Stack>
                             </Stack>

@@ -6,6 +6,7 @@
                type="egovframework.let.dashboard.domain.model.DashboardTodoVO">
         <result property="draftingWorkCategoryId" column="drafting_work_category_id"/>
       <result property="electronicApprovalId" column="electronic_approval_id"/>
+        <result property="eaExeId" column="ea_exe_id"/>
         <result property="title" column="title"/>
         <result property="tenantCode" column="tenant_code"/>
         <result property="categoryCode" column="cata_code"/>
@@ -52,6 +53,7 @@
         SELECT
             w.drafting_work_category_id,
           COALESCE(pending.pending_approval_id, appr.route_approval_id) AS electronic_approval_id,
+            COALESCE(pending.pending_ea_exe_id, appr.route_ea_exe_id, '') AS ea_exe_id,
             COALESCE(NULLIF(TRIM(pending.pending_title), ''), '') AS title,
             t.tenant_code,
             g.cata_code,
@@ -63,24 +65,22 @@
             COALESCE(pending.pending_drafter_name, pending.pending_login_code, CAST(pending.pending_login_id AS varchar), '-') AS created_by,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
-              WHEN COALESCE(pending.pending_alert, FALSE) THEN 'IN_PROGRESS'
-              WHEN COALESCE(appr.in_progress_count, 0) > 0 THEN 'IN_PROGRESS'
-              WHEN COALESCE(appr.approved_count, 0) > 0 THEN 'ACTIVE'
+              WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN 'IN_PROGRESS'
+              WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN 'ACTIVE'
               ELSE 'DRAFT'
             END AS todo_status,
             CASE
-              WHEN COALESCE(pending.pending_alert, FALSE) THEN 'in_progress'
-              WHEN COALESCE(appr.in_progress_count, 0) > 0 THEN 'in_progress'
-              WHEN COALESCE(appr.approved_count, 0) > 0 THEN 'approved'
-              WHEN COALESCE(appr.pre_apply_count, 0) > 0 THEN 'pre_apply'
+              WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN 'in_progress'
+              WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN 'approved'
+              WHEN COALESCE(appr.latest_status_type, '') = 'rejected' THEN 'rejected'
+              WHEN COALESCE(appr.latest_status_type, '') = 'pre_apply' THEN 'pre_apply'
               ELSE 'pre_apply'
             END AS approval_status_type,
             CASE
-              WHEN COALESCE(pending.pending_alert, FALSE) THEN '결재중'
-              WHEN COALESCE(appr.in_progress_count, 0) > 0 THEN '결재중'
-              WHEN COALESCE(appr.approved_count, 0) > 0 THEN '승인'
-              WHEN COALESCE(appr.pre_apply_count, 0) > 0 THEN '임시저장'
-              WHEN COALESCE(appr.rejected_count, 0) > 0 THEN '반송'
+              WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN '결재중'
+              WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN '승인'
+              WHEN COALESCE(appr.latest_status_type, '') = 'pre_apply' THEN '임시저장'
+              WHEN COALESCE(appr.latest_status_type, '') = 'rejected' THEN '반송'
               ELSE '미완료'
             END AS approval_status_type_name,
             TO_CHAR(COALESCE(pending.pending_arrival_at, appr.latest_updated_at, w.updated_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
@@ -112,6 +112,7 @@
         LEFT JOIN LATERAL (
           SELECT
               m.electronic_approval_id AS pending_approval_id,
+              COALESCE(m.ea_exe_id, '') AS pending_ea_exe_id,
               m.ea_title AS pending_title,
               m.login_id AS pending_login_id,
               la.login_code AS pending_login_code,
@@ -130,12 +131,13 @@
            AND la.login_id = m.login_id
           WHERE m.tenant_id = w.tenant_id
             AND m.drafting_work_category_id = w.drafting_work_category_id
+            AND COALESCE(m.status_type, '') = 'in_progress'
             AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
             AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
             AND li.arrival_at IS NOT NULL
             AND li.exe_at IS NULL
             AND COALESCE(m.delete_status, 'N') != 'Y'
-          GROUP BY m.electronic_approval_id, m.ea_title, m.login_id, la.login_code, COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar))
+          GROUP BY m.electronic_approval_id, COALESCE(m.ea_exe_id, ''), m.ea_title, m.login_id, la.login_code, COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar))
           ORDER BY MAX(li.arrival_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
         ) pending ON TRUE
@@ -157,8 +159,14 @@
               SUM(CASE WHEN COALESCE(m.status_type, '') = 'rejected' THEN 1 ELSE 0 END) AS rejected_count,
               MAX(COALESCE(m.updated_at, m.created_at)) AS latest_updated_at,
               (
+                ARRAY_AGG(COALESCE(m.status_type, '') ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC)
+              )[1] AS latest_status_type,
+              (
                 ARRAY_AGG(m.electronic_approval_id ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC)
               )[1] AS route_approval_id
+              ,(
+                ARRAY_AGG(COALESCE(m.ea_exe_id, '') ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC)
+              )[1] AS route_ea_exe_id
           FROM tb_electronic_approval_main m
           CROSS JOIN cycle_base cb
           WHERE m.tenant_id = w.tenant_id
@@ -171,9 +179,7 @@
             SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
         )
           AND COALESCE(w.delete_status, 'N') != 'Y'
-          AND (
-            COALESCE(pending.pending_alert, FALSE)
-            OR EXISTS (
+            AND EXISTS (
               SELECT 1
               FROM tb_drafting_work_category_authority a2
               WHERE a2.tenant_id = w.tenant_id
@@ -181,12 +187,17 @@
                 AND a2.use_at = 'Y'
                 AND COALESCE(a2.delete_status, 'N') != 'Y'
                 AND (
-                      (#{actorLoginId, jdbcType=BIGINT} IS NOT NULL AND a2.employee_no = CAST(#{actorLoginId, jdbcType=BIGINT} AS varchar))
-                   OR (#{actorUserId, jdbcType=BIGINT} IS NOT NULL AND a2.employee_no = CAST(#{actorUserId, jdbcType=BIGINT} AS varchar))
-                   OR (#{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL AND a2.employee_no = #{actorLoginCode, jdbcType=VARCHAR})
+                      (#{actorUserId, jdbcType=BIGINT} IS NOT NULL
+                        AND a2.employee_no = CAST(#{actorUserId, jdbcType=BIGINT} AS varchar))
+                   OR (#{actorUserId, jdbcType=BIGINT} IS NULL
+                        AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                        AND a2.employee_no = CAST(#{actorLoginId, jdbcType=BIGINT} AS varchar))
+                   OR (#{actorUserId, jdbcType=BIGINT} IS NULL
+                        AND #{actorLoginId, jdbcType=BIGINT} IS NULL
+                        AND #{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL
+                        AND a2.employee_no = #{actorLoginCode, jdbcType=VARCHAR})
                 )
             )
-          )
         ORDER BY COALESCE(appr.latest_updated_at, w.updated_at, w.created_at) DESC, w.drafting_work_category_id DESC
     </select>
 
@@ -222,11 +233,87 @@
               AND a2.use_at = 'Y'
               AND COALESCE(a2.delete_status, 'N') != 'Y'
               AND (
-                    (#{actorLoginId, jdbcType=BIGINT} IS NOT NULL AND a2.employee_no = CAST(#{actorLoginId, jdbcType=BIGINT} AS varchar))
-                 OR (#{actorUserId, jdbcType=BIGINT} IS NOT NULL AND a2.employee_no = CAST(#{actorUserId, jdbcType=BIGINT} AS varchar))
-                 OR (#{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL AND a2.employee_no = #{actorLoginCode, jdbcType=VARCHAR})
+                  (#{actorUserId, jdbcType=BIGINT} IS NOT NULL
+                    AND a2.employee_no = CAST(#{actorUserId, jdbcType=BIGINT} AS varchar))
+                  OR (#{actorUserId, jdbcType=BIGINT} IS NULL
+                    AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                    AND a2.employee_no = CAST(#{actorLoginId, jdbcType=BIGINT} AS varchar))
+                  OR (#{actorUserId, jdbcType=BIGINT} IS NULL
+                    AND #{actorLoginId, jdbcType=BIGINT} IS NULL
+                    AND #{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL
+                    AND a2.employee_no = #{actorLoginCode, jdbcType=VARCHAR})
               )
           )
+    </select>
+
+    <select id="DashboardDAO.selectMyApprovalAlertList"
+            parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
+            resultMap="dashboardTodoResult">
+        SELECT
+            w.drafting_work_category_id,
+            m.electronic_approval_id,
+          COALESCE(m.ea_exe_id, '') AS ea_exe_id,
+            COALESCE(NULLIF(TRIM(m.ea_title), ''), '') AS title,
+            t.tenant_code,
+            g.cata_code,
+            g.cata_name AS category_name,
+            COALESCE(g.view_seq, 0) AS category_sort_order,
+            w.cata_type_code,
+            w.code_name,
+            w.reg_term,
+            COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar), '-') AS created_by,
+            CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
+            'IN_PROGRESS' AS todo_status,
+            'in_progress' AS approval_status_type,
+            '결재중' AS approval_status_type_name,
+            TO_CHAR(li.arrival_at, 'YYYY-MM-DD HH24:MI') AS latest_status_at,
+            CAST(w.drafting_work_template_json AS text) AS template_json,
+            w.drafting_work_template_html AS template_html,
+            CASE
+              WHEN w.drafting_work_template_json IS NOT NULL
+                OR NULLIF(TRIM(COALESCE(w.drafting_work_template_html, '')), '') IS NOT NULL
+              THEN TRUE
+              ELSE FALSE
+            END AS has_document,
+            TRUE AS written_in_cycle,
+            TRUE AS pending_approval_alert,
+            TO_CHAR(li.arrival_at, 'YYYY-MM-DD HH24:MI') AS pending_arrival_at
+        FROM tb_electronic_approval_line_info li
+        JOIN tb_electronic_approval_main m
+          ON m.tenant_id = li.tenant_id
+         AND m.electronic_approval_id = li.electronic_approval_id
+        JOIN tb_drafting_work_category w
+          ON w.tenant_id = m.tenant_id
+         AND w.drafting_work_category_id = m.drafting_work_category_id
+        JOIN tb_tenant t
+          ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
+         AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_user ru
+          ON ru.tenant_id = w.tenant_id
+         AND ru.login_id = w.reviewer_id
+        LEFT JOIN tb_user au
+          ON au.tenant_id = w.tenant_id
+         AND au.login_id = w.approver_id
+        LEFT JOIN tb_user pu
+          ON pu.tenant_id = m.tenant_id
+         AND pu.login_id = m.login_id
+        LEFT JOIN tb_login_account la
+          ON la.tenant_id = m.tenant_id
+         AND la.login_id = m.login_id
+        WHERE w.tenant_id = (
+            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
+        )
+          AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+          AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+          AND COALESCE(li.muldec_status, '') = 'drafted'
+          AND li.arrival_at IS NOT NULL
+          AND li.exe_at IS NULL
+          AND COALESCE(m.status_type, '') = 'in_progress'
+          AND COALESCE(m.delete_status, 'N') != 'Y'
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+        ORDER BY li.arrival_at DESC, m.electronic_approval_id DESC
     </select>
 
     <select id="DashboardDAO.selectRecentNotices"

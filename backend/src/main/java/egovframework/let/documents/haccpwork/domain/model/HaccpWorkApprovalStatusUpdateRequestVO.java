@@ -16,7 +16,7 @@ public class HaccpWorkApprovalStatusUpdateRequestVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @Schema(description = "결재 이벤트 코드(review_approve/review_return/final_approve/reference_confirm)")
+    @Schema(description = "결재 이벤트 코드(review_approve/review_return/final_approve/reference_confirm/submit_cancel)")
     private String eventType;
 
     @Schema(description = "결재 코멘트")

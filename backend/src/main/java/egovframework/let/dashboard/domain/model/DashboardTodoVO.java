@@ -22,6 +22,9 @@ public class DashboardTodoVO implements Serializable {
     @Schema(description = "결재 문서 ID")
     private Long electronicApprovalId;
 
+    @Schema(description = "기안번호")
+    private String eaExeId;
+
     @Schema(description = "기안 제목")
     private String title;
 

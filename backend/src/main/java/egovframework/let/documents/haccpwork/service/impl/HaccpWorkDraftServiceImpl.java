@@ -44,6 +44,41 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
     }
 
     @Override
+    public List<HaccpWorkVO> listDocuments(
+            String tenantCode,
+            String actorLoginCode,
+            String actorRoleCode,
+            String workType,
+            String draftNumber,
+            String title,
+            String writer,
+            String status,
+            String startDate,
+            String endDate
+    ) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        Long actorUserId = resolveActorUserId(tenantId, actorLoginId);
+
+        HaccpWorkSearchConditionVO condition = new HaccpWorkSearchConditionVO();
+        condition.setTenantCode(normalizedTenantCode);
+        condition.setActorLoginId(actorLoginId);
+        condition.setActorUserId(actorUserId);
+        condition.setActorLoginCode(normalizeText(actorLoginCode));
+        condition.setActorRoleCode(normalizeRoleCode(actorRoleCode));
+        condition.setWorkType(normalizeText(workType));
+        condition.setDraftNumber(normalizeText(draftNumber));
+        condition.setTitle(normalizeText(title));
+        condition.setWriter(normalizeText(writer));
+        condition.setStatusType(normalizeStatusType(status));
+        condition.setStartDate(normalizeDate(startDate));
+        condition.setEndDate(normalizeDate(endDate));
+
+        return haccpWorkDAO.selectDocumentList(condition);
+    }
+
+    @Override
     public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode) throws Exception {
         String normalizedTenantCode = normalizeTenantCode(tenantCode);
         if (id == null || id.longValue() <= 0L) {
@@ -104,5 +139,56 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
 
     private String normalizeTenantCode(String tenantCode) {
         return StringUtils.hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "";
+    }
+
+    private String normalizeText(String value) {
+        return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private String normalizeRoleCode(String roleCode) {
+        return StringUtils.hasText(roleCode) ? roleCode.trim().toUpperCase() : "";
+    }
+
+    private String normalizeDate(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+
+        String normalized = value.trim();
+        if (!normalized.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+            return null;
+        }
+        return normalized;
+    }
+
+    private String normalizeStatusType(String status) {
+        if (!StringUtils.hasText(status)) {
+            return null;
+        }
+
+        String normalized = status.trim().toLowerCase();
+        if ("결재중".equals(normalized) || "in_progress".equals(normalized)) {
+            return "in_progress";
+        }
+        if ("승인".equals(normalized) || "approved".equals(normalized)) {
+            return "approved";
+        }
+        if (
+                "반송".equals(normalized)
+                        || "반려".equals(normalized)
+                        || "rejected".equals(normalized)
+                        || "returned".equals(normalized)
+        ) {
+            return "rejected";
+        }
+        if (
+                "임시저장".equals(normalized)
+                        || "미완료".equals(normalized)
+                        || "pre_apply".equals(normalized)
+                        || "draft".equals(normalized)
+        ) {
+            return "pre_apply";
+        }
+        return null;
     }
 }

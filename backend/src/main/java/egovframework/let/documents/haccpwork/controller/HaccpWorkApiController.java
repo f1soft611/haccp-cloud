@@ -83,6 +83,53 @@ public class HaccpWorkApiController {
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
+        @Operation(
+            summary = "HACCP 문서 목록 조회",
+            description = "HACCP 문서관리 페이지의 문서 목록을 조회한다",
+            security = { @SecurityRequirement(name = "Authorization") },
+            tags = { "HaccpWorkApiController" }
+        )
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "403", description = "인가된 사용자가 아님")
+        })
+        @GetMapping("/documents")
+        public ResultVO listDocuments(
+            @RequestParam(required = false) String workType,
+            @RequestParam(required = false) String draftNumber,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String writer,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request
+        ) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        String actorLoginCode = resolveLoginCode(user);
+        String actorRoleCode = resolveRoleCode(user);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put(
+            "resultList",
+            haccpWorkDraftService.listDocuments(
+                tenantCode,
+                actorLoginCode,
+                actorRoleCode,
+                workType,
+                draftNumber,
+                title,
+                writer,
+                status,
+                startDate,
+                endDate
+            )
+        );
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+        }
+
     @Operation(
             summary = "기안 임시저장",
             description = "작성 중인 기안 내용을 업무 템플릿에 임시 저장한다",
@@ -214,5 +261,20 @@ public class HaccpWorkApiController {
             }
         }
         return null;
+    }
+
+    private String resolveRoleCode(LoginVO user) {
+        if (user != null && StringUtils.hasText(user.getRoleCode())) {
+            return user.getRoleCode().trim().toUpperCase();
+        }
+
+        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+        if (userDetails instanceof LoginVO) {
+            LoginVO loginVO = (LoginVO) userDetails;
+            if (StringUtils.hasText(loginVO.getRoleCode())) {
+                return loginVO.getRoleCode().trim().toUpperCase();
+            }
+        }
+        return "";
     }
 }

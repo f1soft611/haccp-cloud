@@ -30,4 +30,28 @@ public class HaccpWorkSearchConditionVO implements Serializable {
 
     @Schema(description = "요청 사용자 로그인 코드")
     private String actorLoginCode;
+
+    @Schema(description = "요청 사용자 역할 코드")
+    private String actorRoleCode;
+
+    @Schema(description = "업무 구분")
+    private String workType;
+
+    @Schema(description = "기안 번호")
+    private String draftNumber;
+
+    @Schema(description = "제목")
+    private String title;
+
+    @Schema(description = "작성자")
+    private String writer;
+
+    @Schema(description = "상태 코드(pre_apply/in_progress/approved/rejected)")
+    private String statusType;
+
+    @Schema(description = "조회 시작일(yyyy-MM-dd)")
+    private String startDate;
+
+    @Schema(description = "조회 종료일(yyyy-MM-dd)")
+    private String endDate;
 }

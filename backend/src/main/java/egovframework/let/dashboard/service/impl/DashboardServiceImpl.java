@@ -3,7 +3,6 @@ package egovframework.let.dashboard.service.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.http.HttpStatus;
@@ -36,10 +35,7 @@ public class DashboardServiceImpl extends EgovAbstractServiceImpl implements Das
 
     @Override
     public List<DashboardTodoVO> listMyApprovalAlerts(String tenantCode, String actorLoginCode) throws Exception {
-        List<DashboardTodoVO> todos = dashboardDAO.selectMyTodoList(buildCondition(tenantCode, actorLoginCode));
-        return todos.stream()
-                .filter(DashboardTodoVO::isPendingApprovalAlert)
-                .collect(Collectors.toList());
+        return dashboardDAO.selectMyApprovalAlertList(buildCondition(tenantCode, actorLoginCode));
     }
 
     @Override

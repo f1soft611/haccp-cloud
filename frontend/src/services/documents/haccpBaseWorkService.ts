@@ -3,6 +3,7 @@ import { apiClient } from '../api/apiClient';
 export type HaccpBaseWorkItem = {
   id: string;
   approvalId?: string;
+  draftNumber?: string;
   title?: string;
   tenantCode: string;
   categoryGroupId: string;
@@ -45,6 +46,8 @@ type RawHaccpBaseWorkItem = {
   approvalId?: number | string | null;
   electronicApprovalId?: number | string | null;
   electronic_approval_id?: number | string | null;
+  eaExeId?: string | null;
+  ea_exe_id?: string | null;
   title?: string | null;
   eaTitle?: string | null;
   ea_title?: string | null;
@@ -181,6 +184,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     approvalId: normalizeText(
       raw.approvalId ?? raw.electronicApprovalId ?? raw.electronic_approval_id,
     ),
+    draftNumber: normalizeText(raw.eaExeId ?? raw.ea_exe_id),
     title: normalizeText(raw.title ?? raw.eaTitle ?? raw.ea_title),
     tenantCode: normalizeText(raw.tenantCode),
     categoryGroupId: normalizeText(
@@ -513,7 +517,11 @@ export async function submitHaccpWorkDraft(payload: {
 export async function updateHaccpWorkApprovalStatus(payload: {
   tenantCode: string;
   approvalId: string;
-  eventType: 'review_approve' | 'review_return' | 'final_approve';
+  eventType:
+    | 'review_approve'
+    | 'review_return'
+    | 'final_approve'
+    | 'submit_cancel';
   comment?: string;
 }): Promise<HaccpBaseWorkItem> {
   const { data } = await apiClient.post<

@@ -14,5 +14,18 @@ public interface HaccpWorkDraftService {
 
     public List<HaccpWorkVO> listMyDraftWorks(String tenantCode, String actorLoginCode) throws Exception;
 
+    public List<HaccpWorkVO> listDocuments(
+            String tenantCode,
+            String actorLoginCode,
+            String actorRoleCode,
+            String workType,
+            String draftNumber,
+            String title,
+            String writer,
+            String status,
+            String startDate,
+            String endDate
+    ) throws Exception;
+
     public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode) throws Exception;
 }

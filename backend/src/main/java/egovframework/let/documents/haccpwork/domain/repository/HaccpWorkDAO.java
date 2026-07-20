@@ -22,6 +22,10 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectList("HaccpWorkDAO.selectMyWorkList", condition);
     }
 
+    public List<HaccpWorkVO> selectDocumentList(HaccpWorkSearchConditionVO condition) throws Exception {
+        return selectList("HaccpWorkDAO.selectDocumentList", condition);
+    }
+
     public HaccpWorkVO selectDraftTemplateByWorkId(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectDraftTemplateByWorkId", params);
     }
@@ -74,6 +78,14 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpWorkDAO.selectMaxDraftedExeSeqByApprovalId", params);
     }
 
+    public Integer selectLatestCompletedDraftedSeqByApprovalId(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectLatestCompletedDraftedSeqByApprovalId", params);
+    }
+
+    public Integer selectLatestCompletedDraftedSeqByApprovalAndLogin(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectLatestCompletedDraftedSeqByApprovalAndLogin", params);
+    }
+
     public int updateElectronicApprovalLineStatus(Map<String, Object> params) throws Exception {
         return update("HaccpWorkDAO.updateElectronicApprovalLineStatus", params);
     }
@@ -86,12 +98,20 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return update("HaccpWorkDAO.updateElectronicApprovalLineArrival", params);
     }
 
+    public int updateElectronicApprovalLineToPending(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.updateElectronicApprovalLineToPending", params);
+    }
+
     public int updateElectronicApprovalMainStatus(Map<String, Object> params) throws Exception {
         return update("HaccpWorkDAO.updateElectronicApprovalMainStatus", params);
     }
 
     public Long selectLatestPreApplyApprovalIdByWorkAndLogin(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin", params);
+    }
+
+    public Map<String, Object> selectLatestApprovalStatusByWorkAndLogin(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin", params);
     }
 
     public int updateElectronicApprovalMainDraftContent(Map<String, Object> params) throws Exception {
