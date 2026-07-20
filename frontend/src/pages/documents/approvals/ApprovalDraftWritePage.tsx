@@ -1,7 +1,7 @@
 import { Alert, Stack } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
 import { ApprovalDraftContent } from './components/ApprovalDraftContent';
 import { ApprovalDraftHeader } from './components/ApprovalDraftHeader';
@@ -12,6 +12,7 @@ import { useApprovalDraftWriteData } from './hooks/useApprovalDraftWriteData';
 export function ApprovalDraftWritePage() {
   const theme = useTheme();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const isDarkMode = theme.palette.mode === 'dark';
@@ -41,6 +42,7 @@ export function ApprovalDraftWritePage() {
     isReadOnly,
   } = useApprovalDraftWriteData();
   const isStatusResolved = !baseId || workDetailQuery.isFetched;
+  const returnTo = (searchParams.get('returnTo') || '').trim();
 
   const {
     comments,
@@ -81,7 +83,13 @@ export function ApprovalDraftWritePage() {
   return (
     <Stack spacing={2.25}>
       <ApprovalDraftHeader
-        onBack={() => navigate('/dashboard')}
+        onBack={() => {
+          if (returnTo) {
+            navigate(returnTo);
+            return;
+          }
+          navigate('/dashboard');
+        }}
         onTempSave={handleTempSave}
         onCancelSubmit={
           cancelSubmitDisabled
@@ -108,6 +116,12 @@ export function ApprovalDraftWritePage() {
       {errorMessage ? (
         <Alert severity="error" onClose={clearErrorMessage}>
           {errorMessage}
+        </Alert>
+      ) : null}
+
+      {isReadOnly ? (
+        <Alert severity="info">
+          이 문서의 소유자가 아니므로 편집할 수 없습니다.
         </Alert>
       ) : null}
 

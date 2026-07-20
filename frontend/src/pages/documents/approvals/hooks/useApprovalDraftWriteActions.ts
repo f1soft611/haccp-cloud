@@ -95,7 +95,7 @@ export function useApprovalDraftWriteActions(
         referenceIds,
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       setErrorMessage('');
       await Promise.all([
         queryClient.invalidateQueries({
@@ -105,6 +105,11 @@ export function useApprovalDraftWriteActions(
           queryKey: ['dashboard-todos', tenantCode],
         }),
       ]);
+      if (result.approvalId && idType !== 'approval') {
+        navigate(`/approvals/draft/${result.approvalId}?idType=approval`, {
+          replace: true,
+        });
+      }
       showSuccess('임시저장이 완료되었습니다.');
     },
     onError: (error: unknown) => {

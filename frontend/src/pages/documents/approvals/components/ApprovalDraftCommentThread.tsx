@@ -23,6 +23,7 @@ type ApprovalDraftCommentThreadProps = {
   replyDraftByCommentId: Record<string, string>;
   onChangeReplyDraft: (commentId: string, next: string) => void;
   onAddReply: (commentId: string) => void;
+  isReadOnly?: boolean;
 };
 
 function toInitial(name: string): string {
@@ -39,6 +40,7 @@ export function ApprovalDraftCommentThread(
     replyDraftByCommentId,
     onChangeReplyDraft,
     onAddReply,
+    isReadOnly = false,
   } = props;
   const [isOpinionModalOpen, setIsOpinionModalOpen] = useState(false);
   const [opinionDraft, setOpinionDraft] = useState('');
@@ -86,6 +88,7 @@ export function ApprovalDraftCommentThread(
           <Button
             variant="contained"
             startIcon={<ChatBubbleOutlineRounded />}
+            disabled={isReadOnly}
             onClick={() => setIsOpinionModalOpen(true)}
           >
             의견 등록
@@ -185,6 +188,7 @@ export function ApprovalDraftCommentThread(
                           variant="text"
                           startIcon={<ReplyRounded fontSize="small" />}
                           sx={{ minWidth: 0, px: 0.3 }}
+                          disabled={isReadOnly}
                           onClick={() => toggleReplyComposer(comment.id)}
                         >
                           답글 {comment.replies.length}
@@ -253,6 +257,7 @@ export function ApprovalDraftCommentThread(
                             placeholder="대댓글을 입력하세요"
                             multiline
                             minRows={2}
+                            disabled={isReadOnly}
                             value={replyDraftByCommentId[comment.id] || ''}
                             onChange={(event) =>
                               onChangeReplyDraft(comment.id, event.target.value)
@@ -262,6 +267,7 @@ export function ApprovalDraftCommentThread(
                             size="small"
                             variant="outlined"
                             startIcon={<SendRounded />}
+                            disabled={isReadOnly}
                             onClick={() => onAddReply(comment.id)}
                             sx={{
                               minWidth: 88,
@@ -299,7 +305,11 @@ export function ApprovalDraftCommentThread(
             >
               취소
             </Button>
-            <Button variant="contained" onClick={handleSubmitOpinion}>
+            <Button
+              variant="contained"
+              onClick={handleSubmitOpinion}
+              disabled={isReadOnly}
+            >
               등록
             </Button>
           </>
@@ -310,6 +320,7 @@ export function ApprovalDraftCommentThread(
           placeholder="의견을 입력하세요"
           multiline
           minRows={4}
+          disabled={isReadOnly}
           value={opinionDraft}
           onChange={(event) => setOpinionDraft(event.target.value)}
           fullWidth

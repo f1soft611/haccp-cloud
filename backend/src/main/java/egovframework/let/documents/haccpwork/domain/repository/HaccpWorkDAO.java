@@ -34,6 +34,10 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpWorkDAO.selectDraftTemplateByApprovalId", params);
     }
 
+    public Integer selectWorkAssigneeAccessCount(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectWorkAssigneeAccessCount", params);
+    }
+
     public Long selectTenantIdByCode(String tenantCode) throws Exception {
         return selectOne("HaccpWorkDAO.selectTenantIdByCode", tenantCode);
     }

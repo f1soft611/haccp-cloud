@@ -1,12 +1,4 @@
-import {
-  Alert,
-  Box,
-  Chip,
-  Divider,
-  Paper,
-  Stack,
-  TextField,
-} from '@mui/material';
+import { Box, Chip, Divider, Paper, Stack, TextField } from '@mui/material';
 import type { JSONContent } from '@tiptap/core';
 import type { ReactNode } from 'react';
 import type { HaccpBaseWorkItem } from '../../../../services/documents/haccpBaseWorkService';
@@ -98,13 +90,29 @@ export function ApprovalDraftEditorSection(
             />
           </Stack>
 
-          <Chip
-            size="small"
-            color={statusColor}
-            variant="filled"
-            label={`${statusLabel}`}
-            sx={{ ml: { md: 'auto' }, fontWeight: 700 }}
-          />
+          <Stack
+            direction="row"
+            spacing={0.8}
+            alignItems="center"
+            sx={{ ml: { md: 'auto' } }}
+          >
+            <Chip
+              size="small"
+              color={statusColor}
+              variant="filled"
+              label={`${statusLabel}`}
+              sx={{ fontWeight: 700 }}
+            />
+            {isReadOnly ? (
+              <Chip
+                size="small"
+                color="default"
+                variant="outlined"
+                label="읽기전용"
+                sx={{ fontWeight: 700 }}
+              />
+            ) : null}
+          </Stack>
         </Stack>
 
         <Divider />
@@ -120,11 +128,6 @@ export function ApprovalDraftEditorSection(
             gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
           }}
         >
-          {isReadOnly && (
-            <Alert severity="info" sx={{ gridColumn: '1 / -1', mb: 1 }}>
-              이 문서의 소유자가 아니므로 편집할 수 없습니다.
-            </Alert>
-          )}
           <TextField
             label="기안 제목"
             placeholder="예: 2026-07-16 품질 점검 기안"

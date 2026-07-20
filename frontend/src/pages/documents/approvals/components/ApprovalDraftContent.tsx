@@ -106,6 +106,7 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         replyDraftByCommentId={replyDraftByCommentId}
         onChangeReplyDraft={onChangeReplyDraft}
         onAddReply={onAddReply}
+        isReadOnly={isReadOnly}
       />
     </>
   );

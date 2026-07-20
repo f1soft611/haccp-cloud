@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { listHaccpDocuments } from '../../../../services/documents/haccpDocumentService';
 
@@ -21,6 +21,7 @@ export function HaccpDocumentGrid(props: {
 }) {
   const { rows, loading } = props;
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
 
@@ -102,8 +103,13 @@ export function HaccpDocumentGrid(props: {
                       if (!row.approvalId) {
                         return;
                       }
+                      const returnTo = `${location.pathname}${location.search || ''}`;
+                      const query = new URLSearchParams({
+                        idType: 'approval',
+                        returnTo,
+                      });
                       navigate(
-                        `/approvals/draft/${row.approvalId}?idType=approval`,
+                        `/approvals/draft/${row.approvalId}?${query.toString()}`,
                       );
                     }}
                   >

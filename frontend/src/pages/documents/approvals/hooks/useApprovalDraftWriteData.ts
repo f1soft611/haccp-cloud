@@ -125,18 +125,11 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     });
 
     return {
-      userId,
+      userId: (fromUsers?.id || '').trim() || userId,
       displayName: fromUsers?.name || displayName,
       department: fromUsers?.department || departmentName || '',
     };
   }, [departmentName, displayName, userId, usersQuery.data]);
-
-  const documentFieldValues = useMemo(() => {
-    return resolveDocumentFieldValues({
-      now: new Date(),
-      user: currentUserProfile,
-    });
-  }, [currentUserProfile]);
 
   const templateContent = useMemo(() => {
     return parseTemplateJson(work?.templateJson);
@@ -175,18 +168,54 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     ? undefined
     : (usersQuery.data ?? []).find((user) => user.id === work.approverId);
 
-  const drafterProfile = (usersQuery.data ?? []).find((user) => {
-    if (work?.createdBy && user.id === work.createdBy) {
-      return true;
+  const drafterProfile = useMemo(() => {
+    if (work?.createdBy) {
+      return (usersQuery.data ?? []).find((user) => user.id === work.createdBy);
     }
-    return user.id === userId || user.name === displayName;
-  });
 
-  const drafterDisplayName =
-    (drafterProfile?.name || '').trim() ||
-    (work?.createdBy || '').trim() ||
-    displayName ||
-    userId;
+    return (usersQuery.data ?? []).find((user) => {
+      return user.id === userId || user.name === displayName;
+    });
+  }, [displayName, userId, usersQuery.data, work?.createdBy]);
+
+  const drafterDisplayName = useMemo(() => {
+    if (work?.createdBy) {
+      return (
+        (drafterProfile?.name || '').trim() ||
+        (work.createdBy || '').trim() ||
+        '-'
+      );
+    }
+    return (drafterProfile?.name || '').trim() || displayName || userId;
+  }, [displayName, drafterProfile?.name, userId, work?.createdBy]);
+
+  const documentFieldProfile = useMemo(() => {
+    if (work?.createdBy) {
+      return {
+        userId: work.createdBy,
+        displayName: (drafterProfile?.name || '').trim() || work.createdBy,
+        department: (drafterProfile?.department || '').trim(),
+      };
+    }
+    return currentUserProfile;
+  }, [
+    currentUserProfile,
+    drafterProfile?.department,
+    drafterProfile?.name,
+    work?.createdBy,
+  ]);
+
+  const documentFieldValues = useMemo(() => {
+    const parsedSavedDate = (work?.createdAt || '').trim();
+    const parsedNow = parsedSavedDate
+      ? new Date(parsedSavedDate.replace(' ', 'T'))
+      : new Date();
+
+    return resolveDocumentFieldValues({
+      now: Number.isNaN(parsedNow.getTime()) ? new Date() : parsedNow,
+      user: documentFieldProfile,
+    });
+  }, [documentFieldProfile, work?.createdAt]);
 
   const handleChangeEditor = (nextContent: JSONContent, nextHtml: string) => {
     void nextHtml;
@@ -201,12 +230,12 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
 
   const isOwner = useMemo(() => {
     // 미작성 상태 (기안서 없음): 백엔드가 담당자 확인했으니 편집 가능
-    if (!work?.electronicApprovalId) {
+    if (!work?.approvalId) {
       return true;
     }
     // 작성됨 상태 (기안서 있음): 기안 작성자만 편집 가능
-    return isDocumentOwner(work.createdBy, userId);
-  }, [work?.electronicApprovalId, work?.createdBy, userId]);
+    return isDocumentOwner(work.createdBy, currentUserProfile.userId);
+  }, [currentUserProfile.userId, work?.approvalId, work?.createdBy]);
   const isReadOnly = !isOwner;
 
   return {
