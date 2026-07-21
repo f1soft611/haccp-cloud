@@ -16,6 +16,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { APP_LABELS } from '../../../../shared/constants/labels';
+import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import type { TenantTodoSectionModel } from '../hooks/useTenantDashboardData';
 import { getWorkCycleLabel, getWorkCycleSx } from '../utils';
 
@@ -157,30 +158,13 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
 
                     <Stack spacing={0.7} sx={{ mt: 1 }}>
                       {items.map((item) => {
-                        const statusLabel =
-                          item.approvalStatusTypeName ||
-                          (item.status === 'ACTIVE'
-                            ? '승인'
-                            : item.status === 'IN_PROGRESS'
-                              ? '결재중'
-                              : item.writtenInCycle
-                                ? '임시저장'
-                                : '미완료');
-                        const statusColor:
-                          | 'success'
-                          | 'warning'
-                          | 'info'
-                          | 'secondary'
-                          | 'error' =
-                          statusLabel === '승인'
-                            ? 'success'
-                            : statusLabel === '결재중'
-                              ? 'warning'
-                              : statusLabel === '임시저장'
-                                ? 'info'
-                                : statusLabel === '반송'
-                                  ? 'secondary'
-                                  : 'error';
+                        const { label: statusLabel, color: statusColor } =
+                          resolveApprovalStatusView({
+                            approvalStatusType: item.approvalStatusType,
+                            approvalStatusTypeName: item.approvalStatusTypeName,
+                            todoStatus: item.status,
+                            writtenInCycle: item.writtenInCycle,
+                          });
 
                         return (
                           <Box
@@ -247,12 +231,27 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                                     color="primary"
                                     aria-label="작성하러 가기"
                                     onClick={() => {
-                                      const query =
-                                        item.routeIdType === 'approval'
-                                          ? '?idType=approval'
-                                          : '?idType=work';
+                                      // In todo list, draft entry must be based on "my write in this cycle".
+                                      // If not written, always open by work id to start my own draft.
+                                      const approvalId = (
+                                        item.approvalId || ''
+                                      ).trim();
+                                      const workId = (item.id || '').trim();
+                                      const openApproval =
+                                        Boolean(item.writtenInCycle) &&
+                                        Boolean(approvalId);
+                                      const targetId = openApproval
+                                        ? approvalId
+                                        : workId;
+                                      if (!targetId) {
+                                        return;
+                                      }
+
+                                      const query = openApproval
+                                        ? '?idType=approval'
+                                        : '?idType=work';
                                       navigate(
-                                        `/approvals/draft/${item.routeId}${query}`,
+                                        `/approvals/draft/${targetId}${query}`,
                                       );
                                     }}
                                   >

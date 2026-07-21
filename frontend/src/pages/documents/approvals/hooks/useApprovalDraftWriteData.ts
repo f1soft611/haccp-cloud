@@ -12,6 +12,7 @@ import {
   type DocumentFieldValues,
 } from '../../../../editor/utils/documentFieldValues';
 import { parseTemplateJson } from '../utils/approvalDraftUtils';
+import { isDocumentOwner } from '../../../../shared/utils/ownershipUtils';
 
 type UseApprovalDraftWriteDataResult = {
   baseId?: string;
@@ -19,6 +20,7 @@ type UseApprovalDraftWriteDataResult = {
   tenantCode: string;
   userId: string;
   displayName: string;
+  drafterDisplayName: string;
   title: string;
   setTitle: (next: string) => void;
   referenceIds: string[];
@@ -37,6 +39,19 @@ type UseApprovalDraftWriteDataResult = {
   drafterProfile?: UserItem;
   reviewerProfile?: UserItem;
   approverProfile?: UserItem;
+  isOwner: boolean;
+  isReadOnly: boolean;
+  canTempSave: boolean;
+  canSubmit: boolean;
+  canSubmitCancel: boolean;
+  canApprove: boolean;
+  canConfirm: boolean;
+  canReject: boolean;
+  isFinalOwnerConfirm: boolean;
+  approvalEventType?: 'review_approve' | 'final_approve';
+  referenceEventType?: 'reference_confirm';
+  rejectEventType?: 'review_return' | 'final_return';
+  submitLabel: string;
 };
 
 export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
@@ -84,6 +99,9 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   useEffect(() => {
     setTitle('');
     setReferenceIds([]);
+    setEditorContent(null);
+    setEditorHtml('');
+    setHasUserEdited(false);
   }, [baseId, idType]);
 
   useEffect(() => {
@@ -118,18 +136,11 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     });
 
     return {
-      userId,
+      userId: (fromUsers?.id || '').trim() || userId,
       displayName: fromUsers?.name || displayName,
       department: fromUsers?.department || departmentName || '',
     };
   }, [departmentName, displayName, userId, usersQuery.data]);
-
-  const documentFieldValues = useMemo(() => {
-    return resolveDocumentFieldValues({
-      now: new Date(),
-      user: currentUserProfile,
-    });
-  }, [currentUserProfile]);
 
   const templateContent = useMemo(() => {
     return parseTemplateJson(work?.templateJson);
@@ -168,9 +179,54 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     ? undefined
     : (usersQuery.data ?? []).find((user) => user.id === work.approverId);
 
-  const drafterProfile = (usersQuery.data ?? []).find((user) => {
-    return user.id === userId || user.name === displayName;
-  });
+  const drafterProfile = useMemo(() => {
+    if (work?.createdBy) {
+      return (usersQuery.data ?? []).find((user) => user.id === work.createdBy);
+    }
+
+    return (usersQuery.data ?? []).find((user) => {
+      return user.id === userId || user.name === displayName;
+    });
+  }, [displayName, userId, usersQuery.data, work?.createdBy]);
+
+  const drafterDisplayName = useMemo(() => {
+    if (work?.createdBy) {
+      return (
+        (drafterProfile?.name || '').trim() ||
+        (work.createdBy || '').trim() ||
+        '-'
+      );
+    }
+    return (drafterProfile?.name || '').trim() || displayName || userId;
+  }, [displayName, drafterProfile?.name, userId, work?.createdBy]);
+
+  const documentFieldProfile = useMemo(() => {
+    if (work?.createdBy) {
+      return {
+        userId: work.createdBy,
+        displayName: (drafterProfile?.name || '').trim() || work.createdBy,
+        department: (drafterProfile?.department || '').trim(),
+      };
+    }
+    return currentUserProfile;
+  }, [
+    currentUserProfile,
+    drafterProfile?.department,
+    drafterProfile?.name,
+    work?.createdBy,
+  ]);
+
+  const documentFieldValues = useMemo(() => {
+    const parsedSavedDate = (work?.createdAt || '').trim();
+    const parsedNow = parsedSavedDate
+      ? new Date(parsedSavedDate.replace(' ', 'T'))
+      : new Date();
+
+    return resolveDocumentFieldValues({
+      now: Number.isNaN(parsedNow.getTime()) ? new Date() : parsedNow,
+      user: documentFieldProfile,
+    });
+  }, [documentFieldProfile, work?.createdAt]);
 
   const handleChangeEditor = (nextContent: JSONContent, nextHtml: string) => {
     void nextHtml;
@@ -183,12 +239,123 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     setEditorHtml(nextHtml);
   };
 
+  const isOwner = useMemo(() => {
+    if (typeof work?.isOwner === 'boolean') {
+      return work.isOwner;
+    }
+
+    // 미작성 상태 (기안서 없음): 백엔드가 담당자 확인했으니 편집 가능
+    if (!work?.approvalId) {
+      return true;
+    }
+    // 작성됨 상태 (기안서 있음): 기안 작성자만 편집 가능
+    return isDocumentOwner(work.createdBy, currentUserProfile.userId);
+  }, [currentUserProfile.userId, work?.approvalId, work?.createdBy]);
+  const isReadOnly = useMemo(() => {
+    if (typeof work?.readOnly === 'boolean') {
+      return work.readOnly;
+    }
+    return !isOwner;
+  }, [isOwner, work?.readOnly]);
+
+  const canTempSave = useMemo(() => {
+    if (typeof work?.canTempSave === 'boolean') {
+      return work.canTempSave;
+    }
+    return isOwner;
+  }, [isOwner, work?.canTempSave]);
+
+  const canSubmit = useMemo(() => {
+    if (typeof work?.canSubmit === 'boolean') {
+      return work.canSubmit;
+    }
+    return isOwner;
+  }, [isOwner, work?.canSubmit]);
+
+  const canSubmitCancel = useMemo(() => {
+    if (typeof work?.canSubmitCancel === 'boolean') {
+      return work.canSubmitCancel;
+    }
+    return isOwner;
+  }, [isOwner, work?.canSubmitCancel]);
+
+  const canApprove = useMemo(() => {
+    if (typeof work?.canApprove === 'boolean') {
+      return work.canApprove;
+    }
+    return false;
+  }, [work?.canApprove]);
+
+  const canConfirm = useMemo(() => {
+    if (typeof work?.canConfirm === 'boolean') {
+      return work.canConfirm;
+    }
+    return false;
+  }, [work?.canConfirm]);
+
+  const normalizedApprovalStatus = useMemo(() => {
+    return String(work?.approvalStatusType ?? '')
+      .trim()
+      .toLowerCase();
+  }, [work?.approvalStatusType]);
+
+  const approvalEventType = useMemo<
+    'review_approve' | 'final_approve' | undefined
+  >(() => {
+    if (!canApprove) {
+      return undefined;
+    }
+
+    const reviewerStatus = String(work?.reviewerAppStatus ?? '')
+      .trim()
+      .toLowerCase();
+    if (reviewerStatus === 'approved') {
+      return 'final_approve';
+    }
+    return 'review_approve';
+  }, [canApprove, work?.reviewerAppStatus]);
+
+  const canReject = useMemo(() => {
+    return canApprove;
+  }, [approvalEventType, canApprove]);
+
+  const referenceEventType = useMemo<'reference_confirm' | undefined>(() => {
+    if (!canConfirm) {
+      return undefined;
+    }
+    return 'reference_confirm';
+  }, [canConfirm]);
+
+  const isFinalOwnerConfirm = useMemo(() => {
+    return Boolean(canConfirm && work?.lastOwnerStatus);
+  }, [canConfirm, work?.lastOwnerStatus]);
+
+  const submitLabel = useMemo(() => {
+    if (normalizedApprovalStatus === 'rejected' && work?.lastOwnerStatus) {
+      return '재결재 신청';
+    }
+    return '결재 신청';
+  }, [normalizedApprovalStatus, work?.lastOwnerStatus]);
+
+  const rejectEventType = useMemo<
+    'review_return' | 'final_return' | undefined
+  >(() => {
+    if (!canReject) {
+      return undefined;
+    }
+
+    return approvalEventType === 'final_approve'
+      ? 'final_return'
+      : 'review_return';
+  }, [approvalEventType, canReject]);
+
   return {
     baseId,
     idType,
     tenantCode,
     userId,
     displayName,
+    drafterDisplayName,
     title,
     setTitle,
     referenceIds,
@@ -207,5 +374,18 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     drafterProfile,
     reviewerProfile,
     approverProfile,
+    isOwner,
+    isReadOnly,
+    canTempSave,
+    canSubmit,
+    canSubmitCancel,
+    canApprove,
+    canConfirm,
+    canReject,
+    isFinalOwnerConfirm,
+    approvalEventType,
+    referenceEventType,
+    rejectEventType,
+    submitLabel,
   };
 }

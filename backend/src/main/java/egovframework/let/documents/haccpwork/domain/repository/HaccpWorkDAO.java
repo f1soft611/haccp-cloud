@@ -26,12 +26,25 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectList("HaccpWorkDAO.selectDocumentList", condition);
     }
 
+    public int selectDocumentListCount(HaccpWorkSearchConditionVO condition) throws Exception {
+        Integer count = selectOne("HaccpWorkDAO.selectDocumentListCount", condition);
+        return count == null ? 0 : count.intValue();
+    }
+
     public HaccpWorkVO selectDraftTemplateByWorkId(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectDraftTemplateByWorkId", params);
     }
 
     public HaccpWorkVO selectDraftTemplateByApprovalId(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectDraftTemplateByApprovalId", params);
+    }
+
+    public Integer selectWorkAssigneeAccessCount(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectWorkAssigneeAccessCount", params);
+    }
+
+    public Integer selectApprovalTemplateAccessCount(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectApprovalTemplateAccessCount", params);
     }
 
     public Long selectTenantIdByCode(String tenantCode) throws Exception {
@@ -58,8 +71,8 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         insert("HaccpWorkDAO.insertElectronicApprovalMain", params);
     }
 
-    public void insertElectronicApprovalLine(Map<String, Object> params) throws Exception {
-        insert("HaccpWorkDAO.insertElectronicApprovalLine", params);
+    public Long upsertElectronicApprovalLine(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.upsertElectronicApprovalLine", params);
     }
 
     public Map<String, Object> selectApprovalMainById(Map<String, Object> params) throws Exception {
@@ -78,12 +91,24 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpWorkDAO.selectMaxDraftedExeSeqByApprovalId", params);
     }
 
+    public Integer selectMaxApprovalLineExeSeqByApprovalId(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectMaxApprovalLineExeSeqByApprovalId", params);
+    }
+
+    public Integer selectFinalOwnerExeSeqByApprovalId(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectFinalOwnerExeSeqByApprovalId", params);
+    }
+
     public Integer selectLatestCompletedDraftedSeqByApprovalId(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectLatestCompletedDraftedSeqByApprovalId", params);
     }
 
     public Integer selectLatestCompletedDraftedSeqByApprovalAndLogin(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectLatestCompletedDraftedSeqByApprovalAndLogin", params);
+    }
+
+    public Integer selectFinalOwnerConfirmedCountByApprovalId(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectFinalOwnerConfirmedCountByApprovalId", params);
     }
 
     public int updateElectronicApprovalLineStatus(Map<String, Object> params) throws Exception {
@@ -118,7 +143,43 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return update("HaccpWorkDAO.updateElectronicApprovalMainDraftContent", params);
     }
 
+    public int updateElectronicApprovalMainBusinessKey(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.updateElectronicApprovalMainBusinessKey", params);
+    }
+
     public int deleteElectronicApprovalLinesByApprovalId(Map<String, Object> params) throws Exception {
         return delete("HaccpWorkDAO.deleteElectronicApprovalLinesByApprovalId", params);
+    }
+
+    public int clearUnusedReferenceApprovalLines(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.clearUnusedReferenceApprovalLines", params);
+    }
+
+    public Map<String, Object> selectApprovalLineForHistoryBySeq(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectApprovalLineForHistoryBySeq", params);
+    }
+
+    public Map<String, Object> selectApprovalReferenceLineForHistoryByLogin(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectApprovalReferenceLineForHistoryByLogin", params);
+    }
+
+    public Map<String, Object> selectApprovalLineForHistoryByLogin(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectApprovalLineForHistoryByLogin", params);
+    }
+
+    public Integer selectNextApprovalHistoryAnswerSeq(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectNextApprovalHistoryAnswerSeq", params);
+    }
+
+    public void insertElectronicApprovalHistoryMain(Map<String, Object> params) throws Exception {
+        insert("HaccpWorkDAO.insertElectronicApprovalHistoryMain", params);
+    }
+
+    public List<Map<String, Object>> selectApprovalHistoryCommentsByApprovalId(Map<String, Object> params) throws Exception {
+        return selectList("HaccpWorkDAO.selectApprovalHistoryCommentsByApprovalId", params);
+    }
+
+    public Map<String, Object> selectApprovalHistoryCommentById(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectApprovalHistoryCommentById", params);
     }
 }

@@ -22,6 +22,7 @@ import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentCreateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftTempSaveRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
@@ -84,6 +85,69 @@ public class HaccpWorkApiController {
     }
 
         @Operation(
+            summary = "결재 댓글 이력 조회",
+            description = "결재 문서의 시스템/사용자 댓글 이력을 최신순으로 조회한다",
+            security = { @SecurityRequirement(name = "Authorization") },
+            tags = { "HaccpWorkApiController" }
+        )
+        @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "403", description = "인가된 사용자가 아님"),
+            @ApiResponse(responseCode = "404", description = "결재 문서를 찾을 수 없음")
+        })
+        @GetMapping("/approvals/{approvalId}/comments")
+        public ResultVO listApprovalComments(
+            @PathVariable Long approvalId,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put(
+            "resultList",
+            haccpWorkFlowService.listApprovalComments(
+                approvalId,
+                tenantCode,
+                resolveLoginCode(user)
+            )
+        );
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+        }
+
+    @Operation(
+            summary = "결재 댓글 등록",
+            description = "결재 문서에 사용자 댓글을 등록한다",
+            security = { @SecurityRequirement(name = "Authorization") },
+            tags = { "HaccpWorkApiController" }
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "등록 성공"),
+            @ApiResponse(responseCode = "403", description = "인가된 사용자가 아님"),
+            @ApiResponse(responseCode = "404", description = "결재 문서를 찾을 수 없음")
+    })
+    @PostMapping("/approvals/{approvalId}/comments")
+    public ResultVO createApprovalComment(
+            @PathVariable Long approvalId,
+            @RequestBody HaccpWorkApprovalCommentCreateRequestVO payload,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        haccpWorkFlowService.createApprovalComment(
+                approvalId,
+                tenantCode,
+                payload,
+                resolveLoginCode(user)
+        );
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("message", "댓글이 등록되었습니다.");
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+        @Operation(
             summary = "HACCP 문서 목록 조회",
             description = "HACCP 문서관리 페이지의 문서 목록을 조회한다",
             security = { @SecurityRequirement(name = "Authorization") },
@@ -95,10 +159,13 @@ public class HaccpWorkApiController {
         })
         @GetMapping("/documents")
         public ResultVO listDocuments(
+            @RequestParam(defaultValue = "1") int pageIndex,
+            @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String workType,
             @RequestParam(required = false) String draftNumber,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String writer,
+            @RequestParam(required = false) String participantType,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
@@ -110,21 +177,20 @@ public class HaccpWorkApiController {
         String actorLoginCode = resolveLoginCode(user);
         String actorRoleCode = resolveRoleCode(user);
 
-        Map<String, Object> resultMap = new HashMap<String, Object>();
-        resultMap.put(
-            "resultList",
-            haccpWorkDraftService.listDocuments(
-                tenantCode,
-                actorLoginCode,
-                actorRoleCode,
-                workType,
-                draftNumber,
-                title,
-                writer,
-                status,
-                startDate,
-                endDate
-            )
+        Map<String, Object> resultMap = haccpWorkDraftService.listDocumentsPaged(
+            tenantCode,
+            actorLoginCode,
+            actorRoleCode,
+            workType,
+            draftNumber,
+            title,
+            writer,
+            participantType,
+            status,
+            startDate,
+            endDate,
+            pageIndex,
+            pageSize
         );
         resultMap.put("user", user);
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);

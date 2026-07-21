@@ -40,11 +40,11 @@ export function HaccpBaseSearchBar(props: {
         alignItems={{ xs: 'stretch', md: 'flex-end' }}
       >
         <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel id="haccp-base-category-label">분류설정</InputLabel>
+          <InputLabel id="haccp-base-category-label">업무분류</InputLabel>
           <Select
             labelId="haccp-base-category-label"
             value={value.categoryId}
-            label="분류설정"
+            label="업무분류"
             onChange={(event) =>
               onChange({
                 ...value,

@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS tb_electronic_approval_history_main (
     electronic_approval_history_id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
     electronic_approval_line_id BIGINT NOT NULL,
+    parent_history_id BIGINT,
     answer_seq INTEGER NOT NULL,
     answer_type_name VARCHAR(20) NOT NULL,
     answer_at TIMESTAMP NOT NULL,
@@ -163,6 +164,10 @@ CREATE TABLE IF NOT EXISTS tb_electronic_approval_history_main (
     CONSTRAINT fk_electronic_approval_history_main_line
         FOREIGN KEY (electronic_approval_line_id)
         REFERENCES tb_electronic_approval_line_info(electronic_approval_line_id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_electronic_approval_history_main_parent
+        FOREIGN KEY (parent_history_id)
+        REFERENCES tb_electronic_approval_history_main(electronic_approval_history_id)
         ON DELETE CASCADE,
     CONSTRAINT fk_electronic_approval_history_main_created_by
         FOREIGN KEY (created_by)
@@ -259,6 +264,9 @@ CREATE INDEX IF NOT EXISTS idx_electronic_approval_history_main_answer_seq
 
 CREATE INDEX IF NOT EXISTS idx_electronic_approval_history_main_exe_seq
     ON tb_electronic_approval_history_main(exe_seq);
+
+CREATE INDEX IF NOT EXISTS idx_electronic_approval_history_main_parent_id
+    ON tb_electronic_approval_history_main(parent_history_id);
 
 CREATE INDEX IF NOT EXISTS idx_electronic_approval_open_info_history_id
     ON tb_electronic_approval_open_info(electronic_approval_history_id);

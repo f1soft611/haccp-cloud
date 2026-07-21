@@ -1,7 +1,4 @@
-import {
-  Alert,
-  Stack,
-} from '@mui/material';
+import { Alert, Stack } from '@mui/material';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
@@ -18,8 +15,14 @@ export function HaccpDocumentManagementPage() {
     detailOpen,
     setDetailOpen,
     activeFilterChips,
+    categoryOptions,
     documentsQuery,
     rows,
+    totalCount,
+    pageIndex,
+    pageSize,
+    setPageIndex,
+    setPageSize,
     handleReset,
     handleSearch,
   } = useHaccpDocumentManagement();
@@ -29,7 +32,7 @@ export function HaccpDocumentManagementPage() {
       <PageHeader
         groupLabel={APP_LABELS.menu.documentGroup}
         title="HACCP 문서관리"
-        description="업무구분, 기안번호, 제목 등 다양한 조건으로 문서를 조회하는 페이지 레이아웃입니다."
+        description="업무분류, 기안번호, 제목 등 다양한 조건으로 문서를 조회하는 페이지 레이아웃입니다."
       />
 
       {documentsQuery.isError ? (
@@ -47,13 +50,22 @@ export function HaccpDocumentManagementPage() {
         canViewAllDocuments={canViewAllDocuments}
         detailOpen={detailOpen}
         activeFilterChips={activeFilterChips}
+        categoryOptions={categoryOptions}
         onChange={setSearchValue}
         onToggleDetail={() => setDetailOpen((prev) => !prev)}
         onReset={handleReset}
         onSearch={handleSearch}
       />
 
-      <HaccpDocumentGrid rows={rows} loading={documentsQuery.isLoading} />
+      <HaccpDocumentGrid
+        rows={rows}
+        loading={documentsQuery.isLoading}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        onPageChange={setPageIndex}
+        onPageSizeChange={setPageSize}
+      />
     </Stack>
   );
 }

@@ -1,6 +1,7 @@
 package egovframework.let.documents.haccpwork.domain.model;
 
 import java.io.Serializable;
+import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -46,6 +47,12 @@ public class HaccpWorkSearchConditionVO implements Serializable {
     @Schema(description = "작성자")
     private String writer;
 
+    @Schema(description = "참여유형(DRAFTER/APPROVER/REFERENCE)")
+    private String participantType;
+
+    @Schema(description = "참여유형 목록(DRAFTER/APPROVER/REFERENCE)")
+    private List<String> participantTypes;
+
     @Schema(description = "상태 코드(pre_apply/in_progress/approved/rejected)")
     private String statusType;
 
@@ -54,4 +61,22 @@ public class HaccpWorkSearchConditionVO implements Serializable {
 
     @Schema(description = "조회 종료일(yyyy-MM-dd)")
     private String endDate;
+
+    @Schema(description = "현재 페이지(1-base)")
+    private int pageIndex = 1;
+
+    @Schema(description = "페이지 크기")
+    private int pageSize = 10;
+
+    @Schema(description = "UI 페이지 단위")
+    private int pageUnit = 10;
+
+    @Schema(description = "조회 시작 offset")
+    private int firstIndex = 0;
+
+    @Schema(description = "조회 종료 offset")
+    private int lastIndex = 0;
+
+    @Schema(description = "조회 건수")
+    private int recordCountPerPage = 10;
 }

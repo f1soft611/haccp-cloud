@@ -2,6 +2,7 @@ package egovframework.let.documents.haccpwork.domain.model;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import egovframework.com.jackson.RawStringPreserveSerializer;
@@ -125,4 +126,32 @@ public class HaccpWorkVO implements Serializable {
 
     @Schema(description = "승인 app_status")
     private String approverAppStatus;
+
+    @Schema(description = "현재 사용자가 기안자인지 여부")
+    @JsonProperty("isOwner")
+    private boolean ownerPermission;
+
+    @Schema(description = "현재 사용자가 결재 처리 순서인지 여부")
+    private boolean actorTurn;
+
+    @Schema(description = "읽기전용 여부")
+    private boolean readOnly;
+
+    @Schema(description = "임시저장 가능 여부")
+    private boolean canTempSave;
+
+    @Schema(description = "결재신청 가능 여부")
+    private boolean canSubmit;
+
+    @Schema(description = "결재취소 가능 여부")
+    private boolean canSubmitCancel;
+
+    @Schema(description = "결재 처리 가능 여부")
+    private boolean canApprove;
+
+    @Schema(description = "확인 가능 여부")
+    private boolean canConfirm;
+
+    @Schema(description = "최종 기안자 확인 여부")
+    private boolean lastOwnerStatus;
 }

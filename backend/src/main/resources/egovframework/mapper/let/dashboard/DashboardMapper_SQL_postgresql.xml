@@ -73,15 +73,14 @@
               WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN 'in_progress'
               WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN 'approved'
               WHEN COALESCE(appr.latest_status_type, '') = 'rejected' THEN 'rejected'
-              WHEN COALESCE(appr.latest_status_type, '') = 'pre_apply' THEN 'pre_apply'
-              ELSE 'pre_apply'
+              ELSE NULL
             END AS approval_status_type,
             CASE
               WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN '결재중'
               WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN '승인'
               WHEN COALESCE(appr.latest_status_type, '') = 'pre_apply' THEN '임시저장'
               WHEN COALESCE(appr.latest_status_type, '') = 'rejected' THEN '반송'
-              ELSE '미완료'
+              ELSE '미작성'
             END AS approval_status_type_name,
             TO_CHAR(COALESCE(pending.pending_arrival_at, appr.latest_updated_at, w.updated_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
             CAST(w.drafting_work_template_json AS text) AS template_json,
@@ -307,10 +306,12 @@
         )
           AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
           AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
-          AND COALESCE(li.muldec_status, '') = 'drafted'
           AND li.arrival_at IS NOT NULL
           AND li.exe_at IS NULL
-          AND COALESCE(m.status_type, '') = 'in_progress'
+          AND (
+            (COALESCE(li.muldec_status, '') = 'drafted' AND COALESCE(m.status_type, '') = 'in_progress')
+            OR (COALESCE(li.muldec_status, '') = 'cooperated' AND COALESCE(m.status_type, '') IN ('in_progress', 'approved', 'rejected'))
+          )
           AND COALESCE(m.delete_status, 'N') != 'Y'
           AND COALESCE(w.delete_status, 'N') != 'Y'
         ORDER BY li.arrival_at DESC, m.electronic_approval_id DESC

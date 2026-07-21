@@ -3,6 +3,7 @@ export type HaccpDocSearchValue = {
   draftNumber: string;
   title: string;
   writer: string;
+  participantType: string[];
   status: string;
   startDate: string;
   endDate: string;

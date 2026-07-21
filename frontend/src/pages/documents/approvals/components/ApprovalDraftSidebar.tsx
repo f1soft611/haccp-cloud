@@ -24,9 +24,11 @@ type SignerLineItem = {
 
 const FALLBACK_STAMP_BY_ROLE: Record<SignerRole, string> = {
   drafter: '/project.png',
-  reviewer: '/confirm.png',
+  reviewer: '/approve.png',
   approver: '/approve.png',
 };
+
+const RETURN_STAMP_IMAGE = '/return.png';
 
 type ApprovalDraftSidebarProps = {
   isDarkMode: boolean;
@@ -38,7 +40,8 @@ type ApprovalDraftSidebarProps = {
   approverProfile?: UserItem;
   referenceOptions: UserItem[];
   selectedReferences: UserItem[];
-  onChangeReferences: (next: string[]) => void;
+  onChangeReferences?: (next: string[]) => void;
+  isReadOnly?: boolean;
 };
 
 function normalizeStatus(value: string | undefined): string {
@@ -87,6 +90,7 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
     referenceOptions,
     selectedReferences,
     onChangeReferences,
+    isReadOnly = false,
   } = props;
 
   const signerLine: SignerLineItem[] = [
@@ -121,19 +125,33 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
     .toLowerCase();
   const hasSubmitted =
     approvalStatus.length > 0 && approvalStatus !== 'pre_apply';
-  const isApproved = approvalStatus === 'approved';
 
   const canShowSignerImage = (item: SignerLineItem): boolean => {
     if (item.role === 'drafter') {
       return hasSubmitted;
     }
-    return isApproved;
+
+    const signerStatus = normalizeStatus(item.appStatus);
+    return (
+      signerStatus === 'approved' ||
+      signerStatus === 'returned' ||
+      signerStatus === 'confirmed'
+    );
   };
 
   const resolveSignerImage = (item: SignerLineItem): string => {
+    if (normalizeStatus(item.appStatus) === 'returned') {
+      return RETURN_STAMP_IMAGE;
+    }
+
     if (item.signatureImage && item.signatureImage.trim()) {
       return item.signatureImage;
     }
+
+    if (item.stampImage && item.stampImage.trim()) {
+      return item.stampImage;
+    }
+
     return FALLBACK_STAMP_BY_ROLE[item.role];
   };
 
@@ -276,6 +294,7 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
         <Box sx={{ flex: 1 }}>
           <Autocomplete
             multiple
+            disabled={isReadOnly}
             options={referenceOptions}
             value={selectedReferences}
             getOptionLabel={(option) => option.name}
@@ -283,7 +302,7 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
               option.id === selected.id
             }
             onChange={(_, selected) => {
-              onChangeReferences(selected.map((item) => item.id));
+              onChangeReferences?.(selected.map((item) => item.id));
             }}
             renderInput={(params) => (
               <TextField
