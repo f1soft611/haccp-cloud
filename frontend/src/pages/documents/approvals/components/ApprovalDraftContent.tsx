@@ -34,6 +34,8 @@ type ApprovalDraftContentProps = {
   onAddComment: (value: string) => void;
   onAddReply: (commentId: string) => void;
   isReadOnly?: boolean;
+  canWriteComments?: boolean;
+  commentLoadErrorMessage?: string;
 };
 
 export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
@@ -63,6 +65,8 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     onAddComment,
     onAddReply,
     isReadOnly = false,
+    canWriteComments = true,
+    commentLoadErrorMessage = '',
   } = props;
 
   return (
@@ -102,11 +106,12 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
 
       <ApprovalDraftCommentThread
         comments={comments}
-        onAddComment={onAddComment}
         replyDraftByCommentId={replyDraftByCommentId}
         onChangeReplyDraft={onChangeReplyDraft}
+        onAddComment={onAddComment}
         onAddReply={onAddReply}
-        isReadOnly={isReadOnly}
+        canWriteComments={canWriteComments}
+        commentLoadErrorMessage={commentLoadErrorMessage}
       />
     </>
   );

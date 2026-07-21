@@ -3,7 +3,8 @@ export type ApprovalStatusChipColor =
   | 'success'
   | 'info'
   | 'warning'
-  | 'secondary';
+  | 'secondary'
+  | 'error';
 
 export type ApprovalStatusView = {
   label: string;
@@ -49,7 +50,7 @@ export function resolveApprovalStatusView(params: {
     statusName === '반려' ||
     statusName === '반송'
   ) {
-    return { label: '반려', color: 'secondary' };
+    return { label: '반려', color: 'error' };
   }
 
   if (status === 'pre_apply' || statusName === '임시저장') {

@@ -38,6 +38,14 @@
         <result property="drafterAppStatus" column="drafter_app_status"/>
         <result property="reviewerAppStatus" column="reviewer_app_status"/>
         <result property="approverAppStatus" column="approver_app_status"/>
+        <result property="ownerPermission" column="is_owner"/>
+        <result property="actorTurn" column="is_actor_turn"/>
+        <result property="readOnly" column="read_only"/>
+        <result property="canTempSave" column="can_temp_save"/>
+        <result property="canSubmit" column="can_submit"/>
+        <result property="canSubmitCancel" column="can_submit_cancel"/>
+        <result property="canApprove" column="can_approve"/>
+        <result property="canConfirm" column="can_confirm"/>
     </resultMap>
 
     <select id="HaccpWorkDAO.selectMyWorkList"
@@ -104,6 +112,14 @@
             ,'' AS drafter_app_status
             ,'' AS reviewer_app_status
             ,'' AS approver_app_status
+            ,FALSE AS is_owner
+            ,FALSE AS is_actor_turn
+            ,TRUE AS read_only
+            ,FALSE AS can_temp_save
+            ,FALSE AS can_submit
+            ,FALSE AS can_submit_cancel
+            ,FALSE AS can_approve
+            ,FALSE AS can_confirm
         FROM tb_drafting_work_category w
         JOIN tb_tenant t ON t.tenant_id = w.tenant_id
         LEFT JOIN tb_drafting_work_category_group g
@@ -235,7 +251,15 @@
             TO_CHAR(COALESCE(m.updated_at, m.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
             '' AS drafter_app_status,
             '' AS reviewer_app_status,
-            '' AS approver_app_status
+            '' AS approver_app_status,
+            FALSE AS is_owner,
+            FALSE AS is_actor_turn,
+            TRUE AS read_only,
+            FALSE AS can_temp_save,
+            FALSE AS can_submit,
+            FALSE AS can_submit_cancel,
+            FALSE AS can_approve,
+            FALSE AS can_confirm
         FROM tb_electronic_approval_main m
         JOIN tb_drafting_work_category w
           ON w.tenant_id = m.tenant_id
@@ -380,7 +404,37 @@
             TO_CHAR(COALESCE(pre.updated_at, pre.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
             '' AS drafter_app_status,
             '' AS reviewer_app_status,
-            '' AS approver_app_status
+            '' AS approver_app_status,
+            CASE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NULL THEN FALSE
+              WHEN pre.electronic_approval_id IS NULL THEN TRUE
+              WHEN pre.login_id = #{actorLoginId, jdbcType=BIGINT} THEN TRUE
+              ELSE FALSE
+            END AS is_owner,
+            FALSE AS is_actor_turn,
+            CASE
+              WHEN pre.electronic_approval_id IS NULL THEN FALSE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND pre.login_id = #{actorLoginId, jdbcType=BIGINT}
+               AND COALESCE(pre.status_type, 'pre_apply') = 'pre_apply' THEN FALSE
+              ELSE TRUE
+            END AS read_only,
+            CASE
+              WHEN pre.electronic_approval_id IS NULL THEN TRUE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND pre.login_id = #{actorLoginId, jdbcType=BIGINT}
+               AND COALESCE(pre.status_type, 'pre_apply') = 'pre_apply' THEN TRUE
+              ELSE FALSE
+            END AS can_temp_save,
+            CASE
+              WHEN pre.electronic_approval_id IS NULL THEN TRUE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND pre.login_id = #{actorLoginId, jdbcType=BIGINT}
+               AND COALESCE(pre.status_type, 'pre_apply') = 'pre_apply' THEN TRUE
+              ELSE FALSE
+            END AS can_submit,
+            FALSE AS can_submit_cancel,
+            FALSE AS can_approve
         FROM tb_drafting_work_category w
         JOIN tb_tenant t ON t.tenant_id = w.tenant_id
         LEFT JOIN tb_drafting_work_category_group g
@@ -453,6 +507,8 @@
           WHERE li.tenant_id = w.tenant_id
             AND li.electronic_approval_id = pre.electronic_approval_id
             AND COALESCE(li.muldec_status, '') = 'cooperated'
+            AND li.login_id != pre.login_id
+            AND COALESCE(li.last_owner_status, '') != 'Y'
         ) ref ON TRUE
         LEFT JOIN tb_user cu_pre
           ON cu_pre.tenant_id = w.tenant_id
@@ -554,7 +610,85 @@
             TO_CHAR(COALESCE(m.updated_at, m.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
             COALESCE(l1.app_status, '') AS drafter_app_status,
             COALESCE(l2.app_status, '') AS reviewer_app_status,
-            COALESCE(l3.app_status, '') AS approver_app_status
+            COALESCE(l3.app_status, '') AS approver_app_status,
+            CASE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND m.login_id = #{actorLoginId, jdbcType=BIGINT} THEN TRUE
+              ELSE FALSE
+            END AS is_owner,
+            CASE
+              WHEN COALESCE(m.status_type, '') = 'in_progress'
+               AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND EXISTS (
+                 SELECT 1
+                 FROM tb_electronic_approval_line_info turn_line
+                 WHERE turn_line.tenant_id = m.tenant_id
+                   AND turn_line.electronic_approval_id = m.electronic_approval_id
+                   AND turn_line.login_id = #{actorLoginId, jdbcType=BIGINT}
+                   AND COALESCE(turn_line.muldec_status, '') = 'drafted'
+                   AND turn_line.arrival_at IS NOT NULL
+                   AND turn_line.exe_at IS NULL
+               ) THEN TRUE
+              ELSE FALSE
+            END AS is_actor_turn,
+            CASE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+               AND COALESCE(m.status_type, '') = 'pre_apply' THEN FALSE
+              ELSE TRUE
+            END AS read_only,
+            CASE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+               AND COALESCE(m.status_type, '') = 'pre_apply' THEN TRUE
+              ELSE FALSE
+            END AS can_temp_save,
+            CASE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+               AND COALESCE(m.status_type, '') = 'pre_apply' THEN TRUE
+              ELSE FALSE
+            END AS can_submit,
+            CASE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NULL THEN FALSE
+              WHEN COALESCE(cancel_perm.final_owner_confirmed_flag, 0) = 1 THEN FALSE
+              WHEN cancel_perm.latest_completed_seq IS NULL
+                OR cancel_perm.latest_completed_seq &lt;= 0 THEN FALSE
+              WHEN cancel_perm.actor_latest_completed_seq IS NULL
+                OR cancel_perm.actor_latest_completed_seq &lt;= 0 THEN FALSE
+              WHEN cancel_perm.latest_completed_seq = cancel_perm.actor_latest_completed_seq THEN TRUE
+              ELSE FALSE
+            END AS can_submit_cancel,
+            CASE
+              WHEN COALESCE(m.status_type, '') = 'in_progress'
+               AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND EXISTS (
+                 SELECT 1
+                 FROM tb_electronic_approval_line_info turn_line
+                 WHERE turn_line.tenant_id = m.tenant_id
+                   AND turn_line.electronic_approval_id = m.electronic_approval_id
+                   AND turn_line.login_id = #{actorLoginId, jdbcType=BIGINT}
+                   AND COALESCE(turn_line.muldec_status, '') = 'drafted'
+                   AND turn_line.arrival_at IS NOT NULL
+                   AND turn_line.exe_at IS NULL
+               ) THEN TRUE
+              ELSE FALSE
+            END AS can_approve
+            ,CASE
+              WHEN COALESCE(m.status_type, '') IN ('in_progress', 'approved', 'rejected')
+               AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND EXISTS (
+                 SELECT 1
+                 FROM tb_electronic_approval_line_info turn_line
+                 WHERE turn_line.tenant_id = m.tenant_id
+                   AND turn_line.electronic_approval_id = m.electronic_approval_id
+                   AND turn_line.login_id = #{actorLoginId, jdbcType=BIGINT}
+                   AND COALESCE(turn_line.muldec_status, '') = 'cooperated'
+                   AND turn_line.arrival_at IS NOT NULL
+                   AND turn_line.exe_at IS NULL
+               ) THEN TRUE
+              ELSE FALSE
+            END AS can_confirm
         FROM tb_electronic_approval_main m
         JOIN tb_drafting_work_category w
           ON w.tenant_id = m.tenant_id
@@ -601,7 +735,39 @@
           WHERE li.tenant_id = m.tenant_id
             AND li.electronic_approval_id = m.electronic_approval_id
             AND COALESCE(li.muldec_status, '') = 'cooperated'
+            AND li.login_id != m.login_id
+            AND COALESCE(li.last_owner_status, '') != 'Y'
         ) ref ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT
+            MAX(
+              CASE
+                WHEN COALESCE(li.muldec_status, '') = 'drafted'
+                 AND COALESCE(li.app_status, '') IN ('approved', 'returned') THEN li.exe_seq
+                ELSE NULL
+              END
+            ) AS latest_completed_seq,
+            MAX(
+              CASE
+                WHEN li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                 AND COALESCE(li.muldec_status, '') = 'drafted'
+                 AND COALESCE(li.app_status, '') IN ('approved', 'returned') THEN li.exe_seq
+                ELSE NULL
+              END
+            ) AS actor_latest_completed_seq,
+            MAX(
+              CASE
+                WHEN COALESCE(li.last_owner_status, '') = 'Y'
+                 AND COALESCE(li.muldec_status, '') = 'cooperated'
+                 AND COALESCE(li.app_status, '') = 'confirmed'
+                 AND li.exe_at IS NOT NULL THEN 1
+                ELSE 0
+              END
+            ) AS final_owner_confirmed_flag
+          FROM tb_electronic_approval_line_info li
+          WHERE li.tenant_id = m.tenant_id
+            AND li.electronic_approval_id = m.electronic_approval_id
+        ) cancel_perm ON TRUE
         LEFT JOIN tb_electronic_approval_line_info l1
           ON l1.tenant_id = m.tenant_id
          AND l1.electronic_approval_id = m.electronic_approval_id
@@ -645,6 +811,42 @@
           AND (
             CAST(auth.employee_no AS bigint) = #{actorLoginId}
             OR CAST(auth.employee_no AS varchar) = CAST(#{actorLoginId} AS varchar)
+          )
+    </select>
+
+    <select id="HaccpWorkDAO.selectApprovalTemplateAccessCount"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_electronic_approval_main m
+        JOIN tb_drafting_work_category w
+          ON w.tenant_id = m.tenant_id
+         AND w.drafting_work_category_id = m.drafting_work_category_id
+        WHERE m.tenant_id = #{tenantId}
+          AND m.electronic_approval_id = #{approvalId}
+          AND COALESCE(m.delete_status, 'N') != 'Y'
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+          AND (
+            m.login_id = #{actorLoginId}
+            OR EXISTS (
+              SELECT 1
+              FROM tb_electronic_approval_line_info li
+              WHERE li.tenant_id = m.tenant_id
+                AND li.electronic_approval_id = m.electronic_approval_id
+                AND li.login_id = #{actorLoginId}
+            )
+            OR EXISTS (
+              SELECT 1
+              FROM tb_drafting_work_category_authority auth
+              WHERE auth.tenant_id = w.tenant_id
+                AND auth.drafting_work_category_id = w.drafting_work_category_id
+                AND auth.use_at = 'Y'
+                AND COALESCE(auth.delete_status, 'N') != 'Y'
+                AND (
+                  CAST(auth.employee_no AS bigint) = #{actorLoginId}
+                  OR CAST(auth.employee_no AS varchar) = CAST(#{actorLoginId} AS varchar)
+                )
+            )
           )
     </select>
 
@@ -798,8 +1000,9 @@
       )
     </insert>
 
-    <insert id="HaccpWorkDAO.insertElectronicApprovalLine"
-        parameterType="map">
+    <select id="HaccpWorkDAO.upsertElectronicApprovalLine"
+      parameterType="map"
+      resultType="long">
       INSERT INTO tb_electronic_approval_line_info (
         tenant_id,
         electronic_approval_id,
@@ -854,7 +1057,32 @@
         #{eaExeId},
         #{createdBy, jdbcType=BIGINT}
       )
-    </insert>
+      ON CONFLICT (tenant_id, electronic_approval_id, exe_seq)
+      DO UPDATE SET
+        login_id = EXCLUDED.login_id,
+        department_id = EXCLUDED.department_id,
+        level_name = EXCLUDED.level_name,
+        app_status = EXCLUDED.app_status,
+        arbdec_status = EXCLUDED.arbdec_status,
+        repdec_status = EXCLUDED.repdec_status,
+        stage_name = EXCLUDED.stage_name,
+        muldec_status = EXCLUDED.muldec_status,
+        arrival_at = EXCLUDED.arrival_at,
+        exe_at = EXCLUDED.exe_at,
+        option_name = EXCLUDED.option_name,
+        open_at = EXCLUDED.open_at,
+        approval_type = EXCLUDED.approval_type,
+        last_owner_status = EXCLUDED.last_owner_status,
+        order_seq = EXCLUDED.order_seq,
+        last_cnfrmer_status = EXCLUDED.last_cnfrmer_status,
+        role_name = EXCLUDED.role_name,
+        referencer_view_status = EXCLUDED.referencer_view_status,
+        conn_official_status = EXCLUDED.conn_official_status,
+        eabus_no = EXCLUDED.eabus_no,
+        ea_exe_id = EXCLUDED.ea_exe_id,
+        created_by = EXCLUDED.created_by
+      RETURNING electronic_approval_line_id
+    </select>
 
     <select id="HaccpWorkDAO.selectApprovalMainById"
         parameterType="map"
@@ -882,6 +1110,8 @@
         AND electronic_approval_id = #{approvalId}
         AND exe_seq = #{exeSeq}
         AND COALESCE(muldec_status, '') = 'drafted'
+        AND arrival_at IS NOT NULL
+        AND exe_at IS NULL
       LIMIT 1
     </select>
 
@@ -893,6 +1123,27 @@
       WHERE tenant_id = #{tenantId}
         AND electronic_approval_id = #{approvalId}
         AND COALESCE(muldec_status, '') = 'drafted'
+    </select>
+
+      <select id="HaccpWorkDAO.selectMaxApprovalLineExeSeqByApprovalId"
+        parameterType="map"
+        resultType="int">
+        SELECT MAX(exe_seq)
+        FROM tb_electronic_approval_line_info
+        WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+      </select>
+
+    <select id="HaccpWorkDAO.selectFinalOwnerExeSeqByApprovalId"
+        parameterType="map"
+        resultType="int">
+      SELECT exe_seq
+      FROM tb_electronic_approval_line_info
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND COALESCE(last_owner_status, '') = 'Y'
+      ORDER BY exe_seq DESC
+      LIMIT 1
     </select>
 
     <select id="HaccpWorkDAO.selectLatestCompletedDraftedSeqByApprovalId"
@@ -918,6 +1169,19 @@
         AND COALESCE(app_status, '') IN ('approved', 'returned')
     </select>
 
+      <select id="HaccpWorkDAO.selectFinalOwnerConfirmedCountByApprovalId"
+        parameterType="map"
+        resultType="int">
+        SELECT COUNT(1)
+        FROM tb_electronic_approval_line_info
+        WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND COALESCE(last_owner_status, '') = 'Y'
+        AND COALESCE(muldec_status, '') = 'cooperated'
+        AND COALESCE(app_status, '') = 'confirmed'
+        AND exe_at IS NOT NULL
+      </select>
+
     <select id="HaccpWorkDAO.selectApprovalReferenceLoginId"
         parameterType="map"
         resultType="long">
@@ -927,6 +1191,186 @@
         AND electronic_approval_id = #{approvalId}
         AND login_id = #{loginId}
         AND COALESCE(muldec_status, '') = 'cooperated'
+        AND arrival_at IS NOT NULL
+        AND exe_at IS NULL
+      LIMIT 1
+    </select>
+
+    <select id="HaccpWorkDAO.selectApprovalLineForHistoryBySeq"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        electronic_approval_line_id AS electronicApprovalLineId,
+        exe_seq AS exeSeq,
+        approval_type AS approvalType,
+        eabus_no AS eabusNo,
+        ea_exe_id AS eaExeId
+      FROM tb_electronic_approval_line_info
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND exe_seq = #{exeSeq}
+      LIMIT 1
+    </select>
+
+    <select id="HaccpWorkDAO.selectApprovalReferenceLineForHistoryByLogin"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        electronic_approval_line_id AS electronicApprovalLineId,
+        exe_seq AS exeSeq,
+        approval_type AS approvalType,
+        eabus_no AS eabusNo,
+        ea_exe_id AS eaExeId
+      FROM tb_electronic_approval_line_info
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND login_id = #{loginId}
+        AND COALESCE(muldec_status, '') = 'cooperated'
+      ORDER BY exe_seq ASC
+      LIMIT 1
+    </select>
+
+    <select id="HaccpWorkDAO.selectApprovalLineForHistoryByLogin"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        electronic_approval_line_id AS electronicApprovalLineId,
+        exe_seq AS exeSeq,
+        approval_type AS approvalType,
+        eabus_no AS eabusNo,
+        ea_exe_id AS eaExeId
+      FROM tb_electronic_approval_line_info
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND login_id = #{loginId}
+      ORDER BY
+        CASE
+          WHEN COALESCE(muldec_status, '') = 'drafted' THEN 0
+          WHEN COALESCE(muldec_status, '') = 'cooperated' THEN 1
+          ELSE 2
+        END,
+        exe_seq ASC
+      LIMIT 1
+    </select>
+
+    <select id="HaccpWorkDAO.selectNextApprovalHistoryAnswerSeq"
+        parameterType="map"
+        resultType="int">
+      SELECT COALESCE(MAX(answer_seq), 0) + 1
+      FROM tb_electronic_approval_history_main
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_line_id = #{electronicApprovalLineId}
+        AND exe_seq = #{exeSeq}
+    </select>
+
+    <insert id="HaccpWorkDAO.insertElectronicApprovalHistoryMain"
+        parameterType="map">
+      INSERT INTO tb_electronic_approval_history_main (
+        tenant_id,
+        electronic_approval_line_id,
+        parent_history_id,
+        answer_seq,
+        answer_type_name,
+        answer_at,
+        answer_cnt,
+        not_open_status,
+        main_view_status,
+        exe_seq,
+        approval_type,
+        eabus_no,
+        ea_exe_id,
+        created_by,
+        created_at
+      )
+      VALUES (
+        #{tenantId},
+        #{electronicApprovalLineId},
+        #{parentHistoryId, jdbcType=BIGINT},
+        #{answerSeq},
+        #{answerTypeName},
+        #{answerAt, jdbcType=TIMESTAMP},
+        #{answerCnt},
+        #{notOpenStatus, jdbcType=VARCHAR},
+        #{mainViewStatus, jdbcType=VARCHAR},
+        #{exeSeq},
+        #{approvalType},
+        #{eabusNo},
+        #{eaExeId},
+        #{createdBy, jdbcType=BIGINT},
+        #{createdAt, jdbcType=TIMESTAMP}
+      )
+    </insert>
+
+    <select id="HaccpWorkDAO.selectApprovalHistoryCommentsByApprovalId"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        hm.electronic_approval_history_id AS commentId,
+        hm.parent_history_id AS parentCommentId,
+        hm.answer_type_name AS answerTypeName,
+        hm.answer_cnt AS text,
+        TO_CHAR(hm.answer_at, 'YYYY-MM-DD HH24:MI') AS createdAt,
+        NULLIF(TRIM(COALESCE(la.profile_image, '')), '') AS actorProfileImage,
+        COALESCE(
+          NULLIF(TRIM(u.user_nm), ''),
+          NULLIF(TRIM(la.login_code), ''),
+          '시스템'
+        ) AS actorName
+      FROM tb_electronic_approval_history_main hm
+      LEFT JOIN tb_user u
+        ON u.tenant_id = hm.tenant_id
+       AND u.login_id = hm.created_by
+      LEFT JOIN tb_login_account la
+        ON la.tenant_id = hm.tenant_id
+       AND la.login_id = hm.created_by
+      WHERE hm.tenant_id = #{tenantId}
+        AND (
+          EXISTS (
+            SELECT 1
+            FROM tb_electronic_approval_line_info li
+            WHERE li.tenant_id = hm.tenant_id
+              AND li.electronic_approval_line_id = hm.electronic_approval_line_id
+              AND li.electronic_approval_id = #{approvalId}
+          )
+          OR EXISTS (
+            SELECT 1
+            FROM tb_electronic_approval_main m
+            WHERE m.tenant_id = hm.tenant_id
+              AND m.electronic_approval_id = #{approvalId}
+              AND COALESCE(NULLIF(TRIM(m.eabus_no), ''), '__NULL__') = COALESCE(NULLIF(TRIM(hm.eabus_no), ''), '__NULL__')
+              AND COALESCE(NULLIF(TRIM(m.ea_exe_id), ''), '__NULL__') = COALESCE(NULLIF(TRIM(hm.ea_exe_id), ''), '__NULL__')
+          )
+        )
+      ORDER BY hm.answer_at DESC, hm.electronic_approval_history_id DESC
+    </select>
+
+    <select id="HaccpWorkDAO.selectApprovalHistoryCommentById"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        hm.electronic_approval_history_id AS commentId,
+        hm.answer_type_name AS answerTypeName,
+        hm.parent_history_id AS parentCommentId
+      FROM tb_electronic_approval_history_main hm
+      WHERE hm.tenant_id = #{tenantId}
+        AND hm.electronic_approval_history_id = #{commentId}
+        AND (
+          EXISTS (
+            SELECT 1
+            FROM tb_electronic_approval_line_info li
+            WHERE li.tenant_id = hm.tenant_id
+              AND li.electronic_approval_line_id = hm.electronic_approval_line_id
+              AND li.electronic_approval_id = #{approvalId}
+          )
+          OR EXISTS (
+            SELECT 1
+            FROM tb_electronic_approval_main m
+            WHERE m.tenant_id = hm.tenant_id
+              AND m.electronic_approval_id = #{approvalId}
+              AND COALESCE(NULLIF(TRIM(m.eabus_no), ''), '__NULL__') = COALESCE(NULLIF(TRIM(hm.eabus_no), ''), '__NULL__')
+              AND COALESCE(NULLIF(TRIM(m.ea_exe_id), ''), '__NULL__') = COALESCE(NULLIF(TRIM(hm.ea_exe_id), ''), '__NULL__')
+          )
+        )
       LIMIT 1
     </select>
 
@@ -955,7 +1399,7 @@
       WHERE tenant_id = #{tenantId}
         AND electronic_approval_id = #{approvalId}
         AND exe_seq = #{exeSeq}
-        AND COALESCE(muldec_status, '') = 'drafted'
+        AND COALESCE(muldec_status, '') IN ('drafted', 'cooperated')
     </update>
 
     <update id="HaccpWorkDAO.updateElectronicApprovalLineToPending"
@@ -970,7 +1414,7 @@
       WHERE tenant_id = #{tenantId}
         AND electronic_approval_id = #{approvalId}
         AND exe_seq = #{exeSeq}
-        AND COALESCE(muldec_status, '') = 'drafted'
+        AND COALESCE(muldec_status, '') IN ('drafted', 'cooperated')
     </update>
 
     <update id="HaccpWorkDAO.updateElectronicApprovalReferenceLineStatus"
@@ -998,6 +1442,25 @@
         updated_at = #{updatedAt, jdbcType=TIMESTAMP}
       WHERE tenant_id = #{tenantId}
         AND electronic_approval_id = #{approvalId}
+    </update>
+
+    <update id="HaccpWorkDAO.clearUnusedReferenceApprovalLines"
+        parameterType="map">
+      UPDATE tb_electronic_approval_line_info
+      SET
+        login_id = NULL,
+        department_id = NULL,
+        app_status = '',
+        option_name = '대기',
+        arrival_at = NULL,
+        exe_at = NULL,
+        open_at = NULL,
+        last_owner_status = 'N',
+        last_cnfrmer_status = 'N'
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND COALESCE(muldec_status, '') = 'cooperated'
+        AND exe_seq > #{keepUntilExeSeq}
     </update>
 
     <select id="HaccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin"
@@ -1073,6 +1536,19 @@
         status_type = #{statusType},
         status_type_name = #{statusTypeName},
         end_status = #{endStatus},
+        updated_by = #{updatedBy, jdbcType=BIGINT},
+        updated_at = #{updatedAt, jdbcType=TIMESTAMP}
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+        AND COALESCE(delete_status, 'N') != 'Y'
+    </update>
+
+    <update id="HaccpWorkDAO.updateElectronicApprovalMainBusinessKey"
+        parameterType="map">
+      UPDATE tb_electronic_approval_main
+      SET
+        eabus_no = #{eabusNo},
+        ea_exe_id = #{eaExeId},
         updated_by = #{updatedBy, jdbcType=BIGINT},
         updated_at = #{updatedAt, jdbcType=TIMESTAMP}
       WHERE tenant_id = #{tenantId}

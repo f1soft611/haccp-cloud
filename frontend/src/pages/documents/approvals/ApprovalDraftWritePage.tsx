@@ -15,6 +15,8 @@ export function ApprovalDraftWritePage() {
   const [searchParams] = useSearchParams();
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
+  const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
   const isDarkMode = theme.palette.mode === 'dark';
   const {
     baseId,
@@ -40,9 +42,22 @@ export function ApprovalDraftWritePage() {
     approverProfile,
     isOwner,
     isReadOnly,
+    canTempSave,
+    canSubmit,
+    canSubmitCancel,
+    canApprove,
+    canConfirm,
+    canReject,
+    approvalEventType,
+    referenceEventType,
+    rejectEventType,
   } = useApprovalDraftWriteData();
   const isStatusResolved = !baseId || workDetailQuery.isFetched;
   const returnTo = (searchParams.get('returnTo') || '').trim();
+  const approvalIdForComments =
+    idType === 'approval'
+      ? (baseId ?? '').trim()
+      : (work?.approvalId ?? '').trim();
 
   const {
     comments,
@@ -50,7 +65,10 @@ export function ApprovalDraftWritePage() {
     setReplyDraft,
     addComment,
     addReply,
+    commentLoadErrorMessage,
   } = useApprovalDraftComments(
+    tenantCode,
+    approvalIdForComments,
     displayName || userId,
     drafterProfile?.profileImage,
   );
@@ -59,9 +77,15 @@ export function ApprovalDraftWritePage() {
     isSubmitting,
     errorMessage,
     clearErrorMessage,
+    approveDisabled,
+    rejectDisabled,
     tempSaveDisabled,
     submitDisabled,
     cancelSubmitDisabled,
+    confirmDisabled,
+    handleApprove,
+    handleConfirm,
+    handleReject,
     handleCancelSubmit,
     handleTempSave,
     handleSubmitApproval,
@@ -77,8 +101,29 @@ export function ApprovalDraftWritePage() {
     documentFieldValues,
     editorContent: resolvedEditorContent,
     editorHtml: resolvedEditorHtml,
-    isOwner,
+    canTempSave,
+    canSubmit,
+    canSubmitCancel,
+    canApprove,
+    canConfirm,
+    canReject,
+    approvalEventType,
+    referenceEventType,
+    rejectEventType,
   });
+
+  const showApprove = canApprove && idType === 'approval';
+  const showConfirm = canConfirm && idType === 'approval';
+  const showReject = canReject && idType === 'approval';
+  const showCancelSubmit =
+    canSubmitCancel && idType === 'approval' && !canApprove;
+  const showTempSave = canTempSave;
+  const showSubmit = canSubmit;
+  const approveLabel = showConfirm
+    ? '확인'
+    : approvalEventType === 'final_approve'
+      ? '최종 승인'
+      : '검토 승인';
 
   return (
     <Stack spacing={2.25}>
@@ -90,9 +135,18 @@ export function ApprovalDraftWritePage() {
           }
           navigate('/dashboard');
         }}
-        onTempSave={handleTempSave}
+        onTempSave={showTempSave ? handleTempSave : undefined}
+        onApprove={
+          showConfirm
+            ? () => setApproveConfirmOpen(true)
+            : showApprove
+              ? () => setApproveConfirmOpen(true)
+              : undefined
+        }
+        approveLabel={approveLabel}
+        onReject={showReject ? () => setRejectConfirmOpen(true) : undefined}
         onCancelSubmit={
-          cancelSubmitDisabled
+          !showCancelSubmit
             ? undefined
             : () => {
                 if (isSubmitting) {
@@ -101,13 +155,19 @@ export function ApprovalDraftWritePage() {
                 setCancelConfirmOpen(true);
               }
         }
-        onSubmitApproval={() => {
-          if (submitDisabled || isSubmitting) {
-            return;
-          }
-          setSubmitConfirmOpen(true);
-        }}
+        onSubmitApproval={
+          !showSubmit
+            ? undefined
+            : () => {
+                if (submitDisabled || isSubmitting) {
+                  return;
+                }
+                setSubmitConfirmOpen(true);
+              }
+        }
         isSubmitting={isSubmitting}
+        approveDisabled={showConfirm ? confirmDisabled : approveDisabled}
+        rejectDisabled={rejectDisabled}
         tempSaveDisabled={tempSaveDisabled}
         submitDisabled={submitDisabled}
         cancelSubmitDisabled={cancelSubmitDisabled}
@@ -121,7 +181,9 @@ export function ApprovalDraftWritePage() {
 
       {isReadOnly ? (
         <Alert severity="info">
-          이 문서의 소유자가 아니므로 편집할 수 없습니다.
+          {isOwner
+            ? '문서 상태상 현재는 읽기 전용입니다.'
+            : '이 문서의 소유자가 아니므로 편집할 수 없습니다.'}
         </Alert>
       ) : null}
 
@@ -150,6 +212,8 @@ export function ApprovalDraftWritePage() {
         onChangeReplyDraft={setReplyDraft}
         onAddComment={addComment}
         onAddReply={addReply}
+        canWriteComments={true}
+        commentLoadErrorMessage={commentLoadErrorMessage}
         isReadOnly={isReadOnly}
       />
 
@@ -179,6 +243,42 @@ export function ApprovalDraftWritePage() {
           handleCancelSubmit();
         }}
         onClose={() => setCancelConfirmOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={approveConfirmOpen}
+        title={showConfirm ? '문서 확인' : `${approveLabel} 확인`}
+        description={
+          showConfirm
+            ? '문서를 확인 처리하시겠습니까?'
+            : `${approveLabel}를 진행하시겠습니까?`
+        }
+        confirmText={approveLabel}
+        confirmColor="primary"
+        loading={isSubmitting}
+        onConfirm={() => {
+          setApproveConfirmOpen(false);
+          if (showConfirm) {
+            handleConfirm();
+            return;
+          }
+          handleApprove();
+        }}
+        onClose={() => setApproveConfirmOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={rejectConfirmOpen}
+        title="반려 확인"
+        description="현재 문서를 반려하시겠습니까?"
+        confirmText="반려"
+        confirmColor="error"
+        loading={isSubmitting}
+        onConfirm={() => {
+          setRejectConfirmOpen(false);
+          handleReject();
+        }}
+        onClose={() => setRejectConfirmOpen(false)}
       />
     </Stack>
   );

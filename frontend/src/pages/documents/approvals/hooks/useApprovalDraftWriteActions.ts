@@ -27,7 +27,15 @@ type UseApprovalDraftWriteActionsParams = {
   editorContent: JSONContent;
   editorHtml: string;
   documentFieldValues: DocumentFieldValues;
-  isOwner: boolean;
+  canTempSave: boolean;
+  canSubmit: boolean;
+  canSubmitCancel: boolean;
+  canApprove: boolean;
+  canConfirm: boolean;
+  canReject: boolean;
+  approvalEventType?: 'review_approve' | 'final_approve';
+  referenceEventType?: 'reference_confirm';
+  rejectEventType?: 'review_return' | 'final_return';
 };
 
 type UseApprovalDraftWriteActionsResult = {
@@ -37,9 +45,15 @@ type UseApprovalDraftWriteActionsResult = {
   cancelSubmitDisabled: boolean;
   tempSaveDisabled: boolean;
   submitDisabled: boolean;
+  approveDisabled: boolean;
+  confirmDisabled: boolean;
+  rejectDisabled: boolean;
   handleCancelSubmit: () => void;
   handleTempSave: () => void;
   handleSubmitApproval: () => void;
+  handleApprove: () => void;
+  handleConfirm: () => void;
+  handleReject: () => void;
 };
 
 export function useApprovalDraftWriteActions(
@@ -57,7 +71,15 @@ export function useApprovalDraftWriteActions(
     editorContent,
     editorHtml,
     documentFieldValues,
-    isOwner,
+    canTempSave,
+    canSubmit,
+    canSubmitCancel,
+    canApprove,
+    canConfirm,
+    canReject,
+    approvalEventType,
+    referenceEventType,
+    rejectEventType,
   } = params;
 
   // Note: ownership check is based on work.owner (actual draft author),
@@ -67,6 +89,11 @@ export function useApprovalDraftWriteActions(
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useFeedback();
   const [errorMessage, setErrorMessage] = useState('');
+  const approvalCommentsQueryKey = [
+    'approval-comments',
+    tenantCode,
+    baseId ?? '',
+  ];
 
   const tempSaveMutation = useMutation({
     mutationFn: async () => {
@@ -103,6 +130,9 @@ export function useApprovalDraftWriteActions(
         }),
         queryClient.invalidateQueries({
           queryKey: ['dashboard-todos', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: approvalCommentsQueryKey,
         }),
       ]);
       if (result.approvalId && idType !== 'approval') {
@@ -163,6 +193,9 @@ export function useApprovalDraftWriteActions(
         queryClient.invalidateQueries({
           queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType],
         }),
+        queryClient.invalidateQueries({
+          queryKey: approvalCommentsQueryKey,
+        }),
       ]);
 
       showSuccess(result.message || '결재신청이 완료되었습니다.');
@@ -206,6 +239,9 @@ export function useApprovalDraftWriteActions(
         queryClient.invalidateQueries({
           queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType],
         }),
+        queryClient.invalidateQueries({
+          queryKey: approvalCommentsQueryKey,
+        }),
       ]);
       showSuccess(
         '결재 신청이 취소되었습니다. 임시저장/결재신청을 다시 할 수 있습니다.',
@@ -221,10 +257,142 @@ export function useApprovalDraftWriteActions(
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: async () => {
+      const approvalId = idType === 'approval' ? (baseId ?? '').trim() : '';
+      if (!approvalId) {
+        throw new Error('결재 대상 결재 ID를 찾을 수 없습니다.');
+      }
+      if (!approvalEventType) {
+        throw new Error('현재 결재 처리 단계 정보를 확인할 수 없습니다.');
+      }
+
+      return updateHaccpWorkApprovalStatus({
+        tenantCode,
+        approvalId,
+        eventType: approvalEventType,
+      });
+    },
+    onSuccess: async () => {
+      setErrorMessage('');
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-todos', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-approval-alerts', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: approvalCommentsQueryKey,
+        }),
+      ]);
+      showSuccess('결재 처리가 완료되었습니다.');
+    },
+    onError: (error: unknown) => {
+      const message = extractApiErrorMessage(
+        error,
+        '결재 처리 중 오류가 발생했습니다.',
+      );
+      setErrorMessage(message);
+      showError(message);
+    },
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: async () => {
+      const approvalId = idType === 'approval' ? (baseId ?? '').trim() : '';
+      if (!approvalId) {
+        throw new Error('확인 대상 결재 ID를 찾을 수 없습니다.');
+      }
+      if (!referenceEventType) {
+        throw new Error('현재 확인 단계 정보를 확인할 수 없습니다.');
+      }
+
+      return updateHaccpWorkApprovalStatus({
+        tenantCode,
+        approvalId,
+        eventType: referenceEventType,
+      });
+    },
+    onSuccess: async () => {
+      setErrorMessage('');
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-todos', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-approval-alerts', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: approvalCommentsQueryKey,
+        }),
+      ]);
+      showSuccess('확인이 완료되었습니다.');
+    },
+    onError: (error: unknown) => {
+      const message = extractApiErrorMessage(
+        error,
+        '확인 처리 중 오류가 발생했습니다.',
+      );
+      setErrorMessage(message);
+      showError(message);
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async () => {
+      const approvalId = idType === 'approval' ? (baseId ?? '').trim() : '';
+      if (!approvalId) {
+        throw new Error('반려 대상 결재 ID를 찾을 수 없습니다.');
+      }
+      if (!rejectEventType) {
+        throw new Error('현재 반려 처리 단계 정보를 확인할 수 없습니다.');
+      }
+
+      return updateHaccpWorkApprovalStatus({
+        tenantCode,
+        approvalId,
+        eventType: rejectEventType,
+      });
+    },
+    onSuccess: async () => {
+      setErrorMessage('');
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-todos', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-approval-alerts', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType],
+        }),
+      ]);
+      showSuccess('반려 처리가 완료되었습니다.');
+    },
+    onError: (error: unknown) => {
+      const message = extractApiErrorMessage(
+        error,
+        '반려 처리 중 오류가 발생했습니다.',
+      );
+      setErrorMessage(message);
+      showError(message);
+    },
+  });
+
   const isSubmitting =
     tempSaveMutation.isPending ||
     submitMutation.isPending ||
-    cancelSubmitMutation.isPending;
+    cancelSubmitMutation.isPending ||
+    approveMutation.isPending ||
+    confirmMutation.isPending ||
+    rejectMutation.isPending;
   const normalizedApprovalStatus = String(approvalStatusType ?? '')
     .trim()
     .toLowerCase();
@@ -233,18 +401,32 @@ export function useApprovalDraftWriteActions(
     normalizedApprovalStatus === 'approved';
   const isStatusPending = Boolean(baseId) && !isStatusResolved;
   const tempSaveDisabled =
-    !isOwner || !baseId || isStatusPending || isPostSubmitLocked;
+    !canTempSave || !baseId || isStatusPending || isPostSubmitLocked;
   const submitDisabled =
-    !isOwner ||
+    !canSubmit ||
     !title.trim() ||
     !baseId ||
     isStatusPending ||
     isPostSubmitLocked;
   const cancelSubmitDisabled =
-    !isOwner ||
+    !canSubmitCancel || idType !== 'approval' || isStatusPending || !baseId;
+  const approveDisabled =
+    !canApprove ||
+    !approvalEventType ||
     idType !== 'approval' ||
     isStatusPending ||
-    normalizedApprovalStatus !== 'in_progress' ||
+    !baseId;
+  const confirmDisabled =
+    !canConfirm ||
+    !referenceEventType ||
+    idType !== 'approval' ||
+    isStatusPending ||
+    !baseId;
+  const rejectDisabled =
+    !canReject ||
+    !rejectEventType ||
+    idType !== 'approval' ||
+    isStatusPending ||
     !baseId;
 
   const handleCancelSubmit = () => {
@@ -291,6 +473,30 @@ export function useApprovalDraftWriteActions(
     submitMutation.mutate();
   };
 
+  const handleApprove = () => {
+    if (isSubmitting || approveDisabled) {
+      return;
+    }
+    setErrorMessage('');
+    approveMutation.mutate();
+  };
+
+  const handleConfirm = () => {
+    if (isSubmitting || confirmDisabled) {
+      return;
+    }
+    setErrorMessage('');
+    confirmMutation.mutate();
+  };
+
+  const handleReject = () => {
+    if (isSubmitting || rejectDisabled) {
+      return;
+    }
+    setErrorMessage('');
+    rejectMutation.mutate();
+  };
+
   return {
     isSubmitting,
     errorMessage,
@@ -298,8 +504,14 @@ export function useApprovalDraftWriteActions(
     cancelSubmitDisabled,
     tempSaveDisabled,
     submitDisabled,
+    approveDisabled,
+    confirmDisabled,
+    rejectDisabled,
     handleCancelSubmit,
     handleTempSave,
     handleSubmitApproval,
+    handleApprove,
+    handleConfirm,
+    handleReject,
   };
 }

@@ -35,9 +35,28 @@ export type HaccpBaseWorkItem = {
   drafterAppStatus?: string;
   reviewerAppStatus?: string;
   approverAppStatus?: string;
+  isOwner?: boolean;
+  isActorTurn?: boolean;
+  readOnly?: boolean;
+  canTempSave?: boolean;
+  canSubmit?: boolean;
+  canSubmitCancel?: boolean;
+  canApprove?: boolean;
+  canConfirm?: boolean;
   writtenInCycle?: boolean;
   pendingApprovalAlert?: boolean;
   pendingArrivalAt?: string;
+};
+
+export type HaccpApprovalCommentItem = {
+  id: string;
+  parentCommentId?: string;
+  author: string;
+  authorProfileImage?: string;
+  text: string;
+  createdAt: string;
+  answerTypeName: string;
+  isSystem: boolean;
 };
 
 type RawHaccpBaseWorkItem = {
@@ -100,6 +119,22 @@ type RawHaccpBaseWorkItem = {
   reviewer_app_status?: string | null;
   approverAppStatus?: string | null;
   approver_app_status?: string | null;
+  isOwner?: boolean | string | null;
+  is_owner?: boolean | string | null;
+  isActorTurn?: boolean | string | null;
+  is_actor_turn?: boolean | string | null;
+  readOnly?: boolean | string | null;
+  read_only?: boolean | string | null;
+  canTempSave?: boolean | string | null;
+  can_temp_save?: boolean | string | null;
+  canSubmit?: boolean | string | null;
+  can_submit?: boolean | string | null;
+  canSubmitCancel?: boolean | string | null;
+  can_submit_cancel?: boolean | string | null;
+  canApprove?: boolean | string | null;
+  can_approve?: boolean | string | null;
+  canConfirm?: boolean | string | null;
+  can_confirm?: boolean | string | null;
   writtenInCycle?: boolean | string | null;
   written_in_cycle?: boolean | string | null;
   pendingApprovalAlert?: boolean | string | null;
@@ -114,6 +149,28 @@ type ResultEnvelope<T> = {
     item?: T;
     message?: string;
   };
+};
+
+type RawHaccpApprovalCommentItem = {
+  commentId?: number | string | null;
+  commentid?: number | string | null;
+  parentCommentId?: number | string | null;
+  parentcommentid?: number | string | null;
+  parent_history_id?: number | string | null;
+  actorName?: string | null;
+  actorname?: string | null;
+  actorProfileImage?: string | null;
+  actorprofileimage?: string | null;
+  actor_profile_image?: string | null;
+  text?: string | null;
+  createdAt?: string | null;
+  createdat?: string | null;
+  created_at?: string | null;
+  answerAt?: string | null;
+  answerat?: string | null;
+  answer_at?: string | null;
+  answerTypeName?: string | null;
+  answertypename?: string | null;
 };
 
 function normalizeText(value: unknown): string {
@@ -178,6 +235,39 @@ function normalizeTodoStatus(
   return 'DRAFT';
 }
 
+function normalizeApprovalCommentItem(
+  raw: RawHaccpApprovalCommentItem,
+): HaccpApprovalCommentItem {
+  const answerTypeName = normalizeText(
+    raw.answerTypeName ?? raw.answertypename,
+  );
+  const createdAt = normalizeText(
+    raw.createdAt ??
+      raw.createdat ??
+      raw.created_at ??
+      raw.answerAt ??
+      raw.answerat ??
+      raw.answer_at,
+  );
+  return {
+    id: normalizeText(raw.commentId ?? raw.commentid),
+    parentCommentId: normalizeText(
+      raw.parentCommentId ?? raw.parentcommentid ?? raw.parent_history_id,
+    ),
+    author: normalizeText(raw.actorName ?? raw.actorname) || '시스템',
+    authorProfileImage:
+      normalizeText(
+        raw.actorProfileImage ??
+          raw.actorprofileimage ??
+          raw.actor_profile_image,
+      ) || undefined,
+    text: normalizeText(raw.text),
+    createdAt,
+    answerTypeName,
+    isSystem: answerTypeName.toUpperCase() === 'SYSTEM',
+  };
+}
+
 function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
   return {
     id: normalizeText(raw.id ?? raw.draftingWorkCategoryId),
@@ -232,6 +322,16 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     approverAppStatus: normalizeText(
       raw.approverAppStatus ?? raw.approver_app_status,
     ),
+    isOwner: normalizeBoolean(raw.isOwner ?? raw.is_owner),
+    isActorTurn: normalizeBoolean(raw.isActorTurn ?? raw.is_actor_turn),
+    readOnly: normalizeBoolean(raw.readOnly ?? raw.read_only),
+    canTempSave: normalizeBoolean(raw.canTempSave ?? raw.can_temp_save),
+    canSubmit: normalizeBoolean(raw.canSubmit ?? raw.can_submit),
+    canSubmitCancel: normalizeBoolean(
+      raw.canSubmitCancel ?? raw.can_submit_cancel,
+    ),
+    canApprove: normalizeBoolean(raw.canApprove ?? raw.can_approve),
+    canConfirm: normalizeBoolean(raw.canConfirm ?? raw.can_confirm),
     writtenInCycle: normalizeBoolean(
       raw.writtenInCycle ?? raw.written_in_cycle,
     ),
@@ -501,8 +601,13 @@ export async function submitHaccpWorkDraft(payload: {
     data as { message?: string; item?: { approvalId?: string | number } }
   )?.message;
   const nestedMessage = envelope?.result?.message;
+  const envelopeResult = (envelope?.result ?? {}) as {
+    item?: { approvalId?: string | number };
+    approvalId?: string | number;
+  };
   const approvalIdRaw =
-    envelope?.result?.item?.item?.approvalId ??
+    envelopeResult.item?.approvalId ??
+    envelopeResult.approvalId ??
     (data as { message?: string; item?: { approvalId?: string | number } })
       ?.item?.approvalId;
 
@@ -521,6 +626,8 @@ export async function updateHaccpWorkApprovalStatus(payload: {
     | 'review_approve'
     | 'review_return'
     | 'final_approve'
+    | 'final_return'
+    | 'reference_confirm'
     | 'submit_cancel';
   comment?: string;
 }): Promise<HaccpBaseWorkItem> {
@@ -545,4 +652,41 @@ export async function updateHaccpWorkApprovalStatus(payload: {
       (data as RawHaccpBaseWorkItem));
 
   return normalizeItem(item ?? {});
+}
+
+export async function listHaccpWorkApprovalComments(payload: {
+  tenantCode: string;
+  approvalId: string;
+}): Promise<HaccpApprovalCommentItem[]> {
+  const { data } = await apiClient.get<
+    RawHaccpApprovalCommentItem[] | ResultEnvelope<RawHaccpApprovalCommentItem>
+  >(`/v1/haccp-work/approvals/${payload.approvalId}/comments`, {
+    headers: { 'x-tenant-code': payload.tenantCode },
+  });
+
+  const envelope = data as ResultEnvelope<RawHaccpApprovalCommentItem>;
+  const list = Array.isArray(data)
+    ? data
+    : (envelope?.result?.resultList ?? []);
+
+  return list.map((item) => normalizeApprovalCommentItem(item ?? {}));
+}
+
+export async function createHaccpWorkApprovalComment(payload: {
+  tenantCode: string;
+  approvalId: string;
+  comment: string;
+  parentCommentId?: string;
+}): Promise<void> {
+  const trimmedParentCommentId = normalizeText(payload.parentCommentId);
+  await apiClient.post(
+    `/v1/haccp-work/approvals/${payload.approvalId}/comments`,
+    {
+      comment: payload.comment,
+      parentCommentId: trimmedParentCommentId || undefined,
+    },
+    {
+      headers: { 'x-tenant-code': payload.tenantCode },
+    },
+  );
 }

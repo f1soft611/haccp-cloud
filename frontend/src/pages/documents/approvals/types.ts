@@ -14,6 +14,7 @@ export type DraftComment = {
   authorProfileImage?: string;
   text: string;
   createdAt: string;
+  isSystem?: boolean;
   replies: DraftReply[];
 };
 

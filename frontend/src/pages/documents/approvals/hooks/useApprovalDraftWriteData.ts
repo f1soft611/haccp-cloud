@@ -41,6 +41,15 @@ type UseApprovalDraftWriteDataResult = {
   approverProfile?: UserItem;
   isOwner: boolean;
   isReadOnly: boolean;
+  canTempSave: boolean;
+  canSubmit: boolean;
+  canSubmitCancel: boolean;
+  canApprove: boolean;
+  canConfirm: boolean;
+  canReject: boolean;
+  approvalEventType?: 'review_approve' | 'final_approve';
+  referenceEventType?: 'reference_confirm';
+  rejectEventType?: 'review_return' | 'final_return';
 };
 
 export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
@@ -229,6 +238,10 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   };
 
   const isOwner = useMemo(() => {
+    if (typeof work?.isOwner === 'boolean') {
+      return work.isOwner;
+    }
+
     // 미작성 상태 (기안서 없음): 백엔드가 담당자 확인했으니 편집 가능
     if (!work?.approvalId) {
       return true;
@@ -236,7 +249,86 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     // 작성됨 상태 (기안서 있음): 기안 작성자만 편집 가능
     return isDocumentOwner(work.createdBy, currentUserProfile.userId);
   }, [currentUserProfile.userId, work?.approvalId, work?.createdBy]);
-  const isReadOnly = !isOwner;
+  const isReadOnly = useMemo(() => {
+    if (typeof work?.readOnly === 'boolean') {
+      return work.readOnly;
+    }
+    return !isOwner;
+  }, [isOwner, work?.readOnly]);
+
+  const canTempSave = useMemo(() => {
+    if (typeof work?.canTempSave === 'boolean') {
+      return work.canTempSave;
+    }
+    return isOwner;
+  }, [isOwner, work?.canTempSave]);
+
+  const canSubmit = useMemo(() => {
+    if (typeof work?.canSubmit === 'boolean') {
+      return work.canSubmit;
+    }
+    return isOwner;
+  }, [isOwner, work?.canSubmit]);
+
+  const canSubmitCancel = useMemo(() => {
+    if (typeof work?.canSubmitCancel === 'boolean') {
+      return work.canSubmitCancel;
+    }
+    return isOwner;
+  }, [isOwner, work?.canSubmitCancel]);
+
+  const canApprove = useMemo(() => {
+    if (typeof work?.canApprove === 'boolean') {
+      return work.canApprove;
+    }
+    return false;
+  }, [work?.canApprove]);
+
+  const canConfirm = useMemo(() => {
+    if (typeof work?.canConfirm === 'boolean') {
+      return work.canConfirm;
+    }
+    return false;
+  }, [work?.canConfirm]);
+
+  const approvalEventType = useMemo<
+    'review_approve' | 'final_approve' | undefined
+  >(() => {
+    if (!canApprove) {
+      return undefined;
+    }
+
+    const reviewerStatus = String(work?.reviewerAppStatus ?? '')
+      .trim()
+      .toLowerCase();
+    if (reviewerStatus === 'approved') {
+      return 'final_approve';
+    }
+    return 'review_approve';
+  }, [canApprove, work?.reviewerAppStatus]);
+
+  const canReject = useMemo(() => {
+    return canApprove;
+  }, [approvalEventType, canApprove]);
+
+  const referenceEventType = useMemo<'reference_confirm' | undefined>(() => {
+    if (!canConfirm) {
+      return undefined;
+    }
+    return 'reference_confirm';
+  }, [canConfirm]);
+
+  const rejectEventType = useMemo<
+    'review_return' | 'final_return' | undefined
+  >(() => {
+    if (!canReject) {
+      return undefined;
+    }
+
+    return approvalEventType === 'final_approve'
+      ? 'final_return'
+      : 'review_return';
+  }, [approvalEventType, canReject]);
 
   return {
     baseId,
@@ -265,5 +357,14 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     approverProfile,
     isOwner,
     isReadOnly,
+    canTempSave,
+    canSubmit,
+    canSubmitCancel,
+    canApprove,
+    canConfirm,
+    canReject,
+    approvalEventType,
+    referenceEventType,
+    rejectEventType,
   };
 }

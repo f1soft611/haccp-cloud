@@ -24,9 +24,11 @@ type SignerLineItem = {
 
 const FALLBACK_STAMP_BY_ROLE: Record<SignerRole, string> = {
   drafter: '/project.png',
-  reviewer: '/confirm.png',
+  reviewer: '/approve.png',
   approver: '/approve.png',
 };
+
+const RETURN_STAMP_IMAGE = '/return.png';
 
 type ApprovalDraftSidebarProps = {
   isDarkMode: boolean;
@@ -123,19 +125,33 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
     .toLowerCase();
   const hasSubmitted =
     approvalStatus.length > 0 && approvalStatus !== 'pre_apply';
-  const isApproved = approvalStatus === 'approved';
 
   const canShowSignerImage = (item: SignerLineItem): boolean => {
     if (item.role === 'drafter') {
       return hasSubmitted;
     }
-    return isApproved;
+
+    const signerStatus = normalizeStatus(item.appStatus);
+    return (
+      signerStatus === 'approved' ||
+      signerStatus === 'returned' ||
+      signerStatus === 'confirmed'
+    );
   };
 
   const resolveSignerImage = (item: SignerLineItem): string => {
+    if (normalizeStatus(item.appStatus) === 'returned') {
+      return RETURN_STAMP_IMAGE;
+    }
+
     if (item.signatureImage && item.signatureImage.trim()) {
       return item.signatureImage;
     }
+
+    if (item.stampImage && item.stampImage.trim()) {
+      return item.stampImage;
+    }
+
     return FALLBACK_STAMP_BY_ROLE[item.role];
   };
 

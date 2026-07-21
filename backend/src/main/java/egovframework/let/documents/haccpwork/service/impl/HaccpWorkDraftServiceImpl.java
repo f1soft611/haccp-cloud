@@ -95,6 +95,7 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
 
         HaccpWorkVO item;
         if ("approval".equalsIgnoreCase(idType)) {
+            ensureApprovalTemplateAccess(tenantId, id, actorLoginId);
             item = haccpWorkDAO.selectDraftTemplateByApprovalId(params);
         } else {
             ensureWorkTemplateAccess(tenantId, id, actorLoginId);
@@ -121,6 +122,22 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         Integer accessCount = haccpWorkDAO.selectWorkAssigneeAccessCount(params);
         if (accessCount == null || accessCount.intValue() <= 0) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "담당자만 템플릿을 조회할 수 있습니다.");
+        }
+    }
+
+    private void ensureApprovalTemplateAccess(Long tenantId, Long approvalId, Long actorLoginId) throws Exception {
+        if (tenantId == null || approvalId == null || actorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "결재 문서 조회 권한이 없습니다.");
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("approvalId", approvalId);
+        params.put("actorLoginId", actorLoginId);
+
+        Integer accessCount = haccpWorkDAO.selectApprovalTemplateAccessCount(params);
+        if (accessCount == null || accessCount.intValue() <= 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "결재 참여자만 문서를 조회할 수 있습니다.");
         }
     }
 
