@@ -231,12 +231,27 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                                     color="primary"
                                     aria-label="작성하러 가기"
                                     onClick={() => {
-                                      const query =
-                                        item.routeIdType === 'approval'
-                                          ? '?idType=approval'
-                                          : '?idType=work';
+                                      // In todo list, draft entry must be based on "my write in this cycle".
+                                      // If not written, always open by work id to start my own draft.
+                                      const approvalId = (
+                                        item.approvalId || ''
+                                      ).trim();
+                                      const workId = (item.id || '').trim();
+                                      const openApproval =
+                                        Boolean(item.writtenInCycle) &&
+                                        Boolean(approvalId);
+                                      const targetId = openApproval
+                                        ? approvalId
+                                        : workId;
+                                      if (!targetId) {
+                                        return;
+                                      }
+
+                                      const query = openApproval
+                                        ? '?idType=approval'
+                                        : '?idType=work';
                                       navigate(
-                                        `/approvals/draft/${item.routeId}${query}`,
+                                        `/approvals/draft/${targetId}${query}`,
                                       );
                                     }}
                                   >

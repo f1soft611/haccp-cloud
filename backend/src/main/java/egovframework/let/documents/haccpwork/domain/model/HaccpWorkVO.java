@@ -151,4 +151,7 @@ public class HaccpWorkVO implements Serializable {
 
     @Schema(description = "확인 가능 여부")
     private boolean canConfirm;
+
+    @Schema(description = "최종 기안자 확인 여부")
+    private boolean lastOwnerStatus;
 }

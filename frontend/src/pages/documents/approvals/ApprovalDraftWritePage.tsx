@@ -18,6 +18,7 @@ export function ApprovalDraftWritePage() {
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
   const isDarkMode = theme.palette.mode === 'dark';
+
   const {
     baseId,
     idType,
@@ -48,10 +49,13 @@ export function ApprovalDraftWritePage() {
     canApprove,
     canConfirm,
     canReject,
+    isFinalOwnerConfirm,
     approvalEventType,
     referenceEventType,
     rejectEventType,
+    submitLabel,
   } = useApprovalDraftWriteData();
+
   const isStatusResolved = !baseId || workDetailQuery.isFetched;
   const returnTo = (searchParams.get('returnTo') || '').trim();
   const approvalIdForComments =
@@ -107,6 +111,7 @@ export function ApprovalDraftWritePage() {
     canApprove,
     canConfirm,
     canReject,
+    isFinalOwnerConfirm,
     approvalEventType,
     referenceEventType,
     rejectEventType,
@@ -120,7 +125,9 @@ export function ApprovalDraftWritePage() {
   const showTempSave = canTempSave;
   const showSubmit = canSubmit;
   const approveLabel = showConfirm
-    ? '확인'
+    ? isFinalOwnerConfirm
+      ? '최종 확인'
+      : '확인'
     : approvalEventType === 'final_approve'
       ? '최종 승인'
       : '검토 승인';
@@ -165,6 +172,7 @@ export function ApprovalDraftWritePage() {
                 setSubmitConfirmOpen(true);
               }
         }
+        submitLabel={submitLabel}
         isSubmitting={isSubmitting}
         approveDisabled={showConfirm ? confirmDisabled : approveDisabled}
         rejectDisabled={rejectDisabled}
@@ -219,9 +227,9 @@ export function ApprovalDraftWritePage() {
 
       <ConfirmDialog
         open={submitConfirmOpen}
-        title="결재 신청 확인"
-        description="작성한 내용을 결재 신청하시겠습니까?"
-        confirmText="결재 신청"
+        title={`${submitLabel} 확인`}
+        description={`작성한 내용을 ${submitLabel}하시겠습니까?`}
+        confirmText={submitLabel}
         confirmColor="primary"
         loading={isSubmitting}
         onConfirm={() => {
@@ -247,10 +255,12 @@ export function ApprovalDraftWritePage() {
 
       <ConfirmDialog
         open={approveConfirmOpen}
-        title={showConfirm ? '문서 확인' : `${approveLabel} 확인`}
+        title={showConfirm ? approveLabel : `${approveLabel} 확인`}
         description={
           showConfirm
-            ? '문서를 확인 처리하시겠습니까?'
+            ? isFinalOwnerConfirm
+              ? '문서를 최종 확인 처리하시겠습니까?'
+              : '문서를 확인 처리하시겠습니까?'
             : `${approveLabel}를 진행하시겠습니까?`
         }
         confirmText={approveLabel}

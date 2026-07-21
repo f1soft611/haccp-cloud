@@ -26,6 +26,11 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectList("HaccpWorkDAO.selectDocumentList", condition);
     }
 
+    public int selectDocumentListCount(HaccpWorkSearchConditionVO condition) throws Exception {
+        Integer count = selectOne("HaccpWorkDAO.selectDocumentListCount", condition);
+        return count == null ? 0 : count.intValue();
+    }
+
     public HaccpWorkVO selectDraftTemplateByWorkId(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectDraftTemplateByWorkId", params);
     }

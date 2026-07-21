@@ -18,6 +18,11 @@ export function HaccpDocumentManagementPage() {
     categoryOptions,
     documentsQuery,
     rows,
+    totalCount,
+    pageIndex,
+    pageSize,
+    setPageIndex,
+    setPageSize,
     handleReset,
     handleSearch,
   } = useHaccpDocumentManagement();
@@ -52,7 +57,15 @@ export function HaccpDocumentManagementPage() {
         onSearch={handleSearch}
       />
 
-      <HaccpDocumentGrid rows={rows} loading={documentsQuery.isLoading} />
+      <HaccpDocumentGrid
+        rows={rows}
+        loading={documentsQuery.isLoading}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        onPageChange={setPageIndex}
+        onPageSizeChange={setPageSize}
+      />
     </Stack>
   );
 }

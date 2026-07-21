@@ -1,6 +1,7 @@
 package egovframework.let.documents.haccpwork.service;
 
 import java.util.List;
+import java.util.Map;
 
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
 
@@ -22,10 +23,27 @@ public interface HaccpWorkDraftService {
             String draftNumber,
             String title,
             String writer,
+            String participantType,
             String status,
             String startDate,
             String endDate
     ) throws Exception;
+
+            public Map<String, Object> listDocumentsPaged(
+                String tenantCode,
+                String actorLoginCode,
+                String actorRoleCode,
+                String workType,
+                String draftNumber,
+                String title,
+                String writer,
+                String participantType,
+                String status,
+                String startDate,
+                String endDate,
+                int pageIndex,
+                int pageSize
+            ) throws Exception;
 
     public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode) throws Exception;
 }

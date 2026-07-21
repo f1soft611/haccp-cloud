@@ -77,4 +77,112 @@ describe('TenantTodoSection', () => {
     expect(params.get('startDate')).toMatch(/^\d{4}-\d{2}-01$/);
     expect(params.get('endDate')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
+
+  it('opens work draft route when not written in current cycle even if approval id exists', () => {
+    navigateMock.mockReset();
+
+    render(
+      <AppProviders>
+        <TenantTodoSection
+          isLoading={false}
+          isError={false}
+          sections={[
+            {
+              key: 'ha',
+              label: 'HACCP (HA)',
+              sortOrder: 1,
+              items: [
+                {
+                  id: '101',
+                  approvalId: '9001',
+                  routeIdType: 'approval',
+                  routeId: '9001',
+                  title: '점검 문서',
+                  category: 'HACCP (HA)',
+                  status: 'DRAFT',
+                  updatedBy: '관리자',
+                  updatedAt: '2026-07-20 09:00',
+                  writtenInCycle: false,
+                  tenantCode: 'PLATFORM',
+                  categoryGroupId: '10',
+                  categoryCode: 'HA',
+                  categoryName: 'HACCP (HA)',
+                  categorySortOrder: 1,
+                  divisionCode: '001',
+                  divisionName: '점검 문서',
+                  cycle: '월',
+                  active: true,
+                  assigneeIds: [],
+                  referenceIds: [],
+                  assigneeMapped: true,
+                  hasDocument: true,
+                },
+              ],
+            },
+          ]}
+        />
+      </AppProviders>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '작성하러 가기' }));
+
+    expect(navigateMock).toHaveBeenCalledTimes(1);
+    expect(String(navigateMock.mock.calls[0]?.[0] || '')).toBe(
+      '/approvals/draft/101?idType=work',
+    );
+  });
+
+  it('opens approval draft route when written in current cycle and approval id exists', () => {
+    navigateMock.mockReset();
+
+    render(
+      <AppProviders>
+        <TenantTodoSection
+          isLoading={false}
+          isError={false}
+          sections={[
+            {
+              key: 'ha',
+              label: 'HACCP (HA)',
+              sortOrder: 1,
+              items: [
+                {
+                  id: '101',
+                  approvalId: '9001',
+                  routeIdType: 'work',
+                  routeId: '101',
+                  title: '점검 문서',
+                  category: 'HACCP (HA)',
+                  status: 'IN_PROGRESS',
+                  updatedBy: '관리자',
+                  updatedAt: '2026-07-20 09:00',
+                  writtenInCycle: true,
+                  tenantCode: 'PLATFORM',
+                  categoryGroupId: '10',
+                  categoryCode: 'HA',
+                  categoryName: 'HACCP (HA)',
+                  categorySortOrder: 1,
+                  divisionCode: '001',
+                  divisionName: '점검 문서',
+                  cycle: '월',
+                  active: true,
+                  assigneeIds: [],
+                  referenceIds: [],
+                  assigneeMapped: true,
+                  hasDocument: true,
+                },
+              ],
+            },
+          ]}
+        />
+      </AppProviders>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '작성하러 가기' }));
+
+    expect(navigateMock).toHaveBeenCalledTimes(1);
+    expect(String(navigateMock.mock.calls[0]?.[0] || '')).toBe(
+      '/approvals/draft/9001?idType=approval',
+    );
+  });
 });

@@ -159,10 +159,13 @@ public class HaccpWorkApiController {
         })
         @GetMapping("/documents")
         public ResultVO listDocuments(
+            @RequestParam(defaultValue = "1") int pageIndex,
+            @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String workType,
             @RequestParam(required = false) String draftNumber,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String writer,
+            @RequestParam(required = false) String participantType,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
@@ -174,21 +177,20 @@ public class HaccpWorkApiController {
         String actorLoginCode = resolveLoginCode(user);
         String actorRoleCode = resolveRoleCode(user);
 
-        Map<String, Object> resultMap = new HashMap<String, Object>();
-        resultMap.put(
-            "resultList",
-            haccpWorkDraftService.listDocuments(
-                tenantCode,
-                actorLoginCode,
-                actorRoleCode,
-                workType,
-                draftNumber,
-                title,
-                writer,
-                status,
-                startDate,
-                endDate
-            )
+        Map<String, Object> resultMap = haccpWorkDraftService.listDocumentsPaged(
+            tenantCode,
+            actorLoginCode,
+            actorRoleCode,
+            workType,
+            draftNumber,
+            title,
+            writer,
+            participantType,
+            status,
+            startDate,
+            endDate,
+            pageIndex,
+            pageSize
         );
         resultMap.put("user", user);
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);

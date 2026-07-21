@@ -414,7 +414,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 1,
             actorLoginId,
             now,
-                buildSystemCommentMessage(submitActorName, "submit"),
+                buildSystemCommentMessage(submitActorName, "submit", false),
                 eaExeId
         );
 
@@ -462,6 +462,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         String mainStatusName;
         String endStatus;
         boolean isReferenceEvent = false;
+        boolean isFinalOwnerReference = false;
         boolean shouldUpdateMain = true;
         boolean clearDownstreamLines = false;
         boolean clearFinalOwnerLine = false;
@@ -542,6 +543,11 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             referenceOwnerParams.put("approvalId", approvalId);
             referenceOwnerParams.put("loginId", actorLoginId);
             expectedActorLoginId = haccpWorkDAO.selectApprovalReferenceLoginId(referenceOwnerParams);
+            Map<String, Object> referenceLineInfo = haccpWorkDAO.selectApprovalReferenceLineForHistoryByLogin(referenceOwnerParams);
+            isFinalOwnerReference = "Y".equalsIgnoreCase(resolveMapValueIgnoreCase(referenceLineInfo, "lastOwnerStatus"));
+            if (isFinalOwnerReference) {
+                lineOption = "최종확인";
+            }
         } else {
             Map<String, Object> lineOwnerParams = new HashMap<String, Object>();
             lineOwnerParams.put("tenantId", tenantId);
@@ -637,7 +643,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 approvalId,
                 actorLoginId,
                 now,
-                buildSystemCommentMessage(actorName, eventType)
+                buildSystemCommentMessage(actorName, eventType, isFinalOwnerReference)
             );
         } else {
             appendSystemHistoryCommentBySeq(
@@ -646,7 +652,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 targetSeq,
                 actorLoginId,
                 now,
-                buildSystemCommentMessage(actorName, eventType)
+                buildSystemCommentMessage(actorName, eventType, false)
             );
         }
 
@@ -1163,7 +1169,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         return "사용자";
     }
 
-    private String buildSystemCommentMessage(String actorName, String eventType) {
+    private String buildSystemCommentMessage(String actorName, String eventType, boolean isFinalOwnerReference) {
         String normalizedActorName = StringUtils.hasText(actorName) ? actorName.trim() : "사용자";
         String action;
         if ("submit".equals(eventType)) {
@@ -1177,7 +1183,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         } else if ("submit_cancel".equals(eventType)) {
             action = "상신취소";
         } else if ("reference_confirm".equals(eventType)) {
-            action = "참조확인";
+            action = isFinalOwnerReference ? "최종확인" : "참조확인";
+        } else if ("final_confirm".equals(eventType)) {
+            action = "최종확인";
         } else {
             action = "처리";
         }

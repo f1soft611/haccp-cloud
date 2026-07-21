@@ -43,6 +43,7 @@ export type HaccpBaseWorkItem = {
   canSubmitCancel?: boolean;
   canApprove?: boolean;
   canConfirm?: boolean;
+  lastOwnerStatus?: boolean;
   writtenInCycle?: boolean;
   pendingApprovalAlert?: boolean;
   pendingArrivalAt?: string;
@@ -135,6 +136,8 @@ type RawHaccpBaseWorkItem = {
   can_approve?: boolean | string | null;
   canConfirm?: boolean | string | null;
   can_confirm?: boolean | string | null;
+  lastOwnerStatus?: boolean | string | null;
+  last_owner_status?: boolean | string | null;
   writtenInCycle?: boolean | string | null;
   written_in_cycle?: boolean | string | null;
   pendingApprovalAlert?: boolean | string | null;
@@ -332,6 +335,9 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     ),
     canApprove: normalizeBoolean(raw.canApprove ?? raw.can_approve),
     canConfirm: normalizeBoolean(raw.canConfirm ?? raw.can_confirm),
+    lastOwnerStatus: normalizeBoolean(
+      raw.lastOwnerStatus ?? raw.last_owner_status,
+    ),
     writtenInCycle: normalizeBoolean(
       raw.writtenInCycle ?? raw.written_in_cycle,
     ),

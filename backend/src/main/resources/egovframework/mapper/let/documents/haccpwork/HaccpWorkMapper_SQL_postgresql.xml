@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="HaccpWorkDAO">
-
     <resultMap id="haccpWorkResult"
                type="egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO">
         <result property="draftingWorkCategoryId" column="drafting_work_category_id"/>
-      <result property="electronicApprovalId" column="electronic_approval_id"/>
+        <result property="electronicApprovalId" column="electronic_approval_id"/>
         <result property="eaExeId" column="ea_exe_id"/>
         <result property="title" column="title"/>
         <result property="tenantCode" column="tenant_code"/>
@@ -46,6 +45,7 @@
         <result property="canSubmitCancel" column="can_submit_cancel"/>
         <result property="canApprove" column="can_approve"/>
         <result property="canConfirm" column="can_confirm"/>
+        <result property="lastOwnerStatus" column="last_owner_status"/>
     </resultMap>
 
     <select id="HaccpWorkDAO.selectMyWorkList"
@@ -259,7 +259,8 @@
             FALSE AS can_submit,
             FALSE AS can_submit_cancel,
             FALSE AS can_approve,
-            FALSE AS can_confirm
+            FALSE AS can_confirm,
+            FALSE AS last_owner_status
         FROM tb_electronic_approval_main m
         JOIN tb_drafting_work_category w
           ON w.tenant_id = m.tenant_id
@@ -285,16 +286,76 @@
           AND COALESCE(m.delete_status, 'N') != 'Y'
           AND COALESCE(w.delete_status, 'N') != 'Y'
           AND (
-                COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
+                COALESCE(m.status_type, '') != 'pre_apply'
                 OR (
                   #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                   AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
                 )
+          )
+          AND (
+                COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
+                OR (
+                  #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                  AND (
+                    (m.login_id = #{actorLoginId, jdbcType=BIGINT} OR COALESCE(m.status_type, '') != 'pre_apply')
+                    OR EXISTS (
+                      SELECT 1
+                      FROM tb_electronic_approval_line_info li
+                      WHERE li.tenant_id = m.tenant_id
+                        AND li.electronic_approval_id = m.electronic_approval_id
+                        AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                        AND COALESCE(li.muldec_status, '') = 'drafted'
+                    )
+                    OR EXISTS (
+                      SELECT 1
+                      FROM tb_electronic_approval_line_info li
+                      WHERE li.tenant_id = m.tenant_id
+                        AND li.electronic_approval_id = m.electronic_approval_id
+                        AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                        AND COALESCE(li.muldec_status, '') = 'cooperated'
+                    )
+                  )
+                )
                 OR (
                   #{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL
                   AND la.login_code = #{actorLoginCode, jdbcType=VARCHAR}
+                  AND COALESCE(m.status_type, '') != 'pre_apply'
                 )
           )
+          <if test="participantTypes != null and participantTypes.size() > 0">
+            AND (
+              <foreach collection="participantTypes" item="participantType" separator=" OR ">
+                <choose>
+                  <when test="participantType == 'DRAFTER'">
+                    #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                    AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+                  </when>
+                  <when test="participantType == 'APPROVER'">
+                    #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                    AND EXISTS (
+                      SELECT 1
+                      FROM tb_electronic_approval_line_info li
+                      WHERE li.tenant_id = m.tenant_id
+                        AND li.electronic_approval_id = m.electronic_approval_id
+                        AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                        AND COALESCE(li.muldec_status, '') = 'drafted'
+                    )
+                  </when>
+                  <when test="participantType == 'REFERENCE'">
+                    #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                    AND EXISTS (
+                      SELECT 1
+                      FROM tb_electronic_approval_line_info li
+                      WHERE li.tenant_id = m.tenant_id
+                        AND li.electronic_approval_id = m.electronic_approval_id
+                        AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                        AND COALESCE(li.muldec_status, '') = 'cooperated'
+                    )
+                  </when>
+                </choose>
+              </foreach>
+            )
+          </if>
           <if test="workType != null and workType != '' and workType != '전체'">
             AND (
                   g.cata_name = #{workType}
@@ -332,6 +393,141 @@
                 ) &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
           </if>
         ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
+        <if test="recordCountPerPage > 0">
+          LIMIT #{recordCountPerPage}
+          OFFSET #{firstIndex}
+        </if>
+    </select>
+
+    <select id="HaccpWorkDAO.selectDocumentListCount"
+            parameterType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkSearchConditionVO"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_electronic_approval_main m
+        JOIN tb_drafting_work_category w
+          ON w.tenant_id = m.tenant_id
+         AND w.drafting_work_category_id = m.drafting_work_category_id
+        JOIN tb_tenant t
+          ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
+         AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_login_account la
+          ON la.tenant_id = m.tenant_id
+         AND la.login_id = m.login_id
+        LEFT JOIN tb_user du
+          ON du.tenant_id = m.tenant_id
+         AND du.login_id = m.login_id
+        WHERE t.tenant_code = #{tenantCode}
+          AND COALESCE(m.delete_status, 'N') != 'Y'
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+          AND (
+                COALESCE(m.status_type, '') != 'pre_apply'
+                OR (
+                  #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                  AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+                )
+          )
+          AND (
+                COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
+                OR (
+                  #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                  AND (
+                    (m.login_id = #{actorLoginId, jdbcType=BIGINT} OR COALESCE(m.status_type, '') != 'pre_apply')
+                    OR EXISTS (
+                      SELECT 1
+                      FROM tb_electronic_approval_line_info li
+                      WHERE li.tenant_id = m.tenant_id
+                        AND li.electronic_approval_id = m.electronic_approval_id
+                        AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                        AND COALESCE(li.muldec_status, '') = 'drafted'
+                    )
+                    OR EXISTS (
+                      SELECT 1
+                      FROM tb_electronic_approval_line_info li
+                      WHERE li.tenant_id = m.tenant_id
+                        AND li.electronic_approval_id = m.electronic_approval_id
+                        AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                        AND COALESCE(li.muldec_status, '') = 'cooperated'
+                    )
+                  )
+                )
+                OR (
+                  #{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL
+                  AND la.login_code = #{actorLoginCode, jdbcType=VARCHAR}
+                  AND COALESCE(m.status_type, '') != 'pre_apply'
+                )
+          )
+          <if test="participantTypes != null and participantTypes.size() > 0">
+            AND (
+              <foreach collection="participantTypes" item="participantType" separator=" OR ">
+                <choose>
+                  <when test="participantType == 'DRAFTER'">
+                    #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                    AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+                  </when>
+                  <when test="participantType == 'APPROVER'">
+                    #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                    AND EXISTS (
+                      SELECT 1
+                      FROM tb_electronic_approval_line_info li
+                      WHERE li.tenant_id = m.tenant_id
+                        AND li.electronic_approval_id = m.electronic_approval_id
+                        AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                        AND COALESCE(li.muldec_status, '') = 'drafted'
+                    )
+                  </when>
+                  <when test="participantType == 'REFERENCE'">
+                    #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                    AND EXISTS (
+                      SELECT 1
+                      FROM tb_electronic_approval_line_info li
+                      WHERE li.tenant_id = m.tenant_id
+                        AND li.electronic_approval_id = m.electronic_approval_id
+                        AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                        AND COALESCE(li.muldec_status, '') = 'cooperated'
+                    )
+                  </when>
+                </choose>
+              </foreach>
+            )
+          </if>
+          <if test="workType != null and workType != '' and workType != '전체'">
+            AND (
+                  g.cata_name = #{workType}
+                  OR g.cata_code = #{workType}
+            )
+          </if>
+          <if test="draftNumber != null and draftNumber != ''">
+            AND COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{draftNumber}, '%')
+          </if>
+          <if test="title != null and title != ''">
+            AND COALESCE(m.ea_title, '') ILIKE CONCAT('%', #{title}, '%')
+          </if>
+          <if test="writer != null and writer != ''">
+            AND COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{writer}, '%')
+          </if>
+          <if test="statusType != null and statusType != ''">
+            AND COALESCE(m.status_type, '') = #{statusType}
+          </if>
+          <if test="startDate != null and startDate != ''">
+            AND COALESCE(
+                  CASE
+                    WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
+                  DATE(m.created_at)
+                ) >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+          </if>
+          <if test="endDate != null and endDate != ''">
+            AND COALESCE(
+                  CASE
+                    WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
+                  DATE(m.created_at)
+                ) &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+          </if>
     </select>
 
     <select id="HaccpWorkDAO.selectDraftTemplateByWorkId"
@@ -635,18 +831,30 @@
               WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
                AND COALESCE(m.status_type, '') = 'pre_apply' THEN FALSE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+               AND COALESCE(m.status_type, '') = 'rejected'
+               AND COALESCE(cancel_perm.final_owner_confirmed_flag, 0) = 1 THEN FALSE
               ELSE TRUE
             END AS read_only,
             CASE
               WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
                AND COALESCE(m.status_type, '') = 'pre_apply' THEN TRUE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+               AND COALESCE(m.status_type, '') = 'rejected'
+               AND COALESCE(cancel_perm.final_owner_confirmed_flag, 0) = 1 THEN TRUE
               ELSE FALSE
             END AS can_temp_save,
             CASE
               WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
                AND COALESCE(m.status_type, '') = 'pre_apply' THEN TRUE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
+               AND COALESCE(m.status_type, '') = 'rejected'
+               AND COALESCE(cancel_perm.final_owner_confirmed_flag, 0) = 1 THEN TRUE
               ELSE FALSE
             END AS can_submit,
             CASE
@@ -1219,6 +1427,7 @@
         electronic_approval_line_id AS electronicApprovalLineId,
         exe_seq AS exeSeq,
         approval_type AS approvalType,
+        last_owner_status AS lastOwnerStatus,
         eabus_no AS eabusNo,
         ea_exe_id AS eaExeId
       FROM tb_electronic_approval_line_info
@@ -1237,6 +1446,7 @@
         electronic_approval_line_id AS electronicApprovalLineId,
         exe_seq AS exeSeq,
         approval_type AS approvalType,
+        last_owner_status AS lastOwnerStatus,
         eabus_no AS eabusNo,
         ea_exe_id AS eaExeId
       FROM tb_electronic_approval_line_info

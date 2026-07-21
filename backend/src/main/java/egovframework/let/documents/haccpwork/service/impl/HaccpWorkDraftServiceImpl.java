@@ -1,10 +1,14 @@
 package egovframework.let.documents.haccpwork.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -52,6 +56,96 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
             String draftNumber,
             String title,
             String writer,
+            String participantType,
+            String status,
+            String startDate,
+            String endDate
+    ) throws Exception {
+        HaccpWorkSearchConditionVO condition = buildDocumentSearchCondition(
+                tenantCode,
+                actorLoginCode,
+                actorRoleCode,
+                workType,
+                draftNumber,
+                title,
+                writer,
+                participantType,
+                status,
+                startDate,
+                endDate
+        );
+
+        condition.setRecordCountPerPage(0);
+        condition.setFirstIndex(0);
+        return haccpWorkDAO.selectDocumentList(condition);
+    }
+
+    @Override
+    public Map<String, Object> listDocumentsPaged(
+            String tenantCode,
+            String actorLoginCode,
+            String actorRoleCode,
+            String workType,
+            String draftNumber,
+            String title,
+            String writer,
+            String participantType,
+            String status,
+            String startDate,
+            String endDate,
+            int pageIndex,
+            int pageSize
+    ) throws Exception {
+        HaccpWorkSearchConditionVO condition = buildDocumentSearchCondition(
+                tenantCode,
+                actorLoginCode,
+                actorRoleCode,
+                workType,
+                draftNumber,
+                title,
+                writer,
+                participantType,
+                status,
+                startDate,
+                endDate
+        );
+
+        int normalizedPageIndex = pageIndex > 0 ? pageIndex : 1;
+        int normalizedPageSize = pageSize > 0 ? pageSize : 10;
+
+        condition.setPageIndex(normalizedPageIndex);
+        condition.setPageSize(normalizedPageSize);
+        condition.setPageUnit(normalizedPageSize);
+
+        PaginationInfo paginationInfo = new PaginationInfo();
+        paginationInfo.setCurrentPageNo(condition.getPageIndex());
+        paginationInfo.setRecordCountPerPage(condition.getPageSize());
+        paginationInfo.setPageSize(condition.getPageSize());
+
+        condition.setFirstIndex(paginationInfo.getFirstRecordIndex());
+        condition.setLastIndex(paginationInfo.getLastRecordIndex());
+        condition.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
+
+        List<HaccpWorkVO> resultList = haccpWorkDAO.selectDocumentList(condition);
+        int totalCount = haccpWorkDAO.selectDocumentListCount(condition);
+        paginationInfo.setTotalRecordCount(totalCount);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("resultList", resultList);
+        resultMap.put("totalCount", totalCount);
+        resultMap.put("paginationInfo", paginationInfo);
+        return resultMap;
+    }
+
+    private HaccpWorkSearchConditionVO buildDocumentSearchCondition(
+            String tenantCode,
+            String actorLoginCode,
+            String actorRoleCode,
+            String workType,
+            String draftNumber,
+            String title,
+            String writer,
+            String participantType,
             String status,
             String startDate,
             String endDate
@@ -71,11 +165,16 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         condition.setDraftNumber(normalizeText(draftNumber));
         condition.setTitle(normalizeText(title));
         condition.setWriter(normalizeText(writer));
+        List<String> normalizedParticipantTypes = normalizeParticipantTypes(participantType);
+        condition.setParticipantTypes(normalizedParticipantTypes);
+        condition.setParticipantType(
+            normalizedParticipantTypes.isEmpty() ? null : normalizedParticipantTypes.get(0)
+        );
         condition.setStatusType(normalizeStatusType(status));
         condition.setStartDate(normalizeDate(startDate));
         condition.setEndDate(normalizeDate(endDate));
 
-        return haccpWorkDAO.selectDocumentList(condition);
+        return condition;
     }
 
     @Override
@@ -222,6 +321,46 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
                         || "draft".equals(normalized)
         ) {
             return "pre_apply";
+        }
+        return null;
+    }
+
+    private List<String> normalizeParticipantTypes(String participantType) {
+        Set<String> normalizedTypes = new LinkedHashSet<String>();
+        if (!StringUtils.hasText(participantType)) {
+            return new ArrayList<String>();
+        }
+
+        String[] tokens = participantType.split(",");
+        for (String token : tokens) {
+            String normalized = normalizeParticipantType(token);
+            if (StringUtils.hasText(normalized)) {
+                normalizedTypes.add(normalized);
+            }
+        }
+
+        return new ArrayList<String>(normalizedTypes);
+    }
+
+    private String normalizeParticipantType(String participantType) {
+        if (!StringUtils.hasText(participantType)) {
+            return null;
+        }
+
+        String normalized = participantType.trim().toLowerCase();
+        if ("기안자".equals(normalized) || "drafter".equals(normalized) || "owner".equals(normalized)) {
+            return "DRAFTER";
+        }
+        if ("결재자".equals(normalized) || "approver".equals(normalized) || "reviewer".equals(normalized)) {
+            return "APPROVER";
+        }
+        if (
+                "참조자".equals(normalized)
+                        || "reference".equals(normalized)
+                        || "referrer".equals(normalized)
+                        || "cooperator".equals(normalized)
+        ) {
+            return "REFERENCE";
         }
         return null;
     }

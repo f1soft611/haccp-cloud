@@ -33,6 +33,7 @@ type UseApprovalDraftWriteActionsParams = {
   canApprove: boolean;
   canConfirm: boolean;
   canReject: boolean;
+  isFinalOwnerConfirm?: boolean;
   approvalEventType?: 'review_approve' | 'final_approve';
   referenceEventType?: 'reference_confirm';
   rejectEventType?: 'review_return' | 'final_return';
@@ -77,6 +78,7 @@ export function useApprovalDraftWriteActions(
     canApprove,
     canConfirm,
     canReject,
+    isFinalOwnerConfirm = false,
     approvalEventType,
     referenceEventType,
     rejectEventType,
@@ -188,6 +190,9 @@ export function useApprovalDraftWriteActions(
       setErrorMessage('');
       await Promise.all([
         queryClient.invalidateQueries({
+          queryKey: ['haccp-documents', tenantCode],
+        }),
+        queryClient.invalidateQueries({
           queryKey: ['dashboard-todos', tenantCode],
         }),
         queryClient.invalidateQueries({
@@ -234,6 +239,9 @@ export function useApprovalDraftWriteActions(
       setErrorMessage('');
       await Promise.all([
         queryClient.invalidateQueries({
+          queryKey: ['haccp-documents', tenantCode],
+        }),
+        queryClient.invalidateQueries({
           queryKey: ['dashboard-todos', tenantCode],
         }),
         queryClient.invalidateQueries({
@@ -276,6 +284,9 @@ export function useApprovalDraftWriteActions(
     onSuccess: async () => {
       setErrorMessage('');
       await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-documents', tenantCode],
+        }),
         queryClient.invalidateQueries({
           queryKey: ['dashboard-todos', tenantCode],
         }),
@@ -321,6 +332,9 @@ export function useApprovalDraftWriteActions(
       setErrorMessage('');
       await Promise.all([
         queryClient.invalidateQueries({
+          queryKey: ['haccp-documents', tenantCode],
+        }),
+        queryClient.invalidateQueries({
           queryKey: ['dashboard-todos', tenantCode],
         }),
         queryClient.invalidateQueries({
@@ -333,7 +347,11 @@ export function useApprovalDraftWriteActions(
           queryKey: approvalCommentsQueryKey,
         }),
       ]);
-      showSuccess('확인이 완료되었습니다.');
+      showSuccess(
+        isFinalOwnerConfirm
+          ? '최종 확인이 완료되었습니다.'
+          : '확인이 완료되었습니다.',
+      );
     },
     onError: (error: unknown) => {
       const message = extractApiErrorMessage(
@@ -364,6 +382,9 @@ export function useApprovalDraftWriteActions(
     onSuccess: async () => {
       setErrorMessage('');
       await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-documents', tenantCode],
+        }),
         queryClient.invalidateQueries({
           queryKey: ['dashboard-todos', tenantCode],
         }),

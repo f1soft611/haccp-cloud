@@ -9,6 +9,7 @@ type ApprovalDraftHeaderProps = {
   onCancelSubmit?: () => void;
   onTempSave?: () => void;
   onSubmitApproval?: () => void;
+  submitLabel?: string;
   isSubmitting?: boolean;
   approveDisabled?: boolean;
   rejectDisabled?: boolean;
@@ -26,6 +27,7 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
     onCancelSubmit,
     onTempSave,
     onSubmitApproval,
+    submitLabel = '결재 신청',
     isSubmitting = false,
     approveDisabled = true,
     rejectDisabled = true,
@@ -122,7 +124,7 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
                 disabled={submitDisabled || isSubmitting}
                 onClick={onSubmitApproval}
               >
-                결재 신청
+                {submitLabel}
               </Button>
             ) : null}
             <Button

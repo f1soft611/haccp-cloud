@@ -4,6 +4,8 @@ import {
   Chip,
   Collapse,
   Divider,
+  Checkbox,
+  ListItemText,
   MenuItem,
   Paper,
   Stack,
@@ -12,6 +14,7 @@ import {
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 
 const STATUS_OPTIONS = ['전체', '임시저장', '결재중', '승인', '반송'];
+const PARTICIPANT_OPTIONS = ['기안자', '결재자', '참조자'];
 
 export function HaccpDocumentSearchPanel(props: {
   value: HaccpDocSearchValue;
@@ -195,6 +198,42 @@ export function HaccpDocumentSearchPanel(props: {
                 }
                 sx={{ minWidth: 180 }}
               />
+
+              <TextField
+                select
+                size="small"
+                label="참여유형"
+                value={value.participantType}
+                SelectProps={{
+                  multiple: true,
+                  renderValue: (selected) =>
+                    Array.isArray(selected) && selected.length > 0
+                      ? selected.join(', ')
+                      : '전체',
+                }}
+                onChange={(event) =>
+                  onChange({
+                    ...value,
+                    participantType:
+                      typeof event.target.value === 'string'
+                        ? event.target.value
+                            .split(',')
+                            .map((item) => item.trim())
+                            .filter((item) => item.length > 0)
+                        : event.target.value,
+                  })
+                }
+                sx={{ minWidth: 160 }}
+              >
+                {PARTICIPANT_OPTIONS.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    <Checkbox
+                      checked={value.participantType.includes(option)}
+                    />
+                    <ListItemText primary={option} />
+                  </MenuItem>
+                ))}
+              </TextField>
 
               <TextField
                 size="small"

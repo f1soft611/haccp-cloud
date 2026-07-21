@@ -47,9 +47,11 @@ type UseApprovalDraftWriteDataResult = {
   canApprove: boolean;
   canConfirm: boolean;
   canReject: boolean;
+  isFinalOwnerConfirm: boolean;
   approvalEventType?: 'review_approve' | 'final_approve';
   referenceEventType?: 'reference_confirm';
   rejectEventType?: 'review_return' | 'final_return';
+  submitLabel: string;
 };
 
 export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
@@ -291,6 +293,12 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     return false;
   }, [work?.canConfirm]);
 
+  const normalizedApprovalStatus = useMemo(() => {
+    return String(work?.approvalStatusType ?? '')
+      .trim()
+      .toLowerCase();
+  }, [work?.approvalStatusType]);
+
   const approvalEventType = useMemo<
     'review_approve' | 'final_approve' | undefined
   >(() => {
@@ -317,6 +325,17 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     }
     return 'reference_confirm';
   }, [canConfirm]);
+
+  const isFinalOwnerConfirm = useMemo(() => {
+    return Boolean(canConfirm && work?.lastOwnerStatus);
+  }, [canConfirm, work?.lastOwnerStatus]);
+
+  const submitLabel = useMemo(() => {
+    if (normalizedApprovalStatus === 'rejected' && work?.lastOwnerStatus) {
+      return '재결재 신청';
+    }
+    return '결재 신청';
+  }, [normalizedApprovalStatus, work?.lastOwnerStatus]);
 
   const rejectEventType = useMemo<
     'review_return' | 'final_return' | undefined
@@ -363,8 +382,10 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     canApprove,
     canConfirm,
     canReject,
+    isFinalOwnerConfirm,
     approvalEventType,
     referenceEventType,
     rejectEventType,
+    submitLabel,
   };
 }

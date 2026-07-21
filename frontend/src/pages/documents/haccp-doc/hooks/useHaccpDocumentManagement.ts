@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { listHaccpBaseCategories } from '../../../../services/documents/haccpBaseCategoryService';
 import { listHaccpDocuments } from '../../../../services/documents/haccpDocumentService';
+import { useGridPagination } from '../../../../shared/hooks/useGridPagination';
 import { useAuthStore } from '../../../../shared/store/authStore';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 
@@ -25,11 +26,21 @@ function getCurrentMonthRange(today: Date = new Date()): {
 
 function toSearchValue(searchParams: URLSearchParams): HaccpDocSearchValue {
   const monthRange = getCurrentMonthRange();
+  const participantTypeValues = searchParams.getAll('participantType');
+  const participantTypes =
+    participantTypeValues.length > 0
+      ? participantTypeValues
+          .flatMap((value) => value.split(','))
+          .map((value) => value.trim())
+          .filter((value) => value.length > 0)
+      : [];
+
   return {
     workType: searchParams.get('workType') || '전체',
     draftNumber: searchParams.get('draftNumber') || '',
     title: searchParams.get('title') || '',
     writer: searchParams.get('writer') || '',
+    participantType: participantTypes,
     status: searchParams.get('status') || '전체',
     startDate: searchParams.get('startDate') || monthRange.startDate,
     endDate: searchParams.get('endDate') || monthRange.endDate,
@@ -44,6 +55,8 @@ export function useHaccpDocumentManagement() {
   const role = useAuthStore((state) => state.role);
   const tenantCode = useAuthStore((state) => state.tenantCode || 'PLATFORM');
   const canViewAllDocuments = isDocumentViewerAdmin(role);
+  const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } =
+    useGridPagination();
 
   const [searchParams] = useSearchParams();
   const initialValue = useMemo(() => {
@@ -66,10 +79,19 @@ export function useHaccpDocumentManagement() {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const documentsQuery = useQuery({
-    queryKey: ['haccp-documents', tenantCode, role, appliedFilters],
+    queryKey: [
+      'haccp-documents',
+      tenantCode,
+      role,
+      pageIndex,
+      pageSize,
+      appliedFilters,
+    ],
     queryFn: () =>
       listHaccpDocuments({
         tenantCode,
+        pageIndex,
+        pageSize,
         workType:
           appliedFilters.workType.trim() && appliedFilters.workType !== '전체'
             ? appliedFilters.workType.trim()
@@ -79,6 +101,10 @@ export function useHaccpDocumentManagement() {
         writer: canViewAllDocuments
           ? appliedFilters.writer.trim() || undefined
           : undefined,
+        participantType:
+          appliedFilters.participantType.length > 0
+            ? appliedFilters.participantType.join(',')
+            : undefined,
         status:
           appliedFilters.status.trim() && appliedFilters.status !== '전체'
             ? appliedFilters.status.trim()
@@ -87,6 +113,10 @@ export function useHaccpDocumentManagement() {
         endDate: appliedFilters.endDate || undefined,
       }),
     retry: false,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const categoriesQuery = useQuery({
@@ -127,6 +157,12 @@ export function useHaccpDocumentManagement() {
     if (appliedFilters.status && appliedFilters.status !== '전체') {
       chips.push({ key: 'status', label: `상태: ${appliedFilters.status}` });
     }
+    if (appliedFilters.participantType.length > 0) {
+      chips.push({
+        key: 'participantType',
+        label: `참여유형: ${appliedFilters.participantType.join(', ')}`,
+      });
+    }
     if (appliedFilters.draftNumber.trim()) {
       chips.push({
         key: 'draftNumber',
@@ -149,15 +185,18 @@ export function useHaccpDocumentManagement() {
       draftNumber: '',
       title: '',
       writer: '',
+      participantType: [],
       status: '전체',
       startDate: monthRange.startDate,
       endDate: monthRange.endDate,
     };
     setSearchValue(resetValue);
     setAppliedFilters(resetValue);
+    resetPage();
   };
 
   const handleSearch = () => {
+    resetPage();
     setAppliedFilters({ ...searchValue });
   };
 
@@ -171,7 +210,12 @@ export function useHaccpDocumentManagement() {
     activeFilterChips,
     categoryOptions,
     documentsQuery,
-    rows: documentsQuery.data ?? [],
+    rows: documentsQuery.data?.items ?? [],
+    totalCount: documentsQuery.data?.totalCount ?? 0,
+    pageIndex,
+    pageSize,
+    setPageIndex,
+    setPageSize,
     handleReset,
     handleSearch,
   };

@@ -12,6 +12,16 @@ export type HaccpDocumentItem = {
   updatedAt: string;
 };
 
+export type ListHaccpDocumentsResult = {
+  items: HaccpDocumentItem[];
+  totalCount: number;
+  paginationInfo?: {
+    currentPageNo?: number;
+    recordCountPerPage?: number;
+    totalRecordCount?: number;
+  };
+};
+
 type RawHaccpDocumentItem = {
   draftingWorkCategoryId?: number | string | null;
   id?: number | string | null;
@@ -38,6 +48,12 @@ type RawHaccpDocumentItem = {
 type ResultEnvelope<T> = {
   result?: {
     resultList?: T[];
+    totalCount?: number;
+    paginationInfo?: {
+      currentPageNo?: number;
+      recordCountPerPage?: number;
+      totalRecordCount?: number;
+    };
   };
 };
 
@@ -66,42 +82,64 @@ function normalizeStatus(value: unknown): HaccpDocumentItem['status'] {
 }
 
 function normalizeItem(raw: RawHaccpDocumentItem): HaccpDocumentItem {
+  const approvalId = normalizeText(
+    raw.electronicApprovalId ?? raw.electronic_approval_id,
+  );
+  const draftingWorkCategoryId = normalizeText(
+    raw.id ?? raw.draftingWorkCategoryId,
+  );
+  const draftNumber = normalizeText(raw.eaExeId ?? raw.ea_exe_id);
+  const latestStatusAt = normalizeText(
+    raw.latestStatusAt ?? raw.latest_status_at,
+  );
+
+  // Document list rows must use a unique identity per approval document.
+  const rowId =
+    approvalId ||
+    [draftingWorkCategoryId, draftNumber, latestStatusAt]
+      .filter((value) => value.length > 0)
+      .join('-');
+
   return {
-    id: normalizeText(raw.id ?? raw.draftingWorkCategoryId),
-    approvalId: normalizeText(
-      raw.electronicApprovalId ?? raw.electronic_approval_id,
-    ),
+    id: rowId,
+    approvalId,
     workType: normalizeText(raw.categoryName ?? raw.categoryNm ?? raw.cataName),
-    draftNumber: normalizeText(raw.eaExeId ?? raw.ea_exe_id),
+    draftNumber,
     title: normalizeText(raw.title ?? raw.eaTitle ?? raw.ea_title),
     writer: normalizeText(raw.createdBy ?? raw.created_by),
     status: normalizeStatus(
       raw.approvalStatusTypeName ?? raw.approval_status_type_name,
     ),
     draftedAt: normalizeText(raw.createdAt ?? raw.created_at),
-    updatedAt: normalizeText(raw.latestStatusAt ?? raw.latest_status_at),
+    updatedAt: latestStatusAt,
   };
 }
 
 export async function listHaccpDocuments(params: {
   tenantCode: string;
+  pageIndex: number;
+  pageSize: number;
   workType?: string;
   draftNumber?: string;
   title?: string;
   writer?: string;
+  participantType?: string;
   status?: string;
   startDate?: string;
   endDate?: string;
-}): Promise<HaccpDocumentItem[]> {
+}): Promise<ListHaccpDocumentsResult> {
   const { data } = await apiClient.get<
     RawHaccpDocumentItem[] | ResultEnvelope<RawHaccpDocumentItem>
   >('/v1/haccp-work/documents', {
     headers: { 'x-tenant-code': params.tenantCode },
     params: {
+      pageIndex: params.pageIndex,
+      pageSize: params.pageSize,
       workType: params.workType || undefined,
       draftNumber: params.draftNumber || undefined,
       title: params.title || undefined,
       writer: params.writer || undefined,
+      participantType: params.participantType || undefined,
       status: params.status || undefined,
       startDate: params.startDate || undefined,
       endDate: params.endDate || undefined,
@@ -109,5 +147,13 @@ export async function listHaccpDocuments(params: {
   });
 
   const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
-  return items.map(normalizeItem);
+  return {
+    items: items.map(normalizeItem),
+    totalCount: Array.isArray(data)
+      ? items.length
+      : (data?.result?.totalCount ?? 0),
+    paginationInfo: Array.isArray(data)
+      ? undefined
+      : data?.result?.paginationInfo,
+  };
 }
