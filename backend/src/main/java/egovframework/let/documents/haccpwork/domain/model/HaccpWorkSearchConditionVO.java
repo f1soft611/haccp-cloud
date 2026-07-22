@@ -38,6 +38,12 @@ public class HaccpWorkSearchConditionVO implements Serializable {
     @Schema(description = "업무 구분")
     private String workType;
 
+    @Schema(description = "업무구분명")
+    private String workDivision;
+
+    @Schema(description = "업무구분 ID")
+    private String workDivisionId;
+
     @Schema(description = "기안 번호")
     private String draftNumber;
 

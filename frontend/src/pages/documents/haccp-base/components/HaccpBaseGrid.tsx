@@ -14,6 +14,10 @@ import {
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useTheme } from '@mui/material/styles';
+import {
+  getWorkCycleLabel,
+  getWorkCycleSx,
+} from '../../../dashboard/tenant/utils';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import type { HaccpBaseRow } from '../types';
 
@@ -37,31 +41,6 @@ export function HaccpBaseGrid(props: {
         ? 'rgba(251, 191, 36, 0.2)'
         : 'rgba(31, 79, 143, 0.16)',
     },
-  };
-
-  const getCycleChipSx = (cycle: HaccpBaseRow['cycle']) => {
-    if (cycle === '일') {
-      return {
-        bgcolor: isDarkMode ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.14)',
-        color: isDarkMode ? '#bbf7d0' : '#166534',
-      };
-    }
-    if (cycle === '주') {
-      return {
-        bgcolor: isDarkMode ? 'rgba(14,165,233,0.2)' : 'rgba(14,165,233,0.14)',
-        color: isDarkMode ? '#bae6fd' : '#075985',
-      };
-    }
-    if (cycle === '월') {
-      return {
-        bgcolor: isDarkMode ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.16)',
-        color: isDarkMode ? '#fde68a' : '#92400e',
-      };
-    }
-    return {
-      bgcolor: isDarkMode ? 'rgba(236,72,153,0.2)' : 'rgba(236,72,153,0.14)',
-      color: isDarkMode ? '#fbcfe8' : '#9d174d',
-    };
   };
 
   const getDocumentIconSx = (hasDocument: boolean) => ({
@@ -204,11 +183,25 @@ export function HaccpBaseGrid(props: {
                 </TableCell>
                 <TableCell>{row.categoryName}</TableCell>
                 <TableCell align="center">
-                  <Chip
-                    size="small"
-                    label={row.cycle}
-                    sx={getCycleChipSx(row.cycle)}
-                  />
+                  {(() => {
+                    const cycleLabel = getWorkCycleLabel({
+                      cycle: row.cycle,
+                      title: row.divisionName,
+                      category: row.categoryName,
+                    });
+
+                    return (
+                      <Chip
+                        size="small"
+                        label={cycleLabel}
+                        sx={{
+                          height: 22,
+                          fontWeight: 700,
+                          ...getWorkCycleSx(cycleLabel),
+                        }}
+                      />
+                    );
+                  })()}
                 </TableCell>
                 <TableCell align="center">{row.createdBy}</TableCell>
                 <TableCell align="center">{row.createdAt}</TableCell>

@@ -2,6 +2,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import {
   Chip,
   IconButton,
+  Skeleton,
   TableBody,
   TableCell,
   TableHead,
@@ -80,77 +81,114 @@ export function HaccpDocumentGrid(props: {
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row, index) => (
-            <TableRow key={row.id} hover>
-              <TableCell align="center">
-                {(pageIndex - 1) * pageSize + index + 1}
-              </TableCell>
-              <TableCell>{row.workType}</TableCell>
-              <TableCell align="center">{row.draftNumber}</TableCell>
-              <TableCell>{row.title}</TableCell>
-              <TableCell align="center">{row.writer}</TableCell>
-              <TableCell align="center">
-                <Chip
-                  size="small"
-                  label={row.status}
-                  color={
-                    row.status === '승인'
-                      ? 'success'
-                      : row.status === '결재중'
-                        ? 'warning'
-                        : row.status === '임시저장'
-                          ? 'info'
-                          : 'error'
-                  }
-                />
-              </TableCell>
-              <TableCell align="center">{row.draftedAt}</TableCell>
-              <TableCell align="center">{row.updatedAt}</TableCell>
-              <TableCell align="center">
-                <Tooltip title="상세 보기">
-                  <span>
-                    <IconButton
-                      size="small"
-                      aria-label="상세 보기"
-                      disabled={!row.approvalId}
-                      sx={row.approvalId ? actionIconSx : undefined}
-                      onClick={() => {
-                        if (!row.approvalId) {
-                          return;
-                        }
-                        const returnTo = `${location.pathname}${location.search || ''}`;
-                        const query = new URLSearchParams({
-                          idType: 'approval',
-                          returnTo,
-                        });
-                        navigate(
-                          `/approvals/draft/${row.approvalId}?${query.toString()}`,
-                        );
-                      }}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              </TableCell>
-            </TableRow>
-          ))}
-
-          {!loading && rows.length === 0 ? (
+          {loading ? (
+            Array.from({ length: 5 }).map((_, index) => (
+              <TableRow
+                key={`haccp-document-grid-skeleton-${index}`}
+                data-testid={`haccp-document-grid-skeleton-row-${index}`}
+              >
+                <TableCell align="center">
+                  <Skeleton variant="text" width={24} sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="72%" />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton variant="text" width="68%" sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="84%" />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton variant="text" width="60%" sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={56}
+                    height={24}
+                    sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton variant="text" width="72%" sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton variant="text" width="72%" sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={32}
+                    height={32}
+                    sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
+              </TableRow>
+            ))
+          ) : rows.length === 0 ? (
             <TableRow>
               <TableCell colSpan={9} align="center" sx={{ py: 5 }}>
                 조건에 맞는 문서가 없습니다.
               </TableCell>
             </TableRow>
-          ) : null}
-
-          {loading ? (
-            <TableRow>
-              <TableCell colSpan={9} align="center" sx={{ py: 5 }}>
-                문서 목록을 불러오는 중입니다.
-              </TableCell>
-            </TableRow>
-          ) : null}
+          ) : (
+            rows.map((row, index) => (
+              <TableRow key={row.id} hover>
+                <TableCell align="center">
+                  {(pageIndex - 1) * pageSize + index + 1}
+                </TableCell>
+                <TableCell>{row.workType}</TableCell>
+                <TableCell align="center">{row.draftNumber}</TableCell>
+                <TableCell>{row.title}</TableCell>
+                <TableCell align="center">{row.writer}</TableCell>
+                <TableCell align="center">
+                  <Chip
+                    size="small"
+                    label={row.status}
+                    color={
+                      row.status === '승인'
+                        ? 'success'
+                        : row.status === '결재중'
+                          ? 'warning'
+                          : row.status === '임시저장'
+                            ? 'info'
+                            : 'error'
+                    }
+                  />
+                </TableCell>
+                <TableCell align="center">{row.draftedAt}</TableCell>
+                <TableCell align="center">{row.updatedAt}</TableCell>
+                <TableCell align="center">
+                  <Tooltip title="상세 보기">
+                    <span>
+                      <IconButton
+                        size="small"
+                        aria-label="상세 보기"
+                        disabled={!row.approvalId}
+                        sx={row.approvalId ? actionIconSx : undefined}
+                        onClick={() => {
+                          if (!row.approvalId) {
+                            return;
+                          }
+                          const returnTo = `${location.pathname}${location.search || ''}`;
+                          const query = new URLSearchParams({
+                            idType: 'approval',
+                            returnTo,
+                          });
+                          navigate(
+                            `/approvals/draft/${row.approvalId}?${query.toString()}`,
+                          );
+                        }}
+                      >
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </AdminGrid>
 

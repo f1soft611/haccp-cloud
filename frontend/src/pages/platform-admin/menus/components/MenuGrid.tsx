@@ -167,9 +167,9 @@ export function MenuGrid(props: {
         <TableHead>
           <TableRow>
             <TableCell width="30">확장</TableCell>
-            <TableCell>메뉴명</TableCell>
+            <TableCell width="170">메뉴명</TableCell>
             <TableCell>설명</TableCell>
-            <TableCell>URL</TableCell>
+            <TableCell width="170">URL</TableCell>
             <TableCell width="80">순서</TableCell>
             <TableCell width="80">아이콘</TableCell>
             <TableCell width="80">사용여부</TableCell>

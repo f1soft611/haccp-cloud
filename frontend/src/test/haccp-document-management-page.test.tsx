@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { HaccpDocumentManagementPage } from '../pages/documents/haccp-doc/HaccpDocumentManagementPage';
 import { listHaccpBaseCategories } from '../services/documents/haccpBaseCategoryService';
+import { listHaccpBaseWorks } from '../services/documents/haccpBaseWorkService';
 import { listHaccpDocuments } from '../services/documents/haccpDocumentService';
 import { useAuthStore } from '../shared/store/authStore';
 
@@ -12,6 +13,10 @@ vi.mock('../services/documents/haccpDocumentService', () => ({
 
 vi.mock('../services/documents/haccpBaseCategoryService', () => ({
   listHaccpBaseCategories: vi.fn(),
+}));
+
+vi.mock('../services/documents/haccpBaseWorkService', () => ({
+  listHaccpBaseWorks: vi.fn(),
 }));
 
 function formatDate(date: Date): string {
@@ -71,6 +76,41 @@ describe('HaccpDocumentManagementPage', () => {
       },
     ]);
 
+    vi.mocked(listHaccpBaseWorks).mockResolvedValue([
+      {
+        id: 'w-1',
+        tenantCode: 'TENANT-A',
+        categoryGroupId: '10',
+        categoryCode: 'HA',
+        categoryName: 'HACCP (HA)',
+        categorySortOrder: 1,
+        divisionCode: '001',
+        divisionName: 'CCP-1B 검증기록',
+        cycle: '일',
+        active: true,
+        assigneeMapped: true,
+        assigneeIds: [],
+        referenceIds: [],
+        hasDocument: true,
+      },
+      {
+        id: 'w-2',
+        tenantCode: 'TENANT-A',
+        categoryGroupId: '11',
+        categoryCode: 'SE',
+        categoryName: 'HACCP (선별)',
+        categorySortOrder: 2,
+        divisionCode: '002',
+        divisionName: '선별공정 CCP 점검표',
+        cycle: '주',
+        active: true,
+        assigneeMapped: true,
+        assigneeIds: [],
+        referenceIds: [],
+        hasDocument: true,
+      },
+    ]);
+
     useAuthStore.setState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -86,7 +126,7 @@ describe('HaccpDocumentManagementPage', () => {
     window.history.pushState(
       {},
       '',
-      '/docs/haccp-doc?workType=HACCP%20(HA)&draftNumber=HA-202607-001&title=%EC%A0%90%EA%B2%80&writer=%EA%B3%A0%EB%8C%80%EC%84%B1&status=%EA%B2%B0%EC%9E%AC%EC%A4%91&startDate=2026-07-01&endDate=2026-07-20',
+      '/docs/haccp-doc?workType=HACCP%20(HA)&workDivisionId=w-1&workDivision=CCP-1B%20%EA%B2%80%EC%A6%9D%EA%B8%B0%EB%A1%9D&draftNumber=HA-202607-001&title=%EC%A0%90%EA%B2%80&writer=%EA%B3%A0%EB%8C%80%EC%84%B1&status=%EA%B2%B0%EC%9E%AC%EC%A4%91&startDate=2026-07-01&endDate=2026-07-20',
     );
 
     render(
@@ -98,6 +138,12 @@ describe('HaccpDocumentManagementPage', () => {
     expect(
       screen.getByRole('heading', { name: 'HACCP 문서관리' }),
     ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '상세조건' }));
+    await waitFor(() => {
+      expect(
+        screen.getByRole('combobox', { name: '업무구분' }),
+      ).toHaveTextContent('CCP-1B 검증기록');
+    });
     expect(screen.getByLabelText('기안번호')).toHaveValue('HA-202607-001');
     expect(screen.getByLabelText('제목')).toHaveValue('점검');
     expect(screen.getByLabelText('작성자')).toHaveValue('고대성');
@@ -116,9 +162,12 @@ describe('HaccpDocumentManagementPage', () => {
         pageIndex: 1,
         pageSize: 10,
         workType: 'HACCP (HA)',
+        workDivisionId: 'w-1',
+        workDivision: undefined,
         draftNumber: 'HA-202607-001',
         title: '점검',
         writer: '고대성',
+        participantType: undefined,
         status: '결재중',
         startDate: '2026-07-01',
         endDate: '2026-07-20',
@@ -189,6 +238,7 @@ describe('HaccpDocumentManagementPage', () => {
         expect.objectContaining({
           pageIndex: 1,
           pageSize: 10,
+          workDivision: undefined,
           writer: undefined,
         }),
       );

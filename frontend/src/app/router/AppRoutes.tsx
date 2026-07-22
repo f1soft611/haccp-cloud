@@ -23,6 +23,7 @@ import { HaccpBaseManagementPage } from '../../pages/documents/haccp-base/HaccpB
 import { HaccpBaseEditorPage } from '../../pages/documents/haccp-base/HaccpBaseEditorPage';
 import { HaccpBaseCategoryManagementPage } from '../../pages/documents/haccp-base/HaccpBaseCategoryManagementPage';
 import { HaccpDocumentManagementPage } from '../../pages/documents/haccp-doc/HaccpDocumentManagementPage';
+import { HaccpPortalPage } from '../../pages/documents/portal/HaccpPortalPage';
 import { ApprovalDraftWritePage } from '../../pages/documents/approvals/ApprovalDraftWritePage';
 import { useAuthStore } from '../../shared/store/authStore';
 import { resolveDashboardLandingPath } from '../../shared/utils/dashboardRouting';
@@ -175,6 +176,14 @@ export function AppRoutes() {
           element={
             <ProtectedRoute enforceMenuAccess>
               <HaccpDocumentManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/docs/portal"
+          element={
+            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
+              <HaccpPortalPage />
             </ProtectedRoute>
           }
         />

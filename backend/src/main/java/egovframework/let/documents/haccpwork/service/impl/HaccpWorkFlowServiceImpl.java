@@ -414,7 +414,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 1,
             actorLoginId,
             now,
-                buildSystemCommentMessage(submitActorName, "submit", false),
+                buildSystemCommentMessage(submitActorName, "submit", false, null),
                 eaExeId
         );
 
@@ -643,7 +643,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 approvalId,
                 actorLoginId,
                 now,
-                buildSystemCommentMessage(actorName, eventType, isFinalOwnerReference)
+                buildSystemCommentMessage(actorName, eventType, isFinalOwnerReference, targetSeq)
             );
         } else {
             appendSystemHistoryCommentBySeq(
@@ -652,7 +652,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 targetSeq,
                 actorLoginId,
                 now,
-                buildSystemCommentMessage(actorName, eventType, false)
+                buildSystemCommentMessage(actorName, eventType, false, targetSeq)
             );
         }
 
@@ -1169,7 +1169,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         return "사용자";
     }
 
-    private String buildSystemCommentMessage(String actorName, String eventType, boolean isFinalOwnerReference) {
+    private String buildSystemCommentMessage(String actorName, String eventType, boolean isFinalOwnerReference, Integer cancelTargetSeq) {
         String normalizedActorName = StringUtils.hasText(actorName) ? actorName.trim() : "사용자";
         String action;
         if ("submit".equals(eventType)) {
@@ -1181,7 +1181,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         } else if ("review_return".equals(eventType) || "final_return".equals(eventType)) {
             action = "반려";
         } else if ("submit_cancel".equals(eventType)) {
-            action = "상신취소";
+            action = resolveSubmitCancelAction(cancelTargetSeq);
         } else if ("reference_confirm".equals(eventType)) {
             action = isFinalOwnerReference ? "최종확인" : "참조확인";
         } else if ("final_confirm".equals(eventType)) {
@@ -1191,6 +1191,19 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         }
 
         return "[시스템] " + normalizedActorName + "님이 " + action + " 처리했습니다.";
+    }
+
+    private String resolveSubmitCancelAction(Integer cancelTargetSeq) {
+        if (cancelTargetSeq == null) {
+            return "상신취소";
+        }
+        if (cancelTargetSeq.intValue() == REVIEWER_SEQ) {
+            return "검토승인 취소";
+        }
+        if (cancelTargetSeq.intValue() == APPROVER_SEQ) {
+            return "승인 취소";
+        }
+        return "상신취소";
     }
 
     private void appendSystemHistoryCommentBySeq(

@@ -53,6 +53,8 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
             String actorLoginCode,
             String actorRoleCode,
             String workType,
+            String workDivisionId,
+            String workDivision,
             String draftNumber,
             String title,
             String writer,
@@ -66,6 +68,8 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
                 actorLoginCode,
                 actorRoleCode,
                 workType,
+                workDivisionId,
+                workDivision,
                 draftNumber,
                 title,
                 writer,
@@ -86,6 +90,8 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
             String actorLoginCode,
             String actorRoleCode,
             String workType,
+            String workDivisionId,
+            String workDivision,
             String draftNumber,
             String title,
             String writer,
@@ -101,6 +107,8 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
                 actorLoginCode,
                 actorRoleCode,
                 workType,
+                workDivisionId,
+                workDivision,
                 draftNumber,
                 title,
                 writer,
@@ -142,6 +150,8 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
             String actorLoginCode,
             String actorRoleCode,
             String workType,
+            String workDivisionId,
+            String workDivision,
             String draftNumber,
             String title,
             String writer,
@@ -162,6 +172,8 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         condition.setActorLoginCode(normalizeText(actorLoginCode));
         condition.setActorRoleCode(normalizeRoleCode(actorRoleCode));
         condition.setWorkType(normalizeText(workType));
+        condition.setWorkDivisionId(normalizeText(workDivisionId));
+        condition.setWorkDivision(normalizeText(workDivision));
         condition.setDraftNumber(normalizeText(draftNumber));
         condition.setTitle(normalizeText(title));
         condition.setWriter(normalizeText(writer));
