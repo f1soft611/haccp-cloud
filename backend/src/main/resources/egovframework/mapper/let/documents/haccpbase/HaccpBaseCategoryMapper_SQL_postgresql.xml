@@ -23,7 +23,10 @@
             t.tenant_code,
             g.cata_code,
             g.cata_name,
-            COALESCE(g.view_seq, 0) AS view_seq,
+                        CASE
+                            WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+                            ELSE 0
+                        END AS view_seq,
             CASE WHEN g.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(u.user_nm), ''), CAST(g.created_by AS varchar)) AS created_by,
             TO_CHAR(g.created_at, 'YYYY-MM-DD HH24:MI') AS created_at
@@ -36,13 +39,18 @@
             SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
         )
           AND COALESCE(g.delete_status, 'N') != 'Y'
-        <if test="active != null and active == 'Y'">
+        <if test='active != null and active == "Y"'>
             AND g.use_at = 'Y'
         </if>
-        <if test="active != null and active == 'N'">
+        <if test='active != null and active == "N"'>
             AND g.use_at = 'N'
         </if>
-        ORDER BY COALESCE(g.view_seq, 0), g.drafting_work_category_group_id
+                ORDER BY
+                    CASE
+                        WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+                        ELSE 0
+                    END,
+                    g.drafting_work_category_group_id
     </select>
 
     <!-- 업무 분류 단건 조회 -->
@@ -54,7 +62,10 @@
             t.tenant_code,
             g.cata_code,
             g.cata_name,
-            COALESCE(g.view_seq, 0) AS view_seq,
+                        CASE
+                            WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+                            ELSE 0
+                        END AS view_seq,
             CASE WHEN g.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
                         COALESCE(NULLIF(TRIM(u.user_nm), ''), CAST(g.created_by AS varchar)) AS created_by,
             TO_CHAR(g.created_at, 'YYYY-MM-DD HH24:MI') AS created_at

@@ -16,6 +16,7 @@ export function HaccpDocumentManagementPage() {
     setDetailOpen,
     activeFilterChips,
     categoryOptions,
+    divisionOptions,
     documentsQuery,
     rows,
     totalCount,
@@ -51,6 +52,7 @@ export function HaccpDocumentManagementPage() {
         detailOpen={detailOpen}
         activeFilterChips={activeFilterChips}
         categoryOptions={categoryOptions}
+        divisionOptions={divisionOptions}
         onChange={setSearchValue}
         onToggleDetail={() => setDetailOpen((prev) => !prev)}
         onReset={handleReset}

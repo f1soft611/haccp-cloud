@@ -23,6 +23,7 @@ export function HaccpDocumentSearchPanel(props: {
   detailOpen: boolean;
   activeFilterChips: HaccpDocFilterChip[];
   categoryOptions: Array<{ id: string; name: string }>;
+  divisionOptions: Array<{ id: string; name: string }>;
   onChange: (next: HaccpDocSearchValue) => void;
   onToggleDetail: () => void;
   onReset: () => void;
@@ -34,11 +35,37 @@ export function HaccpDocumentSearchPanel(props: {
     detailOpen,
     activeFilterChips,
     categoryOptions,
+    divisionOptions,
     onChange,
     onToggleDetail,
     onReset,
     onSearch,
   } = props;
+
+  const workTypeOptions =
+    value.workType &&
+    value.workType !== '전체' &&
+    !categoryOptions.some((option) => option.name === value.workType)
+      ? [
+          { id: `selected-${value.workType}`, name: value.workType },
+          ...categoryOptions,
+        ]
+      : categoryOptions;
+
+  const workDivisionOptions =
+    value.workDivision &&
+    !divisionOptions.some(
+      (option) =>
+        option.id === value.workDivision || option.name === value.workDivision,
+    )
+      ? [
+          {
+            id: `selected-${value.workDivision}`,
+            name: value.workDivision,
+          },
+          ...divisionOptions,
+        ]
+      : divisionOptions;
 
   return (
     <Paper sx={{ p: 2 }}>
@@ -62,7 +89,7 @@ export function HaccpDocumentSearchPanel(props: {
             sx={{ minWidth: 180 }}
           >
             <MenuItem value="전체">전체</MenuItem>
-            {categoryOptions.map((cat) => (
+            {workTypeOptions.map((cat) => (
               <MenuItem key={cat.id} value={cat.name}>
                 {cat.name}
               </MenuItem>
@@ -70,17 +97,25 @@ export function HaccpDocumentSearchPanel(props: {
           </TextField>
 
           <TextField
+            select
             size="small"
-            label="제목"
-            value={value.title}
+            label="업무구분"
+            value={value.workDivision}
             onChange={(event) =>
               onChange({
                 ...value,
-                title: event.target.value,
+                workDivision: event.target.value,
               })
             }
-            sx={{ flex: 1, minWidth: 220 }}
-          />
+            sx={{ minWidth: 220 }}
+          >
+            <MenuItem value="">전체</MenuItem>
+            {workDivisionOptions.map((division) => (
+              <MenuItem key={division.id} value={division.id}>
+                {division.name}
+              </MenuItem>
+            ))}
+          </TextField>
 
           <TextField
             select
@@ -101,6 +136,19 @@ export function HaccpDocumentSearchPanel(props: {
               </MenuItem>
             ))}
           </TextField>
+
+          <TextField
+            size="small"
+            label="제목"
+            value={value.title}
+            onChange={(event) =>
+              onChange({
+                ...value,
+                title: event.target.value,
+              })
+            }
+            sx={{ flex: 1, minWidth: 220 }}
+          />
 
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" onClick={onReset}>

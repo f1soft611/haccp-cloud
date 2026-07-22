@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { listHaccpBaseCategories } from '../../../../services/documents/haccpBaseCategoryService';
+import { listHaccpBaseWorks } from '../../../../services/documents/haccpBaseWorkService';
 import { listHaccpDocuments } from '../../../../services/documents/haccpDocumentService';
 import { useGridPagination } from '../../../../shared/hooks/useGridPagination';
 import { useAuthStore } from '../../../../shared/store/authStore';
@@ -37,6 +38,10 @@ function toSearchValue(searchParams: URLSearchParams): HaccpDocSearchValue {
 
   return {
     workType: searchParams.get('workType') || '전체',
+    workDivision:
+      searchParams.get('workDivisionId') ||
+      searchParams.get('workDivision') ||
+      '',
     draftNumber: searchParams.get('draftNumber') || '',
     title: searchParams.get('title') || '',
     writer: searchParams.get('writer') || '',
@@ -59,6 +64,7 @@ export function useHaccpDocumentManagement() {
     useGridPagination();
 
   const [searchParams] = useSearchParams();
+  const requestedDivisionId = (searchParams.get('workDivisionId') || '').trim();
   const initialValue = useMemo(() => {
     const value = toSearchValue(searchParams);
 
@@ -78,6 +84,91 @@ export function useHaccpDocumentManagement() {
     useState<HaccpDocSearchValue>(initialValue);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  const categoriesQuery = useQuery({
+    queryKey: ['haccp-base-categories', tenantCode],
+    queryFn: () => listHaccpBaseCategories({ tenantCode }),
+    retry: false,
+  });
+
+  const baseWorksQuery = useQuery({
+    queryKey: ['haccp-base-works', tenantCode, 'document-search-panel'],
+    queryFn: () => listHaccpBaseWorks({ tenantCode, active: 'Y' }),
+    retry: false,
+  });
+
+  const categoryOptions = useMemo(
+    () =>
+      (categoriesQuery.data ?? [])
+        .filter((item) => item.active)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((item) => ({ id: item.id, name: item.categoryName })),
+    [categoriesQuery.data],
+  );
+
+  const divisionOptions = useMemo(() => {
+    const selectedWorkType = searchValue.workType.trim();
+    const onlySpecificType =
+      selectedWorkType.length > 0 && selectedWorkType !== '전체';
+
+    const activeWorks = (baseWorksQuery.data ?? []).filter((item) => {
+      if (!item.active) {
+        return false;
+      }
+
+      return true;
+    });
+
+    const filteredWorks = onlySpecificType
+      ? activeWorks.filter(
+          (item) => item.categoryName.trim() === selectedWorkType,
+        )
+      : activeWorks;
+
+    const source = filteredWorks.length > 0 ? filteredWorks : activeWorks;
+
+    const seen = new Set<string>();
+    const options: Array<{ id: string; name: string }> = [];
+
+    source.forEach((item) => {
+      const id = item.id.trim();
+      const name = item.divisionName.trim();
+      if (!id || !name || seen.has(id)) {
+        return;
+      }
+      seen.add(id);
+      options.push({ id, name });
+    });
+
+    return options.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  }, [baseWorksQuery.data, searchValue.workType]);
+
+  useEffect(() => {
+    const current = searchValue.workDivision.trim();
+    if (!current) {
+      return;
+    }
+
+    if (divisionOptions.some((option) => option.id === current)) {
+      return;
+    }
+
+    const matchedByName = divisionOptions.find(
+      (option) => option.name === current,
+    );
+    if (!matchedByName) {
+      return;
+    }
+
+    setSearchValue((prev) => ({
+      ...prev,
+      workDivision: matchedByName.id,
+    }));
+    setAppliedFilters((prev) => ({
+      ...prev,
+      workDivision: matchedByName.id,
+    }));
+  }, [divisionOptions, searchValue.workDivision]);
+
   const documentsQuery = useQuery({
     queryKey: [
       'haccp-documents',
@@ -87,8 +178,15 @@ export function useHaccpDocumentManagement() {
       pageSize,
       appliedFilters,
     ],
-    queryFn: () =>
-      listHaccpDocuments({
+    queryFn: () => {
+      const divisionValue = appliedFilters.workDivision.trim();
+      const isKnownDivisionId = divisionOptions.some(
+        (option) => option.id === divisionValue,
+      );
+      const isRequestedDivisionId =
+        requestedDivisionId.length > 0 && divisionValue === requestedDivisionId;
+
+      return listHaccpDocuments({
         tenantCode,
         pageIndex,
         pageSize,
@@ -96,6 +194,14 @@ export function useHaccpDocumentManagement() {
           appliedFilters.workType.trim() && appliedFilters.workType !== '전체'
             ? appliedFilters.workType.trim()
             : undefined,
+        workDivisionId:
+          isKnownDivisionId || isRequestedDivisionId
+            ? divisionValue
+            : undefined,
+        workDivision:
+          isKnownDivisionId || isRequestedDivisionId
+            ? undefined
+            : divisionValue || undefined,
         draftNumber: appliedFilters.draftNumber.trim() || undefined,
         title: appliedFilters.title.trim() || undefined,
         writer: canViewAllDocuments
@@ -111,28 +217,14 @@ export function useHaccpDocumentManagement() {
             : undefined,
         startDate: appliedFilters.startDate || undefined,
         endDate: appliedFilters.endDate || undefined,
-      }),
+      });
+    },
     retry: false,
     staleTime: 0,
     gcTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
-
-  const categoriesQuery = useQuery({
-    queryKey: ['haccp-base-categories', tenantCode],
-    queryFn: () => listHaccpBaseCategories({ tenantCode }),
-    retry: false,
-  });
-
-  const categoryOptions = useMemo(
-    () =>
-      (categoriesQuery.data ?? [])
-        .filter((item) => item.active)
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((item) => ({ id: item.id, name: item.categoryName })),
-    [categoriesQuery.data],
-  );
 
   const activeFilterChips = useMemo<HaccpDocFilterChip[]>(() => {
     const chips: HaccpDocFilterChip[] = [];
@@ -146,6 +238,16 @@ export function useHaccpDocumentManagement() {
       chips.push({
         key: 'workType',
         label: `업무분류: ${appliedFilters.workType}`,
+      });
+    }
+    if (appliedFilters.workDivision.trim()) {
+      const selectedDivisionName =
+        divisionOptions.find(
+          (option) => option.id === appliedFilters.workDivision.trim(),
+        )?.name ?? appliedFilters.workDivision.trim();
+      chips.push({
+        key: 'workDivision',
+        label: `업무구분: ${selectedDivisionName}`,
       });
     }
     if (appliedFilters.title.trim()) {
@@ -176,12 +278,13 @@ export function useHaccpDocumentManagement() {
       });
     }
     return chips;
-  }, [appliedFilters, canViewAllDocuments]);
+  }, [appliedFilters, canViewAllDocuments, divisionOptions]);
 
   const handleReset = () => {
     const monthRange = getCurrentMonthRange();
     const resetValue: HaccpDocSearchValue = {
       workType: '전체',
+      workDivision: '',
       draftNumber: '',
       title: '',
       writer: '',
@@ -209,6 +312,7 @@ export function useHaccpDocumentManagement() {
     setDetailOpen,
     activeFilterChips,
     categoryOptions,
+    divisionOptions,
     documentsQuery,
     rows: documentsQuery.data?.items ?? [],
     totalCount: documentsQuery.data?.totalCount ?? 0,

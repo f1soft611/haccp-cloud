@@ -4,6 +4,7 @@ export type HaccpDocumentItem = {
   id: string;
   approvalId: string;
   workType: string;
+  workDivision: string;
   draftNumber: string;
   title: string;
   writer: string;
@@ -30,6 +31,9 @@ type RawHaccpDocumentItem = {
   categoryName?: string | null;
   categoryNm?: string | null;
   cataName?: string | null;
+  divisionName?: string | null;
+  codeName?: string | null;
+  code_name?: string | null;
   eaExeId?: string | null;
   ea_exe_id?: string | null;
   title?: string | null;
@@ -104,6 +108,9 @@ function normalizeItem(raw: RawHaccpDocumentItem): HaccpDocumentItem {
     id: rowId,
     approvalId,
     workType: normalizeText(raw.categoryName ?? raw.categoryNm ?? raw.cataName),
+    workDivision: normalizeText(
+      raw.divisionName ?? raw.codeName ?? raw.code_name,
+    ),
     draftNumber,
     title: normalizeText(raw.title ?? raw.eaTitle ?? raw.ea_title),
     writer: normalizeText(raw.createdBy ?? raw.created_by),
@@ -120,6 +127,8 @@ export async function listHaccpDocuments(params: {
   pageIndex: number;
   pageSize: number;
   workType?: string;
+  workDivisionId?: string;
+  workDivision?: string;
   draftNumber?: string;
   title?: string;
   writer?: string;
@@ -136,6 +145,8 @@ export async function listHaccpDocuments(params: {
       pageIndex: params.pageIndex,
       pageSize: params.pageSize,
       workType: params.workType || undefined,
+      workDivisionId: params.workDivisionId || undefined,
+      workDivision: params.workDivision || undefined,
       draftNumber: params.draftNumber || undefined,
       title: params.title || undefined,
       writer: params.writer || undefined,

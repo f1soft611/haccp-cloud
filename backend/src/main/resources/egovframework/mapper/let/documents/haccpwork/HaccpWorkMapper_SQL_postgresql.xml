@@ -60,7 +60,10 @@
             w.drafting_work_category_group_id,
             g.cata_code,
             g.cata_name AS category_name,
-            COALESCE(g.view_seq, 0) AS category_sort_order,
+            CASE
+              WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+              ELSE 0
+            END AS category_sort_order,
             w.cata_type_code,
             w.code_name,
             w.reg_term,
@@ -200,7 +203,10 @@
             w.drafting_work_category_group_id,
             g.cata_code,
             g.cata_name AS category_name,
-            COALESCE(g.view_seq, 0) AS category_sort_order,
+            CASE
+              WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+              ELSE 0
+            END AS category_sort_order,
             w.cata_type_code,
             w.code_name,
             w.reg_term,
@@ -362,6 +368,12 @@
                   OR g.cata_code = #{workType}
             )
           </if>
+          <if test="workDivisionId != null and workDivisionId != ''">
+            AND CAST(w.drafting_work_category_id AS varchar) = #{workDivisionId}
+          </if>
+          <if test="(workDivisionId == null or workDivisionId == '') and workDivision != null and workDivision != ''">
+            AND COALESCE(w.code_name, '') ILIKE CONCAT('%', #{workDivision}, '%')
+          </if>
           <if test="draftNumber != null and draftNumber != ''">
             AND COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{draftNumber}, '%')
           </if>
@@ -498,6 +510,12 @@
                   OR g.cata_code = #{workType}
             )
           </if>
+          <if test="workDivisionId != null and workDivisionId != ''">
+            AND CAST(w.drafting_work_category_id AS varchar) = #{workDivisionId}
+          </if>
+          <if test="(workDivisionId == null or workDivisionId == '') and workDivision != null and workDivision != ''">
+            AND COALESCE(w.code_name, '') ILIKE CONCAT('%', #{workDivision}, '%')
+          </if>
           <if test="draftNumber != null and draftNumber != ''">
             AND COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{draftNumber}, '%')
           </if>
@@ -542,7 +560,10 @@
             w.drafting_work_category_group_id,
             g.cata_code,
             g.cata_name AS category_name,
-            COALESCE(g.view_seq, 0) AS category_sort_order,
+            CASE
+              WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+              ELSE 0
+            END AS category_sort_order,
             w.cata_type_code,
             w.code_name,
             w.reg_term,
@@ -743,7 +764,10 @@
             w.drafting_work_category_group_id,
             g.cata_code,
             g.cata_name AS category_name,
-            COALESCE(g.view_seq, 0) AS category_sort_order,
+            CASE
+              WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+              ELSE 0
+            END AS category_sort_order,
             w.cata_type_code,
             w.code_name,
             w.reg_term,

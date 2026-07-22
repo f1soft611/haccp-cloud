@@ -38,9 +38,10 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * HACCP 업무 작성~결재 흐름을 위한 컨트롤러 클래스
+ *
  * @author SHMT-MES
- * @since 2026.07.16
  * @version 1.0
+ * @since 2026.07.16
  */
 @RestController
 @RequiredArgsConstructor
@@ -55,8 +56,8 @@ public class HaccpWorkApiController {
     @Operation(
             summary = "기안 템플릿 조회",
             description = "작성 페이지 진입 시 템플릿 ID 또는 결재문서 ID로 기안 템플릿을 조회한다",
-            security = { @SecurityRequirement(name = "Authorization") },
-            tags = { "HaccpWorkApiController" }
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"HaccpWorkApiController"}
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -72,10 +73,10 @@ public class HaccpWorkApiController {
             HttpServletRequest request) throws Exception {
         String tenantCode = resolveTenantCode(tenantHeader, request);
         HaccpWorkVO item = haccpWorkDraftService.getDraftTemplate(
-            tenantCode,
-            id,
-            idType,
-            resolveLoginCode(user)
+                tenantCode,
+                id,
+                idType,
+                resolveLoginCode(user)
         );
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
@@ -84,19 +85,19 @@ public class HaccpWorkApiController {
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
-        @Operation(
+    @Operation(
             summary = "결재 댓글 이력 조회",
             description = "결재 문서의 시스템/사용자 댓글 이력을 최신순으로 조회한다",
-            security = { @SecurityRequirement(name = "Authorization") },
-            tags = { "HaccpWorkApiController" }
-        )
-        @ApiResponses(value = {
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"HaccpWorkApiController"}
+    )
+    @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "403", description = "인가된 사용자가 아님"),
             @ApiResponse(responseCode = "404", description = "결재 문서를 찾을 수 없음")
-        })
-        @GetMapping("/approvals/{approvalId}/comments")
-        public ResultVO listApprovalComments(
+    })
+    @GetMapping("/approvals/{approvalId}/comments")
+    public ResultVO listApprovalComments(
             @PathVariable Long approvalId,
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
@@ -104,22 +105,22 @@ public class HaccpWorkApiController {
         String tenantCode = resolveTenantCode(tenantHeader, request);
         Map<String, Object> resultMap = new HashMap<String, Object>();
         resultMap.put(
-            "resultList",
-            haccpWorkFlowService.listApprovalComments(
-                approvalId,
-                tenantCode,
-                resolveLoginCode(user)
-            )
+                "resultList",
+                haccpWorkFlowService.listApprovalComments(
+                        approvalId,
+                        tenantCode,
+                        resolveLoginCode(user)
+                )
         );
         resultMap.put("user", user);
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
-        }
+    }
 
     @Operation(
             summary = "결재 댓글 등록",
             description = "결재 문서에 사용자 댓글을 등록한다",
-            security = { @SecurityRequirement(name = "Authorization") },
-            tags = { "HaccpWorkApiController" }
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"HaccpWorkApiController"}
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "등록 성공"),
@@ -147,21 +148,23 @@ public class HaccpWorkApiController {
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
-        @Operation(
+    @Operation(
             summary = "HACCP 문서 목록 조회",
             description = "HACCP 문서관리 페이지의 문서 목록을 조회한다",
-            security = { @SecurityRequirement(name = "Authorization") },
-            tags = { "HaccpWorkApiController" }
-        )
-        @ApiResponses(value = {
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"HaccpWorkApiController"}
+    )
+    @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "403", description = "인가된 사용자가 아님")
-        })
-        @GetMapping("/documents")
-        public ResultVO listDocuments(
+    })
+    @GetMapping("/documents")
+    public ResultVO listDocuments(
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String workType,
+            @RequestParam(required = false) String workDivisionId,
+            @RequestParam(required = false) String workDivision,
             @RequestParam(required = false) String draftNumber,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String writer,
@@ -172,35 +175,37 @@ public class HaccpWorkApiController {
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
             HttpServletRequest request
-        ) throws Exception {
+    ) throws Exception {
         String tenantCode = resolveTenantCode(tenantHeader, request);
         String actorLoginCode = resolveLoginCode(user);
         String actorRoleCode = resolveRoleCode(user);
 
         Map<String, Object> resultMap = haccpWorkDraftService.listDocumentsPaged(
-            tenantCode,
-            actorLoginCode,
-            actorRoleCode,
-            workType,
-            draftNumber,
-            title,
-            writer,
-            participantType,
-            status,
-            startDate,
-            endDate,
-            pageIndex,
-            pageSize
+                tenantCode,
+                actorLoginCode,
+                actorRoleCode,
+                workType,
+                workDivisionId,
+                workDivision,
+                draftNumber,
+                title,
+                writer,
+                participantType,
+                status,
+                startDate,
+                endDate,
+                pageIndex,
+                pageSize
         );
         resultMap.put("user", user);
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
-        }
+    }
 
     @Operation(
             summary = "기안 임시저장",
             description = "작성 중인 기안 내용을 업무 템플릿에 임시 저장한다",
-            security = { @SecurityRequirement(name = "Authorization") },
-            tags = { "HaccpWorkApiController" }
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"HaccpWorkApiController"}
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "저장 성공"),
@@ -231,8 +236,8 @@ public class HaccpWorkApiController {
     @Operation(
             summary = "기안 결재신청",
             description = "작성 완료된 기안을 결재신청한다",
-            security = { @SecurityRequirement(name = "Authorization") },
-            tags = { "HaccpWorkApiController" }
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"HaccpWorkApiController"}
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "신청 성공"),
@@ -246,52 +251,52 @@ public class HaccpWorkApiController {
             @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
             HttpServletRequest request) throws Exception {
         String tenantCode = resolveTenantCode(tenantHeader, request);
-            Long approvalId = haccpWorkFlowService.submitDraft(workId, tenantCode, payload, resolveLoginCode(user));
+        Long approvalId = haccpWorkFlowService.submitDraft(workId, tenantCode, payload, resolveLoginCode(user));
 
-            Map<String, Object> item = new HashMap<String, Object>();
-            item.put("approvalId", approvalId);
-            item.put("idType", "approval");
-            item.put("id", approvalId);
+        Map<String, Object> item = new HashMap<String, Object>();
+        item.put("approvalId", approvalId);
+        item.put("idType", "approval");
+        item.put("id", approvalId);
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
-            resultMap.put("item", item);
+        resultMap.put("item", item);
         resultMap.put("message", "결재신청이 완료되었습니다.");
         resultMap.put("user", user);
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
-            @Operation(
-                summary = "결재 상태 업데이트",
-                description = "검토 승인/반송/최종 승인 이벤트에 따라 결재선 app_status와 결재 메인 상태를 갱신한다",
-                security = { @SecurityRequirement(name = "Authorization") },
-                tags = { "HaccpWorkApiController" }
-            )
-            @ApiResponses(value = {
-                @ApiResponse(responseCode = "200", description = "처리 성공"),
-                @ApiResponse(responseCode = "403", description = "처리 권한 없음"),
-                @ApiResponse(responseCode = "404", description = "결재 문서를 찾을 수 없음")
-            })
-            @PostMapping("/approvals/{approvalId}/status")
-            public ResultVO updateApprovalStatus(
-                @PathVariable Long approvalId,
-                @RequestBody HaccpWorkApprovalStatusUpdateRequestVO payload,
-                @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
-                @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
-                HttpServletRequest request) throws Exception {
-            String tenantCode = resolveTenantCode(tenantHeader, request);
-            HaccpWorkVO item = haccpWorkFlowService.updateApprovalStatus(
+    @Operation(
+            summary = "결재 상태 업데이트",
+            description = "검토 승인/반송/최종 승인 이벤트에 따라 결재선 app_status와 결재 메인 상태를 갱신한다",
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"HaccpWorkApiController"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "처리 성공"),
+            @ApiResponse(responseCode = "403", description = "처리 권한 없음"),
+            @ApiResponse(responseCode = "404", description = "결재 문서를 찾을 수 없음")
+    })
+    @PostMapping("/approvals/{approvalId}/status")
+    public ResultVO updateApprovalStatus(
+            @PathVariable Long approvalId,
+            @RequestBody HaccpWorkApprovalStatusUpdateRequestVO payload,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        HaccpWorkVO item = haccpWorkFlowService.updateApprovalStatus(
                 approvalId,
                 tenantCode,
                 payload,
                 resolveLoginCode(user)
-            );
+        );
 
-            Map<String, Object> resultMap = new HashMap<String, Object>();
-            resultMap.put("item", item);
-            resultMap.put("message", "결재 상태가 갱신되었습니다.");
-            resultMap.put("user", user);
-            return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
-            }
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("item", item);
+        resultMap.put("message", "결재 상태가 갱신되었습니다.");
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
 
     private String resolveTenantCode(String tenantHeader, HttpServletRequest request) {
         if (StringUtils.hasText(tenantHeader)) {
