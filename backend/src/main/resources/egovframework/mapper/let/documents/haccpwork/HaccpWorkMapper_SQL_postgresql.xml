@@ -303,7 +303,7 @@
                 OR (
                   #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                   AND (
-                    (m.login_id = #{actorLoginId, jdbcType=BIGINT} OR COALESCE(m.status_type, '') != 'pre_apply')
+                    m.login_id = #{actorLoginId, jdbcType=BIGINT}
                     OR EXISTS (
                       SELECT 1
                       FROM tb_electronic_approval_line_info li
@@ -321,11 +321,6 @@
                         AND COALESCE(li.muldec_status, '') = 'cooperated'
                     )
                   )
-                )
-                OR (
-                  #{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL
-                  AND la.login_code = #{actorLoginCode, jdbcType=VARCHAR}
-                  AND COALESCE(m.status_type, '') != 'pre_apply'
                 )
           )
           <if test="participantTypes != null and participantTypes.size() > 0">
@@ -445,7 +440,7 @@
                 OR (
                   #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                   AND (
-                    (m.login_id = #{actorLoginId, jdbcType=BIGINT} OR COALESCE(m.status_type, '') != 'pre_apply')
+                    m.login_id = #{actorLoginId, jdbcType=BIGINT}
                     OR EXISTS (
                       SELECT 1
                       FROM tb_electronic_approval_line_info li
@@ -463,11 +458,6 @@
                         AND COALESCE(li.muldec_status, '') = 'cooperated'
                     )
                   )
-                )
-                OR (
-                  #{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL
-                  AND la.login_code = #{actorLoginCode, jdbcType=VARCHAR}
-                  AND COALESCE(m.status_type, '') != 'pre_apply'
                 )
           )
           <if test="participantTypes != null and participantTypes.size() > 0">
