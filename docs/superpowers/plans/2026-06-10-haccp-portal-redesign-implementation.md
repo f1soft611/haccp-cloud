@@ -747,7 +747,7 @@ export const appTheme = createTheme({
 export const APP_LABELS = {
   ...,
   header: {
-    govNotice: '이 서비스는 HACCP 관리시스템 포털입니다.',
+    govNotice: '이 서비스는 FoodLink 관리시스템 포털입니다.',
     quickSearchPlaceholder: '문서, 담당자, 작업을 검색하세요',
   },
   dashboard: {

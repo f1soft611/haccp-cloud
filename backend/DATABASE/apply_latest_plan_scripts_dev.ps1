@@ -14,6 +14,7 @@ if (-not (Test-Path $psql)) {
 
 $scriptFiles = @(
     "$PSScriptRoot\add_postgresql_plan_subscription_feature_tables.sql",
+    "$PSScriptRoot\migrate_postgresql_add_drafting_work_category_tables.sql",
     "$PSScriptRoot\migrate_postgresql_add_role_system_flag.sql",
     "$PSScriptRoot\migrate_postgresql_drop_tenant_id_from_tb_menu.sql",
     "$PSScriptRoot\migrate_postgresql_add_menu_metadata_columns.sql",

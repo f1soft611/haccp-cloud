@@ -15,16 +15,16 @@ import {
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { logout as logoutApi } from '../../../services/auth/logoutService';
+import { Link as RouterLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { APP_LABELS } from '../../constants/labels';
-import { resolveLoginPathWithLastDomain } from '../../utils/loginDomainRouting';
+import { loadLastLoginDomain } from '../../utils/loginDomainRouting';
 import {
   getStoredThemeMode,
   storeThemeMode,
   type ThemeModePreference,
 } from '../../theme/themePreference';
+import { UserAccountMenu } from '../account/UserAccountMenu';
 
 const ROOT_FONT_SIZE_PX = 16;
 const FONT_SIZE_STORAGE_KEY = 'haccp-ui-font-size';
@@ -42,15 +42,46 @@ type FontSizeOptionKey = (typeof FONT_SIZE_OPTIONS)[number]['key'];
 const isFontSizeOptionKey = (value: string): value is FontSizeOptionKey =>
   FONT_SIZE_OPTIONS.some((option) => option.key === value);
 
+type TenantBrandCache = {
+  tenantNm?: string;
+  logoImage?: string;
+};
+
+function resolveTenantBrandStorageKey(domain: string): string {
+  return `haccp.tenant-brand.${domain}`;
+}
+
+function resolveSafeLogoSrc(logoImage?: string): string {
+  const value = (logoImage ?? '').trim();
+  if (!value) {
+    return '';
+  }
+
+  if (value.startsWith('data:image/')) {
+    return value;
+  }
+
+  if (value.startsWith('https://')) {
+    return value;
+  }
+
+  if (value.startsWith('http://')) {
+    return import.meta.env.PROD ? '' : value;
+  }
+
+  if (/^[a-z0-9+/=\r\n]+$/i.test(value) && value.length >= 32) {
+    const compact = value.replace(/\s+/g, '');
+    return `data:image/png;base64,${compact}`;
+  }
+
+  return '';
+}
+
 export function TopGovBar() {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
-  const navigate = useNavigate();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const role = useAuthStore((state) => state.role);
   const userId = useAuthStore((state) => state.userId);
-  const loginHistoryId = useAuthStore((state) => state.loginHistoryId);
-  const clearAuth = useAuthStore((state) => state.logout);
   const themeStorageUserId = isAuthenticated ? userId : undefined;
   const [fontSizeMenuAnchor, setFontSizeMenuAnchor] =
     useState<null | HTMLElement>(null);
@@ -74,6 +105,35 @@ export function TopGovBar() {
     useState<ThemeModePreference>(
       () => getStoredThemeMode(themeStorageUserId) ?? 'light',
     );
+  const tenantBrand = (() => {
+    if (typeof window === 'undefined') {
+      return { logoSrc: '', logoAlt: '업체 로고' };
+    }
+
+    const domain = loadLastLoginDomain();
+    if (!domain) {
+      return { logoSrc: '', logoAlt: '업체 로고' };
+    }
+
+    try {
+      const raw = window.sessionStorage.getItem(
+        resolveTenantBrandStorageKey(domain),
+      );
+      if (!raw) {
+        return { logoSrc: '', logoAlt: '업체 로고' };
+      }
+
+      const parsed = JSON.parse(raw) as TenantBrandCache;
+      const safeSrc = resolveSafeLogoSrc(parsed.logoImage);
+      const tenantName = (parsed.tenantNm ?? '').trim();
+      return {
+        logoSrc: safeSrc,
+        logoAlt: tenantName ? `${tenantName} 로고` : '업체 로고',
+      };
+    } catch {
+      return { logoSrc: '', logoAlt: '업체 로고' };
+    }
+  })();
 
   const selectedFontSize = useMemo(
     () =>
@@ -96,17 +156,6 @@ export function TopGovBar() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedThemeMode(getStoredThemeMode(themeStorageUserId) ?? 'light');
   }, [themeStorageUserId, isDarkMode]);
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi(loginHistoryId);
-    } catch {
-      // Force local logout even if backend call fails.
-    } finally {
-      clearAuth();
-      navigate(resolveLoginPathWithLastDomain(), { replace: true });
-    }
-  };
 
   const handleFontSizeMenuOpen = (event: MouseEvent<HTMLElement>) => {
     setFontSizeMenuAnchor(event.currentTarget);
@@ -190,13 +239,28 @@ export function TopGovBar() {
               },
             }}
           >
-            <Typography
-              variant="h6"
-              fontWeight={800}
-              sx={{ letterSpacing: 0.2, textAlign: 'left' }}
-            >
-              {APP_LABELS.appTitle} {APP_LABELS.appSubtitle}
-            </Typography>
+            {tenantBrand.logoSrc ? (
+              <Box
+                component="img"
+                src={tenantBrand.logoSrc}
+                alt={tenantBrand.logoAlt}
+                sx={{
+                  display: 'block',
+                  width: 163,
+                  height: 28,
+                  objectFit: 'contain',
+                  imageRendering: '-webkit-optimize-contrast',
+                }}
+              />
+            ) : (
+              <Typography
+                variant="subtitle1"
+                fontWeight={800}
+                sx={{ letterSpacing: 0.1, textAlign: 'left' }}
+              >
+                업체 포털
+              </Typography>
+            )}
           </Link>
 
           <Stack
@@ -282,18 +346,7 @@ export function TopGovBar() {
               {APP_LABELS.header.fontSizeAction}
             </Button>
 
-            {isAuthenticated && role !== 'PLATFORM_ADMIN' ? (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => {
-                  void handleLogout();
-                }}
-                sx={{ minWidth: 96, fontWeight: 700, borderRadius: 999 }}
-              >
-                {APP_LABELS.action.logout}
-              </Button>
-            ) : null}
+            <UserAccountMenu />
           </Stack>
         </Stack>
       </Container>

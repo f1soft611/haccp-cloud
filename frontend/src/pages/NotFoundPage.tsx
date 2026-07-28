@@ -85,7 +85,7 @@ export function NotFoundPage() {
           fontSize: { xs: '0.72rem', sm: '0.8rem' },
         }}
       >
-        © 2026 HACCP Cloud · F1soft
+        © 2026 FoodLink Cloud · F1soft
       </Typography>
     </Box>
   );

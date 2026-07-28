@@ -17,7 +17,14 @@ import { PlatformTenantManagementPage } from '../../pages/platform-admin/tenants
 import { PlatformTenantDetailPage } from '../../pages/platform-admin/tenants/PlatformTenantDetailPage';
 import { PlatformPlanManagementPage } from '../../pages/platform-admin/plans/PlatformPlanManagementPage';
 import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
+import { MyPage } from '../../pages/account/MyPage';
 import { OnboardingVerifyPage } from '../../pages/platform-admin/tenants/OnboardingVerifyPage';
+import { HaccpBaseManagementPage } from '../../pages/documents/haccp-base/HaccpBaseManagementPage';
+import { HaccpBaseEditorPage } from '../../pages/documents/haccp-base/HaccpBaseEditorPage';
+import { HaccpBaseCategoryManagementPage } from '../../pages/documents/haccp-base/HaccpBaseCategoryManagementPage';
+import { HaccpDocumentManagementPage } from '../../pages/documents/haccp-doc/HaccpDocumentManagementPage';
+import { HaccpPortalPage } from '../../pages/documents/portal/HaccpPortalPage';
+import { ApprovalDraftWritePage } from '../../pages/documents/approvals/ApprovalDraftWritePage';
 import { useAuthStore } from '../../shared/store/authStore';
 import { resolveDashboardLandingPath } from '../../shared/utils/dashboardRouting';
 
@@ -28,7 +35,6 @@ function DefaultHomeRoute() {
 
   return <Navigate to={defaultPath} replace />;
 }
-
 export function AppRoutes() {
   return (
     <Routes>
@@ -141,6 +147,59 @@ export function AppRoutes() {
         />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/document-history" element={<DocumentHistoryPage />} />
+        <Route
+          path="/docs/haccp-base"
+          element={
+            <ProtectedRoute enforceMenuAccess>
+              <HaccpBaseManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/docs/haccp-base/editor/:baseId"
+          element={
+            <ProtectedRoute enforceMenuAccess>
+              <HaccpBaseEditorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/docs/haccp-base/categories"
+          element={
+            <ProtectedRoute enforceMenuAccess>
+              <HaccpBaseCategoryManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/docs/haccp-doc"
+          element={
+            <ProtectedRoute enforceMenuAccess>
+              <HaccpDocumentManagementPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/docs/portal"
+          element={
+            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
+              <HaccpPortalPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/approvals/draft/:baseId"
+          element={
+            <ProtectedRoute>
+              <ApprovalDraftWritePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/account"
+          element={<Navigate to="/account/my-page" replace />}
+        />
+        <Route path="/account/my-page" element={<MyPage />} />
         <Route path="/account/password" element={<AccountPasswordPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

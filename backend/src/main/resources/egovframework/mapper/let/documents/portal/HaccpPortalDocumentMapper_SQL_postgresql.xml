@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="HaccpPortalDocumentDAO">
+
+    <resultMap id="haccpPortalDocumentResult"
+               type="egovframework.let.documents.portal.domain.model.HaccpPortalDocumentVO">
+        <result property="draftingWorkCategoryId" column="drafting_work_category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="divisionName" column="division_name"/>
+        <result property="cycle" column="reg_term"/>
+        <result property="assigneeSummary" column="assignee_summary"/>
+    </resultMap>
+
+    <select id="HaccpPortalDocumentDAO.selectPortalDocuments"
+            parameterType="egovframework.let.documents.portal.domain.model.HaccpPortalDocumentSearchConditionVO"
+            resultMap="haccpPortalDocumentResult">
+        SELECT
+            w.drafting_work_category_id,
+            COALESCE(NULLIF(TRIM(g.cata_name), ''), '기타문서') AS category_name,
+            COALESCE(NULLIF(TRIM(w.code_name), ''), '-') AS division_name,
+            COALESCE(NULLIF(TRIM(w.reg_term), ''), '발생시') AS reg_term,
+            '관리자 외 2명' AS assignee_summary
+        FROM tb_drafting_work_category w
+        JOIN tb_tenant t
+          ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.tenant_id = w.tenant_id
+         AND g.drafting_work_category_group_id = w.drafting_work_category_group_id
+        WHERE t.tenant_code = #{tenantCode}
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+          AND COALESCE(w.use_at, 'N') = 'Y'
+        ORDER BY
+          CASE
+            WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+            ELSE 0
+          END,
+          CASE
+            WHEN COALESCE(TRIM(w.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(w.view_seq::varchar) AS integer)
+            ELSE 0
+          END,
+          w.drafting_work_category_id
+    </select>
+
+</mapper>

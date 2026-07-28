@@ -9,6 +9,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { appTheme } from '../../app/theme';
@@ -151,6 +152,8 @@ function resolveDomainFromLocation(routeDomain?: string): string {
 }
 
 export function LoginPage() {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const navigate = useNavigate();
   const location = useLocation();
   const { domain: routeDomain } = useParams<{ domain?: string }>();
@@ -292,7 +295,8 @@ export function LoginPage() {
     normalizedIdInput.length > 0 && password.trim().length > 0;
   const tenantDisplayName =
     tenantBrand?.tenantNm?.trim() || tenantInfo?.tenantNm?.trim() || '';
-  const fallbackLogoSrc = '/login.png';
+  const appLogoSrc = isDarkMode ? '/f1foodlink_wh.png' : '/f1foodlink_midd.png';
+  const fallbackLogoSrc = appLogoSrc;
   const lightPalette = appTheme.palette;
   const fieldDefaultBorder = '1px solid #cbd5e1';
   const fieldFocusBorder = `1px solid ${lightPalette.primary.main}`;
@@ -411,7 +415,7 @@ export function LoginPage() {
   return (
     <Box
       data-testid="login-page-shell"
-      data-theme-mode="light"
+      data-theme-mode={isDarkMode ? 'dark' : 'light'}
       display="flex"
       flexDirection="column"
       minHeight="100vh"
@@ -421,22 +425,23 @@ export function LoginPage() {
         backgroundColor: '#f3f4f6',
       }}
     >
-      <Typography
-        component="p"
-        sx={{
-          position: 'absolute',
-          top: 14,
-          left: { xs: 16, md: 'calc(50% - 470px)' },
-          fontSize: 25,
-          lineHeight: 1,
-          fontWeight: 800,
-          letterSpacing: '-0.03em',
-          color: lightPalette.primary.main,
-          fontFamily: 'Pretendard, SUIT, Noto Sans KR, sans-serif',
-        }}
-      >
-        HACCP Cloud
-      </Typography>
+      {!isDomainScopedLogin && (
+        <Box
+          component="img"
+          src={appLogoSrc}
+          alt="F1FoodLink"
+          sx={{
+            position: 'absolute',
+            top: 12,
+            left: { xs: 16, md: 'calc(50% - 470px)' },
+            display: 'block',
+            width: 148,
+            height: 25,
+            objectFit: 'contain',
+            imageRendering: '-webkit-optimize-contrast',
+          }}
+        />
+      )}
 
       <Box
         sx={{
@@ -774,9 +779,10 @@ export function LoginPage() {
       <Typography
         data-testid="login-footer-copyright"
         sx={{
-          pb: 1.2,
+          pb: 3.2,
           textAlign: 'center',
-          fontSize: 12,
+          fontSize: 14,
+          fontWeight: 600,
           letterSpacing: '0',
           color: 'rgba(100,116,139,0.52)',
           fontFamily: 'Pretendard, SUIT, Noto Sans KR, sans-serif',

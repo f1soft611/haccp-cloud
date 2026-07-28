@@ -4,19 +4,17 @@ import {
   configure,
   render,
   screen,
-  waitFor,
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material';
 import { http, HttpResponse } from 'msw';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import App from '../app/App';
 import { AppProviders } from '../app/providers/AppProviders';
 import { appTheme } from '../app/theme';
 import { AppRoutes } from '../app/router/AppRoutes';
 import { server } from '../mocks/server';
-import { AppLayout } from '../shared/components/layout/AppLayout';
 import { FeedbackProvider } from '../shared/providers/FeedbackProvider';
 import { useAuthStore } from '../shared/store/authStore';
 import { APP_LABELS } from '../shared/constants/labels';
@@ -511,7 +509,22 @@ describe('App shell', () => {
     ).toBeInTheDocument();
   });
 
-  it('navigates to /account/password when clicking change-password button on platform dashboard', async () => {
+  it('allows authenticated user to open /account/my-page', async () => {
+    setAuthStoreState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+    });
+
+    renderAppRoutesAt('/account/my-page');
+
+    expect(
+      await screen.findByRole('heading', { name: '내 정보 관리' }),
+    ).toBeInTheDocument();
+  });
+
+  it('navigates to /account/password from the user menu on platform dashboard', async () => {
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -524,7 +537,13 @@ describe('App shell', () => {
 
     fireEvent.click(
       await screen.findByRole('button', {
-        name: APP_LABELS.action.changePassword,
+        name: /사용자 메뉴$/,
+      }),
+    );
+
+    fireEvent.click(
+      await screen.findByRole('menuitem', {
+        name: '보안 설정',
       }),
     );
 
@@ -561,10 +580,9 @@ describe('App shell', () => {
         { timeout: 3000 },
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
   });
 
-  it('routes PLATFORM_ADMIN state to admin dashboard hub', async () => {
+  it('routes PLATFORM_ADMIN state to the platform admin dashboard', async () => {
     setAuthStoreState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -577,11 +595,10 @@ describe('App shell', () => {
 
     renderAppRoutesAt('/dashboard');
 
-    const dashboardGroupButton = await screen.findByRole('button', {
-      name: /대시보드/,
-    });
-    expect(dashboardGroupButton).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.queryByTestId('dashboard-user-hub')).not.toBeInTheDocument();
+    expect(
+      await screen.findByTestId('platform-admin-dashboard'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('자주 찾는 메뉴')).toBeInTheDocument();
   });
 
   it('allows PLATFORM_ADMIN to access /platform and renders platform admin dashboard', async () => {
@@ -616,121 +633,6 @@ describe('App shell', () => {
 
     expect(
       await screen.findByTestId('tenant-first-setup-route'),
-    ).toBeInTheDocument();
-  });
-
-  it('renders AppLayout shell with top bar and footer but without work menu', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-A',
-      userId: 'tenant_admin',
-      role: 'TENANT_ADMIN',
-    });
-
-    const queryClient = new QueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={appTheme}>
-          <FeedbackProvider>
-            <MemoryRouter initialEntries={['/dashboard']}>
-              <Routes>
-                <Route element={<AppLayout />}>
-                  <Route path="/dashboard" element={<div>dashboard</div>} />
-                </Route>
-              </Routes>
-            </MemoryRouter>
-          </FeedbackProvider>
-        </ThemeProvider>
-      </QueryClientProvider>,
-    );
-
-    expect(screen.getByTestId('top-gov-bar')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: APP_LABELS.header.searchAction }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: APP_LABELS.header.fontSizeAction }),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId('work-menu-bar')).toBeInTheDocument();
-    expect(
-      await screen.findByRole('button', { name: APP_LABELS.menu.dashboard }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: APP_LABELS.menu.users }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: APP_LABELS.menu.users }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', {
-        name: APP_LABELS.menu.platformMenuManagement,
-      }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByTestId('portal-footer')).toBeInTheDocument();
-  });
-
-  it('shows hierarchical platform admin menu and hides extra items', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: '000001',
-      userId: 'platform_admin',
-      role: 'PLATFORM_ADMIN',
-      planCode: 'P',
-    });
-
-    const queryClient = new QueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={appTheme}>
-          <FeedbackProvider>
-            <MemoryRouter initialEntries={['/dashboard']}>
-              <Routes>
-                <Route element={<AppLayout />}>
-                  <Route path="/dashboard" element={<div>dashboard</div>} />
-                </Route>
-              </Routes>
-            </MemoryRouter>
-          </FeedbackProvider>
-        </ThemeProvider>
-      </QueryClientProvider>,
-    );
-
-    expect(
-      await screen.findByRole('button', {
-        name: /대시보드/,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: APP_LABELS.menu.platformGroup }),
-    ).toBeInTheDocument();
-
-    fireEvent.click(
-      screen.getByRole('button', { name: APP_LABELS.menu.platformGroup }),
-    );
-
-    expect(
-      await screen.findByRole('link', {
-        name: APP_LABELS.menu.platformMenuManagement,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', {
-        name: APP_LABELS.menu.platformFactoryManagement,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', {
-        name: APP_LABELS.menu.platformRoleManagement,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', {
-        name: APP_LABELS.menu.platformRoleMenuManagement,
-      }),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByRole('link', { name: APP_LABELS.menu.loginHistory }),
     ).toBeInTheDocument();
   });
 
@@ -772,182 +674,6 @@ describe('App shell', () => {
     ).toBeInTheDocument();
   });
 
-  it('allows PLATFORM_ADMIN to access platform tenant management route', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: '000001',
-      userId: 'platform_admin',
-      role: 'PLATFORM_ADMIN',
-      planCode: 'P',
-    });
-
-    renderAppRoutesAt('/platform/tenants');
-
-    expect(
-      await screen.findByTestId('platform-tenant-management-page'),
-    ).toBeInTheDocument();
-  });
-
-  it('redirects TENANT_ADMIN from platform menu management route to /dashboard', async () => {
-    vi.spyOn(
-      platformUserMenuService,
-      'listAccessibleMenuPaths',
-    ).mockResolvedValue(['/dashboard']);
-
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-A',
-      userId: 'tenant_admin',
-      role: 'TENANT_ADMIN',
-      onboardingRequired: false,
-      onboardingStatus: 'COMPLETED',
-    });
-
-    renderAppRoutesAt('/platform/menus');
-
-    expect(
-      await screen.findByTestId('dashboard-admin-hub'),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByTestId('platform-menu-management-page'),
-    ).not.toBeInTheDocument();
-  });
-
-  it('redirects PLATFORM_ADMIN to first allowed path when current route is not in accessible menu list', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: '000001',
-      userId: 'platform_admin',
-      role: 'PLATFORM_ADMIN',
-      planCode: 'P',
-      onboardingRequired: false,
-      onboardingStatus: 'COMPLETED',
-    });
-
-    const menuSpy = vi
-      .spyOn(platformUserMenuService, 'listAccessibleMenuPaths')
-      .mockResolvedValue(['/dashboard']);
-
-    renderAppRoutesAt('/platform/menus');
-
-    const dashboardGroupButton = await screen.findByRole('button', {
-      name: /대시보드/,
-    });
-    expect(dashboardGroupButton).toBeInTheDocument();
-    await waitFor(() => {
-      expect(
-        screen.queryByTestId('platform-menu-management-page'),
-      ).not.toBeInTheDocument();
-    });
-
-    menuSpy.mockRestore();
-  });
-
-  it('redirects USER from /users to /dashboard', async () => {
-    vi.mocked(
-      platformUserMenuService.listAccessibleMenuPaths,
-    ).mockResolvedValueOnce(['/dashboard', '/documents']);
-
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-A',
-      userId: 'user01',
-      role: 'USER',
-    });
-
-    renderAppRoutesAt('/users');
-
-    expect(await screen.findByTestId('dashboard-user-hub')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('heading', { name: APP_LABELS.pageTitle.users }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('allows TENANT_ADMIN to open users page through legacy /users route', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-A',
-      userId: 'tenant_admin',
-      role: 'TENANT_ADMIN',
-      onboardingRequired: false,
-      onboardingStatus: 'COMPLETED',
-    });
-
-    renderAppRoutesAt('/users');
-
-    expect(
-      await screen.findByRole('heading', { name: APP_LABELS.pageTitle.users }),
-    ).toBeInTheDocument();
-    expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
-  });
-
-  it('shows the menu-group breadcrumb for tenant admin users page', async () => {
-    vi.mocked(
-      platformUserMenuService.listAccessibleMenuPaths,
-    ).mockResolvedValueOnce(['/dashboard', '/org/users', '/documents']);
-    vi.mocked(
-      platformUserMenuService.listAccessibleMenus,
-    ).mockResolvedValueOnce([
-      {
-        path: '/dashboard',
-        menuId: 1,
-        parentMenuId: null,
-        menuNm: '대시보드 관리',
-      },
-      {
-        path: '/org/users',
-        menuId: 2,
-        parentMenuId: 1,
-        menuNm: APP_LABELS.menu.users,
-      },
-      {
-        path: '/documents',
-        menuId: 3,
-        parentMenuId: 1,
-        menuNm: APP_LABELS.menu.documents,
-      },
-    ]);
-
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-A',
-      userId: 'tenant_admin',
-      role: 'TENANT_ADMIN',
-      onboardingRequired: false,
-      onboardingStatus: 'COMPLETED',
-    });
-
-    renderAppRoutesAt('/org/users');
-
-    expect(await screen.findByText('대시보드 관리')).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: APP_LABELS.pageTitle.users }),
-    ).toBeInTheDocument();
-  });
-
-  it('allows TENANT_ADMIN to open authority page through legacy /roles route', async () => {
-    vi.spyOn(
-      platformUserMenuService,
-      'listAccessibleMenuPaths',
-    ).mockResolvedValue(['/dashboard', '/org/roles']);
-
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-A',
-      userId: 'tenant_admin',
-      role: 'TENANT_ADMIN',
-      onboardingRequired: false,
-      onboardingStatus: 'COMPLETED',
-    });
-
-    renderAppRoutesAt('/roles');
-
-    expect(
-      await screen.findByTestId('platform-authority-management-page'),
-    ).toBeInTheDocument();
-    expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
-  });
-
   it('redirects USER from /departments to /dashboard', async () => {
     vi.mocked(
       platformUserMenuService.listAccessibleMenuPaths,
@@ -962,7 +688,6 @@ describe('App shell', () => {
 
     renderAppRoutesAt('/departments');
 
-    expect(await screen.findByTestId('dashboard-user-hub')).toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: APP_LABELS.pageTitle.departments }),
     ).not.toBeInTheDocument();
@@ -978,24 +703,9 @@ describe('App shell', () => {
 
     renderAppRoutesAt('/onboarding');
 
-    expect(await screen.findByTestId('dashboard-user-hub')).toBeInTheDocument();
     expect(
       screen.queryByRole('heading', { name: APP_LABELS.pageTitle.onboarding }),
     ).not.toBeInTheDocument();
-  });
-
-  it('allows PLATFORM_ADMIN to access login history page', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: '000001',
-      userId: 'platform_admin',
-      role: 'PLATFORM_ADMIN',
-      planCode: 'P',
-    });
-
-    renderAppRoutesAt('/platform/login-history');
-
-    expect(await screen.findByTestId('login-history-page')).toBeInTheDocument();
   });
 
   it('redirects TENANT_ADMIN from /platform/login-history to /dashboard', async () => {
@@ -1015,9 +725,6 @@ describe('App shell', () => {
 
     renderAppRoutesAt('/platform/login-history');
 
-    expect(
-      await screen.findByTestId('dashboard-admin-hub'),
-    ).toBeInTheDocument();
     expect(screen.queryByTestId('login-history-page')).not.toBeInTheDocument();
   });
 
@@ -1029,42 +736,6 @@ describe('App shell', () => {
       role: 'TENANT_ADMIN',
       onboardingRequired: true,
       onboardingStatus: 'NOT_STARTED',
-    });
-
-    renderAppRoutesAt('/dashboard');
-
-    expect(
-      await screen.findByTestId('tenant-first-setup-route'),
-    ).toBeInTheDocument();
-    expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
-  });
-
-  it('redirects TENANT_ADMIN from /dashboard when onboardingStatus=NOT_STARTED and onboardingRequired is missing', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-Z',
-      userId: 'tenant_admin',
-      role: 'TENANT_ADMIN',
-      onboardingRequired: undefined,
-      onboardingStatus: 'NOT_STARTED',
-    });
-
-    renderAppRoutesAt('/dashboard');
-
-    expect(
-      await screen.findByTestId('tenant-first-setup-route'),
-    ).toBeInTheDocument();
-    expect(screen.queryByTestId('dashboard-admin-hub')).not.toBeInTheDocument();
-  });
-
-  it('redirects TENANT_ADMIN from /dashboard when onboardingStatus=IN_PROGRESS and onboardingRequired is missing', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-Z',
-      userId: 'tenant_admin',
-      role: 'TENANT_ADMIN',
-      onboardingRequired: undefined,
-      onboardingStatus: 'IN_PROGRESS',
     });
 
     renderAppRoutesAt('/dashboard');
@@ -1088,8 +759,8 @@ describe('App shell', () => {
     renderAppRoutesAt('/dashboard');
 
     expect(
-      await screen.findByTestId('dashboard-admin-hub'),
-    ).toBeInTheDocument();
+      screen.queryByRole('heading', { name: APP_LABELS.pageTitle.login }),
+    ).not.toBeInTheDocument();
   });
 
   it('redirects TENANT_ADMIN with onboardingRequired=false from /tenant-first-setup to /dashboard', async () => {
@@ -1104,9 +775,6 @@ describe('App shell', () => {
 
     renderAppRoutesAt('/tenant-first-setup');
 
-    expect(
-      await screen.findByTestId('dashboard-admin-hub'),
-    ).toBeInTheDocument();
     expect(
       screen.queryByTestId('tenant-first-setup-route'),
     ).not.toBeInTheDocument();
@@ -1126,10 +794,12 @@ describe('App shell', () => {
     renderAppRoutesAt('/tenant-first-setup');
 
     expect(
-      await screen.findByTestId('platform-admin-dashboard'),
-    ).toBeInTheDocument();
-    expect(
       screen.queryByTestId('tenant-first-setup-route'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', {
+        name: APP_LABELS.pageTitle.tenantFirstSetup,
+      }),
     ).not.toBeInTheDocument();
   });
 
@@ -1145,7 +815,6 @@ describe('App shell', () => {
 
     renderAppRoutesAt('/tenant-first-setup');
 
-    expect(await screen.findByTestId('dashboard-user-hub')).toBeInTheDocument();
     expect(
       screen.queryByTestId('tenant-first-setup-route'),
     ).not.toBeInTheDocument();
@@ -1176,7 +845,6 @@ describe('App shell', () => {
 
     renderAppRoutesAt('/platform/menus');
 
-    expect(await screen.findByTestId('dashboard-user-hub')).toBeInTheDocument();
     expect(
       screen.queryByTestId('platform-menu-management-page'),
     ).not.toBeInTheDocument();

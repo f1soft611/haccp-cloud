@@ -52,6 +52,12 @@ This schema uses a single authorization model:
 
 - `tb_tenant` -> `tb_tenant_domain`, `tb_department`, `tb_login_account`, `tb_user`, `tb_role`, `tb_menu`, `tb_permission`, `tb_login_history`
 - `tb_login_account` -> `tb_login_account_role`
+
+## Login Account Image Columns
+
+- `tb_login_account.profile_image`: profile image data URL or stored image reference
+- `tb_login_account.stamp_image`: approval stamp image data URL or stored image reference
+- Login response aliases `stamp_image` to both `signatureImage` and `stampImage` for frontend compatibility
 - `tb_role` -> `tb_login_account_role`, `tb_role_menu_permission`, `tb_login_history`
 - `tb_menu` -> `tb_role_menu_permission`
 - `tb_permission` -> `tb_role_menu_permission`

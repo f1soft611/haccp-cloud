@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DashboardDAO">
+
+    <resultMap id="dashboardTodoResult"
+               type="egovframework.let.dashboard.domain.model.DashboardTodoVO">
+        <result property="draftingWorkCategoryId" column="drafting_work_category_id"/>
+      <result property="electronicApprovalId" column="electronic_approval_id"/>
+        <result property="eaExeId" column="ea_exe_id"/>
+        <result property="title" column="title"/>
+        <result property="tenantCode" column="tenant_code"/>
+        <result property="categoryCode" column="cata_code"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="categorySortOrder" column="category_sort_order"/>
+        <result property="divisionCode" column="cata_type_code"/>
+        <result property="divisionName" column="code_name"/>
+        <result property="cycle" column="reg_term"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="owner" column="owner"/>
+        <result property="todoStatus" column="todo_status"/>
+        <result property="approvalStatusType" column="approval_status_type"/>
+        <result property="approvalStatusTypeName" column="approval_status_type_name"/>
+        <result property="latestStatusAt" column="latest_status_at"/>
+        <result property="templateJson" column="template_json"/>
+        <result property="templateHtml" column="template_html"/>
+        <result property="hasDocument" column="has_document"/>
+        <result property="writtenInCycle" column="written_in_cycle"/>
+        <result property="pendingApprovalAlert" column="pending_approval_alert"/>
+        <result property="pendingArrivalAt" column="pending_arrival_at"/>
+    </resultMap>
+
+    <resultMap id="dashboardSummaryResult"
+               type="egovframework.let.dashboard.domain.model.DashboardSummaryVO">
+        <result property="totalTodoCount" column="total_todo_count"/>
+        <result property="inProgressCount" column="in_progress_count"/>
+        <result property="draftCount" column="draft_count"/>
+        <result property="activeCount" column="active_count"/>
+        <result property="todayActionCount" column="today_action_count"/>
+        <result property="noticeCount" column="notice_count"/>
+    </resultMap>
+
+    <resultMap id="dashboardNoticeResult"
+               type="egovframework.let.dashboard.domain.model.DashboardNoticeVO">
+        <result property="noticeId" column="notice_id"/>
+        <result property="scope" column="scope"/>
+        <result property="title" column="title"/>
+        <result property="noticeDate" column="notice_date"/>
+    </resultMap>
+
+    <select id="DashboardDAO.selectMyTodoList"
+            parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
+            resultMap="dashboardTodoResult">
+        SELECT
+            w.drafting_work_category_id,
+          COALESCE(pending.pending_approval_id, appr.route_approval_id) AS electronic_approval_id,
+            COALESCE(pending.pending_ea_exe_id, appr.route_ea_exe_id, '') AS ea_exe_id,
+            COALESCE(NULLIF(TRIM(pending.pending_title), ''), '') AS title,
+            t.tenant_code,
+            g.cata_code,
+            g.cata_name AS category_name,
+            COALESCE(g.view_seq, 0) AS category_sort_order,
+            w.cata_type_code,
+            w.code_name,
+            w.reg_term,
+            COALESCE(pending.pending_drafter_name, pending.pending_login_code, CAST(pending.pending_login_id AS varchar), '-') AS created_by,
+            CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
+            CASE
+              WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN 'IN_PROGRESS'
+              WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN 'ACTIVE'
+              ELSE 'DRAFT'
+            END AS todo_status,
+            CASE
+              WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN 'in_progress'
+              WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN 'approved'
+              WHEN COALESCE(appr.latest_status_type, '') = 'rejected' THEN 'rejected'
+              ELSE NULL
+            END AS approval_status_type,
+            CASE
+              WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN '결재중'
+              WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN '승인'
+              WHEN COALESCE(appr.latest_status_type, '') = 'pre_apply' THEN '임시저장'
+              WHEN COALESCE(appr.latest_status_type, '') = 'rejected' THEN '반송'
+              ELSE '미작성'
+            END AS approval_status_type_name,
+            TO_CHAR(COALESCE(pending.pending_arrival_at, appr.latest_updated_at, w.updated_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
+            CAST(w.drafting_work_template_json AS text) AS template_json,
+            w.drafting_work_template_html AS template_html,
+            CASE
+              WHEN w.drafting_work_template_json IS NOT NULL
+                OR NULLIF(TRIM(COALESCE(w.drafting_work_template_html, '')), '') IS NOT NULL
+              THEN TRUE
+              ELSE FALSE
+            END AS has_document,
+            CASE
+              WHEN COALESCE(appr.total_count, 0) > 0 THEN TRUE
+              ELSE FALSE
+            END AS written_in_cycle,
+            COALESCE(pending.pending_alert, FALSE) AS pending_approval_alert,
+            TO_CHAR(pending.pending_arrival_at, 'YYYY-MM-DD HH24:MI') AS pending_arrival_at
+        FROM tb_drafting_work_category w
+        JOIN tb_tenant t ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
+         AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_user ru
+          ON ru.tenant_id = w.tenant_id
+         AND ru.login_id = w.reviewer_id
+        LEFT JOIN tb_user au
+          ON au.tenant_id = w.tenant_id
+         AND au.login_id = w.approver_id
+        LEFT JOIN LATERAL (
+          SELECT
+              m.electronic_approval_id AS pending_approval_id,
+              COALESCE(m.ea_exe_id, '') AS pending_ea_exe_id,
+              m.ea_title AS pending_title,
+              m.login_id AS pending_login_id,
+              la.login_code AS pending_login_code,
+              COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar)) AS pending_drafter_name,
+              MAX(li.arrival_at) AS pending_arrival_at,
+              TRUE AS pending_alert
+          FROM tb_electronic_approval_main m
+          JOIN tb_electronic_approval_line_info li
+            ON li.tenant_id = m.tenant_id
+           AND li.electronic_approval_id = m.electronic_approval_id
+          LEFT JOIN tb_user pu
+            ON pu.tenant_id = m.tenant_id
+           AND pu.login_id = m.login_id
+          LEFT JOIN tb_login_account la
+            ON la.tenant_id = m.tenant_id
+           AND la.login_id = m.login_id
+          WHERE m.tenant_id = w.tenant_id
+            AND m.drafting_work_category_id = w.drafting_work_category_id
+            AND COALESCE(m.status_type, '') = 'in_progress'
+            AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+            AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+            AND li.arrival_at IS NOT NULL
+            AND li.exe_at IS NULL
+            AND COALESCE(m.delete_status, 'N') != 'Y'
+          GROUP BY m.electronic_approval_id, COALESCE(m.ea_exe_id, ''), m.ea_title, m.login_id, la.login_code, COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar))
+          ORDER BY MAX(li.arrival_at) DESC, m.electronic_approval_id DESC
+          LIMIT 1
+        ) pending ON TRUE
+        LEFT JOIN LATERAL (
+          WITH cycle_base AS (
+            SELECT CASE
+                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
+                  THEN date_trunc('month', CURRENT_TIMESTAMP)
+                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
+                  THEN date_trunc('week', CURRENT_TIMESTAMP)
+                ELSE date_trunc('day', CURRENT_TIMESTAMP)
+              END AS cycle_start
+          )
+          SELECT
+              COUNT(*) AS total_count,
+              SUM(CASE WHEN COALESCE(m.status_type, '') = 'pre_apply' THEN 1 ELSE 0 END) AS pre_apply_count,
+              SUM(CASE WHEN COALESCE(m.status_type, '') = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_count,
+              SUM(CASE WHEN COALESCE(m.status_type, '') = 'approved' THEN 1 ELSE 0 END) AS approved_count,
+              SUM(CASE WHEN COALESCE(m.status_type, '') = 'rejected' THEN 1 ELSE 0 END) AS rejected_count,
+              MAX(COALESCE(m.updated_at, m.created_at)) AS latest_updated_at,
+              (
+                ARRAY_AGG(COALESCE(m.status_type, '') ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC)
+              )[1] AS latest_status_type,
+              (
+                ARRAY_AGG(m.electronic_approval_id ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC)
+              )[1] AS route_approval_id
+              ,(
+                ARRAY_AGG(COALESCE(m.ea_exe_id, '') ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC)
+              )[1] AS route_ea_exe_id
+          FROM tb_electronic_approval_main m
+          CROSS JOIN cycle_base cb
+          WHERE m.tenant_id = w.tenant_id
+            AND m.drafting_work_category_id = w.drafting_work_category_id
+            AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
+            AND COALESCE(m.delete_status, 'N') != 'Y'
+            AND COALESCE(m.updated_at, m.created_at) >= cb.cycle_start
+        ) appr ON TRUE
+        WHERE w.tenant_id = (
+            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
+        )
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+            AND EXISTS (
+              SELECT 1
+              FROM tb_drafting_work_category_authority a2
+              WHERE a2.tenant_id = w.tenant_id
+                AND a2.drafting_work_category_id = w.drafting_work_category_id
+                AND a2.use_at = 'Y'
+                AND COALESCE(a2.delete_status, 'N') != 'Y'
+                AND (
+                      (#{actorUserId, jdbcType=BIGINT} IS NOT NULL
+                        AND a2.employee_no = CAST(#{actorUserId, jdbcType=BIGINT} AS varchar))
+                   OR (#{actorUserId, jdbcType=BIGINT} IS NULL
+                        AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                        AND a2.employee_no = CAST(#{actorLoginId, jdbcType=BIGINT} AS varchar))
+                   OR (#{actorUserId, jdbcType=BIGINT} IS NULL
+                        AND #{actorLoginId, jdbcType=BIGINT} IS NULL
+                        AND #{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL
+                        AND a2.employee_no = #{actorLoginCode, jdbcType=VARCHAR})
+                )
+            )
+        ORDER BY COALESCE(appr.latest_updated_at, w.updated_at, w.created_at) DESC, w.drafting_work_category_id DESC
+    </select>
+
+    <select id="DashboardDAO.selectSummary"
+            parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
+            resultMap="dashboardSummaryResult">
+        SELECT
+            COUNT(*)::int AS total_todo_count,
+            SUM(CASE WHEN COALESCE(appr.in_progress_count, 0) > 0 THEN 1 ELSE 0 END)::int AS in_progress_count,
+            SUM(CASE WHEN COALESCE(appr.in_progress_count, 0) = 0 AND COALESCE(appr.approved_count, 0) > 0 THEN 1 ELSE 0 END)::int AS active_count,
+            SUM(CASE WHEN COALESCE(appr.in_progress_count, 0) = 0 AND COALESCE(appr.approved_count, 0) = 0 THEN 1 ELSE 0 END)::int AS draft_count,
+            SUM(CASE WHEN COALESCE(appr.in_progress_count, 0) > 0 OR COALESCE(appr.approved_count, 0) = 0 THEN 1 ELSE 0 END)::int AS today_action_count,
+            0::int AS notice_count
+        FROM tb_drafting_work_category w
+        LEFT JOIN LATERAL (
+          SELECT
+              SUM(CASE WHEN COALESCE(m.status_type, '') = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_count,
+              SUM(CASE WHEN COALESCE(m.status_type, '') = 'approved' THEN 1 ELSE 0 END) AS approved_count
+          FROM tb_electronic_approval_main m
+          WHERE m.tenant_id = w.tenant_id
+            AND m.drafting_work_category_id = w.drafting_work_category_id
+            AND COALESCE(m.delete_status, 'N') != 'Y'
+        ) appr ON TRUE
+        WHERE w.tenant_id = (
+            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
+        )
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+          AND EXISTS (
+            SELECT 1
+            FROM tb_drafting_work_category_authority a2
+            WHERE a2.tenant_id = w.tenant_id
+              AND a2.drafting_work_category_id = w.drafting_work_category_id
+              AND a2.use_at = 'Y'
+              AND COALESCE(a2.delete_status, 'N') != 'Y'
+              AND (
+                  (#{actorUserId, jdbcType=BIGINT} IS NOT NULL
+                    AND a2.employee_no = CAST(#{actorUserId, jdbcType=BIGINT} AS varchar))
+                  OR (#{actorUserId, jdbcType=BIGINT} IS NULL
+                    AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                    AND a2.employee_no = CAST(#{actorLoginId, jdbcType=BIGINT} AS varchar))
+                  OR (#{actorUserId, jdbcType=BIGINT} IS NULL
+                    AND #{actorLoginId, jdbcType=BIGINT} IS NULL
+                    AND #{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL
+                    AND a2.employee_no = #{actorLoginCode, jdbcType=VARCHAR})
+              )
+          )
+    </select>
+
+    <select id="DashboardDAO.selectMyApprovalAlertList"
+            parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
+            resultMap="dashboardTodoResult">
+        SELECT
+            w.drafting_work_category_id,
+            m.electronic_approval_id,
+          COALESCE(m.ea_exe_id, '') AS ea_exe_id,
+            COALESCE(NULLIF(TRIM(m.ea_title), ''), '') AS title,
+            t.tenant_code,
+            g.cata_code,
+            g.cata_name AS category_name,
+            COALESCE(g.view_seq, 0) AS category_sort_order,
+            w.cata_type_code,
+            w.code_name,
+            w.reg_term,
+            COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar), '-') AS created_by,
+            CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
+            'IN_PROGRESS' AS todo_status,
+            'in_progress' AS approval_status_type,
+            '결재중' AS approval_status_type_name,
+            TO_CHAR(li.arrival_at, 'YYYY-MM-DD HH24:MI') AS latest_status_at,
+            CAST(w.drafting_work_template_json AS text) AS template_json,
+            w.drafting_work_template_html AS template_html,
+            CASE
+              WHEN w.drafting_work_template_json IS NOT NULL
+                OR NULLIF(TRIM(COALESCE(w.drafting_work_template_html, '')), '') IS NOT NULL
+              THEN TRUE
+              ELSE FALSE
+            END AS has_document,
+            TRUE AS written_in_cycle,
+            TRUE AS pending_approval_alert,
+            TO_CHAR(li.arrival_at, 'YYYY-MM-DD HH24:MI') AS pending_arrival_at
+        FROM tb_electronic_approval_line_info li
+        JOIN tb_electronic_approval_main m
+          ON m.tenant_id = li.tenant_id
+         AND m.electronic_approval_id = li.electronic_approval_id
+        JOIN tb_drafting_work_category w
+          ON w.tenant_id = m.tenant_id
+         AND w.drafting_work_category_id = m.drafting_work_category_id
+        JOIN tb_tenant t
+          ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
+         AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_user ru
+          ON ru.tenant_id = w.tenant_id
+         AND ru.login_id = w.reviewer_id
+        LEFT JOIN tb_user au
+          ON au.tenant_id = w.tenant_id
+         AND au.login_id = w.approver_id
+        LEFT JOIN tb_user pu
+          ON pu.tenant_id = m.tenant_id
+         AND pu.login_id = m.login_id
+        LEFT JOIN tb_login_account la
+          ON la.tenant_id = m.tenant_id
+         AND la.login_id = m.login_id
+        WHERE w.tenant_id = (
+            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
+        )
+          AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+          AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+          AND li.arrival_at IS NOT NULL
+          AND li.exe_at IS NULL
+          AND (
+            (COALESCE(li.muldec_status, '') = 'drafted' AND COALESCE(m.status_type, '') = 'in_progress')
+            OR (COALESCE(li.muldec_status, '') = 'cooperated' AND COALESCE(m.status_type, '') IN ('in_progress', 'approved', 'rejected'))
+          )
+          AND COALESCE(m.delete_status, 'N') != 'Y'
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+        ORDER BY li.arrival_at DESC, m.electronic_approval_id DESC
+    </select>
+
+    <select id="DashboardDAO.selectRecentNotices"
+            parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
+            resultMap="dashboardNoticeResult">
+        SELECT
+            1::bigint AS notice_id,
+            '업체'::varchar AS scope,
+            'HACCP CCP 온도기록 누락 점검 주간 운영(6.19~6.26)'::varchar AS title,
+            TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') AS notice_date
+        UNION ALL
+        SELECT
+            2::bigint,
+            '업체'::varchar,
+            '현장 점검 체크리스트 모바일 입력 기능 점검 안내'::varchar,
+            TO_CHAR(CURRENT_DATE - INTERVAL '1 day', 'YYYY-MM-DD')
+        UNION ALL
+        SELECT
+            3::bigint,
+            '플랫폼'::varchar,
+            '플랫폼 공통 문서 템플릿 버전관리 정책 업데이트 안내'::varchar,
+            TO_CHAR(CURRENT_DATE - INTERVAL '2 day', 'YYYY-MM-DD')
+        ORDER BY notice_id ASC
+    </select>
+
+    <select id="DashboardDAO.selectTenantIdByCode"
+            parameterType="string"
+            resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+        LIMIT 1
+    </select>
+
+    <select id="DashboardDAO.selectLoginIdByTenantAndLoginCode"
+            parameterType="map"
+            resultType="long">
+        SELECT login_id
+        FROM tb_login_account
+        WHERE tenant_id = #{tenantId}
+          AND login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <select id="DashboardDAO.selectUserIdByTenantAndLoginId"
+            parameterType="map"
+            resultType="long">
+        SELECT user_id
+        FROM tb_user
+        WHERE tenant_id = #{tenantId}
+          AND login_id = #{loginId}
+        LIMIT 1
+    </select>
+
+</mapper>

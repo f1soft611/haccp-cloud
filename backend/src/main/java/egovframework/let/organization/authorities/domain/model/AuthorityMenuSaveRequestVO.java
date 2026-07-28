@@ -11,9 +11,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 플랫폼 역할별 메뉴 저장 요청 VO
+ * 플랫폼 권한별 메뉴 저장 요청을 위한 VO 클래스
+ * @author SHMT-MES
+ * @since 2026.07.14
+ * @version 1.0
  */
-@Schema(description = "플랫폼 역할별 메뉴 저장 요청 VO")
+@Schema(description = "플랫폼 권한별 메뉴 저장 요청 모델")
 @Getter
 @Setter
 public class AuthorityMenuSaveRequestVO implements Serializable {

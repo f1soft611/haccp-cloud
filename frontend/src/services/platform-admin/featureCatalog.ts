@@ -24,6 +24,8 @@ const PATH_FEATURE_CODE_MAP: Record<string, string> = {
   '/org/departments': FEATURE_CODES.TENANT_USER_MANAGEMENT,
   '/documents': FEATURE_CODES.DOCUMENT_WORKFLOW,
   '/document-history': FEATURE_CODES.DOCUMENT_WORKFLOW,
+  '/docs/haccp-base': FEATURE_CODES.DOCUMENT_WORKFLOW,
+  '/docs/haccp-base/editor': FEATURE_CODES.DOCUMENT_WORKFLOW,
 };
 
 const BUTTON_FEATURE_CODE_MAP: Record<string, string> = {

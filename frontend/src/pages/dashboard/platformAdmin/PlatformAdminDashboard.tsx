@@ -1,35 +1,17 @@
 import { Alert, Stack } from '@mui/material';
 import { useQueries } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import {
   getPlatformAdminDashboardKpis,
   listPlatformAdminCcpDocuments,
   listPlatformAdminTenantCodeIssuance,
   listPlatformAdminTenants,
 } from '../../../services/documents/dashboardService';
-import { logout as logoutApi } from '../../../services/auth/logoutService';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { APP_LABELS } from '../../../shared/constants/labels';
-import { resolveLoginPathWithLastDomain } from '../../../shared/utils/loginDomainRouting';
 import { PlatformAdminPanels } from './PlatformAdminPanels';
 
 export function PlatformAdminDashboard() {
-  const navigate = useNavigate();
   const role = useAuthStore((state) => state.role);
-  const displayName = useAuthStore((state) => state.displayName);
-  const loginHistoryId = useAuthStore((state) => state.loginHistoryId);
-  const clearAuth = useAuthStore((state) => state.logout);
-
-  const handleLogout = async () => {
-    try {
-      await logoutApi(loginHistoryId);
-    } catch {
-      // Force local logout even if backend call fails.
-    } finally {
-      clearAuth();
-      navigate(resolveLoginPathWithLastDomain(), { replace: true });
-    }
-  };
 
   const [
     kpisQuery,
@@ -128,10 +110,6 @@ export function PlatformAdminDashboard() {
           void ccpDocumentsQuery.refetch();
         }}
         loginRole={role}
-        displayName={displayName}
-        onLogout={() => {
-          void handleLogout();
-        }}
       />
     </Stack>
   );

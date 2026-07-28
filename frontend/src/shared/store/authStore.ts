@@ -25,6 +25,11 @@ type AuthState = {
   planCode?: string;
   userId: string;
   displayName: string;
+  email?: string;
+  departmentName?: string;
+  profileImage?: string;
+  signatureImage?: string;
+  stampImage?: string;
   role: UserRole;
   accessToken: string;
   refreshToken: string;
@@ -36,12 +41,22 @@ type AuthState = {
     planCode?: string;
     userId: string;
     displayName?: string;
+    email?: string;
+    departmentName?: string;
+    profileImage?: string;
+    signatureImage?: string;
+    stampImage?: string;
     role: UserRole;
     accessToken?: string;
     refreshToken?: string;
     loginHistoryId?: number;
     onboardingRequired?: boolean;
     onboardingStatus?: OnboardingStatus;
+  }) => void;
+  updateUserImages: (payload: {
+    profileImage?: string;
+    signatureImage?: string;
+    stampImage?: string;
   }) => void;
   updateAccessToken: (accessToken: string) => void;
   markOnboardingCompleted: () => void;
@@ -94,6 +109,11 @@ const initialState = {
   planCode: undefined,
   userId: '',
   displayName: '',
+  email: undefined,
+  departmentName: undefined,
+  profileImage: undefined,
+  signatureImage: undefined,
+  stampImage: undefined,
   role: 'USER' as UserRole,
   accessToken: '',
   refreshToken: '',
@@ -121,6 +141,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     planCode,
     userId,
     displayName,
+    email,
+    departmentName,
+    profileImage,
+    signatureImage,
+    stampImage,
     role,
     accessToken,
     refreshToken,
@@ -140,6 +165,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       planCode: planCode?.trim().toUpperCase() || undefined,
       userId,
       displayName: (displayName ?? '').trim(),
+      email: (email ?? '').trim() || undefined,
+      departmentName: (departmentName ?? '').trim() || undefined,
+      profileImage: (profileImage ?? '').trim() || undefined,
+      signatureImage: (signatureImage ?? '').trim() || undefined,
+      stampImage: (stampImage ?? '').trim() || undefined,
       role: normalizeUserRole(role),
       accessToken: accessToken ?? '',
       refreshToken: refreshToken ?? '',
@@ -153,6 +183,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     set(nextState);
     persistState(nextState);
+  },
+  updateUserImages: ({ profileImage, signatureImage, stampImage }) => {
+    set((state) => {
+      const nextState = {
+        ...state,
+        profileImage: (profileImage ?? '').trim() || undefined,
+        signatureImage: (signatureImage ?? '').trim() || undefined,
+        stampImage: (stampImage ?? '').trim() || undefined,
+      };
+
+      persistState(nextState);
+      return nextState;
+    });
   },
   updateAccessToken: (accessToken) => {
     set((state) => {

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="HaccpBaseCategoryDAO">
+
+    <resultMap id="haccpBaseCategoryResult"
+               type="egovframework.let.documents.haccpbase.categories.domain.model.HaccpBaseCategoryVO">
+        <result property="draftingWorkCategoryGroupId" column="drafting_work_category_group_id"/>
+        <result property="tenantCode" column="tenant_code"/>
+        <result property="categoryCode" column="cata_code"/>
+        <result property="categoryName" column="cata_name"/>
+        <result property="sortOrder" column="view_seq"/>
+        <result property="active" column="active"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 업무 분류 목록 조회 -->
+    <select id="HaccpBaseCategoryDAO.selectCategoryList"
+            parameterType="egovframework.let.documents.haccpbase.categories.domain.model.HaccpBaseCategorySearchConditionVO"
+            resultMap="haccpBaseCategoryResult">
+        SELECT
+            g.drafting_work_category_group_id,
+            t.tenant_code,
+            g.cata_code,
+            g.cata_name,
+                        CASE
+                            WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+                            ELSE 0
+                        END AS view_seq,
+            CASE WHEN g.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            COALESCE(NULLIF(TRIM(u.user_nm), ''), CAST(g.created_by AS varchar)) AS created_by,
+            TO_CHAR(g.created_at, 'YYYY-MM-DD HH24:MI') AS created_at
+        FROM tb_drafting_work_category_group g
+        JOIN tb_tenant t ON t.tenant_id = g.tenant_id
+        LEFT JOIN tb_user u
+          ON u.tenant_id = g.tenant_id
+         AND u.login_id = g.created_by
+        WHERE g.tenant_id = (
+            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
+        )
+          AND COALESCE(g.delete_status, 'N') != 'Y'
+        <if test='active != null and active == "Y"'>
+            AND g.use_at = 'Y'
+        </if>
+        <if test='active != null and active == "N"'>
+            AND g.use_at = 'N'
+        </if>
+                ORDER BY
+                    CASE
+                        WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+                        ELSE 0
+                    END,
+                    g.drafting_work_category_group_id
+    </select>
+
+    <!-- 업무 분류 단건 조회 -->
+    <select id="HaccpBaseCategoryDAO.selectCategoryById"
+            parameterType="map"
+            resultMap="haccpBaseCategoryResult">
+        SELECT
+            g.drafting_work_category_group_id,
+            t.tenant_code,
+            g.cata_code,
+            g.cata_name,
+                        CASE
+                            WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+                            ELSE 0
+                        END AS view_seq,
+            CASE WHEN g.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+                        COALESCE(NULLIF(TRIM(u.user_nm), ''), CAST(g.created_by AS varchar)) AS created_by,
+            TO_CHAR(g.created_at, 'YYYY-MM-DD HH24:MI') AS created_at
+        FROM tb_drafting_work_category_group g
+        JOIN tb_tenant t ON t.tenant_id = g.tenant_id
+                LEFT JOIN tb_user u
+                    ON u.tenant_id = g.tenant_id
+                 AND u.login_id = g.created_by
+        WHERE g.drafting_work_category_group_id = #{id}
+          AND t.tenant_code = #{tenantCode}
+          AND COALESCE(g.delete_status, 'N') != 'Y'
+    </select>
+
+    <!-- tenant_id 조회 -->
+    <select id="HaccpBaseCategoryDAO.selectTenantIdByCode"
+            parameterType="string"
+            resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+        LIMIT 1
+    </select>
+
+    <!-- login_id 조회 -->
+    <select id="HaccpBaseCategoryDAO.selectLoginIdByTenantAndLoginCode"
+            parameterType="map"
+            resultType="long">
+        SELECT login_id
+        FROM tb_login_account
+        WHERE tenant_id = #{tenantId}
+          AND login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <!-- 업무 분류 등록 -->
+    <select id="HaccpBaseCategoryDAO.insertCategory"
+            parameterType="map"
+            resultType="long">
+        INSERT INTO tb_drafting_work_category_group (
+            tenant_id,
+            cata_code,
+            cata_name,
+            view_seq,
+            use_at,
+            delete_status,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        ) VALUES (
+            #{tenantId},
+            #{categoryCode},
+            #{categoryName},
+            #{sortOrder},
+            #{useAt},
+            'N',
+            #{createdBy, jdbcType=BIGINT},
+            CURRENT_TIMESTAMP,
+            #{updatedBy, jdbcType=BIGINT},
+            CURRENT_TIMESTAMP
+        )
+        RETURNING drafting_work_category_group_id
+    </select>
+
+    <!-- 업무 분류 수정 -->
+    <update id="HaccpBaseCategoryDAO.updateCategory"
+            parameterType="map">
+        UPDATE tb_drafting_work_category_group
+        SET
+            cata_name = #{categoryName},
+            view_seq = #{sortOrder},
+            use_at = #{useAt},
+            updated_by = #{updatedBy, jdbcType=BIGINT},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE drafting_work_category_group_id = #{id}
+          AND tenant_id = #{tenantId}
+          AND COALESCE(delete_status, 'N') != 'Y'
+    </update>
+
+</mapper>

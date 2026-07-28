@@ -71,4 +71,53 @@ describe('TopGovBar', () => {
 
     expect(await screen.findByText('home-page')).toBeInTheDocument();
   });
+
+  it('opens the account menu for authenticated users and shows account actions', async () => {
+    act(() => {
+      useAuthStore.setState({
+        isAuthenticated: true,
+        tenantCode: 'TENANT-A',
+        userId: 'tenant_admin',
+        displayName: '김기형',
+        role: 'TENANT_ADMIN',
+        onboardingRequired: false,
+        onboardingStatus: 'COMPLETED',
+      });
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/documents']}>
+        <Routes>
+          <Route
+            path="/documents"
+            element={
+              <>
+                <TopGovBar />
+                <div>documents-page</div>
+              </>
+            }
+          />
+          <Route path="/account/my-page" element={<div>my-page</div>} />
+          <Route path="/login" element={<div>login-page</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const accountButton = screen.getByRole('button', { name: /사용자 메뉴/ });
+    fireEvent.click(accountButton);
+
+    expect(
+      await screen.findByRole('menuitem', { name: '내 정보 관리' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitem', { name: '보안 설정' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('menuitem', { name: '로그아웃' }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('menuitem', { name: '내 정보 관리' }));
+
+    expect(await screen.findByText('my-page')).toBeInTheDocument();
+  });
 });

@@ -8,6 +8,9 @@
 <result property="tenantCode" column="tenantCode"/>
 <result property="id" column="id"/>
 <result property="name" column="name"/>
+<result property="profileImage" column="profileImage"/>
+<result property="signatureImage" column="signatureImage"/>
+<result property="stampImage" column="stampImage"/>
 <result property="ihidNum" column="ihidNum"/>
 <result property="email" column="email"/>
 <result property="password" column="password"/>
@@ -36,6 +39,9 @@ li.tenant_id       AS tenantId,
 t.tenant_code      AS tenantCode,
 li.login_code      AS id,
 u.user_nm          AS name,
+li.profile_image   AS profileImage,
+li.stamp_image     AS signatureImage,
+li.stamp_image     AS stampImage,
 li.password_hash   AS password,
 NULL               AS ihidNum,
 u.email_addr       AS email,

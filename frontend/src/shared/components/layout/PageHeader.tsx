@@ -10,12 +10,16 @@ export type PageHeaderProps = {
   title: string;
   groupLabel?: string;
   description?: string;
+  useMenuMetadata?: boolean;
+  showGroupLabel?: boolean;
 };
 
 export function PageHeader({
   title,
   groupLabel,
   description,
+  useMenuMetadata = true,
+  showGroupLabel = true,
 }: PageHeaderProps) {
   const location = useLocation();
   const currentMenuGroupLabel = useCurrentMenuGroupLabel();
@@ -34,9 +38,15 @@ export function PageHeader({
     return menuMetadataByPath[bestPath];
   }, [location.pathname, menuMetadataByPath]);
 
-  const resolvedTitle = currentMetadata?.menuNm || title;
-  const resolvedDescription = currentMetadata?.menuDc || description;
-  const resolvedGroupLabel = currentMenuGroupLabel || groupLabel;
+  const resolvedTitle =
+    useMenuMetadata && currentMetadata?.menuNm ? currentMetadata.menuNm : title;
+  const resolvedDescription =
+    useMenuMetadata && currentMetadata?.menuDc
+      ? currentMetadata.menuDc
+      : description;
+  const resolvedGroupLabel = showGroupLabel
+    ? currentMenuGroupLabel || groupLabel
+    : undefined;
 
   return (
     <Box

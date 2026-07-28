@@ -17,6 +17,11 @@ export type LoginResponse = {
   tenantCode: string;
   userId: string;
   displayName?: string;
+  email?: string;
+  departmentName?: string;
+  profileImage?: string;
+  signatureImage?: string;
+  stampImage?: string;
   role: UserRole;
   accessToken: string;
   refreshToken?: string;
@@ -29,6 +34,11 @@ type BackendLoginVO = {
   factoryCode?: string;
   id?: string;
   name?: string;
+  email?: string;
+  departmentName?: string;
+  profileImage?: string;
+  signatureImage?: string;
+  stampImage?: string;
   groupNm?: string;
   roleCode?: string;
 };
@@ -187,6 +197,11 @@ function normalizeLoginResponse(
     tenantCode: resultVO.factoryCode ?? '000001',
     userId,
     displayName: resultVO.name?.trim() || undefined,
+    email: resultVO.email?.trim() || undefined,
+    departmentName: resultVO.departmentName?.trim() || undefined,
+    profileImage: resultVO.profileImage?.trim() || undefined,
+    signatureImage: resultVO.signatureImage?.trim() || undefined,
+    stampImage: resultVO.stampImage?.trim() || undefined,
     role: resolveRole(userId, resultVO.groupNm, resultVO.roleCode),
     accessToken: data.jToken ?? '',
     refreshToken: data.refreshToken,

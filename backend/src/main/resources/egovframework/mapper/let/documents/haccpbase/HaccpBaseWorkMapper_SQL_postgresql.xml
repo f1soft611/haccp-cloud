@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="HaccpBaseWorkDAO">
+
+    <resultMap id="haccpBaseWorkResult"
+               type="egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkVO">
+        <result property="draftingWorkCategoryId" column="drafting_work_category_id"/>
+        <result property="tenantCode" column="tenant_code"/>
+        <result property="categoryGroupId" column="drafting_work_category_group_id"/>
+        <result property="categoryCode" column="cata_code"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="categorySortOrder" column="category_sort_order"/>
+        <result property="divisionCode" column="cata_type_code"/>
+        <result property="divisionName" column="code_name"/>
+        <result property="cycle" column="reg_term"/>
+        <result property="active" column="active"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="owner" column="owner"/>
+        <result property="assigneeSummary" column="assignee_summary"/>
+        <result property="assigneeIdsCsv" column="assignee_ids_csv"/>
+        <result property="reviewerId" column="reviewer_id"/>
+        <result property="reviewerName" column="reviewer_name"/>
+        <result property="approverId" column="approver_id"/>
+        <result property="approverName" column="approver_name"/>
+        <result property="assigneeMapped" column="assignee_mapped"/>
+        <result property="templateJson" column="template_json"/>
+        <result property="templateHtml" column="template_html"/>
+        <result property="hasDocument" column="has_document"/>
+        <result property="todoStatus" column="todo_status"/>
+        <result property="approvalStatusType" column="approval_status_type"/>
+        <result property="approvalStatusTypeName" column="approval_status_type_name"/>
+        <result property="latestStatusAt" column="latest_status_at"/>
+    </resultMap>
+
+
+    <select id="HaccpBaseWorkDAO.selectWorkList"
+            parameterType="egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkSearchConditionVO"
+            resultMap="haccpBaseWorkResult">
+        SELECT
+            w.drafting_work_category_id,
+            t.tenant_code,
+            w.drafting_work_category_group_id,
+            g.cata_code,
+            g.cata_name AS category_name,
+            CASE
+              WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+              ELSE 0
+            END AS category_sort_order,
+            w.cata_type_code,
+            w.code_name,
+            w.reg_term,
+            CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
+            TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
+            CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
+            CASE
+              WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
+              WHEN wa.assignee_count = 1 THEN wa.first_assignee_name
+              ELSE wa.first_assignee_name || ' 외 ' || CAST(wa.assignee_count - 1 AS varchar) || '명'
+            END AS assignee_summary,
+            COALESCE(wa.assignee_ids_csv, '') AS assignee_ids_csv,
+            w.reviewer_id,
+            COALESCE(NULLIF(TRIM(ru.user_nm), ''), '') AS reviewer_name,
+            w.approver_id,
+            COALESCE(NULLIF(TRIM(au.user_nm), ''), '') AS approver_name,
+            CASE
+              WHEN w.reviewer_id IS NOT NULL AND w.approver_id IS NOT NULL THEN TRUE
+              ELSE FALSE
+            END AS assignee_mapped,
+            CAST(w.drafting_work_template_json AS text) AS template_json,
+            w.drafting_work_template_html AS template_html,
+            CASE
+              WHEN w.drafting_work_template_json IS NOT NULL
+                OR NULLIF(TRIM(COALESCE(w.drafting_work_template_html, '')), '') IS NOT NULL
+              THEN TRUE
+              ELSE FALSE
+            END AS has_document
+        FROM tb_drafting_work_category w
+        JOIN tb_tenant t ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
+         AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_user cu
+          ON cu.tenant_id = w.tenant_id
+         AND cu.login_id = w.created_by
+        LEFT JOIN tb_user ru
+          ON ru.tenant_id = w.tenant_id
+         AND ru.login_id = w.reviewer_id
+        LEFT JOIN tb_user au
+          ON au.tenant_id = w.tenant_id
+         AND au.login_id = w.approver_id
+        LEFT JOIN LATERAL (
+          SELECT
+              COUNT(*) AS assignee_count,
+              STRING_AGG(a.employee_no, ',' ORDER BY a.drafting_work_category_authority_id) AS assignee_ids_csv,
+              (ARRAY_AGG(
+                  COALESCE(NULLIF(TRIM(um.user_nm), ''), a.employee_no)
+                  ORDER BY a.drafting_work_category_authority_id
+              ))[1] AS first_assignee_name
+          FROM tb_drafting_work_category_authority a
+          LEFT JOIN tb_user um
+            ON um.tenant_id = a.tenant_id
+           AND (
+             CAST(um.user_id AS varchar) = a.employee_no
+             OR CAST(um.login_id AS varchar) = a.employee_no
+           )
+          WHERE a.tenant_id = w.tenant_id
+            AND a.drafting_work_category_id = w.drafting_work_category_id
+            AND a.use_at = 'Y'
+            AND COALESCE(a.delete_status, 'N') != 'Y'
+        ) wa ON TRUE
+        WHERE w.tenant_id = (
+            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
+        )
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+        <if test='active != null and active == "Y"'>
+            AND w.use_at = 'Y'
+        </if>
+        <if test='active != null and active == "N"'>
+            AND w.use_at = 'N'
+        </if>
+        ORDER BY
+          CASE
+            WHEN COALESCE(TRIM(w.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(w.view_seq::varchar) AS integer)
+            ELSE 0
+          END,
+          w.drafting_work_category_id
+    </select>
+
+    <select id="HaccpBaseWorkDAO.selectWorkById"
+            parameterType="map"
+            resultMap="haccpBaseWorkResult">
+        SELECT
+            w.drafting_work_category_id,
+            t.tenant_code,
+            w.drafting_work_category_group_id,
+            g.cata_code,
+            g.cata_name AS category_name,
+            CASE
+              WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+              ELSE 0
+            END AS category_sort_order,
+            w.cata_type_code,
+            w.code_name,
+            w.reg_term,
+            CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
+            TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
+            CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
+            CASE
+              WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
+              WHEN wa.assignee_count = 1 THEN wa.first_assignee_name
+              ELSE wa.first_assignee_name || ' 외 ' || CAST(wa.assignee_count - 1 AS varchar) || '명'
+            END AS assignee_summary,
+            COALESCE(wa.assignee_ids_csv, '') AS assignee_ids_csv,
+            w.reviewer_id,
+            COALESCE(NULLIF(TRIM(ru.user_nm), ''), '') AS reviewer_name,
+            w.approver_id,
+            COALESCE(NULLIF(TRIM(au.user_nm), ''), '') AS approver_name,
+            CASE
+              WHEN w.reviewer_id IS NOT NULL AND w.approver_id IS NOT NULL THEN TRUE
+              ELSE FALSE
+            END AS assignee_mapped,
+            CAST(w.drafting_work_template_json AS text) AS template_json,
+            w.drafting_work_template_html AS template_html,
+            CASE
+              WHEN w.drafting_work_template_json IS NOT NULL
+                OR NULLIF(TRIM(COALESCE(w.drafting_work_template_html, '')), '') IS NOT NULL
+              THEN TRUE
+              ELSE FALSE
+            END AS has_document
+        FROM tb_drafting_work_category w
+        JOIN tb_tenant t ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
+         AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_user cu
+          ON cu.tenant_id = w.tenant_id
+         AND cu.login_id = w.created_by
+        LEFT JOIN tb_user ru
+          ON ru.tenant_id = w.tenant_id
+         AND ru.login_id = w.reviewer_id
+        LEFT JOIN tb_user au
+          ON au.tenant_id = w.tenant_id
+         AND au.login_id = w.approver_id
+        LEFT JOIN LATERAL (
+          SELECT
+              COUNT(*) AS assignee_count,
+              STRING_AGG(a.employee_no, ',' ORDER BY a.drafting_work_category_authority_id) AS assignee_ids_csv,
+              (ARRAY_AGG(
+                  COALESCE(NULLIF(TRIM(um.user_nm), ''), a.employee_no)
+                  ORDER BY a.drafting_work_category_authority_id
+              ))[1] AS first_assignee_name
+          FROM tb_drafting_work_category_authority a
+          LEFT JOIN tb_user um
+            ON um.tenant_id = a.tenant_id
+           AND (
+             CAST(um.user_id AS varchar) = a.employee_no
+             OR CAST(um.login_id AS varchar) = a.employee_no
+           )
+          WHERE a.tenant_id = w.tenant_id
+            AND a.drafting_work_category_id = w.drafting_work_category_id
+            AND a.use_at = 'Y'
+            AND COALESCE(a.delete_status, 'N') != 'Y'
+        ) wa ON TRUE
+        WHERE w.drafting_work_category_id = #{id}
+          AND t.tenant_code = #{tenantCode}
+          AND COALESCE(w.delete_status, 'N') != 'Y'
+    </select>
+
+
+    <select id="HaccpBaseWorkDAO.selectTenantIdByCode"
+            parameterType="string"
+            resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+        LIMIT 1
+    </select>
+
+    <select id="HaccpBaseWorkDAO.selectLoginIdByTenantAndLoginCode"
+            parameterType="map"
+            resultType="long">
+        SELECT login_id
+        FROM tb_login_account
+        WHERE tenant_id = #{tenantId}
+          AND login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <select id="HaccpBaseWorkDAO.selectUserIdByTenantAndLoginId"
+            parameterType="map"
+            resultType="long">
+        SELECT user_id
+        FROM tb_user
+        WHERE tenant_id = #{tenantId}
+          AND login_id = #{loginId}
+        LIMIT 1
+    </select>
+
+    <select id="HaccpBaseWorkDAO.insertWork"
+            parameterType="map"
+            resultType="long">
+        INSERT INTO tb_drafting_work_category (
+            tenant_id,
+            drafting_work_category_group_id,
+            cata_type_code,
+            code_name,
+            view_seq,
+            reg_term,
+            reviewer_id,
+            approver_id,
+            cata_code,
+            use_at,
+            delete_status,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        ) VALUES (
+            #{tenantId},
+            #{categoryGroupId},
+            #{divisionCode},
+            #{divisionName},
+            0,
+            #{cycle},
+            #{reviewerId, jdbcType=BIGINT},
+            #{approverId, jdbcType=BIGINT},
+            (SELECT cata_code FROM tb_drafting_work_category_group
+              WHERE drafting_work_category_group_id = #{categoryGroupId}
+                AND tenant_id = #{tenantId}
+              LIMIT 1),
+            #{useAt},
+            'N',
+            #{createdBy, jdbcType=BIGINT},
+            CURRENT_TIMESTAMP,
+            #{updatedBy, jdbcType=BIGINT},
+            CURRENT_TIMESTAMP
+        )
+        RETURNING drafting_work_category_id
+    </select>
+
+    <update id="HaccpBaseWorkDAO.updateWork"
+            parameterType="map">
+        UPDATE tb_drafting_work_category
+        SET
+            drafting_work_category_group_id = #{categoryGroupId},
+            cata_type_code = #{divisionCode},
+            code_name = #{divisionName},
+            reg_term = #{cycle},
+            reviewer_id = #{reviewerId, jdbcType=BIGINT},
+            approver_id = #{approverId, jdbcType=BIGINT},
+            cata_code = (SELECT cata_code FROM tb_drafting_work_category_group
+                          WHERE drafting_work_category_group_id = #{categoryGroupId}
+                            AND tenant_id = #{tenantId}
+                          LIMIT 1),
+            use_at = #{useAt},
+            updated_by = #{updatedBy, jdbcType=BIGINT},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE drafting_work_category_id = #{id}
+          AND tenant_id = #{tenantId}
+          AND COALESCE(delete_status, 'N') != 'Y'
+    </update>
+
+        <update id="HaccpBaseWorkDAO.updateWorkTemplate"
+            parameterType="map">
+          UPDATE tb_drafting_work_category
+          SET
+            drafting_work_template_json =
+              CASE
+                WHEN #{templateJson, jdbcType=VARCHAR} IS NULL THEN NULL
+                ELSE CAST(#{templateJson, jdbcType=VARCHAR} AS jsonb)
+              END,
+            drafting_work_template_html = #{templateHtml, jdbcType=LONGVARCHAR},
+            updated_by = #{updatedBy, jdbcType=BIGINT},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE drafting_work_category_id = #{id}
+            AND tenant_id = #{tenantId}
+            AND COALESCE(delete_status, 'N') != 'Y'
+        </update>
+
+      <delete id="HaccpBaseWorkDAO.deleteWorkAuthorityMappings"
+          parameterType="map">
+        DELETE
+        FROM tb_drafting_work_category_authority
+        WHERE tenant_id = #{tenantId}
+          AND drafting_work_category_id = #{workId}
+      </delete>
+
+      <insert id="HaccpBaseWorkDAO.insertWorkAuthorityMapping"
+          parameterType="map">
+        INSERT INTO tb_drafting_work_category_authority (
+          tenant_id,
+          drafting_work_category_id,
+          cata_type_code,
+          employee_no,
+          use_at,
+          delete_status,
+          created_by,
+          created_at,
+          updated_by,
+          updated_at
+        ) VALUES (
+          #{tenantId},
+          #{workId},
+          #{cataTypeCode},
+          #{employeeNo},
+          'Y',
+          'N',
+          #{createdBy, jdbcType=BIGINT},
+          CURRENT_TIMESTAMP,
+          #{updatedBy, jdbcType=BIGINT},
+          CURRENT_TIMESTAMP
+        )
+      </insert>
+
+</mapper>
