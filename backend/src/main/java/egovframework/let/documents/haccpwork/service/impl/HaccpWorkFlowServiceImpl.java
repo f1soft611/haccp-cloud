@@ -1182,6 +1182,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 "review_approve"
             );
 
+            markNextApprovalArrival(tenantId, approvalId, APPROVER_SEQ, now, "승인요청");
+
             if (isApprovalLineOwnedByActor(tenantId, approvalId, APPROVER_SEQ, actorLoginId)) {
                 processApprovalStep(
                     tenantId,
@@ -1198,8 +1200,6 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                     "final_approve"
                 );
                 markFinalOwnerArrival(tenantId, approvalId, now, "최종기안알림");
-            } else {
-                markNextApprovalArrival(tenantId, approvalId, APPROVER_SEQ, now, "승인요청");
             }
             return;
         }
@@ -1220,6 +1220,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 "review_approve"
             );
 
+            markNextApprovalArrival(tenantId, approvalId, APPROVER_SEQ, now, "승인요청");
+
             if (isApprovalLineOwnedByActor(tenantId, approvalId, APPROVER_SEQ, actorLoginId)) {
                 processApprovalStep(
                     tenantId,
@@ -1236,8 +1238,6 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                     "final_approve"
                 );
                 markFinalOwnerArrival(tenantId, approvalId, now, "최종기안알림");
-            } else {
-                markNextApprovalArrival(tenantId, approvalId, APPROVER_SEQ, now, "승인요청");
             }
             return;
         }
