@@ -5,13 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
+import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,9 +24,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
 import egovframework.let.documents.haccpwork.domain.repository.HaccpWorkDAO;
 import egovframework.let.documents.haccpwork.service.HaccpWorkDraftService;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 
 class HaccpWorkFlowServiceImplTest {
 
@@ -90,6 +96,150 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("[시스템] 최종승인자님이 승인 취소 처리했습니다.", answerCnt);
     }
 
+    @DisplayName("검토자와 승인자가 같으면 검토승인 요청 한 번으로 최종승인까지 이어진다")
+    @Test
+    void updateApprovalStatus_reviewApproveAutoAdvancesWhenNextAssigneeIsSameActor() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForApprovalChainTest(3001L, 3001L);
+
+        HaccpWorkApprovalStatusUpdateRequestVO payload = new HaccpWorkApprovalStatusUpdateRequestVO();
+        payload.setEventType("review_approve");
+
+        service.updateApprovalStatus(77L, "tenant_001", payload, "3001");
+
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalLineStatus(anyMap());
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalMainStatus(anyMap());
+        verify(serviceHaccpWorkDAO, times(2)).insertElectronicApprovalHistoryMain(anyMap());
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalLineArrival(anyMap());
+
+        ArgumentCaptor<Map> historyCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(2)).insertElectronicApprovalHistoryMain(historyCaptor.capture());
+        assertEquals(2, historyCaptor.getAllValues().size());
+        assertEquals(2, historyCaptor.getAllValues().get(0).get("exeSeq"));
+        assertEquals("[시스템] 검토자님이 검토승인 처리했습니다.", historyCaptor.getAllValues().get(0).get("answerCnt"));
+        assertEquals(3, historyCaptor.getAllValues().get(1).get("exeSeq"));
+        assertEquals("[시스템] 검토자님이 최종승인 처리했습니다.", historyCaptor.getAllValues().get(1).get("answerCnt"));
+
+        ArgumentCaptor<Map> mainCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalMainStatus(mainCaptor.capture());
+        assertEquals("approved", mainCaptor.getAllValues().get(1).get("statusType"));
+        assertEquals("완료", mainCaptor.getAllValues().get(1).get("statusTypeName"));
+
+        ArgumentCaptor<Map> arrivalCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalLineArrival(arrivalCaptor.capture());
+        assertEquals(3, arrivalCaptor.getAllValues().get(0).get("exeSeq"));
+        assertEquals("승인요청", arrivalCaptor.getAllValues().get(0).get("optionName"));
+        assertEquals(4, arrivalCaptor.getAllValues().get(1).get("exeSeq"));
+        assertEquals("최종기안알림", arrivalCaptor.getAllValues().get(1).get("optionName"));
+    }
+
+    @DisplayName("다음 승인자가 다른 사용자면 검토승인까지만 처리하고 다음 결재선만 열어둔다")
+    @Test
+    void updateApprovalStatus_reviewApproveStopsWhenNextAssigneeDiffers() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForApprovalChainTest(3001L, 4001L);
+
+        HaccpWorkApprovalStatusUpdateRequestVO payload = new HaccpWorkApprovalStatusUpdateRequestVO();
+        payload.setEventType("review_approve");
+
+        service.updateApprovalStatus(77L, "tenant_001", payload, "3001");
+
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalLineStatus(anyMap());
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalMainStatus(anyMap());
+        verify(serviceHaccpWorkDAO, times(1)).insertElectronicApprovalHistoryMain(anyMap());
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalLineArrival(anyMap());
+
+        ArgumentCaptor<Map> historyCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(1)).insertElectronicApprovalHistoryMain(historyCaptor.capture());
+        assertEquals(2, historyCaptor.getValue().get("exeSeq"));
+        assertEquals("[시스템] 검토자님이 검토승인 처리했습니다.", historyCaptor.getValue().get("answerCnt"));
+
+        ArgumentCaptor<Map> mainCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalMainStatus(mainCaptor.capture());
+        assertEquals("in_progress", mainCaptor.getValue().get("statusType"));
+        assertEquals("진행중", mainCaptor.getValue().get("statusTypeName"));
+
+        ArgumentCaptor<Map> arrivalCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalLineArrival(arrivalCaptor.capture());
+        assertEquals(3, arrivalCaptor.getValue().get("exeSeq"));
+        assertEquals("승인요청", arrivalCaptor.getValue().get("optionName"));
+    }
+
+    @DisplayName("검토자와 승인자가 같으면 결재신청 후 검토승인과 최종승인까지 자동으로 이어진다")
+    @Test
+    void submitDraft_autoAdvancesThroughReviewAndFinalWhenSameActor() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 3001L);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("제출 테스트");
+
+        Long approvalId = service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        assertEquals(77L, approvalId);
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalLineStatus(anyMap());
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalMainStatus(anyMap());
+        verify(serviceHaccpWorkDAO, times(3)).insertElectronicApprovalHistoryMain(anyMap());
+
+        ArgumentCaptor<Map> historyCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(3)).insertElectronicApprovalHistoryMain(historyCaptor.capture());
+        assertEquals(1, historyCaptor.getAllValues().get(0).get("exeSeq"));
+        assertEquals("[시스템] 검토자님이 결재신청 처리했습니다.", historyCaptor.getAllValues().get(0).get("answerCnt"));
+        assertEquals(2, historyCaptor.getAllValues().get(1).get("exeSeq"));
+        assertEquals("[시스템] 검토자님이 검토승인 처리했습니다.", historyCaptor.getAllValues().get(1).get("answerCnt"));
+        assertEquals(3, historyCaptor.getAllValues().get(2).get("exeSeq"));
+        assertEquals("[시스템] 검토자님이 최종승인 처리했습니다.", historyCaptor.getAllValues().get(2).get("answerCnt"));
+
+        ArgumentCaptor<Map> mainCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalMainStatus(mainCaptor.capture());
+        assertEquals("approved", mainCaptor.getAllValues().get(1).get("statusType"));
+        assertEquals("완료", mainCaptor.getAllValues().get(1).get("statusTypeName"));
+
+        ArgumentCaptor<Map> lineCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalLineStatus(lineCaptor.capture());
+        assertEquals(2, lineCaptor.getAllValues().get(0).get("exeSeq"));
+        assertEquals("approved", lineCaptor.getAllValues().get(0).get("appStatus"));
+        assertEquals(3, lineCaptor.getAllValues().get(1).get("exeSeq"));
+        assertEquals("approved", lineCaptor.getAllValues().get(1).get("appStatus"));
+    }
+
+    @DisplayName("검토자만 같고 승인자가 다르면 결재신청 후 검토승인까지만 자동 처리된다")
+    @Test
+    void submitDraft_stopsAfterReviewWhenFinalApproverDiffers() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("제출 테스트");
+
+        Long approvalId = service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        assertEquals(77L, approvalId);
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalLineStatus(anyMap());
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalMainStatus(anyMap());
+        verify(serviceHaccpWorkDAO, times(2)).insertElectronicApprovalHistoryMain(anyMap());
+        verify(serviceHaccpWorkDAO, times(2)).selectApprovalLineLoginId(anyMap());
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalLineArrival(anyMap());
+
+        ArgumentCaptor<Map> historyCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(2)).insertElectronicApprovalHistoryMain(historyCaptor.capture());
+        assertEquals(1, historyCaptor.getAllValues().get(0).get("exeSeq"));
+        assertEquals("[시스템] 검토자님이 결재신청 처리했습니다.", historyCaptor.getAllValues().get(0).get("answerCnt"));
+        assertEquals(2, historyCaptor.getAllValues().get(1).get("exeSeq"));
+        assertEquals("[시스템] 검토자님이 검토승인 처리했습니다.", historyCaptor.getAllValues().get(1).get("answerCnt"));
+
+        ArgumentCaptor<Map> mainCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalMainStatus(mainCaptor.capture());
+        assertEquals("in_progress", mainCaptor.getValue().get("statusType"));
+        assertEquals("진행중", mainCaptor.getValue().get("statusTypeName"));
+
+        ArgumentCaptor<Map> lineCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalLineStatus(lineCaptor.capture());
+        assertEquals(2, lineCaptor.getValue().get("exeSeq"));
+        assertEquals("approved", lineCaptor.getValue().get("appStatus"));
+
+        ArgumentCaptor<Map> arrivalCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(1)).updateElectronicApprovalLineArrival(arrivalCaptor.capture());
+        assertEquals(3, arrivalCaptor.getValue().get("exeSeq"));
+        assertEquals("승인요청", arrivalCaptor.getValue().get("optionName"));
+    }
+
     private HaccpWorkDAO serviceHaccpWorkDAO;
 
     private HaccpWorkFlowServiceImpl createServiceForSubmitCancelMessageTest(int latestCompletedSeq) throws Exception {
@@ -126,6 +276,151 @@ class HaccpWorkFlowServiceImplTest {
         when(serviceHaccpWorkDAO.selectFinalOwnerExeSeqByApprovalId(anyMap())).thenReturn(4);
         when(draftService.getDraftTemplate(eq("TENANT_001"), eq(77L), eq("approval"), eq("3001")))
             .thenReturn(new HaccpWorkVO());
+
+        return service;
+    }
+
+    private HaccpWorkFlowServiceImpl createServiceForApprovalChainTest(Long reviewerLoginId, Long approverLoginId) throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        serviceHaccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, serviceHaccpWorkDAO);
+
+        when(serviceHaccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(serviceHaccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(reviewerLoginId);
+        doAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            params.put("electronicApprovalId", 77L);
+            return null;
+        }).when(serviceHaccpWorkDAO).insertElectronicApprovalMain(anyMap());
+
+        Map<String, Object> actorProfile = new HashMap<String, Object>();
+        actorProfile.put("userName", "검토자");
+        when(serviceHaccpWorkDAO.selectApprovalActorProfile(anyMap())).thenReturn(actorProfile);
+
+        Map<String, Object> approvalMain = new HashMap<String, Object>();
+        approvalMain.put("electronicApprovalId", 77L);
+        when(serviceHaccpWorkDAO.selectApprovalMainById(anyMap())).thenReturn(approvalMain);
+
+        AtomicBoolean approverArrived = new AtomicBoolean(false);
+
+        when(serviceHaccpWorkDAO.selectApprovalLineLoginId(anyMap())).thenAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            Integer exeSeq = (Integer) params.get("exeSeq");
+            if (exeSeq != null && exeSeq.intValue() == 2) {
+                return reviewerLoginId;
+            }
+            if (exeSeq != null && exeSeq.intValue() == 3) {
+                if (!approverArrived.get()) {
+                    return null;
+                }
+                return approverLoginId;
+            }
+            return null;
+        });
+
+        when(serviceHaccpWorkDAO.selectFinalOwnerExeSeqByApprovalId(anyMap())).thenReturn(4);
+        when(serviceHaccpWorkDAO.updateElectronicApprovalLineStatus(anyMap())).thenReturn(1);
+        when(serviceHaccpWorkDAO.updateElectronicApprovalMainStatus(anyMap())).thenReturn(1);
+        when(serviceHaccpWorkDAO.updateElectronicApprovalLineArrival(anyMap())).thenAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            Integer exeSeq = (Integer) params.get("exeSeq");
+            if (exeSeq != null && exeSeq.intValue() == 3) {
+                approverArrived.set(true);
+            }
+            return 1;
+        });
+
+        when(serviceHaccpWorkDAO.selectApprovalLineForHistoryBySeq(anyMap())).thenAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            Integer exeSeq = (Integer) params.get("exeSeq");
+            Map<String, Object> historyLineInfo = new HashMap<String, Object>();
+            historyLineInfo.put("electronicApprovalLineId", exeSeq != null && exeSeq.intValue() == 2 ? 100L : 200L);
+            historyLineInfo.put("exeSeq", exeSeq);
+            historyLineInfo.put("approvalType", "drafted");
+            historyLineInfo.put("eabusNo", "001");
+            historyLineInfo.put("eaExeId", "EA-001");
+            return historyLineInfo;
+        });
+        when(serviceHaccpWorkDAO.selectNextApprovalHistoryAnswerSeq(anyMap())).thenReturn(1);
+
+        when(draftService.getDraftTemplate(eq("TENANT_001"), eq(77L), eq("approval"), eq("3001")))
+            .thenReturn(new HaccpWorkVO());
+
+        return service;
+    }
+
+    private HaccpWorkFlowServiceImpl createServiceForSubmitChainTest(Long reviewerLoginId, Long approverLoginId) throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        serviceHaccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, serviceHaccpWorkDAO);
+        EgovIdGnrService idGnrService = mock(EgovIdGnrService.class);
+        when(idGnrService.getNextStringId()).thenReturn("1");
+        Field idGnrField = HaccpWorkFlowServiceImpl.class.getDeclaredField("electronicApprovalExeIdGnrService");
+        idGnrField.setAccessible(true);
+        idGnrField.set(service, idGnrService);
+
+        when(serviceHaccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(serviceHaccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(reviewerLoginId);
+
+        Map<String, Object> approvalMain = new HashMap<String, Object>();
+        approvalMain.put("electronicApprovalId", 77L);
+        approvalMain.put("eaExeId", "EA-001");
+        when(serviceHaccpWorkDAO.selectApprovalMainById(anyMap())).thenReturn(approvalMain);
+
+        Map<String, Object> actorProfile = new HashMap<String, Object>();
+        actorProfile.put("userName", "검토자");
+        when(serviceHaccpWorkDAO.selectApprovalActorProfile(anyMap())).thenReturn(actorProfile);
+
+        when(serviceHaccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin(anyMap())).thenReturn(new HashMap<String, Object>());
+        when(serviceHaccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(anyMap())).thenReturn(77L);
+
+        HaccpWorkVO draftWork = new HaccpWorkVO();
+        draftWork.setReviewerId(reviewerLoginId);
+        draftWork.setApproverId(approverLoginId);
+        draftWork.setTemplateJson("{}");
+        draftWork.setTemplateHtml("<p>본문</p>");
+        when(draftService.getDraftTemplate(eq("TENANT_001"), eq(77L), eq("work"), eq("3001"))).thenReturn(draftWork);
+
+        when(serviceHaccpWorkDAO.upsertElectronicApprovalLine(anyMap())).thenReturn(101L, 102L, 103L, 104L);
+        AtomicBoolean approverArrived = new AtomicBoolean(false);
+
+        when(serviceHaccpWorkDAO.selectApprovalLineLoginId(anyMap())).thenAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            Integer exeSeq = (Integer) params.get("exeSeq");
+            if (exeSeq != null && exeSeq.intValue() == 2) {
+                return reviewerLoginId;
+            }
+            if (exeSeq != null && exeSeq.intValue() == 3) {
+                if (!approverArrived.get()) {
+                    return null;
+                }
+                return approverLoginId;
+            }
+            return null;
+        });
+        when(serviceHaccpWorkDAO.selectApprovalLineForHistoryBySeq(anyMap())).thenAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            Integer exeSeq = (Integer) params.get("exeSeq");
+            Map<String, Object> historyLineInfo = new HashMap<String, Object>();
+            historyLineInfo.put("electronicApprovalLineId", exeSeq != null && exeSeq.intValue() == 2 ? 200L : 300L);
+            historyLineInfo.put("exeSeq", exeSeq);
+            historyLineInfo.put("approvalType", "drafted");
+            historyLineInfo.put("eabusNo", "001");
+            historyLineInfo.put("eaExeId", "EA-001");
+            return historyLineInfo;
+        });
+        when(serviceHaccpWorkDAO.selectNextApprovalHistoryAnswerSeq(anyMap())).thenReturn(1);
+        when(serviceHaccpWorkDAO.updateElectronicApprovalLineStatus(anyMap())).thenReturn(1);
+        when(serviceHaccpWorkDAO.updateElectronicApprovalMainStatus(anyMap())).thenReturn(1);
+        when(serviceHaccpWorkDAO.updateElectronicApprovalLineArrival(anyMap())).thenAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            Integer exeSeq = (Integer) params.get("exeSeq");
+            if (exeSeq != null && exeSeq.intValue() == 3) {
+                approverArrived.set(true);
+            }
+            return 1;
+        });
+        when(serviceHaccpWorkDAO.clearUnusedReferenceApprovalLines(anyMap())).thenReturn(0);
 
         return service;
     }
