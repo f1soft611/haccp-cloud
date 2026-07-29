@@ -418,6 +418,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 eaExeId
         );
 
+        processApprovalChain(tenantId, electronicApprovalId, actorLoginId, submitActorName, now, "submit");
+
         return electronicApprovalId;
     }
 
@@ -1160,6 +1162,48 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             LocalDateTime now,
             String eventType
     ) throws Exception {
+        if ("submit".equals(eventType)) {
+            if (!isApprovalLineOwnedByActor(tenantId, approvalId, REVIEWER_SEQ, actorLoginId)) {
+                return;
+            }
+
+            processApprovalStep(
+                tenantId,
+                approvalId,
+                REVIEWER_SEQ,
+                actorLoginId,
+                actorName,
+                now,
+                "approved",
+                "검토승인",
+                "in_progress",
+                "진행중",
+                "in_progress",
+                "review_approve"
+            );
+
+            if (isApprovalLineOwnedByActor(tenantId, approvalId, APPROVER_SEQ, actorLoginId)) {
+                processApprovalStep(
+                    tenantId,
+                    approvalId,
+                    APPROVER_SEQ,
+                    actorLoginId,
+                    actorName,
+                    now,
+                    "approved",
+                    "최종승인",
+                    "approved",
+                    "완료",
+                    "approved",
+                    "final_approve"
+                );
+                markFinalOwnerArrival(tenantId, approvalId, now, "최종기안알림");
+            } else {
+                markNextApprovalArrival(tenantId, approvalId, APPROVER_SEQ, now, "승인요청");
+            }
+            return;
+        }
+
         if ("review_approve".equals(eventType)) {
             processApprovalStep(
                 tenantId,
