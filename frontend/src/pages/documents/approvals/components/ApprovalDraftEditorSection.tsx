@@ -177,6 +177,7 @@ export function ApprovalDraftEditorSection(
               editable={!isReadOnly}
               showToolbar={false}
               enableSlashCommand={false}
+              enableTableContextMenu={!isReadOnly}
               documentFieldDisplayMode="value"
               canvasMinHeight={0}
               editorMinHeight={0}

@@ -17,6 +17,7 @@ type SlashCommandKey =
   | 'heading2'
   | 'table'
   | 'image'
+  | 'documentFieldImage'
   | 'code'
   | 'divider'
   | 'quote'
@@ -51,12 +52,13 @@ const SLASH_OPTIONS: SlashCommandOption[] = [
     description: '4x4 기본 표를 삽입합니다.',
     searchTerms: ['table', 'grid'],
   },
-  // {
-  //   key: 'image',
-  //   title: '이미지 자리표시자',
-  //   description: '이미지 블록 확장 전 임시 영역을 넣습니다.',
-  //   searchTerms: ['image', 'img', 'photo'],
-  // },
+  {
+    key: 'documentFieldImage',
+    title: '문서필드 이미지',
+    description:
+      '클릭 시 이미지 URL을 삽입할 수 있는 문서필드 이미지를 추가합니다.',
+    searchTerms: ['문서필드', '이미지', 'image', 'img', 'photo'],
+  },
   // {
   //   key: 'code',
   //   title: '코드 블록',
@@ -147,6 +149,11 @@ function runSlashCommand(editor: Editor, range: Range, key: SlashCommandKey) {
         { type: 'paragraph' },
       ])
       .run();
+    return;
+  }
+
+  if (key === 'documentFieldImage') {
+    editor.chain().focus().deleteRange(range).insertDocumentFieldImage().run();
     return;
   }
 
