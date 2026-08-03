@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   createDocumentFieldImageNode,
   createDefaultDocumentFieldImageAttributes,
+  validateDocumentImageFile,
+  MAX_DOCUMENT_IMAGE_FILE_SIZE_BYTES,
 } from '../editor/extensions/documentFieldImageExtension';
 import {
   normalizeImageWidth,
@@ -43,5 +45,35 @@ describe('documentFieldImageExtension', () => {
   it('computes width from drag deltas', () => {
     expect(resolveImageWidthFromDelta('80%', 40, 400)).toBe('90%');
     expect(resolveImageWidthFromDelta('20%', -400, 400)).toBe('20%');
+  });
+
+  it('rejects unsupported file extension and mime type', () => {
+    const result = validateDocumentImageFile({
+      name: 'sample.txt',
+      type: 'text/plain',
+      size: 1024,
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects files bigger than 5MB', () => {
+    const result = validateDocumentImageFile({
+      name: 'sample.png',
+      type: 'image/png',
+      size: MAX_DOCUMENT_IMAGE_FILE_SIZE_BYTES + 1,
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it('accepts image mime type and extension within 5MB', () => {
+    const result = validateDocumentImageFile({
+      name: 'sample.png',
+      type: 'image/png',
+      size: 1024 * 10,
+    });
+
+    expect(result.ok).toBe(true);
   });
 });

@@ -704,6 +704,8 @@
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND COALESCE(m.delete_status, 'N') != 'Y'
             AND COALESCE(m.status_type, '') = 'pre_apply'
+            AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+            AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
             AND COALESCE(m.updated_at, m.created_at) >= cb.cycle_start
           ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
