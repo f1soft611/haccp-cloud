@@ -215,6 +215,10 @@
             TO_CHAR(
               COALESCE(
                 CASE
+                  WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                  ELSE NULL
+                END,
+                CASE
                   WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                   ELSE NULL
                 END,
@@ -384,6 +388,10 @@
           <if test="startDate != null and startDate != ''">
             AND COALESCE(
                   CASE
+                    WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
+                  CASE
                     WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                     ELSE NULL
                   END,
@@ -392,6 +400,10 @@
           </if>
           <if test="endDate != null and endDate != ''">
             AND COALESCE(
+                  CASE
+                    WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
                   CASE
                     WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                     ELSE NULL
@@ -521,6 +533,10 @@
           <if test="startDate != null and startDate != ''">
             AND COALESCE(
                   CASE
+                    WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
+                  CASE
                     WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                     ELSE NULL
                   END,
@@ -529,6 +545,10 @@
           </if>
           <if test="endDate != null and endDate != ''">
             AND COALESCE(
+                  CASE
+                    WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
                   CASE
                     WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                     ELSE NULL
@@ -562,7 +582,18 @@
               NULLIF(TRIM(CAST(cu_pre.user_id AS varchar)), ''),
               CAST(pre.login_id AS varchar)
             ) AS created_by,
-            TO_CHAR(COALESCE(pre.updated_at, pre.created_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS created_at,
+            TO_CHAR(
+              COALESCE(
+                CASE
+                  WHEN NULLIF(TRIM(pre.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(pre.twf_date), ''), 'YYYYMMDD')
+                  ELSE NULL
+                END,
+                DATE(pre.updated_at),
+                DATE(pre.created_at),
+                DATE(w.created_at)
+              ),
+              'YYYY-MM-DD'
+            ) AS created_at,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
               WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
@@ -696,6 +727,7 @@
               m.txt_json,
               m.after_cnt,
               m.after_txt_json,
+              m.twf_date,
               m.created_at,
               m.updated_at
           FROM tb_electronic_approval_main m
@@ -768,7 +800,18 @@
               NULLIF(TRIM(CAST(cu_main.user_id AS varchar)), ''),
               CAST(m.login_id AS varchar)
             ) AS created_by,
-            TO_CHAR(COALESCE(m.updated_at, m.created_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS created_at,
+            TO_CHAR(
+              COALESCE(
+                CASE
+                  WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                  ELSE NULL
+                END,
+                DATE(m.updated_at),
+                DATE(m.created_at),
+                DATE(w.created_at)
+              ),
+              'YYYY-MM-DD'
+            ) AS created_at,
             CONCAT(
               '검토:',
               COALESCE(NULLIF(TRIM(ru_line.user_nm), ''), NULLIF(TRIM(ru.user_nm), ''), '-'),
@@ -1873,6 +1916,9 @@
               NULL
             </otherwise>
           </choose>,
+        reg_date = COALESCE(#{regDate, jdbcType=VARCHAR}, reg_date),
+        twf_date = COALESCE(#{twfDate, jdbcType=VARCHAR}, twf_date),
+        after_twf_date = COALESCE(#{afterTwfDate, jdbcType=VARCHAR}, after_twf_date),
         status_type = #{statusType},
         status_type_name = #{statusTypeName},
         end_status = #{endStatus},

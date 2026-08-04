@@ -280,6 +280,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             updateParams.put("txtJson", templateJson);
             updateParams.put("afterCnt", templateHtml);
             updateParams.put("afterTxtJson", templateJson);
+            updateParams.put("regDate", regDate);
+            updateParams.put("twfDate", regDate);
+            updateParams.put("afterTwfDate", regDate);
             updateParams.put("statusType", "in_progress");
             updateParams.put("statusTypeName", "진행중");
             updateParams.put("endStatus", "in_progress");
