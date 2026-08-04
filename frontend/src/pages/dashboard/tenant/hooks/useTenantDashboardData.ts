@@ -132,7 +132,22 @@ export function useTenantDashboardData() {
   }, [todoDocuments]);
 
   const approvalAlerts = useMemo(() => {
-    return approvalAlertDocuments.slice(0, 6);
+    const unique = new Map<string, TenantTodoCardItem>();
+
+    approvalAlertDocuments.forEach((item) => {
+      const routeId = String(
+        item.routeId || item.approvalId || item.id || '',
+      ).trim();
+      if (!routeId) {
+        return;
+      }
+
+      if (!unique.has(routeId)) {
+        unique.set(routeId, item);
+      }
+    });
+
+    return [...unique.values()].slice(0, 6);
   }, [approvalAlertDocuments]);
 
   return {

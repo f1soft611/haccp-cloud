@@ -45,3 +45,4 @@ Thumbs.db
 *.nar
 frontend/.env.production
 backend/src/main/resources/application-prod.properties
+backend/.minio/*

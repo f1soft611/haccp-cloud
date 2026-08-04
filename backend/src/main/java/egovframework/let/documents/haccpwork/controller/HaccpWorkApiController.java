@@ -1,14 +1,17 @@
 package egovframework.let.documents.haccpwork.controller;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -23,9 +26,13 @@ import egovframework.com.cmm.util.EgovUserDetailsHelper;
 import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentCreateRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftTempSaveRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpAttachmentCompleteRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpAttachmentUploadRequestVO;
+import egovframework.let.documents.haccpwork.service.HaccpWorkAttachmentService;
 import egovframework.let.documents.haccpwork.service.HaccpWorkDraftService;
 import egovframework.let.documents.haccpwork.service.HaccpWorkFlowService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,6 +59,134 @@ public class HaccpWorkApiController {
     private final ResultVoHelper resultVoHelper;
     private final HaccpWorkDraftService haccpWorkDraftService;
     private final HaccpWorkFlowService haccpWorkFlowService;
+    private final HaccpWorkAttachmentService haccpWorkAttachmentService;
+
+    @PostMapping("/approvals/{approvalId}/attachments/presign-upload")
+    public ResultVO presignUpload(
+            @PathVariable Long approvalId,
+            @RequestBody Map<String, List<HaccpAttachmentUploadRequestVO>> payload,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        List<HaccpAttachmentUploadRequestVO> items = payload == null ? null : payload.get("items");
+
+        Map<String, Object> resultMap = haccpWorkAttachmentService.presignUpload(
+                approvalId,
+                tenantCode,
+                items,
+                resolveLoginCode(user),
+                resolveClientIp(request),
+                resolveUserAgent(request)
+        );
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @PostMapping("/approvals/{approvalId}/attachments/complete")
+    public ResultVO completeUpload(
+            @PathVariable Long approvalId,
+            @RequestBody Map<String, List<HaccpAttachmentCompleteRequestVO>> payload,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        List<HaccpAttachmentCompleteRequestVO> items = payload == null ? null : payload.get("items");
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put(
+                "resultList",
+                haccpWorkAttachmentService.completeUpload(
+                        approvalId,
+                        tenantCode,
+                        items,
+                        resolveLoginCode(user)
+                )
+        );
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @GetMapping("/approvals/{approvalId}/attachments")
+    public ResultVO listAttachments(
+            @PathVariable Long approvalId,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put(
+                "resultList",
+                haccpWorkAttachmentService.listAttachments(
+                        approvalId,
+                        tenantCode,
+                        resolveLoginCode(user)
+                )
+        );
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @PostMapping("/approvals/{approvalId}/attachments/{attachmentId}/presign-download")
+    public ResultVO presignDownload(
+            @PathVariable Long approvalId,
+            @PathVariable Long attachmentId,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        Map<String, Object> resultMap = haccpWorkAttachmentService.presignDownload(
+                approvalId,
+                attachmentId,
+                tenantCode,
+                resolveLoginCode(user),
+                resolveClientIp(request),
+                resolveUserAgent(request)
+        );
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @PostMapping("/approvals/{approvalId}/attachments/{attachmentId}/presign-preview")
+    public ResultVO presignPreview(
+            @PathVariable Long approvalId,
+            @PathVariable Long attachmentId,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        Map<String, Object> resultMap = haccpWorkAttachmentService.presignPreview(
+                approvalId,
+                attachmentId,
+                tenantCode,
+                resolveLoginCode(user),
+                resolveClientIp(request),
+                resolveUserAgent(request)
+        );
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @DeleteMapping("/approvals/{approvalId}/attachments/{attachmentId}")
+    public ResultVO deleteAttachment(
+            @PathVariable Long approvalId,
+            @PathVariable Long attachmentId,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        haccpWorkAttachmentService.deleteAttachment(
+                approvalId,
+                attachmentId,
+                tenantCode,
+                resolveLoginCode(user)
+        );
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("message", "첨부파일이 삭제되었습니다.");
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
 
     @Operation(
             summary = "기안 템플릿 조회",
@@ -147,6 +282,71 @@ public class HaccpWorkApiController {
         resultMap.put("user", user);
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
+
+        @PatchMapping("/approvals/{approvalId}/comments/{commentId}")
+        public ResultVO updateApprovalComment(
+                        @PathVariable Long approvalId,
+                        @PathVariable Long commentId,
+                        @RequestBody HaccpWorkApprovalCommentUpdateRequestVO payload,
+                        @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+                        @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+                        HttpServletRequest request) throws Exception {
+                String tenantCode = resolveTenantCode(tenantHeader, request);
+                haccpWorkFlowService.updateApprovalComment(
+                                approvalId,
+                                commentId,
+                                tenantCode,
+                                payload,
+                                resolveLoginCode(user)
+                );
+
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                resultMap.put("message", "댓글이 수정되었습니다.");
+                resultMap.put("user", user);
+                return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+        }
+
+        @DeleteMapping("/approvals/{approvalId}/comments/{commentId}")
+        public ResultVO deleteApprovalComment(
+                        @PathVariable Long approvalId,
+                        @PathVariable Long commentId,
+                        @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+                        @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+                        HttpServletRequest request) throws Exception {
+                String tenantCode = resolveTenantCode(tenantHeader, request);
+                haccpWorkFlowService.deleteApprovalComment(
+                                approvalId,
+                                commentId,
+                                tenantCode,
+                                resolveLoginCode(user)
+                );
+
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                resultMap.put("message", "댓글이 삭제되었습니다.");
+                resultMap.put("user", user);
+                return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+        }
+
+        @PostMapping("/approvals/{approvalId}/comments/{commentId}/likes")
+        public ResultVO toggleApprovalCommentLike(
+                        @PathVariable Long approvalId,
+                        @PathVariable Long commentId,
+                        @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+                        @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+                        HttpServletRequest request) throws Exception {
+                String tenantCode = resolveTenantCode(tenantHeader, request);
+                haccpWorkFlowService.toggleApprovalCommentLike(
+                                approvalId,
+                                commentId,
+                                tenantCode,
+                                resolveLoginCode(user)
+                );
+
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                resultMap.put("message", "좋아요가 반영되었습니다.");
+                resultMap.put("user", user);
+                return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+        }
 
     @Operation(
             summary = "HACCP 문서 목록 조회",
@@ -303,12 +503,16 @@ public class HaccpWorkApiController {
             return tenantHeader.trim().toUpperCase();
         }
 
-        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
-        if (userDetails instanceof LoginVO) {
-            LoginVO loginVO = (LoginVO) userDetails;
-            if (StringUtils.hasText(loginVO.getTenantCode())) {
-                return loginVO.getTenantCode().trim().toUpperCase();
+                try {
+                        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+                        if (userDetails instanceof LoginVO) {
+                                LoginVO loginVO = (LoginVO) userDetails;
+                                if (StringUtils.hasText(loginVO.getTenantCode())) {
+                                        return loginVO.getTenantCode().trim().toUpperCase();
+                                }
             }
+                } catch (RuntimeException ignored) {
+                        // 테스트/비인증 시점에서는 helper가 null authentication으로 예외를 낼 수 있다.
         }
 
         Object attributeTenantCode = request.getAttribute("tenantCode");
@@ -324,12 +528,16 @@ public class HaccpWorkApiController {
             return user.getId().trim();
         }
 
-        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
-        if (userDetails instanceof LoginVO) {
-            LoginVO loginVO = (LoginVO) userDetails;
-            if (StringUtils.hasText(loginVO.getId())) {
-                return loginVO.getId().trim();
+                try {
+                        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+                        if (userDetails instanceof LoginVO) {
+                                LoginVO loginVO = (LoginVO) userDetails;
+                                if (StringUtils.hasText(loginVO.getId())) {
+                                        return loginVO.getId().trim();
+                                }
             }
+                } catch (RuntimeException ignored) {
+                        // noop
         }
         return null;
     }
@@ -339,13 +547,39 @@ public class HaccpWorkApiController {
             return user.getRoleCode().trim().toUpperCase();
         }
 
-        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
-        if (userDetails instanceof LoginVO) {
-            LoginVO loginVO = (LoginVO) userDetails;
-            if (StringUtils.hasText(loginVO.getRoleCode())) {
-                return loginVO.getRoleCode().trim().toUpperCase();
+                try {
+                        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+                        if (userDetails instanceof LoginVO) {
+                                LoginVO loginVO = (LoginVO) userDetails;
+                                if (StringUtils.hasText(loginVO.getRoleCode())) {
+                                        return loginVO.getRoleCode().trim().toUpperCase();
+                                }
             }
+                } catch (RuntimeException ignored) {
+                        // noop
         }
         return "";
     }
+
+        private String resolveClientIp(HttpServletRequest request) {
+                if (request == null) {
+                        return null;
+                }
+
+                String forwardedFor = request.getHeader("X-Forwarded-For");
+                if (StringUtils.hasText(forwardedFor)) {
+                        String[] parts = forwardedFor.split(",");
+                        if (parts.length > 0 && StringUtils.hasText(parts[0])) {
+                                return parts[0].trim();
+                        }
+                }
+                return request.getRemoteAddr();
+        }
+
+        private String resolveUserAgent(HttpServletRequest request) {
+                if (request == null) {
+                        return null;
+                }
+                return request.getHeader("User-Agent");
+        }
 }

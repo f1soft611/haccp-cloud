@@ -60,9 +60,9 @@ export function TenantSidebarSection(props: TenantSidebarSectionProps) {
                 : '현재 결재 대상 업무가 없습니다.'}
             </Typography>
           ) : (
-            approvalAlerts.map((item) => (
+            approvalAlerts.map((item, index) => (
               <Box
-                key={`approval-${item.id}`}
+                key={`approval-${item.routeId || item.approvalId || item.id || index}`}
                 sx={{
                   px: 1,
                   py: 0.9,

@@ -52,12 +52,17 @@ export type HaccpBaseWorkItem = {
 export type HaccpApprovalCommentItem = {
   id: string;
   parentCommentId?: string;
+  createdBy?: string;
+  createdByLoginCode?: string;
   author: string;
   authorProfileImage?: string;
   text: string;
   createdAt: string;
+  likeCount: number;
+  likedByMe: boolean;
   answerTypeName: string;
   isSystem: boolean;
+  isDeleted: boolean;
 };
 
 type RawHaccpBaseWorkItem = {
@@ -174,6 +179,16 @@ type RawHaccpApprovalCommentItem = {
   answer_at?: string | null;
   answerTypeName?: string | null;
   answertypename?: string | null;
+  likeCount?: number | string | null;
+  likecount?: number | string | null;
+  likedByMe?: boolean | string | null;
+  likedbyme?: boolean | string | null;
+  createdBy?: number | string | null;
+  createdby?: number | string | null;
+  createdByLoginCode?: string | null;
+  createdbylogincode?: string | null;
+  isDeleted?: boolean | string | null;
+  isdeleted?: boolean | string | null;
 };
 
 function normalizeText(value: unknown): string {
@@ -257,6 +272,10 @@ function normalizeApprovalCommentItem(
     parentCommentId: normalizeText(
       raw.parentCommentId ?? raw.parentcommentid ?? raw.parent_history_id,
     ),
+    createdBy: normalizeText(raw.createdBy ?? raw.createdby),
+    createdByLoginCode:
+      normalizeText(raw.createdByLoginCode ?? raw.createdbylogincode) ||
+      undefined,
     author: normalizeText(raw.actorName ?? raw.actorname) || '시스템',
     authorProfileImage:
       normalizeText(
@@ -266,8 +285,11 @@ function normalizeApprovalCommentItem(
       ) || undefined,
     text: normalizeText(raw.text),
     createdAt,
+    likeCount: Number(raw.likeCount ?? raw.likecount ?? 0) || 0,
+    likedByMe: normalizeBoolean(raw.likedByMe ?? raw.likedbyme),
     answerTypeName,
     isSystem: answerTypeName.toUpperCase() === 'SYSTEM',
+    isDeleted: normalizeBoolean(raw.isDeleted ?? raw.isdeleted),
   };
 }
 
@@ -691,6 +713,48 @@ export async function createHaccpWorkApprovalComment(payload: {
       comment: payload.comment,
       parentCommentId: trimmedParentCommentId || undefined,
     },
+    {
+      headers: { 'x-tenant-code': payload.tenantCode },
+    },
+  );
+}
+
+export async function updateHaccpWorkApprovalComment(payload: {
+  tenantCode: string;
+  approvalId: string;
+  commentId: string;
+  comment: string;
+}): Promise<void> {
+  await apiClient.patch(
+    `/v1/haccp-work/approvals/${payload.approvalId}/comments/${payload.commentId}`,
+    { comment: payload.comment },
+    {
+      headers: { 'x-tenant-code': payload.tenantCode },
+    },
+  );
+}
+
+export async function deleteHaccpWorkApprovalComment(payload: {
+  tenantCode: string;
+  approvalId: string;
+  commentId: string;
+}): Promise<void> {
+  await apiClient.delete(
+    `/v1/haccp-work/approvals/${payload.approvalId}/comments/${payload.commentId}`,
+    {
+      headers: { 'x-tenant-code': payload.tenantCode },
+    },
+  );
+}
+
+export async function toggleHaccpWorkApprovalCommentLike(payload: {
+  tenantCode: string;
+  approvalId: string;
+  commentId: string;
+}): Promise<void> {
+  await apiClient.post(
+    `/v1/haccp-work/approvals/${payload.approvalId}/comments/${payload.commentId}/likes`,
+    {},
     {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
