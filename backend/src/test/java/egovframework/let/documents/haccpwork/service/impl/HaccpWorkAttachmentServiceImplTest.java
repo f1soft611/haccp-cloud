@@ -25,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 import egovframework.let.documents.haccpwork.domain.model.HaccpAttachmentCompleteRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpAttachmentUploadRequestVO;
 import egovframework.let.documents.haccpwork.domain.repository.HaccpWorkDAO;
+import egovframework.let.documents.haccpwork.service.HaccpWorkFlowService;
 import egovframework.let.storage.StorageClient;
 import egovframework.let.storage.StorageProperties;
 
@@ -34,9 +35,10 @@ class HaccpWorkAttachmentServiceImplTest {
     void presignUpload_shouldFailWhenNoApprovalAccess() throws Exception {
         HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
         StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkFlowService haccpWorkFlowService = mock(HaccpWorkFlowService.class);
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("haccp-attachments");
-        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties);
+        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties, haccpWorkFlowService);
 
         when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
         when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);
@@ -63,9 +65,10 @@ class HaccpWorkAttachmentServiceImplTest {
     void presignDownload_shouldWriteAuditLog() throws Exception {
         HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
         StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkFlowService haccpWorkFlowService = mock(HaccpWorkFlowService.class);
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("haccp-attachments");
-        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties);
+        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties, haccpWorkFlowService);
 
         when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
         when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);
@@ -98,9 +101,10 @@ class HaccpWorkAttachmentServiceImplTest {
     void completeUpload_shouldPersistCompletedAttachment() throws Exception {
         HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
         StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkFlowService haccpWorkFlowService = mock(HaccpWorkFlowService.class);
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("haccp-attachments");
-        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties);
+        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties, haccpWorkFlowService);
 
         when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
         when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);
@@ -181,12 +185,197 @@ class HaccpWorkAttachmentServiceImplTest {
     }
 
     @Test
+    void completeUpload_shouldAppendApprovalHistoryComment() throws Exception {
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkFlowService haccpWorkFlowService = mock(HaccpWorkFlowService.class);
+        StorageProperties storageProperties = new StorageProperties();
+        storageProperties.setBucket("haccp-attachments");
+        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties, haccpWorkFlowService);
+
+        when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);
+        when(haccpWorkDAO.selectApprovalTemplateAccessCount(anyMap())).thenReturn(1);
+
+        HaccpAttachmentUploadRequestVO uploadRequest = new HaccpAttachmentUploadRequestVO();
+        uploadRequest.setFileName("a.pdf");
+        uploadRequest.setContentType("application/pdf");
+        uploadRequest.setFileSize(123L);
+
+        doAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> params = (Map<String, Object>) invocation.getArgument(0);
+            params.put("attachmentId", 88L);
+            return null;
+        }).when(haccpWorkDAO).insertDocumentAttachment(anyMap());
+
+        when(storageClient.presignUpload(org.mockito.ArgumentMatchers.any(StorageClient.PresignedUploadRequest.class)))
+                .thenReturn(new StorageClient.PresignedUploadResult("https://example/upload", "PUT", 600));
+
+        Map<String, Object> issued = service.presignUpload(
+                100L,
+                "platform",
+                Collections.singletonList(uploadRequest),
+                "platform_admin",
+                "127.0.0.1",
+                "JUnit");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> issuedItems = (List<Map<String, Object>>) issued.get("items");
+        Map<String, Object> firstIssued = issuedItems.get(0);
+
+        Map<String, Object> session = new HashMap<String, Object>();
+        session.put("uploadToken", firstIssued.get("uploadToken"));
+        session.put("objectKey", firstIssued.get("objectKey"));
+        session.put("attachmentId", 88L);
+        session.put("approvalId", 100L);
+        session.put("sessionStatus", "ISSUED");
+        session.put("expiresAt", java.sql.Timestamp.valueOf(LocalDateTime.now().plusMinutes(3)));
+        when(haccpWorkDAO.selectDocumentAttachmentUploadSessionByToken(anyMap())).thenReturn(session);
+
+        Map<String, Object> attachmentBefore = new HashMap<String, Object>();
+        attachmentBefore.put("attachmentId", 88L);
+        attachmentBefore.put("approvalId", 100L);
+        attachmentBefore.put("contentType", "application/pdf");
+        attachmentBefore.put("bucketName", "haccp-attachments");
+        attachmentBefore.put("objectKey", String.valueOf(firstIssued.get("objectKey")));
+        attachmentBefore.put("originalFileName", "a.pdf");
+
+        when(storageClient.statObject(eq("haccp-attachments"), eq(String.valueOf(firstIssued.get("objectKey")))))
+                .thenReturn(new StorageClient.ObjectStat(123L, "etag", Instant.now(), "application/pdf"));
+
+        Map<String, Object> completedAttachment = new HashMap<String, Object>();
+        completedAttachment.put("attachmentId", 88L);
+        completedAttachment.put("approvalId", 100L);
+        completedAttachment.put("contentType", "application/pdf");
+        completedAttachment.put("fileSize", 123L);
+        completedAttachment.put("uploadStatus", "COMPLETED");
+        completedAttachment.put("originalFileName", "a.pdf");
+        when(haccpWorkDAO.selectDocumentAttachmentById(anyMap())).thenReturn(attachmentBefore, completedAttachment);
+        when(haccpWorkDAO.updateDocumentAttachmentUploadSessionStatus(anyMap())).thenReturn(1);
+        when(haccpWorkDAO.updateDocumentAttachmentStatus(anyMap())).thenReturn(1);
+
+        HaccpAttachmentCompleteRequestVO completeRequest = new HaccpAttachmentCompleteRequestVO();
+        completeRequest.setUploadToken(String.valueOf(firstIssued.get("uploadToken")));
+        completeRequest.setObjectKey(String.valueOf(firstIssued.get("objectKey")));
+        completeRequest.setFileName("a.pdf");
+        completeRequest.setContentType("application/pdf");
+        completeRequest.setFileSize(123L);
+
+        service.completeUpload(
+                100L,
+                "platform",
+                Collections.singletonList(completeRequest),
+                "platform_admin");
+
+        verify(haccpWorkFlowService).createSystemApprovalComment(
+                100L,
+                "PLATFORM",
+                "첨부파일 업로드",
+                "a.pdf",
+                "platform_admin");
+    }
+
+    @Test
+    void completeUpload_shouldAppendApprovalHistoryCommentUsingFallbackLineInfo() throws Exception {
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkFlowService haccpWorkFlowService = mock(HaccpWorkFlowService.class);
+        StorageProperties storageProperties = new StorageProperties();
+        storageProperties.setBucket("haccp-attachments");
+        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties, haccpWorkFlowService);
+
+        when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);
+        when(haccpWorkDAO.selectApprovalTemplateAccessCount(anyMap())).thenReturn(1);
+
+        HaccpAttachmentUploadRequestVO uploadRequest = new HaccpAttachmentUploadRequestVO();
+        uploadRequest.setFileName("a.pdf");
+        uploadRequest.setContentType("application/pdf");
+        uploadRequest.setFileSize(123L);
+
+        doAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> params = (Map<String, Object>) invocation.getArgument(0);
+            params.put("attachmentId", 88L);
+            return null;
+        }).when(haccpWorkDAO).insertDocumentAttachment(anyMap());
+
+        when(storageClient.presignUpload(org.mockito.ArgumentMatchers.any(StorageClient.PresignedUploadRequest.class)))
+                .thenReturn(new StorageClient.PresignedUploadResult("https://example/upload", "PUT", 600));
+
+        Map<String, Object> issued = service.presignUpload(
+                100L,
+                "platform",
+                Collections.singletonList(uploadRequest),
+                "platform_admin",
+                "127.0.0.1",
+                "JUnit");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> issuedItems = (List<Map<String, Object>>) issued.get("items");
+        Map<String, Object> firstIssued = issuedItems.get(0);
+
+        Map<String, Object> session = new HashMap<String, Object>();
+        session.put("uploadToken", firstIssued.get("uploadToken"));
+        session.put("objectKey", firstIssued.get("objectKey"));
+        session.put("attachmentId", 88L);
+        session.put("approvalId", 100L);
+        session.put("sessionStatus", "ISSUED");
+        session.put("expiresAt", java.sql.Timestamp.valueOf(LocalDateTime.now().plusMinutes(3)));
+        when(haccpWorkDAO.selectDocumentAttachmentUploadSessionByToken(anyMap())).thenReturn(session);
+
+        Map<String, Object> attachmentBefore = new HashMap<String, Object>();
+        attachmentBefore.put("attachmentId", 88L);
+        attachmentBefore.put("approvalId", 100L);
+        attachmentBefore.put("contentType", "application/pdf");
+        attachmentBefore.put("bucketName", "haccp-attachments");
+        attachmentBefore.put("objectKey", String.valueOf(firstIssued.get("objectKey")));
+        attachmentBefore.put("originalFileName", "a.pdf");
+
+        when(storageClient.statObject(eq("haccp-attachments"), eq(String.valueOf(firstIssued.get("objectKey")))))
+                .thenReturn(new StorageClient.ObjectStat(123L, "etag", Instant.now(), "application/pdf"));
+
+        Map<String, Object> completedAttachment = new HashMap<String, Object>();
+        completedAttachment.put("attachmentId", 88L);
+        completedAttachment.put("approvalId", 100L);
+        completedAttachment.put("contentType", "application/pdf");
+        completedAttachment.put("fileSize", 123L);
+        completedAttachment.put("uploadStatus", "COMPLETED");
+        completedAttachment.put("originalFileName", "a.pdf");
+        when(haccpWorkDAO.selectDocumentAttachmentById(anyMap())).thenReturn(attachmentBefore, completedAttachment);
+        when(haccpWorkDAO.updateDocumentAttachmentUploadSessionStatus(anyMap())).thenReturn(1);
+        when(haccpWorkDAO.updateDocumentAttachmentStatus(anyMap())).thenReturn(1);
+
+        HaccpAttachmentCompleteRequestVO completeRequest = new HaccpAttachmentCompleteRequestVO();
+        completeRequest.setUploadToken(String.valueOf(firstIssued.get("uploadToken")));
+        completeRequest.setObjectKey(String.valueOf(firstIssued.get("objectKey")));
+        completeRequest.setFileName("a.pdf");
+        completeRequest.setContentType("application/pdf");
+        completeRequest.setFileSize(123L);
+
+        service.completeUpload(
+                100L,
+                "platform",
+                Collections.singletonList(completeRequest),
+                "platform_admin");
+
+        verify(haccpWorkFlowService).createSystemApprovalComment(
+                100L,
+                "PLATFORM",
+                "첨부파일 업로드",
+                "a.pdf",
+                "platform_admin");
+    }
+
+    @Test
     void completeUpload_shouldFailWhenSessionStateTransitionRejected() throws Exception {
         HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
         StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkFlowService haccpWorkFlowService = mock(HaccpWorkFlowService.class);
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("haccp-attachments");
-        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties);
+        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties, haccpWorkFlowService);
 
         when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
         when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);
@@ -234,9 +423,10 @@ class HaccpWorkAttachmentServiceImplTest {
     void presignPreview_shouldRejectNonPreviewableType() throws Exception {
         HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
         StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkFlowService haccpWorkFlowService = mock(HaccpWorkFlowService.class);
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("haccp-attachments");
-        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties);
+        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties, haccpWorkFlowService);
 
         when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
         when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);
@@ -266,9 +456,10 @@ class HaccpWorkAttachmentServiceImplTest {
     void deleteAttachment_shouldSoftDeleteAndRemoveObject() throws Exception {
         HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
         StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkFlowService haccpWorkFlowService = mock(HaccpWorkFlowService.class);
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("haccp-attachments");
-        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties);
+        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties, haccpWorkFlowService);
 
         when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
         when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);
@@ -279,12 +470,19 @@ class HaccpWorkAttachmentServiceImplTest {
         attachment.put("approvalId", 100L);
         attachment.put("objectKey", "tenants/PLATFORM/approvals/100/2026/08/a.pdf");
         attachment.put("bucketName", "haccp-attachments");
+                attachment.put("originalFileName", "a.pdf");
         when(haccpWorkDAO.selectDocumentAttachmentById(anyMap())).thenReturn(attachment);
         when(haccpWorkDAO.softDeleteDocumentAttachment(anyMap())).thenReturn(1);
 
         service.deleteAttachment(100L, 77L, "platform", "platform_admin");
 
         verify(haccpWorkDAO).softDeleteDocumentAttachment(anyMap());
+        verify(haccpWorkFlowService).createSystemApprovalComment(
+                100L,
+                "PLATFORM",
+                "첨부파일 삭제",
+                "a.pdf",
+                "platform_admin");
         verify(storageClient).deleteObject("haccp-attachments", "tenants/PLATFORM/approvals/100/2026/08/a.pdf");
     }
 
@@ -292,9 +490,10 @@ class HaccpWorkAttachmentServiceImplTest {
     void listAttachments_shouldReturnDaoRows() throws Exception {
         HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
         StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkFlowService haccpWorkFlowService = mock(HaccpWorkFlowService.class);
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("haccp-attachments");
-        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties);
+        HaccpWorkAttachmentServiceImpl service = new HaccpWorkAttachmentServiceImpl(haccpWorkDAO, storageClient, storageProperties, haccpWorkFlowService);
 
         when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
         when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);

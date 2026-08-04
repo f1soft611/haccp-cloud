@@ -167,6 +167,10 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpWorkDAO.selectApprovalLineForHistoryByLogin", params);
     }
 
+    public Map<String, Object> selectAnyApprovalLineForHistory(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectAnyApprovalLineForHistory", params);
+    }
+
     public Integer selectNextApprovalHistoryAnswerSeq(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectNextApprovalHistoryAnswerSeq", params);
     }

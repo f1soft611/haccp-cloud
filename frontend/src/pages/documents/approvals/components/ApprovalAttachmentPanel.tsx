@@ -26,16 +26,20 @@ import {
   presignHaccpAttachmentPreview,
   type HaccpAttachmentItem,
 } from '../../../../services/documents/haccpAttachmentService';
+import { extractApiErrorMessage } from '../../../../services/api/errorMessage';
 import { ConfirmDialog } from '../../../../shared/components/feedback/ConfirmDialog';
 
 type ApprovalAttachmentPanelProps = {
   tenantCode: string;
   approvalId: string;
   isReadOnly?: boolean;
+  onChanged?: () => void | Promise<void>;
 };
 
 export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
-  const { tenantCode, approvalId, isReadOnly = false } = props;
+  const { tenantCode, approvalId, isReadOnly = false, onChanged } = props;
+  const normalizedApprovalId = String(approvalId || '').trim();
+  const canUseAttachmentApi = normalizedApprovalId.length > 0;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [attachments, setAttachments] = useState<HaccpAttachmentItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,22 +49,91 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     null,
   );
 
-  const loadAttachments = async () => {
+  const extractStorageErrorMessage = (rawText: string) => {
+    const messageMatch = rawText.match(/<Message>([^<]+)<\/Message>/i);
+    if (messageMatch?.[1]) {
+      return messageMatch[1].trim();
+    }
+
+    const codeMatch = rawText.match(/<Code>([^<]+)<\/Code>/i);
+    if (codeMatch?.[1]) {
+      return codeMatch[1].trim();
+    }
+
+    return rawText.trim();
+  };
+
+  const resolveStorageUploadErrorMessage = async (response: Response) => {
+    let responseText = '';
     try {
-      const data = await listHaccpAttachments({ tenantCode, approvalId });
+      responseText = await response.text();
+    } catch {
+      responseText = '';
+    }
+
+    const parsedMessage = responseText
+      ? extractStorageErrorMessage(responseText)
+      : '';
+
+    if (parsedMessage) {
+      return `파일 업로드 저장소 전송에 실패했습니다. (${response.status}) ${parsedMessage}`;
+    }
+
+    return `파일 업로드 저장소 전송에 실패했습니다. (${response.status})`;
+  };
+
+  const loadAttachments = async (silent = false) => {
+    if (!canUseAttachmentApi) {
+      setAttachments([]);
+      return;
+    }
+
+    try {
+      const data = await listHaccpAttachments({
+        tenantCode,
+        approvalId: normalizedApprovalId,
+      });
       setAttachments(data.items ?? []);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : '첨부파일 목록을 불러오지 못했습니다.',
-      );
+      if (!silent) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '첨부파일 목록을 불러오지 못했습니다.',
+        );
+      }
     }
   };
 
   useEffect(() => {
     void loadAttachments();
-  }, [tenantCode, approvalId]);
+  }, [tenantCode, normalizedApprovalId, canUseAttachmentApi]);
+
+  useEffect(() => {
+    if (!canUseAttachmentApi) {
+      return;
+    }
+
+    const handleFocusReload = () => {
+      if (document.visibilityState === 'visible') {
+        void loadAttachments(true);
+      }
+    };
+
+    const handleVisibilityReload = () => {
+      if (document.visibilityState === 'visible') {
+        void loadAttachments(true);
+      }
+    };
+
+    window.addEventListener('focus', handleFocusReload);
+    document.addEventListener('visibilitychange', handleVisibilityReload);
+
+    return () => {
+      window.removeEventListener('focus', handleFocusReload);
+      document.removeEventListener('visibilitychange', handleVisibilityReload);
+    };
+  }, [tenantCode, normalizedApprovalId, canUseAttachmentApi]);
 
   const handleSelectFiles = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -74,10 +147,19 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     setErrorMessage('');
     setSuccessMessage('');
 
+    if (!canUseAttachmentApi) {
+      setLoading(false);
+      setErrorMessage('결재 문서가 생성된 후 첨부파일을 업로드할 수 있습니다.');
+      if (inputRef.current) {
+        inputRef.current.value = '';
+      }
+      return;
+    }
+
     try {
       const presigned = await presignHaccpAttachmentsUpload({
         tenantCode,
-        approvalId,
+        approvalId: normalizedApprovalId,
         items: files.map((file) => ({
           fileName: file.name,
           contentType: file.type || 'application/octet-stream',
@@ -107,7 +189,9 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
               headers: uploadHeaders,
             });
             if (!uploadResponse.ok) {
-              throw new Error('파일 업로드 저장소 전송에 실패했습니다.');
+              throw new Error(
+                await resolveStorageUploadErrorMessage(uploadResponse),
+              );
             }
           }
 
@@ -128,9 +212,12 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
       if (completePayload.length) {
         await completeHaccpAttachmentsUpload({
           tenantCode,
-          approvalId,
+          approvalId: normalizedApprovalId,
           items: completePayload,
         });
+        if (onChanged) {
+          await onChanged();
+        }
         setSuccessMessage('첨부파일 업로드가 완료되었습니다.');
       }
 
@@ -142,10 +229,8 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
 
       setErrorMessage(
         networkLikelyIssue
-          ? '스토리지 업로드 연결에 실패했습니다. MinIO(127.0.0.1:9000) 실행/CORS 설정을 확인해주세요.'
-          : error instanceof Error
-            ? error.message
-            : '첨부파일 업로드에 실패했습니다.',
+          ? '스토리지 업로드 연결에 실패했습니다. MinIO(218.155.74.34:9000) 실행/CORS 설정을 확인해주세요.'
+          : extractApiErrorMessage(error, '첨부파일 업로드에 실패했습니다.'),
       );
     } finally {
       setLoading(false);
@@ -163,7 +248,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     try {
       const { previewUrl } = await presignHaccpAttachmentPreview({
         tenantCode,
-        approvalId,
+        approvalId: normalizedApprovalId,
         attachmentId: attachment.attachmentId,
       });
       window.open(previewUrl, '_blank', 'noopener,noreferrer');
@@ -184,7 +269,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     try {
       const { downloadUrl } = await presignHaccpAttachmentDownload({
         tenantCode,
-        approvalId,
+        approvalId: normalizedApprovalId,
         attachmentId: attachment.attachmentId,
       });
       window.open(downloadUrl, '_blank', 'noopener,noreferrer');
@@ -214,9 +299,12 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
       setSuccessMessage('');
       await deleteHaccpAttachment({
         tenantCode,
-        approvalId,
+        approvalId: normalizedApprovalId,
         attachmentId: deleteTarget.attachmentId,
       });
+      if (onChanged) {
+        await onChanged();
+      }
       await loadAttachments();
       setSuccessMessage('첨부파일이 삭제되었습니다.');
       setDeleteTarget(null);
@@ -326,7 +414,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
             variant="contained"
             startIcon={<FileUploadIcon />}
             onClick={() => inputRef.current?.click()}
-            disabled={loading}
+            disabled={loading || !canUseAttachmentApi}
             sx={{
               borderRadius: 2,
               px: 1.75,
@@ -337,7 +425,11 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
               alignSelf: { xs: 'stretch', sm: 'auto' },
             }}
           >
-            {loading ? '업로드 중...' : '파일 선택'}
+            {!canUseAttachmentApi
+              ? '문서 생성 후 업로드 가능'
+              : loading
+                ? '업로드 중...'
+                : '파일 선택'}
           </Button>
         ) : null}
       </Stack>
@@ -360,6 +452,12 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
       {successMessage ? (
         <Alert severity="success" sx={{ mb: 1.5, borderRadius: 2 }}>
           {successMessage}
+        </Alert>
+      ) : null}
+
+      {!canUseAttachmentApi ? (
+        <Alert severity="info" sx={{ mb: 1.5, borderRadius: 2 }}>
+          결재 문서 저장 후 첨부파일 기능을 사용할 수 있습니다.
         </Alert>
       ) : null}
 

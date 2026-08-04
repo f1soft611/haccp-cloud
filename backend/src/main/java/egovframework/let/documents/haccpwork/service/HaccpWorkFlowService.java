@@ -47,4 +47,12 @@ public interface HaccpWorkFlowService {
             HaccpWorkApprovalCommentCreateRequestVO payload,
             String actorLoginCode
     ) throws Exception;
+
+    public void createSystemApprovalComment(
+            Long approvalId,
+            String tenantCode,
+            String actionLabel,
+            String actionDetail,
+            String actorLoginCode
+    ) throws Exception;
 }

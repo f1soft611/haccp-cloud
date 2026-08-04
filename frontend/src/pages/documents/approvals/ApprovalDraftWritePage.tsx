@@ -69,6 +69,7 @@ export function ApprovalDraftWritePage() {
     setReplyDraft,
     addComment,
     addReply,
+    refreshComments,
     commentLoadErrorMessage,
   } = useApprovalDraftComments(
     tenantCode,
@@ -124,6 +125,12 @@ export function ApprovalDraftWritePage() {
     canSubmitCancel && idType === 'approval' && !canApprove;
   const showTempSave = canTempSave;
   const showSubmit = canSubmit;
+  const normalizedApprovalStatus = String(work?.approvalStatusType ?? '')
+    .trim()
+    .toLowerCase();
+  const canUploadAttachmentsWhileInProgress =
+    isOwner && normalizedApprovalStatus === 'in_progress';
+  const attachmentReadOnly = isReadOnly && !canUploadAttachmentsWhileInProgress;
   const approveLabel = showConfirm
     ? isFinalOwnerConfirm
       ? '최종 확인'
@@ -190,7 +197,9 @@ export function ApprovalDraftWritePage() {
       {isReadOnly ? (
         <Alert severity="info">
           {isOwner
-            ? '문서 상태상 현재는 읽기 전용입니다.'
+            ? canUploadAttachmentsWhileInProgress
+              ? '결재 진행중 문서는 본문 편집은 잠겨 있지만 첨부파일 업로드는 가능합니다.'
+              : '문서 상태상 현재는 읽기 전용입니다.'
             : '이 문서의 소유자가 아니므로 편집할 수 없습니다.'}
         </Alert>
       ) : null}
@@ -224,7 +233,9 @@ export function ApprovalDraftWritePage() {
         approvalId={approvalIdForComments}
         canWriteComments={true}
         commentLoadErrorMessage={commentLoadErrorMessage}
+        onAttachmentChanged={refreshComments}
         isReadOnly={isReadOnly}
+        attachmentReadOnly={attachmentReadOnly}
       />
 
       <ConfirmDialog

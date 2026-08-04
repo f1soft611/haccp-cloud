@@ -24,6 +24,7 @@ import egovframework.let.documents.haccpwork.domain.model.HaccpAttachmentPolicy;
 import egovframework.let.documents.haccpwork.domain.model.HaccpAttachmentUploadRequestVO;
 import egovframework.let.documents.haccpwork.domain.repository.HaccpWorkDAO;
 import egovframework.let.documents.haccpwork.service.HaccpWorkAttachmentService;
+import egovframework.let.documents.haccpwork.service.HaccpWorkFlowService;
 import egovframework.let.storage.StorageClient;
 import egovframework.let.storage.StorageProperties;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class HaccpWorkAttachmentServiceImpl extends EgovAbstractServiceImpl impl
     private final HaccpWorkDAO haccpWorkDAO;
     private final StorageClient storageClient;
     private final StorageProperties storageProperties;
+    private final HaccpWorkFlowService haccpWorkFlowService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -250,6 +252,13 @@ public class HaccpWorkAttachmentServiceImpl extends EgovAbstractServiceImpl impl
             selectParams.put("attachmentId", attachmentId);
             Map<String, Object> attachment = haccpWorkDAO.selectDocumentAttachmentById(selectParams);
             if (attachment != null) {
+                haccpWorkFlowService.createSystemApprovalComment(
+                        approvalId,
+                        normalizedTenant,
+                    "첨부파일 업로드",
+                    resolveAttachmentFileName(attachment),
+                        actorLoginCode
+                );
                 resultList.add(attachment);
             }
         }
@@ -320,6 +329,14 @@ public class HaccpWorkAttachmentServiceImpl extends EgovAbstractServiceImpl impl
         if (updated <= 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "삭제할 첨부파일을 찾을 수 없습니다.");
         }
+
+        haccpWorkFlowService.createSystemApprovalComment(
+            approvalId,
+            normalizedTenant,
+            "첨부파일 삭제",
+            resolveAttachmentFileName(attachment),
+            actorLoginCode
+        );
 
         String bucketName = resolveBucketName(asString(attachment.get("bucketName")));
         String objectKey = String.valueOf(attachment.get("objectKey"));
@@ -502,6 +519,21 @@ public class HaccpWorkAttachmentServiceImpl extends EgovAbstractServiceImpl impl
             return storageProperties.getBucket().trim();
         }
         return DEFAULT_BUCKET;
+    }
+
+    private String resolveAttachmentFileName(Map<String, Object> attachment) {
+        String fileName = "";
+        if (attachment != null) {
+            fileName = trimToEmpty(asString(attachment.get("originalFileName")));
+            if (!StringUtils.hasText(fileName)) {
+                fileName = trimToEmpty(asString(attachment.get("fileName")));
+            }
+        }
+        if (!StringUtils.hasText(fileName)) {
+            fileName = "파일명 없음";
+        }
+
+        return fileName;
     }
 
     private static String asString(Object value) {

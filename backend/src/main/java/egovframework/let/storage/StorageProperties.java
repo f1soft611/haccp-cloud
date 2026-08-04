@@ -14,7 +14,7 @@ public class StorageProperties implements InitializingBean {
     @Value("${storage.bucket:document-attachments}")
     private String bucket;
 
-    @Value("${storage.endpoint:http://localhost:9000}")
+        @Value("${storage.endpoint:http://218.155.74.34:9000}")
     private String endpoint;
 
     @Value("${storage.accessKey:}")

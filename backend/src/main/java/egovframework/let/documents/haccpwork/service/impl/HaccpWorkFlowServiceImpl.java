@@ -726,7 +726,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         lineParams.put("tenantId", tenantId);
         lineParams.put("approvalId", approvalId);
         lineParams.put("loginId", actorLoginId);
-        Map<String, Object> lineInfo = haccpWorkDAO.selectApprovalLineForHistoryByLogin(lineParams);
+        Map<String, Object> lineInfo = resolveHistoryLineInfo(lineParams);
         if (lineInfo == null || lineInfo.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 저장 대상 결재선 정보를 찾을 수 없습니다.");
         }
@@ -758,6 +758,81 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             HISTORY_TYPE_USER,
             parentCommentId
         );
+    }
+
+    @Override
+    @Transactional
+    public void createSystemApprovalComment(
+            Long approvalId,
+            String tenantCode,
+            String actionLabel,
+            String actionDetail,
+            String actorLoginCode
+    ) throws Exception {
+        if (approvalId == null || approvalId.longValue() <= 0L) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재 ID가 올바르지 않습니다.");
+        }
+
+        String normalizedActionLabel = trimToEmpty(actionLabel);
+        if (!StringUtils.hasText(normalizedActionLabel)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "시스템 댓글 액션은 필수입니다.");
+        }
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        if (actorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 등록 사용자 정보를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> accessParams = new HashMap<String, Object>();
+        accessParams.put("tenantId", tenantId);
+        accessParams.put("approvalId", approvalId);
+        accessParams.put("actorLoginId", actorLoginId);
+        Integer hasAccess = haccpWorkDAO.selectApprovalTemplateAccessCount(accessParams);
+        if (hasAccess == null || hasAccess.intValue() <= 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 결재 문서 댓글 등록 권한이 없습니다.");
+        }
+
+        Map<String, Object> lineParams = new HashMap<String, Object>();
+        lineParams.put("tenantId", tenantId);
+        lineParams.put("approvalId", approvalId);
+        lineParams.put("loginId", actorLoginId);
+        Map<String, Object> lineInfo = resolveHistoryLineInfo(lineParams);
+        if (lineInfo == null || lineInfo.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 저장 대상 결재선 정보를 찾을 수 없습니다.");
+        }
+
+        Map<String, Object> actorProfile = selectApprovalActorProfile(tenantId, actorLoginId);
+        String actorName = resolveActorDisplayName(actorProfile, actorLoginCode);
+        String normalizedActionDetail = trimToEmpty(actionDetail);
+
+        appendHistoryCommentFromLine(
+            tenantId,
+            lineInfo,
+            actorLoginId,
+            LocalDateTime.now(),
+            buildSystemActionCommentMessage(actorName, normalizedActionLabel, normalizedActionDetail),
+            HISTORY_TYPE_SYSTEM,
+            null
+        );
+    }
+
+    private Map<String, Object> resolveHistoryLineInfo(Map<String, Object> lineParams) throws Exception {
+        Map<String, Object> lineInfo = haccpWorkDAO.selectApprovalLineForHistoryByLogin(lineParams);
+        if (lineInfo != null && !lineInfo.isEmpty()) {
+            return lineInfo;
+        }
+
+        lineInfo = haccpWorkDAO.selectApprovalReferenceLineForHistoryByLogin(lineParams);
+        if (lineInfo != null && !lineInfo.isEmpty()) {
+            return lineInfo;
+        }
+
+        Map<String, Object> anyLineParams = new HashMap<String, Object>();
+        anyLineParams.put("tenantId", lineParams.get("tenantId"));
+        anyLineParams.put("approvalId", lineParams.get("approvalId"));
+        return haccpWorkDAO.selectAnyApprovalLineForHistory(anyLineParams);
     }
 
     private Long resolveTenantId(String tenantCode) throws Exception {
@@ -1359,6 +1434,16 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         }
 
         return "[시스템] " + normalizedActorName + "님이 " + action + " 처리했습니다.";
+    }
+
+    private String buildSystemActionCommentMessage(String actorName, String actionLabel, String actionDetail) {
+        String normalizedActorName = StringUtils.hasText(actorName) ? actorName.trim() : "사용자";
+        String normalizedActionLabel = StringUtils.hasText(actionLabel) ? actionLabel.trim() : "처리";
+        String message = "[시스템] " + normalizedActorName + "님이 " + normalizedActionLabel + " 처리했습니다.";
+        if (!StringUtils.hasText(actionDetail)) {
+            return message;
+        }
+        return message + " (대상: " + actionDetail.trim() + ")";
     }
 
     private String resolveSubmitCancelAction(Integer cancelTargetSeq) {

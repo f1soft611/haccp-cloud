@@ -1479,6 +1479,29 @@
       LIMIT 1
     </select>
 
+    <select id="HaccpWorkDAO.selectAnyApprovalLineForHistory"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        electronic_approval_line_id AS electronicApprovalLineId,
+        exe_seq AS exeSeq,
+        approval_type AS approvalType,
+        last_owner_status AS lastOwnerStatus,
+        eabus_no AS eabusNo,
+        ea_exe_id AS eaExeId
+      FROM tb_electronic_approval_line_info
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+      ORDER BY
+        CASE
+          WHEN COALESCE(muldec_status, '') = 'drafted' THEN 0
+          WHEN COALESCE(muldec_status, '') = 'cooperated' THEN 1
+          ELSE 2
+        END,
+        exe_seq ASC
+      LIMIT 1
+    </select>
+
     <select id="HaccpWorkDAO.selectNextApprovalHistoryAnswerSeq"
         parameterType="map"
         resultType="int">

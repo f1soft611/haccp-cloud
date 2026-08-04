@@ -56,6 +56,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(500).body(res);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException e) {
+        String message = (e.getMessage() == null || e.getMessage().trim().isEmpty())
+                ? "요청 값이 올바르지 않습니다."
+                : e.getMessage();
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("resultCode", "FAIL");
+        res.put("message", message);
+        res.put("resultMessage", message);
+        return ResponseEntity.status(400).body(res);
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException e) {
         String reason = e.getReason() == null || e.getReason().trim().isEmpty()

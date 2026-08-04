@@ -15,6 +15,7 @@ type UseApprovalDraftCommentsResult = {
   setReplyDraft: (commentId: string, next: string) => void;
   addComment: (text: string) => void;
   addReply: (commentId: string) => void;
+  refreshComments: () => Promise<void>;
   commentLoadErrorMessage: string;
 };
 
@@ -221,12 +222,22 @@ export function useApprovalDraftComments(
     }));
   };
 
+  const refreshComments = async () => {
+    if (!tenantCode || !approvalId) {
+      return;
+    }
+    await queryClient.invalidateQueries({
+      queryKey: ['approval-comments', tenantCode, approvalId],
+    });
+  };
+
   return {
     comments,
     replyDraftByCommentId,
     setReplyDraft,
     addComment,
     addReply,
+    refreshComments,
     commentLoadErrorMessage,
   };
 }

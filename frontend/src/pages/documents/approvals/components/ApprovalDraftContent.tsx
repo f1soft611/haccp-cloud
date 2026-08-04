@@ -37,8 +37,10 @@ type ApprovalDraftContentProps = {
   tenantCode?: string;
   approvalId?: string;
   isReadOnly?: boolean;
+  attachmentReadOnly?: boolean;
   canWriteComments?: boolean;
   commentLoadErrorMessage?: string;
+  onAttachmentChanged?: () => void | Promise<void>;
 };
 
 export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
@@ -70,8 +72,10 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     tenantCode = '',
     approvalId = '',
     isReadOnly = false,
+    attachmentReadOnly = isReadOnly,
     canWriteComments = true,
     commentLoadErrorMessage = '',
+    onAttachmentChanged,
   } = props;
 
   return (
@@ -112,7 +116,8 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
       <ApprovalAttachmentPanel
         tenantCode={tenantCode}
         approvalId={approvalId}
-        isReadOnly={isReadOnly}
+        isReadOnly={attachmentReadOnly}
+        onChanged={onAttachmentChanged}
       />
 
       <ApprovalDraftCommentThread
