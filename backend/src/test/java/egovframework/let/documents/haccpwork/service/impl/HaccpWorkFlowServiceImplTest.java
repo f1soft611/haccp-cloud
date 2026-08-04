@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
 import egovframework.let.documents.haccpwork.domain.repository.HaccpWorkDAO;
 import egovframework.let.documents.haccpwork.service.HaccpWorkDraftService;
@@ -31,6 +32,121 @@ import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 
 class HaccpWorkFlowServiceImplTest {
+
+    @DisplayName("시스템 댓글은 수정할 수 없다")
+    @Test
+    void updateApprovalComment_rejectsSystemComment() throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, haccpWorkDAO);
+
+        when(haccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(haccpWorkDAO.selectApprovalTemplateAccessCount(anyMap())).thenReturn(1);
+
+        Map<String, Object> commentRow = new HashMap<String, Object>();
+        commentRow.put("commentId", 200L);
+        commentRow.put("answerTypeName", "SYSTEM");
+        commentRow.put("createdBy", 3001L);
+        when(haccpWorkDAO.selectApprovalHistoryCommentById(anyMap())).thenReturn(commentRow);
+
+        HaccpWorkApprovalCommentUpdateRequestVO payload = new HaccpWorkApprovalCommentUpdateRequestVO();
+        payload.setComment("수정 시도");
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.updateApprovalComment(77L, 200L, "tenant_001", payload, "3001"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertTrue(ex.getReason() != null && ex.getReason().contains("시스템 댓글"));
+        verify(haccpWorkDAO, never()).updateElectronicApprovalHistoryComment(anyMap());
+    }
+
+    @DisplayName("시스템 댓글은 삭제할 수 없다")
+    @Test
+    void deleteApprovalComment_rejectsSystemComment() throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, haccpWorkDAO);
+
+        when(haccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(haccpWorkDAO.selectApprovalTemplateAccessCount(anyMap())).thenReturn(1);
+
+        Map<String, Object> commentRow = new HashMap<String, Object>();
+        commentRow.put("commentId", 200L);
+        commentRow.put("answerTypeName", "SYSTEM");
+        commentRow.put("createdBy", 3001L);
+        when(haccpWorkDAO.selectApprovalHistoryCommentById(anyMap())).thenReturn(commentRow);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.deleteApprovalComment(77L, 200L, "tenant_001", "3001"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertTrue(ex.getReason() != null && ex.getReason().contains("시스템 댓글"));
+        verify(haccpWorkDAO, never()).softDeleteElectronicApprovalHistoryComment(anyMap());
+    }
+
+    @DisplayName("수동 댓글은 수정할 수 있다")
+    @Test
+    void updateApprovalComment_updatesManualComment() throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, haccpWorkDAO);
+
+        when(haccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(haccpWorkDAO.selectApprovalTemplateAccessCount(anyMap())).thenReturn(1);
+        when(haccpWorkDAO.selectApprovalHistoryCommentById(anyMap())).thenAnswer(invocation -> {
+            Map<String, Object> row = new HashMap<String, Object>();
+            row.put("commentId", 200L);
+            row.put("answerTypeName", "USER");
+            row.put("createdBy", 3001L);
+            return row;
+        });
+        when(haccpWorkDAO.updateElectronicApprovalHistoryComment(anyMap())).thenReturn(1);
+
+        HaccpWorkApprovalCommentUpdateRequestVO payload = new HaccpWorkApprovalCommentUpdateRequestVO();
+        payload.setComment("수정된 의견");
+
+        service.updateApprovalComment(77L, 200L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> updateCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(haccpWorkDAO).updateElectronicApprovalHistoryComment(updateCaptor.capture());
+        assertEquals(10L, updateCaptor.getValue().get("tenantId"));
+        assertEquals(200L, updateCaptor.getValue().get("commentId"));
+        assertEquals(3001L, updateCaptor.getValue().get("actorLoginId"));
+        assertEquals("수정된 의견", updateCaptor.getValue().get("comment"));
+    }
+
+    @DisplayName("수동 댓글은 삭제 시 소프트 삭제 문구로 바뀐다")
+    @Test
+    void deleteApprovalComment_softDeletesManualComment() throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, haccpWorkDAO);
+
+        when(haccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(haccpWorkDAO.selectApprovalTemplateAccessCount(anyMap())).thenReturn(1);
+        when(haccpWorkDAO.selectApprovalHistoryCommentById(anyMap())).thenAnswer(invocation -> {
+            Map<String, Object> row = new HashMap<String, Object>();
+            row.put("commentId", 200L);
+            row.put("answerTypeName", "USER");
+            row.put("createdBy", 3001L);
+            return row;
+        });
+        when(haccpWorkDAO.softDeleteElectronicApprovalHistoryComment(anyMap())).thenReturn(1);
+
+        service.deleteApprovalComment(77L, 200L, "tenant_001", "3001");
+
+        ArgumentCaptor<Map> deleteCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(haccpWorkDAO).softDeleteElectronicApprovalHistoryComment(deleteCaptor.capture());
+        assertEquals(10L, deleteCaptor.getValue().get("tenantId"));
+        assertEquals(200L, deleteCaptor.getValue().get("commentId"));
+        assertEquals(3001L, deleteCaptor.getValue().get("actorLoginId"));
+    }
 
     @DisplayName("최종기안 확인이 완료된 문서는 최종승인자가 결재취소할 수 없다")
     @Test

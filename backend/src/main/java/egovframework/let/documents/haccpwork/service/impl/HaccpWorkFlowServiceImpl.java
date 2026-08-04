@@ -22,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentCreateRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftTempSaveRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
@@ -50,6 +51,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
     private static final String DEFAULT_WEIGHT_STATUS = "normal";
     private static final String HISTORY_TYPE_SYSTEM = "SYSTEM";
     private static final String HISTORY_TYPE_USER = "USER";
+    private static final String HISTORY_TYPE_DELETED = "DELETED";
+    private static final String DELETED_COMMENT_TEXT = "사용자에 의해 삭제 되었습니다.";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HHmm");
 
@@ -762,6 +765,63 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 
     @Override
     @Transactional
+    public void updateApprovalComment(
+            Long approvalId,
+            Long commentId,
+            String tenantCode,
+            HaccpWorkApprovalCommentUpdateRequestVO payload,
+            String actorLoginCode
+    ) throws Exception {
+        requireEditableComment(approvalId, commentId, tenantCode, actorLoginCode);
+
+        String comment = payload == null ? "" : trimToEmpty(payload.getComment());
+        if (!StringUtils.hasText(comment)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 내용은 필수입니다.");
+        }
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("commentId", commentId);
+        params.put("actorLoginId", actorLoginId);
+        params.put("comment", comment);
+
+        int updatedCount = haccpWorkDAO.updateElectronicApprovalHistoryComment(params);
+        if (updatedCount <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글을 수정하지 못했습니다.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteApprovalComment(
+            Long approvalId,
+            Long commentId,
+            String tenantCode,
+            String actorLoginCode
+    ) throws Exception {
+        requireEditableComment(approvalId, commentId, tenantCode, actorLoginCode);
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("commentId", commentId);
+        params.put("actorLoginId", actorLoginId);
+
+        int deletedCount = haccpWorkDAO.softDeleteElectronicApprovalHistoryComment(params);
+        if (deletedCount <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글을 삭제하지 못했습니다.");
+        }
+    }
+
+    @Override
+    @Transactional
     public void createSystemApprovalComment(
             Long approvalId,
             String tenantCode,
@@ -816,6 +876,60 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             HISTORY_TYPE_SYSTEM,
             null
         );
+    }
+
+    private Map<String, Object> requireEditableComment(
+            Long approvalId,
+            Long commentId,
+            String tenantCode,
+            String actorLoginCode
+    ) throws Exception {
+        if (approvalId == null || approvalId.longValue() <= 0L) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재 ID가 올바르지 않습니다.");
+        }
+        if (commentId == null || commentId.longValue() <= 0L) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 ID가 올바르지 않습니다.");
+        }
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        if (actorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 처리 사용자 정보를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> accessParams = new HashMap<String, Object>();
+        accessParams.put("tenantId", tenantId);
+        accessParams.put("approvalId", approvalId);
+        accessParams.put("actorLoginId", actorLoginId);
+        Integer hasAccess = haccpWorkDAO.selectApprovalTemplateAccessCount(accessParams);
+        if (hasAccess == null || hasAccess.intValue() <= 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 결재 문서 댓글 처리 권한이 없습니다.");
+        }
+
+        Map<String, Object> commentParams = new HashMap<String, Object>();
+        commentParams.put("tenantId", tenantId);
+        commentParams.put("approvalId", approvalId);
+        commentParams.put("commentId", commentId);
+        Map<String, Object> commentRow = haccpWorkDAO.selectApprovalHistoryCommentById(commentParams);
+        if (commentRow == null || commentRow.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글을 찾을 수 없습니다.");
+        }
+
+        String answerTypeName = trimToEmpty(resolveMapValueIgnoreCase(commentRow, "answerTypeName"));
+        if (HISTORY_TYPE_SYSTEM.equalsIgnoreCase(answerTypeName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "시스템 댓글은 수정하거나 삭제할 수 없습니다.");
+        }
+        if (HISTORY_TYPE_DELETED.equalsIgnoreCase(answerTypeName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 삭제된 댓글입니다.");
+        }
+
+        Long createdBy = getLong(commentRow, "createdBy");
+        if (createdBy == null || !createdBy.equals(actorLoginId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인이 작성한 댓글만 수정하거나 삭제할 수 있습니다.");
+        }
+
+        return commentRow;
     }
 
     private Map<String, Object> resolveHistoryLineInfo(Map<String, Object> lineParams) throws Exception {

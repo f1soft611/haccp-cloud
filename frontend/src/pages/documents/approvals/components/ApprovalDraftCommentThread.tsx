@@ -12,13 +12,15 @@ import {
   Button,
   Chip,
   IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Stack,
   Tooltip,
   Typography,
   TextField,
 } from '@mui/material';
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import type { DraftComment } from '../types';
 
@@ -28,6 +30,9 @@ type ApprovalDraftCommentThreadProps = {
   replyDraftByCommentId: Record<string, string>;
   onChangeReplyDraft: (commentId: string, next: string) => void;
   onAddReply: (commentId: string) => void;
+  onEditComment: (commentId: string, nextText: string) => void;
+  onDeleteComment: (commentId: string) => void;
+  currentUserLoginCode?: string;
   canWriteComments?: boolean;
   commentLoadErrorMessage?: string;
 };
@@ -113,6 +118,28 @@ function formatReplyTimestamp(value: string): string {
   return formatAbsoluteTimestamp(parsed);
 }
 
+function isEditableComment(
+  comment: Pick<DraftComment, 'isSystem' | 'isDeleted' | 'createdByLoginCode'>,
+  currentUserLoginCode?: string,
+): boolean {
+  const loginCode = String(currentUserLoginCode || '').trim();
+  return Boolean(
+    loginCode &&
+    comment.createdByLoginCode &&
+    comment.createdByLoginCode === loginCode &&
+    !comment.isSystem &&
+    !comment.isDeleted,
+  );
+}
+
+function renderCommentBody(comment: Pick<DraftComment, 'text' | 'isDeleted'>) {
+  if (comment.isDeleted) {
+    return '사용자에 의해 삭제 되었습니다.';
+  }
+
+  return comment.text;
+}
+
 export function ApprovalDraftCommentThread(
   props: ApprovalDraftCommentThreadProps,
 ) {
@@ -122,6 +149,9 @@ export function ApprovalDraftCommentThread(
     replyDraftByCommentId,
     onChangeReplyDraft,
     onAddReply,
+    onEditComment,
+    onDeleteComment,
+    currentUserLoginCode,
     canWriteComments = true,
     commentLoadErrorMessage = '',
   } = props;
@@ -130,6 +160,14 @@ export function ApprovalDraftCommentThread(
   const [replyComposerOpen, setReplyComposerOpen] = useState<
     Record<string, boolean>
   >({});
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editDraft, setEditDraft] = useState('');
+  const [editTargetCommentId, setEditTargetCommentId] = useState('');
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleteTargetCommentId, setDeleteTargetCommentId] = useState('');
+  const [commentMenuAnchor, setCommentMenuAnchor] =
+    useState<HTMLElement | null>(null);
+  const [commentMenuTargetId, setCommentMenuTargetId] = useState('');
 
   const handleSubmitOpinion = () => {
     const nextText = opinionDraft.trim();
@@ -148,6 +186,60 @@ export function ApprovalDraftCommentThread(
       [commentId]: !prev[commentId],
     }));
   };
+
+  const openEditDialog = (comment: DraftComment) => {
+    setEditTargetCommentId(comment.id);
+    setEditDraft(comment.text);
+    setIsEditModalOpen(true);
+  };
+
+  const submitEdit = () => {
+    const nextText = editDraft.trim();
+    if (!editTargetCommentId || !nextText) {
+      return;
+    }
+
+    onEditComment(editTargetCommentId, nextText);
+    setIsEditModalOpen(false);
+    setEditTargetCommentId('');
+    setEditDraft('');
+  };
+
+  const openDeleteConfirm = (commentId: string) => {
+    setDeleteTargetCommentId(commentId);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTargetCommentId) {
+      return;
+    }
+
+    onDeleteComment(deleteTargetCommentId);
+    setIsDeleteConfirmOpen(false);
+    setDeleteTargetCommentId('');
+  };
+
+  const openCommentMenu = (
+    event: MouseEvent<HTMLElement>,
+    commentId: string,
+  ) => {
+    setCommentMenuAnchor(event.currentTarget);
+    setCommentMenuTargetId(commentId);
+  };
+
+  const closeCommentMenu = () => {
+    setCommentMenuAnchor(null);
+    setCommentMenuTargetId('');
+  };
+
+  const activeComment = comments.find(
+    (comment) => comment.id === commentMenuTargetId,
+  );
+  const activeReply = comments
+    .flatMap((comment) => comment.replies)
+    .find((reply) => reply.id === commentMenuTargetId);
+  const menuTarget = activeComment ?? activeReply;
 
   return (
     <Paper
@@ -254,6 +346,12 @@ export function ApprovalDraftCommentThread(
             {comments.map((comment) =>
               (() => {
                 const timeMeta = renderCommentTimestamp(comment.createdAt);
+                const canManageComment = isEditableComment(
+                  comment,
+                  currentUserLoginCode,
+                );
+                const canReplyToComment =
+                  !comment.isSystem && !comment.isDeleted;
                 return (
                   <Box
                     key={comment.id}
@@ -350,13 +448,6 @@ export function ApprovalDraftCommentThread(
                                 </Typography>
                               </Tooltip>
                             </Stack>
-
-                            <IconButton
-                              size="small"
-                              sx={{ color: 'text.secondary' }}
-                            >
-                              <MoreHorizRounded fontSize="small" />
-                            </IconButton>
                           </Stack>
 
                           <Typography
@@ -366,9 +457,15 @@ export function ApprovalDraftCommentThread(
                               whiteSpace: 'pre-wrap',
                               lineHeight: 1.55,
                               color: 'text.primary',
+                              fontStyle: comment.isDeleted
+                                ? 'italic'
+                                : 'normal',
+                              color: comment.isDeleted
+                                ? 'text.secondary'
+                                : 'text.primary',
                             }}
                           >
-                            {comment.text}
+                            {renderCommentBody(comment)}
                           </Typography>
 
                           <Stack
@@ -398,13 +495,26 @@ export function ApprovalDraftCommentThread(
                               variant="text"
                               startIcon={<ReplyRounded fontSize="small" />}
                               sx={{ minWidth: 0, px: 0.3, borderRadius: 1.5 }}
-                              disabled={!canWriteComments || comment.isSystem}
+                              disabled={!canWriteComments || !canReplyToComment}
                               onClick={() => toggleReplyComposer(comment.id)}
                             >
-                              {comment.isSystem
+                              {!canReplyToComment
                                 ? '답글 비활성'
                                 : `답글 ${comment.replies.length}`}
                             </Button>
+
+                            {canManageComment ? (
+                              <IconButton
+                                size="small"
+                                aria-label="댓글 메뉴"
+                                onClick={(event) =>
+                                  openCommentMenu(event, comment.id)
+                                }
+                                sx={{ color: 'text.secondary' }}
+                              >
+                                <MoreHorizRounded fontSize="small" />
+                              </IconButton>
+                            ) : null}
                           </Stack>
 
                           {comment.replies.length > 0 ? (
@@ -451,18 +561,42 @@ export function ApprovalDraftCommentThread(
                                       sx={{
                                         whiteSpace: 'pre-wrap',
                                         lineHeight: 1.5,
-                                        color: 'text.primary',
+                                        color: reply.isDeleted
+                                          ? 'text.secondary'
+                                          : 'text.primary',
+                                        fontStyle: reply.isDeleted
+                                          ? 'italic'
+                                          : 'normal',
                                       }}
                                     >
-                                      {reply.text}
+                                      {renderCommentBody(reply)}
                                     </Typography>
+
+                                    {isEditableComment(
+                                      reply,
+                                      currentUserLoginCode,
+                                    ) ? (
+                                      <IconButton
+                                        size="small"
+                                        aria-label="댓글 메뉴"
+                                        onClick={(event) =>
+                                          openCommentMenu(event, reply.id)
+                                        }
+                                        sx={{
+                                          mt: 0.2,
+                                          color: 'text.secondary',
+                                        }}
+                                      >
+                                        <MoreHorizRounded fontSize="small" />
+                                      </IconButton>
+                                    ) : null}
                                   </Box>
                                 </Stack>
                               ))}
                             </Stack>
                           ) : null}
 
-                          {!comment.isSystem &&
+                          {canReplyToComment &&
                           replyComposerOpen[comment.id] ? (
                             <Stack
                               direction={{ xs: 'column', sm: 'row' }}
@@ -516,6 +650,123 @@ export function ApprovalDraftCommentThread(
           </Stack>
         )}
       </Stack>
+
+      <FormDialog
+        open={isEditModalOpen}
+        title="댓글 수정"
+        description="수정한 내용은 즉시 댓글 스레드에 반영됩니다."
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditTargetCommentId('');
+          setEditDraft('');
+        }}
+        actions={
+          <>
+            <Button
+              variant="contained"
+              onClick={submitEdit}
+              disabled={!editDraft.trim()}
+              sx={{ borderRadius: 1.75, minWidth: 84 }}
+            >
+              수정
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setIsEditModalOpen(false);
+                setEditTargetCommentId('');
+                setEditDraft('');
+              }}
+              sx={{ borderRadius: 1.75, minWidth: 84 }}
+            >
+              취소
+            </Button>
+          </>
+        }
+      >
+        <TextField
+          label="댓글 내용"
+          multiline
+          minRows={4}
+          fullWidth
+          value={editDraft}
+          onChange={(event) => setEditDraft(event.target.value)}
+        />
+      </FormDialog>
+
+      <FormDialog
+        open={isDeleteConfirmOpen}
+        title="댓글 삭제 확인"
+        description="삭제된 댓글은 본문 대신 삭제 문구로 표시됩니다."
+        onClose={() => {
+          setIsDeleteConfirmOpen(false);
+          setDeleteTargetCommentId('');
+        }}
+        actions={
+          <>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={confirmDelete}
+              sx={{ borderRadius: 1.75, minWidth: 84 }}
+            >
+              삭제
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setIsDeleteConfirmOpen(false);
+                setDeleteTargetCommentId('');
+              }}
+              sx={{ borderRadius: 1.75, minWidth: 84 }}
+            >
+              취소
+            </Button>
+          </>
+        }
+      >
+        <Typography variant="body2" color="text.secondary">
+          사용자가 직접 입력한 댓글만 삭제할 수 있습니다.
+        </Typography>
+      </FormDialog>
+
+      <Menu
+        anchorEl={commentMenuAnchor}
+        open={Boolean(commentMenuAnchor)}
+        onClose={closeCommentMenu}
+        PaperProps={{
+          sx: {
+            mt: 0.75,
+            borderRadius: 2,
+            minWidth: 120,
+            boxShadow: (theme) =>
+              theme.palette.mode === 'dark'
+                ? '0 14px 30px rgba(2, 6, 23, 0.45)'
+                : '0 14px 28px rgba(15, 23, 42, 0.16)',
+          },
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            if (menuTarget) {
+              openEditDialog(menuTarget);
+            }
+            closeCommentMenu();
+          }}
+        >
+          수정
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (menuTarget) {
+              openDeleteConfirm(menuTarget.id);
+            }
+            closeCommentMenu();
+          }}
+        >
+          삭제
+        </MenuItem>
+      </Menu>
 
       <FormDialog
         open={isOpinionModalOpen}

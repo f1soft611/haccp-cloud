@@ -5,8 +5,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { DraftComment, DraftReply } from '../types';
 import { formatNow } from '../utils/approvalDraftUtils';
 import {
+  deleteHaccpWorkApprovalComment,
   createHaccpWorkApprovalComment,
   listHaccpWorkApprovalComments,
+  updateHaccpWorkApprovalComment,
 } from '../../../../services/documents/haccpBaseWorkService';
 
 type UseApprovalDraftCommentsResult = {
@@ -15,9 +17,38 @@ type UseApprovalDraftCommentsResult = {
   setReplyDraft: (commentId: string, next: string) => void;
   addComment: (text: string) => void;
   addReply: (commentId: string) => void;
+  editComment: (commentId: string, nextText: string) => void;
+  deleteComment: (commentId: string) => void;
   refreshComments: () => Promise<void>;
   commentLoadErrorMessage: string;
 };
+
+function normalizeCommentText(value: string): string {
+  return String(value || '').trim();
+}
+
+function mapLocalCommentTree(
+  comments: DraftComment[],
+  commentId: string,
+  updater: (comment: DraftComment) => DraftComment,
+): DraftComment[] {
+  return comments.map((comment) => {
+    if (comment.id === commentId) {
+      return updater(comment);
+    }
+
+    if (!comment.replies.length) {
+      return comment;
+    }
+
+    return {
+      ...comment,
+      replies: comment.replies.map((reply) =>
+        reply.id === commentId ? updater(reply as DraftComment) : reply,
+      ),
+    };
+  });
+}
 
 export function useApprovalDraftComments(
   tenantCode: string,
@@ -59,11 +90,13 @@ export function useApprovalDraftComments(
 
       const comment: DraftComment = {
         id,
+        createdByLoginCode: item.createdByLoginCode,
         author: item.author,
         authorProfileImage: item.authorProfileImage,
         text: item.text,
         createdAt: item.createdAt,
         isSystem: item.isSystem,
+        isDeleted: item.isDeleted,
         replies: [],
       };
       byId[id] = comment;
@@ -96,10 +129,13 @@ export function useApprovalDraftComments(
 
       parent.replies.push({
         id: comment.id,
+        createdByLoginCode: comment.createdByLoginCode,
         author: comment.author,
         authorProfileImage: comment.authorProfileImage,
         text: comment.text,
         createdAt: comment.createdAt,
+        isSystem: comment.isSystem,
+        isDeleted: comment.isDeleted,
       });
     }
 
@@ -132,6 +168,37 @@ export function useApprovalDraftComments(
         approvalId,
         comment: params.comment,
         parentCommentId: params.parentCommentId,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['approval-comments', tenantCode, approvalId],
+      });
+    },
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: async (params: { commentId: string; comment: string }) => {
+      return updateHaccpWorkApprovalComment({
+        tenantCode,
+        approvalId,
+        commentId: params.commentId,
+        comment: params.comment,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['approval-comments', tenantCode, approvalId],
+      });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      return deleteHaccpWorkApprovalComment({
+        tenantCode,
+        approvalId,
+        commentId,
       });
     },
     onSuccess: async () => {
@@ -175,7 +242,7 @@ export function useApprovalDraftComments(
     }
 
     const targetComment = comments.find((comment) => comment.id === commentId);
-    if (!targetComment || targetComment.isSystem) {
+    if (!targetComment || targetComment.isSystem || targetComment.isDeleted) {
       return;
     }
 
@@ -190,6 +257,7 @@ export function useApprovalDraftComments(
     } else {
       const nextReply: DraftReply = {
         id: `reply-${Date.now()}`,
+        createdByLoginCode: userId,
         author: authorName,
         authorProfileImage,
         text: draft,
@@ -215,6 +283,47 @@ export function useApprovalDraftComments(
     }));
   };
 
+  const editComment = (commentId: string, nextText: string) => {
+    const normalized = normalizeCommentText(nextText);
+    if (!normalized) {
+      return;
+    }
+
+    if (approvalId) {
+      if (updateCommentMutation.isPending) {
+        return;
+      }
+      updateCommentMutation.mutate({ commentId, comment: normalized });
+      return;
+    }
+
+    setLocalComments((prev) =>
+      mapLocalCommentTree(prev, commentId, (comment) => ({
+        ...comment,
+        text: normalized,
+      })),
+    );
+  };
+
+  const deleteComment = (commentId: string) => {
+    if (approvalId) {
+      if (deleteCommentMutation.isPending) {
+        return;
+      }
+      deleteCommentMutation.mutate(commentId);
+      return;
+    }
+
+    setLocalComments((prev) =>
+      mapLocalCommentTree(prev, commentId, (comment) => ({
+        ...comment,
+        text: '사용자에 의해 삭제 되었습니다.',
+        isDeleted: true,
+        isSystem: false,
+      })),
+    );
+  };
+
   const setReplyDraft = (commentId: string, next: string) => {
     setReplyDraftByCommentId((prev) => ({
       ...prev,
@@ -237,6 +346,8 @@ export function useApprovalDraftComments(
     setReplyDraft,
     addComment,
     addReply,
+    editComment,
+    deleteComment,
     refreshComments,
     commentLoadErrorMessage,
   };

@@ -1556,7 +1556,10 @@
       SELECT
         hm.electronic_approval_history_id AS commentId,
         hm.parent_history_id AS parentCommentId,
+        hm.created_by AS createdBy,
+        COALESCE(la.login_code, '') AS createdByLoginCode,
         hm.answer_type_name AS answerTypeName,
+        CASE WHEN UPPER(COALESCE(hm.answer_type_name, '')) = 'DELETED' THEN TRUE ELSE FALSE END AS isDeleted,
         hm.answer_cnt AS text,
         TO_CHAR(hm.answer_at, 'YYYY-MM-DD HH24:MI') AS createdAt,
         NULLIF(TRIM(COALESCE(la.profile_image, '')), '') AS actorProfileImage,
@@ -1593,14 +1596,43 @@
       ORDER BY hm.answer_at DESC, hm.electronic_approval_history_id DESC
     </select>
 
+    <update id="HaccpWorkDAO.updateElectronicApprovalHistoryComment"
+        parameterType="map">
+      UPDATE tb_electronic_approval_history_main
+      SET answer_cnt = #{comment},
+          answer_type_name = 'USER'
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_history_id = #{commentId}
+        AND created_by = #{actorLoginId}
+        AND answer_type_name = 'USER'
+    </update>
+
+    <update id="HaccpWorkDAO.softDeleteElectronicApprovalHistoryComment"
+        parameterType="map">
+      UPDATE tb_electronic_approval_history_main
+      SET answer_cnt = '사용자에 의해 삭제 되었습니다.',
+          answer_type_name = 'DELETED'
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_history_id = #{commentId}
+        AND created_by = #{actorLoginId}
+        AND answer_type_name = 'USER'
+    </update>
+
     <select id="HaccpWorkDAO.selectApprovalHistoryCommentById"
         parameterType="map"
         resultType="map">
       SELECT
         hm.electronic_approval_history_id AS commentId,
         hm.answer_type_name AS answerTypeName,
+        CASE WHEN UPPER(COALESCE(hm.answer_type_name, '')) = 'DELETED' THEN TRUE ELSE FALSE END AS isDeleted,
+        hm.answer_cnt AS text,
+        hm.created_by AS createdBy,
+        COALESCE(la.login_code, '') AS createdByLoginCode,
         hm.parent_history_id AS parentCommentId
       FROM tb_electronic_approval_history_main hm
+      LEFT JOIN tb_login_account la
+        ON la.tenant_id = hm.tenant_id
+       AND la.login_id = hm.created_by
       WHERE hm.tenant_id = #{tenantId}
         AND hm.electronic_approval_history_id = #{commentId}
         AND (

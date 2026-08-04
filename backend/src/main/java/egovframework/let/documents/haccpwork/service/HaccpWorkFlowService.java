@@ -8,6 +8,7 @@ import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftTempSave
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentCreateRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentUpdateRequestVO;
 
 /**
  * HACCP 업무 작성~결재 흐름을 위한 서비스 인터페이스 클래스
@@ -45,6 +46,21 @@ public interface HaccpWorkFlowService {
             Long approvalId,
             String tenantCode,
             HaccpWorkApprovalCommentCreateRequestVO payload,
+            String actorLoginCode
+    ) throws Exception;
+
+    public void updateApprovalComment(
+            Long approvalId,
+            Long commentId,
+            String tenantCode,
+            HaccpWorkApprovalCommentUpdateRequestVO payload,
+            String actorLoginCode
+    ) throws Exception;
+
+    public void deleteApprovalComment(
+            Long approvalId,
+            Long commentId,
+            String tenantCode,
             String actorLoginCode
     ) throws Exception;
 

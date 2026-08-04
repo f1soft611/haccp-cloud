@@ -34,6 +34,9 @@ type ApprovalDraftContentProps = {
   onChangeReplyDraft: (commentId: string, value: string) => void;
   onAddComment: (value: string) => void;
   onAddReply: (commentId: string) => void;
+  onEditComment: (commentId: string, value: string) => void;
+  onDeleteComment: (commentId: string) => void;
+  currentUserLoginCode?: string;
   tenantCode?: string;
   approvalId?: string;
   isReadOnly?: boolean;
@@ -69,6 +72,9 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     onChangeReplyDraft,
     onAddComment,
     onAddReply,
+    onEditComment,
+    onDeleteComment,
+    currentUserLoginCode,
     tenantCode = '',
     approvalId = '',
     isReadOnly = false,
@@ -126,6 +132,9 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         onChangeReplyDraft={onChangeReplyDraft}
         onAddComment={onAddComment}
         onAddReply={onAddReply}
+        onEditComment={onEditComment}
+        onDeleteComment={onDeleteComment}
+        currentUserLoginCode={currentUserLoginCode}
         canWriteComments={canWriteComments}
         commentLoadErrorMessage={commentLoadErrorMessage}
       />

@@ -69,6 +69,8 @@ export function ApprovalDraftWritePage() {
     setReplyDraft,
     addComment,
     addReply,
+    editComment,
+    deleteComment,
     refreshComments,
     commentLoadErrorMessage,
   } = useApprovalDraftComments(
@@ -229,6 +231,9 @@ export function ApprovalDraftWritePage() {
         onChangeReplyDraft={setReplyDraft}
         onAddComment={addComment}
         onAddReply={addReply}
+        onEditComment={editComment}
+        onDeleteComment={deleteComment}
+        currentUserLoginCode={userId}
         tenantCode={tenantCode}
         approvalId={approvalIdForComments}
         canWriteComments={true}

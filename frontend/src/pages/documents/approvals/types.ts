@@ -2,19 +2,24 @@ import type { UserItem } from '../../../services/organization/usersService';
 
 export type DraftReply = {
   id: string;
-  author: string;
-  authorProfileImage?: string;
-  text: string;
-  createdAt: string;
-};
-
-export type DraftComment = {
-  id: string;
+  createdByLoginCode?: string;
   author: string;
   authorProfileImage?: string;
   text: string;
   createdAt: string;
   isSystem?: boolean;
+  isDeleted?: boolean;
+};
+
+export type DraftComment = {
+  id: string;
+  createdByLoginCode?: string;
+  author: string;
+  authorProfileImage?: string;
+  text: string;
+  createdAt: string;
+  isSystem?: boolean;
+  isDeleted?: boolean;
   replies: DraftReply[];
 };
 
