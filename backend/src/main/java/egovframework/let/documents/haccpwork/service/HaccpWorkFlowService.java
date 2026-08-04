@@ -64,6 +64,13 @@ public interface HaccpWorkFlowService {
             String actorLoginCode
     ) throws Exception;
 
+    public void toggleApprovalCommentLike(
+            Long approvalId,
+            Long commentId,
+            String tenantCode,
+            String actorLoginCode
+    ) throws Exception;
+
     public void createSystemApprovalComment(
             Long approvalId,
             String tenantCode,

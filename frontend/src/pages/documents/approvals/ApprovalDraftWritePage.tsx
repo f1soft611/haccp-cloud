@@ -71,6 +71,7 @@ export function ApprovalDraftWritePage() {
     addReply,
     editComment,
     deleteComment,
+    toggleLikeComment,
     refreshComments,
     commentLoadErrorMessage,
   } = useApprovalDraftComments(
@@ -78,6 +79,7 @@ export function ApprovalDraftWritePage() {
     approvalIdForComments,
     displayName || userId,
     drafterProfile?.profileImage,
+    userId,
   );
 
   const {
@@ -233,6 +235,7 @@ export function ApprovalDraftWritePage() {
         onAddReply={addReply}
         onEditComment={editComment}
         onDeleteComment={deleteComment}
+        onToggleLikeComment={toggleLikeComment}
         currentUserLoginCode={userId}
         tenantCode={tenantCode}
         approvalId={approvalIdForComments}

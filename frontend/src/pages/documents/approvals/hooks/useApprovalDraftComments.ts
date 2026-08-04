@@ -8,6 +8,7 @@ import {
   deleteHaccpWorkApprovalComment,
   createHaccpWorkApprovalComment,
   listHaccpWorkApprovalComments,
+  toggleHaccpWorkApprovalCommentLike,
   updateHaccpWorkApprovalComment,
 } from '../../../../services/documents/haccpBaseWorkService';
 
@@ -19,6 +20,7 @@ type UseApprovalDraftCommentsResult = {
   addReply: (commentId: string) => void;
   editComment: (commentId: string, nextText: string) => void;
   deleteComment: (commentId: string) => void;
+  toggleLikeComment: (commentId: string) => void;
   refreshComments: () => Promise<void>;
   commentLoadErrorMessage: string;
 };
@@ -44,7 +46,12 @@ function mapLocalCommentTree(
     return {
       ...comment,
       replies: comment.replies.map((reply) =>
-        reply.id === commentId ? updater(reply as DraftComment) : reply,
+        reply.id === commentId
+          ? (updater({
+              ...reply,
+              replies: [],
+            }) as unknown as DraftReply)
+          : reply,
       ),
     };
   });
@@ -55,6 +62,7 @@ export function useApprovalDraftComments(
   approvalId: string,
   authorName: string,
   authorProfileImage?: string,
+  userId?: string,
 ): UseApprovalDraftCommentsResult {
   const [localComments, setLocalComments] = useState<DraftComment[]>([]);
   const [replyDraftByCommentId, setReplyDraftByCommentId] = useState<
@@ -95,6 +103,8 @@ export function useApprovalDraftComments(
         authorProfileImage: item.authorProfileImage,
         text: item.text,
         createdAt: item.createdAt,
+        likeCount: item.likeCount,
+        likedByMe: item.likedByMe,
         isSystem: item.isSystem,
         isDeleted: item.isDeleted,
         replies: [],
@@ -134,6 +144,8 @@ export function useApprovalDraftComments(
         authorProfileImage: comment.authorProfileImage,
         text: comment.text,
         createdAt: comment.createdAt,
+        likeCount: comment.likeCount,
+        likedByMe: comment.likedByMe,
         isSystem: comment.isSystem,
         isDeleted: comment.isDeleted,
       });
@@ -208,6 +220,21 @@ export function useApprovalDraftComments(
     },
   });
 
+  const toggleLikeMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      return toggleHaccpWorkApprovalCommentLike({
+        tenantCode,
+        approvalId,
+        commentId,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['approval-comments', tenantCode, approvalId],
+      });
+    },
+  });
+
   const addComment = (text: string) => {
     const nextText = text.trim();
     if (!nextText) {
@@ -229,6 +256,8 @@ export function useApprovalDraftComments(
         authorProfileImage,
         text: nextText,
         createdAt: formatNow(new Date()),
+        likeCount: 0,
+        likedByMe: false,
         replies: [],
       },
       ...prev,
@@ -262,6 +291,8 @@ export function useApprovalDraftComments(
         authorProfileImage,
         text: draft,
         createdAt: formatNow(new Date()),
+        likeCount: 0,
+        likedByMe: false,
       };
 
       setLocalComments((prev) =>
@@ -324,6 +355,36 @@ export function useApprovalDraftComments(
     );
   };
 
+  const toggleLikeComment = (commentId: string) => {
+    const targetComment =
+      comments.find((comment) => comment.id === commentId) ??
+      comments
+        .flatMap((comment) => comment.replies)
+        .find((reply) => reply.id === commentId);
+    if (!targetComment || targetComment.isSystem || targetComment.isDeleted) {
+      return;
+    }
+
+    if (approvalId) {
+      if (toggleLikeMutation.isPending) {
+        return;
+      }
+      toggleLikeMutation.mutate(commentId);
+      return;
+    }
+
+    setLocalComments((prev) =>
+      mapLocalCommentTree(prev, commentId, (comment) => ({
+        ...comment,
+        likedByMe: !comment.likedByMe,
+        likeCount: Math.max(
+          0,
+          (comment.likeCount || 0) + (comment.likedByMe ? -1 : 1),
+        ),
+      })),
+    );
+  };
+
   const setReplyDraft = (commentId: string, next: string) => {
     setReplyDraftByCommentId((prev) => ({
       ...prev,
@@ -348,6 +409,7 @@ export function useApprovalDraftComments(
     addReply,
     editComment,
     deleteComment,
+    toggleLikeComment,
     refreshComments,
     commentLoadErrorMessage,
   };

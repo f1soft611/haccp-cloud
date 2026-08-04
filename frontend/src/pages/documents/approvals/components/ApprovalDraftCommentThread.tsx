@@ -1,4 +1,5 @@
 import ChatBubbleOutlineRounded from '@mui/icons-material/ChatBubbleOutlineRounded';
+import FavoriteRounded from '@mui/icons-material/FavoriteRounded';
 import FavoriteBorderRounded from '@mui/icons-material/FavoriteBorderRounded';
 import MoreHorizRounded from '@mui/icons-material/MoreHorizRounded';
 import NotificationsActiveRounded from '@mui/icons-material/NotificationsActiveRounded';
@@ -32,6 +33,7 @@ type ApprovalDraftCommentThreadProps = {
   onAddReply: (commentId: string) => void;
   onEditComment: (commentId: string, nextText: string) => void;
   onDeleteComment: (commentId: string) => void;
+  onToggleLikeComment: (commentId: string) => void;
   currentUserLoginCode?: string;
   canWriteComments?: boolean;
   commentLoadErrorMessage?: string;
@@ -151,6 +153,7 @@ export function ApprovalDraftCommentThread(
     onAddReply,
     onEditComment,
     onDeleteComment,
+    onToggleLikeComment,
     currentUserLoginCode,
     canWriteComments = true,
     commentLoadErrorMessage = '',
@@ -218,6 +221,10 @@ export function ApprovalDraftCommentThread(
     onDeleteComment(deleteTargetCommentId);
     setIsDeleteConfirmOpen(false);
     setDeleteTargetCommentId('');
+  };
+
+  const handleToggleLike = (commentId: string) => {
+    onToggleLikeComment(commentId);
   };
 
   const openCommentMenu = (
@@ -401,7 +408,7 @@ export function ApprovalDraftCommentThread(
                           <Stack
                             direction="row"
                             spacing={0.75}
-                            alignItems="center"
+                            alignItems="flex-start"
                             justifyContent="space-between"
                           >
                             <Stack
@@ -448,6 +455,23 @@ export function ApprovalDraftCommentThread(
                                 </Typography>
                               </Tooltip>
                             </Stack>
+
+                            {canManageComment ? (
+                              <IconButton
+                                size="small"
+                                aria-label="댓글 메뉴"
+                                onClick={(event) =>
+                                  openCommentMenu(event, comment.id)
+                                }
+                                sx={{
+                                  color: 'text.secondary',
+                                  mt: -0.35,
+                                  mr: -0.35,
+                                }}
+                              >
+                                <MoreHorizRounded fontSize="small" />
+                              </IconButton>
+                            ) : null}
                           </Stack>
 
                           <Typography
@@ -477,16 +501,27 @@ export function ApprovalDraftCommentThread(
                             <Button
                               size="small"
                               variant="text"
+                              aria-label={`좋아요 ${comment.likeCount ?? 0}`}
                               startIcon={
-                                <FavoriteBorderRounded fontSize="small" />
+                                comment.likedByMe ? (
+                                  <FavoriteRounded fontSize="small" />
+                                ) : (
+                                  <FavoriteBorderRounded fontSize="small" />
+                                )
                               }
-                              sx={{ minWidth: 0, px: 0.3, borderRadius: 1.5 }}
+                              sx={{
+                                minWidth: 0,
+                                px: 0.3,
+                                borderRadius: 1.5,
+                                color: comment.likedByMe
+                                  ? 'error.main'
+                                  : 'text.secondary',
+                              }}
+                              onClick={() => handleToggleLike(comment.id)}
+                              disabled={comment.isSystem || comment.isDeleted}
                             >
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                0
+                              <Typography variant="caption" color="inherit">
+                                {comment.likeCount ?? 0}
                               </Typography>
                             </Button>
 
@@ -502,19 +537,6 @@ export function ApprovalDraftCommentThread(
                                 ? '답글 비활성'
                                 : `답글 ${comment.replies.length}`}
                             </Button>
-
-                            {canManageComment ? (
-                              <IconButton
-                                size="small"
-                                aria-label="댓글 메뉴"
-                                onClick={(event) =>
-                                  openCommentMenu(event, comment.id)
-                                }
-                                sx={{ color: 'text.secondary' }}
-                              >
-                                <MoreHorizRounded fontSize="small" />
-                              </IconButton>
-                            ) : null}
                           </Stack>
 
                           {comment.replies.length > 0 ? (
@@ -536,61 +558,113 @@ export function ApprovalDraftCommentThread(
                                   direction="row"
                                   spacing={0.9}
                                   alignItems="flex-start"
+                                  justifyContent="space-between"
                                 >
-                                  <Avatar
-                                    src={reply.authorProfileImage || undefined}
-                                    sx={{
-                                      width: 24,
-                                      height: 24,
-                                      fontSize: 11,
-                                      fontWeight: 700,
-                                    }}
+                                  <Stack
+                                    direction="row"
+                                    spacing={0.9}
+                                    alignItems="flex-start"
+                                    sx={{ flex: 1, minWidth: 0 }}
                                   >
-                                    {toInitial(reply.author)}
-                                  </Avatar>
-                                  <Box>
-                                    <Typography
-                                      variant="caption"
-                                      color="text.secondary"
-                                    >
-                                      {reply.author} ·{' '}
-                                      {formatReplyTimestamp(reply.createdAt)}
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
+                                    <Avatar
+                                      src={
+                                        reply.authorProfileImage || undefined
+                                      }
                                       sx={{
-                                        whiteSpace: 'pre-wrap',
-                                        lineHeight: 1.5,
-                                        color: reply.isDeleted
-                                          ? 'text.secondary'
-                                          : 'text.primary',
-                                        fontStyle: reply.isDeleted
-                                          ? 'italic'
-                                          : 'normal',
+                                        width: 24,
+                                        height: 24,
+                                        fontSize: 11,
+                                        fontWeight: 700,
                                       }}
                                     >
-                                      {renderCommentBody(reply)}
-                                    </Typography>
-
-                                    {isEditableComment(
-                                      reply,
-                                      currentUserLoginCode,
-                                    ) ? (
-                                      <IconButton
-                                        size="small"
-                                        aria-label="댓글 메뉴"
-                                        onClick={(event) =>
-                                          openCommentMenu(event, reply.id)
-                                        }
+                                      {toInitial(reply.author)}
+                                    </Avatar>
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                      <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                      >
+                                        {reply.author} ·{' '}
+                                        {formatReplyTimestamp(reply.createdAt)}
+                                      </Typography>
+                                      <Typography
+                                        variant="body2"
                                         sx={{
-                                          mt: 0.2,
-                                          color: 'text.secondary',
+                                          whiteSpace: 'pre-wrap',
+                                          lineHeight: 1.5,
+                                          color: reply.isDeleted
+                                            ? 'text.secondary'
+                                            : 'text.primary',
+                                          fontStyle: reply.isDeleted
+                                            ? 'italic'
+                                            : 'normal',
                                         }}
                                       >
-                                        <MoreHorizRounded fontSize="small" />
-                                      </IconButton>
-                                    ) : null}
-                                  </Box>
+                                        {renderCommentBody(reply)}
+                                      </Typography>
+
+                                      <Stack
+                                        direction="row"
+                                        spacing={1.75}
+                                        alignItems="center"
+                                        sx={{ mt: 0.55 }}
+                                      >
+                                        <Button
+                                          size="small"
+                                          variant="text"
+                                          aria-label={`좋아요 ${reply.likeCount ?? 0}`}
+                                          startIcon={
+                                            reply.likedByMe ? (
+                                              <FavoriteRounded fontSize="small" />
+                                            ) : (
+                                              <FavoriteBorderRounded fontSize="small" />
+                                            )
+                                          }
+                                          sx={{
+                                            minWidth: 0,
+                                            px: 0.3,
+                                            borderRadius: 1.5,
+                                            color: reply.likedByMe
+                                              ? 'error.main'
+                                              : 'text.secondary',
+                                          }}
+                                          onClick={() =>
+                                            handleToggleLike(reply.id)
+                                          }
+                                          disabled={
+                                            reply.isSystem || reply.isDeleted
+                                          }
+                                        >
+                                          <Typography
+                                            variant="caption"
+                                            color="inherit"
+                                          >
+                                            {reply.likeCount ?? 0}
+                                          </Typography>
+                                        </Button>
+                                      </Stack>
+                                    </Box>
+                                  </Stack>
+
+                                  {isEditableComment(
+                                    reply,
+                                    currentUserLoginCode,
+                                  ) ? (
+                                    <IconButton
+                                      size="small"
+                                      aria-label="댓글 메뉴"
+                                      onClick={(event) =>
+                                        openCommentMenu(event, reply.id)
+                                      }
+                                      sx={{
+                                        color: 'text.secondary',
+                                        mt: -0.25,
+                                        mr: -0.25,
+                                      }}
+                                    >
+                                      <MoreHorizRounded fontSize="small" />
+                                    </IconButton>
+                                  ) : null}
                                 </Stack>
                               ))}
                             </Stack>

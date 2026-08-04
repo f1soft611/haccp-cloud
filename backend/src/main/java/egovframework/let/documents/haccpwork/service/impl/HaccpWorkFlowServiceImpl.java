@@ -688,6 +688,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("tenantId", tenantId);
         params.put("approvalId", approvalId);
+        params.put("actorLoginId", actorLoginId);
         return haccpWorkDAO.selectApprovalHistoryCommentsByApprovalId(params);
     }
 
@@ -817,6 +818,71 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         int deletedCount = haccpWorkDAO.softDeleteElectronicApprovalHistoryComment(params);
         if (deletedCount <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글을 삭제하지 못했습니다.");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void toggleApprovalCommentLike(
+            Long approvalId,
+            Long commentId,
+            String tenantCode,
+            String actorLoginCode
+    ) throws Exception {
+        if (approvalId == null || approvalId.longValue() <= 0L) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재 ID가 올바르지 않습니다.");
+        }
+        if (commentId == null || commentId.longValue() <= 0L) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 ID가 올바르지 않습니다.");
+        }
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        if (actorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "좋아요 처리 사용자 정보를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> accessParams = new HashMap<String, Object>();
+        accessParams.put("tenantId", tenantId);
+        accessParams.put("approvalId", approvalId);
+        accessParams.put("actorLoginId", actorLoginId);
+        Integer hasAccess = haccpWorkDAO.selectApprovalTemplateAccessCount(accessParams);
+        if (hasAccess == null || hasAccess.intValue() <= 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 결재 문서 댓글 좋아요 권한이 없습니다.");
+        }
+
+        Map<String, Object> commentParams = new HashMap<String, Object>();
+        commentParams.put("tenantId", tenantId);
+        commentParams.put("approvalId", approvalId);
+        commentParams.put("commentId", commentId);
+        Map<String, Object> commentRow = haccpWorkDAO.selectApprovalHistoryCommentById(commentParams);
+        if (commentRow == null || commentRow.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "좋아요 대상 댓글을 찾을 수 없습니다.");
+        }
+
+        String answerTypeName = trimToEmpty(resolveMapValueIgnoreCase(commentRow, "answerTypeName"));
+        if (HISTORY_TYPE_SYSTEM.equalsIgnoreCase(answerTypeName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "시스템 댓글에는 좋아요를 할 수 없습니다.");
+        }
+        if (HISTORY_TYPE_DELETED.equalsIgnoreCase(answerTypeName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "삭제된 댓글에는 좋아요를 할 수 없습니다.");
+        }
+
+        Map<String, Object> likeParams = new HashMap<String, Object>();
+        likeParams.put("tenantId", tenantId);
+        likeParams.put("commentId", commentId);
+        likeParams.put("actorLoginId", actorLoginId);
+
+        Integer isLiked = haccpWorkDAO.selectApprovalCommentLikeExists(likeParams);
+        if (isLiked != null && isLiked.intValue() > 0) {
+            haccpWorkDAO.deleteApprovalCommentLike(likeParams);
+            return;
+        }
+
+        int inserted = haccpWorkDAO.insertApprovalCommentLike(likeParams);
+        if (inserted <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "좋아요를 반영하지 못했습니다.");
         }
     }
 

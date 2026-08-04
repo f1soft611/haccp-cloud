@@ -58,6 +58,8 @@ export type HaccpApprovalCommentItem = {
   authorProfileImage?: string;
   text: string;
   createdAt: string;
+  likeCount: number;
+  likedByMe: boolean;
   answerTypeName: string;
   isSystem: boolean;
   isDeleted: boolean;
@@ -177,6 +179,10 @@ type RawHaccpApprovalCommentItem = {
   answer_at?: string | null;
   answerTypeName?: string | null;
   answertypename?: string | null;
+  likeCount?: number | string | null;
+  likecount?: number | string | null;
+  likedByMe?: boolean | string | null;
+  likedbyme?: boolean | string | null;
   createdBy?: number | string | null;
   createdby?: number | string | null;
   createdByLoginCode?: string | null;
@@ -279,6 +285,8 @@ function normalizeApprovalCommentItem(
       ) || undefined,
     text: normalizeText(raw.text),
     createdAt,
+    likeCount: Number(raw.likeCount ?? raw.likecount ?? 0) || 0,
+    likedByMe: normalizeBoolean(raw.likedByMe ?? raw.likedbyme),
     answerTypeName,
     isSystem: answerTypeName.toUpperCase() === 'SYSTEM',
     isDeleted: normalizeBoolean(raw.isDeleted ?? raw.isdeleted),
@@ -733,6 +741,20 @@ export async function deleteHaccpWorkApprovalComment(payload: {
 }): Promise<void> {
   await apiClient.delete(
     `/v1/haccp-work/approvals/${payload.approvalId}/comments/${payload.commentId}`,
+    {
+      headers: { 'x-tenant-code': payload.tenantCode },
+    },
+  );
+}
+
+export async function toggleHaccpWorkApprovalCommentLike(payload: {
+  tenantCode: string;
+  approvalId: string;
+  commentId: string;
+}): Promise<void> {
+  await apiClient.post(
+    `/v1/haccp-work/approvals/${payload.approvalId}/comments/${payload.commentId}/likes`,
+    {},
     {
       headers: { 'x-tenant-code': payload.tenantCode },
     },

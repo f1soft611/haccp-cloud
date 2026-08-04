@@ -327,6 +327,27 @@ public class HaccpWorkApiController {
                 return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
         }
 
+        @PostMapping("/approvals/{approvalId}/comments/{commentId}/likes")
+        public ResultVO toggleApprovalCommentLike(
+                        @PathVariable Long approvalId,
+                        @PathVariable Long commentId,
+                        @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+                        @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+                        HttpServletRequest request) throws Exception {
+                String tenantCode = resolveTenantCode(tenantHeader, request);
+                haccpWorkFlowService.toggleApprovalCommentLike(
+                                approvalId,
+                                commentId,
+                                tenantCode,
+                                resolveLoginCode(user)
+                );
+
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                resultMap.put("message", "좋아요가 반영되었습니다.");
+                resultMap.put("user", user);
+                return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+        }
+
     @Operation(
             summary = "HACCP 문서 목록 조회",
             description = "HACCP 문서관리 페이지의 문서 목록을 조회한다",

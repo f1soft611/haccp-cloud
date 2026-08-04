@@ -36,6 +36,7 @@ type ApprovalDraftContentProps = {
   onAddReply: (commentId: string) => void;
   onEditComment: (commentId: string, value: string) => void;
   onDeleteComment: (commentId: string) => void;
+  onToggleLikeComment: (commentId: string) => void;
   currentUserLoginCode?: string;
   tenantCode?: string;
   approvalId?: string;
@@ -74,6 +75,7 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     onAddReply,
     onEditComment,
     onDeleteComment,
+    onToggleLikeComment,
     currentUserLoginCode,
     tenantCode = '',
     approvalId = '',
@@ -134,6 +136,7 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         onAddReply={onAddReply}
         onEditComment={onEditComment}
         onDeleteComment={onDeleteComment}
+        onToggleLikeComment={onToggleLikeComment}
         currentUserLoginCode={currentUserLoginCode}
         canWriteComments={canWriteComments}
         commentLoadErrorMessage={commentLoadErrorMessage}

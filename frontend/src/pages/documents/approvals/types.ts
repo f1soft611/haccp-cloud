@@ -7,6 +7,8 @@ export type DraftReply = {
   authorProfileImage?: string;
   text: string;
   createdAt: string;
+  likeCount?: number;
+  likedByMe?: boolean;
   isSystem?: boolean;
   isDeleted?: boolean;
 };
@@ -18,6 +20,8 @@ export type DraftComment = {
   authorProfileImage?: string;
   text: string;
   createdAt: string;
+  likeCount?: number;
+  likedByMe?: boolean;
   isSystem?: boolean;
   isDeleted?: boolean;
   replies: DraftReply[];

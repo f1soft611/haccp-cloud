@@ -187,6 +187,18 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpWorkDAO.selectApprovalHistoryCommentById", params);
     }
 
+    public Integer selectApprovalCommentLikeExists(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectApprovalCommentLikeExists", params);
+    }
+
+    public int insertApprovalCommentLike(Map<String, Object> params) throws Exception {
+        return insert("HaccpWorkDAO.insertApprovalCommentLike", params);
+    }
+
+    public int deleteApprovalCommentLike(Map<String, Object> params) throws Exception {
+        return delete("HaccpWorkDAO.deleteApprovalCommentLike", params);
+    }
+
     public int updateElectronicApprovalHistoryComment(Map<String, Object> params) throws Exception {
         return update("HaccpWorkDAO.updateElectronicApprovalHistoryComment", params);
     }

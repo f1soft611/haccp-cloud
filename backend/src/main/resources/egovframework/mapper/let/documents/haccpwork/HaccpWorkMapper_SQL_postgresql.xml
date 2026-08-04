@@ -1560,6 +1560,8 @@
         COALESCE(la.login_code, '') AS createdByLoginCode,
         hm.answer_type_name AS answerTypeName,
         CASE WHEN UPPER(COALESCE(hm.answer_type_name, '')) = 'DELETED' THEN TRUE ELSE FALSE END AS isDeleted,
+        COALESCE(like_summary.like_count, 0) AS likeCount,
+        COALESCE(like_me.liked_by_me, FALSE) AS likedByMe,
         hm.answer_cnt AS text,
         TO_CHAR(hm.answer_at, 'YYYY-MM-DD HH24:MI') AS createdAt,
         NULLIF(TRIM(COALESCE(la.profile_image, '')), '') AS actorProfileImage,
@@ -1575,6 +1577,28 @@
       LEFT JOIN tb_login_account la
         ON la.tenant_id = hm.tenant_id
        AND la.login_id = hm.created_by
+      LEFT JOIN (
+        SELECT
+          tenant_id,
+          electronic_approval_history_id,
+          COUNT(*)::int AS like_count
+        FROM tb_electronic_approval_history_like
+        WHERE tenant_id = #{tenantId}
+        GROUP BY tenant_id, electronic_approval_history_id
+      ) like_summary
+        ON like_summary.tenant_id = hm.tenant_id
+       AND like_summary.electronic_approval_history_id = hm.electronic_approval_history_id
+      LEFT JOIN (
+        SELECT
+          tenant_id,
+          electronic_approval_history_id,
+          TRUE AS liked_by_me
+        FROM tb_electronic_approval_history_like
+        WHERE tenant_id = #{tenantId}
+          AND login_id = #{actorLoginId}
+      ) like_me
+        ON like_me.tenant_id = hm.tenant_id
+       AND like_me.electronic_approval_history_id = hm.electronic_approval_history_id
       WHERE hm.tenant_id = #{tenantId}
         AND (
           EXISTS (
@@ -1654,6 +1678,41 @@
         )
       LIMIT 1
     </select>
+
+    <select id="HaccpWorkDAO.selectApprovalCommentLikeExists"
+        parameterType="map"
+        resultType="int">
+      SELECT COUNT(*)::int
+      FROM tb_electronic_approval_history_like
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_history_id = #{commentId}
+        AND login_id = #{actorLoginId}
+    </select>
+
+    <insert id="HaccpWorkDAO.insertApprovalCommentLike"
+        parameterType="map">
+      INSERT INTO tb_electronic_approval_history_like (
+        tenant_id,
+        electronic_approval_history_id,
+        login_id,
+        created_at
+      ) VALUES (
+        #{tenantId},
+        #{commentId},
+        #{actorLoginId},
+        CURRENT_TIMESTAMP
+      )
+      ON CONFLICT (tenant_id, electronic_approval_history_id, login_id)
+      DO NOTHING
+    </insert>
+
+    <delete id="HaccpWorkDAO.deleteApprovalCommentLike"
+        parameterType="map">
+      DELETE FROM tb_electronic_approval_history_like
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_history_id = #{commentId}
+        AND login_id = #{actorLoginId}
+    </delete>
 
     <update id="HaccpWorkDAO.updateElectronicApprovalLineStatus"
         parameterType="map">

@@ -5,6 +5,41 @@ import { ApprovalDraftCommentThread } from '../pages/documents/approvals/compone
 import type { DraftComment } from '../pages/documents/approvals/types';
 
 describe('ApprovalDraftCommentThread', () => {
+  it('shows like count and toggles likes for manual comments', async () => {
+    const comments: DraftComment[] = [
+      {
+        id: '3001',
+        author: '홍길동',
+        text: '좋아요가 필요한 의견입니다.',
+        createdAt: '2026-08-04 11:00',
+        createdByLoginCode: '3001',
+        likeCount: 3,
+        likedByMe: false,
+        replies: [],
+      },
+    ];
+
+    const user = userEvent.setup();
+    render(
+      <ApprovalDraftCommentThread
+        comments={comments}
+        onAddComment={() => undefined}
+        replyDraftByCommentId={{}}
+        onChangeReplyDraft={() => undefined}
+        onAddReply={() => undefined}
+        onEditComment={() => undefined}
+        onDeleteComment={() => undefined}
+        onToggleLikeComment={() => undefined}
+        currentUserLoginCode="3001"
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: '좋아요 3' }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '좋아요 3' }));
+  });
+
   it('shows edit and delete only for manual comments and keeps system comments read only', async () => {
     const comments: DraftComment[] = [
       {
@@ -22,6 +57,8 @@ describe('ApprovalDraftCommentThread', () => {
         text: '수동으로 남긴 의견입니다.',
         createdAt: '2026-08-04 09:05',
         createdByLoginCode: '3001',
+        likeCount: 0,
+        likedByMe: false,
         replies: [],
       },
     ];
@@ -36,6 +73,7 @@ describe('ApprovalDraftCommentThread', () => {
         onAddReply={() => undefined}
         onEditComment={() => undefined}
         onDeleteComment={() => undefined}
+        onToggleLikeComment={() => undefined}
         currentUserLoginCode="3001"
       />,
     );
@@ -60,6 +98,8 @@ describe('ApprovalDraftCommentThread', () => {
         createdAt: '2026-08-04 10:00',
         createdByLoginCode: '3001',
         isDeleted: true,
+        likeCount: 0,
+        likedByMe: false,
         replies: [],
       },
     ];
@@ -73,6 +113,7 @@ describe('ApprovalDraftCommentThread', () => {
         onAddReply={() => undefined}
         onEditComment={() => undefined}
         onDeleteComment={() => undefined}
+        onToggleLikeComment={() => undefined}
         currentUserLoginCode="3001"
       />,
     );

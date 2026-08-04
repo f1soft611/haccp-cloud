@@ -148,6 +148,58 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals(3001L, deleteCaptor.getValue().get("actorLoginId"));
     }
 
+    @DisplayName("수동 댓글 좋아요를 토글할 수 있다")
+    @Test
+    void toggleApprovalCommentLike_togglesManualCommentLike() throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, haccpWorkDAO);
+
+        when(haccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(haccpWorkDAO.selectApprovalTemplateAccessCount(anyMap())).thenReturn(1);
+
+        Map<String, Object> commentRow = new HashMap<String, Object>();
+        commentRow.put("commentId", 200L);
+        commentRow.put("answerTypeName", "USER");
+        commentRow.put("createdBy", 3001L);
+        when(haccpWorkDAO.selectApprovalHistoryCommentById(anyMap())).thenReturn(commentRow);
+        when(haccpWorkDAO.selectApprovalCommentLikeExists(anyMap())).thenReturn(0);
+        when(haccpWorkDAO.insertApprovalCommentLike(anyMap())).thenReturn(1);
+
+        service.toggleApprovalCommentLike(77L, 200L, "tenant_001", "3001");
+
+        verify(haccpWorkDAO).insertApprovalCommentLike(anyMap());
+        verify(haccpWorkDAO, never()).deleteApprovalCommentLike(anyMap());
+    }
+
+    @DisplayName("시스템 댓글에는 좋아요를 할 수 없다")
+    @Test
+    void toggleApprovalCommentLike_rejectsSystemComment() throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, haccpWorkDAO);
+
+        when(haccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(haccpWorkDAO.selectApprovalTemplateAccessCount(anyMap())).thenReturn(1);
+
+        Map<String, Object> commentRow = new HashMap<String, Object>();
+        commentRow.put("commentId", 200L);
+        commentRow.put("answerTypeName", "SYSTEM");
+        commentRow.put("createdBy", 3001L);
+        when(haccpWorkDAO.selectApprovalHistoryCommentById(anyMap())).thenReturn(commentRow);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.toggleApprovalCommentLike(77L, 200L, "tenant_001", "3001"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertTrue(ex.getReason() != null && ex.getReason().contains("시스템 댓글"));
+        verify(haccpWorkDAO, never()).insertApprovalCommentLike(anyMap());
+        verify(haccpWorkDAO, never()).deleteApprovalCommentLike(anyMap());
+    }
+
     @DisplayName("최종기안 확인이 완료된 문서는 최종승인자가 결재취소할 수 없다")
     @Test
     void updateApprovalStatus_submitCancelRejectedAfterFinalOwnerConfirm() throws Exception {
