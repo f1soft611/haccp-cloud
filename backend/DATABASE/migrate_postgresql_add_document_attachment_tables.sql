@@ -80,13 +80,18 @@ INSERT INTO tb_schedulerconfig (
     cron_expression,
     created_at,
     updated_at
-) VALUES (
+)
+SELECT
     'AttachmentCleanup',
     '미완료 첨부 업로드 정리',
     'Y',
     '0 */10 * * * *',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
-) ON CONFLICT (scheduler_nm) DO NOTHING;
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM tb_schedulerconfig
+    WHERE scheduler_nm = 'AttachmentCleanup'
+);
 
 COMMIT;
