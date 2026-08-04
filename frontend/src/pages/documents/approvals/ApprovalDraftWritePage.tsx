@@ -220,6 +220,8 @@ export function ApprovalDraftWritePage() {
         onChangeReplyDraft={setReplyDraft}
         onAddComment={addComment}
         onAddReply={addReply}
+        tenantCode={tenantCode}
+        approvalId={approvalIdForComments}
         canWriteComments={true}
         commentLoadErrorMessage={commentLoadErrorMessage}
         isReadOnly={isReadOnly}

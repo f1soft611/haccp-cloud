@@ -1789,4 +1789,301 @@
         AND electronic_approval_id = #{approvalId}
       </delete>
 
+    <insert id="HaccpWorkDAO.insertDocumentAttachment"
+        parameterType="map"
+        useGeneratedKeys="true"
+        keyProperty="attachmentId"
+        keyColumn="attachment_id">
+      INSERT INTO tb_document_attachment (
+        tenant_id,
+        approval_id,
+        object_key,
+        original_file_name,
+        file_ext,
+        content_type,
+        file_size,
+        checksum_sha256,
+        upload_status,
+        previewable_yn,
+        storage_provider,
+        bucket_name,
+        deleted_yn,
+        created_by,
+        updated_by
+      )
+      VALUES (
+        #{tenantId},
+        #{approvalId},
+        #{objectKey},
+        #{originalFileName},
+        #{fileExt},
+        #{contentType},
+        #{fileSize},
+        #{checksumSha256},
+        #{uploadStatus},
+        COALESCE(#{previewableYn}, 'N'),
+        COALESCE(#{storageProvider}, 'MINIO'),
+        COALESCE(#{bucketName}, 'haccp-attachments'),
+        'N',
+        #{createdBy},
+        #{createdBy}
+      )
+    </insert>
+
+    <update id="HaccpWorkDAO.updateDocumentAttachmentStatus"
+        parameterType="map">
+      UPDATE tb_document_attachment
+      SET
+        upload_status = #{uploadStatus},
+        checksum_sha256 = COALESCE(#{checksumSha256, jdbcType=VARCHAR}, checksum_sha256),
+        updated_by = #{updatedBy, jdbcType=BIGINT},
+        updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+    </update>
+
+    <update id="HaccpWorkDAO.softDeleteDocumentAttachment"
+        parameterType="map">
+      UPDATE tb_document_attachment
+      SET
+        deleted_yn = 'Y',
+        upload_status = 'DELETED',
+        updated_by = #{updatedBy, jdbcType=BIGINT},
+        updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+    </update>
+
+    <select id="HaccpWorkDAO.selectDocumentAttachmentById"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        attachment_id AS "attachmentId",
+        tenant_id AS "tenantId",
+        approval_id AS "approvalId",
+        object_key AS "objectKey",
+        original_file_name AS "originalFileName",
+        file_ext AS "fileExt",
+        content_type AS "contentType",
+        file_size AS "fileSize",
+        checksum_sha256 AS "checksumSha256",
+        storage_provider AS "storageProvider",
+        bucket_name AS "bucketName",
+        upload_status AS "uploadStatus",
+        previewable_yn AS "previewableYn",
+        deleted_yn AS "deletedYn",
+        created_by AS "createdBy",
+        created_at AS "createdAt",
+        updated_by AS "updatedBy",
+        updated_at AS "updatedAt"
+      FROM tb_document_attachment
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+      LIMIT 1
+    </select>
+
+    <select id="HaccpWorkDAO.selectDocumentAttachmentsByApprovalId"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        attachment_id AS "attachmentId",
+        tenant_id AS "tenantId",
+        approval_id AS "approvalId",
+        object_key AS "objectKey",
+        original_file_name AS "originalFileName",
+        file_ext AS "fileExt",
+        content_type AS "contentType",
+        file_size AS "fileSize",
+        checksum_sha256 AS "checksumSha256",
+        upload_status AS "uploadStatus",
+        previewable_yn AS "previewableYn",
+        storage_provider AS "storageProvider",
+        bucket_name AS "bucketName",
+        created_by AS "createdBy",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+      FROM tb_document_attachment
+      WHERE tenant_id = #{tenantId}
+        AND approval_id = #{approvalId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+      ORDER BY attachment_id DESC
+    </select>
+
+    <insert id="HaccpWorkDAO.insertDocumentAttachmentUploadSession"
+        parameterType="map"
+        useGeneratedKeys="true"
+        keyProperty="uploadSessionId"
+        keyColumn="upload_session_id">
+      INSERT INTO tb_document_attachment_upload_session (
+        tenant_id,
+        approval_id,
+        attachment_id,
+        upload_token,
+        object_key,
+        expected_file_name,
+        expected_content_type,
+        expected_file_size,
+        session_status,
+        expires_at,
+        completed_at,
+        created_by,
+        updated_by
+      )
+      VALUES (
+        #{tenantId},
+        #{approvalId},
+        #{attachmentId, jdbcType=BIGINT},
+        #{uploadToken},
+        #{objectKey},
+        #{expectedFileName, jdbcType=VARCHAR},
+        #{expectedContentType, jdbcType=VARCHAR},
+        #{expectedFileSize, jdbcType=BIGINT},
+        COALESCE(#{sessionStatus}, 'PENDING'),
+        #{expiresAt, jdbcType=TIMESTAMP},
+        #{completedAt, jdbcType=TIMESTAMP},
+        #{createdBy, jdbcType=BIGINT},
+        #{createdBy, jdbcType=BIGINT}
+      )
+    </insert>
+
+    <select id="HaccpWorkDAO.selectDocumentAttachmentUploadSessionByToken"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        upload_session_id AS "uploadSessionId",
+        tenant_id AS "tenantId",
+        approval_id AS "approvalId",
+        attachment_id AS "attachmentId",
+        upload_token AS "uploadToken",
+        object_key AS "objectKey",
+        expected_file_name AS "expectedFileName",
+        expected_content_type AS "expectedContentType",
+        expected_file_size AS "expectedFileSize",
+        session_status AS "sessionStatus",
+        expires_at AS "expiresAt",
+        completed_at AS "completedAt",
+        created_by AS "createdBy",
+        created_at AS "createdAt",
+        updated_by AS "updatedBy",
+        updated_at AS "updatedAt"
+      FROM tb_document_attachment_upload_session
+      WHERE tenant_id = #{tenantId}
+        AND upload_token = #{uploadToken}
+      LIMIT 1
+    </select>
+
+    <update id="HaccpWorkDAO.updateDocumentAttachmentUploadSessionStatus"
+        parameterType="map">
+      UPDATE tb_document_attachment_upload_session
+      SET
+        session_status = #{sessionStatus},
+        attachment_id = #{attachmentId, jdbcType=BIGINT},
+        completed_at = #{completedAt, jdbcType=TIMESTAMP},
+        updated_by = #{updatedBy, jdbcType=BIGINT},
+        updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND upload_token = #{uploadToken}
+      <if test="expectedSessionStatus != null and expectedSessionStatus != ''">
+        AND session_status = #{expectedSessionStatus}
+      </if>
+      <if test="requireNotExpired != null and requireNotExpired">
+        AND expires_at > NOW()
+      </if>
+    </update>
+
+    <insert id="HaccpWorkDAO.insertDocumentAttachmentAuditLog"
+        parameterType="map"
+        useGeneratedKeys="true"
+        keyProperty="attachmentAuditId"
+        keyColumn="attachment_audit_id">
+      INSERT INTO tb_document_attachment_audit_log (
+        tenant_id,
+        attachment_id,
+        approval_id,
+        action_type,
+        actor_login_id,
+        actor_ip,
+        actor_user_agent,
+        detail_text,
+        created_at
+      )
+      VALUES (
+        #{tenantId},
+        #{attachmentId, jdbcType=BIGINT},
+        #{approvalId},
+        #{actionType},
+        #{actorLoginId, jdbcType=BIGINT},
+        #{actorIp, jdbcType=VARCHAR},
+        #{actorUserAgent, jdbcType=VARCHAR},
+        #{detailText, jdbcType=VARCHAR},
+        COALESCE(#{createdAt, jdbcType=TIMESTAMP}, NOW())
+      )
+    </insert>
+
+    <select id="HaccpWorkDAO.selectDocumentAttachmentAuditLogsByAttachmentId"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        attachment_audit_id AS "attachmentAuditId",
+        tenant_id AS "tenantId",
+        attachment_id AS "attachmentId",
+        approval_id AS "approvalId",
+        action_type AS "actionType",
+        actor_login_id AS "actorLoginId",
+        actor_ip AS "actorIp",
+        actor_user_agent AS "actorUserAgent",
+        detail_text AS "detailText",
+        created_at AS "createdAt"
+      FROM tb_document_attachment_audit_log
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+      ORDER BY attachment_audit_id DESC
+    </select>
+
+    <select id="HaccpWorkDAO.selectExpiredUploadSessions"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        upload_session_id AS "uploadSessionId",
+        tenant_id AS "tenantId",
+        approval_id AS "approvalId",
+        attachment_id AS "attachmentId",
+        upload_token AS "uploadToken",
+        object_key AS "objectKey",
+        expected_file_name AS "expectedFileName",
+        expected_content_type AS "expectedContentType",
+        expected_file_size AS "expectedFileSize",
+        session_status AS "sessionStatus",
+        expires_at AS "expiresAt",
+        created_by AS "createdBy",
+        COALESCE(#{bucketName, jdbcType=VARCHAR}, 'haccp-attachments') AS "bucketName"
+      FROM tb_document_attachment_upload_session
+      WHERE session_status = 'PENDING'
+        AND expires_at &lt;= NOW()
+    </select>
+
+    <update id="HaccpWorkDAO.markUploadSessionCleaned"
+        parameterType="map">
+      UPDATE tb_document_attachment_upload_session
+      SET session_status = 'CLEANED',
+          updated_by = #{updatedBy, jdbcType=BIGINT},
+          updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND upload_token = #{uploadToken}
+    </update>
+
+    <update id="HaccpWorkDAO.markAttachmentAbandoned"
+        parameterType="map">
+      UPDATE tb_document_attachment
+      SET upload_status = 'ABANDONED',
+          updated_by = #{updatedBy, jdbcType=BIGINT},
+          updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+    </update>
+
 </mapper>

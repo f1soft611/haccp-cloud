@@ -6,6 +6,7 @@ import type { DocumentFieldValues } from '../../../../editor/utils/documentField
 import { ApprovalDraftCommentThread } from './ApprovalDraftCommentThread';
 import { ApprovalDraftEditorSection } from './ApprovalDraftEditorSection';
 import { ApprovalDraftSidebar } from './ApprovalDraftSidebar';
+import { ApprovalAttachmentPanel } from './ApprovalAttachmentPanel';
 import type { DraftComment } from '../types';
 
 type ApprovalDraftContentProps = {
@@ -33,6 +34,8 @@ type ApprovalDraftContentProps = {
   onChangeReplyDraft: (commentId: string, value: string) => void;
   onAddComment: (value: string) => void;
   onAddReply: (commentId: string) => void;
+  tenantCode?: string;
+  approvalId?: string;
   isReadOnly?: boolean;
   canWriteComments?: boolean;
   commentLoadErrorMessage?: string;
@@ -64,6 +67,8 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     onChangeReplyDraft,
     onAddComment,
     onAddReply,
+    tenantCode = '',
+    approvalId = '',
     isReadOnly = false,
     canWriteComments = true,
     commentLoadErrorMessage = '',
@@ -101,6 +106,12 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         content={content}
         onChangeEditor={onChangeEditor}
         documentFieldValues={documentFieldValues}
+        isReadOnly={isReadOnly}
+      />
+
+      <ApprovalAttachmentPanel
+        tenantCode={tenantCode}
+        approvalId={approvalId}
         isReadOnly={isReadOnly}
       />
 

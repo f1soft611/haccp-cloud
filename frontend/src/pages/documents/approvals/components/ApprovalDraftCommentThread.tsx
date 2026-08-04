@@ -6,6 +6,7 @@ import ReplyRounded from '@mui/icons-material/ReplyRounded';
 import SendRounded from '@mui/icons-material/SendRounded';
 import {
   Alert,
+  alpha,
   Avatar,
   Box,
   Button,
@@ -104,6 +105,14 @@ function renderCommentTimestamp(value: string): {
   };
 }
 
+function formatReplyTimestamp(value: string): string {
+  const parsed = parseCommentDate(value);
+  if (!parsed) {
+    return String(value || '').trim() || '-';
+  }
+  return formatAbsoluteTimestamp(parsed);
+}
+
 export function ApprovalDraftCommentThread(
   props: ApprovalDraftCommentThreadProps,
 ) {
@@ -143,53 +152,133 @@ export function ApprovalDraftCommentThread(
   return (
     <Paper
       sx={{
-        p: 2,
+        p: { xs: 1.75, sm: 2.25 },
         borderRadius: 3,
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: (theme) =>
+          theme.palette.mode === 'dark'
+            ? alpha(theme.palette.common.white, 0.12)
+            : alpha(theme.palette.primary.main, 0.14),
+        background: (theme) =>
+          theme.palette.mode === 'dark'
+            ? `linear-gradient(155deg, ${alpha('#0f172a', 0.96)} 0%, ${alpha('#111827', 0.96)} 100%)`
+            : `linear-gradient(155deg, ${alpha('#f8fafc', 0.96)} 0%, ${alpha('#f1f5f9', 0.9)} 100%)`,
+        boxShadow: (theme) =>
+          theme.palette.mode === 'dark'
+            ? `0 16px 36px ${alpha('#020617', 0.45)}`
+            : `0 16px 34px ${alpha('#0f172a', 0.08)}`,
       }}
     >
-      <Stack spacing={1.5}>
+      <Stack spacing={1.75}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"
-          spacing={1}
+          spacing={1.1}
           alignItems={{ xs: 'stretch', sm: 'center' }}
         >
-          <Typography variant="h6" fontWeight={800}>
-            결재 댓글 스레드
-          </Typography>
+          <Stack direction="row" spacing={1.2} alignItems="center">
+            <Box
+              sx={{
+                width: 38,
+                height: 38,
+                borderRadius: 2,
+                display: 'grid',
+                placeItems: 'center',
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.info.light, 0.14)
+                    : alpha(theme.palette.info.main, 0.12),
+                color: 'info.main',
+              }}
+            >
+              <ChatBubbleOutlineRounded fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={800}>
+                결재 댓글 스레드
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                댓글 {comments.length}개
+              </Typography>
+            </Box>
+          </Stack>
           <Button
             variant="contained"
             startIcon={<ChatBubbleOutlineRounded />}
             disabled={!canWriteComments}
             onClick={() => setIsOpinionModalOpen(true)}
+            sx={{
+              borderRadius: 2,
+              px: 1.75,
+              boxShadow: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? `0 8px 18px ${alpha(theme.palette.primary.dark, 0.45)}`
+                  : `0 10px 20px ${alpha(theme.palette.primary.main, 0.26)}`,
+              alignSelf: { xs: 'stretch', sm: 'auto' },
+            }}
           >
             의견 등록
           </Button>
         </Stack>
 
         {commentLoadErrorMessage ? (
-          <Alert severity="warning">{commentLoadErrorMessage}</Alert>
+          <Alert severity="warning" sx={{ borderRadius: 2 }}>
+            {commentLoadErrorMessage}
+          </Alert>
         ) : null}
 
         {comments.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            등록된 결재의견이 없습니다.
-          </Typography>
+          <Box
+            sx={{
+              borderRadius: 2,
+              border: '1px dashed',
+              borderColor: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.common.white, 0.18)
+                  : alpha(theme.palette.primary.main, 0.24),
+              bgcolor: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.common.white, 0.02)
+                  : alpha(theme.palette.common.white, 0.75),
+              py: 2.5,
+              px: 1.25,
+              textAlign: 'center',
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              등록된 결재의견이 없습니다.
+            </Typography>
+          </Box>
         ) : (
-          <Stack>
-            {comments.map((comment, index) =>
+          <Stack spacing={1}>
+            {comments.map((comment) =>
               (() => {
                 const timeMeta = renderCommentTimestamp(comment.createdAt);
                 return (
                   <Box
                     key={comment.id}
                     sx={{
-                      py: 1.5,
-                      borderTop: index === 0 ? '1px solid' : 'none',
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
+                      px: 1.1,
+                      py: 1.2,
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: (theme) =>
+                        theme.palette.mode === 'dark'
+                          ? alpha(theme.palette.common.white, 0.08)
+                          : alpha(theme.palette.common.black, 0.08),
+                      bgcolor: (theme) =>
+                        theme.palette.mode === 'dark'
+                          ? alpha(theme.palette.common.white, 0.03)
+                          : alpha(theme.palette.common.white, 0.88),
+                      transition: 'all 0.22s ease',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        transform: 'translateY(-1px)',
+                        boxShadow: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? `0 8px 16px ${alpha('#020617', 0.3)}`
+                            : `0 10px 18px ${alpha('#0f172a', 0.08)}`,
+                      },
                     }}
                   >
                     <Stack spacing={1.1}>
@@ -235,7 +324,7 @@ export function ApprovalDraftCommentThread(
                                       sx={{ fontSize: 13 }}
                                     />
                                   }
-                                  label="시스템"
+                                  label="시스템 알림"
                                   color="default"
                                   variant="filled"
                                   sx={{
@@ -276,6 +365,7 @@ export function ApprovalDraftCommentThread(
                               mt: 0.3,
                               whiteSpace: 'pre-wrap',
                               lineHeight: 1.55,
+                              color: 'text.primary',
                             }}
                           >
                             {comment.text}
@@ -293,7 +383,7 @@ export function ApprovalDraftCommentThread(
                               startIcon={
                                 <FavoriteBorderRounded fontSize="small" />
                               }
-                              sx={{ minWidth: 0, px: 0.3 }}
+                              sx={{ minWidth: 0, px: 0.3, borderRadius: 1.5 }}
                             >
                               <Typography
                                 variant="caption"
@@ -307,7 +397,7 @@ export function ApprovalDraftCommentThread(
                               size="small"
                               variant="text"
                               startIcon={<ReplyRounded fontSize="small" />}
-                              sx={{ minWidth: 0, px: 0.3 }}
+                              sx={{ minWidth: 0, px: 0.3, borderRadius: 1.5 }}
                               disabled={!canWriteComments || comment.isSystem}
                               onClick={() => toggleReplyComposer(comment.id)}
                             >
@@ -324,7 +414,10 @@ export function ApprovalDraftCommentThread(
                                 mt: 1.15,
                                 pl: 1.25,
                                 borderLeft: '2px solid',
-                                borderColor: 'divider',
+                                borderColor: (theme) =>
+                                  theme.palette.mode === 'dark'
+                                    ? alpha(theme.palette.info.light, 0.35)
+                                    : alpha(theme.palette.info.main, 0.3),
                               }}
                             >
                               {comment.replies.map((reply) => (
@@ -350,13 +443,15 @@ export function ApprovalDraftCommentThread(
                                       variant="caption"
                                       color="text.secondary"
                                     >
-                                      {reply.author} · {reply.createdAt}
+                                      {reply.author} ·{' '}
+                                      {formatReplyTimestamp(reply.createdAt)}
                                     </Typography>
                                     <Typography
                                       variant="body2"
                                       sx={{
                                         whiteSpace: 'pre-wrap',
                                         lineHeight: 1.5,
+                                        color: 'text.primary',
                                       }}
                                     >
                                       {reply.text}
@@ -388,6 +483,11 @@ export function ApprovalDraftCommentThread(
                                     event.target.value,
                                   )
                                 }
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    borderRadius: 1.75,
+                                  },
+                                }}
                               />
                               <Button
                                 size="small"
@@ -399,6 +499,7 @@ export function ApprovalDraftCommentThread(
                                   minWidth: 88,
                                   whiteSpace: 'nowrap',
                                   flexShrink: 0,
+                                  borderRadius: 1.75,
                                 }}
                               >
                                 등록
@@ -423,36 +524,85 @@ export function ApprovalDraftCommentThread(
         onClose={() => {
           setIsOpinionModalOpen(false);
         }}
+        contentSx={{
+          '& .comment-opinion-editor': {
+            p: 1.25,
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: (theme) =>
+              theme.palette.mode === 'dark'
+                ? alpha(theme.palette.common.white, 0.1)
+                : alpha(theme.palette.primary.main, 0.16),
+            background: (theme) =>
+              theme.palette.mode === 'dark'
+                ? alpha(theme.palette.common.white, 0.02)
+                : alpha(theme.palette.common.white, 0.86),
+          },
+          '& .comment-opinion-editor .MuiOutlinedInput-root': {
+            borderRadius: 2,
+            background: (theme) =>
+              theme.palette.mode === 'dark'
+                ? alpha(theme.palette.common.white, 0.02)
+                : alpha(theme.palette.common.white, 0.95),
+          },
+        }}
         actions={
           <>
+            <Button
+              variant="contained"
+              onClick={handleSubmitOpinion}
+              disabled={!canWriteComments}
+              sx={{
+                borderRadius: 1.75,
+                minWidth: 84,
+                boxShadow: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? `0 8px 18px ${alpha(theme.palette.primary.dark, 0.42)}`
+                    : `0 10px 20px ${alpha(theme.palette.primary.main, 0.24)}`,
+              }}
+            >
+              등록
+            </Button>
             <Button
               variant="outlined"
               onClick={() => {
                 setIsOpinionModalOpen(false);
               }}
+              sx={{ borderRadius: 1.75, minWidth: 84 }}
             >
               취소
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleSubmitOpinion}
-              disabled={!canWriteComments}
-            >
-              등록
             </Button>
           </>
         }
       >
-        <TextField
-          label="결재의견"
-          placeholder="의견을 입력하세요"
-          multiline
-          minRows={4}
-          disabled={!canWriteComments}
-          value={opinionDraft}
-          onChange={(event) => setOpinionDraft(event.target.value)}
-          fullWidth
-        />
+        <Stack spacing={1} className="comment-opinion-editor">
+          <TextField
+            label="결재의견"
+            placeholder="의견을 입력하세요"
+            multiline
+            minRows={4}
+            disabled={!canWriteComments}
+            value={opinionDraft}
+            onChange={(event) => setOpinionDraft(event.target.value)}
+            fullWidth
+          />
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Typography variant="caption" color="text.secondary">
+              불필요한 개인정보나 민감 정보는 입력하지 마세요.
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight={600}
+            >
+              {opinionDraft.trim().length}자
+            </Typography>
+          </Stack>
+        </Stack>
       </FormDialog>
     </Paper>
   );
