@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { useState, type MouseEvent } from 'react';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
-import type { DraftComment } from '../types';
+import type { DraftComment, DraftReply } from '../types';
 
 type ApprovalDraftCommentThreadProps = {
   comments: DraftComment[];
@@ -190,7 +190,11 @@ export function ApprovalDraftCommentThread(
     }));
   };
 
-  const openEditDialog = (comment: DraftComment) => {
+  const openEditDialog = (
+    comment:
+      | Pick<DraftComment, 'id' | 'text'>
+      | Pick<DraftReply, 'id' | 'text'>,
+  ) => {
     setEditTargetCommentId(comment.id);
     setEditDraft(comment.text);
     setIsEditModalOpen(true);
@@ -480,7 +484,6 @@ export function ApprovalDraftCommentThread(
                               mt: 0.3,
                               whiteSpace: 'pre-wrap',
                               lineHeight: 1.55,
-                              color: 'text.primary',
                               fontStyle: comment.isDeleted
                                 ? 'italic'
                                 : 'normal',
