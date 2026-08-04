@@ -1,32 +1,152 @@
+import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from '../../shared/components/layout/AppLayout';
-import { LoginPage } from '../../pages/auth/LoginPage';
 import { ProtectedRoute } from './ProtectedRoute';
-import { DashboardPage } from '../../pages/DashboardPage';
-import { OnboardingPage } from '../../pages/platform-admin/tenants/OnboardingPage';
-import { UsersPage } from '../../pages/organization/users/UsersPage';
-import { DepartmentsPage } from '../../pages/organization/departments/DepartmentsPage';
-import { DocumentsPage } from '../../pages/documents/DocumentsPage';
-import { DocumentHistoryPage } from '../../pages/documents/DocumentHistoryPage';
-import { NotFoundPage } from '../../pages/NotFoundPage';
-import { TenantFirstLoginSetupPage } from '../../pages/platform-admin/tenants/TenantFirstLoginSetupPage';
-import { LoginHistoryPage } from '../../pages/platform-admin/login-history/LoginHistoryPage';
-import { PlatformMenuManagementPage } from '../../pages/platform-admin/menus/PlatformMenuManagementPage';
-import { PlatformAuthorityManagementPage } from '../../pages/organization/authorities/PlatformAuthorityManagementPage';
-import { PlatformTenantManagementPage } from '../../pages/platform-admin/tenants/PlatformTenantManagementPage';
-import { PlatformTenantDetailPage } from '../../pages/platform-admin/tenants/PlatformTenantDetailPage';
-import { PlatformPlanManagementPage } from '../../pages/platform-admin/plans/PlatformPlanManagementPage';
-import { AccountPasswordPage } from '../../pages/account/AccountPasswordPage';
-import { MyPage } from '../../pages/account/MyPage';
-import { OnboardingVerifyPage } from '../../pages/platform-admin/tenants/OnboardingVerifyPage';
-import { HaccpBaseManagementPage } from '../../pages/documents/haccp-base/HaccpBaseManagementPage';
-import { HaccpBaseEditorPage } from '../../pages/documents/haccp-base/HaccpBaseEditorPage';
-import { HaccpBaseCategoryManagementPage } from '../../pages/documents/haccp-base/HaccpBaseCategoryManagementPage';
-import { HaccpDocumentManagementPage } from '../../pages/documents/haccp-doc/HaccpDocumentManagementPage';
-import { HaccpPortalPage } from '../../pages/documents/portal/HaccpPortalPage';
-import { ApprovalDraftWritePage } from '../../pages/documents/approvals/ApprovalDraftWritePage';
 import { useAuthStore } from '../../shared/store/authStore';
 import { resolveDashboardLandingPath } from '../../shared/utils/dashboardRouting';
+import {
+  loadAccountPasswordPage,
+  loadApprovalDraftWritePage,
+  loadDashboardPage,
+  loadDepartmentsPage,
+  loadDocumentHistoryPage,
+  loadDocumentsPage,
+  loadHaccpBaseCategoryManagementPage,
+  loadHaccpBaseEditorPage,
+  loadHaccpBaseManagementPage,
+  loadHaccpDocumentManagementPage,
+  loadHaccpPortalPage,
+  loadLoginHistoryPage,
+  loadLoginPage,
+  loadMyPage,
+  loadNotFoundPage,
+  loadOnboardingPage,
+  loadOnboardingVerifyPage,
+  loadPlatformAuthorityManagementPage,
+  loadPlatformMenuManagementPage,
+  loadPlatformPlanManagementPage,
+  loadPlatformTenantDetailPage,
+  loadPlatformTenantManagementPage,
+  loadTenantFirstLoginSetupPage,
+  loadUsersPage,
+} from './routePrefetch';
+
+const LoginPage = lazy(() =>
+  loadLoginPage().then((module) => ({
+    default: module.LoginPage,
+  })),
+);
+const DashboardPage = lazy(() =>
+  loadDashboardPage().then((module) => ({
+    default: module.DashboardPage,
+  })),
+);
+const OnboardingPage = lazy(() =>
+  loadOnboardingPage().then((module) => ({ default: module.OnboardingPage })),
+);
+const UsersPage = lazy(() =>
+  loadUsersPage().then((module) => ({
+    default: module.UsersPage,
+  })),
+);
+const DepartmentsPage = lazy(() =>
+  loadDepartmentsPage().then((module) => ({ default: module.DepartmentsPage })),
+);
+const DocumentsPage = lazy(() =>
+  loadDocumentsPage().then((module) => ({
+    default: module.DocumentsPage,
+  })),
+);
+const DocumentHistoryPage = lazy(() =>
+  loadDocumentHistoryPage().then((module) => ({
+    default: module.DocumentHistoryPage,
+  })),
+);
+const NotFoundPage = lazy(() =>
+  loadNotFoundPage().then((module) => ({
+    default: module.NotFoundPage,
+  })),
+);
+const TenantFirstLoginSetupPage = lazy(() =>
+  loadTenantFirstLoginSetupPage().then((module) => ({
+    default: module.TenantFirstLoginSetupPage,
+  })),
+);
+const LoginHistoryPage = lazy(() =>
+  loadLoginHistoryPage().then((module) => ({
+    default: module.LoginHistoryPage,
+  })),
+);
+const PlatformMenuManagementPage = lazy(() =>
+  loadPlatformMenuManagementPage().then((module) => ({
+    default: module.PlatformMenuManagementPage,
+  })),
+);
+const PlatformAuthorityManagementPage = lazy(() =>
+  loadPlatformAuthorityManagementPage().then((module) => ({
+    default: module.PlatformAuthorityManagementPage,
+  })),
+);
+const PlatformTenantManagementPage = lazy(() =>
+  loadPlatformTenantManagementPage().then((module) => ({
+    default: module.PlatformTenantManagementPage,
+  })),
+);
+const PlatformTenantDetailPage = lazy(() =>
+  loadPlatformTenantDetailPage().then((module) => ({
+    default: module.PlatformTenantDetailPage,
+  })),
+);
+const PlatformPlanManagementPage = lazy(() =>
+  loadPlatformPlanManagementPage().then((module) => ({
+    default: module.PlatformPlanManagementPage,
+  })),
+);
+const AccountPasswordPage = lazy(() =>
+  loadAccountPasswordPage().then((module) => ({
+    default: module.AccountPasswordPage,
+  })),
+);
+const MyPage = lazy(() =>
+  loadMyPage().then((module) => ({
+    default: module.MyPage,
+  })),
+);
+const OnboardingVerifyPage = lazy(() =>
+  loadOnboardingVerifyPage().then((module) => ({
+    default: module.OnboardingVerifyPage,
+  })),
+);
+const HaccpBaseManagementPage = lazy(() =>
+  loadHaccpBaseManagementPage().then((module) => ({
+    default: module.HaccpBaseManagementPage,
+  })),
+);
+const HaccpBaseEditorPage = lazy(() =>
+  loadHaccpBaseEditorPage().then((module) => ({
+    default: module.HaccpBaseEditorPage,
+  })),
+);
+const HaccpBaseCategoryManagementPage = lazy(() =>
+  loadHaccpBaseCategoryManagementPage().then((module) => ({
+    default: module.HaccpBaseCategoryManagementPage,
+  })),
+);
+const HaccpDocumentManagementPage = lazy(() =>
+  loadHaccpDocumentManagementPage().then((module) => ({
+    default: module.HaccpDocumentManagementPage,
+  })),
+);
+const HaccpPortalPage = lazy(() =>
+  loadHaccpPortalPage().then((module) => ({
+    default: module.HaccpPortalPage,
+  })),
+);
+const ApprovalDraftWritePage = lazy(() =>
+  loadApprovalDraftWritePage().then((module) => ({
+    default: module.ApprovalDraftWritePage,
+  })),
+);
 
 function DefaultHomeRoute() {
   const role = useAuthStore((state) => state.role);
@@ -37,172 +157,174 @@ function DefaultHomeRoute() {
 }
 export function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/login/:domain" element={<LoginPage />} />
-      <Route path="/onboarding/verify" element={<OnboardingVerifyPage />} />
-      <Route
-        path="/login/platform"
-        element={<Navigate to="/login" replace />}
-      />
-      <Route
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<DefaultHomeRoute />} />
-        <Route path="/platform" element={<DashboardPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+    <Suspense fallback={null}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login/:domain" element={<LoginPage />} />
+        <Route path="/onboarding/verify" element={<OnboardingVerifyPage />} />
         <Route
-          path="/platform/onboarding"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <OnboardingPage />
-            </ProtectedRoute>
-          }
+          path="/login/platform"
+          element={<Navigate to="/login" replace />}
         />
         <Route
-          path="/platform/tenants"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <PlatformTenantManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/platform/tenants/:tenantCode"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <PlatformTenantDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/onboarding"
-          element={<Navigate to="/platform/onboarding" replace />}
-        />
-        <Route path="/users" element={<Navigate to="/org/users" replace />} />
-        <Route
-          path="/org/users"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <UsersPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tenant-first-setup"
-          element={
-            <ProtectedRoute allowedRoles={['TENANT_ADMIN']}>
-              <TenantFirstLoginSetupPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/departments"
-          element={<Navigate to="/org/departments" replace />}
-        />
-        <Route
-          path="/org/departments"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <DepartmentsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/platform/login-history"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <LoginHistoryPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/platform/menus"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <PlatformMenuManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/platform/plans"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <PlatformPlanManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/roles" element={<Navigate to="/org/roles" replace />} />
-        <Route
-          path="/org/roles"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <PlatformAuthorityManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/document-history" element={<DocumentHistoryPage />} />
-        <Route
-          path="/docs/haccp-base"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <HaccpBaseManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/docs/haccp-base/editor/:baseId"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <HaccpBaseEditorPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/docs/haccp-base/categories"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <HaccpBaseCategoryManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/docs/haccp-doc"
-          element={
-            <ProtectedRoute enforceMenuAccess>
-              <HaccpDocumentManagementPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/docs/portal"
-          element={
-            <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
-              <HaccpPortalPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/approvals/draft/:baseId"
           element={
             <ProtectedRoute>
-              <ApprovalDraftWritePage />
+              <AppLayout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/account"
-          element={<Navigate to="/account/my-page" replace />}
-        />
-        <Route path="/account/my-page" element={<MyPage />} />
-        <Route path="/account/password" element={<AccountPasswordPage />} />
-      </Route>
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        >
+          <Route index element={<DefaultHomeRoute />} />
+          <Route path="/platform" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route
+            path="/platform/onboarding"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <OnboardingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/tenants"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <PlatformTenantManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/tenants/:tenantCode"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <PlatformTenantDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding"
+            element={<Navigate to="/platform/onboarding" replace />}
+          />
+          <Route path="/users" element={<Navigate to="/org/users" replace />} />
+          <Route
+            path="/org/users"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tenant-first-setup"
+            element={
+              <ProtectedRoute allowedRoles={['TENANT_ADMIN']}>
+                <TenantFirstLoginSetupPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/departments"
+            element={<Navigate to="/org/departments" replace />}
+          />
+          <Route
+            path="/org/departments"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <DepartmentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/login-history"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <LoginHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/menus"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <PlatformMenuManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/plans"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <PlatformPlanManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/roles" element={<Navigate to="/org/roles" replace />} />
+          <Route
+            path="/org/roles"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <PlatformAuthorityManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/document-history" element={<DocumentHistoryPage />} />
+          <Route
+            path="/docs/haccp-base"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <HaccpBaseManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docs/haccp-base/editor/:baseId"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <HaccpBaseEditorPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docs/haccp-base/categories"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <HaccpBaseCategoryManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docs/haccp-doc"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <HaccpDocumentManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docs/portal"
+            element={
+              <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
+                <HaccpPortalPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/approvals/draft/:baseId"
+            element={
+              <ProtectedRoute>
+                <ApprovalDraftWritePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account"
+            element={<Navigate to="/account/my-page" replace />}
+          />
+          <Route path="/account/my-page" element={<MyPage />} />
+          <Route path="/account/password" element={<AccountPasswordPage />} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
   );
 }
