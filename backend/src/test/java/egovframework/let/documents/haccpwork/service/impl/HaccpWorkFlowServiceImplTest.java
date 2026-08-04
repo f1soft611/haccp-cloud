@@ -408,6 +408,28 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("승인요청", arrivalCaptor.getValue().get("optionName"));
     }
 
+    @DisplayName("기존 임시저장 문서 재결재 신청 시 기안일 필드(twf_date)가 갱신된다")
+    @Test
+    void submitDraft_updatesDraftDateFieldsWhenReSubmittingExistingPreApply() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("재결재 신청 테스트");
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> updateCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).updateElectronicApprovalMainDraftContent(updateCaptor.capture());
+
+        Object regDate = updateCaptor.getValue().get("regDate");
+        Object twfDate = updateCaptor.getValue().get("twfDate");
+        Object afterTwfDate = updateCaptor.getValue().get("afterTwfDate");
+
+        assertTrue(regDate instanceof String && ((String) regDate).matches("^\\d{8}$"));
+        assertTrue(twfDate instanceof String && ((String) twfDate).matches("^\\d{8}$"));
+        assertTrue(afterTwfDate instanceof String && ((String) afterTwfDate).matches("^\\d{8}$"));
+    }
+
     private HaccpWorkDAO serviceHaccpWorkDAO;
 
     private HaccpWorkFlowServiceImpl createServiceForSubmitCancelMessageTest(int latestCompletedSeq) throws Exception {

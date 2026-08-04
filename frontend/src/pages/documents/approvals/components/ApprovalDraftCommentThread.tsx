@@ -297,7 +297,7 @@ export function ApprovalDraftCommentThread(
               <ChatBubbleOutlineRounded fontSize="small" />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight={800}>
+              <Typography variant="subtitle1" fontWeight={700}>
                 결재 댓글 스레드
               </Typography>
               <Typography variant="body2" color="text.secondary">

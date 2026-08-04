@@ -4,6 +4,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore, type UserRole } from '../../shared/store/authStore';
 import { listAccessibleMenuPaths } from '../../services/platform-admin/platformUserMenuService';
 import { resolveLoginPathWithLastDomain } from '../../shared/utils/loginDomainRouting';
+import { prefetchRouteByPath } from './routePrefetch';
 
 type ProtectedRouteProps = PropsWithChildren<{
   allowedRoles?: UserRole[];
@@ -41,6 +42,7 @@ export function ProtectedRoute({
     effectiveOnboardingRequired &&
     !isTenantFirstSetupRoute
   ) {
+    void prefetchRouteByPath('/tenant-first-setup');
     return <Navigate to="/tenant-first-setup" replace />;
   }
 
