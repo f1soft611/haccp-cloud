@@ -270,4 +270,47 @@ describe('HaccpDocumentManagementPage', () => {
       );
     });
   });
+
+  it('keeps search query in returnTo when opening detail', async () => {
+    window.history.pushState({}, '', '/docs/haccp-doc');
+
+    render(
+      <AppProviders>
+        <HaccpDocumentManagementPage />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByText('원재료 입고 점검일지')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('제목'), {
+      target: { value: '점검' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+
+    await waitFor(() => {
+      const params = new URLSearchParams(window.location.search);
+      expect(params.get('title')).toBe('점검');
+      expect(params.get('startDate')).toBeTruthy();
+      expect(params.get('endDate')).toBeTruthy();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('원재료 입고 점검일지')).toBeInTheDocument();
+    });
+
+    const expectedReturnTo = `/docs/haccp-doc${window.location.search}`;
+    const detailButtons = document.querySelectorAll(
+      'button[aria-label="상세 보기"]',
+    );
+    expect(detailButtons.length).toBeGreaterThan(0);
+    fireEvent.click(detailButtons[0]);
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/approvals/draft/APPR-202607-001');
+    });
+
+    const detailParams = new URLSearchParams(window.location.search);
+    expect(detailParams.get('idType')).toBe('approval');
+    expect(detailParams.get('returnTo')).toBe(expectedReturnTo);
+  });
 });

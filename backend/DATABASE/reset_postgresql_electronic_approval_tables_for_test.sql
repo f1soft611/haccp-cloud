@@ -33,6 +33,14 @@ WITH target AS (
     FROM tb_tenant
     WHERE tenant_code = 'PLATFORM'
 )
+DELETE FROM tb_electronic_approval_history_like
+WHERE tenant_id IN (SELECT tenant_id FROM target);
+
+WITH target AS (
+    SELECT tenant_id
+    FROM tb_tenant
+    WHERE tenant_code = 'PLATFORM'
+)
 DELETE FROM tb_electronic_approval_history_main
 WHERE tenant_id IN (SELECT tenant_id FROM target);
 
@@ -67,6 +75,10 @@ SELECT 'tb_electronic_approval_history_main', COUNT(*)
 FROM tb_electronic_approval_history_main
 WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1)
 UNION ALL
+SELECT 'tb_electronic_approval_history_like', COUNT(*)
+FROM tb_electronic_approval_history_like
+WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1)
+UNION ALL
 SELECT 'tb_electronic_approval_open_info', COUNT(*)
 FROM tb_electronic_approval_open_info
 WHERE tenant_id = (SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1);
@@ -79,6 +91,7 @@ COMMIT;
 -- BEGIN;
 -- TRUNCATE TABLE
 --     tb_electronic_approval_open_info,
+--     tb_electronic_approval_history_like,
 --     tb_electronic_approval_history_main,
 --     tb_electronic_approval_line_info,
 --     tb_electronic_approval_main

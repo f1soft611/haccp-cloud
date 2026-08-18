@@ -52,6 +52,67 @@ function toSearchValue(searchParams: URLSearchParams): HaccpDocSearchValue {
   };
 }
 
+function toSearchParams(
+  value: HaccpDocSearchValue,
+  options: {
+    canViewAllDocuments: boolean;
+    divisionOptions: Array<{ id: string; name: string }>;
+  },
+): URLSearchParams {
+  const params = new URLSearchParams();
+  const trimmedWorkType = value.workType.trim();
+  const trimmedWorkDivision = value.workDivision.trim();
+  const trimmedDraftNumber = value.draftNumber.trim();
+  const trimmedTitle = value.title.trim();
+  const trimmedWriter = value.writer.trim();
+  const trimmedStatus = value.status.trim();
+  const hasKnownDivisionId = options.divisionOptions.some(
+    (option) => option.id === trimmedWorkDivision,
+  );
+
+  if (trimmedWorkType && trimmedWorkType !== '전체') {
+    params.set('workType', trimmedWorkType);
+  }
+
+  if (trimmedWorkDivision) {
+    if (hasKnownDivisionId) {
+      params.set('workDivisionId', trimmedWorkDivision);
+    } else {
+      params.set('workDivision', trimmedWorkDivision);
+    }
+  }
+
+  if (trimmedDraftNumber) {
+    params.set('draftNumber', trimmedDraftNumber);
+  }
+
+  if (trimmedTitle) {
+    params.set('title', trimmedTitle);
+  }
+
+  if (options.canViewAllDocuments && trimmedWriter) {
+    params.set('writer', trimmedWriter);
+  }
+
+  if (value.participantType.length > 0) {
+    params.set('participantType', value.participantType.join(','));
+  }
+
+  if (trimmedStatus && trimmedStatus !== '전체') {
+    params.set('status', trimmedStatus);
+  }
+
+  if (value.startDate) {
+    params.set('startDate', value.startDate);
+  }
+
+  if (value.endDate) {
+    params.set('endDate', value.endDate);
+  }
+
+  return params;
+}
+
 function isDocumentViewerAdmin(role: string): boolean {
   return role === 'PLATFORM_ADMIN' || role === 'TENANT_ADMIN';
 }
@@ -63,7 +124,7 @@ export function useHaccpDocumentManagement() {
   const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } =
     useGridPagination();
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const requestedDivisionId = (searchParams.get('workDivisionId') || '').trim();
   const initialValue = useMemo(() => {
     const value = toSearchValue(searchParams);
@@ -296,11 +357,24 @@ export function useHaccpDocumentManagement() {
     setSearchValue(resetValue);
     setAppliedFilters(resetValue);
     resetPage();
+    setSearchParams(
+      toSearchParams(resetValue, {
+        canViewAllDocuments,
+        divisionOptions,
+      }),
+    );
   };
 
   const handleSearch = () => {
     resetPage();
-    setAppliedFilters({ ...searchValue });
+    const nextFilters = { ...searchValue };
+    setAppliedFilters(nextFilters);
+    setSearchParams(
+      toSearchParams(nextFilters, {
+        canViewAllDocuments,
+        divisionOptions,
+      }),
+    );
   };
 
   return {

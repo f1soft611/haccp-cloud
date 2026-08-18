@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Box } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Outlet, useLocation } from 'react-router-dom';
@@ -20,6 +20,7 @@ import {
   CurrentMenuGroupLabelProvider,
   UserMenuMetadataProvider,
 } from './userMenuMetadataContext';
+import { scheduleRoutePrefetch } from '../../../app/router/routePrefetch';
 
 export function AppLayout() {
   const location = useLocation();
@@ -148,6 +149,24 @@ export function AppLayout() {
     return matchedGroup?.label;
   }, [location.pathname, menuGroups]);
 
+  const prioritizedPrefetchPaths = useMemo(() => {
+    const activeGroup =
+      menuGroups.find((group) =>
+        group.items.some((item) => location.pathname.startsWith(item.path)),
+      ) ?? menuGroups[0];
+
+    const activePaths = (activeGroup?.items ?? []).map((item) => item.path);
+    const fallbackPaths = menuGroups
+      .flatMap((group) => group.items.map((item) => item.path))
+      .filter((path) => !activePaths.includes(path));
+
+    return ['/dashboard', ...activePaths, ...fallbackPaths];
+  }, [location.pathname, menuGroups]);
+
+  useEffect(() => {
+    scheduleRoutePrefetch(prioritizedPrefetchPaths, 6);
+  }, [prioritizedPrefetchPaths]);
+
   return (
     <UserMenuMetadataProvider value={menuMetadataByPath}>
       <CurrentMenuGroupLabelProvider value={currentMenuGroupLabel}>
@@ -157,7 +176,9 @@ export function AppLayout() {
           <TopGovBar />
           <WorkMenuBar menuGroups={menuGroups} role={role} />
           <PageShell>
-            <Outlet />
+            <Suspense fallback={null}>
+              <Outlet />
+            </Suspense>
           </PageShell>
           <PortalFooter />
         </Box>

@@ -167,6 +167,10 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpWorkDAO.selectApprovalLineForHistoryByLogin", params);
     }
 
+    public Map<String, Object> selectAnyApprovalLineForHistory(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectAnyApprovalLineForHistory", params);
+    }
+
     public Integer selectNextApprovalHistoryAnswerSeq(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectNextApprovalHistoryAnswerSeq", params);
     }
@@ -181,5 +185,77 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
 
     public Map<String, Object> selectApprovalHistoryCommentById(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectApprovalHistoryCommentById", params);
+    }
+
+    public Integer selectApprovalCommentLikeExists(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectApprovalCommentLikeExists", params);
+    }
+
+    public int insertApprovalCommentLike(Map<String, Object> params) throws Exception {
+        return insert("HaccpWorkDAO.insertApprovalCommentLike", params);
+    }
+
+    public int deleteApprovalCommentLike(Map<String, Object> params) throws Exception {
+        return delete("HaccpWorkDAO.deleteApprovalCommentLike", params);
+    }
+
+    public int updateElectronicApprovalHistoryComment(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.updateElectronicApprovalHistoryComment", params);
+    }
+
+    public int softDeleteElectronicApprovalHistoryComment(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.softDeleteElectronicApprovalHistoryComment", params);
+    }
+
+    public void insertDocumentAttachment(Map<String, Object> params) throws Exception {
+        insert("HaccpWorkDAO.insertDocumentAttachment", params);
+    }
+
+    public int updateDocumentAttachmentStatus(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.updateDocumentAttachmentStatus", params);
+    }
+
+    public int softDeleteDocumentAttachment(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.softDeleteDocumentAttachment", params);
+    }
+
+    public Map<String, Object> selectDocumentAttachmentById(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectDocumentAttachmentById", params);
+    }
+
+    public List<Map<String, Object>> selectDocumentAttachmentsByApprovalId(Map<String, Object> params) throws Exception {
+        return selectList("HaccpWorkDAO.selectDocumentAttachmentsByApprovalId", params);
+    }
+
+    public void insertDocumentAttachmentUploadSession(Map<String, Object> params) throws Exception {
+        insert("HaccpWorkDAO.insertDocumentAttachmentUploadSession", params);
+    }
+
+    public Map<String, Object> selectDocumentAttachmentUploadSessionByToken(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectDocumentAttachmentUploadSessionByToken", params);
+    }
+
+    public int updateDocumentAttachmentUploadSessionStatus(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.updateDocumentAttachmentUploadSessionStatus", params);
+    }
+
+    public void insertDocumentAttachmentAuditLog(Map<String, Object> params) throws Exception {
+        insert("HaccpWorkDAO.insertDocumentAttachmentAuditLog", params);
+    }
+
+    public List<Map<String, Object>> selectDocumentAttachmentAuditLogsByAttachmentId(Map<String, Object> params) throws Exception {
+        return selectList("HaccpWorkDAO.selectDocumentAttachmentAuditLogsByAttachmentId", params);
+    }
+
+    public List<Map<String, Object>> selectExpiredUploadSessions(Map<String, Object> params) throws Exception {
+        return selectList("HaccpWorkDAO.selectExpiredUploadSessions", params);
+    }
+
+    public int markUploadSessionCleaned(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.markUploadSessionCleaned", params);
+    }
+
+    public int markAttachmentAbandoned(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.markAttachmentAbandoned", params);
     }
 }

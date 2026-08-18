@@ -19,6 +19,7 @@ import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import type { UserRole } from '../../store/authStore';
 import type { MenuGroup, MenuIconName } from './workMenuConfig';
+import { prefetchRouteByPath } from '../../../app/router/routePrefetch';
 
 type MenuIconComponent = typeof DashboardRoundedIcon;
 
@@ -277,6 +278,12 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                         key={item.path}
                         component={NavLink}
                         to={item.path}
+                        onMouseEnter={() => {
+                          void prefetchRouteByPath(item.path);
+                        }}
+                        onFocus={() => {
+                          void prefetchRouteByPath(item.path);
+                        }}
                         aria-label={item.label}
                         color="primary"
                         variant="text"

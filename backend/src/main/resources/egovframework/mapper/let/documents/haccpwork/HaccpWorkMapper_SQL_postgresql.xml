@@ -215,6 +215,10 @@
             TO_CHAR(
               COALESCE(
                 CASE
+                  WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                  ELSE NULL
+                END,
+                CASE
                   WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                   ELSE NULL
                 END,
@@ -384,6 +388,10 @@
           <if test="startDate != null and startDate != ''">
             AND COALESCE(
                   CASE
+                    WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
+                  CASE
                     WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                     ELSE NULL
                   END,
@@ -392,6 +400,10 @@
           </if>
           <if test="endDate != null and endDate != ''">
             AND COALESCE(
+                  CASE
+                    WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
                   CASE
                     WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                     ELSE NULL
@@ -521,6 +533,10 @@
           <if test="startDate != null and startDate != ''">
             AND COALESCE(
                   CASE
+                    WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
+                  CASE
                     WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                     ELSE NULL
                   END,
@@ -529,6 +545,10 @@
           </if>
           <if test="endDate != null and endDate != ''">
             AND COALESCE(
+                  CASE
+                    WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
                   CASE
                     WHEN NULLIF(TRIM(m.reg_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.reg_date), ''), 'YYYYMMDD')
                     ELSE NULL
@@ -562,7 +582,18 @@
               NULLIF(TRIM(CAST(cu_pre.user_id AS varchar)), ''),
               CAST(pre.login_id AS varchar)
             ) AS created_by,
-            TO_CHAR(COALESCE(pre.updated_at, pre.created_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS created_at,
+            TO_CHAR(
+              COALESCE(
+                CASE
+                  WHEN NULLIF(TRIM(pre.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(pre.twf_date), ''), 'YYYYMMDD')
+                  ELSE NULL
+                END,
+                DATE(pre.updated_at),
+                DATE(pre.created_at),
+                DATE(w.created_at)
+              ),
+              'YYYY-MM-DD'
+            ) AS created_at,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
               WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
@@ -696,6 +727,7 @@
               m.txt_json,
               m.after_cnt,
               m.after_txt_json,
+              m.twf_date,
               m.created_at,
               m.updated_at
           FROM tb_electronic_approval_main m
@@ -704,6 +736,8 @@
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND COALESCE(m.delete_status, 'N') != 'Y'
             AND COALESCE(m.status_type, '') = 'pre_apply'
+            AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+            AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
             AND COALESCE(m.updated_at, m.created_at) >= cb.cycle_start
           ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
@@ -766,7 +800,18 @@
               NULLIF(TRIM(CAST(cu_main.user_id AS varchar)), ''),
               CAST(m.login_id AS varchar)
             ) AS created_by,
-            TO_CHAR(COALESCE(m.updated_at, m.created_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS created_at,
+            TO_CHAR(
+              COALESCE(
+                CASE
+                  WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                  ELSE NULL
+                END,
+                DATE(m.updated_at),
+                DATE(m.created_at),
+                DATE(w.created_at)
+              ),
+              'YYYY-MM-DD'
+            ) AS created_at,
             CONCAT(
               '검토:',
               COALESCE(NULLIF(TRIM(ru_line.user_nm), ''), NULLIF(TRIM(ru.user_nm), ''), '-'),
@@ -1477,6 +1522,29 @@
       LIMIT 1
     </select>
 
+    <select id="HaccpWorkDAO.selectAnyApprovalLineForHistory"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        electronic_approval_line_id AS electronicApprovalLineId,
+        exe_seq AS exeSeq,
+        approval_type AS approvalType,
+        last_owner_status AS lastOwnerStatus,
+        eabus_no AS eabusNo,
+        ea_exe_id AS eaExeId
+      FROM tb_electronic_approval_line_info
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_id = #{approvalId}
+      ORDER BY
+        CASE
+          WHEN COALESCE(muldec_status, '') = 'drafted' THEN 0
+          WHEN COALESCE(muldec_status, '') = 'cooperated' THEN 1
+          ELSE 2
+        END,
+        exe_seq ASC
+      LIMIT 1
+    </select>
+
     <select id="HaccpWorkDAO.selectNextApprovalHistoryAnswerSeq"
         parameterType="map"
         resultType="int">
@@ -1531,7 +1599,12 @@
       SELECT
         hm.electronic_approval_history_id AS commentId,
         hm.parent_history_id AS parentCommentId,
+        hm.created_by AS createdBy,
+        COALESCE(la.login_code, '') AS createdByLoginCode,
         hm.answer_type_name AS answerTypeName,
+        CASE WHEN UPPER(COALESCE(hm.answer_type_name, '')) = 'DELETED' THEN TRUE ELSE FALSE END AS isDeleted,
+        COALESCE(like_summary.like_count, 0) AS likeCount,
+        COALESCE(like_me.liked_by_me, FALSE) AS likedByMe,
         hm.answer_cnt AS text,
         TO_CHAR(hm.answer_at, 'YYYY-MM-DD HH24:MI') AS createdAt,
         NULLIF(TRIM(COALESCE(la.profile_image, '')), '') AS actorProfileImage,
@@ -1547,6 +1620,28 @@
       LEFT JOIN tb_login_account la
         ON la.tenant_id = hm.tenant_id
        AND la.login_id = hm.created_by
+      LEFT JOIN (
+        SELECT
+          tenant_id,
+          electronic_approval_history_id,
+          COUNT(*)::int AS like_count
+        FROM tb_electronic_approval_history_like
+        WHERE tenant_id = #{tenantId}
+        GROUP BY tenant_id, electronic_approval_history_id
+      ) like_summary
+        ON like_summary.tenant_id = hm.tenant_id
+       AND like_summary.electronic_approval_history_id = hm.electronic_approval_history_id
+      LEFT JOIN (
+        SELECT
+          tenant_id,
+          electronic_approval_history_id,
+          TRUE AS liked_by_me
+        FROM tb_electronic_approval_history_like
+        WHERE tenant_id = #{tenantId}
+          AND login_id = #{actorLoginId}
+      ) like_me
+        ON like_me.tenant_id = hm.tenant_id
+       AND like_me.electronic_approval_history_id = hm.electronic_approval_history_id
       WHERE hm.tenant_id = #{tenantId}
         AND (
           EXISTS (
@@ -1568,14 +1663,43 @@
       ORDER BY hm.answer_at DESC, hm.electronic_approval_history_id DESC
     </select>
 
+    <update id="HaccpWorkDAO.updateElectronicApprovalHistoryComment"
+        parameterType="map">
+      UPDATE tb_electronic_approval_history_main
+      SET answer_cnt = #{comment},
+          answer_type_name = 'USER'
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_history_id = #{commentId}
+        AND created_by = #{actorLoginId}
+        AND answer_type_name = 'USER'
+    </update>
+
+    <update id="HaccpWorkDAO.softDeleteElectronicApprovalHistoryComment"
+        parameterType="map">
+      UPDATE tb_electronic_approval_history_main
+      SET answer_cnt = '사용자에 의해 삭제 되었습니다.',
+          answer_type_name = 'DELETED'
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_history_id = #{commentId}
+        AND created_by = #{actorLoginId}
+        AND answer_type_name = 'USER'
+    </update>
+
     <select id="HaccpWorkDAO.selectApprovalHistoryCommentById"
         parameterType="map"
         resultType="map">
       SELECT
         hm.electronic_approval_history_id AS commentId,
         hm.answer_type_name AS answerTypeName,
+        CASE WHEN UPPER(COALESCE(hm.answer_type_name, '')) = 'DELETED' THEN TRUE ELSE FALSE END AS isDeleted,
+        hm.answer_cnt AS text,
+        hm.created_by AS createdBy,
+        COALESCE(la.login_code, '') AS createdByLoginCode,
         hm.parent_history_id AS parentCommentId
       FROM tb_electronic_approval_history_main hm
+      LEFT JOIN tb_login_account la
+        ON la.tenant_id = hm.tenant_id
+       AND la.login_id = hm.created_by
       WHERE hm.tenant_id = #{tenantId}
         AND hm.electronic_approval_history_id = #{commentId}
         AND (
@@ -1597,6 +1721,41 @@
         )
       LIMIT 1
     </select>
+
+    <select id="HaccpWorkDAO.selectApprovalCommentLikeExists"
+        parameterType="map"
+        resultType="int">
+      SELECT COUNT(*)::int
+      FROM tb_electronic_approval_history_like
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_history_id = #{commentId}
+        AND login_id = #{actorLoginId}
+    </select>
+
+    <insert id="HaccpWorkDAO.insertApprovalCommentLike"
+        parameterType="map">
+      INSERT INTO tb_electronic_approval_history_like (
+        tenant_id,
+        electronic_approval_history_id,
+        login_id,
+        created_at
+      ) VALUES (
+        #{tenantId},
+        #{commentId},
+        #{actorLoginId},
+        CURRENT_TIMESTAMP
+      )
+      ON CONFLICT (tenant_id, electronic_approval_history_id, login_id)
+      DO NOTHING
+    </insert>
+
+    <delete id="HaccpWorkDAO.deleteApprovalCommentLike"
+        parameterType="map">
+      DELETE FROM tb_electronic_approval_history_like
+      WHERE tenant_id = #{tenantId}
+        AND electronic_approval_history_id = #{commentId}
+        AND login_id = #{actorLoginId}
+    </delete>
 
     <update id="HaccpWorkDAO.updateElectronicApprovalLineStatus"
         parameterType="map">
@@ -1757,6 +1916,9 @@
               NULL
             </otherwise>
           </choose>,
+        reg_date = COALESCE(#{regDate, jdbcType=VARCHAR}, reg_date),
+        twf_date = COALESCE(#{twfDate, jdbcType=VARCHAR}, twf_date),
+        after_twf_date = COALESCE(#{afterTwfDate, jdbcType=VARCHAR}, after_twf_date),
         status_type = #{statusType},
         status_type_name = #{statusTypeName},
         end_status = #{endStatus},
@@ -1786,5 +1948,302 @@
         WHERE tenant_id = #{tenantId}
         AND electronic_approval_id = #{approvalId}
       </delete>
+
+    <insert id="HaccpWorkDAO.insertDocumentAttachment"
+        parameterType="map"
+        useGeneratedKeys="true"
+        keyProperty="attachmentId"
+        keyColumn="attachment_id">
+      INSERT INTO tb_document_attachment (
+        tenant_id,
+        approval_id,
+        object_key,
+        original_file_name,
+        file_ext,
+        content_type,
+        file_size,
+        checksum_sha256,
+        upload_status,
+        previewable_yn,
+        storage_provider,
+        bucket_name,
+        deleted_yn,
+        created_by,
+        updated_by
+      )
+      VALUES (
+        #{tenantId},
+        #{approvalId},
+        #{objectKey},
+        #{originalFileName},
+        #{fileExt},
+        #{contentType},
+        #{fileSize},
+        #{checksumSha256},
+        #{uploadStatus},
+        COALESCE(#{previewableYn}, 'N'),
+        COALESCE(#{storageProvider}, 'MINIO'),
+        COALESCE(#{bucketName}, 'haccp-attachments'),
+        'N',
+        #{createdBy},
+        #{createdBy}
+      )
+    </insert>
+
+    <update id="HaccpWorkDAO.updateDocumentAttachmentStatus"
+        parameterType="map">
+      UPDATE tb_document_attachment
+      SET
+        upload_status = #{uploadStatus},
+        checksum_sha256 = COALESCE(#{checksumSha256, jdbcType=VARCHAR}, checksum_sha256),
+        updated_by = #{updatedBy, jdbcType=BIGINT},
+        updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+    </update>
+
+    <update id="HaccpWorkDAO.softDeleteDocumentAttachment"
+        parameterType="map">
+      UPDATE tb_document_attachment
+      SET
+        deleted_yn = 'Y',
+        upload_status = 'DELETED',
+        updated_by = #{updatedBy, jdbcType=BIGINT},
+        updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+    </update>
+
+    <select id="HaccpWorkDAO.selectDocumentAttachmentById"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        attachment_id AS "attachmentId",
+        tenant_id AS "tenantId",
+        approval_id AS "approvalId",
+        object_key AS "objectKey",
+        original_file_name AS "originalFileName",
+        file_ext AS "fileExt",
+        content_type AS "contentType",
+        file_size AS "fileSize",
+        checksum_sha256 AS "checksumSha256",
+        storage_provider AS "storageProvider",
+        bucket_name AS "bucketName",
+        upload_status AS "uploadStatus",
+        previewable_yn AS "previewableYn",
+        deleted_yn AS "deletedYn",
+        created_by AS "createdBy",
+        created_at AS "createdAt",
+        updated_by AS "updatedBy",
+        updated_at AS "updatedAt"
+      FROM tb_document_attachment
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+      LIMIT 1
+    </select>
+
+    <select id="HaccpWorkDAO.selectDocumentAttachmentsByApprovalId"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        attachment_id AS "attachmentId",
+        tenant_id AS "tenantId",
+        approval_id AS "approvalId",
+        object_key AS "objectKey",
+        original_file_name AS "originalFileName",
+        file_ext AS "fileExt",
+        content_type AS "contentType",
+        file_size AS "fileSize",
+        checksum_sha256 AS "checksumSha256",
+        upload_status AS "uploadStatus",
+        previewable_yn AS "previewableYn",
+        storage_provider AS "storageProvider",
+        bucket_name AS "bucketName",
+        created_by AS "createdBy",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+      FROM tb_document_attachment
+      WHERE tenant_id = #{tenantId}
+        AND approval_id = #{approvalId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+      ORDER BY attachment_id DESC
+    </select>
+
+    <insert id="HaccpWorkDAO.insertDocumentAttachmentUploadSession"
+        parameterType="map"
+        useGeneratedKeys="true"
+        keyProperty="uploadSessionId"
+        keyColumn="upload_session_id">
+      INSERT INTO tb_document_attachment_upload_session (
+        tenant_id,
+        approval_id,
+        attachment_id,
+        upload_token,
+        object_key,
+        expected_file_name,
+        expected_content_type,
+        expected_file_size,
+        session_status,
+        expires_at,
+        completed_at,
+        created_by,
+        updated_by
+      )
+      VALUES (
+        #{tenantId},
+        #{approvalId},
+        #{attachmentId, jdbcType=BIGINT},
+        #{uploadToken},
+        #{objectKey},
+        #{expectedFileName, jdbcType=VARCHAR},
+        #{expectedContentType, jdbcType=VARCHAR},
+        #{expectedFileSize, jdbcType=BIGINT},
+        COALESCE(#{sessionStatus}, 'PENDING'),
+        #{expiresAt, jdbcType=TIMESTAMP},
+        #{completedAt, jdbcType=TIMESTAMP},
+        #{createdBy, jdbcType=BIGINT},
+        #{createdBy, jdbcType=BIGINT}
+      )
+    </insert>
+
+    <select id="HaccpWorkDAO.selectDocumentAttachmentUploadSessionByToken"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        upload_session_id AS "uploadSessionId",
+        tenant_id AS "tenantId",
+        approval_id AS "approvalId",
+        attachment_id AS "attachmentId",
+        upload_token AS "uploadToken",
+        object_key AS "objectKey",
+        expected_file_name AS "expectedFileName",
+        expected_content_type AS "expectedContentType",
+        expected_file_size AS "expectedFileSize",
+        session_status AS "sessionStatus",
+        expires_at AS "expiresAt",
+        completed_at AS "completedAt",
+        created_by AS "createdBy",
+        created_at AS "createdAt",
+        updated_by AS "updatedBy",
+        updated_at AS "updatedAt"
+      FROM tb_document_attachment_upload_session
+      WHERE tenant_id = #{tenantId}
+        AND upload_token = #{uploadToken}
+      LIMIT 1
+    </select>
+
+    <update id="HaccpWorkDAO.updateDocumentAttachmentUploadSessionStatus"
+        parameterType="map">
+      UPDATE tb_document_attachment_upload_session
+      SET
+        session_status = #{sessionStatus},
+        attachment_id = #{attachmentId, jdbcType=BIGINT},
+        completed_at = #{completedAt, jdbcType=TIMESTAMP},
+        updated_by = #{updatedBy, jdbcType=BIGINT},
+        updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND upload_token = #{uploadToken}
+      <if test="expectedSessionStatus != null and expectedSessionStatus != ''">
+        AND session_status = #{expectedSessionStatus}
+      </if>
+      <if test="requireNotExpired != null and requireNotExpired">
+        AND expires_at > NOW()
+      </if>
+    </update>
+
+    <insert id="HaccpWorkDAO.insertDocumentAttachmentAuditLog"
+        parameterType="map"
+        useGeneratedKeys="true"
+        keyProperty="attachmentAuditId"
+        keyColumn="attachment_audit_id">
+      INSERT INTO tb_document_attachment_audit_log (
+        tenant_id,
+        attachment_id,
+        approval_id,
+        action_type,
+        actor_login_id,
+        actor_ip,
+        actor_user_agent,
+        detail_text,
+        created_at
+      )
+      VALUES (
+        #{tenantId},
+        #{attachmentId, jdbcType=BIGINT},
+        #{approvalId},
+        #{actionType},
+        #{actorLoginId, jdbcType=BIGINT},
+        #{actorIp, jdbcType=VARCHAR},
+        #{actorUserAgent, jdbcType=VARCHAR},
+        #{detailText, jdbcType=VARCHAR},
+        COALESCE(#{createdAt, jdbcType=TIMESTAMP}, NOW())
+      )
+    </insert>
+
+    <select id="HaccpWorkDAO.selectDocumentAttachmentAuditLogsByAttachmentId"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        attachment_audit_id AS "attachmentAuditId",
+        tenant_id AS "tenantId",
+        attachment_id AS "attachmentId",
+        approval_id AS "approvalId",
+        action_type AS "actionType",
+        actor_login_id AS "actorLoginId",
+        actor_ip AS "actorIp",
+        actor_user_agent AS "actorUserAgent",
+        detail_text AS "detailText",
+        created_at AS "createdAt"
+      FROM tb_document_attachment_audit_log
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+      ORDER BY attachment_audit_id DESC
+    </select>
+
+    <select id="HaccpWorkDAO.selectExpiredUploadSessions"
+        parameterType="map"
+        resultType="map">
+      SELECT
+        upload_session_id AS "uploadSessionId",
+        tenant_id AS "tenantId",
+        approval_id AS "approvalId",
+        attachment_id AS "attachmentId",
+        upload_token AS "uploadToken",
+        object_key AS "objectKey",
+        expected_file_name AS "expectedFileName",
+        expected_content_type AS "expectedContentType",
+        expected_file_size AS "expectedFileSize",
+        session_status AS "sessionStatus",
+        expires_at AS "expiresAt",
+        created_by AS "createdBy",
+        COALESCE(#{bucketName, jdbcType=VARCHAR}, 'haccp-attachments') AS "bucketName"
+      FROM tb_document_attachment_upload_session
+      WHERE session_status = 'PENDING'
+        AND expires_at &lt;= NOW()
+    </select>
+
+    <update id="HaccpWorkDAO.markUploadSessionCleaned"
+        parameterType="map">
+      UPDATE tb_document_attachment_upload_session
+      SET session_status = 'CLEANED',
+          updated_by = #{updatedBy, jdbcType=BIGINT},
+          updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND upload_token = #{uploadToken}
+    </update>
+
+    <update id="HaccpWorkDAO.markAttachmentAbandoned"
+        parameterType="map">
+      UPDATE tb_document_attachment
+      SET upload_status = 'ABANDONED',
+          updated_by = #{updatedBy, jdbcType=BIGINT},
+          updated_at = NOW()
+      WHERE tenant_id = #{tenantId}
+        AND attachment_id = #{attachmentId}
+        AND COALESCE(deleted_yn, 'N') != 'Y'
+    </update>
 
 </mapper>

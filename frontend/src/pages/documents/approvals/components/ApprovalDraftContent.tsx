@@ -6,6 +6,7 @@ import type { DocumentFieldValues } from '../../../../editor/utils/documentField
 import { ApprovalDraftCommentThread } from './ApprovalDraftCommentThread';
 import { ApprovalDraftEditorSection } from './ApprovalDraftEditorSection';
 import { ApprovalDraftSidebar } from './ApprovalDraftSidebar';
+import { ApprovalAttachmentPanel } from './ApprovalAttachmentPanel';
 import type { DraftComment } from '../types';
 
 type ApprovalDraftContentProps = {
@@ -33,9 +34,17 @@ type ApprovalDraftContentProps = {
   onChangeReplyDraft: (commentId: string, value: string) => void;
   onAddComment: (value: string) => void;
   onAddReply: (commentId: string) => void;
+  onEditComment: (commentId: string, value: string) => void;
+  onDeleteComment: (commentId: string) => void;
+  onToggleLikeComment: (commentId: string) => void;
+  currentUserLoginCode?: string;
+  tenantCode?: string;
+  approvalId?: string;
   isReadOnly?: boolean;
+  attachmentReadOnly?: boolean;
   canWriteComments?: boolean;
   commentLoadErrorMessage?: string;
+  onAttachmentChanged?: () => void | Promise<void>;
 };
 
 export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
@@ -64,9 +73,17 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     onChangeReplyDraft,
     onAddComment,
     onAddReply,
+    onEditComment,
+    onDeleteComment,
+    onToggleLikeComment,
+    currentUserLoginCode,
+    tenantCode = '',
+    approvalId = '',
     isReadOnly = false,
+    attachmentReadOnly = isReadOnly,
     canWriteComments = true,
     commentLoadErrorMessage = '',
+    onAttachmentChanged,
   } = props;
 
   return (
@@ -104,12 +121,23 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         isReadOnly={isReadOnly}
       />
 
+      <ApprovalAttachmentPanel
+        tenantCode={tenantCode}
+        approvalId={approvalId}
+        isReadOnly={attachmentReadOnly}
+        onChanged={onAttachmentChanged}
+      />
+
       <ApprovalDraftCommentThread
         comments={comments}
         replyDraftByCommentId={replyDraftByCommentId}
         onChangeReplyDraft={onChangeReplyDraft}
         onAddComment={onAddComment}
         onAddReply={onAddReply}
+        onEditComment={onEditComment}
+        onDeleteComment={onDeleteComment}
+        onToggleLikeComment={onToggleLikeComment}
+        currentUserLoginCode={currentUserLoginCode}
         canWriteComments={canWriteComments}
         commentLoadErrorMessage={commentLoadErrorMessage}
       />

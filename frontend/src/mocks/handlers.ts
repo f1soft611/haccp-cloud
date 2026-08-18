@@ -818,6 +818,19 @@ function resolveOnboardingStatus(
   return 'IN_PROGRESS';
 }
 
+const attachmentStore = {
+  items: [
+    {
+      attachmentId: 1,
+      originalFileName: 'sample.pdf',
+      contentType: 'application/pdf',
+      fileSize: 1234,
+      uploadStatus: 'COMPLETED',
+      previewableYn: 'Y',
+    },
+  ],
+};
+
 export const handlers = [
   http.post('/api/auth/login', async ({ request }) => {
     const payload = (await request.json()) as {
@@ -1599,6 +1612,107 @@ export const handlers = [
     const tenantCode = getTenantCodeFromHeader(request);
     return HttpResponse.json(tenantScoped(documents, tenantCode));
   }),
+
+  http.post(
+    '/api/v1/haccp-work/approvals/:approvalId/attachments/presign-upload',
+    async ({ params, request }) => {
+      const payload = (await request.json()) as
+        | Array<{
+            fileName?: string;
+            contentType?: string;
+            fileSize?: number;
+          }>
+        | {
+            items?: Array<{
+              fileName?: string;
+              contentType?: string;
+              fileSize?: number;
+            }>;
+          };
+      const inputItems = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.items)
+          ? payload.items
+          : [];
+      const items = inputItems.map((item, index) => ({
+        uploadToken: `mock-token-${params.approvalId}-${index + 1}`,
+        objectKey: `uploads/${params.approvalId}/${index + 1}-${item.fileName ?? 'file'}`,
+        uploadUrl: 'https://example.invalid/upload',
+        fileName: item.fileName,
+        contentType: item.contentType,
+        fileSize: item.fileSize,
+      }));
+
+      return HttpResponse.json({ items });
+    },
+  ),
+
+  http.post(
+    '/api/v1/haccp-work/approvals/:approvalId/attachments/complete',
+    async ({ params, request }) => {
+      const payload = (await request.json()) as
+        | Array<{
+            fileName?: string;
+            contentType?: string;
+            fileSize?: number;
+          }>
+        | {
+            items?: Array<{
+              fileName?: string;
+              contentType?: string;
+              fileSize?: number;
+            }>;
+          };
+      const inputItems = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.items)
+          ? payload.items
+          : [];
+      const completedItems = inputItems.map((item, index) => ({
+        attachmentId: 1000 + index + Number(params.approvalId),
+        originalFileName: item.fileName ?? `file-${index + 1}`,
+        contentType: item.contentType ?? 'application/octet-stream',
+        fileSize: item.fileSize ?? 0,
+        uploadStatus: 'COMPLETED',
+        previewableYn: 'Y',
+      }));
+
+      attachmentStore.items = [...attachmentStore.items, ...completedItems];
+      return HttpResponse.json({ items: completedItems });
+    },
+  ),
+
+  http.get('/api/v1/haccp-work/approvals/:approvalId/attachments', () => {
+    return HttpResponse.json({ items: attachmentStore.items });
+  }),
+
+  http.post(
+    '/api/v1/haccp-work/approvals/:approvalId/attachments/:attachmentId/presign-download',
+    () => {
+      return HttpResponse.json({
+        downloadUrl: 'https://example.invalid/download',
+      });
+    },
+  ),
+
+  http.post(
+    '/api/v1/haccp-work/approvals/:approvalId/attachments/:attachmentId/presign-preview',
+    () => {
+      return HttpResponse.json({
+        previewUrl: 'https://example.invalid/preview',
+      });
+    },
+  ),
+
+  http.delete(
+    '/api/v1/haccp-work/approvals/:approvalId/attachments/:attachmentId',
+    ({ params }) => {
+      attachmentStore.items = attachmentStore.items.filter(
+        (item) => String(item.attachmentId) !== String(params.attachmentId),
+      );
+      return new HttpResponse(null, { status: 204 });
+    },
+  ),
 
   http.post('/api/documents', async ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
