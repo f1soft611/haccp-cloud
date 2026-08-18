@@ -7,10 +7,12 @@ import { resolveDashboardLandingPath } from '../../shared/utils/dashboardRouting
 import {
   loadAccountPasswordPage,
   loadApprovalDraftWritePage,
+  loadCustomersPage,
   loadDashboardPage,
   loadDepartmentsPage,
   loadDocumentHistoryPage,
   loadDocumentsPage,
+  loadEquipmentPage,
   loadHaccpBaseCategoryManagementPage,
   loadHaccpBaseEditorPage,
   loadHaccpBaseManagementPage,
@@ -18,6 +20,7 @@ import {
   loadHaccpPortalPage,
   loadLoginHistoryPage,
   loadLoginPage,
+  loadMaterialsPage,
   loadMyPage,
   loadNotFoundPage,
   loadOnboardingPage,
@@ -147,6 +150,21 @@ const ApprovalDraftWritePage = lazy(() =>
     default: module.ApprovalDraftWritePage,
   })),
 );
+const CustomersPage = lazy(() =>
+  loadCustomersPage().then((module) => ({
+    default: module.CustomersPage,
+  })),
+);
+const MaterialsPage = lazy(() =>
+  loadMaterialsPage().then((module) => ({
+    default: module.MaterialsPage,
+  })),
+);
+const EquipmentPage = lazy(() =>
+  loadEquipmentPage().then((module) => ({
+    default: module.EquipmentPage,
+  })),
+);
 
 function DefaultHomeRoute() {
   const role = useAuthStore((state) => state.role);
@@ -263,6 +281,30 @@ export function AppRoutes() {
             element={
               <ProtectedRoute enforceMenuAccess>
                 <PlatformAuthorityManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/basicinfo/customers"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <CustomersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/basicinfo/materials"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <MaterialsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/basicinfo/equipment"
+            element={
+              <ProtectedRoute enforceMenuAccess>
+                <EquipmentPage />
               </ProtectedRoute>
             }
           />
