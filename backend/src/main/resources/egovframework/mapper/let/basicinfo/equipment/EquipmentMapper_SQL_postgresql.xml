@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="EquipmentDAO">
+
+    <!-- 설비 정보 resultMap -->
+    <resultMap id="equipmentResult"
+               type="egovframework.let.basicinfo.equipment.domain.model.EquipmentVO">
+        <id property="equipmentId" column="equipmentId"/>
+        <result property="tenantCode" column="tenantCode"/>
+        <result property="equipSysCd" column="equipSysCd"/>
+        <result property="equipCd" column="equipCd"/>
+        <result property="equipNm" column="equipNm"/>
+        <result property="equipKind" column="equipKind"/>
+        <result property="purDate" column="purDate"/>
+        <result property="purCust" column="purCust"/>
+        <result property="makCust" column="makCust"/>
+        <result property="equipSpec" column="equipSpec"/>
+        <result property="location" column="location"/>
+        <result property="bigo" column="bigo"/>
+        <result property="active" column="active"/>
+    </resultMap>
+
+    <!-- 설비 페이징 목록 조회 -->
+    <select id="EquipmentDAO.selectEquipmentPagedList"
+            parameterType="egovframework.let.basicinfo.equipment.domain.model.EquipmentSearchConditionVO"
+            resultMap="equipmentResult">
+        SELECT *
+        FROM (
+            SELECT
+                e.equipment_id                       AS equipmentId,
+                t.tenant_code                        AS tenantCode,
+                e.equip_sys_cd                       AS equipSysCd,
+                e.equip_cd                           AS equipCd,
+                e.equip_nm                           AS equipNm,
+                e.equip_kind                         AS equipKind,
+                e.pur_date                           AS purDate,
+                e.pur_cust                           AS purCust,
+                e.mak_cust                           AS makCust,
+                e.equip_spec                         AS equipSpec,
+                e.location                           AS location,
+                e.bigo                               AS bigo,
+                CASE WHEN e.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+                ROW_NUMBER() OVER (ORDER BY e.equip_sys_cd) AS rn
+            FROM tb_equipment_info e
+            JOIN tb_tenant t ON t.tenant_id = e.tenant_id
+            WHERE 1 = 1
+            <if test="tenantCode != null and tenantCode != ''">
+                AND t.tenant_code = #{tenantCode}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    LOWER(COALESCE(e.equip_nm, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR LOWER(COALESCE(e.equip_kind, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR LOWER(COALESCE(e.pur_cust, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR LOWER(COALESCE(e.mak_cust, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR e.equip_sys_cd LIKE '%' || #{keyword} || '%'
+                    OR e.equip_cd LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+            <if test='filterActive != null and filterActive == "Y"'>
+                AND e.use_at = 'Y'
+            </if>
+            <if test='filterActive != null and filterActive == "N"'>
+                AND e.use_at = 'N'
+            </if>
+        ) equipment_query
+        WHERE rn BETWEEN #{firstIndex} AND #{lastIndex}
+        ORDER BY rn
+    </select>
+
+    <!-- 설비 페이징 개수 조회 -->
+    <select id="EquipmentDAO.selectEquipmentPagedCount"
+            parameterType="egovframework.let.basicinfo.equipment.domain.model.EquipmentSearchConditionVO"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_equipment_info e
+        JOIN tb_tenant t ON t.tenant_id = e.tenant_id
+        WHERE 1 = 1
+        <if test="tenantCode != null and tenantCode != ''">
+            AND t.tenant_code = #{tenantCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                LOWER(COALESCE(e.equip_nm, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(COALESCE(e.equip_kind, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(COALESCE(e.pur_cust, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(COALESCE(e.mak_cust, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR e.equip_sys_cd LIKE '%' || #{keyword} || '%'
+                OR e.equip_cd LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+        <if test='filterActive != null and filterActive == "Y"'>
+            AND e.use_at = 'Y'
+        </if>
+        <if test='filterActive != null and filterActive == "N"'>
+            AND e.use_at = 'N'
+        </if>
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="EquipmentDAO.selectEquipmentById"
+            parameterType="map"
+            resultMap="equipmentResult">
+        SELECT
+            e.equipment_id                       AS equipmentId,
+            t.tenant_code                        AS tenantCode,
+            e.equip_sys_cd                       AS equipSysCd,
+            e.equip_cd                           AS equipCd,
+            e.equip_nm                           AS equipNm,
+            e.equip_kind                         AS equipKind,
+            e.pur_date                           AS purDate,
+            e.pur_cust                           AS purCust,
+            e.mak_cust                           AS makCust,
+            e.equip_spec                         AS equipSpec,
+            e.location                           AS location,
+            e.bigo                               AS bigo,
+            CASE WHEN e.use_at = 'Y' THEN TRUE ELSE FALSE END AS active
+        FROM tb_equipment_info e
+        JOIN tb_tenant t ON t.tenant_id = e.tenant_id
+        WHERE e.equipment_id = #{equipmentId}
+          AND e.tenant_id    = #{tenantId}
+    </select>
+
+    <!-- 테넌트 ID 조회 -->
+    <select id="EquipmentDAO.selectTenantIdByCode"
+            parameterType="string"
+            resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+        LIMIT 1
+    </select>
+
+    <!-- 로그인코드로 사용자 ID 조회 (created_by/updated_by 기록용) -->
+    <select id="EquipmentDAO.selectUserIdByLoginCode"
+            parameterType="map"
+            resultType="long">
+        SELECT u.user_id
+        FROM tb_user u
+        JOIN tb_login_account la ON la.login_id = u.login_id
+        WHERE la.tenant_id = #{tenantId}
+          AND la.login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <!-- 관리코드 채번을 위한 테넌트 단위 트랜잭션 잠금 -->
+    <select id="EquipmentDAO.lockTenantForCodeGeneration"
+            parameterType="long"
+            resultType="string">
+        SELECT pg_advisory_xact_lock(#{value})::text
+    </select>
+
+    <!-- 테넌트 내 최대 관리코드 조회 -->
+    <select id="EquipmentDAO.selectMaxEquipSysCd"
+            parameterType="long"
+            resultType="string">
+        SELECT MAX(equip_sys_cd)
+        FROM tb_equipment_info
+        WHERE tenant_id = #{value}
+    </select>
+
+    <!-- 설비 등록 (PostgreSQL RETURNING으로 신규 ID 반환) -->
+    <select id="EquipmentDAO.insertEquipment"
+            parameterType="map"
+            resultType="long">
+        INSERT INTO tb_equipment_info (
+            tenant_id,
+            equip_sys_cd,
+            equip_cd,
+            equip_nm,
+            equip_kind,
+            pur_date,
+            pur_cust,
+            mak_cust,
+            equip_spec,
+            location,
+            bigo,
+            use_at,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        ) VALUES (
+            #{tenantId},
+            #{equipSysCd},
+            #{equipCd},
+            #{equipNm},
+            #{equipKind, jdbcType=VARCHAR},
+            #{purDate, jdbcType=VARCHAR},
+            #{purCust, jdbcType=VARCHAR},
+            #{makCust, jdbcType=VARCHAR},
+            #{equipSpec, jdbcType=VARCHAR},
+            #{location, jdbcType=VARCHAR},
+            #{bigo, jdbcType=VARCHAR},
+            #{useAt},
+            #{createdBy, jdbcType=VARCHAR},
+            CURRENT_TIMESTAMP,
+            #{updatedBy, jdbcType=VARCHAR},
+            CURRENT_TIMESTAMP
+        )
+        RETURNING equipment_id
+    </select>
+
+    <!-- 설비 수정 -->
+    <update id="EquipmentDAO.updateEquipment"
+            parameterType="map">
+        UPDATE tb_equipment_info
+        SET
+            equip_cd     = #{equipCd},
+            equip_nm     = #{equipNm},
+            equip_kind   = #{equipKind, jdbcType=VARCHAR},
+            pur_date     = #{purDate, jdbcType=VARCHAR},
+            pur_cust     = #{purCust, jdbcType=VARCHAR},
+            mak_cust     = #{makCust, jdbcType=VARCHAR},
+            equip_spec   = #{equipSpec, jdbcType=VARCHAR},
+            location     = #{location, jdbcType=VARCHAR},
+            bigo         = #{bigo, jdbcType=VARCHAR},
+            use_at       = #{useAt},
+            updated_by   = #{updatedBy, jdbcType=VARCHAR},
+            updated_at   = CURRENT_TIMESTAMP
+        WHERE equipment_id = #{equipmentId}
+          AND tenant_id    = #{tenantId}
+    </update>
+
+    <!-- 설비 삭제 -->
+    <delete id="EquipmentDAO.deleteEquipment"
+            parameterType="map">
+        DELETE FROM tb_equipment_info
+        WHERE equipment_id = #{equipmentId}
+          AND tenant_id    = #{tenantId}
+    </delete>
+
+</mapper>
