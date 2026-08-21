@@ -1,4 +1,5 @@
 import { apiClient } from '../api/apiClient';
+import { normalizePlatformTenantCode } from '../../shared/tenant/platformTenant';
 
 type ResultEnvelope<T> = {
   result?: T;
@@ -27,7 +28,7 @@ function normalizeMenuIds(menuIds: string[]): string[] {
   return Array.from(
     new Set(
       menuIds
-        .map((menuId) => menuId.trim())
+        .map((menuId) => menuId.trim().toUpperCase())
         .filter((menuId) => menuId.length > 0),
     ),
   );
@@ -43,7 +44,7 @@ export async function getPlatformRoleMenuMapping(
     {
       params: {
         roleCode: normalizedRoleCode,
-        tenantCode: tenantCode?.trim().toUpperCase(),
+        tenantCode: normalizePlatformTenantCode(tenantCode),
       },
     },
   );
@@ -66,7 +67,7 @@ export async function savePlatformRoleMenuMapping(payload: {
     { menuIds },
     {
       params: {
-        tenantCode: payload.tenantCode?.trim().toUpperCase(),
+        tenantCode: normalizePlatformTenantCode(payload.tenantCode),
       },
     },
   );
@@ -80,7 +81,7 @@ export async function savePlatformRoleMenuMapping(payload: {
 export async function listRoleMenuCandidatesByTenant(
   tenantCode: string,
 ): Promise<string[]> {
-  const normalizedTenantCode = tenantCode.trim().toUpperCase();
+  const normalizedTenantCode = normalizePlatformTenantCode(tenantCode);
   const { data } = await apiClient.get<
     ResultEnvelope<RoleMenuCandidatesResult>
   >('/v1/platform-admin/role-menu-candidates', {

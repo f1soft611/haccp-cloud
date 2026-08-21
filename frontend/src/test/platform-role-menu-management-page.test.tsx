@@ -116,4 +116,15 @@ describe('PlatformRoleMenuManagementPage', () => {
       '000001',
     );
   });
+
+  it('keeps the menu list visible when no tenant candidate list is returned', async () => {
+    listRoleMenuCandidatesByTenantMock.mockResolvedValueOnce([]);
+
+    renderPage();
+
+    expect(
+      await screen.findByRole('button', { name: '플랫폼 관리자' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('권한 관리')).toBeInTheDocument();
+  });
 });

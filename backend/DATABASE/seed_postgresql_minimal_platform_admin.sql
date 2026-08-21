@@ -108,22 +108,14 @@ ON CONFLICT (tenant_id, permission_code) DO UPDATE
 SET permission_nm = EXCLUDED.permission_nm,
     use_at = 'Y';
 
--- 4) Shared menu tree (delete and recreate the seed-owned menu rows)
-DELETE FROM tb_menu
-WHERE menu_code IN (
-    'MENU_PLATFORM_ROOT',
-    'MENU_DOCUMENT_ROOT',
-    'MENU_SYSTEM_ROOT',
-    'MENU_PLAN_MANAGEMENT',
-    'MENU_MENU_MANAGEMENT',
-    'MENU_AUTHORITY_MANAGEMENT',
-    'MENU_ROLE_MENU_MANAGEMENT',
-    'MENU_TENANT_MANAGEMENT',
-    'MENU_LOGIN_HISTORY',
-    'MENU_TENANT_USERS',
-    'MENU_TENANT_DEPARTMENTS',
-    'MENU_TENANT_DOCUMENTS',
-    'MENU_TENANT_HISTORY'
+-- 4) Shared menu tree (reset to the clean platform-admin catalog)
+DELETE FROM tb_role_menu_permission;
+DELETE FROM tb_menu;
+DELETE FROM tb_permission
+WHERE tenant_id = (
+    SELECT tenant_id
+    FROM tb_tenant
+    WHERE tenant_code = 'PLATFORM'
 );
 
 INSERT INTO tb_menu (

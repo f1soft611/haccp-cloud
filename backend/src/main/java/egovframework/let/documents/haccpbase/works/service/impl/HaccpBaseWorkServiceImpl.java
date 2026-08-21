@@ -35,17 +35,25 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
 
     @Override
     public List<HaccpBaseWorkVO> listWorks(String tenantCode, String active) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+
         HaccpBaseWorkSearchConditionVO condition = new HaccpBaseWorkSearchConditionVO();
-        condition.setTenantCode(normalizeTenantCode(tenantCode));
+        condition.setTenantId(tenantId);
+        condition.setTenantCode(normalizedTenantCode);
         condition.setActive(normalizeActive(active));
         return haccpBaseWorkDAO.selectWorkList(condition);
     }
 
     @Override
     public HaccpBaseWorkVO getWorkById(Long id, String tenantCode) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("id", id);
-        params.put("tenantCode", normalizeTenantCode(tenantCode));
+        params.put("tenantId", tenantId);
+        params.put("tenantCode", normalizedTenantCode);
 
         HaccpBaseWorkVO item = haccpBaseWorkDAO.selectWorkById(params);
         if (item == null) {
@@ -87,6 +95,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
 
         Map<String, Object> lookupParams = new HashMap<String, Object>();
         lookupParams.put("id", newId);
+        lookupParams.put("tenantId", tenantId);
         lookupParams.put("tenantCode", tenantCode);
         return haccpBaseWorkDAO.selectWorkById(lookupParams);
     }
@@ -123,6 +132,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
 
         Map<String, Object> lookupParams = new HashMap<String, Object>();
         lookupParams.put("id", id);
+        lookupParams.put("tenantId", tenantId);
         lookupParams.put("tenantCode", tenantCode);
         HaccpBaseWorkVO item = haccpBaseWorkDAO.selectWorkById(lookupParams);
         if (item == null) {

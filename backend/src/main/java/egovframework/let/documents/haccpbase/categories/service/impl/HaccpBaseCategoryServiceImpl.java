@@ -35,8 +35,12 @@ public class HaccpBaseCategoryServiceImpl extends EgovAbstractServiceImpl implem
      */
     @Override
     public List<HaccpBaseCategoryVO> listCategories(String tenantCode, String active) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+
         HaccpBaseCategorySearchConditionVO condition = new HaccpBaseCategorySearchConditionVO();
-        condition.setTenantCode(normalizeTenantCode(tenantCode));
+        condition.setTenantId(tenantId);
+        condition.setTenantCode(normalizedTenantCode);
         condition.setActive(normalizeActive(active));
         return haccpBaseCategoryDAO.selectCategoryList(condition);
     }
@@ -76,6 +80,7 @@ public class HaccpBaseCategoryServiceImpl extends EgovAbstractServiceImpl implem
 
         Map<String, Object> lookupParams = new HashMap<String, Object>();
         lookupParams.put("id", newId);
+        lookupParams.put("tenantId", tenantId);
         lookupParams.put("tenantCode", tenantCode);
         return haccpBaseCategoryDAO.selectCategoryById(lookupParams);
     }
@@ -106,6 +111,7 @@ public class HaccpBaseCategoryServiceImpl extends EgovAbstractServiceImpl implem
 
         Map<String, Object> lookupParams = new HashMap<String, Object>();
         lookupParams.put("id", id);
+        lookupParams.put("tenantId", tenantId);
         lookupParams.put("tenantCode", tenantCode);
         HaccpBaseCategoryVO item = haccpBaseCategoryDAO.selectCategoryById(lookupParams);
         if (item == null) {

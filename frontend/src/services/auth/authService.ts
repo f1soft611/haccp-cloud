@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { apiClient } from '../api/apiClient';
 import type { OnboardingStatus, UserRole } from '../../shared/store/authStore';
+import { normalizePlatformTenantCode } from '../../shared/tenant/platformTenant';
 
 export type LoginRequest = {
   userId: string;
@@ -187,14 +188,17 @@ function normalizeLoginResponse(
   data: LoginResponse | BackendLoginEnvelope,
 ): LoginResponse {
   if ('accessToken' in data && 'tenantCode' in data && 'userId' in data) {
-    return data;
+    return {
+      ...data,
+      tenantCode: normalizePlatformTenantCode(data.tenantCode),
+    };
   }
 
   const resultVO = data.resultVO ?? {};
   const userId = resultVO.id ?? '';
 
   return {
-    tenantCode: resultVO.factoryCode ?? '000001',
+    tenantCode: normalizePlatformTenantCode(resultVO.factoryCode),
     userId,
     displayName: resultVO.name?.trim() || undefined,
     email: resultVO.email?.trim() || undefined,

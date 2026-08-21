@@ -49,7 +49,9 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
     public List<RoleInfoVO> listRoles(String tenantCode) throws Exception {
         RoleInfoVO condition = new RoleInfoVO();
         if (hasText(tenantCode)) {
-            condition.setTenantCode(tenantCode.trim().toUpperCase());
+            String normalizedTenantCode = tenantCode.trim().toUpperCase();
+            condition.setTenantCode(normalizedTenantCode);
+            condition.setTenantId(planAccessService.resolveTenantIdByTenantCode(normalizedTenantCode));
         }
         return authorityDAO.selectRoleList(condition);
     }
@@ -67,7 +69,9 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
         condition.setPageSize(pageSize);
         condition.setSearchField(hasText(searchField) ? searchField.trim() : "");
         condition.setSearchKeyword(hasText(searchKeyword) ? searchKeyword.trim() : "");
-        condition.setTenantCode(hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "");
+        String normalizedTenantCode = hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "";
+        condition.setTenantCode(normalizedTenantCode);
+        condition.setTenantId(hasText(normalizedTenantCode) ? planAccessService.resolveTenantIdByTenantCode(normalizedTenantCode) : null);
         condition.setUseAt(hasText(useAt) ? useAt.trim().toUpperCase() : "all");
 
         PaginationInfo paginationInfo = new PaginationInfo();
@@ -98,7 +102,9 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
 
         payload.setRoleCode(toUpper(payload.getRoleCode()));
         payload.setUseAt("Y");
-        payload.setTenantCode(hasText(payload.getTenantCode()) ? toUpper(payload.getTenantCode()) : "PLATFORM");
+        String normalizedTenantCode = hasText(payload.getTenantCode()) ? toUpper(payload.getTenantCode()) : "PLATFORM";
+        payload.setTenantCode(normalizedTenantCode);
+        payload.setTenantId(planAccessService.resolveTenantIdByTenantCode(normalizedTenantCode));
         payload.setSystemRoleYn(hasText(payload.getSystemRoleYn()) ? toUpper(payload.getSystemRoleYn()) : "N");
 
         if (!hasText(payload.getFrstRegisterId())) {

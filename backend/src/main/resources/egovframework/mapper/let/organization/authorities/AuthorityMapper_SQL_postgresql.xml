@@ -72,7 +72,7 @@
                 ELSE 3
             END AS roleLevel,
             'Y' AS tenantScoped,
-            t.tenant_code AS tenantCode,
+            #{tenantCode} AS tenantCode,
             r.use_at AS useAt,
             COALESCE(r.is_system_role, 'N') AS systemRoleYn,
             CASE WHEN COALESCE(r.is_system_role, 'N') = 'Y' THEN TRUE ELSE FALSE END AS systemRole,
@@ -81,10 +81,9 @@
             r.updated_at AS lastUpdtPnttm,
             'SYSTEM' AS lastUpdusrId
         FROM tb_role r
-            INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
         WHERE 1=1
-        <if test="tenantCode != null and tenantCode != ''">
-            AND t.tenant_code = #{tenantCode}
+        <if test="tenantId != null">
+            AND r.tenant_id = #{tenantId}
         </if>
         ORDER BY roleLevel, roleCode
     </select>
@@ -102,7 +101,7 @@
                 ELSE 3
             END AS roleLevel,
             'Y' AS tenantScoped,
-            t.tenant_code AS tenantCode,
+            #{tenantCode} AS tenantCode,
             r.use_at AS useAt,
             COALESCE(r.is_system_role, 'N') AS systemRoleYn,
             CASE WHEN COALESCE(r.is_system_role, 'N') = 'Y' THEN TRUE ELSE FALSE END AS systemRole,
@@ -111,10 +110,9 @@
             r.updated_at AS lastUpdtPnttm,
             'SYSTEM' AS lastUpdusrId
         FROM tb_role r
-            INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
         WHERE 1=1
-        <if test="tenantCode != null and tenantCode != ''">
-            AND t.tenant_code = #{tenantCode}
+        <if test="tenantId != null">
+            AND r.tenant_id = #{tenantId}
         </if>
         <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
             AND r.use_at = #{useAt}
@@ -141,10 +139,9 @@
     <select id="AuthorityDAO.selectRolePagedCount" parameterType="egovframework.let.uss.auth.service.RoleInfoVO" resultType="int">
         SELECT COUNT(1)
         FROM tb_role r
-            INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
         WHERE 1=1
-        <if test="tenantCode != null and tenantCode != ''">
-            AND t.tenant_code = #{tenantCode}
+        <if test="tenantId != null">
+            AND r.tenant_id = #{tenantId}
         </if>
         <if test="useAt != null and useAt != '' and useAt != 'all' and useAt != 'ALL'">
             AND r.use_at = #{useAt}
@@ -177,7 +174,7 @@
                 ELSE 3
             END AS roleLevel,
             'Y' AS tenantScoped,
-            t.tenant_code AS tenantCode,
+            #{tenantCode} AS tenantCode,
             r.use_at AS useAt,
             COALESCE(r.is_system_role, 'N') AS systemRoleYn,
             CASE WHEN COALESCE(r.is_system_role, 'N') = 'Y' THEN TRUE ELSE FALSE END AS systemRole,
@@ -186,7 +183,6 @@
             r.updated_at AS lastUpdtPnttm,
             'SYSTEM' AS lastUpdusrId
         FROM tb_role r
-            INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
         WHERE r.role_id = #{value}
         LIMIT 1
     </select>
@@ -202,7 +198,7 @@
             created_at,
             updated_at
         ) VALUES (
-            (SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1),
+            #{tenantId},
             #{roleCode},
             #{roleNm},
             #{useAt},

@@ -21,7 +21,7 @@
             resultMap="departmentResult">
         SELECT
             d.department_id                     AS departmentId,
-            t.tenant_code                       AS tenantCode,
+            #{tenantCode}                       AS tenantCode,
             d.department_nm                     AS name,
             d.parent_department_id              AS parentId,
             pd.department_nm                    AS parentName,
@@ -32,11 +32,11 @@
                 WHERE cd.parent_department_id = d.department_id
             ) THEN TRUE ELSE FALSE END          AS hasChildren
         FROM tb_department d
-        JOIN tb_tenant t ON t.tenant_id = d.tenant_id
         LEFT JOIN tb_department pd ON pd.department_id = d.parent_department_id
-        WHERE d.tenant_id = (
-            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
-        )
+        WHERE 1 = 1
+        <if test="tenantId != null">
+            AND d.tenant_id = #{tenantId}
+        </if>
         <if test="name != null and name != ''">
             AND LOWER(d.department_nm) LIKE '%' || LOWER(#{name}) || '%'
         </if>
@@ -55,7 +55,7 @@
             resultMap="departmentResult">
         SELECT
             d.department_id                     AS departmentId,
-            t.tenant_code                       AS tenantCode,
+            #{tenantCode}                       AS tenantCode,
             d.department_nm                     AS name,
             d.parent_department_id              AS parentId,
             pd.department_nm                    AS parentName,
@@ -66,10 +66,9 @@
                 WHERE cd.parent_department_id = d.department_id
             ) THEN TRUE ELSE FALSE END          AS hasChildren
         FROM tb_department d
-        JOIN tb_tenant t ON t.tenant_id = d.tenant_id
         LEFT JOIN tb_department pd ON pd.department_id = d.parent_department_id
         WHERE d.department_id = #{departmentId}
-          AND t.tenant_code   = #{tenantCode}
+          AND d.tenant_id = #{tenantId}
     </select>
 
     <!-- 테넌트 ID 조회 -->

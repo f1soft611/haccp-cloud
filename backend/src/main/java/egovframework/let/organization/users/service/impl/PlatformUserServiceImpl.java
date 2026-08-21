@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.let.platform_admin.access.service.PlanAccessService;
+import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
 import egovframework.let.organization.users.domain.model.PlatformUserImageUpdateRequestVO;
 import egovframework.let.organization.users.domain.model.PlatformUserPasswordChangeRequestVO;
 import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
@@ -47,6 +48,7 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
     @Override
     public List<PlatformUserVO> listUsers(String tenantCode) throws Exception {
         PlatformUserSearchConditionVO condition = new PlatformUserSearchConditionVO();
+        condition.setTenantId(resolveTenantIdOrContext(tenantCode));
         condition.setTenantCode(normalizeTenantCode(tenantCode));
         return platformUserDAO.selectUserList(condition);
     }
@@ -58,6 +60,7 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         condition.setPageSize(pageSize);
         condition.setSearchKeyword(normalizeNullable(keyword));
         condition.setFilterActive(normalizeFilterActive(filterActive));
+        condition.setTenantId(resolveTenantIdOrContext(tenantCode));
         condition.setTenantCode(normalizeTenantCode(tenantCode));
 
         PaginationInfo paginationInfo = new PaginationInfo();
@@ -90,6 +93,8 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         }
 
         Map<String, Object> condition = new HashMap<String, Object>();
+        Long tenantId = resolveTenantIdOrContext(normalizedTenantCode);
+        condition.put("tenantId", tenantId);
         condition.put("tenantCode", normalizedTenantCode);
         condition.put("loginCode", normalizedLoginCode);
 
@@ -114,6 +119,8 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         }
 
         Map<String, Object> condition = new HashMap<String, Object>();
+        Long tenantId = resolveTenantIdOrContext(normalizedTenantCode);
+        condition.put("tenantId", tenantId);
         condition.put("tenantCode", normalizedTenantCode);
         condition.put("loginCode", normalizedLoginCode);
 
@@ -151,6 +158,8 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         }
 
         Map<String, Object> condition = new HashMap<String, Object>();
+        Long tenantId = resolveTenantIdOrContext(normalizedTenantCode);
+        condition.put("tenantId", tenantId);
         condition.put("tenantCode", normalizedTenantCode);
         condition.put("loginCode", normalizedLoginCode);
 
@@ -279,7 +288,10 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
     }
 
     private Long resolveTenantIdOrThrow(PlatformUserSaveRequestVO payload) throws Exception {
-        Long tenantId = platformUserDAO.selectTenantIdByCode(normalizeTenantCode(payload.getTenantCode()));
+        Long tenantId = resolveTenantIdOrContext(payload.getTenantCode());
+        if (tenantId == null) {
+            tenantId = platformUserDAO.selectTenantIdByCode(normalizeTenantCode(payload.getTenantCode()));
+        }
         if (tenantId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tenantCode를 확인할 수 없습니다.");
         }
@@ -461,6 +473,21 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
             return "all";
         }
         return filterActive.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private Long resolveTenantIdOrContext(String tenantCode) {
+        Long tenantId = TenantContextHolder.getTenantId();
+        if (tenantId != null) {
+            return tenantId;
+        }
+        if (!StringUtils.hasText(tenantCode)) {
+            return null;
+        }
+        try {
+            return platformUserDAO.selectTenantIdByCode(normalizeTenantCode(tenantCode));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private String normalizeNullable(String value) {

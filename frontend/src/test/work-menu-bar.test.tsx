@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -15,9 +16,84 @@ import { useAuthStore, type UserRole } from '../shared/store/authStore';
 import { APP_LABELS } from '../shared/constants/labels';
 
 const mockListAccessibleMenuPaths = vi.fn<() => Promise<string[]>>();
+const mockListAccessibleMenus = vi.fn();
+
+const accessibleMenuMetadata = [
+  {
+    menuId: 1,
+    parentMenuId: null,
+    menuCode: 'MENU_DASHBOARD_ROOT',
+    path: '',
+    menuNm: APP_LABELS.menu.dashboardGroup,
+  },
+  {
+    menuId: 2,
+    parentMenuId: 1,
+    menuCode: 'MENU_DASHBOARD',
+    path: '/dashboard',
+    menuNm: APP_LABELS.menu.dashboard,
+  },
+  {
+    menuId: 10,
+    parentMenuId: null,
+    menuCode: 'MENU_PLATFORM_ROOT',
+    path: '/platform',
+    menuNm: APP_LABELS.menu.platformGroup,
+  },
+  ...[
+    ['/platform/tenants', APP_LABELS.menu.platformFactoryManagement],
+    ['/platform/menus', APP_LABELS.menu.platformMenuManagement],
+    ['/platform/roles', APP_LABELS.menu.platformRoleManagement],
+    ['/platform/login-history', APP_LABELS.menu.loginHistory],
+  ].map(([path, menuNm], index) => ({
+    menuId: 11 + index,
+    parentMenuId: 10,
+    path,
+    menuNm,
+  })),
+  {
+    menuId: 20,
+    parentMenuId: null,
+    menuCode: 'MENU_DOCUMENT_ROOT',
+    path: '/documents',
+    menuNm: APP_LABELS.menu.documentGroup,
+  },
+  {
+    menuId: 21,
+    parentMenuId: 20,
+    path: '/documents',
+    menuNm: APP_LABELS.menu.documents,
+  },
+  {
+    menuId: 22,
+    parentMenuId: 20,
+    path: '/document-history',
+    menuNm: APP_LABELS.menu.history,
+  },
+  {
+    menuId: 30,
+    parentMenuId: null,
+    menuCode: 'MENU_SYSTEM_ROOT',
+    path: '/org/users',
+    menuNm: APP_LABELS.menu.systemGroup,
+  },
+  {
+    menuId: 31,
+    parentMenuId: 30,
+    path: '/org/users',
+    menuNm: APP_LABELS.menu.users,
+  },
+  {
+    menuId: 32,
+    parentMenuId: 30,
+    path: '/org/departments',
+    menuNm: APP_LABELS.menu.departments,
+  },
+];
 
 vi.mock('../services/platform-admin/platformUserMenuService', () => ({
   listAccessibleMenuPaths: () => mockListAccessibleMenuPaths(),
+  listAccessibleMenus: () => mockListAccessibleMenus(),
 }));
 
 const renderLayoutWithRole = (
@@ -34,8 +110,8 @@ const renderLayoutWithRole = (
       '/platform/roles',
       '/platform/role-menus',
       '/platform/login-history',
-      '/users',
-      '/departments',
+      '/org/users',
+      '/org/departments',
       '/documents',
       '/document-history',
     ],
@@ -46,6 +122,7 @@ const renderLayoutWithRole = (
   const menuPaths = accessiblePaths ?? defaultPathsByRole[role];
 
   mockListAccessibleMenuPaths.mockResolvedValue(menuPaths);
+  mockListAccessibleMenus.mockResolvedValue(accessibleMenuMetadata);
 
   act(() => {
     useAuthStore.setState({
@@ -147,6 +224,7 @@ const resetAuthStore = () => {
 describe('WorkMenuBar role-based visibility', () => {
   beforeEach(() => {
     mockListAccessibleMenuPaths.mockImplementation(async () => []);
+    mockListAccessibleMenus.mockImplementation(async () => []);
   });
 
   afterEach(() => {
@@ -272,7 +350,7 @@ describe('WorkMenuBar role-based visibility', () => {
     });
   });
 
-  it('redirects to a child route instead of a group root path', async () => {
+  it('keeps the current route when accessible paths include an organization group root', async () => {
     renderLayoutWithRole('TENANT_ADMIN', '/dashboard', [
       '/org',
       '/org/users',
@@ -280,10 +358,11 @@ describe('WorkMenuBar role-based visibility', () => {
     ]);
 
     await waitFor(() => {
-      expect(screen.getByTestId('org-users-stub')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard-stub')).toBeInTheDocument();
     });
 
-    expect(screen.queryByTestId('dashboard-stub')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('org-root-stub')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('org-users-stub')).not.toBeInTheDocument();
   });
 
   it('keeps /dashboard as the landing page even when menu paths start with /org', async () => {
@@ -304,7 +383,9 @@ describe('WorkMenuBar role-based visibility', () => {
   it('work-menu-bar has segmented nav variant marker', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
-    await screen.findByRole('button', { name: APP_LABELS.menu.dashboard });
+    await screen.findByRole('button', {
+      name: APP_LABELS.menu.dashboardGroup,
+    });
 
     expect(screen.getByTestId('work-menu-bar')).toHaveAttribute(
       'data-nav-variant',
@@ -323,6 +404,7 @@ describe('WorkMenuBar role-based visibility', () => {
     });
 
     mockListAccessibleMenuPaths.mockReturnValue(pendingMenuPaths);
+    mockListAccessibleMenus.mockResolvedValue(accessibleMenuMetadata);
 
     act(() => {
       useAuthStore.setState({
@@ -371,7 +453,9 @@ describe('WorkMenuBar role-based visibility', () => {
   it('group buttons expose aria-pressed state', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
-    const [systemBtn] = await screen.findAllByRole('button');
+    const [systemBtn] = await within(
+      screen.getByTestId('work-menu-bar'),
+    ).findAllByRole('button');
     expect(systemBtn).toHaveAttribute('aria-pressed');
   });
 });

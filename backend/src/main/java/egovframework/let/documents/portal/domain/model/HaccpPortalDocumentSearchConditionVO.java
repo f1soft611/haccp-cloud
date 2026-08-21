@@ -16,6 +16,9 @@ public class HaccpPortalDocumentSearchConditionVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Schema(description = "테넌트 ID")
+    private Long tenantId;
+
     @Schema(description = "테넌트 코드")
     private String tenantCode;
 }

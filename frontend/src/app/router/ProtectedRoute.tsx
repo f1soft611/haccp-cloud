@@ -24,6 +24,8 @@ export function ProtectedRoute({
   const isTenantFirstSetupRoute = location.pathname === '/tenant-first-setup';
   const effectiveOnboardingRequired =
     onboardingRequired || onboardingStatus !== 'COMPLETED';
+  const tenantOnboardingRequired =
+    isAuthenticated && role === 'TENANT_ADMIN' && effectiveOnboardingRequired;
   const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
 
   const accessibleMenuQuery = useQuery({
@@ -37,16 +39,13 @@ export function ProtectedRoute({
     return <Navigate to={resolveLoginPathWithLastDomain()} replace />;
   }
 
-  if (
-    role === 'TENANT_ADMIN' &&
-    effectiveOnboardingRequired &&
-    !isTenantFirstSetupRoute
-  ) {
+  if (tenantOnboardingRequired && !isTenantFirstSetupRoute) {
     void prefetchRouteByPath('/tenant-first-setup');
     return <Navigate to="/tenant-first-setup" replace />;
   }
 
   if (
+    isAuthenticated &&
     role === 'TENANT_ADMIN' &&
     !effectiveOnboardingRequired &&
     isTenantFirstSetupRoute

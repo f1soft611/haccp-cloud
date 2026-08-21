@@ -1,5 +1,8 @@
 package egovframework.com.config;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
@@ -8,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+
+import egovframework.let.platform_admin.tenants.context.TenantRoutingDataSource;
 
 /**
  * @ClassName : EgovConfigAppDatasource.java
@@ -89,8 +94,23 @@ public class EgovConfigAppDatasource {
 	/**
 	 * @return [DataSource 설정]
 	 */
+	@Bean(name = "platformDataSource")
+	public DataSource platformDataSource() {
+		return basicDataSource();
+	}
+
 	@Bean(name = {"dataSource", "egov.dataSource", "egovDataSource"})
 	public DataSource dataSource() {
-		return basicDataSource();
+		DataSource platformDataSource = platformDataSource();
+		TenantRoutingDataSource routingDataSource = new TenantRoutingDataSource();
+		routingDataSource.setDefaultTargetDataSource(platformDataSource);
+		routingDataSource.setPostgresJdbcUrl(url);
+		routingDataSource.setPostgresUsername(userName);
+		routingDataSource.setPostgresPassword(password);
+		Map<Object, Object> targetDataSources = new HashMap<>();
+		targetDataSources.put("PLATFORM", platformDataSource);
+		routingDataSource.setTargetDataSources(targetDataSources);
+		routingDataSource.afterPropertiesSet();
+		return routingDataSource;
 	}
 }

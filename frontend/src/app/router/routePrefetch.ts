@@ -66,7 +66,11 @@ function normalizePath(value: string): string {
 const routeLoaders: RouteLoader[] = [
   {
     key: 'login',
-    matches: (path) => path === '/login' || path.startsWith('/login/'),
+    matches: (path) =>
+      path === '/login' ||
+      path.startsWith('/login/') ||
+      path === '/admin' ||
+      path.startsWith('/admin/'),
     load: loadLoginPage,
   },
   {

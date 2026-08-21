@@ -38,7 +38,7 @@ async function fillStep1({
   fireEvent.change(
     screen.getByLabelText(new RegExp(APP_LABELS.field.planCode)),
     {
-      target: { value: 'BASIC' },
+      target: { value: 'A' },
     },
   );
 
@@ -104,7 +104,7 @@ describe('Platform onboarding page wizard', () => {
   beforeEach(() => {
     vi.spyOn(planAccessService, 'listPlanSummaries').mockResolvedValue([
       {
-        planCode: 'BASIC',
+        planCode: 'A',
         planName: '기본 플랜',
         planDesc: '',
         useAt: 'Y',
@@ -147,6 +147,31 @@ describe('Platform onboarding page wizard', () => {
     expect(
       await screen.findByText(APP_LABELS.message.onboardingBrnFormatError),
     ).toBeInTheDocument();
+  });
+
+  it('shows corporate number format error when the value is not 13 digits', async () => {
+    renderPage();
+    await fillStep1({ corporateNumber: '110111-123456' });
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
+    );
+    expect(
+      await screen.findByText(
+        APP_LABELS.message.onboardingCorporateNumberFormatError,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('formats corporate number like a 13-digit registration number', async () => {
+    renderPage();
+    const corporateInput = await screen.findByLabelText(
+      new RegExp(APP_LABELS.field.corporateNumber),
+    );
+    fireEvent.change(corporateInput, {
+      target: { value: '1101111234567' },
+    });
+
+    expect(corporateInput).toHaveValue('110111-1234567');
   });
 
   it('advances to step 2 with valid inputs', async () => {

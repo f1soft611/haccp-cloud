@@ -12,15 +12,20 @@ import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.mail.internet.MimeMessage;
 
+import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
 import egovframework.let.platform_admin.tenants.domain.model.TenantAuthTokenVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantOnboardingCompleteRequestVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVerificationResponseVO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantAuthTokenDAO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
+import egovframework.let.platform_admin.tenants.service.TenantDatabaseRegistryService;
 import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 import egovframework.let.platform_admin.tenants.service.exception.MailAuthenticationFailureException;
 import egovframework.let.platform_admin.tenants.service.exception.MailConfigurationException;
@@ -61,10 +66,16 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
     private TenantInfoDAO tenantInfoDAO;
 
     @Autowired
+    private TenantDatabaseRegistryService tenantDatabaseRegistryService;
+
+    @Autowired
     private PlatformUserDAO platformUserDAO;
 
     @Autowired
     private AuthorityService authorityService;
+
+    @Autowired(required = false)
+    private PlatformTransactionManager transactionManager;
 
     @Autowired(required = false)
     private JavaMailSender javaMailSender;
@@ -135,51 +146,64 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
     }
 
     private Long ensureBootstrapLoginAccount(String tenantCode, String adminEmail, String adminName) {
+        Map<String, Object> bootstrapInfo = ensureBootstrapLoginAccountWithCode(tenantCode, adminEmail, adminName);
+        return ((Number) bootstrapInfo.get("loginAccountId")).longValue();
+    }
+
+    private Map<String, Object> ensureBootstrapLoginAccountWithCode(String tenantCode, String adminEmail, String adminName) {
         Long tenantId = tenantInfoDAO.selectTenantIdByCode(tenantCode);
         if (tenantId == null) {
             throw new IllegalStateException("테넌트가 존재하지 않습니다. tenantCode=" + tenantCode);
         }
 
-        String baseLoginCode = buildBootstrapLoginCodeBase(adminEmail);
-        for (int attempt = 0; attempt < 10; attempt++) {
-            String loginCode = buildBootstrapLoginCodeCandidate(baseLoginCode, attempt);
-            Map<String, Object> condition = new HashMap<String, Object>();
-            condition.put("tenantId", tenantId);
-            condition.put("loginCode", loginCode);
+        return runWithTenantContext(tenantId, tenantCode, () -> {
+            String baseLoginCode = buildBootstrapLoginCodeBase(adminEmail);
+            for (int attempt = 0; attempt < 10; attempt++) {
+                String loginCode = buildBootstrapLoginCodeCandidate(baseLoginCode, attempt);
+                Map<String, Object> condition = new HashMap<String, Object>();
+                condition.put("tenantId", tenantId);
+                condition.put("loginCode", loginCode);
 
-            Long existingLoginId;
-            try {
-                existingLoginId = platformUserDAO.selectLoginIdByLoginCode(condition);
-            } catch (Exception ex) {
-                throw new IllegalStateException("로그인 계정 조회 중 오류가 발생했습니다.", ex);
-            }
-            if (existingLoginId != null) {
-                return existingLoginId;
-            }
-
-            Map<String, Object> loginPayload = new HashMap<String, Object>();
-            loginPayload.put("tenantId", tenantId);
-            loginPayload.put("loginCode", loginCode);
-            loginPayload.put("passwordHash", buildBootstrapPasswordHash(loginCode));
-            // 인증 완료 전에는 로그인 불가 상태로 계정을 미리 생성한다.
-            loginPayload.put("useAt", "N");
-
-            try {
-                platformUserDAO.insertLoginAccount(loginPayload);
-                Long createdLoginId = platformUserDAO.selectLoginIdByLoginCode(condition);
-                if (createdLoginId != null) {
-                    ensureBootstrapAdminUser(tenantId, createdLoginId, adminEmail, adminName);
-                    return createdLoginId;
+                Long existingLoginId;
+                try {
+                    existingLoginId = platformUserDAO.selectLoginIdByLoginCode(condition);
+                } catch (Exception ex) {
+                    throw new IllegalStateException("로그인 계정 조회 중 오류가 발생했습니다.", ex);
                 }
-            } catch (Exception ex) {
-                log.warn("부트스트랩 로그인 계정 생성 충돌: tenantCode={}, loginCode={}, reason={}",
-                        tenantCode,
-                        loginCode,
-                        ex.getMessage());
-            }
-        }
+                if (existingLoginId != null) {
+                    Map<String, Object> result = new HashMap<String, Object>();
+                    result.put("loginAccountId", existingLoginId);
+                    result.put("loginCode", loginCode);
+                    return result;
+                }
 
-        throw new IllegalStateException("로그인 계정 정보를 찾을 수 없습니다. tenantCode=" + tenantCode);
+                Map<String, Object> loginPayload = new HashMap<String, Object>();
+                loginPayload.put("tenantId", tenantId);
+                loginPayload.put("loginCode", loginCode);
+                loginPayload.put("passwordHash", buildBootstrapPasswordHash(loginCode));
+                // 인증 완료 전에는 로그인 불가 상태로 계정을 미리 생성한다.
+                loginPayload.put("useAt", "N");
+
+                try {
+                    platformUserDAO.insertLoginAccount(loginPayload);
+                    Long createdLoginId = platformUserDAO.selectLoginIdByLoginCode(condition);
+                    if (createdLoginId != null) {
+                        ensureBootstrapAdminUser(tenantId, createdLoginId, adminEmail, adminName);
+                        Map<String, Object> result = new HashMap<String, Object>();
+                        result.put("loginAccountId", createdLoginId);
+                        result.put("loginCode", loginCode);
+                        return result;
+                    }
+                } catch (Exception ex) {
+                    log.warn("부트스트랩 로그인 계정 생성 충돌: tenantCode={}, loginCode={}, reason={}",
+                            tenantCode,
+                            loginCode,
+                            ex.getMessage());
+                }
+            }
+
+            throw new IllegalStateException("로그인 계정 정보를 찾을 수 없습니다. tenantCode=" + tenantCode);
+        });
     }
 
     private void ensureBootstrapAdminUser(Long tenantId, Long loginAccountId, String adminEmail, String adminName) {
@@ -286,13 +310,30 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             throw new IllegalStateException("유효하지 않은 토큰입니다");
         }
 
+        tenantInfoDAO.updateOnboardingStatusByTenantCode(tokenVO.getTenantCode(), "EMAIL_VERIFIED");
         if (tokenVO.getLoginAccountId() != null) {
             tenantInfoDAO.updateLoginAccountOnboardingStatus(tokenVO.getLoginAccountId(), "EMAIL_VERIFIED");
         }
 
         String tenantNm = tenantInfoDAO.selectTenantNameByCode(tokenVO.getTenantCode());
-        String adminEmail = tenantInfoDAO.selectAdminEmailByLoginAccountId(tokenVO.getLoginAccountId());
-        String adminLoginCode = tenantInfoDAO.selectLoginCodeByLoginAccountId(tokenVO.getLoginAccountId());
+        String adminEmail = null;
+        String adminLoginCode = null;
+        if (tokenVO.getLoginAccountId() != null && tokenVO.getTenantId() != null) {
+            final Long tenantId = tokenVO.getTenantId();
+            final Long loginAccountId = tokenVO.getLoginAccountId();
+            final String tenantCode = tokenVO.getTenantCode();
+            Map<String, String> loginIdentity = runWithTenantContext(tenantId, tenantCode, () -> {
+                Map<String, String> values = new HashMap<String, String>();
+                values.put("adminEmail", tenantInfoDAO.selectAdminEmailByLoginAccountId(loginAccountId));
+                values.put("adminLoginCode", tenantInfoDAO.selectLoginCodeByLoginAccountId(loginAccountId));
+                return values;
+            });
+            adminEmail = loginIdentity.get("adminEmail");
+            adminLoginCode = loginIdentity.get("adminLoginCode");
+        }
+        if (isBlank(adminEmail)) {
+            adminEmail = tenantInfoDAO.selectAdminEmailByTenantCode(tokenVO.getTenantCode());
+        }
 
         TenantVerificationResponseVO responseVO = TenantVerificationResponseVO.builder()
                 .tenantCode(tokenVO.getTenantCode())
@@ -329,6 +370,15 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         String loginDomain = normalizeDomain(requestVO.getLoginDomain());
         String logoImage = normalizeLogoImage(requestVO.getLogoImage());
 
+        Long tenantId = tenantInfoDAO.selectTenantIdByCode(tenantCode);
+        if (tenantId == null) {
+            throw new IllegalStateException("테넌트가 존재하지 않습니다");
+        }
+
+        if (!isBlank(loginDomain)) {
+            validateDomainAvailability(loginDomain, tenantId);
+        }
+
         TenantAuthTokenVO tokenVO = tenantAuthTokenDAO.selectTokenByValue(authToken);
         if (tokenVO == null) {
             throw new IllegalStateException("토큰이 존재하지 않습니다");
@@ -347,41 +397,43 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             throw new IllegalStateException("로그인 계정이 존재하지 않습니다");
         }
 
-        Long tenantId = tenantInfoDAO.selectTenantIdByCode(tenantCode);
-        if (tenantId == null) {
-            throw new IllegalStateException("테넌트가 존재하지 않습니다");
-        }
+        Long[] loginAccountRef = { loginAccountId };
 
-        if (!isBlank(loginDomain)) {
-            validateDomainAvailability(loginDomain, tenantId);
-        }
+        runWithTenantContext(tenantId, tenantCode, () -> {
+            String loginCode = tenantInfoDAO.selectLoginCodeByLoginAccountId(loginAccountRef[0]);
+            if (isBlank(loginCode)) {
+                String adminEmail = tenantInfoDAO.selectAdminEmailByTenantCode(tenantCode);
+                String tenantNm = tenantInfoDAO.selectTenantNameByCode(tenantCode);
+                Map<String, Object> bootstrapInfo = ensureBootstrapLoginAccountWithCode(tenantCode, adminEmail, tenantNm);
+                loginAccountRef[0] = ((Number) bootstrapInfo.get("loginAccountId")).longValue();
+                loginCode = (String) bootstrapInfo.get("loginCode");
+            }
+            if (isBlank(loginCode)) {
+                throw new IllegalStateException("로그인 계정 정보를 찾을 수 없습니다");
+            }
 
-        String loginCode = tenantInfoDAO.selectLoginCodeByLoginAccountId(loginAccountId);
-        if (isBlank(loginCode)) {
-            throw new IllegalStateException("로그인 계정 정보를 찾을 수 없습니다");
-        }
+            String encodedPassword;
+            try {
+                encodedPassword = EgovFileScrty.encryptPassword(password, loginCode);
+            } catch (Exception e) {
+                throw new IllegalStateException("비밀번호 암호화에 실패했습니다", e);
+            }
+            int updatedLoginAccountCount = tenantInfoDAO.updateLoginAccountPasswordAndActivate(
+                    loginAccountRef[0],
+                    encodedPassword,
+                "SHA-512",
+                    "Y",
+                    "FIRST_SETUP_COMPLETED");
+            if (updatedLoginAccountCount <= 0) {
+                throw new IllegalStateException("로그인 계정이 존재하지 않습니다");
+            }
 
-        String encodedPassword;
-        try {
-            encodedPassword = EgovFileScrty.encryptPassword(password, loginCode);
-        } catch (Exception e) {
-            throw new IllegalStateException("비밀번호 암호화에 실패했습니다", e);
-        }
-        int updatedLoginAccountCount = tenantInfoDAO.updateLoginAccountPasswordAndActivate(
-                loginAccountId,
-                encodedPassword,
-            "SHA-512",
-                "Y",
-                "FIRST_SETUP_COMPLETED");
-        if (updatedLoginAccountCount <= 0) {
-            throw new IllegalStateException("로그인 계정이 존재하지 않습니다");
-        }
+            provisionTenantAuthorityForOnboarding(tenantCode, tenantId, loginAccountRef[0]);
 
-        provisionTenantAuthorityForOnboarding(tenantCode, tenantId, loginAccountId);
-
-        if (requestVO.getPhoneNumber() != null) {
-            tenantInfoDAO.updateUserMobileNoByLoginAccountId(loginAccountId, requestVO.getPhoneNumber());
-        }
+            if (requestVO.getPhoneNumber() != null) {
+                tenantInfoDAO.updateUserMobileNoByLoginAccountId(loginAccountRef[0], requestVO.getPhoneNumber());
+            }
+        });
 
         if (!isBlank(loginDomain)) {
             tenantInfoDAO.demotePrimaryDomainByTenantId(tenantId);
@@ -396,6 +448,8 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         }
 
         tenantInfoDAO.updateOnboardingStatusByTenantCode(tenantCode, "ACTIVE");
+
+        loginAccountId = loginAccountRef[0];
 
         tenantAuthTokenDAO.markTokenAsUsed(authToken);
 
@@ -413,6 +467,9 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         replaceLoginAccountRole(loginAccountId, tenantAdminRoleId);
 
         List<String> allowedMenuCodes = resolveAllowedMenuCodesByPlan(tenantCode);
+        if (allowedMenuCodes == null || allowedMenuCodes.isEmpty()) {
+            allowedMenuCodes = new ArrayList<String>();
+        }
         replaceRoleMenusByCode("TENANT_ADMIN", tenantCode, allowedMenuCodes);
         replaceRoleMenusByCode("TENANT_USER", tenantCode, new ArrayList<String>());
     }
@@ -518,6 +575,58 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         } catch (Exception ex) {
             throw new IllegalStateException("관리자 권한 매핑 중 오류가 발생했습니다.", ex);
         }
+    }
+
+    private <T> T runWithTenantContext(Long tenantId, String tenantCode, TenantContextAction<T> action) {
+        Long previousTenantId = TenantContextHolder.getTenantId();
+        String previousTenantCode = TenantContextHolder.getTenantCode();
+        String previousDbKey = TenantContextHolder.getDbKey();
+
+        try {
+            TenantContextHolder.setTenantId(tenantId);
+            if (!isBlank(tenantCode)) {
+                TenantContextHolder.setTenantCode(tenantCode);
+            }
+            TenantContextHolder.setDbKey(tenantDatabaseRegistryService.resolveDbKeyByTenantId(tenantId));
+            return executeInTenantTransaction(action);
+        } finally {
+            if (previousTenantId != null || previousTenantCode != null || previousDbKey != null) {
+                TenantContextHolder.clear();
+                if (previousTenantId != null) {
+                    TenantContextHolder.setTenantId(previousTenantId);
+                }
+                if (!isBlank(previousTenantCode)) {
+                    TenantContextHolder.setTenantCode(previousTenantCode);
+                }
+                if (!isBlank(previousDbKey)) {
+                    TenantContextHolder.setDbKey(previousDbKey);
+                }
+            } else {
+                TenantContextHolder.clear();
+            }
+        }
+    }
+
+    private void runWithTenantContext(Long tenantId, String tenantCode, Runnable action) {
+        runWithTenantContext(tenantId, tenantCode, () -> {
+            action.run();
+            return null;
+        });
+    }
+
+    private <T> T executeInTenantTransaction(TenantContextAction<T> action) {
+        if (transactionManager == null) {
+            return action.execute();
+        }
+
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        return transactionTemplate.execute(status -> action.execute());
+    }
+
+    @FunctionalInterface
+    private interface TenantContextAction<T> {
+        T execute();
     }
 
     private List<String> resolveAllowedMenuCodesByPlan(String tenantCode) {

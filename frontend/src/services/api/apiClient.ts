@@ -83,9 +83,14 @@ apiClient.interceptors.response.use(
 
     if (status === 401 && originalRequest && !originalRequest._retry) {
       if (!isAuthEndpoint) {
+        const authState = useAuthStore.getState();
+        if (!authState.isAuthenticated) {
+          return Promise.reject(error);
+        }
+
         originalRequest._retry = true;
 
-        const { refreshToken, updateAccessToken } = useAuthStore.getState();
+        const { refreshToken, updateAccessToken } = authState;
 
         if (refreshToken) {
           try {
@@ -103,14 +108,23 @@ apiClient.interceptors.response.use(
               return apiClient.request(originalRequest);
             }
           } catch {
-            useAuthStore.getState().logout();
+            const nextAuthState = useAuthStore.getState();
+            if (nextAuthState.isAuthenticated) {
+              nextAuthState.logout();
+            }
           }
         } else {
-          useAuthStore.getState().logout();
+          const nextAuthState = useAuthStore.getState();
+          if (nextAuthState.isAuthenticated) {
+            nextAuthState.logout();
+          }
         }
       }
     } else if (status === 401) {
-      useAuthStore.getState().logout();
+      const authState = useAuthStore.getState();
+      if (authState.isAuthenticated) {
+        authState.logout();
+      }
     }
 
     return Promise.reject(error);

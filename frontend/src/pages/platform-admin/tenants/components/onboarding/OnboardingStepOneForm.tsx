@@ -100,6 +100,7 @@ export function OnboardingStepOneForm({
               />
               <TextField
                 label={APP_LABELS.field.corporateNumber}
+                placeholder="000000-0000000"
                 value={form.corporateNumber}
                 onChange={(e) => onCorporateNumberChange(e.target.value)}
                 error={corporateNumberError}
@@ -109,6 +110,7 @@ export function OnboardingStepOneForm({
                     : '미입력 가능 (숫자 13자리)'
                 }
                 fullWidth
+                inputProps={{ maxLength: 14 }}
               />
             </Stack>
             <Stack direction="row" spacing={2}>

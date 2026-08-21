@@ -95,4 +95,5 @@ class AuthorityServiceImplTest {
         verify(authorityDAO).upsertPermissionType(10L, "PERM_READ", "조회");
         verify(authorityDAO).upsertPermissionType(10L, "PERM_WRITE", "등록/수정");
     }
+
 }

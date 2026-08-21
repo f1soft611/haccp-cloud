@@ -25,6 +25,8 @@ import egovframework.com.jwt.EgovJwtTokenUtil;
 import egovframework.let.uat.uia.service.EgovLoginService;
 import egovframework.let.platform_admin.loginhistory.domain.model.LoginHistory;
 import egovframework.let.platform_admin.loginhistory.service.LoginHistoryService;
+import egovframework.let.platform_admin.tenants.context.PlatformTenantCodes;
+import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -110,15 +112,10 @@ public class EgovLoginApiController {
 		LoginVO loginResultVO = loginService.actionLogin(loginVO);
 
 		// 로그인 이력 엔티티 생성
-		LoginHistory loginHistory = new LoginHistory();
-		loginHistory.setTenantCode(loginVO.getTenantCode());
-		loginHistory.setUserId(loginVO.getId());
-		loginHistory.setRoleCode(loginVO.getRoleCode());
-		loginHistory.setLoginIp(clientIp);
-		loginHistory.setLoginType("SESSION");
-		loginHistory.setUserAgent(userAgent);
+		LoginHistory loginHistory = createLoginHistory(loginVO, loginResultVO, clientIp, userAgent, "SESSION");
 
 		if (loginResultVO != null && loginResultVO.getId() != null && !"".equals(loginResultVO.getId())) {
+			loginHistory.setTenantId(loginResultVO.getTenantId() != null ? loginResultVO.getTenantId() : loginHistory.getTenantId());
 			loginHistory.setTenantCode(loginResultVO.getTenantCode());
 			loginHistory.setRoleCode(loginResultVO.getRoleCode());
 			if (Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN")) {
@@ -181,15 +178,10 @@ public class EgovLoginApiController {
 		LoginVO loginResultVO = loginService.actionLogin(loginVO);
 
 		// 2. 로그인 이력 저장
-		LoginHistory loginHistory = new LoginHistory();
-		loginHistory.setTenantCode(loginVO.getTenantCode());
-		loginHistory.setUserId(loginVO.getId());
-		loginHistory.setRoleCode(loginVO.getRoleCode());
-		loginHistory.setLoginIp(clientIp);
-		loginHistory.setLoginType("JWT");
-		loginHistory.setUserAgent(userAgent);
+		LoginHistory loginHistory = createLoginHistory(loginVO, loginResultVO, clientIp, userAgent, "JWT");
 		
 		if (loginResultVO != null && loginResultVO.getId() != null && !loginResultVO.getId().equals("")) {
+			loginHistory.setTenantId(loginResultVO.getTenantId() != null ? loginResultVO.getTenantId() : loginHistory.getTenantId());
 			loginHistory.setTenantCode(loginResultVO.getTenantCode());
 			loginHistory.setRoleCode(loginResultVO.getRoleCode());
 			if(Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN")) {//로그인 결과에서 역할코드값에 따른 권한부여
@@ -270,13 +262,7 @@ public class EgovLoginApiController {
 
 		LoginVO loginResultVO = loginService.actionLogin(loginVO);
 
-		LoginHistory loginHistory = new LoginHistory();
-		loginHistory.setTenantCode(loginVO.getTenantCode());
-		loginHistory.setUserId(loginVO.getId());
-		loginHistory.setRoleCode(loginVO.getRoleCode());
-		loginHistory.setLoginIp(clientIp);
-		loginHistory.setLoginType("JWT_ADMIN");
-		loginHistory.setUserAgent(userAgent);
+		LoginHistory loginHistory = createLoginHistory(loginVO, loginResultVO, clientIp, userAgent, "JWT_ADMIN");
 
 		boolean isValidLogin = loginResultVO != null
 				&& loginResultVO.getId() != null
@@ -284,6 +270,8 @@ public class EgovLoginApiController {
 		boolean isPlatformAdmin = isValidLogin && Objects.equals(loginResultVO.getRoleCode(), "PLATFORM_ADMIN");
 
 		if (isPlatformAdmin) {
+			loginResultVO.setTenantCode(PlatformTenantCodes.CANONICAL);
+			loginHistory.setTenantId(loginResultVO.getTenantId() != null ? loginResultVO.getTenantId() : loginHistory.getTenantId());
 			if (StringUtils.hasText(loginResultVO.getTenantCode())) {
 				loginHistory.setTenantCode(loginResultVO.getTenantCode());
 			}
@@ -458,6 +446,44 @@ public class EgovLoginApiController {
 	 * @param request
 	 * @return clientIp
 	 */
+	private LoginHistory createLoginHistory(LoginVO requestVO, LoginVO loginResultVO, String clientIp, String userAgent, String loginType) {
+		LoginHistory loginHistory = new LoginHistory();
+
+		Long tenantId = loginResultVO != null ? loginResultVO.getTenantId() : null;
+		if (tenantId == null && requestVO != null) {
+			tenantId = requestVO.getTenantId();
+		}
+		if (tenantId == null) {
+			tenantId = TenantContextHolder.getTenantId();
+		}
+
+		String tenantCode = loginResultVO != null ? loginResultVO.getTenantCode() : null;
+		if (!StringUtils.hasText(tenantCode) && requestVO != null) {
+			tenantCode = requestVO.getTenantCode();
+		}
+		if (!StringUtils.hasText(tenantCode)) {
+			tenantCode = TenantContextHolder.getTenantCode();
+		}
+
+		String userId = requestVO != null ? requestVO.getId() : null;
+		if (!StringUtils.hasText(userId) && loginResultVO != null) {
+			userId = loginResultVO.getId();
+		}
+		String roleCode = loginResultVO != null ? loginResultVO.getRoleCode() : null;
+		if (!StringUtils.hasText(roleCode) && requestVO != null) {
+			roleCode = requestVO.getRoleCode();
+		}
+
+		loginHistory.setTenantId(tenantId);
+		loginHistory.setTenantCode(tenantCode);
+		loginHistory.setUserId(userId);
+		loginHistory.setRoleCode(roleCode);
+		loginHistory.setLoginIp(clientIp);
+		loginHistory.setLoginType(loginType);
+		loginHistory.setUserAgent(userAgent);
+		return loginHistory;
+	}
+
 	private String getClientIp(HttpServletRequest request) {
 		String ip = request.getHeader("X-Forwarded-For");
 		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
