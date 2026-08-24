@@ -2,6 +2,7 @@ package egovframework.let.platform_admin.tenants.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -466,11 +467,11 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         ensureTenantAdminUser(tenantId, loginAccountId, adminEmail, tenantNm);
         replaceLoginAccountRole(loginAccountId, tenantAdminRoleId);
 
-        List<String> allowedMenuCodes = resolveAllowedMenuCodesByPlan(tenantCode);
-        if (allowedMenuCodes == null || allowedMenuCodes.isEmpty()) {
-            allowedMenuCodes = new ArrayList<String>();
+        List<String> tenantMenuCodes = resolveTenantMenuCodes(tenantCode);
+        if (tenantMenuCodes == null || tenantMenuCodes.isEmpty()) {
+            tenantMenuCodes = resolveAllowedMenuCodesByPlan(tenantCode);
         }
-        replaceRoleMenusByCode("TENANT_ADMIN", tenantCode, allowedMenuCodes);
+        replaceRoleMenusByCode("TENANT_ADMIN", tenantCode, tenantMenuCodes);
         replaceRoleMenusByCode("TENANT_USER", tenantCode, new ArrayList<String>());
     }
 
@@ -481,6 +482,7 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         }
 
         RoleInfoVO payload = new RoleInfoVO();
+        payload.setTenantId(tenantId);
         payload.setTenantCode(tenantCode);
         payload.setRoleCode(roleCode);
         payload.setRoleNm(roleName);
@@ -506,6 +508,9 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         Map<String, Object> condition = new HashMap<String, Object>();
         condition.put("tenantId", tenantId);
         condition.put("roleCode", roleCode);
+        if (!isBlank(roleCode)) {
+            condition.put("tenantCode", TenantContextHolder.getTenantCode());
+        }
         try {
             return platformUserDAO.selectRoleIdByCode(condition);
         } catch (Exception ex) {
@@ -634,6 +639,16 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
             return authorityService.listAllowedMenuCodesByTenantPlan(tenantCode);
         } catch (Exception ex) {
             throw new IllegalStateException("플랜별 메뉴 조회 중 오류가 발생했습니다.", ex);
+        }
+    }
+
+    private List<String> resolveTenantMenuCodes(String tenantCode) {
+        try {
+            List<String> menuCodes = authorityService.listRoleMenuCodes(tenantCode, "TENANT_ADMIN");
+            return menuCodes == null ? Collections.emptyList() : menuCodes;
+        } catch (Exception ex) {
+            log.warn("테넌트 메뉴 조회 실패, 플랜 허용 메뉴로 fallback 합니다. tenantCode={}", tenantCode, ex);
+            return Collections.emptyList();
         }
     }
 

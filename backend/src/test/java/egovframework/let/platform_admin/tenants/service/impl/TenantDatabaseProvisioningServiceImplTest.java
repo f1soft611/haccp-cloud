@@ -28,11 +28,14 @@ class TenantDatabaseProvisioningServiceImplTest {
         assertEquals(Integer.valueOf(5433), ReflectionTestUtils.getField(connection, "port"));
 
         Method normalizeMenuCodes = TenantDatabaseProvisioningServiceImpl.class
-            .getDeclaredMethod("normalizeMenuCodes", java.util.List.class);
+            .getDeclaredMethod("normalizeMenuCodes", java.util.List.class, java.util.List.class);
         normalizeMenuCodes.setAccessible(true);
         assertEquals(
             "MENU_A,MENU_B",
-            normalizeMenuCodes.invoke(service, Arrays.asList(" menu_a ", "MENU_B", "MENU_A")));
+            normalizeMenuCodes.invoke(
+                    service,
+                    Arrays.asList(" menu_a ", "MENU_B", "MENU_A"),
+                    java.util.Collections.emptyList()));
     }
 
     @Test
@@ -53,5 +56,26 @@ class TenantDatabaseProvisioningServiceImplTest {
         assertEquals(
                 "jdbc:postgresql://218.155.74.34:5433/postgres",
                 resolveJdbcUrl.invoke(service, "postgres"));
+    }
+
+    @Test
+    void resolvesFallbackMenuCodesWhenPlanMenuCatalogIsEmpty() throws Exception {
+        TenantDatabaseProvisioningServiceImpl service = new TenantDatabaseProvisioningServiceImpl();
+
+        Method resolveFallbackMenuCodes = TenantDatabaseProvisioningServiceImpl.class
+                .getDeclaredMethod("resolveFallbackMenuCodes", String.class);
+        resolveFallbackMenuCodes.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        java.util.List<String> planMenuCodes =
+                (java.util.List<String>) resolveFallbackMenuCodes.invoke(service, "A");
+
+        assertEquals(
+                Arrays.asList(
+                        "MENU_TENANT_DASHBOARD",
+                        "MENU_TENANT_USERS",
+                        "MENU_TENANT_DEPARTMENTS",
+                        "MENU_TENANT_HISTORY"),
+                planMenuCodes);
     }
 }

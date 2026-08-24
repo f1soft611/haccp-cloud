@@ -54,3 +54,11 @@ Thumbs.db
 frontend/.env.production
 backend/src/main/resources/application-prod.properties
 backend/.minio/*
+Tmp*.java
+debug_db_check.py
+tmp_check_db.py
+backend/CheckTenant37.java
+backend/tenant37_check.out
+backend/tenant37_check.sql
+backend/logs/2026-08/app-2026-08-24-16-1.log.gz
+backend/test-planaccess.log

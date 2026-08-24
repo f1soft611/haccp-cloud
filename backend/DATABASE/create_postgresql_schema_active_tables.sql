@@ -213,6 +213,25 @@ CREATE TABLE IF NOT EXISTS tb_schedulerconfig (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS tb_scheduler_history (
+    history_id BIGSERIAL PRIMARY KEY,
+    scheduler_id BIGINT NOT NULL,
+    scheduler_name VARCHAR(100) NOT NULL,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'RUNNING',
+    error_message TEXT,
+    error_stack_trace TEXT,
+    execution_time_ms BIGINT,
+    retry_count INT NOT NULL DEFAULT 0,
+    reg_dt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (scheduler_id) REFERENCES tb_schedulerconfig(scheduler_id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_scheduler_history_scheduler_id ON tb_scheduler_history(scheduler_id);
+CREATE INDEX IF NOT EXISTS idx_scheduler_history_status ON tb_scheduler_history(status);
+CREATE INDEX IF NOT EXISTS idx_scheduler_history_reg_dt ON tb_scheduler_history(reg_dt DESC);
+
 -- Create Indexes for Performance
 CREATE INDEX IF NOT EXISTS idx_tenant_department ON tb_department(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_parent_department ON tb_department(parent_department_id);

@@ -310,8 +310,21 @@
     <select id="PlatformUserDAO.selectRoleIdByCode" parameterType="map" resultType="long">
         SELECT role_id
         FROM tb_role
-        WHERE tenant_id = #{tenantId}
-          AND role_code = #{roleCode}
+        WHERE role_code = #{roleCode}
+          <choose>
+              <when test="tenantCode != null and tenantCode != ''">
+                  AND tenant_id = (
+                      SELECT tenant_id
+                      FROM tb_tenant
+                      WHERE tenant_code = #{tenantCode}
+                      LIMIT 1
+                  )
+              </when>
+              <otherwise>
+                  AND tenant_id = #{tenantId}
+              </otherwise>
+          </choose>
+        ORDER BY role_id
         LIMIT 1
     </select>
 

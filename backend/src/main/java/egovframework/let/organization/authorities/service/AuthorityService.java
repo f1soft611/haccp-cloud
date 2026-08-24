@@ -92,6 +92,8 @@ public interface AuthorityService {
      */
     Map<String, Object> replaceRoleMenus(String roleCode, String tenantCode, AuthorityMenuSaveRequestVO payload) throws Exception;
 
+    List<String> listRoleMenuCodes(String tenantCode, String roleCode) throws Exception;
+
     List<String> listAllowedMenuCodesByTenantPlan(String tenantCode) throws Exception;
 
     /**

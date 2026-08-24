@@ -12,11 +12,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import egovframework.let.platform_admin.access.domain.repository.CentralPlanAccessDAO;
 import egovframework.let.platform_admin.access.domain.repository.PlanAccessDAO;
 import egovframework.let.platform_admin.access.domain.model.PlanFeatureItemVO;
 import egovframework.let.platform_admin.access.domain.model.PlanFeatureStatusVO;
 import egovframework.let.platform_admin.access.domain.model.PlanSummaryVO;
 import egovframework.let.platform_admin.access.service.PlanAccessService;
+import egovframework.let.platform_admin.tenants.context.PlatformTenantCodes;
+import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,6 +49,7 @@ public class PlanAccessServiceImpl implements PlanAccessService {
     private static final String ENABLED = "Y";
 
     private final PlanAccessDAO planAccessDAO;
+    private final CentralPlanAccessDAO centralPlanAccessDAO;
 
     @Override
     public boolean isFeatureEnabled(Long tenantId, String featureCode) {
@@ -58,7 +62,7 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            String enabledAt = planAccessDAO.selectLatestFeatureEnabledAt(
+            String enabledAt = centralPlanAccessDAO.selectLatestFeatureEnabledAt(
                     tenantId,
                     ACTIVE_STATUS,
                     featureCode.trim());
@@ -90,7 +94,7 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            Long limitValue = planAccessDAO.selectLatestFeatureLimitValue(
+            Long limitValue = centralPlanAccessDAO.selectLatestFeatureLimitValue(
                     tenantId,
                     ACTIVE_STATUS,
                     featureCode.trim(),
@@ -124,14 +128,22 @@ public class PlanAccessServiceImpl implements PlanAccessService {
             return null;
         }
 
+        String previousDbKey = TenantContextHolder.getDbKey();
         try {
-            return planAccessDAO.selectActivePlanCode(tenantId, ACTIVE_STATUS);
+            TenantContextHolder.setDbKey(PlatformTenantCodes.CANONICAL);
+            return centralPlanAccessDAO.selectActivePlanCode(tenantId, ACTIVE_STATUS);
         } catch (DataAccessException ex) {
             log.warn("Failed to resolve plan code. tenantId={}, reason={}", tenantId, ex.getMessage());
             return null;
         } catch (Exception ex) {
             log.warn("Failed to resolve plan code. tenantId={}, reason={}", tenantId, ex.getMessage());
             return null;
+        } finally {
+            if (previousDbKey != null) {
+                TenantContextHolder.setDbKey(previousDbKey);
+            } else {
+                TenantContextHolder.clear();
+            }
         }
     }
 
@@ -141,14 +153,49 @@ public class PlanAccessServiceImpl implements PlanAccessService {
             return null;
         }
 
+        String trimmed = tenantCode.trim();
+        String previousDbKey = TenantContextHolder.getDbKey();
         try {
-            return planAccessDAO.selectTenantIdByTenantCode(tenantCode.trim());
+            TenantContextHolder.setDbKey(PlatformTenantCodes.CANONICAL);
+            Long tenantId = centralPlanAccessDAO.selectTenantIdByTenantCode(trimmed);
+            if (tenantId != null) {
+                return tenantId;
+            }
+
+            String normalizedTenantCode = PlatformTenantCodes.normalize(trimmed);
+            if (StringUtils.hasText(normalizedTenantCode) && !normalizedTenantCode.equals(trimmed)) {
+                tenantId = centralPlanAccessDAO.selectTenantIdByTenantCode(normalizedTenantCode);
+                if (tenantId != null) {
+                    return tenantId;
+                }
+            }
+
+            if (trimmed.startsWith("TENANT_")) {
+                String stripped = trimmed.substring("TENANT_".length());
+                tenantId = centralPlanAccessDAO.selectTenantIdByTenantCode(stripped);
+                if (tenantId != null) {
+                    return tenantId;
+                }
+            }
+
+            Long parsedTenantId = parseLongValue(trimmed);
+            if (parsedTenantId != null && isLikelyTenantId(trimmed)) {
+                return parsedTenantId;
+            }
+
+            return null;
         } catch (DataAccessException ex) {
             log.warn("Failed to resolve tenant id by code. tenantCode={}, reason={}", tenantCode, ex.getMessage());
             return null;
         } catch (Exception ex) {
             log.warn("Failed to resolve tenant id by code. tenantCode={}, reason={}", tenantCode, ex.getMessage());
             return null;
+        } finally {
+            if (previousDbKey != null) {
+                TenantContextHolder.setDbKey(previousDbKey);
+            } else {
+                TenantContextHolder.clear();
+            }
         }
     }
 
@@ -160,7 +207,7 @@ public class PlanAccessServiceImpl implements PlanAccessService {
 
         try {
             Map<String, Boolean> featureMap = new LinkedHashMap<String, Boolean>();
-            List<PlanFeatureStatusVO> rows = planAccessDAO.selectFeatureEnabledListByTenantId(tenantId, ACTIVE_STATUS);
+            List<PlanFeatureStatusVO> rows = centralPlanAccessDAO.selectFeatureEnabledListByTenantId(tenantId, ACTIVE_STATUS);
             for (PlanFeatureStatusVO row : rows) {
                 featureMap.put(row.getFeatureCode(), ENABLED.equalsIgnoreCase(row.getEnabledAt()));
             }
@@ -182,7 +229,7 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            return planAccessDAO.selectPlanList();
+            return centralPlanAccessDAO.selectPlanList();
         } catch (DataAccessException ex) {
             log.warn("Failed to list plans. reason={}", ex.getMessage());
             return Collections.emptyList();
@@ -200,7 +247,7 @@ public class PlanAccessServiceImpl implements PlanAccessService {
 
         try {
             Map<String, Boolean> featureMap = new LinkedHashMap<String, Boolean>();
-            List<PlanFeatureStatusVO> rows = planAccessDAO.selectFeatureEnabledListByPlanCode(planCode.trim().toUpperCase());
+            List<PlanFeatureStatusVO> rows = centralPlanAccessDAO.selectFeatureEnabledListByPlanCode(planCode.trim().toUpperCase());
             for (PlanFeatureStatusVO row : rows) {
                 featureMap.put(row.getFeatureCode(), ENABLED.equalsIgnoreCase(row.getEnabledAt()));
             }
@@ -221,7 +268,7 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
 
         try {
-            List<PlanFeatureItemVO> rows = planAccessDAO.selectPlanFeatureItems(planCode.trim().toUpperCase());
+            List<PlanFeatureItemVO> rows = centralPlanAccessDAO.selectPlanFeatureItems(planCode.trim().toUpperCase());
             for (PlanFeatureItemVO row : rows) {
                 row.setEnabled(ENABLED.equalsIgnoreCase(row.getEnabledAt()));
             }
@@ -241,34 +288,66 @@ public class PlanAccessServiceImpl implements PlanAccessService {
             return Collections.emptyList();
         }
 
+        String previousDbKey = TenantContextHolder.getDbKey();
         try {
-            return planAccessDAO.selectPlanMenuCodes(planCode.trim().toUpperCase());
+            TenantContextHolder.setDbKey(PlatformTenantCodes.CANONICAL);
+            return centralPlanAccessDAO.selectPlanMenuCodes(planCode.trim().toUpperCase());
         } catch (DataAccessException ex) {
             log.warn("Failed to resolve plan menus. planCode={}, reason={}", planCode, ex.getMessage());
             return Collections.emptyList();
         } catch (Exception ex) {
             log.warn("Failed to resolve plan menus. planCode={}, reason={}", planCode, ex.getMessage());
             return Collections.emptyList();
+        } finally {
+            if (previousDbKey != null) {
+                TenantContextHolder.setDbKey(previousDbKey);
+            } else {
+                TenantContextHolder.clear();
+            }
         }
     }
 
     @Override
     public List<String> resolveTenantPlanMenuCodes(String tenantCode) {
         if (!StringUtils.hasText(tenantCode)) {
+            log.warn("resolveTenantPlanMenuCodes: empty tenantCode");
             return Collections.emptyList();
         }
 
-        Long tenantId = resolveTenantIdByTenantCode(tenantCode);
-        if (tenantId == null) {
-            return Collections.emptyList();
-        }
+        Long previousTenantId = TenantContextHolder.getTenantId();
+        String previousTenantCode = TenantContextHolder.getTenantCode();
+        String previousDbKey = TenantContextHolder.getDbKey();
+        log.info("resolveTenantPlanMenuCodes start: rawTenantCode={}, previousTenantId={}, previousTenantCode={}, previousDbKey={}", tenantCode, previousTenantId, previousTenantCode, previousDbKey);
 
-        String planCode = resolveActivePlanCode(tenantId);
-        if (!StringUtils.hasText(planCode)) {
-            return Collections.emptyList();
-        }
+        try {
+            Long tenantId = resolveTenantIdByTenantCode(tenantCode);
+            log.info("resolveTenantPlanMenuCodes: resolvedTenantId={} for tenantCode={}", tenantId, tenantCode);
+            if (tenantId == null) {
+                return Collections.emptyList();
+            }
 
-        return resolvePlanMenuCodes(planCode);
+            String planCode = resolveActivePlanCode(tenantId);
+            log.info("resolveTenantPlanMenuCodes: resolvedPlanCode={} for tenantId={}", planCode, tenantId);
+            if (!StringUtils.hasText(planCode)) {
+                return Collections.emptyList();
+            }
+
+            List<String> menuCodes = resolvePlanMenuCodes(planCode);
+            log.info("resolveTenantPlanMenuCodes: resultMenuCodes={} for planCode={}", menuCodes, planCode);
+            return menuCodes;
+        } finally {
+            if (previousTenantId != null) {
+                TenantContextHolder.setTenantId(previousTenantId);
+            } else {
+                TenantContextHolder.clear();
+            }
+            if (previousTenantCode != null) {
+                TenantContextHolder.setTenantCode(previousTenantCode);
+            }
+            if (previousDbKey != null) {
+                TenantContextHolder.setDbKey(previousDbKey);
+            }
+        }
     }
 
     @Override
@@ -290,10 +369,10 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         List<String> normalizedMenuCodes = new ArrayList<String>(normalizedMenuCodeSet);
 
         try {
-            planAccessDAO.deletePlanMenusByPlanCode(normalizedPlanCode);
+            centralPlanAccessDAO.deletePlanMenusByPlanCode(normalizedPlanCode);
 
             for (String menuCode : normalizedMenuCodes) {
-                planAccessDAO.upsertPlanMenu(normalizedPlanCode, menuCode);
+                centralPlanAccessDAO.upsertPlanMenu(normalizedPlanCode, menuCode);
             }
         } catch (DataAccessException ex) {
             log.warn("Failed to replace plan menus. planCode={}, reason={}", planCode, ex.getMessage());
@@ -304,10 +383,44 @@ public class PlanAccessServiceImpl implements PlanAccessService {
         }
     }
 
+    private Long parseLongValue(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        if (!trimmed.matches("^-?\\d+$")) {
+            return null;
+        }
+
+        try {
+            return Long.valueOf(trimmed);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private boolean isLikelyTenantId(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+
+        String trimmed = value.trim();
+        if (!trimmed.matches("^-?\\d+$")) {
+            return false;
+        }
+
+        if (trimmed.startsWith("-")) {
+            return trimmed.length() <= 10;
+        }
+
+        return trimmed.length() <= 9;
+    }
+
     private long resolveCurrentUsage(Long tenantId, String featureCode) {
         if ("LIMIT_USER_COUNT".equals(featureCode)) {
             try {
-                return planAccessDAO.selectActiveUserCountByTenantId(tenantId);
+                return centralPlanAccessDAO.selectActiveUserCountByTenantId(tenantId);
             } catch (Exception ex) {
                 log.warn("Failed to resolve current usage. tenantId={}, featureCode={}, reason={}",
                         tenantId, featureCode, ex.getMessage());
@@ -320,7 +433,7 @@ public class PlanAccessServiceImpl implements PlanAccessService {
 
     private boolean isPlanSchemaReady() {
         try {
-            return planAccessDAO.selectPlanSchemaTableCount() >= 3;
+            return centralPlanAccessDAO.selectPlanSchemaTableCount() >= 3;
         } catch (DataAccessException ex) {
             return false;
         } catch (Exception ex) {

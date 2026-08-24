@@ -1,6 +1,7 @@
 package egovframework.let.platform_admin.tenants.service.impl;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ public final class TenantSchemaScript {
             new LinkedHashSet<String>(Arrays.asList("BEGIN", "COMMIT", "ROLLBACK", "END", "START TRANSACTION"));
 
     private static final Pattern VARIABLE_PATTERN = Pattern.compile(":'([A-Za-z0-9_]+)'");
-    private static final Pattern SAFE_VALUE_PATTERN = Pattern.compile("[A-Za-z0-9_(),.:/@#, -]*");
+    private static final Pattern SAFE_VALUE_PATTERN = Pattern.compile("[\\p{L}\\p{N}\\p{Zs}_/|:.,@#%\\-\\()\\[\\]\\+\\=\\*\\?;]*");
 
     private TenantSchemaScript() {
     }
@@ -218,21 +219,26 @@ public final class TenantSchemaScript {
         Resource resource = resolveScriptResource(normalizedPath);
         if (resource != null && resource.exists()) {
             try (InputStream inputStream = resource.getInputStream()) {
-                byte[] bytes = new byte[inputStream.available()];
-                int readCount = 0;
-                while (readCount < bytes.length) {
-                    int readNow = inputStream.read(bytes, readCount, bytes.length - readCount);
-                    if (readNow < 0) {
-                        break;
-                    }
-                    readCount += readNow;
-                }
-                return new String(bytes, StandardCharsets.UTF_8);
+                return new String(readAllBytes(inputStream), StandardCharsets.UTF_8);
             }
         }
 
         String resolvedPath = resolveScriptPath(normalizedPath, workingDirectory);
         return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(resolvedPath)), StandardCharsets.UTF_8);
+    }
+
+    static byte[] readAllBytes(InputStream inputStream) throws IOException {
+        if (inputStream == null) {
+            return new byte[0];
+        }
+
+        java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int readCount;
+        while ((readCount = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, readCount);
+        }
+        return outputStream.toByteArray();
     }
 
     private static Resource resolveScriptResource(String configuredPath) {

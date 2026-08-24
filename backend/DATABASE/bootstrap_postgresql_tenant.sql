@@ -47,8 +47,10 @@ source_menu AS (
         sm.menu_dc,
         sm.menu_url,
         sm.icon_nm,
-        sm.menu_order
+        sm.menu_order,
+        parent_source.menu_code AS parent_menu_code
     FROM public.tb_menu sm
+    LEFT JOIN public.tb_menu parent_source ON parent_source.menu_id = sm.parent_menu_id
     JOIN requested_codes rc ON rc.menu_code = sm.menu_code
 ),
 inserted_menu AS (
@@ -77,7 +79,8 @@ inserted_menu AS (
         NOW()
     FROM source_menu sm
     ON CONFLICT (menu_code) DO UPDATE
-    SET menu_nm = EXCLUDED.menu_nm,
+    SET parent_menu_id = EXCLUDED.parent_menu_id,
+        menu_nm = EXCLUDED.menu_nm,
         menu_dc = EXCLUDED.menu_dc,
         menu_url = EXCLUDED.menu_url,
         icon_nm = EXCLUDED.icon_nm,
@@ -90,12 +93,12 @@ source_parent_map AS (
     SELECT
         sm.menu_code,
         sm.source_parent_menu_id,
+        sm.parent_menu_code,
         inserted.menu_id AS local_menu_id,
         parent_inserted.menu_id AS local_parent_menu_id
     FROM source_menu sm
-    LEFT JOIN public.tb_menu source_parent ON source_parent.menu_id = sm.source_parent_menu_id
     LEFT JOIN inserted_menu inserted ON inserted.menu_code = sm.menu_code
-    LEFT JOIN inserted_menu parent_inserted ON parent_inserted.menu_code = source_parent.menu_code
+    LEFT JOIN inserted_menu parent_inserted ON parent_inserted.menu_code = sm.parent_menu_code
 )
 UPDATE tb_menu target
 SET parent_menu_id = source_parent_map.local_parent_menu_id,

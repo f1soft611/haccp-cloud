@@ -57,7 +57,7 @@ class PlatformTenantServiceImplTest {
         TenantRegistrationResultVO result = service.registerTenant(requestVO);
 
         assertEquals(124L, result.getTenantId());
-        assertEquals("TENANT_" + TENANT_CODE, result.getTenantCode());
+        assertEquals(TENANT_CODE, result.getTenantCode());
         assertEquals("123456-1234567", result.getCorporateNumber());
         assertEquals("123-45-67890", result.getBusinessRegistrationNumber());
         assertEquals("식품제조", result.getBusinessType());
@@ -333,7 +333,7 @@ class PlatformTenantServiceImplTest {
         TenantRegistrationResultVO result = service.registerTenant(requestVO);
 
         assertEquals(301L, result.getTenantId());
-        verify(tenantInfoDAO).insertTenantDatabase(eq(301L), eq("TENANT_1234567890"), eq("tenant_1234567890"), eq("public"));
+        verify(tenantInfoDAO).insertTenantDatabase(eq(301L), eq("1234567890"), eq("tenant_1234567890"), eq("public"));
         verify(tenantDatabaseProvisioningService, never()).provisionNewTenantDatabase(any(), any(), any(), any(), any(), any());
     }
 
@@ -429,7 +429,7 @@ class PlatformTenantServiceImplTest {
 
         verify(tenantInfoDAO).insertTenantDatabase(
                 eq(210L),
-                eq("TENANT_" + TENANT_CODE),
+                eq(TENANT_CODE),
                 eq("tenant_" + TENANT_CODE),
                 eq("public"));
     }

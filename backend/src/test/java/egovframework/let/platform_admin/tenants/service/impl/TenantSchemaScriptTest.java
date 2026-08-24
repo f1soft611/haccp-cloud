@@ -7,6 +7,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -135,6 +138,43 @@ class TenantSchemaScriptTest {
         assertEquals("SELECT ''", TenantSchemaScript.bindVariables("SELECT :'menu_codes'", variables));
     }
 
+    @DisplayName("InputStream.available()가 0이어도 전체 내용을 안전하게 읽는다")
+    @Test
+    void readAllBytes_readsFullContentWhenAvailableReturnsZero() throws IOException {
+        InputStream inputStream = new InputStream() {
+            private final byte[] bytes = "SELECT 1;\nINSERT INTO tb_menu VALUES (1);".getBytes(StandardCharsets.UTF_8);
+            private int index = 0;
+
+            @Override
+            public int read() {
+                if (index >= bytes.length) {
+                    return -1;
+                }
+                return bytes[index++];
+            }
+
+            @Override
+            public int available() {
+                return 0;
+            }
+        };
+
+        byte[] actual = TenantSchemaScript.readAllBytes(inputStream);
+
+        assertEquals("SELECT 1;\nINSERT INTO tb_menu VALUES (1);", new String(actual, StandardCharsets.UTF_8));
+    }
+
+    @DisplayName("메뉴 메타데이터 catalog는 |와 ;, 한글을 포함해도 안전하게 바인딩한다")
+    @Test
+    void bindVariables_allowsMenuCatalogWithKoreanAndDelimiters() {
+        Map<String, String> variables = new HashMap<String, String>();
+        variables.put("menu_catalog", "MENU_TENANT_DASHBOARD|대시보드|대시보드 요약|/tenant/dashboard|Dashboard|1|;MENU_TENANT_USERS|사용자|사용자 관리|/tenant/users|Users|2|");
+
+        assertEquals(
+                "SELECT 'MENU_TENANT_DASHBOARD|대시보드|대시보드 요약|/tenant/dashboard|Dashboard|1|;MENU_TENANT_USERS|사용자|사용자 관리|/tenant/users|Users|2|'",
+                TenantSchemaScript.bindVariables("SELECT :'menu_catalog'", variables));
+    }
+
     @DisplayName("작업 디렉터리가 backend여도 DATABASE 스크립트를 찾는다")
     @Test
     void resolveScriptPath_findsScriptFromBackendWorkingDirectory() {
@@ -212,6 +252,18 @@ class TenantSchemaScriptTest {
         assertTrue(sql.contains("sm.menu_nm"));
         assertTrue(sql.contains("sm.menu_dc"));
         assertTrue(sql.contains("sm.menu_url"));
+    }
+
+    @DisplayName("테넌트 부트스트랩은 부모 메뉴 관계를 보존하고 충돌 시에도 parent_menu_id를 갱신한다")
+    @Test
+    void bootstrapTenantScript_preservesParentMenuHierarchyOnConflict() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "bootstrap_postgresql_tenant.sql")),
+                StandardCharsets.UTF_8);
+
+        assertTrue(sql.contains("parent_menu_id = EXCLUDED.parent_menu_id"));
+        assertTrue(sql.contains("source_parent_map.local_parent_menu_id"));
+        assertTrue(sql.contains("LEFT JOIN inserted_menu parent_inserted ON parent_inserted.menu_code = sm.parent_menu_code"));
     }
 
     @DisplayName("필수 스크립트가 아니면 SQL 실패를 조용히 건너뛴다")

@@ -11,7 +11,9 @@ export type PlatformRoleMenuMapping = {
 };
 
 type RoleMenuItemResult = {
-  item?: PlatformRoleMenuMapping;
+  item?: PlatformRoleMenuMapping & {
+    menuCodes?: string[];
+  };
 };
 
 type RoleMenuCandidatesResult = {
@@ -34,6 +36,16 @@ function normalizeMenuIds(menuIds: string[]): string[] {
   );
 }
 
+function normalizeMenuCodes(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return normalizeMenuIds(
+    value.filter((entry): entry is string => typeof entry === 'string'),
+  );
+}
+
 export async function getPlatformRoleMenuMapping(
   roleCode: string,
   tenantCode?: string,
@@ -49,9 +61,10 @@ export async function getPlatformRoleMenuMapping(
     },
   );
   const item = data?.result?.item;
+  const menuIds = normalizeMenuCodes(item?.menuCodes ?? item?.menuIds ?? []);
   return {
     roleCode: normalizeRoleCode(item?.roleCode ?? normalizedRoleCode),
-    menuIds: normalizeMenuIds(item?.menuIds ?? []),
+    menuIds,
   };
 }
 

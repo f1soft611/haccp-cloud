@@ -72,7 +72,7 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
 
         String normalizedBusinessRegistrationNumber = normalizeBusinessRegistrationNumber(businessRegistrationNumber);
         String tenantSerialCode = normalizedBusinessRegistrationNumber;
-        String tenantCode = "TENANT_" + tenantSerialCode;
+        String tenantCode = tenantSerialCode;
         String tenantDbName = "tenant_" + tenantSerialCode;
 
         boolean tenantDatabaseMetaExists = tenantInfoDAO.selectTenantDatabaseCountByDbName(tenantDbName) > 0;

@@ -99,6 +99,11 @@ public class EgovConfigAppDatasource {
 		return basicDataSource();
 	}
 
+	@Bean(name = "centralDataSource")
+	public DataSource centralDataSource() {
+		return basicDataSource();
+	}
+
 	@Bean(name = {"dataSource", "egov.dataSource", "egovDataSource"})
 	public DataSource dataSource() {
 		DataSource platformDataSource = platformDataSource();

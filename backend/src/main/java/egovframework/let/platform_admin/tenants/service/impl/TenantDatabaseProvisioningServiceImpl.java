@@ -108,16 +108,22 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
             String tenantJdbcUrl = resolveJdbcUrl(normalizedDbName);
             executeStatement(tenantJdbcUrl, "CREATE SCHEMA IF NOT EXISTS \"" + normalizedSchemaName + "\"");
 
+            List<String> effectiveMenuCodes = planMenuCodes == null || planMenuCodes.isEmpty()
+                    ? resolveFallbackMenuCodes(planCode)
+                    : planMenuCodes;
+            List<String> expandedMenuCodes = expandMenuCodesWithAncestors(effectiveMenuCodes);
+
             Map<String, String> bootstrapVariables = new HashMap<String, String>();
             bootstrapVariables.put("tenant_id", String.valueOf(tenantId));
             bootstrapVariables.put("tenant_code", tenantCode == null ? "" : tenantCode.trim());
             bootstrapVariables.put("plan_code",
                     planCode == null || planCode.trim().isEmpty() ? "" : planCode.trim().toUpperCase());
-            bootstrapVariables.put("menu_codes", normalizeMenuCodes(planMenuCodes, Collections.emptyList()));
-            bootstrapVariables.put("menu_catalog", resolveMenuCatalog(planMenuCodes));
+            bootstrapVariables.put("menu_codes", normalizeMenuCodes(expandedMenuCodes, Collections.emptyList()));
+            bootstrapVariables.put("menu_catalog", resolveMenuCatalog(expandedMenuCodes));
 
             runScript(tenantJdbcUrl, tenantSchemaFile, Collections.<String, String>emptyMap());
             runScript(tenantJdbcUrl, tenantBootstrapFile, bootstrapVariables);
+            upsertTenantMenuCatalog(tenantJdbcUrl, expandedMenuCodes);
 
             List<String> optionalScripts = Arrays.asList(
                     tenantDraftingCategoryFile,
@@ -197,6 +203,149 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
         }
     }
 
+    private void upsertTenantMenuCatalog(String tenantJdbcUrl, List<String> expandedMenuCodes) throws Exception {
+        if (expandedMenuCodes == null || expandedMenuCodes.isEmpty()) {
+            return;
+        }
+
+        List<String> orderedMenuCodes = new ArrayList<String>();
+        Set<String> seenMenuCodes = new LinkedHashSet<String>();
+        for (String menuCode : expandedMenuCodes) {
+            if (menuCode == null || menuCode.trim().isEmpty()) {
+                continue;
+            }
+            String normalized = menuCode.trim().toUpperCase();
+            if (normalized.matches("[A-Z0-9_]+") && seenMenuCodes.add(normalized)) {
+                orderedMenuCodes.add(normalized);
+            }
+        }
+        if (orderedMenuCodes.isEmpty()) {
+            return;
+        }
+
+        List<MenuCatalogRow> sourceRows = resolveSourceMenuCatalogRows(orderedMenuCodes);
+        if (sourceRows.isEmpty()) {
+            return;
+        }
+
+        try (Connection tenantConnection = openConnection(tenantJdbcUrl)) {
+            try (PreparedStatement insertStatement = tenantConnection.prepareStatement(
+                    "INSERT INTO public.tb_menu (parent_menu_id, menu_code, menu_nm, menu_dc, menu_url, icon_nm, menu_order, use_at, created_at, updated_at) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, 'Y', NOW(), NOW()) " +
+                    "ON CONFLICT (menu_code) DO UPDATE SET " +
+                    "parent_menu_id = EXCLUDED.parent_menu_id, " +
+                    "menu_nm = EXCLUDED.menu_nm, " +
+                    "menu_dc = EXCLUDED.menu_dc, " +
+                    "menu_url = EXCLUDED.menu_url, " +
+                    "icon_nm = EXCLUDED.icon_nm, " +
+                    "menu_order = EXCLUDED.menu_order, " +
+                    "use_at = 'Y', " +
+                    "updated_at = NOW()")) {
+
+                Map<String, Long> localMenuIdByCode = new HashMap<String, Long>();
+                for (MenuCatalogRow sourceRow : sourceRows) {
+                    Long parentMenuId = null;
+                    if (sourceRow.parentMenuCode != null && !sourceRow.parentMenuCode.trim().isEmpty()) {
+                        parentMenuId = localMenuIdByCode.get(sourceRow.parentMenuCode.trim().toUpperCase());
+                    }
+                    if (parentMenuId != null) {
+                        insertStatement.setLong(1, parentMenuId);
+                    } else {
+                        insertStatement.setNull(1, java.sql.Types.BIGINT);
+                    }
+                    insertStatement.setString(2, sourceRow.menuCode);
+                    insertStatement.setString(3, sourceRow.menuNm);
+                    insertStatement.setString(4, sourceRow.menuDc);
+                    insertStatement.setString(5, sourceRow.menuUrl);
+                    insertStatement.setString(6, sourceRow.iconNm);
+                    if (sourceRow.menuOrder == null) {
+                        insertStatement.setNull(7, java.sql.Types.INTEGER);
+                    } else {
+                        insertStatement.setInt(7, sourceRow.menuOrder);
+                    }
+                    insertStatement.executeUpdate();
+
+                    try (PreparedStatement selectStatement = tenantConnection.prepareStatement(
+                            "SELECT menu_id FROM public.tb_menu WHERE menu_code = ? LIMIT 1")) {
+                        selectStatement.setString(1, sourceRow.menuCode);
+                        try (ResultSet resultSet = selectStatement.executeQuery()) {
+                            if (resultSet.next()) {
+                                localMenuIdByCode.put(sourceRow.menuCode, resultSet.getLong("menu_id"));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private List<MenuCatalogRow> resolveSourceMenuCatalogRows(List<String> menuCodes) throws Exception {
+        if (menuCodes == null || menuCodes.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<String> requestedMenuCodes = new LinkedHashSet<String>();
+        for (String menuCode : menuCodes) {
+            String normalized = menuCode == null ? "" : menuCode.trim().toUpperCase();
+            if (!normalized.isEmpty() && normalized.matches("[A-Z0-9_]+")) {
+                requestedMenuCodes.add(normalized);
+            }
+        }
+        if (requestedMenuCodes.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String placeholders = requestedMenuCodes.stream().map(code -> "?").collect(Collectors.joining(","));
+        String sql = "SELECT menu_id, parent_menu_id, menu_code, menu_nm, menu_dc, menu_url, icon_nm, menu_order " +
+                "FROM public.tb_menu WHERE menu_code IN (" + placeholders + ") ORDER BY menu_order, menu_id";
+
+        try (Connection centralConnection = openConnection(postgresUrl);
+                PreparedStatement statement = centralConnection.prepareStatement(sql)) {
+            int index = 1;
+            for (String menuCode : requestedMenuCodes) {
+                statement.setString(index++, menuCode);
+            }
+
+            List<MenuCatalogRow> rows = new ArrayList<MenuCatalogRow>();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    Long parentMenuId = resultSet.getObject("parent_menu_id") == null
+                            ? null
+                            : resultSet.getLong("parent_menu_id");
+                    String parentMenuCode = parentMenuId == null ? null : resolveMenuCodeById(centralConnection, parentMenuId);
+                    rows.add(new MenuCatalogRow(
+                            resultSet.getString("menu_code"),
+                            resultSet.getString("menu_nm"),
+                            resultSet.getString("menu_dc"),
+                            resultSet.getString("menu_url"),
+                            resultSet.getString("icon_nm"),
+                            resultSet.getObject("menu_order") == null ? null : resultSet.getInt("menu_order"),
+                            parentMenuCode));
+                }
+            }
+            return rows;
+        }
+    }
+
+    private static final class MenuCatalogRow {
+        private final String menuCode;
+        private final String menuNm;
+        private final String menuDc;
+        private final String menuUrl;
+        private final String iconNm;
+        private final Integer menuOrder;
+        private final String parentMenuCode;
+
+        private MenuCatalogRow(String menuCode, String menuNm, String menuDc, String menuUrl, String iconNm, Integer menuOrder, String parentMenuCode) {
+            this.menuCode = menuCode;
+            this.menuNm = menuNm;
+            this.menuDc = menuDc;
+            this.menuUrl = menuUrl;
+            this.iconNm = iconNm;
+            this.menuOrder = menuOrder;
+            this.parentMenuCode = parentMenuCode;
+        }
+    }
+
     private void executeStatement(String jdbcUrl, String sql) throws Exception {
         try (Connection connection = openConnection(jdbcUrl);
                 Statement statement = connection.createStatement()) {
@@ -239,6 +388,115 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
         }
 
         return merged.stream().distinct().collect(Collectors.joining(","));
+    }
+
+    private List<String> resolveFallbackMenuCodes(String planCode) {
+        String normalizedPlanCode = planCode == null ? "" : planCode.trim().toUpperCase();
+        if ("B".equals(normalizedPlanCode) || "C".equals(normalizedPlanCode)) {
+            return Arrays.asList(
+                    "MENU_TENANT_DASHBOARD",
+                    "MENU_TENANT_USERS",
+                    "MENU_TENANT_DEPARTMENTS",
+                    "MENU_TENANT_DOCUMENTS",
+                    "MENU_TENANT_HISTORY");
+        }
+        if ("P".equals(normalizedPlanCode)) {
+            return Arrays.asList(
+                    "MENU_PLATFORM_ROOT",
+                    "MENU_DOCUMENT_ROOT",
+                    "MENU_SYSTEM_ROOT",
+                    "MENU_PLAN_MANAGEMENT",
+                    "MENU_MENU_MANAGEMENT",
+                    "MENU_AUTHORITY_MANAGEMENT",
+                    "MENU_TENANT_MANAGEMENT",
+                    "MENU_LOGIN_HISTORY",
+                    "MENU_TENANT_USERS",
+                    "MENU_TENANT_DEPARTMENTS",
+                    "MENU_TENANT_DOCUMENTS",
+                    "MENU_TENANT_HISTORY",
+                    "MENU_TENANT_DASHBOARD");
+        }
+        return Arrays.asList(
+                "MENU_TENANT_DASHBOARD",
+                "MENU_TENANT_USERS",
+                "MENU_TENANT_DEPARTMENTS",
+                "MENU_TENANT_HISTORY");
+    }
+
+    private List<String> expandMenuCodesWithAncestors(List<String> menuCodes) {
+        Set<String> expanded = new LinkedHashSet<String>();
+        if (menuCodes == null || menuCodes.isEmpty()) {
+            return new ArrayList<String>(expanded);
+        }
+
+        try (Connection connection = openConnection(postgresUrl)) {
+            for (String menuCode : menuCodes) {
+                collectAncestorMenuCodes(connection, menuCode, expanded);
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to expand ancestor menu codes. Falling back to requested set. reason={}", ex.getMessage());
+        }
+
+        List<String> ordered = new ArrayList<String>();
+        for (String menuCode : menuCodes) {
+            if (menuCode != null && !menuCode.trim().isEmpty()) {
+                String normalized = menuCode.trim().toUpperCase();
+                if (normalized.matches("[A-Z0-9_]+")) {
+                    ordered.add(normalized);
+                }
+            }
+        }
+        for (String menuCode : expanded) {
+            if (!ordered.contains(menuCode)) {
+                ordered.add(menuCode);
+            }
+        }
+        return ordered;
+    }
+
+    private void collectAncestorMenuCodes(Connection connection, String menuCode, Set<String> expanded) throws Exception {
+        if (menuCode == null) {
+            return;
+        }
+
+        String normalized = menuCode.trim().toUpperCase();
+        if (normalized.isEmpty() || !normalized.matches("[A-Z0-9_]+")) {
+            return;
+        }
+
+        Set<String> visited = new LinkedHashSet<String>();
+        String currentCode = normalized;
+        while (currentCode != null && !currentCode.isEmpty() && !visited.contains(currentCode)) {
+            visited.add(currentCode);
+            expanded.add(currentCode);
+
+            Long parentMenuId = resolveParentMenuIdByCode(connection, currentCode);
+            if (parentMenuId == null) {
+                return;
+            }
+            String parentCode = resolveMenuCodeById(connection, parentMenuId);
+            if (parentCode == null || parentCode.trim().isEmpty()) {
+                return;
+            }
+            currentCode = parentCode.trim().toUpperCase();
+        }
+    }
+
+    private Long resolveParentMenuIdByCode(Connection connection, String menuCode) throws Exception {
+        if (menuCode == null || menuCode.trim().isEmpty()) {
+            return null;
+        }
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT parent_menu_id FROM public.tb_menu WHERE menu_code = ? LIMIT 1")) {
+            statement.setString(1, menuCode.trim().toUpperCase());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    Object value = resultSet.getObject("parent_menu_id");
+                    return value == null ? null : resultSet.getLong("parent_menu_id");
+                }
+            }
+        }
+        return null;
     }
 
     private String resolveMenuCatalog(List<String> menuCodes) {

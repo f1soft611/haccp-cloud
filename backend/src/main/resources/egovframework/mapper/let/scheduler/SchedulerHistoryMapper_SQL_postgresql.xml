@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SchedulerHistoryDAO">
+
+    <resultMap id="schedulerHistoryResultMap" type="egovframework.let.scheduler.domain.model.SchedulerHistory">
+        <result property="historyId" column="history_id"/>
+        <result property="schedulerId" column="scheduler_id"/>
+        <result property="schedulerName" column="scheduler_name"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="status" column="status"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="errorStackTrace" column="error_stack_trace"/>
+        <result property="executionTimeMs" column="execution_time_ms"/>
+        <result property="retryCount" column="retry_count"/>
+        <result property="regDt" column="reg_dt"/>
+    </resultMap>
+
+    <resultMap id="schedulerHistoryVOResultMap" type="egovframework.let.scheduler.domain.model.SchedulerHistoryVO">
+        <result property="historyId" column="history_id"/>
+        <result property="schedulerId" column="scheduler_id"/>
+        <result property="schedulerName" column="scheduler_name"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="status" column="status"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="errorStackTrace" column="error_stack_trace"/>
+        <result property="executionTimeMs" column="execution_time_ms"/>
+        <result property="retryCount" column="retry_count"/>
+        <result property="regDt" column="reg_dt"/>
+    </resultMap>
+
+    <select id="SchedulerHistoryDAO.selectSchedulerHistoryList" resultMap="schedulerHistoryVOResultMap"
+            parameterType="egovframework.let.scheduler.domain.model.SchedulerHistoryVO">
+        SELECT
+            history_id,
+            scheduler_id,
+            scheduler_name,
+            start_time,
+            end_time,
+            status,
+            error_message,
+            error_stack_trace,
+            execution_time_ms,
+            retry_count,
+            reg_dt
+        FROM tb_scheduler_history
+        WHERE 1 = 1
+        <if test="schedulerId != null">
+            AND scheduler_id = #{schedulerId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="searchWrd != null and searchWrd != ''">
+            AND (
+                scheduler_name ILIKE '%' || #{searchWrd} || '%'
+                OR error_message ILIKE '%' || #{searchWrd} || '%'
+            )
+        </if>
+        ORDER BY history_id DESC
+        <if test="firstIndex != null and recordCountPerPage != null">
+            LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+        </if>
+    </select>
+
+    <select id="SchedulerHistoryDAO.selectSchedulerHistoryListCnt" resultType="int"
+            parameterType="egovframework.let.scheduler.domain.model.SchedulerHistoryVO">
+        SELECT COUNT(*)
+        FROM tb_scheduler_history
+        WHERE 1 = 1
+        <if test="schedulerId != null">
+            AND scheduler_id = #{schedulerId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="searchWrd != null and searchWrd != ''">
+            AND (
+                scheduler_name ILIKE '%' || #{searchWrd} || '%'
+                OR error_message ILIKE '%' || #{searchWrd} || '%'
+            )
+        </if>
+    </select>
+
+    <select id="SchedulerHistoryDAO.selectSchedulerHistoryDetail" resultMap="schedulerHistoryResultMap" parameterType="long">
+        SELECT
+            history_id,
+            scheduler_id,
+            scheduler_name,
+            start_time,
+            end_time,
+            status,
+            error_message,
+            error_stack_trace,
+            execution_time_ms,
+            retry_count,
+            reg_dt
+        FROM tb_scheduler_history
+        WHERE history_id = #{historyId}
+    </select>
+
+    <insert id="SchedulerHistoryDAO.insertSchedulerHistory"
+            parameterType="egovframework.let.scheduler.domain.model.SchedulerHistory"
+            useGeneratedKeys="true"
+            keyProperty="historyId"
+            keyColumn="history_id">
+        INSERT INTO tb_scheduler_history (
+            scheduler_id,
+            scheduler_name,
+            start_time,
+            end_time,
+            status,
+            error_message,
+            error_stack_trace,
+            execution_time_ms,
+            retry_count,
+            reg_dt
+        ) VALUES (
+            #{schedulerId},
+            #{schedulerName},
+            #{startTime},
+            #{endTime},
+            #{status},
+            #{errorMessage},
+            #{errorStackTrace},
+            #{executionTimeMs},
+            #{retryCount},
+            NOW()
+        )
+    </insert>
+
+    <update id="SchedulerHistoryDAO.updateSchedulerHistory" parameterType="egovframework.let.scheduler.domain.model.SchedulerHistory">
+        UPDATE tb_scheduler_history
+        SET end_time = #{endTime},
+            status = #{status},
+            error_message = #{errorMessage},
+            error_stack_trace = #{errorStackTrace},
+            execution_time_ms = #{executionTimeMs},
+            retry_count = #{retryCount}
+        WHERE history_id = #{historyId}
+    </update>
+
+</mapper>

@@ -395,6 +395,25 @@
         LIMIT 1
     </select>
 
+    <!-- 테넌트/역할 코드로 역할 ID 조회 -->
+    <select id="AuthorityDAO.selectRoleIdByCode" parameterType="map" resultType="long">
+        SELECT r.role_id
+        FROM tb_role r
+        INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
+        WHERE r.role_code = #{roleCode}
+          AND t.tenant_code = #{tenantCode}
+        ORDER BY r.role_id
+        LIMIT 1
+    </select>
+
+    <!-- 테넌트에 등록된 전체 메뉴 코드 조회 -->
+    <select id="AuthorityDAO.selectAllMenuCodesByTenantCode" parameterType="map" resultType="string">
+        SELECT m.menu_code
+        FROM tb_menu m
+        WHERE m.use_at = 'Y'
+        ORDER BY m.menu_order, m.menu_id, m.menu_code
+    </select>
+
     <!-- 테넌트 권한 유형 생성 또는 갱신 -->
     <insert id="AuthorityDAO.upsertPermissionType" parameterType="map">
         INSERT INTO tb_permission (
