@@ -279,6 +279,32 @@ class TenantSchemaScriptTest {
         assertTrue(!result);
     }
 
+    @DisplayName("전자결재 상태 컬럼은 긴 상태값을 저장할 수 있어야 한다")
+    @Test
+    void electronicApprovalLineInfo_schemaAllowsLongStatusValues() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "migrate_postgresql_add_electronic_approval_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        assertTrue(sql.contains("app_status VARCHAR(30) NOT NULL"));
+        assertTrue(sql.contains("approval_type VARCHAR(30) NOT NULL"));
+        assertTrue(sql.contains("last_owner_status VARCHAR(30) NOT NULL"));
+        assertTrue(sql.contains("referencer_view_status VARCHAR(30)"));
+        assertTrue(sql.contains("conn_official_status VARCHAR(30)"));
+    }
+
+    @DisplayName("조건부 ID 생성은 PostgreSQL용 Mapper를 제공한다")
+    @Test
+    void conditionalIdMapper_postgresqlUsesUpsertStatement() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("src", "main", "resources", "egovframework", "mapper", "let", "common", "idgen", "ConditionalId_SQL_postgresql.xml")),
+                StandardCharsets.UTF_8);
+
+        assertTrue(sql.contains("<mapper namespace=\"ConditionalIdDAO\">"));
+        assertTrue(sql.contains("ON CONFLICT"));
+        assertTrue(sql.contains("INSERT INTO ids2"));
+    }
+
     @DisplayName("PostgreSQL 연결은 UTF-8 인코딩을 강제한다")
     @Test
     void configureConnectionForUtf8_setsClientEncoding() throws Exception {

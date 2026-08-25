@@ -8,6 +8,26 @@
 
 BEGIN;
 
+-- Shared ID generator tables used by eGov and conditional per-date sequence generation.
+CREATE TABLE IF NOT EXISTS ids (
+    table_name VARCHAR(50) PRIMARY KEY,
+    next_id BIGINT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ids2 (
+    table_name  VARCHAR(30) NOT NULL,
+    condition1  VARCHAR(50) NOT NULL DEFAULT '__NONE__',
+    condition2  VARCHAR(50) NOT NULL DEFAULT '__NONE__',
+    next_id     BIGINT NOT NULL DEFAULT 1,
+    PRIMARY KEY (table_name, condition1, condition2)
+);
+
+INSERT INTO ids (table_name, next_id)
+VALUES ('EA_EXE_ID', 1)
+ON CONFLICT (table_name) DO NOTHING;
+
 -- Tenant/Multi-tenancy Foundation
 CREATE TABLE IF NOT EXISTS tb_tenant (
     tenant_id BIGSERIAL PRIMARY KEY,

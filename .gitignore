@@ -63,3 +63,5 @@ backend/tenant37_check.sql
 backend/logs/2026-08/app-2026-08-24-16-1.log.gz
 backend/test-planaccess.log
 backend/build.log
+git-secret-replacements.txt
+redact-secrets.sh
