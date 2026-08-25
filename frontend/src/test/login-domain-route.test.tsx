@@ -8,7 +8,9 @@ import { appTheme } from '../app/theme';
 import { FeedbackProvider } from '../shared/providers/FeedbackProvider';
 
 vi.mock('../services/organization/tenantService', async () => {
-  const actual = await vi.importActual('../services/organization/tenantService');
+  const actual = await vi.importActual(
+    '../services/organization/tenantService',
+  );
 
   return {
     ...actual,
@@ -115,6 +117,13 @@ describe('Login domain route', () => {
     expect(
       await screen.findByTestId('login-fallback-logo'),
     ).toBeInTheDocument();
+  });
+
+  it('keeps the app logo pinned to the left in the default login screen', async () => {
+    renderAt('/login');
+
+    const appLogo = await screen.findByAltText('F1FoodLink');
+    expect(appLogo).toHaveStyle({ left: '16px' });
   });
 
   it('moves to password step when Enter is pressed on ID field', async () => {

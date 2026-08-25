@@ -457,7 +457,8 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
           sx={{
             position: 'absolute',
             top: 12,
-            left: { xs: 16, md: 'calc(50% - 470px)' },
+            left: 16,
+            right: 'auto',
             display: 'block',
             width: 148,
             height: 25,

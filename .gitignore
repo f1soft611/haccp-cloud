@@ -65,3 +65,5 @@ backend/test-planaccess.log
 backend/build.log
 git-secret-replacements.txt
 redact-secrets.sh
+fix_git_secret.sh
+replacements.txt
