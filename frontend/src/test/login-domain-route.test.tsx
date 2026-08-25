@@ -119,13 +119,6 @@ describe('Login domain route', () => {
     ).toBeInTheDocument();
   });
 
-  it('keeps the app logo pinned to the left in the default login screen', async () => {
-    renderAt('/login');
-
-    const appLogo = await screen.findByAltText('F1FoodLink');
-    expect(appLogo).toHaveStyle({ left: '16px' });
-  });
-
   it('moves to password step when Enter is pressed on ID field', async () => {
     renderAt('/login/f1soft.co.kr');
 

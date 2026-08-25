@@ -456,9 +456,8 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
           alt="F1FoodLink"
           sx={{
             position: 'absolute',
-            top: 12,
-            left: 16,
-            right: 'auto',
+            top: 30,
+            left: { xs: 16, md: 'calc(50% - 470px)' },
             display: 'block',
             width: 148,
             height: 25,
