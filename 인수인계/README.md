@@ -5,6 +5,8 @@
 - [01. DB 스키마 상세 정리](01-db-schema.md)
 - [02. 신규 테넌트 생성 절차](02-new-tenant-procedure.md)
 - [03. 운영 배포 변수 정리](03-operational-config.md)
+- [04. 프로젝트 구조 정리](04-project-structure.md)
+- [05. 첨부파일 / MinIO 연동 정리](05-attachment-minio.md)
 
 ## 1. 프로젝트 개요
 
