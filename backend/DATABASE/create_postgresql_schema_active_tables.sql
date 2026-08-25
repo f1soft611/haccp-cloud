@@ -14,6 +14,11 @@ CREATE TABLE IF NOT EXISTS tb_tenant (
     tenant_code VARCHAR(50) UNIQUE NOT NULL,
     tenant_nm VARCHAR(200) NOT NULL,
     admin_email VARCHAR(100) UNIQUE NOT NULL,
+    business_registration_number VARCHAR(12),
+    corporate_number VARCHAR(14),
+    business_type VARCHAR(200),
+    business_category VARCHAR(200),
+    registration_date DATE,
     logo_image TEXT,
     onboarding_status VARCHAR(50) DEFAULT 'EMAIL_QUEUED' NOT NULL,
     use_at CHAR(1) DEFAULT 'Y' NOT NULL,
@@ -22,19 +27,16 @@ CREATE TABLE IF NOT EXISTS tb_tenant (
     created_by BIGINT
 );
 
--- Tenant Domain Mapping (for domain-based login routing)
-CREATE TABLE IF NOT EXISTS tb_tenant_domain (
-    tenant_domain_id BIGSERIAL PRIMARY KEY,
-    tenant_id BIGINT NOT NULL,
-    email_domain VARCHAR(255) NOT NULL,
-    is_primary CHAR(1) DEFAULT 'N' NOT NULL CHECK (is_primary IN ('Y', 'N')),
-    use_at CHAR(1) DEFAULT 'Y' NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tb_tenant_business_registration_number_active
+    ON tb_tenant (business_registration_number)
+    WHERE business_registration_number IS NOT NULL AND use_at = 'Y';
 
-    UNIQUE (email_domain),
-    FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE
-);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tb_tenant_corporate_number_active
+    ON tb_tenant (corporate_number)
+    WHERE corporate_number IS NOT NULL AND use_at = 'Y';
+
+-- Tenant Onboarding Authentication Tokens, Tenant Domain Mapping, and Tenant
+-- Database Registry stay in the central platform database by design.
 
 -- Department/Organization
 CREATE TABLE IF NOT EXISTS tb_department (
@@ -120,7 +122,7 @@ CREATE TABLE IF NOT EXISTS tb_login_account_role (
 CREATE TABLE IF NOT EXISTS tb_menu (
     menu_id BIGSERIAL PRIMARY KEY,
     parent_menu_id BIGINT,
-    menu_code VARCHAR(50),
+    menu_code VARCHAR(50) NOT NULL,
     menu_nm VARCHAR(100) NOT NULL,
     menu_dc VARCHAR(500),
     menu_url VARCHAR(500),
@@ -129,7 +131,8 @@ CREATE TABLE IF NOT EXISTS tb_menu (
     use_at CHAR(1) DEFAULT 'Y' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
+    UNIQUE (menu_code),
     FOREIGN KEY (parent_menu_id) REFERENCES tb_menu(menu_id) ON DELETE CASCADE
 );
 
@@ -194,23 +197,42 @@ CREATE TABLE IF NOT EXISTS tb_login_history (
     FOREIGN KEY (user_id) REFERENCES tb_user(user_id) ON DELETE SET NULL
 );
 
--- Scheduler Config
+-- Scheduler Config (legacy-compatible schema expected by the app)
 CREATE TABLE IF NOT EXISTS tb_schedulerconfig (
     scheduler_id BIGSERIAL PRIMARY KEY,
-    scheduler_nm VARCHAR(100) NOT NULL,
-    scheduler_desc VARCHAR(500),
-    is_running CHAR(1) DEFAULT 'N' NOT NULL,
+    scheduler_name VARCHAR(100) NOT NULL,
+    scheduler_description VARCHAR(500),
     cron_expression VARCHAR(100),
-    next_run_time TIMESTAMP,
-    last_run_time TIMESTAMP,
+    job_class_name VARCHAR(255),
+    is_enabled CHAR(1) DEFAULT 'N' NOT NULL,
+    reg_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reg_user_id VARCHAR(50),
+    upd_dt TIMESTAMP,
+    upd_user_id VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Indexes for Performance
-CREATE INDEX IF NOT EXISTS idx_tenant_domain_tenant ON tb_tenant_domain(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_tenant_domain_use_at ON tb_tenant_domain(use_at);
+CREATE TABLE IF NOT EXISTS tb_scheduler_history (
+    history_id BIGSERIAL PRIMARY KEY,
+    scheduler_id BIGINT NOT NULL,
+    scheduler_name VARCHAR(100) NOT NULL,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'RUNNING',
+    error_message TEXT,
+    error_stack_trace TEXT,
+    execution_time_ms BIGINT,
+    retry_count INT NOT NULL DEFAULT 0,
+    reg_dt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (scheduler_id) REFERENCES tb_schedulerconfig(scheduler_id) ON DELETE SET NULL
+);
 
+CREATE INDEX IF NOT EXISTS idx_scheduler_history_scheduler_id ON tb_scheduler_history(scheduler_id);
+CREATE INDEX IF NOT EXISTS idx_scheduler_history_status ON tb_scheduler_history(status);
+CREATE INDEX IF NOT EXISTS idx_scheduler_history_reg_dt ON tb_scheduler_history(reg_dt DESC);
+
+-- Create Indexes for Performance
 CREATE INDEX IF NOT EXISTS idx_tenant_department ON tb_department(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_parent_department ON tb_department(parent_department_id);
 
@@ -223,7 +245,6 @@ CREATE INDEX IF NOT EXISTS idx_user_login_id ON tb_user(login_id);
 
 CREATE INDEX IF NOT EXISTS idx_tenant_role ON tb_role(tenant_id);
 
-CREATE INDEX IF NOT EXISTS idx_tenant_menu ON tb_menu(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_menu_parent ON tb_menu(parent_menu_id);
 
 CREATE INDEX IF NOT EXISTS idx_tenant_permission ON tb_permission(tenant_id);

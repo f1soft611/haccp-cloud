@@ -106,9 +106,11 @@ public class PlatformTenantApiController {
             serviceRequest.setTenantNm(requestVO.getCompanyName());
             serviceRequest.setAdminEmail(requestVO.getAdminEmail());
             serviceRequest.setAdminName(requestVO.getAdminName());
+            serviceRequest.setBusinessRegistrationNumber(requestVO.getBusinessRegistrationNumber());
             serviceRequest.setCorporateNumber(requestVO.getCorporateNumber());
             serviceRequest.setBusinessType(requestVO.getBusinessType());
             serviceRequest.setBusinessCategory(requestVO.getBusinessCategory());
+            serviceRequest.setRegistrationDate(requestVO.getRegistrationDate());
             serviceRequest.setPlanCode(requestVO.getPlanCode());
 
             TenantRegistrationResultVO created = platformTenantService.registerTenant(serviceRequest);
@@ -119,6 +121,7 @@ public class PlatformTenantApiController {
             response.setCompanyName(created.getTenantNm());
             response.setBusinessRegistrationNumber(trimToEmpty(requestVO.getBusinessRegistrationNumber()));
             response.setCorporateNumber(created.getCorporateNumber());
+            response.setRegistrationDate(created.getRegistrationDate());
             response.setAdminEmail(created.getAdminEmail());
             response.setCreatedAt(created.getCreatedAt());
             response.setMailDispatchStatus("SENT");

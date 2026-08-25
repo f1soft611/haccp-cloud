@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { normalizePlatformTenantCode } from '../tenant/platformTenant';
 
 export type UserRole = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'USER';
 export type OnboardingStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -60,6 +61,7 @@ type AuthState = {
   }) => void;
   updateAccessToken: (accessToken: string) => void;
   markOnboardingCompleted: () => void;
+  reset: () => void;
   logout: () => void;
 };
 
@@ -77,9 +79,20 @@ function loadPersistedState(): Partial<AuthState> {
     }
 
     const parsed = JSON.parse(raw) as Partial<AuthState>;
+    const hasState =
+      parsed.isAuthenticated === true &&
+      (Boolean(parsed.userId) ||
+        Boolean(parsed.accessToken) ||
+        Boolean(parsed.tenantCode));
+
+    if (!hasState) {
+      clearPersistedState();
+      return {};
+    }
 
     return {
       ...parsed,
+      tenantCode: normalizePlatformTenantCode(parsed.tenantCode),
       role: normalizeUserRole(parsed.role),
     };
   } catch {
@@ -161,7 +174,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     const nextState = {
       isAuthenticated: true,
-      tenantCode,
+      tenantCode: normalizePlatformTenantCode(tenantCode),
       planCode: planCode?.trim().toUpperCase() || undefined,
       userId,
       displayName: (displayName ?? '').trim(),
@@ -219,8 +232,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       persistState(nextState);
       return nextState;
     }),
+  reset: () => {
+    clearPersistedState();
+    set({ ...initialState });
+  },
   logout: () => {
     clearPersistedState();
-    set(initialState);
+    set({ ...initialState });
   },
 }));

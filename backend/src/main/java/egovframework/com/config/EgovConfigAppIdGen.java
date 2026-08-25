@@ -516,6 +516,32 @@ public class EgovConfigAppIdGen {
 			.build();
 	}
 
+	@Bean(destroyMethod = "destroy")
+	public EgovTableIdGnrServiceImpl haccpBaseCategoryCodeIdGnrService() {
+		return new EgovIdGnrBuilder().setDataSource(egovDataSource)
+			.setEgovIdGnrStrategyImpl(new EgovIdGnrStrategyImpl())
+			.setBlockSize(1)
+			.setTable("ids")
+			.setTableName("HACCP_CATEGORY_CODE")
+			.setPreFix("")
+			.setCipers(3)
+			.setFillChar('0')
+			.build();
+	}
+
+	@Bean(destroyMethod = "destroy")
+	public EgovTableIdGnrServiceImpl haccpBaseWorkCodeIdGnrService() {
+		return new EgovIdGnrBuilder().setDataSource(egovDataSource)
+			.setEgovIdGnrStrategyImpl(new EgovIdGnrStrategyImpl())
+			.setBlockSize(1)
+			.setTable("ids")
+			.setTableName("HACCP_WORK_CODE")
+			.setPreFix("")
+			.setCipers(3)
+			.setFillChar('0')
+			.build();
+	}
+
 	/** 게시판용 NTT_ID Generation  Config
 	 * @return
 	 */

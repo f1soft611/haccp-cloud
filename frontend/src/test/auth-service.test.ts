@@ -130,7 +130,7 @@ describe('authService', () => {
     });
 
     expect(result).toEqual({
-      tenantCode: '000001',
+      tenantCode: 'PLATFORM',
       userId: 'platform_admin',
       displayName: '플랫폼관리자',
       role: 'PLATFORM_ADMIN',

@@ -10,6 +10,14 @@ backend/src/main/resources/application-dev.properties
 backend/src/main/resources/application-prod.local.properties
 backend/config/application-prod.properties
 
+# Temporary local probe/debug utilities and one-off scripts
+Cleanup*.java
+*Probe*.java
+*Split*.java
+*.bak
+*.tmp
+*.orig
+
 # Frontend build outputs and local dependencies
 frontend/node_modules/
 frontend/dist/
@@ -46,3 +54,16 @@ Thumbs.db
 frontend/.env.production
 backend/src/main/resources/application-prod.properties
 backend/.minio/*
+Tmp*.java
+debug_db_check.py
+tmp_check_db.py
+backend/CheckTenant37.java
+backend/tenant37_check.out
+backend/tenant37_check.sql
+backend/logs/2026-08/app-2026-08-24-16-1.log.gz
+backend/test-planaccess.log
+backend/build.log
+git-secret-replacements.txt
+redact-secrets.sh
+fix_git_secret.sh
+replacements.txt

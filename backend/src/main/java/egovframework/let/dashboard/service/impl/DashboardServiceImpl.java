@@ -73,6 +73,7 @@ public class DashboardServiceImpl extends EgovAbstractServiceImpl implements Das
         Long actorUserId = resolveActorUserId(tenantId, actorLoginId);
 
         DashboardSearchConditionVO condition = new DashboardSearchConditionVO();
+        condition.setTenantId(tenantId);
         condition.setTenantCode(normalizedTenantCode);
         condition.setActorLoginId(actorLoginId);
         condition.setActorUserId(actorUserId);

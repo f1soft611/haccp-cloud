@@ -33,8 +33,12 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
 
     @Override
     public List<DepartmentVO> listDepartments(String tenantCode, String name, String active) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+
         DepartmentSearchConditionVO condition = new DepartmentSearchConditionVO();
-        condition.setTenantCode(normalizeTenantCode(tenantCode));
+        condition.setTenantId(tenantId);
+        condition.setTenantCode(normalizedTenantCode);
         condition.setName(normalizeNullable(name));
         condition.setActive(normalizeActive(active));
         return departmentDAO.selectDepartmentList(condition);
@@ -61,6 +65,7 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
 
         Map<String, Object> lookupParams = new HashMap<String, Object>();
         lookupParams.put("departmentId", newId);
+        lookupParams.put("tenantId", tenantId);
         lookupParams.put("tenantCode", tenantCode);
         return departmentDAO.selectDepartmentById(lookupParams);
     }
@@ -86,6 +91,7 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
 
         Map<String, Object> lookupParams = new HashMap<String, Object>();
         lookupParams.put("departmentId", departmentId);
+        lookupParams.put("tenantId", tenantId);
         lookupParams.put("tenantCode", tenantCode);
         return departmentDAO.selectDepartmentById(lookupParams);
     }

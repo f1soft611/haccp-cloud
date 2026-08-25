@@ -12,11 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TenantContextHolder {
     private static final ThreadLocal<Long> tenantIdHolder = new ThreadLocal<>();
+    private static final ThreadLocal<String> tenantCodeHolder = new ThreadLocal<>();
+    private static final ThreadLocal<String> dbKeyHolder = new ThreadLocal<>();
 
-    /**
-     * 테넌트 ID 설정
-     * @param tenantId 테넌트 ID
-     */
     public static void setTenantId(Long tenantId) {
         if (tenantId != null) {
             log.debug("TenantContext 설정: tenantId = {}", tenantId);
@@ -24,29 +22,40 @@ public class TenantContextHolder {
         }
     }
 
-    /**
-     * 테넌트 ID 조회
-     * @return 테넌트 ID (없으면 null)
-     */
     public static Long getTenantId() {
         Long tenantId = tenantIdHolder.get();
         log.debug("TenantContext 조회: tenantId = {}", tenantId);
         return tenantId;
     }
 
-    /**
-     * 테넌트 컨텍스트 초기화
-     */
+    public static void setTenantCode(String tenantCode) {
+        if (tenantCode != null && !tenantCode.trim().isEmpty()) {
+            tenantCodeHolder.set(PlatformTenantCodes.normalize(tenantCode));
+        }
+    }
+
+    public static String getTenantCode() {
+        return tenantCodeHolder.get();
+    }
+
+    public static void setDbKey(String dbKey) {
+        if (dbKey != null && !dbKey.trim().isEmpty()) {
+            dbKeyHolder.set(dbKey.trim().toUpperCase());
+        }
+    }
+
+    public static String getDbKey() {
+        return dbKeyHolder.get();
+    }
+
     public static void clear() {
         log.debug("TenantContext 초기화");
         tenantIdHolder.remove();
+        tenantCodeHolder.remove();
+        dbKeyHolder.remove();
     }
 
-    /**
-     * 테넌트 컨텍스트 설정 여부 확인
-     * @return 설정되었으면 true
-     */
     public static boolean hasContext() {
-        return tenantIdHolder.get() != null;
+        return tenantIdHolder.get() != null || tenantCodeHolder.get() != null || dbKeyHolder.get() != null;
     }
 }

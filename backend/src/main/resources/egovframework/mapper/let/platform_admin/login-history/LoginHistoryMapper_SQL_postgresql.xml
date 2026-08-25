@@ -45,6 +45,7 @@
 			fail_reason
 		) VALUES (
 			COALESCE(
+				#{tenantId},
 				(SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1),
 				(SELECT tenant_id FROM tb_tenant WHERE tenant_code = 'PLATFORM' LIMIT 1)
 			),

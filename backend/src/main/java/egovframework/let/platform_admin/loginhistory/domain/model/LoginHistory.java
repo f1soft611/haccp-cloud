@@ -28,6 +28,9 @@ public class LoginHistory implements Serializable {
 	@Schema(description = "로그인 이력 ID")
 	private Long loginHistoryId;
 
+	@Schema(description = "테넌트 ID")
+	private Long tenantId;
+
 	@Schema(description = "테넌트 코드")
 	private String tenantCode;
 

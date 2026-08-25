@@ -10,6 +10,7 @@ import egovframework.let.documents.portal.domain.model.HaccpPortalDocumentSearch
 import egovframework.let.documents.portal.domain.model.HaccpPortalDocumentVO;
 import egovframework.let.documents.portal.domain.repository.HaccpPortalDocumentDAO;
 import egovframework.let.documents.portal.service.HaccpPortalDocumentService;
+import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -20,11 +21,16 @@ import lombok.RequiredArgsConstructor;
 public class HaccpPortalDocumentServiceImpl extends EgovAbstractServiceImpl implements HaccpPortalDocumentService {
 
     private final HaccpPortalDocumentDAO haccpPortalDocumentDAO;
+    private final TenantInfoDAO tenantInfoDAO;
 
     @Override
     public List<HaccpPortalDocumentVO> listPortalDocuments(String tenantCode) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = tenantInfoDAO.selectTenantIdByCode(normalizedTenantCode);
+
         HaccpPortalDocumentSearchConditionVO condition = new HaccpPortalDocumentSearchConditionVO();
-        condition.setTenantCode(normalizeTenantCode(tenantCode));
+        condition.setTenantId(tenantId);
+        condition.setTenantCode(normalizedTenantCode);
         return haccpPortalDocumentDAO.selectPortalDocuments(condition);
     }
 

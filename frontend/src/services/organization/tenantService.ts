@@ -86,6 +86,7 @@ export type IssueTenantCodeResponse = {
   companyName: string;
   businessRegistrationNumber: string;
   adminEmail: string;
+  registrationDate?: string;
   createdAt: string;
   mailDispatchStatus: MailDispatchStatus;
 };
@@ -139,6 +140,8 @@ type IssueTenantCodePayload = Partial<IssueTenantCodeResponse> & {
   corporate_number?: string;
   adminEmail?: string;
   admin_email?: string;
+  registrationDate?: string;
+  registration_date?: string;
   createdAt?: string;
   created_at?: string;
   mailDispatchStatus?: MailDispatchStatus | string;
@@ -159,6 +162,8 @@ type IssueTenantCodeEnvelope = {
   corporate_number?: string;
   adminEmail?: string;
   admin_email?: string;
+  registrationDate?: string;
+  registration_date?: string;
   createdAt?: string;
   created_at?: string;
   mailDispatchStatus?: MailDispatchStatus | string;
@@ -229,6 +234,10 @@ function normalizeIssueTenantCodeResponse(
         '',
     ).trim(),
     adminEmail: String(payload.adminEmail ?? payload.admin_email ?? '').trim(),
+    registrationDate:
+      String(
+        payload.registrationDate ?? payload.registration_date ?? '',
+      ).trim() || undefined,
     createdAt: String(payload.createdAt ?? payload.created_at ?? '').trim(),
     mailDispatchStatus: mailDispatchStatus || 'FAILED',
   };

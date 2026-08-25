@@ -2,6 +2,7 @@ package egovframework.let.organization.authorities.service.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -49,7 +50,9 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
     public List<RoleInfoVO> listRoles(String tenantCode) throws Exception {
         RoleInfoVO condition = new RoleInfoVO();
         if (hasText(tenantCode)) {
-            condition.setTenantCode(tenantCode.trim().toUpperCase());
+            String normalizedTenantCode = tenantCode.trim().toUpperCase();
+            condition.setTenantCode(normalizedTenantCode);
+            condition.setTenantId(planAccessService.resolveTenantIdByTenantCode(normalizedTenantCode));
         }
         return authorityDAO.selectRoleList(condition);
     }
@@ -67,7 +70,9 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
         condition.setPageSize(pageSize);
         condition.setSearchField(hasText(searchField) ? searchField.trim() : "");
         condition.setSearchKeyword(hasText(searchKeyword) ? searchKeyword.trim() : "");
-        condition.setTenantCode(hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "");
+        String normalizedTenantCode = hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "";
+        condition.setTenantCode(normalizedTenantCode);
+        condition.setTenantId(hasText(normalizedTenantCode) ? planAccessService.resolveTenantIdByTenantCode(normalizedTenantCode) : null);
         condition.setUseAt(hasText(useAt) ? useAt.trim().toUpperCase() : "all");
 
         PaginationInfo paginationInfo = new PaginationInfo();
@@ -98,7 +103,14 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
 
         payload.setRoleCode(toUpper(payload.getRoleCode()));
         payload.setUseAt("Y");
-        payload.setTenantCode(hasText(payload.getTenantCode()) ? toUpper(payload.getTenantCode()) : "PLATFORM");
+        String normalizedTenantCode = hasText(payload.getTenantCode()) ? toUpper(payload.getTenantCode()) : "PLATFORM";
+        payload.setTenantCode(normalizedTenantCode);
+
+        Long resolvedTenantId = planAccessService.resolveTenantIdByTenantCode(normalizedTenantCode);
+        if (resolvedTenantId == null || resolvedTenantId <= 0L) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않은 tenantId입니다. tenantCode=" + normalizedTenantCode);
+        }
+        payload.setTenantId(resolvedTenantId);
         payload.setSystemRoleYn(hasText(payload.getSystemRoleYn()) ? toUpper(payload.getSystemRoleYn()) : "N");
 
         if (!hasText(payload.getFrstRegisterId())) {
@@ -217,11 +229,49 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
         Long roleId = parseLong(payload.getRoleCode());
         String normalizedRoleCode = toUpper(payload.getRoleCode());
         String normalizedTenantCode = hasText(tenantCode) ? toUpper(tenantCode) : "PLATFORM";
+        if (roleId == null) {
+            roleId = authorityDAO.selectRoleIdByCode(normalizedTenantCode, normalizedRoleCode);
+        }
+        if (roleId == null && ("TENANT_ADMIN".equals(normalizedRoleCode) || "TENANT_USER".equals(normalizedRoleCode))) {
+            RoleInfoVO defaultRole = new RoleInfoVO();
+            defaultRole.setTenantCode(normalizedTenantCode);
+            defaultRole.setRoleCode(normalizedRoleCode);
+            defaultRole.setRoleNm("TENANT_ADMIN".equals(normalizedRoleCode) ? "업체 관리자" : "업체 사용자");
+            defaultRole.setUseAt("Y");
+            defaultRole.setSystemRoleYn("Y");
+            defaultRole.setFrstRegisterId(SYSTEM_USER_ID);
+            defaultRole.setLastUpdusrId(SYSTEM_USER_ID);
+            defaultRole.setTenantId(planAccessService.resolveTenantIdByTenantCode(normalizedTenantCode));
+            authorityDAO.insertRole(defaultRole);
+            roleId = authorityDAO.selectRoleIdByCode(normalizedTenantCode, normalizedRoleCode);
+        }
+        if (roleId == null && !"TENANT_ADMIN".equals(normalizedRoleCode) && !"TENANT_USER".equals(normalizedRoleCode)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "역할을 찾을 수 없습니다: " + normalizedRoleCode);
+        }
+        if (roleId == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "역할을 찾을 수 없습니다: " + normalizedRoleCode);
+        }
         List<String> allowedMenuCodes = listAllowedMenuCodesByTenantPlan(normalizedTenantCode);
-        Set<String> allowedSet = new LinkedHashSet<String>(allowedMenuCodes);
 
-        List<String> filteredMenuIds = payload.getMenuIds().stream()
-                .filter(allowedSet::contains)
+        List<String> sourceMenuCodes = payload.getMenuIds();
+        Set<String> validMenuSet = new LinkedHashSet<String>(allowedMenuCodes);
+
+        if ("TENANT_ADMIN".equals(normalizedRoleCode)) {
+            try {
+                sourceMenuCodes = authorityDAO.selectAllMenuCodesByTenantCode(normalizedTenantCode);
+            } catch (Exception ex) {
+                sourceMenuCodes = payload.getMenuIds();
+            }
+            if (sourceMenuCodes == null || sourceMenuCodes.isEmpty()) {
+                sourceMenuCodes = payload.getMenuIds();
+            }
+            validMenuSet = new LinkedHashSet<String>(sourceMenuCodes == null ? Collections.emptyList() : sourceMenuCodes);
+        }
+
+        final Set<String> finalValidMenuSet = new LinkedHashSet<String>(validMenuSet);
+        final List<String> effectiveSourceMenuCodes = sourceMenuCodes == null ? Collections.emptyList() : sourceMenuCodes;
+        List<String> filteredMenuIds = effectiveSourceMenuCodes.stream()
+                .filter(code -> code != null && finalValidMenuSet.contains(code.trim().toUpperCase()))
                 .collect(Collectors.toList());
 
         Map<String, Object> deleteCondition = new HashMap<String, Object>();
@@ -244,7 +294,11 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
             if (roleId != null) {
                 item.setRoleId(roleId);
             } else {
-                item.setRoleCode(normalizedRoleCode);
+                Long resolvedRoleId = authorityDAO.selectRoleIdByCode(normalizedTenantCode, normalizedRoleCode);
+                if (resolvedRoleId == null) {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "역할을 찾을 수 없습니다: " + normalizedRoleCode);
+                }
+                item.setRoleId(resolvedRoleId);
             }
             item.setTenantCode(normalizedTenantCode);
             item.setMenuId(menuId);
@@ -275,6 +329,23 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
 
         authorityDAO.upsertPermissionType(tenantId, "PERM_READ", "조회");
         authorityDAO.upsertPermissionType(tenantId, "PERM_WRITE", "등록/수정");
+    }
+
+    @Override
+    public List<String> listRoleMenuCodes(String tenantCode, String roleCode) throws Exception {
+        String normalizedTenantCode = hasText(tenantCode) ? toUpper(tenantCode) : "PLATFORM";
+        String normalizedRoleCode = hasText(roleCode) ? toUpper(roleCode) : "";
+
+        if ("TENANT_ADMIN".equals(normalizedRoleCode)) {
+            try {
+                List<String> tenantMenus = authorityDAO.selectAllMenuCodesByTenantCode(normalizedTenantCode);
+                return tenantMenus == null ? Collections.emptyList() : tenantMenus;
+            } catch (Exception ex) {
+                return listAllowedMenuCodesByTenantPlan(normalizedTenantCode);
+            }
+        }
+
+        return listAllowedMenuCodesByTenantPlan(normalizedTenantCode);
     }
 
     @Override

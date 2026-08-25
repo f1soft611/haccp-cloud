@@ -45,6 +45,10 @@ public class EgovConfigAppMapper {
 	DataSource dataSource;
 
 	@Autowired
+	@Qualifier("centralDataSource")
+	DataSource centralDataSource;
+
+	@Autowired
 	Environment env;
 
 	private String dbType;
@@ -80,6 +84,29 @@ public class EgovConfigAppMapper {
 		}
 
 		return sqlSessionFactoryBean;
+	}
+
+	@Bean(name = "centralSqlSession")
+	public SqlSessionFactoryBean centralSqlSession() {
+		SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
+		sqlSessionFactoryBean.setDataSource(centralDataSource);
+		PathMatchingResourcePatternResolver pathMatchingResourcePatternResolver = new PathMatchingResourcePatternResolver();
+		sqlSessionFactoryBean.setConfigLocation(
+			pathMatchingResourcePatternResolver
+				.getResource("classpath:/egovframework/mapper/config/mapper-config.xml"));
+		try {
+			sqlSessionFactoryBean.setMapperLocations(
+				pathMatchingResourcePatternResolver
+					.getResources("classpath:/egovframework/mapper/let/**/*_" + dbType + ".xml"));
+		} catch (IOException e) {
+			// TODO Exception 처리 필요
+		}
+		return sqlSessionFactoryBean;
+	}
+
+	@Bean(name = "egovCentralSqlSessionTemplate")
+	public SqlSessionTemplate egovCentralSqlSessionTemplate(@Qualifier("centralSqlSession") SqlSessionFactory sqlSession) {
+		return new SqlSessionTemplate(sqlSession);
 	}
 
 	@Bean

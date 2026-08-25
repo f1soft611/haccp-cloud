@@ -1,9 +1,6 @@
 package egovframework.let.platform_admin.tenants.service.impl;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -23,6 +20,8 @@ import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationR
 import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
 import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
+import egovframework.let.platform_admin.tenants.service.TenantDatabaseProvisioningService;
+import egovframework.let.platform_admin.access.domain.repository.PlanAccessDAO;
 
 /**
  * 플랫폼 테넌트 서비스 구현체
@@ -43,13 +42,17 @@ import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
 @Service("platformTenantService")
 public class PlatformTenantServiceImpl implements PlatformTenantService {
 
-    private static final DateTimeFormatter TENANT_CODE_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyMMdd");
-    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
     private static final Pattern EMAIL_PATTERN =
             Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     @Resource(name = "tenantInfoDAO")
     private TenantInfoDAO tenantInfoDAO;
+
+    @Resource(name = "tenantDatabaseProvisioningService")
+    private TenantDatabaseProvisioningService tenantDatabaseProvisioningService;
+
+    @Resource(name = "planAccessDAO")
+    private PlanAccessDAO planAccessDAO;
 
     @Override
     @Transactional
@@ -59,55 +62,119 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         String tenantNm = requestVO.getTenantNm().trim();
         String adminEmail = emptyToNull(requestVO.getAdminEmail());
         String adminName = emptyToNull(requestVO.getAdminName());
+        String businessRegistrationNumber = emptyToNull(requestVO.getBusinessRegistrationNumber());
         String corporateNumber = emptyToNull(requestVO.getCorporateNumber());
         String normalizedCorporateNumber = normalizeCorporateNumber(corporateNumber);
         String businessType = emptyToNull(requestVO.getBusinessType());
         String businessCategory = emptyToNull(requestVO.getBusinessCategory());
+        String registrationDate = emptyToNull(requestVO.getRegistrationDate());
         String planCode = emptyToNull(requestVO.getPlanCode());
+
+        String normalizedBusinessRegistrationNumber = normalizeBusinessRegistrationNumber(businessRegistrationNumber);
+        String tenantSerialCode = normalizedBusinessRegistrationNumber;
+        String tenantCode = tenantSerialCode;
+        String tenantDbName = "tenant_" + tenantSerialCode;
+
+        boolean tenantDatabaseMetaExists = tenantInfoDAO.selectTenantDatabaseCountByDbName(tenantDbName) > 0;
+        boolean tenantDatabasePhysicalExists = tenantDatabaseProvisioningService != null
+                && tenantDatabaseProvisioningService.databaseExists(tenantDbName);
+        boolean tenantDatabaseAlreadyExists = tenantDatabaseMetaExists || tenantDatabasePhysicalExists;
 
         if (normalizedCorporateNumber != null) {
             int activeDuplicateCount = tenantInfoDAO.selectActiveTenantCountByCorporateNumber(normalizedCorporateNumber);
+            if (activeDuplicateCount > 0) {
+                throw new IllegalStateException("이미 등록된 활성 업체의 법인번호입니다");
+            }
+        }
+
+        if (normalizedBusinessRegistrationNumber != null) {
+            int activeDuplicateCount = tenantInfoDAO.selectActiveTenantCountByBusinessRegistrationNumber(normalizedBusinessRegistrationNumber);
             if (activeDuplicateCount > 0) {
                 throw new IllegalStateException("이미 등록된 활성 업체의 사업자번호입니다");
             }
         }
 
-        String datePrefix = TENANT_CODE_DATE_FORMATTER.format(LocalDate.now(BUSINESS_ZONE));
-        String maxCodeForDate = tenantInfoDAO.selectMaxTenantCodeByDatePrefix(datePrefix);
+        tenantInfoDAO.insertTenantWithBusinessInfo(
+            tenantSerialCode,
+            tenantNm,
+            adminEmail,
+            businessRegistrationNumber,
+            corporateNumber,
+            businessType,
+            businessCategory,
+            registrationDate);
 
-        String tenantSerialCode = TenantCodeGenerator.nextTenantCode(datePrefix, maxCodeForDate);
-        String tenantCode = "TENANT_" + tenantSerialCode;
+        Long existingTenantId = tenantInfoDAO.selectTenantIdByCode(tenantSerialCode);
 
-        tenantInfoDAO.insertTenant(
-                tenantSerialCode,
-                tenantNm,
-                adminEmail,
-                corporateNumber,
-                businessType,
-                businessCategory
-        );
+        if (existingTenantId != null && tenantInfoDAO.selectTenantDatabaseCountByDbName(tenantDbName) == 0) {
+            tenantInfoDAO.insertTenantDatabase(existingTenantId, tenantCode, tenantDbName, "public");
+        }
 
-        Long tenantId = tenantInfoDAO.selectTenantIdByCode(tenantSerialCode);
-        if (tenantId != null && planCode != null) {
-            tenantInfoDAO.expireActiveTenantSubscription(tenantId);
-            int inserted = tenantInfoDAO.insertActiveTenantSubscriptionByPlanCode(tenantId, planCode.trim().toUpperCase());
+        if (!tenantDatabaseAlreadyExists && existingTenantId != null && tenantDatabaseProvisioningService != null) {
+            List<String> planMenuCodes = resolvePlanMenuCodes(planCode);
+            tenantDatabaseProvisioningService.provisionNewTenantDatabase(
+                existingTenantId, tenantCode, tenantDbName, "public", planCode, planMenuCodes);
+        }
+
+        if (existingTenantId != null && planCode != null) {
+            tenantInfoDAO.expireActiveTenantSubscription(existingTenantId);
+            int inserted = tenantInfoDAO.insertActiveTenantSubscriptionByPlanCode(existingTenantId, planCode.trim().toUpperCase());
             if (inserted <= 0) {
                 throw new IllegalStateException("유효하지 않은 플랜 코드입니다");
             }
         }
 
+        TenantRegistrationResultVO resultVO = buildTenantRegistrationResult(
+            existingTenantId,
+            tenantCode,
+            tenantNm,
+            adminEmail,
+            businessRegistrationNumber,
+            corporateNumber,
+            businessType,
+            businessCategory,
+            registrationDate,
+            planCode);
+        resultVO.setAdminName(adminName);
+        return resultVO;
+    }
+
+    private TenantRegistrationResultVO buildTenantRegistrationResult(
+            Long tenantId,
+            String tenantCode,
+            String tenantNm,
+            String adminEmail,
+            String businessRegistrationNumber,
+            String corporateNumber,
+            String businessType,
+            String businessCategory,
+            String registrationDate,
+            String planCode) {
         TenantRegistrationResultVO resultVO = new TenantRegistrationResultVO();
         resultVO.setTenantId(tenantId);
         resultVO.setTenantCode(tenantCode);
         resultVO.setTenantNm(tenantNm);
         resultVO.setAdminEmail(adminEmail);
-        resultVO.setAdminName(adminName);
+        resultVO.setBusinessRegistrationNumber(businessRegistrationNumber);
         resultVO.setCorporateNumber(corporateNumber);
         resultVO.setBusinessType(businessType);
         resultVO.setBusinessCategory(businessCategory);
+        resultVO.setRegistrationDate(registrationDate);
         resultVO.setPlanCode(planCode);
         resultVO.setCreatedAt(Instant.now().toString());
         return resultVO;
+    }
+
+    private List<String> resolvePlanMenuCodes(String planCode) {
+        if (planAccessDAO == null || planCode == null || planCode.trim().isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        try {
+            return planAccessDAO.selectPlanMenuCodes(planCode.trim().toUpperCase());
+        } catch (Exception ex) {
+            throw new IllegalStateException("플랜별 메뉴 조회에 실패했습니다. planCode=" + planCode, ex);
+        }
     }
 
     @Override
@@ -308,6 +375,13 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         if (requestVO.getBusinessCategory() == null || requestVO.getBusinessCategory().trim().isEmpty()) {
             throw new IllegalArgumentException("businessCategory is required");
         }
+        String businessRegistrationNumber = requestVO.getBusinessRegistrationNumber();
+        if (businessRegistrationNumber == null || businessRegistrationNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException("businessRegistrationNumber is required");
+        }
+        if (!businessRegistrationNumber.replaceAll("[^0-9]", "").matches("[0-9]{10}")) {
+            throw new IllegalArgumentException("businessRegistrationNumber format is invalid");
+        }
         String adminEmail = requestVO.getAdminEmail();
         if (adminEmail == null || adminEmail.trim().isEmpty()) {
             throw new IllegalArgumentException("adminEmail is required");
@@ -317,16 +391,20 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         }
     }
 
+    private String normalizeBusinessRegistrationNumber(String businessRegistrationNumber) {
+        return businessRegistrationNumber.replaceAll("[^0-9]", "");
+    }
+
     private String normalizeCorporateNumber(String corporateNumber) {
         if (corporateNumber == null || corporateNumber.trim().isEmpty()) {
             return null;
         }
 
         String normalized = corporateNumber.replaceAll("[^0-9]", "");
-        if (normalized.length() != 13) {
-            throw new IllegalArgumentException("corporateNumber format is invalid");
+        if (normalized.length() == 10 || normalized.length() == 13) {
+            return normalized;
         }
-        return normalized;
+        throw new IllegalArgumentException("corporateNumber format is invalid");
     }
 
     private String emptyToNull(String value) {

@@ -198,7 +198,6 @@ export function HaccpBaseManagementPage() {
   const handleCreate = () => {
     if (
       !createForm.categoryId ||
-      !createForm.divisionCode.trim() ||
       !createForm.divisionName.trim() ||
       !createForm.reviewerId ||
       !createForm.approverId

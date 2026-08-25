@@ -118,18 +118,15 @@ export function PlatformAuthorityManagementPage() {
     retry: false,
   });
 
-  const effectiveRoleIdentifier = selectedRole?.id ?? '';
+  const effectiveRoleCode =
+    selectedRole?.code ??
+    rolesQuery.data?.items.find((role) => role.id === selectedRole?.id)?.code ??
+    '';
 
   const mappingQuery = useQuery({
-    queryKey: [
-      'platform-admin',
-      'role-menus',
-      effectiveRoleIdentifier,
-      tenantCode,
-    ],
-    queryFn: () =>
-      getPlatformRoleMenuMapping(effectiveRoleIdentifier, tenantCode),
-    enabled: mappingModalOpen && effectiveRoleIdentifier.length > 0,
+    queryKey: ['platform-admin', 'role-menus', effectiveRoleCode, tenantCode],
+    queryFn: () => getPlatformRoleMenuMapping(effectiveRoleCode, tenantCode),
+    enabled: mappingModalOpen && effectiveRoleCode.length > 0,
     retry: false,
   });
 
@@ -363,7 +360,7 @@ export function PlatformAuthorityManagementPage() {
   };
 
   const handleSaveMapping = () => {
-    if (!selectedRole || !effectiveRoleIdentifier) {
+    if (!selectedRole || !effectiveRoleCode) {
       return;
     }
 
@@ -373,7 +370,7 @@ export function PlatformAuthorityManagementPage() {
       confirmText: '저장',
       action: () => {
         saveMutation.mutate({
-          roleCode: effectiveRoleIdentifier,
+          roleCode: effectiveRoleCode,
           tenantCode,
           menuIds: selectedMenuIds,
         });

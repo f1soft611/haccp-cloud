@@ -110,9 +110,7 @@
             AND a.use_at = 'Y'
             AND COALESCE(a.delete_status, 'N') != 'Y'
         ) wa ON TRUE
-        WHERE w.tenant_id = (
-            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
-        )
+        WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
         <if test='active != null and active == "Y"'>
             AND w.use_at = 'Y'
@@ -205,7 +203,7 @@
             AND COALESCE(a.delete_status, 'N') != 'Y'
         ) wa ON TRUE
         WHERE w.drafting_work_category_id = #{id}
-          AND t.tenant_code = #{tenantCode}
+          AND w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
     </select>
 
@@ -236,6 +234,18 @@
         FROM tb_user
         WHERE tenant_id = #{tenantId}
           AND login_id = #{loginId}
+        LIMIT 1
+    </select>
+
+    <select id="HaccpBaseWorkDAO.selectWorkIdByCode"
+            parameterType="map"
+            resultType="long">
+        SELECT drafting_work_category_id
+        FROM tb_drafting_work_category
+        WHERE tenant_id = #{tenantId}
+          AND drafting_work_category_group_id = #{categoryGroupId}
+          AND cata_type_code = #{divisionCode}
+          AND COALESCE(delete_status, 'N') != 'Y'
         LIMIT 1
     </select>
 

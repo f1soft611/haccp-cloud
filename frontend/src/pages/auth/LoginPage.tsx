@@ -13,7 +13,7 @@ import { useTheme } from '@mui/material/styles';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { appTheme } from '../../app/theme';
-import { login } from '../../services/auth/authService';
+import { login, loginPlatformAdmin } from '../../services/auth/authService';
 import { getCurrentPlanAccess } from '../../services/platform-admin/planAccessService';
 import { extractApiErrorMessage } from '../../services/api/errorMessage';
 import {
@@ -151,7 +151,11 @@ function resolveDomainFromLocation(routeDomain?: string): string {
   return '';
 }
 
-export function LoginPage() {
+type LoginPageProps = {
+  adminMode?: boolean;
+};
+
+export function LoginPage({ adminMode = false }: LoginPageProps) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const navigate = useNavigate();
@@ -174,8 +178,19 @@ export function LoginPage() {
   const shouldSkipAutoDomainRedirect =
     (location.state as { skipAutoDomainRedirect?: boolean } | null)
       ?.skipAutoDomainRedirect === true;
+  const isAdminRoute = adminMode;
 
   useEffect(() => {
+    if (isAdminRoute) {
+      setDomain('');
+      setLoginStep('id');
+      setPassword('');
+      setTenantInfo(null);
+      setTenantCode('');
+      setTenantBrand(null);
+      setRecommendedDomain('');
+      return;
+    }
     let mounted = true;
     let hasNavigatedFallback = false;
 
@@ -284,7 +299,7 @@ export function LoginPage() {
   };
 
   const logoSrc = resolveSafeLogoSrc(tenantBrand?.logoImage);
-  const isDomainScopedLogin = !!domain;
+  const isDomainScopedLogin = !!domain && !isAdminRoute;
   const normalizedIdInput = userId.trim();
   const effectiveUserId =
     isDomainScopedLogin && normalizedIdInput && !normalizedIdInput.includes('@')
@@ -301,16 +316,20 @@ export function LoginPage() {
   const fieldDefaultBorder = '1px solid #cbd5e1';
   const fieldFocusBorder = `1px solid ${lightPalette.primary.main}`;
   const fieldFocusShadow = `0 0 0 3px ${alpha(lightPalette.primary.main, 0.18)}`;
-  const loginTitle = tenantDisplayName
-    ? `${tenantDisplayName}에 로그인`
+  const loginTitle = isAdminRoute
+    ? '플랫폼 관리자 로그인'
+    : tenantDisplayName
+      ? `${tenantDisplayName}에 로그인`
+      : isDomainScopedLogin
+        ? `${domain} 오피스에 로그인`
+        : APP_LABELS.pageTitle.login;
+  const loginHelpText = isAdminRoute
+    ? '중앙 관리자 계정으로 로그인하세요.'
     : isDomainScopedLogin
-      ? `${domain} 오피스에 로그인`
-      : APP_LABELS.pageTitle.login;
-  const loginHelpText = isDomainScopedLogin
-    ? loginStep === 'id'
-      ? '로그인 ID를 입력하세요.'
-      : '본인 확인을 위해 비밀번호를 입력하세요.'
-    : APP_LABELS.message.loginHelp;
+      ? loginStep === 'id'
+        ? '로그인 ID를 입력하세요.'
+        : '본인 확인을 위해 비밀번호를 입력하세요.'
+      : APP_LABELS.message.loginHelp;
 
   useEffect(() => {
     if (!isDomainScopedLogin || loginStep !== 'password') {
@@ -325,11 +344,16 @@ export function LoginPage() {
 
     setIsLoading(true);
     try {
-      const result = await login({
-        userId: effectiveUserId,
-        password,
-        tenantCode,
-      });
+      const result = isAdminRoute
+        ? await loginPlatformAdmin({
+            userId: effectiveUserId,
+            password,
+          })
+        : await login({
+            userId: effectiveUserId,
+            password,
+            tenantCode,
+          });
 
       let planCode: string | undefined;
       try {
@@ -433,7 +457,8 @@ export function LoginPage() {
           sx={{
             position: 'absolute',
             top: 12,
-            left: { xs: 16, md: 'calc(50% - 470px)' },
+            left: 16,
+            right: 'auto',
             display: 'block',
             width: 148,
             height: 25,

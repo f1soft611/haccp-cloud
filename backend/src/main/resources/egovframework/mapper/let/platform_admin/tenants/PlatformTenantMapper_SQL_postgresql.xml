@@ -52,11 +52,42 @@
         )
     </insert>
 
+    <insert id="TenantInfoDAO.insertTenantWithBusinessInfo" parameterType="map">
+        INSERT INTO tb_tenant (
+            tenant_code,
+            tenant_nm,
+            admin_email,
+            business_registration_number,
+            corporate_number,
+            business_type,
+            business_category,
+            registration_date,
+            use_at
+        ) VALUES (
+            #{tenantSerialCode},
+            #{tenantNm},
+            #{adminEmail},
+            #{businessRegistrationNumber},
+            #{corporateNumber},
+            #{businessType},
+            #{businessCategory},
+            NULLIF(#{registrationDate}, '')::date,
+            'Y'
+        )
+    </insert>
+
     <!-- 테넌트 코드 기준 테넌트 ID 조회 -->
     <select id="TenantInfoDAO.selectTenantIdByCode" parameterType="string" resultType="long">
         SELECT tenant_id
         FROM tb_tenant
         WHERE tenant_code = #{value}
+    </select>
+
+    <!-- DB명 기준 테넌트 DB 레지스트리 건수 조회 -->
+    <select id="TenantInfoDAO.selectTenantDatabaseCountByDbName" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tb_tenant_database
+        WHERE db_name = #{value}
     </select>
 
     <!-- 테넌트 코드 기준 온보딩 상태 조회 -->
@@ -229,9 +260,20 @@
         )
     </insert>
 
-    <!-- 사업자번호 기준 활성 테넌트 건수 조회 -->
+    <!-- 법인번호 기준 활성 테넌트 건수 조회 -->
     <select id="TenantInfoDAO.selectActiveTenantCountByCorporateNumber" parameterType="string" resultType="int">
-                SELECT 0
+                SELECT COUNT(*)
+                FROM tb_tenant
+                WHERE corporate_number = #{value}
+                    AND use_at = 'Y'
+    </select>
+
+    <!-- 사업자번호 기준 활성 테넌트 건수 조회 -->
+    <select id="TenantInfoDAO.selectActiveTenantCountByBusinessRegistrationNumber" parameterType="string" resultType="int">
+                SELECT COUNT(*)
+                FROM tb_tenant
+                WHERE business_registration_number = #{value}
+                    AND use_at = 'Y'
     </select>
 
     <!-- 조건별 테넌트 건수 조회 -->
@@ -283,9 +325,9 @@
             COALESCE(p.plan_code, '-') AS plan_code,
             COALESCE(p.plan_nm, '-') AS plan_name,
             TO_CHAR(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
-            NULL AS corporate_number,
-            NULL AS business_type,
-            NULL AS business_category
+            t.corporate_number,
+            t.business_type,
+            t.business_category
         FROM tb_tenant t
         LEFT JOIN (
             SELECT DISTINCT ON (s.tenant_id)
@@ -341,9 +383,9 @@
             COALESCE(p.plan_code, '-') AS plan_code,
             COALESCE(p.plan_nm, '-') AS plan_name,
             TO_CHAR(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
-            NULL AS corporate_number,
-            NULL AS business_type,
-            NULL AS business_category
+            t.corporate_number,
+            t.business_type,
+            t.business_category
         FROM tb_tenant t
         LEFT JOIN (
             SELECT DISTINCT ON (s.tenant_id)
@@ -367,7 +409,7 @@
             tenant_id,
             tenant_code,
             tenant_nm AS company_name,
-            NULL AS business_registration_number,
+            business_registration_number,
             COALESCE(NULLIF(TRIM(admin_email), ''), '-') AS admin_email,
             TO_CHAR(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS issued_at
         FROM tb_tenant
@@ -382,9 +424,9 @@
                         t.tenant_code,
                         t.tenant_nm,
                         t.admin_email,
-                        NULL AS corporate_number,
-                        NULL AS business_type,
-                        NULL AS business_category,
+                        t.corporate_number,
+                        t.business_type,
+                        t.business_category,
                         t.logo_image,
                         COALESCE(NULLIF(TRIM(t.onboarding_status), ''), 'EMAIL_QUEUED') AS onboarding_status,
                         t.created_at,
@@ -407,9 +449,9 @@
             tenant_code,
             tenant_nm,
             admin_email,
-            NULL AS corporate_number,
-            NULL AS business_type,
-            NULL AS business_category,
+            corporate_number,
+            business_type,
+            business_category,
             logo_image,
             COALESCE(NULLIF(TRIM(onboarding_status), ''), 'EMAIL_QUEUED') AS onboarding_status,
             created_at,
@@ -418,6 +460,84 @@
             use_at
         FROM tb_tenant
         WHERE tenant_id = #{tenantId}
+    </select>
+
+    <!-- tenantId로 tenant DB registry 조회 -->
+    <insert id="TenantInfoDAO.insertTenantDatabase" parameterType="map">
+        INSERT INTO tb_tenant_database (
+            tenant_id,
+            db_key,
+            db_name,
+            jdbc_url,
+            jdbc_username,
+            jdbc_password_secret_ref,
+            driver_class_name,
+            schema_name,
+            pool_min_idle,
+            pool_max_size,
+            provisioning_status,
+            use_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{tenantId},
+            #{dbKey},
+            #{dbName},
+            #{jdbcUrl},
+            #{jdbcUsername},
+            #{jdbcPasswordSecretRef},
+            'org.postgresql.Driver',
+            #{schemaName},
+            1,
+            5,
+            'PENDING',
+            'Y',
+            NOW(),
+            NOW()
+        )
+    </insert>
+
+    <update id="TenantInfoDAO.updateTenantDatabaseProvisioningStatus" parameterType="map">
+        UPDATE tb_tenant_database
+        SET provisioning_status = #{provisioningStatus},
+            updated_at = NOW()
+        WHERE tenant_id = #{tenantId}
+    </update>
+
+    <select id="TenantInfoDAO.selectTenantDatabaseByTenantId" parameterType="long" resultType="egovframework.let.platform_admin.tenants.domain.model.TenantDatabaseInfoVO">
+        SELECT
+            td.tenant_id,
+            td.db_key,
+            td.jdbc_url,
+            td.jdbc_username,
+            td.jdbc_password_secret_ref,
+            td.schema_name,
+            td.provisioning_status,
+            td.use_at
+        FROM tb_tenant_database td
+        WHERE td.tenant_id = #{value}
+          AND td.use_at = 'Y'
+        LIMIT 1
+    </select>
+
+    <!-- domain/host로 tenant DB registry 조회 -->
+    <select id="TenantInfoDAO.selectTenantDatabaseByDomainHost" parameterType="string" resultType="egovframework.let.platform_admin.tenants.domain.model.TenantDatabaseInfoVO">
+        SELECT
+            td.tenant_id,
+            td.db_key,
+            td.jdbc_url,
+            td.jdbc_username,
+            td.jdbc_password_secret_ref,
+            td.schema_name,
+            td.provisioning_status,
+            td.use_at
+        FROM tb_tenant_domain domain
+        JOIN tb_tenant_database td ON td.tenant_id = domain.tenant_id
+        WHERE domain.email_domain = #{value}
+          AND domain.use_at = 'Y'
+          AND td.use_at = 'Y'
+        ORDER BY CASE WHEN domain.is_primary = 'Y' THEN 0 ELSE 1 END, domain.tenant_domain_id
+        LIMIT 1
     </select>
 
     <!-- 테넌트 로고 이미지 업데이트 -->

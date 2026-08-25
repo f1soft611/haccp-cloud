@@ -65,6 +65,19 @@ public class AuthorityDAO extends EgovAbstractMapper {
         return selectOne("AuthorityDAO.selectMenuIdByCode", menuCode);
     }
 
+    public Long selectRoleIdByCode(String tenantCode, String roleCode) throws Exception {
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantCode", tenantCode);
+        condition.put("roleCode", roleCode);
+        return selectOne("AuthorityDAO.selectRoleIdByCode", condition);
+    }
+
+    public List<String> selectAllMenuCodesByTenantCode(String tenantCode) throws Exception {
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantCode", tenantCode);
+        return selectList("AuthorityDAO.selectAllMenuCodesByTenantCode", condition);
+    }
+
     public void upsertPermissionType(Long tenantId, String permissionCode, String permissionNm) throws Exception {
         Map<String, Object> payload = new HashMap<String, Object>();
         payload.put("tenantId", tenantId);

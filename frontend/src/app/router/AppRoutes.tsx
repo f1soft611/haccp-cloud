@@ -159,12 +159,13 @@ export function AppRoutes() {
   return (
     <Suspense fallback={null}>
       <Routes>
+        <Route path="/admin" element={<LoginPage adminMode />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/login/:domain" element={<LoginPage />} />
         <Route path="/onboarding/verify" element={<OnboardingVerifyPage />} />
         <Route
           path="/login/platform"
-          element={<Navigate to="/login" replace />}
+          element={<Navigate to="/admin" replace />}
         />
         <Route
           element={

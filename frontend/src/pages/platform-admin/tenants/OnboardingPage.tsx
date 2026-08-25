@@ -37,6 +37,12 @@ function formatBrn(value: string): string {
   return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
 }
 
+function formatCorporateNumber(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 13);
+  if (digits.length <= 6) return digits;
+  return `${digits.slice(0, 6)}-${digits.slice(6)}`;
+}
+
 function resolveIssueTenantCodeErrorMessage(error: unknown): string {
   const rawMessage = extractApiErrorMessage(
     error,
@@ -108,7 +114,7 @@ export function OnboardingPage() {
   };
 
   const handleCorporateNumberChange = (raw: string) => {
-    setField('corporateNumber', raw);
+    setField('corporateNumber', formatCorporateNumber(raw));
     setCorporateNumberError(false);
   };
 

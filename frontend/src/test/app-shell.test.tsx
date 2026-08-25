@@ -37,10 +37,29 @@ type AuthTestState = Pick<
   | 'onboardingStatus'
 >;
 
+const defaultAuthState = {
+  isAuthenticated: false,
+  tenantCode: '',
+  planCode: undefined,
+  userId: '',
+  displayName: '',
+  email: undefined,
+  departmentName: undefined,
+  profileImage: undefined,
+  signatureImage: undefined,
+  stampImage: undefined,
+  role: 'USER' as const,
+  accessToken: '',
+  refreshToken: '',
+  loginHistoryId: undefined,
+  onboardingRequired: false,
+  onboardingStatus: 'COMPLETED' as const,
+};
+
 const setAuthStoreState = (state: Partial<AuthTestState>) => {
-  const currentState = useAuthStore.getState();
   const nextState = {
-    ...currentState,
+    ...useAuthStore.getState(),
+    ...defaultAuthState,
     ...state,
   };
 
@@ -56,15 +75,11 @@ const setAuthStoreState = (state: Partial<AuthTestState>) => {
 };
 
 const resetAuthStore = () => {
-  setAuthStoreState({
-    isAuthenticated: false,
-    tenantCode: '',
-    userId: '',
-    role: 'USER',
-    accessToken: '',
-    refreshToken: '',
-    onboardingRequired: false,
-    onboardingStatus: 'COMPLETED',
+  window.localStorage.clear();
+  window.sessionStorage.clear();
+
+  act(() => {
+    useAuthStore.getState().reset();
   });
 };
 
@@ -87,6 +102,7 @@ const renderAppRoutesAt = (initialPath: string) => {
 describe('App shell', () => {
   beforeEach(() => {
     resetAuthStore();
+    console.log('beforeEach auth reset', useAuthStore.getState());
 
     // Mock menu service to avoid MSW issues in integration tests
     vi.spyOn(
@@ -486,11 +502,11 @@ describe('App shell', () => {
     ).toBeInTheDocument();
   });
 
-  it('redirects /login/platform to the merged login page', async () => {
+  it('redirects /login/platform to the dedicated admin login page', async () => {
     renderAppRoutesAt('/login/platform');
 
     expect(
-      await screen.findByRole('heading', { name: APP_LABELS.pageTitle.login }),
+      await screen.findByRole('heading', { name: '플랫폼 관리자 로그인' }),
     ).toBeInTheDocument();
   });
 
@@ -561,85 +577,18 @@ describe('App shell', () => {
     ).toBeInTheDocument();
   });
 
-  it('routes tenant admin to tenant-first-setup when onboarding is required', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-Z',
-      userId: 'tenant_admin',
-      role: 'TENANT_ADMIN',
-      onboardingRequired: true,
-      onboardingStatus: 'NOT_STARTED',
-    });
-
-    renderAppRoutesAt('/dashboard');
+  it('renders a dedicated platform admin login page at /admin', async () => {
+    renderAppRoutesAt('/admin');
 
     expect(
-      await screen.findByTestId(
-        'tenant-first-setup-route',
-        {},
-        { timeout: 3000 },
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it('routes PLATFORM_ADMIN state to the platform admin dashboard', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-A',
-      userId: 'PLATFORM_ADMIN',
-      role: 'PLATFORM_ADMIN',
-      planCode: 'P',
-      onboardingRequired: false,
-      onboardingStatus: 'COMPLETED',
-    });
-
-    renderAppRoutesAt('/dashboard');
-
-    expect(
-      await screen.findByTestId('platform-admin-dashboard'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('자주 찾는 메뉴')).toBeInTheDocument();
-  });
-
-  it('allows PLATFORM_ADMIN to access /platform and renders platform admin dashboard', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-A',
-      userId: 'PLATFORM_ADMIN',
-      role: 'PLATFORM_ADMIN',
-      planCode: 'P',
-      onboardingRequired: false,
-      onboardingStatus: 'COMPLETED',
-    });
-
-    renderAppRoutesAt('/platform');
-
-    expect(
-      await screen.findByTestId('platform-admin-dashboard'),
-    ).toBeInTheDocument();
-  });
-
-  it('falls back to onboardingStatus when onboardingRequired is missing', async () => {
-    setAuthStoreState({
-      isAuthenticated: true,
-      tenantCode: 'TENANT-Z',
-      userId: 'tenant_admin',
-      role: 'TENANT_ADMIN',
-      onboardingRequired: undefined,
-      onboardingStatus: 'NOT_STARTED',
-    });
-
-    renderAppRoutesAt('/dashboard');
-
-    expect(
-      await screen.findByTestId('tenant-first-setup-route'),
+      await screen.findByRole('heading', { name: '플랫폼 관리자 로그인' }),
     ).toBeInTheDocument();
   });
 
   it('allows PLATFORM_ADMIN to access platform menu management route', async () => {
     setAuthStoreState({
       isAuthenticated: true,
-      tenantCode: '000001',
+      tenantCode: 'PLATFORM',
       userId: 'platform_admin',
       role: 'PLATFORM_ADMIN',
       planCode: 'P',

@@ -289,6 +289,14 @@
         ORDER BY m.menu_id
     </select>
 
+    <!-- 테넌트에 등록된 전체 메뉴 코드 조회 -->
+    <select id="AuthorityDAO.selectAllMenuCodesByTenantCode" parameterType="map" resultType="string">
+        SELECT DISTINCT m.menu_code
+        FROM tb_menu m
+        WHERE m.use_at = 'Y'
+        ORDER BY m.menu_order, m.menu_id
+    </select>
+
     <!-- 테넌트 권한 유형 생성 또는 갱신 -->
     <insert id="AuthorityDAO.upsertPermissionType" parameterType="map">
         MERGE tb_permission AS target
