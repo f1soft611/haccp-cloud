@@ -35,7 +35,6 @@ export function HaccpBaseCreateDialog(props: {
   } = props;
 
   const isSubmitDisabled =
-    !value.divisionCode.trim() ||
     !value.divisionName.trim() ||
     !value.categoryId ||
     !value.reviewerId ||
@@ -77,11 +76,13 @@ export function HaccpBaseCreateDialog(props: {
               })
             }
             inputProps={{ maxLength: 3 }}
-            required
+            required={false}
             autoFocus={mode === 'create'}
             disabled={mode === 'edit'}
             helperText={
-              mode === 'edit' ? '구분코드는 수정할 수 없습니다.' : undefined
+              mode === 'edit'
+                ? '구분코드는 수정할 수 없습니다.'
+                : '미입력 시 자동 발급됩니다.'
             }
           />
 

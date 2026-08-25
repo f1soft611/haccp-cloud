@@ -98,6 +98,18 @@
         LIMIT 1
     </select>
 
+    <!-- 동일 테넌트의 분류 코드 존재 여부 조회 -->
+    <select id="HaccpBaseCategoryDAO.selectCategoryIdByCode"
+            parameterType="map"
+            resultType="long">
+        SELECT drafting_work_category_group_id
+        FROM tb_drafting_work_category_group
+        WHERE tenant_id = #{tenantId}
+          AND cata_code = #{categoryCode}
+          AND COALESCE(delete_status, 'N') != 'Y'
+        LIMIT 1
+    </select>
+
     <!-- 업무 분류 등록 -->
     <select id="HaccpBaseCategoryDAO.insertCategory"
             parameterType="map"

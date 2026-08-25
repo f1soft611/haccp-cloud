@@ -62,3 +62,4 @@ backend/tenant37_check.out
 backend/tenant37_check.sql
 backend/logs/2026-08/app-2026-08-24-16-1.log.gz
 backend/test-planaccess.log
+backend/build.log

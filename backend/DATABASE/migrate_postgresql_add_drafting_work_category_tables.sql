@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
     user_type VARCHAR(10) DEFAULT '0',
     haccp_cp_status VARCHAR(10),
     reg_term VARCHAR(6),
+    drafting_work_template_json JSONB,
+    drafting_work_template_html TEXT,
     duty_charge_code VARCHAR(10),
     cata_code VARCHAR(3),
     use_at CHAR(1) NOT NULL DEFAULT 'Y',

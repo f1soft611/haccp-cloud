@@ -145,7 +145,7 @@ export function HaccpBaseCategoryManagementPage() {
   }, [categoriesQuery.data]);
 
   const handleCreate = () => {
-    if (!createForm.categoryCode.trim() || !createForm.categoryName.trim()) {
+    if (!createForm.categoryName.trim()) {
       return;
     }
 
@@ -320,9 +320,7 @@ export function HaccpBaseCategoryManagementPage() {
               variant="contained"
               onClick={handleCreate}
               disabled={
-                createMutation.isPending ||
-                !createForm.categoryCode.trim() ||
-                !createForm.categoryName.trim()
+                createMutation.isPending || !createForm.categoryName.trim()
               }
             >
               등록

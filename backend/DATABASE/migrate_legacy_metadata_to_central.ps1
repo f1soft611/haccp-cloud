@@ -5,7 +5,10 @@ $targetDb = 'haccp_cloud_central'
 $hostName = '218.155.74.34'
 $port = 5433
 $user = 'postgres'
-$password = 'f1soft@96'
+if (-not $env:PGPASSWORD) {
+    throw 'PGPASSWORD is required. Set it in the environment before running this script.'
+}
+$password = $env:PGPASSWORD
 $tempDir = 'C:/temp'
 
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null

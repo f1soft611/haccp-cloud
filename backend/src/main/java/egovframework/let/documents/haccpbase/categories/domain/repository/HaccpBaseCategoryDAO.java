@@ -1,5 +1,6 @@
 package egovframework.let.documents.haccpbase.categories.domain.repository;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,16 @@ public class HaccpBaseCategoryDAO extends EgovAbstractMapper {
      */
     public Long selectLoginIdByTenantAndLoginCode(Map<String, Object> params) throws Exception {
         return selectOne("HaccpBaseCategoryDAO.selectLoginIdByTenantAndLoginCode", params);
+    }
+
+    /**
+     * 같은 테넌트의 분류 코드 존재 여부를 조회한다.
+     */
+    public Long selectCategoryIdByCode(Long tenantId, String categoryCode) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("categoryCode", categoryCode);
+        return selectOne("HaccpBaseCategoryDAO.selectCategoryIdByCode", params);
     }
 
     /**

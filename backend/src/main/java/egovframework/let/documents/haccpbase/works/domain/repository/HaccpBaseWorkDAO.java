@@ -1,5 +1,6 @@
 package egovframework.let.documents.haccpbase.works.domain.repository;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +37,14 @@ public class HaccpBaseWorkDAO extends EgovAbstractMapper {
 
     public Long selectUserIdByTenantAndLoginId(Map<String, Object> params) throws Exception {
         return selectOne("HaccpBaseWorkDAO.selectUserIdByTenantAndLoginId", params);
+    }
+
+    public Long selectWorkIdByCode(Long tenantId, Long categoryGroupId, String divisionCode) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("categoryGroupId", categoryGroupId);
+        params.put("divisionCode", divisionCode);
+        return selectOne("HaccpBaseWorkDAO.selectWorkIdByCode", params);
     }
 
     public Long insertWork(Map<String, Object> payload) throws Exception {

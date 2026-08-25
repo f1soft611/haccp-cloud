@@ -366,7 +366,7 @@ class EgovLoginServiceImplTest {
 
 		LoginVO requestVO = new LoginVO();
 		requestVO.setId("socra710@onbording4.co.kr");
-		requestVO.setPassword("f1soft@611");
+		requestVO.setPassword("test-password");
 
 		LoginVO result = service.actionLogin(requestVO);
 

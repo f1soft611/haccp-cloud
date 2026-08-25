@@ -2,6 +2,35 @@
 
 BEGIN;
 
+CREATE TABLE IF NOT EXISTS tb_schedulerconfig (
+    scheduler_id BIGSERIAL PRIMARY KEY,
+    scheduler_name VARCHAR(100) NOT NULL,
+    scheduler_description VARCHAR(500),
+    cron_expression VARCHAR(100),
+    job_class_name VARCHAR(255),
+    is_enabled CHAR(1) DEFAULT 'N' NOT NULL,
+    reg_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reg_user_id VARCHAR(50),
+    upd_dt TIMESTAMP,
+    upd_user_id VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Self-heal pre-existing legacy tb_schedulerconfig tables missing columns added later.
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS scheduler_name VARCHAR(100);
+ALTER TABLE tb_schedulerconfig ALTER COLUMN scheduler_name SET NOT NULL;
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS scheduler_description VARCHAR(500);
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS cron_expression VARCHAR(100);
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS job_class_name VARCHAR(255);
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS is_enabled CHAR(1) DEFAULT 'N' NOT NULL;
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS reg_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS reg_user_id VARCHAR(50);
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS upd_dt TIMESTAMP;
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS upd_user_id VARCHAR(50);
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE tb_schedulerconfig ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
 CREATE TABLE IF NOT EXISTS tb_document_attachment (
     attachment_id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,

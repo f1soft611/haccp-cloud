@@ -237,6 +237,18 @@
         LIMIT 1
     </select>
 
+    <select id="HaccpBaseWorkDAO.selectWorkIdByCode"
+            parameterType="map"
+            resultType="long">
+        SELECT drafting_work_category_id
+        FROM tb_drafting_work_category
+        WHERE tenant_id = #{tenantId}
+          AND drafting_work_category_group_id = #{categoryGroupId}
+          AND cata_type_code = #{divisionCode}
+          AND COALESCE(delete_status, 'N') != 'Y'
+        LIMIT 1
+    </select>
+
     <select id="HaccpBaseWorkDAO.insertWork"
             parameterType="map"
             resultType="long">

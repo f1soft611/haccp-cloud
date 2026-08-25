@@ -4,9 +4,13 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
+import javax.annotation.Resource;
+
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +23,7 @@ import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkTem
 import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkVO;
 import egovframework.let.documents.haccpbase.works.domain.repository.HaccpBaseWorkDAO;
 import egovframework.let.documents.haccpbase.works.service.HaccpBaseWorkService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * HACCP 양식 업무 관리를 위한 서비스 구현 클래스
@@ -28,10 +32,18 @@ import lombok.RequiredArgsConstructor;
  * @version 1.0
  */
 @Service("haccpBaseWorkService")
-@RequiredArgsConstructor
 public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements HaccpBaseWorkService {
 
     private final HaccpBaseWorkDAO haccpBaseWorkDAO;
+
+    @Resource(name = "haccpBaseWorkCodeIdGnrService")
+    private EgovIdGnrService haccpBaseWorkCodeIdGnrService;
+
+    @Autowired
+    public HaccpBaseWorkServiceImpl(HaccpBaseWorkDAO haccpBaseWorkDAO, EgovIdGnrService haccpBaseWorkCodeIdGnrService) {
+        this.haccpBaseWorkDAO = haccpBaseWorkDAO;
+        this.haccpBaseWorkCodeIdGnrService = haccpBaseWorkCodeIdGnrService;
+    }
 
     @Override
     public List<HaccpBaseWorkVO> listWorks(String tenantCode, String active) throws Exception {
@@ -67,15 +79,21 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
     @Transactional
     public HaccpBaseWorkVO createWork(HaccpBaseWorkSaveRequestVO payload, String actorLoginCode) throws Exception {
         String tenantCode = normalizeTenantCode(payload.getTenantCode());
+        Long tenantId = resolveTenantId(tenantCode);
+        String divisionCode = StringUtils.hasText(payload.getDivisionCode()) ? payload.getDivisionCode().trim() : "";
+        if (!StringUtils.hasText(divisionCode)) {
+            divisionCode = generateWorkCode();
+        }
+        payload.setDivisionCode(divisionCode);
         validatePayload(payload);
 
-        Long tenantId = resolveTenantId(tenantCode);
         Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        validateWorkCodeDuplication(tenantId, payload.getCategoryGroupId(), divisionCode, null);
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("tenantId", tenantId);
         params.put("categoryGroupId", payload.getCategoryGroupId());
-        params.put("divisionCode", payload.getDivisionCode().trim());
+        params.put("divisionCode", divisionCode);
         params.put("divisionName", payload.getDivisionName().trim());
         params.put("cycle", normalizeCycle(payload.getCycle()));
         params.put("useAt", Boolean.FALSE.equals(payload.getActive()) ? "N" : "Y");
@@ -104,16 +122,22 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
     @Transactional
     public HaccpBaseWorkVO updateWork(Long id, HaccpBaseWorkSaveRequestVO payload, String actorLoginCode) throws Exception {
         String tenantCode = normalizeTenantCode(payload.getTenantCode());
+        Long tenantId = resolveTenantId(tenantCode);
+        String divisionCode = StringUtils.hasText(payload.getDivisionCode()) ? payload.getDivisionCode().trim() : "";
+        if (!StringUtils.hasText(divisionCode)) {
+            divisionCode = generateWorkCode();
+        }
+        payload.setDivisionCode(divisionCode);
         validatePayload(payload);
 
-        Long tenantId = resolveTenantId(tenantCode);
         Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        validateWorkCodeDuplication(tenantId, payload.getCategoryGroupId(), divisionCode, id);
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("id", id);
         params.put("tenantId", tenantId);
         params.put("categoryGroupId", payload.getCategoryGroupId());
-        params.put("divisionCode", payload.getDivisionCode().trim());
+        params.put("divisionCode", divisionCode);
         params.put("divisionName", payload.getDivisionName().trim());
         params.put("cycle", normalizeCycle(payload.getCycle()));
         params.put("useAt", Boolean.FALSE.equals(payload.getActive()) ? "N" : "Y");
@@ -180,10 +204,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         if (payload.getCategoryGroupId() == null) {
             throw new IllegalArgumentException("분류는 필수입니다.");
         }
-        if (!StringUtils.hasText(payload.getDivisionCode())) {
-            throw new IllegalArgumentException("구분코드는 필수입니다.");
-        }
-        String divisionCode = payload.getDivisionCode().trim();
+        String divisionCode = payload.getDivisionCode() == null ? "" : payload.getDivisionCode().trim();
         if (divisionCode.length() > 3) {
             throw new IllegalArgumentException("구분코드는 최대 3자리까지 입력할 수 있습니다.");
         }
@@ -213,6 +234,20 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
                     throw new IllegalArgumentException("담당자 번호는 최대 10자리까지 입력할 수 있습니다.");
                 }
             }
+        }
+    }
+
+    private String generateWorkCode() throws Exception {
+        if (haccpBaseWorkCodeIdGnrService == null) {
+            throw new IllegalStateException("업무 코드 생성기가 초기화되지 않았습니다.");
+        }
+        return haccpBaseWorkCodeIdGnrService.getNextStringId();
+    }
+
+    private void validateWorkCodeDuplication(Long tenantId, Long categoryGroupId, String divisionCode, Long excludeId) throws Exception {
+        Long existingId = haccpBaseWorkDAO.selectWorkIdByCode(tenantId, categoryGroupId, divisionCode);
+        if (existingId != null && (excludeId == null || !Objects.equals(excludeId, existingId))) {
+            throw new IllegalArgumentException("이미 사용 중인 구분코드입니다.");
         }
     }
 
