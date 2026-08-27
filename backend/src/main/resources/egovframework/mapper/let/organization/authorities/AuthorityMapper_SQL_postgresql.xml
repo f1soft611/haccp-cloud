@@ -65,7 +65,7 @@
             r.role_id AS roleId,
             r.role_code AS roleCode,
             r.role_nm AS roleNm,
-            NULL::varchar AS roleDc,
+            r.role_dc AS roleDc,
             CASE
                 WHEN r.role_code = 'PLATFORM_ADMIN' THEN 1
                 WHEN r.role_code = 'TENANT_ADMIN' THEN 2
@@ -94,7 +94,7 @@
             r.role_id AS roleId,
             r.role_code AS roleCode,
             r.role_nm AS roleNm,
-            NULL::varchar AS roleDc,
+            r.role_dc AS roleDc,
             CASE
                 WHEN r.role_code = 'PLATFORM_ADMIN' THEN 1
                 WHEN r.role_code = 'TENANT_ADMIN' THEN 2
@@ -167,7 +167,7 @@
             r.role_id AS roleId,
             r.role_code AS roleCode,
             r.role_nm AS roleNm,
-            NULL::varchar AS roleDc,
+            r.role_dc AS roleDc,
             CASE
                 WHEN r.role_code = 'PLATFORM_ADMIN' THEN 1
                 WHEN r.role_code = 'TENANT_ADMIN' THEN 2
@@ -193,6 +193,7 @@
             tenant_id,
             role_code,
             role_nm,
+            role_dc,
             use_at,
             is_system_role,
             created_at,
@@ -201,6 +202,7 @@
             #{tenantId},
             #{roleCode},
             #{roleNm},
+            #{roleDc},
             #{useAt},
             COALESCE(#{systemRoleYn}, 'N'),
             now(),
@@ -212,6 +214,7 @@
     <update id="AuthorityDAO.updateRole" parameterType="egovframework.let.uss.auth.service.RoleInfoVO">
         UPDATE tb_role
         SET role_nm = #{roleNm},
+            role_dc = #{roleDc},
             use_at = #{useAt},
             updated_at = now()
         WHERE role_id = #{roleId}

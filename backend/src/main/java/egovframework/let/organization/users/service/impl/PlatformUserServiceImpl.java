@@ -58,7 +58,7 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         PlatformUserSearchConditionVO condition = new PlatformUserSearchConditionVO();
         condition.setPageIndex(pageIndex);
         condition.setPageSize(pageSize);
-        condition.setSearchKeyword(normalizeNullable(keyword));
+        condition.setKeyword(normalizeNullable(keyword));
         condition.setFilterActive(normalizeFilterActive(filterActive));
         condition.setTenantId(resolveTenantIdOrContext(tenantCode));
         condition.setTenantCode(normalizeTenantCode(tenantCode));
