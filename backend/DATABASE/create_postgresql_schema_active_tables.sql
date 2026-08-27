@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS tb_role (
     tenant_id BIGINT NOT NULL,
     role_code VARCHAR(50) NOT NULL,
     role_nm VARCHAR(100) NOT NULL,
+    role_dc VARCHAR(500),
     use_at CHAR(1) DEFAULT 'Y' NOT NULL,
     is_system_role CHAR(1) DEFAULT 'N' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
