@@ -450,6 +450,28 @@ describe('WorkMenuBar role-based visibility', () => {
     });
   });
 
+  it('closes the dropdown after clicking a menu item', async () => {
+    renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
+
+    const platformGroupButton = await screen.findByRole('button', {
+      name: APP_LABELS.menu.platformGroup,
+    });
+    fireEvent.click(platformGroupButton);
+
+    const tenantsLink = await screen.findByRole('link', {
+      name: APP_LABELS.menu.platformFactoryManagement,
+    });
+    fireEvent.click(tenantsLink);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('link', {
+          name: APP_LABELS.menu.platformFactoryManagement,
+        }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   it('group buttons expose aria-pressed state', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
