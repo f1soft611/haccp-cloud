@@ -32,6 +32,7 @@ async function fillStep1({
   businessCategory = '즉석조리식품',
   adminName = '홍길동',
   adminEmail = 'admin@testfood.com',
+  registrationDate = '',
 } = {}) {
   await screen.findByRole('option', { name: '기본 플랜' });
 
@@ -98,6 +99,14 @@ async function fillStep1({
       },
     );
   }
+  if (registrationDate) {
+    fireEvent.change(
+      screen.getByLabelText(new RegExp(APP_LABELS.field.registrationDate)),
+      {
+        target: { value: registrationDate },
+      },
+    );
+  }
 }
 
 describe('Platform onboarding page wizard', () => {
@@ -158,6 +167,32 @@ describe('Platform onboarding page wizard', () => {
     expect(
       await screen.findByText(
         APP_LABELS.message.onboardingCorporateNumberFormatError,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows admin email format error for an invalid email', async () => {
+    renderPage();
+    await fillStep1({ adminEmail: 'not-an-email' });
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
+    );
+    expect(
+      await screen.findByText(
+        APP_LABELS.message.onboardingAdminEmailFormatError,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows registration date error for a padded 2-digit year (e.g. 0025)', async () => {
+    renderPage();
+    await fillStep1({ registrationDate: '0025-08-27' });
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
+    );
+    expect(
+      await screen.findByText(
+        APP_LABELS.message.onboardingRegistrationDateFormatError,
       ),
     ).toBeInTheDocument();
   });
