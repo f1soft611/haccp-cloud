@@ -29,6 +29,12 @@ import {
 
 const BRN_REGEX = /^\d{3}-\d{2}-\d{5}$/;
 const CORPORATE_NUMBER_REGEX = /^\d{13}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_REGISTRATION_DATE = '1900-01-01';
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function formatBrn(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 10);
@@ -53,13 +59,13 @@ function resolveIssueTenantCodeErrorMessage(error: unknown): string {
 
   if (
     normalizedMessage.includes('tb_tenant_admin_email_key') ||
-    normalizedMessage.includes('admin_email') ||
     compactMessage.includes('업체관리자이메일')
   ) {
     return APP_LABELS.message.onboardingDuplicateAdminEmail;
   }
 
   if (
+    normalizedMessage.includes('tb_tenant_tenant_code_key') ||
     normalizedMessage.includes('duplicate_brn') ||
     normalizedMessage.includes('businessregistrationnumber') ||
     compactMessage.includes('이미등록된사업자번호')
@@ -79,6 +85,8 @@ export function OnboardingPage() {
   );
   const [brnError, setBrnError] = useState(false);
   const [corporateNumberError, setCorporateNumberError] = useState(false);
+  const [adminEmailError, setAdminEmailError] = useState(false);
+  const [registrationDateError, setRegistrationDateError] = useState(false);
   const [validationError, setValidationError] = useState(false);
 
   const sampleTenantsQuery = useQuery({
@@ -105,6 +113,12 @@ export function OnboardingPage() {
 
   const setField = (key: keyof TenantOnboardingFormData, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    if (key === 'adminEmail') {
+      setAdminEmailError(false);
+    }
+    if (key === 'registrationDate') {
+      setRegistrationDateError(false);
+    }
   };
 
   const handleBrnChange = (raw: string) => {
@@ -134,6 +148,12 @@ export function OnboardingPage() {
     const corporateNumberInvalid =
       normalizedCorporateNumber.length > 0 &&
       !CORPORATE_NUMBER_REGEX.test(normalizedCorporateNumber);
+    const adminEmailInvalid = !EMAIL_REGEX.test(form.adminEmail.trim());
+    const trimmedRegistrationDate = form.registrationDate.trim();
+    const registrationDateInvalid =
+      trimmedRegistrationDate.length > 0 &&
+      (trimmedRegistrationDate < MIN_REGISTRATION_DATE ||
+        trimmedRegistrationDate > todayIsoDate());
 
     if (hasEmpty) {
       setValidationError(true);
@@ -147,9 +167,19 @@ export function OnboardingPage() {
       setCorporateNumberError(true);
       return;
     }
+    if (adminEmailInvalid) {
+      setAdminEmailError(true);
+      return;
+    }
+    if (registrationDateInvalid) {
+      setRegistrationDateError(true);
+      return;
+    }
     setValidationError(false);
     setBrnError(false);
     setCorporateNumberError(false);
+    setAdminEmailError(false);
+    setRegistrationDateError(false);
     setStep(2);
   };
 
@@ -174,6 +204,8 @@ export function OnboardingPage() {
     setForm(EMPTY_ONBOARDING_FORM);
     setBrnError(false);
     setCorporateNumberError(false);
+    setAdminEmailError(false);
+    setRegistrationDateError(false);
     setValidationError(false);
     mutation.reset();
     setStep(1);
@@ -203,6 +235,8 @@ export function OnboardingPage() {
           form={form}
           brnError={brnError}
           corporateNumberError={corporateNumberError}
+          adminEmailError={adminEmailError}
+          registrationDateError={registrationDateError}
           validationError={validationError}
           planOptions={planSummariesQuery.data ?? []}
           planLoading={planSummariesQuery.isPending}
