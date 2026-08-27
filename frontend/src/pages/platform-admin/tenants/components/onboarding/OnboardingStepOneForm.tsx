@@ -16,6 +16,8 @@ type OnboardingStepOneFormProps = {
   form: TenantOnboardingFormData;
   brnError: boolean;
   corporateNumberError: boolean;
+  adminEmailError: boolean;
+  registrationDateError: boolean;
   validationError: boolean;
   planOptions: PlanSummary[];
   planLoading: boolean;
@@ -29,6 +31,8 @@ export function OnboardingStepOneForm({
   form,
   brnError,
   corporateNumberError,
+  adminEmailError,
+  registrationDateError,
   validationError,
   planOptions,
   planLoading,
@@ -73,6 +77,7 @@ export function OnboardingStepOneForm({
                 }
                 required
                 fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
               >
                 <option value="">플랜을 선택하세요</option>
                 {planOptions.map((plan) => (
@@ -110,7 +115,7 @@ export function OnboardingStepOneForm({
                     : '미입력 가능 (숫자 13자리)'
                 }
                 fullWidth
-                inputProps={{ maxLength: 14 }}
+                inputProps={{ maxLength: 14, inputMode: 'numeric' }}
               />
             </Stack>
             <Stack direction="row" spacing={2}>
@@ -164,8 +169,18 @@ export function OnboardingStepOneForm({
                 onChange={(e) =>
                   onFieldChange('registrationDate', e.target.value)
                 }
+                error={registrationDateError}
+                helperText={
+                  registrationDateError
+                    ? APP_LABELS.message.onboardingRegistrationDateFormatError
+                    : undefined
+                }
                 fullWidth
                 slotProps={{ inputLabel: { shrink: true } }}
+                inputProps={{
+                  min: '1900-01-01',
+                  max: new Date().toISOString().slice(0, 10),
+                }}
               />
             </Stack>
           </Stack>
@@ -190,6 +205,12 @@ export function OnboardingStepOneForm({
               type="email"
               value={form.adminEmail}
               onChange={(e) => onFieldChange('adminEmail', e.target.value)}
+              error={adminEmailError}
+              helperText={
+                adminEmailError
+                  ? APP_LABELS.message.onboardingAdminEmailFormatError
+                  : undefined
+              }
               required
               fullWidth
             />

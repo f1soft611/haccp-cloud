@@ -32,6 +32,7 @@ async function fillStep1({
   businessCategory = '즉석조리식품',
   adminName = '홍길동',
   adminEmail = 'admin@testfood.com',
+  registrationDate = '',
 } = {}) {
   await screen.findByRole('option', { name: '기본 플랜' });
 
@@ -98,6 +99,14 @@ async function fillStep1({
       },
     );
   }
+  if (registrationDate) {
+    fireEvent.change(
+      screen.getByLabelText(new RegExp(APP_LABELS.field.registrationDate)),
+      {
+        target: { value: registrationDate },
+      },
+    );
+  }
 }
 
 describe('Platform onboarding page wizard', () => {
@@ -158,6 +167,32 @@ describe('Platform onboarding page wizard', () => {
     expect(
       await screen.findByText(
         APP_LABELS.message.onboardingCorporateNumberFormatError,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows admin email format error for an invalid email', async () => {
+    renderPage();
+    await fillStep1({ adminEmail: 'not-an-email' });
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
+    );
+    expect(
+      await screen.findByText(
+        APP_LABELS.message.onboardingAdminEmailFormatError,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows registration date error for a padded 2-digit year (e.g. 0025)', async () => {
+    renderPage();
+    await fillStep1({ registrationDate: '0025-08-27' });
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
+    );
+    expect(
+      await screen.findByText(
+        APP_LABELS.message.onboardingRegistrationDateFormatError,
       ),
     ).toBeInTheDocument();
   });
@@ -280,6 +315,38 @@ describe('Platform onboarding page wizard', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent(
+      APP_LABELS.message.onboardingDuplicateAdminEmail,
+    );
+  });
+
+  it('shows duplicate BRN message for a tenant_code constraint violation, not admin email', async () => {
+    vi.spyOn(tenantService, 'listSampleTenants').mockResolvedValueOnce([]);
+    vi.spyOn(tenantService, 'issueTenantCode').mockRejectedValueOnce({
+      response: {
+        status: 500,
+        data: {
+          message:
+            '### Error updating database.  Cause: org.postgresql.util.PSQLException: 오류: 중복된 키 값이 "tb_tenant_tenant_code_key" 고유 제약 조건을 위반함\n' +
+            '### The error occurred while setting parameters\n' +
+            '### SQL: INSERT INTO tb_tenant ( tenant_code, tenant_nm, admin_email, business_registration_number, corporate_number, business_type, business_category, registration_date, use_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, NULLIF(?, \'\')::date, \'Y\' )\n' +
+            '### Cause: org.postgresql.util.PSQLException: 오류: 중복된 키 값이 "tb_tenant_tenant_code_key" 고유 제약 조건을 위반함',
+        },
+      },
+    });
+
+    renderPage();
+    await fillStep1();
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
+    );
+    await screen.findByText(APP_LABELS.onboarding.confirmTitle);
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.issueTenantCode }),
+    );
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(APP_LABELS.message.onboardingDuplicateBrn);
+    expect(alert).not.toHaveTextContent(
       APP_LABELS.message.onboardingDuplicateAdminEmail,
     );
   });
