@@ -59,13 +59,13 @@ function resolveIssueTenantCodeErrorMessage(error: unknown): string {
 
   if (
     normalizedMessage.includes('tb_tenant_admin_email_key') ||
-    normalizedMessage.includes('admin_email') ||
     compactMessage.includes('업체관리자이메일')
   ) {
     return APP_LABELS.message.onboardingDuplicateAdminEmail;
   }
 
   if (
+    normalizedMessage.includes('tb_tenant_tenant_code_key') ||
     normalizedMessage.includes('duplicate_brn') ||
     normalizedMessage.includes('businessregistrationnumber') ||
     compactMessage.includes('이미등록된사업자번호')

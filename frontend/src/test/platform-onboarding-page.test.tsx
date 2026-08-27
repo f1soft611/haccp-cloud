@@ -319,6 +319,38 @@ describe('Platform onboarding page wizard', () => {
     );
   });
 
+  it('shows duplicate BRN message for a tenant_code constraint violation, not admin email', async () => {
+    vi.spyOn(tenantService, 'listSampleTenants').mockResolvedValueOnce([]);
+    vi.spyOn(tenantService, 'issueTenantCode').mockRejectedValueOnce({
+      response: {
+        status: 500,
+        data: {
+          message:
+            '### Error updating database.  Cause: org.postgresql.util.PSQLException: 오류: 중복된 키 값이 "tb_tenant_tenant_code_key" 고유 제약 조건을 위반함\n' +
+            '### The error occurred while setting parameters\n' +
+            '### SQL: INSERT INTO tb_tenant ( tenant_code, tenant_nm, admin_email, business_registration_number, corporate_number, business_type, business_category, registration_date, use_at ) VALUES ( ?, ?, ?, ?, ?, ?, ?, NULLIF(?, \'\')::date, \'Y\' )\n' +
+            '### Cause: org.postgresql.util.PSQLException: 오류: 중복된 키 값이 "tb_tenant_tenant_code_key" 고유 제약 조건을 위반함',
+        },
+      },
+    });
+
+    renderPage();
+    await fillStep1();
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.nextStep }),
+    );
+    await screen.findByText(APP_LABELS.onboarding.confirmTitle);
+    fireEvent.click(
+      screen.getByRole('button', { name: APP_LABELS.action.issueTenantCode }),
+    );
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(APP_LABELS.message.onboardingDuplicateBrn);
+    expect(alert).not.toHaveTextContent(
+      APP_LABELS.message.onboardingDuplicateAdminEmail,
+    );
+  });
+
   it('renders issued tenant history table', async () => {
     vi.spyOn(tenantService, 'listSampleTenants').mockResolvedValueOnce([
       {
