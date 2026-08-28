@@ -191,6 +191,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
 
         Map<String, Object> lookupParams = new HashMap<String, Object>();
         lookupParams.put("id", id);
+        lookupParams.put("tenantId", tenantId);
         lookupParams.put("tenantCode", normalizedTenantCode);
         HaccpBaseWorkVO item = haccpBaseWorkDAO.selectWorkById(lookupParams);
         if (item == null) {
