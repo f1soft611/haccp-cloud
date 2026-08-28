@@ -200,8 +200,9 @@ export function PlatformAuthorityManagementPage() {
         queryKey: ['platform-admin', 'roles-paged'],
       });
     },
-    onError: () => {
-      showError('권한 등록 처리에 실패했습니다.');
+    onError: (error) => {
+      setConfirmState(null);
+      showError(extractApiErrorMessage(error, '권한 등록 처리에 실패했습니다.'));
     },
   });
 
@@ -217,8 +218,9 @@ export function PlatformAuthorityManagementPage() {
         queryKey: ['platform-admin', 'roles-paged'],
       });
     },
-    onError: () => {
-      showError('권한 상태 변경에 실패했습니다.');
+    onError: (error) => {
+      setConfirmState(null);
+      showError(extractApiErrorMessage(error, '권한 상태 변경에 실패했습니다.'));
     },
   });
 
@@ -236,8 +238,9 @@ export function PlatformAuthorityManagementPage() {
         queryKey: ['platform-admin', 'roles-paged'],
       });
     },
-    onError: () => {
-      showError('권한 수정 처리에 실패했습니다.');
+    onError: (error) => {
+      setConfirmState(null);
+      showError(extractApiErrorMessage(error, '권한 수정 처리에 실패했습니다.'));
     },
   });
 
@@ -258,8 +261,9 @@ export function PlatformAuthorityManagementPage() {
         ],
       });
     },
-    onError: () => {
-      showError('권한별 메뉴 저장에 실패했습니다.');
+    onError: (error) => {
+      setConfirmState(null);
+      showError(extractApiErrorMessage(error, '권한별 메뉴 저장에 실패했습니다.'));
     },
   });
 
