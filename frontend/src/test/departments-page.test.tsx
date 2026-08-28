@@ -8,14 +8,6 @@ const { listDepartmentsMock } = vi.hoisted(() => ({
   listDepartmentsMock: vi.fn(async () => []),
 }));
 
-vi.mock('../services/organization/departmentsService', () => ({
-  listDepartments: listDepartmentsMock,
-  createDepartment: vi.fn(),
-  updateDepartment: vi.fn(),
-  deleteDepartment: vi.fn(),
-  updateDepartmentStatus: vi.fn(),
-}));
-
 function renderPage() {
   render(
     <AppProviders>

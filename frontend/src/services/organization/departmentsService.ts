@@ -151,15 +151,29 @@ export async function deleteDepartment(payload: {
   });
 }
 
+// export async function updateDepartmentStatus(payload: {
+//   tenantCode: string;
+//   id: string;
+//   active: boolean;
+// }): Promise<DepartmentItem> {
+//   const { data } = await apiClient.patch<RawDepartmentItem>(
+//     `/v1/departments/${payload.id}`,
+//     { active: payload.active },
+//     { headers: { 'x-tenant-code': payload.tenantCode } },
+//   );
+//   return normalizeDepartmentItem(data);
+// }
 export async function updateDepartmentStatus(payload: {
   tenantCode: string;
   id: string;
   active: boolean;
 }): Promise<DepartmentItem> {
-  const { data } = await apiClient.patch<RawDepartmentItem>(
-    `/v1/departments/${payload.id}`,
-    { active: payload.active },
-    { headers: { 'x-tenant-code': payload.tenantCode } },
+  // 기존 -> apiClient.patch<RawDepartmentItem>(...) 후 data를 바로 정규화
+  // 변경 -> 다른 엔드포인트와 동일하게 ResultEnvelope<DepartmentItemResult>로 받아 data.result.item을 정규화
+  const { data } = await apiClient.patch<ResultEnvelope<DepartmentItemResult>>(
+      `/v1/departments/${payload.id}`,
+      { active: payload.active },
+      { headers: { 'x-tenant-code': payload.tenantCode } },
   );
-  return normalizeDepartmentItem(data);
+  return normalizeDepartmentItem(data?.result?.item ?? {});
 }
