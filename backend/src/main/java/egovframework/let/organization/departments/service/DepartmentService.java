@@ -20,4 +20,8 @@ public interface DepartmentService {
     DepartmentVO updateDepartment(Long departmentId, DepartmentSaveRequestVO payload) throws Exception;
 
     void deleteDepartment(Long departmentId, String tenantCode) throws Exception;
+
+    // 신규 -> 사용여부 토글(변경된 부서 정보 반환). 하드 삭제 deleteDepartment는 그대로 유지, 별도 경로로 추가
+    DepartmentVO updateDepartmentActive(Long departmentId, String tenantCode, boolean active) throws Exception;
+
 }

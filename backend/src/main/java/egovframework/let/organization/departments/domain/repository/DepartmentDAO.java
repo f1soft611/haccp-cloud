@@ -42,6 +42,11 @@ public class DepartmentDAO extends EgovAbstractMapper {
         delete("DepartmentDAO.deleteDepartment", params);
     }
 
+    // 신규 -> 사용여부만 UPDATE (하드 삭제 deleteDepartment는 그대로 유지, 별도 경로로 추가)
+    public void updateDepartmentActive(Map<String, Object> params) throws Exception {
+        update("DepartmentDAO.updateDepartmentActive", params);
+    }
+
     public int countChildDepartments(Map<String, Object> params) throws Exception {
         Integer count = selectOne("DepartmentDAO.countChildDepartments", params);
         return count == null ? 0 : count;

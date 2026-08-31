@@ -113,6 +113,10 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
         payload.setTenantId(resolvedTenantId);
         payload.setSystemRoleYn(hasText(payload.getSystemRoleYn()) ? toUpper(payload.getSystemRoleYn()) : "N");
 
+        if (authorityDAO.selectRoleIdByCode(normalizedTenantCode, payload.getRoleCode()) != null) {
+            throw new IllegalArgumentException("이미 사용 중인 권한 코드입니다.");
+        }
+
         if (!hasText(payload.getFrstRegisterId())) {
             payload.setFrstRegisterId(SYSTEM_USER_ID);
         }
