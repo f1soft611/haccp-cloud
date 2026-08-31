@@ -378,6 +378,7 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
         loginHistoryId: result.loginHistoryId,
         onboardingRequired: result.onboardingRequired,
         onboardingStatus: result.onboardingStatus,
+        mustChangePassword: result.mustChangePassword,
       });
       const userIdDomain = normalizeLoginDomain(
         effectiveUserId.includes('@')

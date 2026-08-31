@@ -139,6 +139,7 @@ describe('authService', () => {
       loginHistoryId: 101,
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
+      mustChangePassword: false,
     });
   });
 
