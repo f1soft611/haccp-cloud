@@ -37,5 +37,7 @@ public interface PlatformUserService {
 
     PlatformUserVO updateUserActive(Long userId, PlatformUserSaveRequestVO payload) throws Exception;
 
+    String resetPassword(Long userId, String tenantCode) throws Exception;
+
     Long resolveTenantIdByCode(String tenantCode);
 }
