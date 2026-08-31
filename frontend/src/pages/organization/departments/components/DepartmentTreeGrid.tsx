@@ -1,4 +1,4 @@
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ExpandLessOutlinedIcon from '@mui/icons-material/ExpandLessOutlined';
 import ExpandMoreOutlinedIcon from '@mui/icons-material/ExpandMoreOutlined';
@@ -26,28 +26,32 @@ export type DepartmentTreeRow = {
 export function DepartmentTreeGrid(props: {
   rows: DepartmentTreeRow[];
   loading?: boolean;
-  deletePending?: boolean;
+  // 기존 -> deletePending?: boolean;
+  // 변경 -> statusPending?: boolean;
+  statusPending?: boolean;
   expandedIds: Set<string>;
   pageIndex: number;
   pageSize: number;
   totalCount: number;
   onToggleExpand: (id: string) => void;
   onEdit: (dept: DepartmentItem) => void;
-  onDelete: (dept: DepartmentItem) => void;
+  // 기존 -> onDelete: (dept: DepartmentItem) => void;
+  // 변경 -> onToggleActive: (dept: DepartmentItem) => void;
+  onToggleActive: (dept: DepartmentItem) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
 }) {
   const {
     rows,
     loading = false,
-    deletePending = false,
+    statusPending = false,
     expandedIds,
     pageIndex,
     pageSize,
     totalCount,
     onToggleExpand,
     onEdit,
-    onDelete,
+    onToggleActive,
     onPageChange,
     onPageSizeChange,
   } = props;
@@ -79,22 +83,53 @@ export function DepartmentTreeGrid(props: {
     </IconButton>
   );
 
-  const deleteBtn = (dept: DepartmentItem) => (
-    <IconButton
-      size="small"
-      onClick={() => onDelete(dept)}
-      disabled={deletePending || dept.hasChildren}
-      title={dept.hasChildren ? '하위 부서가 있어 삭제할 수 없습니다.' : '삭제'}
-      sx={{
-        color: '#c53b3b',
-        bgcolor: 'rgba(197, 59, 59, 0.08)',
-        '&:hover': { bgcolor: 'rgba(197, 59, 59, 0.16)' },
-        '&.Mui-disabled': { opacity: 0.38 },
-      }}
-    >
-      <DeleteOutlineOutlinedIcon fontSize="small" />
-    </IconButton>
-  );
+  // 기존 -> deleteBtn: 휴지통 아이콘, 하위 부서 있으면 항상 disabled, 클릭 시 onDelete
+  // 변경 -> toggleBtn: 전원 아이콘, 사용↔미사용 토글, 하위 부서 있을 때는 "미사용 전환"만 disabled
+  const toggleBtn = (dept: DepartmentItem) => {
+    const blockDeactivate = dept.active && dept.hasChildren;
+    return (
+        <IconButton
+            size="small"
+            onClick={() => onToggleActive(dept)}
+            disabled={statusPending || blockDeactivate}
+            title={
+              blockDeactivate
+                  ? '하위 부서가 있어 미사용으로 변경할 수 없습니다.'
+                  : dept.active
+                      ? '미사용으로 변경'
+                      : '사용으로 변경'
+            }
+            sx={{
+              color: dept.active
+                  ? isDarkMode
+                      ? '#f87171'
+                      : '#c53b3b'
+                  : isDarkMode
+                      ? '#86efac'
+                      : '#2e7d32',
+              bgcolor: dept.active
+                  ? isDarkMode
+                      ? 'rgba(248, 113, 113, 0.12)'
+                      : 'rgba(197, 59, 59, 0.08)'
+                  : isDarkMode
+                      ? 'rgba(134, 239, 172, 0.12)'
+                      : 'rgba(46, 125, 50, 0.08)',
+              '&:hover': {
+                bgcolor: dept.active
+                    ? isDarkMode
+                        ? 'rgba(248, 113, 113, 0.2)'
+                        : 'rgba(197, 59, 59, 0.16)'
+                    : isDarkMode
+                        ? 'rgba(134, 239, 172, 0.2)'
+                        : 'rgba(46, 125, 50, 0.16)',
+              },
+              '&.Mui-disabled': { opacity: 0.38 },
+            }}
+        >
+          <PowerSettingsNewOutlinedIcon fontSize="small" />
+        </IconButton>
+    );
+  };
 
   return (
     <>
@@ -190,7 +225,7 @@ export function DepartmentTreeGrid(props: {
                   </TableCell>
                   <TableCell align="center">
                     {editBtn(dept)}
-                    {deleteBtn(dept)}
+                    {toggleBtn(dept)}
                   </TableCell>
                 </TableRow>
 
@@ -246,7 +281,7 @@ export function DepartmentTreeGrid(props: {
                       </TableCell>
                       <TableCell align="center">
                         {editBtn(child)}
-                        {deleteBtn(child)}
+                        {toggleBtn(child)}
                       </TableCell>
                     </TableRow>
                   ))}

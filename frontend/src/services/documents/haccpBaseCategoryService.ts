@@ -28,11 +28,22 @@ type RawHaccpBaseCategoryItem = {
 };
 
 type ResultEnvelope<T> = {
+  resultCode?: number | string;
+  resultMessage?: string;
   result?: {
     resultList?: T[];
     item?: T;
+    message?: string;
   };
 };
+
+function assertSuccess(data: ResultEnvelope<unknown>): void {
+  const resultCode = Number(data?.resultCode);
+  if (Number.isFinite(resultCode) && resultCode !== 200) {
+    const message = data?.result?.message || data?.resultMessage || '요청 처리 중 오류가 발생했습니다.';
+    throw { response: { data: { message } }, message };
+  }
+}
 
 function normalizeText(value: unknown): string {
   if (typeof value === 'string') {
@@ -110,6 +121,10 @@ export async function createHaccpBaseCategory(payload: {
     { headers: { 'x-tenant-code': payload.tenantCode } },
   );
 
+  if (!Array.isArray(data)) {
+    assertSuccess(data as ResultEnvelope<RawHaccpBaseCategoryItem>);
+  }
+
   const item = Array.isArray(data)
     ? data[0]
     : ((data as ResultEnvelope<RawHaccpBaseCategoryItem>)?.result?.item ??
@@ -136,6 +151,10 @@ export async function updateHaccpBaseCategory(payload: {
     },
     { headers: { 'x-tenant-code': payload.tenantCode } },
   );
+
+  if (!Array.isArray(data)) {
+    assertSuccess(data as ResultEnvelope<RawHaccpBaseCategoryItem>);
+  }
 
   const item = Array.isArray(data)
     ? data[0]

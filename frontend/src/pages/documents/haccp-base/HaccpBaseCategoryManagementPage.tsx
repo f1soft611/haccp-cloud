@@ -116,6 +116,7 @@ export function HaccpBaseCategoryManagementPage() {
       });
     },
     onError: (error) => {
+      setConfirmState(null);
       showError(extractApiErrorMessage(error, '분류 등록에 실패했습니다.'));
     },
   });
@@ -133,6 +134,7 @@ export function HaccpBaseCategoryManagementPage() {
       });
     },
     onError: (error) => {
+      setConfirmState(null);
       showError(extractApiErrorMessage(error, '분류 수정에 실패했습니다.'));
     },
   });
@@ -333,15 +335,9 @@ export function HaccpBaseCategoryManagementPage() {
           <TextField
             label="분류코드"
             value={createForm.categoryCode}
-            onChange={(event) =>
-              setCreateForm((prev) => ({
-                ...prev,
-                categoryCode: event.target.value.slice(0, 3),
-              }))
-            }
-            inputProps={{ maxLength: 3 }}
-            required
-            autoFocus
+            placeholder="자동 채번됩니다"
+            helperText="분류코드는 자동으로 채번됩니다."
+            disabled
           />
           <TextField
             label="분류명"
@@ -353,6 +349,7 @@ export function HaccpBaseCategoryManagementPage() {
               }))
             }
             required
+            autoFocus
           />
           <TextField
             label="정렬순서"
