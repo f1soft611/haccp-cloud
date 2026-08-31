@@ -142,6 +142,29 @@ describe('authService', () => {
     });
   });
 
+  it('parses mustChangePassword from the backend jwt envelope', async () => {
+    const mockedPost = vi.mocked(apiClient.post);
+    mockedPost.mockResolvedValue({
+      data: {
+        resultCode: '200',
+        jToken: 'jwt-token',
+        resultVO: {
+          factoryCode: 'TENANT-A',
+          id: 'hong123',
+          roleCode: 'TENANT_USER',
+          mustChangePassword: true,
+        },
+      },
+    });
+
+    const result = await login({
+      userId: 'hong123',
+      password: 'hong123hong123',
+    });
+
+    expect(result.mustChangePassword).toBe(true);
+  });
+
   it('treats roleCode PLATFORM_ADMIN as platform role even when groupNm is missing', async () => {
     const mockedPost = vi.mocked(apiClient.post);
     mockedPost.mockResolvedValue({
