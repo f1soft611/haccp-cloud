@@ -30,6 +30,9 @@ export function AccountPasswordPage() {
   const userId = useAuthStore((state) => state.userId);
   const role = useAuthStore((state) => state.role);
   const profileImage = useAuthStore((state) => state.profileImage);
+  const clearMustChangePassword = useAuthStore(
+      (state) => state.clearMustChangePassword,
+  );
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [nextPassword, setNextPassword] = useState('');
@@ -58,6 +61,7 @@ export function AccountPasswordPage() {
       setCurrentPassword('');
       setNextPassword('');
       setConfirmPassword('');
+      clearMustChangePassword();
     },
     onError: (error) => {
       setNoticeMessage('');
@@ -81,6 +85,10 @@ export function AccountPasswordPage() {
     }
     if (nextPassword.trim().length < 8) {
       setErrorMessage('새 비밀번호는 8자 이상이어야 합니다.');
+      return;
+    }
+    if (nextPassword.toLowerCase().includes(userId.trim().toLowerCase())) {
+      setErrorMessage('비밀번호에 아이디를 포함할 수 없습니다.');
       return;
     }
     if (!confirmPassword.trim()) {

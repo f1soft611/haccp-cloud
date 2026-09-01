@@ -5,9 +5,11 @@ import { GridPaginationBar } from '../../../shared/components/data/GridPaginatio
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { useAuthStore } from '../../../shared/store/authStore';
+import { useFeedback } from '../../../shared/hooks/useFeedback';
 import {
   createUser,
   listUsersPaged,
+  resetUserPassword,
   updateUser,
   updateUserStatus,
   type UserItem,
@@ -25,6 +27,7 @@ import {
   type UserFormValue,
 } from './components/UserFormDialog';
 import { UserStatusDialog } from './components/UserStatusDialog';
+import { UserPasswordResetDialog } from './components/UserPasswordResetDialog';
 
 export function UsersPage() {
   const queryClient = useQueryClient();
@@ -44,6 +47,7 @@ export function UsersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [statusTarget, setStatusTarget] = useState<UserItem | null>(null);
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<UserItem | null>(null);
 
   const usersQuery = useQuery({
     queryKey: [
@@ -139,6 +143,16 @@ export function UsersPage() {
     },
   });
 
+  const { showSuccess } = useFeedback();
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: resetUserPassword,
+    onSuccess: (tempPassword) => {
+      setResetPasswordTarget(null);
+      showSuccess(`비밀번호가 초기화되었습니다. 임시 비밀번호: ${tempPassword}`);
+    },
+  });
+
   const handleSearch = () => {
     resetPage();
     setAppliedSearch({
@@ -227,30 +241,34 @@ export function UsersPage() {
       />
 
       <UserFormDialog
-        open={formOpen}
-        mode={editingUser ? 'edit' : 'create'}
-        saving={createMutation.isPending || updateMutation.isPending}
-        departmentOptions={departmentOptions}
-        roleOptions={roleOptions}
-        initialValue={
-          editingUser
-            ? {
-                name: editingUser.name,
-                email: editingUser.email,
-                department: editingUser.department,
-                roleCode: editingUser.roleCode,
-                active: editingUser.active,
-              }
-            : undefined
-        }
-        onClose={() => {
-          if (createMutation.isPending || updateMutation.isPending) {
-            return;
+          open={formOpen}
+          mode={editingUser ? 'edit' : 'create'}
+          saving={createMutation.isPending || updateMutation.isPending}
+          resettingPassword={resetPasswordMutation.isPending}
+          departmentOptions={departmentOptions}
+          roleOptions={roleOptions}
+          initialValue={
+            editingUser
+                ? {
+                  name: editingUser.name,
+                  email: editingUser.email,
+                  department: editingUser.department,
+                  roleCode: editingUser.roleCode,
+                  active: editingUser.active,
+                }
+                : undefined
           }
-          setFormOpen(false);
-          setEditingUser(null);
-        }}
-        onSubmit={handleSubmitForm}
+          onClose={() => {
+            if (createMutation.isPending || updateMutation.isPending) {
+              return;
+            }
+            setFormOpen(false);
+            setEditingUser(null);
+          }}
+          onSubmit={handleSubmitForm}
+          onResetPassword={
+            editingUser ? () => setResetPasswordTarget(editingUser) : undefined
+          }
       />
 
       <UserStatusDialog
@@ -264,6 +282,27 @@ export function UsersPage() {
           setStatusTarget(null);
         }}
         onConfirm={handleConfirmToggle}
+      />
+
+      <UserPasswordResetDialog
+          open={Boolean(resetPasswordTarget)}
+          target={resetPasswordTarget}
+          saving={resetPasswordMutation.isPending}
+          onClose={() => {
+            if (resetPasswordMutation.isPending) {
+              return;
+            }
+            setResetPasswordTarget(null);
+          }}
+          onConfirm={() => {
+            if (!resetPasswordTarget) {
+              return;
+            }
+            resetPasswordMutation.mutate({
+              tenantCode: tenantCode || undefined,
+              id: resetPasswordTarget.id,
+            });
+          }}
       />
     </Stack>
   );

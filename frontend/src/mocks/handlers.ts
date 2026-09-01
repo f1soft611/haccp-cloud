@@ -1497,10 +1497,30 @@ export const handlers = [
     return HttpResponse.json(target);
   }),
 
+  http.patch(/.*\/api\/v1\/users\/([^/]+)\/password-reset$/, ({ params }) => {
+    const targetId = String(params[0] ?? '');
+    const target = users.find((item) => item.id === targetId);
+
+    if (!target) {
+      return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    const tempPassword = `${target.id}${target.id}`;
+    return HttpResponse.json({
+      resultCode: 200,
+      resultMessage: '성공했습니다.',
+      result: {
+        tempPassword,
+        message: '비밀번호가 성공적으로 초기화되었습니다.',
+      },
+    });
+  }),
+
   http.get(/.*\/api\/v1\/departments$/, ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     return HttpResponse.json(tenantScoped(departments, tenantCode));
   }),
+
 
   http.post(/.*\/api\/v1\/departments$/, async ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
