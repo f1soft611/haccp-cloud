@@ -26,6 +26,22 @@ export type TenantTodoSectionModel = {
   items: TenantTodoCardItem[];
 };
 
+export function toTenantTodoCardItem(
+    item: HaccpBaseWorkItem,
+): TenantTodoCardItem {
+  return {
+    ...item,
+    title: item.title || item.divisionName || item.categoryName || '업무',
+    category: item.categoryName || '기타문서',
+    status: item.todoStatus || 'DRAFT',
+    updatedBy: item.owner || item.createdBy || '없음',
+    updatedAt:
+        item.pendingArrivalAt || item.latestStatusAt || item.createdAt || '',
+    writtenInCycle: Boolean(item.writtenInCycle),
+    routeIdType: item.approvalId ? ('approval' as const) : ('work' as const),
+    routeId: item.approvalId || item.id,
+  };
+}
 export function useTenantDashboardData() {
   const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
 
@@ -46,20 +62,7 @@ export function useTenantDashboardData() {
     queryKey: ['haccp-work-todos', tenantCode],
     queryFn: async () => {
       const items = await listHaccpWorkTodos({ tenantCode });
-      return items.map((item) => ({
-        ...item,
-        title: item.title || item.divisionName || item.categoryName || '업무',
-        category: item.categoryName || '기타문서',
-        status: item.todoStatus || 'DRAFT',
-        updatedBy: item.owner || item.createdBy || '없음',
-        updatedAt:
-          item.pendingArrivalAt || item.latestStatusAt || item.createdAt || '',
-        writtenInCycle: Boolean(item.writtenInCycle),
-        routeIdType: item.approvalId
-          ? ('approval' as const)
-          : ('work' as const),
-        routeId: item.approvalId || item.id,
-      }));
+      return items.map(toTenantTodoCardItem);
     },
     retry: 0,
   });
