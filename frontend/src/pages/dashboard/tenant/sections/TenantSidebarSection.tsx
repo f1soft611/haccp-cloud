@@ -1,17 +1,27 @@
-import { Box, Chip, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import {
+    Box,
+    Button,
+    Chip,
+    Paper,
+    Skeleton,
+    Stack,
+    Typography,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { NOTICE_ITEMS } from '../constants';
 import type { TenantTodoCardItem } from '../hooks/useTenantDashboardData';
 import { formatDate } from '../utils';
 
 type TenantSidebarSectionProps = {
-  approvalAlerts: TenantTodoCardItem[];
-  isLoading: boolean;
-  isError: boolean;
+    approvalAlerts: TenantTodoCardItem[];
+    isLoading: boolean;
+    isError: boolean;
+    onOpenCalendar: () => void;
 };
 
 export function TenantSidebarSection(props: TenantSidebarSectionProps) {
-  const { approvalAlerts, isLoading, isError } = props;
+    const { approvalAlerts, isLoading, isError, onOpenCalendar } = props;
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
 
@@ -23,6 +33,39 @@ export function TenantSidebarSection(props: TenantSidebarSectionProps) {
 
   return (
     <Stack spacing={2}>
+        <Paper
+            sx={{
+                p: 2,
+                borderRadius: 2.5,
+                border: '1px solid',
+                borderColor: isDarkMode
+                    ? 'rgba(99,102,241,0.4)'
+                    : 'rgba(99,102,241,0.28)',
+                bgcolor: isDarkMode
+                    ? 'rgba(30,27,75,0.9)'
+                    : 'rgba(238,242,255,0.9)',
+            }}
+        >
+            <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                spacing={1}
+            >
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <CalendarMonthOutlinedIcon fontSize="small" />
+                    <Typography variant="h6" fontWeight={800}>
+                        업무 캘린더
+                    </Typography>
+                </Stack>
+                <Button size="small" variant="outlined" onClick={onOpenCalendar}>
+                    캘린더 보기
+                </Button>
+            </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8 }}>
+                할일 업무를 달력에서 한눈에 확인하세요.
+            </Typography>
+        </Paper>
       <Paper
         sx={{
           p: 2,
