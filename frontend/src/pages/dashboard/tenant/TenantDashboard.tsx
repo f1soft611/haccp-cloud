@@ -1,4 +1,5 @@
 import { Grid, Stack } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { NOTICE_ITEMS } from './constants';
 import { useTenantDashboardData } from './hooks/useTenantDashboardData';
 import { TenantKpiSection } from './sections/TenantKpiSection';
@@ -7,17 +8,18 @@ import { TenantSummarySection } from './sections/TenantSummarySection';
 import { TenantTodoSection } from './sections/TenantTodoSection';
 
 export function TenantDashboard() {
-  const {
-    ccpCompletion,
-    uncheckedCount,
-    draftDocuments,
-    todayActionCount,
-    todoSections,
-    approvalAlerts,
-    isMetricsLoading,
-    isTodoLoading,
-    isTodoError,
-  } = useTenantDashboardData();
+    const navigate = useNavigate();
+    const {
+        ccpCompletion,
+        uncheckedCount,
+        draftDocuments,
+        todayActionCount,
+        todoSections,
+        approvalAlerts,
+        isMetricsLoading,
+        isTodoLoading,
+        isTodoError,
+    } = useTenantDashboardData();
 
   return (
     <Stack spacing={2.25}>
@@ -45,11 +47,12 @@ export function TenantDashboard() {
           />
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
-          <TenantSidebarSection
-            approvalAlerts={approvalAlerts}
-            isLoading={isTodoLoading}
-            isError={isTodoError}
-          />
+            <TenantSidebarSection
+                approvalAlerts={approvalAlerts}
+                isLoading={isTodoLoading}
+                isError={isTodoError}
+                onOpenCalendar={() => navigate('/docs/work-calendar')}
+            />
         </Grid>
       </Grid>
     </Stack>

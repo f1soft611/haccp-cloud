@@ -30,10 +30,13 @@ describe('Dashboard page', () => {
       screen.getByRole('heading', { name: '결재 알림' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: '공지사항' }),
+        screen.getByRole('heading', { name: '공지사항' }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole('heading', { name: '관리자 허브' }),
+        screen.getByRole('heading', { name: '업무 캘린더' }),
+    ).toBeInTheDocument();
+    expect(
+        screen.queryByRole('heading', { name: '관리자 허브' }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText('DOCUMENT MANAGEMENT PORTAL'),
