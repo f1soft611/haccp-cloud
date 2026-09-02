@@ -29,6 +29,7 @@ import {
   loadPlatformTenantManagementPage,
   loadTenantFirstLoginSetupPage,
   loadUsersPage,
+    loadWorkCalendarPage,
 } from './routePrefetch';
 
 const LoginPage = lazy(() =>
@@ -146,6 +147,11 @@ const ApprovalDraftWritePage = lazy(() =>
   loadApprovalDraftWritePage().then((module) => ({
     default: module.ApprovalDraftWritePage,
   })),
+);
+const WorkCalendarPage = lazy(() =>
+    loadWorkCalendarPage().then((module) => ({
+        default: module.WorkCalendarPage,
+    })),
 );
 
 function DefaultHomeRoute() {
@@ -309,6 +315,14 @@ export function AppRoutes() {
               </ProtectedRoute>
             }
           />
+            <Route
+                path="/docs/work-calendar"
+                element={
+                    <ProtectedRoute>
+                        <WorkCalendarPage />
+                    </ProtectedRoute>
+                }
+            />
           <Route
             path="/approvals/draft/:baseId"
             element={

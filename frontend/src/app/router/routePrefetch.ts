@@ -50,6 +50,8 @@ export const loadHaccpPortalPage = () =>
   import('../../pages/documents/portal/HaccpPortalPage');
 export const loadApprovalDraftWritePage = () =>
   import('../../pages/documents/approvals/ApprovalDraftWritePage');
+export const loadWorkCalendarPage = () =>
+    import('../../pages/documents/work-calendar/WorkCalendarPage');
 
 const prefetchedRouteKeys = new Set<string>();
 const inflightRoutePrefetches = new Map<string, Promise<void>>();
@@ -173,6 +175,11 @@ const routeLoaders: RouteLoader[] = [
     key: 'approval-draft',
     matches: (path) => path.startsWith('/approvals/draft/'),
     load: loadApprovalDraftWritePage,
+  },
+  {
+    key: 'work-calendar',
+    matches: (path) => path === '/docs/work-calendar',
+    load: loadWorkCalendarPage,
   },
   {
     key: 'account-my-page',
