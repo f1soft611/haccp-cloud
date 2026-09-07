@@ -37,6 +37,7 @@ type AuthState = {
   loginHistoryId?: number;
   onboardingRequired: boolean;
   onboardingStatus: OnboardingStatus;
+  mustChangePassword: boolean;
   login: (payload: {
     tenantCode: string;
     planCode?: string;
@@ -53,6 +54,7 @@ type AuthState = {
     loginHistoryId?: number;
     onboardingRequired?: boolean;
     onboardingStatus?: OnboardingStatus;
+    mustChangePassword?: boolean;
   }) => void;
   updateUserImages: (payload: {
     profileImage?: string;
@@ -61,6 +63,7 @@ type AuthState = {
   }) => void;
   updateAccessToken: (accessToken: string) => void;
   markOnboardingCompleted: () => void;
+  clearMustChangePassword: () => void;
   reset: () => void;
   logout: () => void;
 };
@@ -133,6 +136,7 @@ const initialState = {
   loginHistoryId: undefined,
   onboardingRequired: false,
   onboardingStatus: 'COMPLETED' as OnboardingStatus,
+  mustChangePassword: false,
 };
 
 function resolveOnboardingStatus(
@@ -165,6 +169,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     loginHistoryId,
     onboardingRequired,
     onboardingStatus,
+    mustChangePassword,
   }) => {
     if (onboardingRequired === undefined) {
       console.warn(
@@ -192,6 +197,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         onboardingRequired,
         onboardingStatus,
       ),
+      mustChangePassword: mustChangePassword ?? false,
     };
 
     set(nextState);
@@ -232,6 +238,16 @@ export const useAuthStore = create<AuthState>((set) => ({
       persistState(nextState);
       return nextState;
     }),
+  clearMustChangePassword: () =>
+      set((state) => {
+        const nextState = {
+          ...state,
+          mustChangePassword: false,
+        };
+
+        persistState(nextState);
+        return nextState;
+      }),
   reset: () => {
     clearPersistedState();
     set({ ...initialState });

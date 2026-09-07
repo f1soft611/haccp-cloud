@@ -956,6 +956,21 @@
                ) THEN TRUE
               ELSE FALSE
             END AS can_confirm
+            ,CASE
+              WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+               AND EXISTS (
+                 SELECT 1
+                 FROM tb_electronic_approval_line_info turn_line
+                 WHERE turn_line.tenant_id = m.tenant_id
+                   AND turn_line.electronic_approval_id = m.electronic_approval_id
+                   AND turn_line.login_id = #{actorLoginId, jdbcType=BIGINT}
+                   AND COALESCE(turn_line.muldec_status, '') = 'cooperated'
+                   AND turn_line.arrival_at IS NOT NULL
+                   AND turn_line.exe_at IS NULL
+                   AND COALESCE(turn_line.last_owner_status, '') = 'Y'
+               ) THEN TRUE
+              ELSE FALSE
+            END AS last_owner_status
         FROM tb_electronic_approval_main m
         JOIN tb_drafting_work_category w
           ON w.tenant_id = m.tenant_id

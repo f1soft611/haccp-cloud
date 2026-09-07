@@ -117,6 +117,9 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         if (!StringUtils.hasText(normalizedLoginCode)) {
             throw new IllegalArgumentException("로그인 정보를 확인할 수 없습니다.");
         }
+        if (payload.getNewPassword().toLowerCase(Locale.ROOT).contains(normalizedLoginCode.toLowerCase(Locale.ROOT))) {
+            throw new IllegalArgumentException("비밀번호에 아이디를 포함할 수 없습니다.");
+        }
 
         Map<String, Object> condition = new HashMap<String, Object>();
         Long tenantId = resolveTenantIdOrContext(normalizedTenantCode);
@@ -268,6 +271,40 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         platformUserDAO.updateUserStatus(loginStatusPayload);
 
         return getUserById(tenantId, userId, payload.getTenantCode());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String resetPassword(Long userId, String tenantCode) throws Exception {
+        if (userId == null) {
+            throw new IllegalArgumentException("user id is required");
+        }
+
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantIdOrContext(normalizedTenantCode);
+        if (tenantId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tenantCode를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantId", tenantId);
+        condition.put("tenantCode", normalizedTenantCode);
+        condition.put("userId", userId);
+
+        PlatformUserVO user = platformUserDAO.selectUserDetail(condition);
+        if (user == null || user.getLoginId() == null || !StringUtils.hasText(user.getLoginCode())) {
+            throw new IllegalStateException("사용자 계정을 찾을 수 없습니다.");
+        }
+
+        String tempPassword = user.getLoginCode() + user.getLoginCode();
+        String passwordHash = EgovFileScrty.encryptPassword(tempPassword, user.getLoginCode());
+
+        Map<String, Object> updatePayload = new HashMap<String, Object>();
+        updatePayload.put("loginId", user.getLoginId());
+        updatePayload.put("passwordHash", passwordHash);
+        platformUserDAO.updateLoginPasswordHash(updatePayload);
+
+        return tempPassword;
     }
 
     @Override

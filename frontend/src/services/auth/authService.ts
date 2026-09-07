@@ -29,6 +29,7 @@ export type LoginResponse = {
   loginHistoryId?: number;
   onboardingRequired?: boolean;
   onboardingStatus?: OnboardingStatus;
+  mustChangePassword?: boolean;
 };
 
 type BackendLoginVO = {
@@ -42,6 +43,7 @@ type BackendLoginVO = {
   stampImage?: string;
   groupNm?: string;
   roleCode?: string;
+  mustChangePassword?: boolean;
 };
 
 type BackendLoginEnvelope = {
@@ -212,6 +214,7 @@ function normalizeLoginResponse(
     loginHistoryId: data.loginHistoryId,
     onboardingRequired: data.onboardingRequired ?? false,
     onboardingStatus: data.onboardingStatus ?? 'COMPLETED',
+    mustChangePassword: Boolean(resultVO.mustChangePassword),
   };
 }
 

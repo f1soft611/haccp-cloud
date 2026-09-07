@@ -1,7 +1,6 @@
 package egovframework.let.uat.uia.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -16,6 +15,7 @@ import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
 import egovframework.let.platform_admin.tenants.service.TenantDatabaseRegistryService;
 import egovframework.let.uat.uia.web.EgovLoginApiController;
+import egovframework.let.utl.sim.service.EgovFileScrty;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -376,5 +376,71 @@ class EgovLoginServiceImplTest {
 		assertEquals("socra710", requestVO.getId());
 		verify(loginDAO, times(2)).actionLogin(eq(requestVO));
 		verify(loginDAO).selectLoginCodeByTenantIdAndEmail(3L, "socra710@onbording4.co.kr");
+	}
+
+	@DisplayName("임시 비밀번호(아이디 반복)로 로그인하면 mustChangePassword가 true로 설정된다")
+	@Test
+	void actionLogin_setsMustChangePasswordWhenPasswordMatchesTemporaryPattern() throws Exception {
+		LoginDAO loginDAO = mock(LoginDAO.class);
+		TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+		TenantDatabaseRegistryService tenantDatabaseRegistryService = mock(TenantDatabaseRegistryService.class);
+		EgovLoginServiceImpl service = new EgovLoginServiceImpl();
+		ReflectionTestUtils.setField(service, "loginDAO", loginDAO);
+		ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+		ReflectionTestUtils.setField(service, "tenantDatabaseRegistryService", tenantDatabaseRegistryService);
+		when(tenantInfoDAO.selectTenantIdByCode("TENANT1")).thenReturn(7L);
+		when(tenantDatabaseRegistryService.resolveDbKeyByTenantId(7L)).thenReturn("TENANT_7");
+
+		String temporaryPasswordHash = EgovFileScrty.encryptPassword("hong123hong123", "hong123");
+
+		LoginVO storedLoginVO = new LoginVO();
+		storedLoginVO.setId("hong123");
+		storedLoginVO.setPassword(temporaryPasswordHash);
+		storedLoginVO.setTenantCode("TENANT1");
+		storedLoginVO.setRoleCode("TENANT_USER");
+		when(loginDAO.actionLogin(any(LoginVO.class))).thenReturn(storedLoginVO);
+
+		LoginVO requestVO = new LoginVO();
+		requestVO.setId("hong123");
+		requestVO.setPassword("hong123hong123");
+		requestVO.setTenantCode("TENANT1");
+		requestVO.setRoleCode("TENANT_USER");
+
+		LoginVO result = service.actionLogin(requestVO);
+
+		assertNotNull(result);
+		assertTrue(result.isMustChangePassword());
+	}
+
+	@DisplayName("실제 비밀번호로 로그인하면 mustChangePassword가 false로 유지된다")
+	@Test
+	void actionLogin_keepsMustChangePasswordFalseForRealPassword() throws Exception {
+		LoginDAO loginDAO = mock(LoginDAO.class);
+		TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+		TenantDatabaseRegistryService tenantDatabaseRegistryService = mock(TenantDatabaseRegistryService.class);
+		EgovLoginServiceImpl service = new EgovLoginServiceImpl();
+		ReflectionTestUtils.setField(service, "loginDAO", loginDAO);
+		ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+		ReflectionTestUtils.setField(service, "tenantDatabaseRegistryService", tenantDatabaseRegistryService);
+		when(tenantInfoDAO.selectTenantIdByCode("TENANT1")).thenReturn(7L);
+		when(tenantDatabaseRegistryService.resolveDbKeyByTenantId(7L)).thenReturn("TENANT_7");
+
+		LoginVO storedLoginVO = new LoginVO();
+		storedLoginVO.setId("hong123");
+		storedLoginVO.setPassword("some-real-encoded-password");
+		storedLoginVO.setTenantCode("TENANT1");
+		storedLoginVO.setRoleCode("TENANT_USER");
+		when(loginDAO.actionLogin(any(LoginVO.class))).thenReturn(storedLoginVO);
+
+		LoginVO requestVO = new LoginVO();
+		requestVO.setId("hong123");
+		requestVO.setPassword("real-password");
+		requestVO.setTenantCode("TENANT1");
+		requestVO.setRoleCode("TENANT_USER");
+
+		LoginVO result = service.actionLogin(requestVO);
+
+		assertNotNull(result);
+		assertFalse(result.isMustChangePassword());
 	}
 }

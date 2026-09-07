@@ -106,6 +106,9 @@ public class LoginVO implements Serializable{
 	@Schema(description = "역할ID")
 	private Long roleId;
 
+	@Schema(description = "임시 비밀번호로 로그인하여 비밀번호 변경이 필요한지 여부")
+	private boolean mustChangePassword;
+
 	@Deprecated
 	public String getFactoryCode() {
 		return tenantCode;

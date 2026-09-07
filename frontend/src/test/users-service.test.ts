@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { listUsers, listUsersPaged } from '../services/organization/usersService';
+import {
+  listUsers,
+  listUsersPaged,
+  resetUserPassword,
+} from '../services/organization/usersService';
 
 describe('usersService', () => {
   it('lists users in tenant scope', async () => {
@@ -21,5 +25,14 @@ describe('usersService', () => {
     expect(page.items.every((user) => user.tenantCode === 'TENANT-A')).toBe(
       true,
     );
+  });
+
+  it('resets a user password and returns the temp password from the server', async () => {
+    const tempPassword = await resetUserPassword({
+      tenantCode: 'TENANT-A',
+      id: 'U-1',
+    });
+
+    expect(tempPassword).toBe('U-1U-1');
   });
 });

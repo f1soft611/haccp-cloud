@@ -146,6 +146,7 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 					|| "PLATFORM_ADMIN".equals(loginVO.getRoleCode())) {
 				loginVO.setTenantCode(PlatformTenantCodes.CANONICAL);
 			}
+			loginVO.setMustChangePassword(isTemporaryPassword(loginVO.getId(), loginVO.getPassword()));
 			log.info("Login successful: userId={}, tenantId={}", loginVO.getId(), tenantId);
 			return loginVO;
 		} else {
@@ -188,6 +189,14 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 				&& !loginVO.getId().isEmpty()
 				&& loginVO.getPassword() != null
 				&& !loginVO.getPassword().isEmpty();
+	}
+
+	private boolean isTemporaryPassword(String loginCode, String passwordHash) throws Exception {
+		if (!StringUtils.hasText(loginCode) || !StringUtils.hasText(passwordHash)) {
+			return false;
+		}
+		String temporaryPasswordHash = EgovFileScrty.encryptPassword(loginCode + loginCode, loginCode);
+		return temporaryPasswordHash.equals(passwordHash);
 	}
 
 	private boolean isEmailFormat(String value) {

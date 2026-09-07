@@ -24,8 +24,10 @@ type UserFormDialogProps = {
   roleOptions: Array<{ code: string; name: string }>;
   initialValue?: UserFormValue;
   saving?: boolean;
+  resettingPassword?: boolean;
   onClose: () => void;
   onSubmit: (value: UserFormValue) => void;
+  onResetPassword?: () => void;
 };
 
 const EMPTY_VALUE: UserFormValue = {
@@ -37,15 +39,17 @@ const EMPTY_VALUE: UserFormValue = {
 };
 
 export function UserFormDialog({
-  open,
-  mode,
-  departmentOptions,
-  roleOptions,
-  initialValue,
-  saving,
-  onClose,
-  onSubmit,
-}: UserFormDialogProps) {
+                                 open,
+                                 mode,
+                                 departmentOptions,
+                                 roleOptions,
+                                 initialValue,
+                                 saving,
+                                 resettingPassword,
+                                 onClose,
+                                 onSubmit,
+                                 onResetPassword,
+                               }: UserFormDialogProps) {
   const [value, setValue] = useState<UserFormValue>(EMPTY_VALUE);
 
   const normalizedRoleOptions = useMemo(() => {
@@ -181,20 +185,35 @@ export function UserFormDialog({
           ))}
         </TextField>
 
-        <FormControlLabel
-          control={
-            <Switch
-              checked={value.active}
-              onChange={(event) =>
-                setValue((prev) => ({
-                  ...prev,
-                  active: event.target.checked,
-                }))
+        <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+        >
+          <FormControlLabel
+              control={
+                <Switch
+                    checked={value.active}
+                    onChange={(event) =>
+                        setValue((prev) => ({
+                          ...prev,
+                          active: event.target.checked,
+                        }))
+                    }
+                />
               }
-            />
-          }
-          label={value.active ? '활성(로그인 허용)' : '비활성(로그인 차단)'}
-        />
+              label={value.active ? '활성(로그인 허용)' : '비활성(로그인 차단)'}
+          />
+          {mode === 'edit' && onResetPassword ? (
+              <Button
+                  onClick={onResetPassword}
+                  disabled={resettingPassword}
+                  color="warning"
+              >
+                비밀번호 초기화
+              </Button>
+          ) : null}
+        </Stack>
       </Stack>
     </FormDialog>
   );

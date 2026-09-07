@@ -136,12 +136,14 @@ export function ApprovalDraftWritePage() {
     isOwner && normalizedApprovalStatus === 'in_progress';
   const attachmentReadOnly = isReadOnly && !canUploadAttachmentsWhileInProgress;
   const approveLabel = showConfirm
-    ? isFinalOwnerConfirm
-      ? '최종 확인'
-      : '확인'
-    : approvalEventType === 'final_approve'
-      ? '최종 승인'
-      : '검토 승인';
+      ? isFinalOwnerConfirm
+          ? normalizedApprovalStatus === 'rejected'
+              ? '재상신'
+              : '최종 확인'
+          : '확인'
+      : approvalEventType === 'final_approve'
+          ? '최종 승인'
+          : '검토 승인';
 
   return (
     <Stack spacing={2.25}>
@@ -279,10 +281,12 @@ export function ApprovalDraftWritePage() {
         title={showConfirm ? approveLabel : `${approveLabel} 확인`}
         description={
           showConfirm
-            ? isFinalOwnerConfirm
-              ? '문서를 최종 확인 처리하시겠습니까?'
-              : '문서를 확인 처리하시겠습니까?'
-            : `${approveLabel}를 진행하시겠습니까?`
+              ? isFinalOwnerConfirm
+                  ? normalizedApprovalStatus === 'rejected'
+                      ? '반려된 문서를 재상신하시겠습니까?'
+                      : '문서를 최종 확인 처리하시겠습니까?'
+                  : '문서를 확인 처리하시겠습니까?'
+              : `${approveLabel}를 진행하시겠습니까?`
         }
         confirmText={approveLabel}
         confirmColor="primary"
