@@ -14,6 +14,8 @@ import {
     useWorkCalendarData,
     type WorkCalendarEvent,
 } from './hooks/useWorkCalendarData';
+import { getWorkCycleLabel, getWorkCycleSx } from '../../dashboard/tenant/utils';
+
 
 dayjs.locale('ko');
 const localizer = dayjsLocalizer(dayjs);
@@ -55,6 +57,17 @@ export function WorkCalendarPage() {
                     popup
                     startAccessor="start"
                     endAccessor="end"
+                    eventPropGetter={(event) => {
+                        const cycleLabel = getWorkCycleLabel(event.resource);
+                        const sx = getWorkCycleSx(cycleLabel);
+                        return {
+                            style: {
+                                backgroundColor: sx.bgcolor,
+                                color: sx.color,
+                                border: sx.border,
+                            },
+                        };
+                    }}
                     style={{ height: 720 }}
                     components={{
                         toolbar: WorkCalendarToolbar,

@@ -4,6 +4,7 @@ import { AppProviders } from '../app/providers/AppProviders';
 import { WorkCalendarPage } from '../pages/documents/work-calendar/WorkCalendarPage';
 import { listHaccpWorkTodos } from '../services/documents/haccpBaseWorkService';
 import { useAuthStore } from '../shared/store/authStore';
+import { getWorkCycleSx } from '../pages/dashboard/tenant/utils';
 
 const { navigateMock } = vi.hoisted(() => ({
     navigateMock: vi.fn(),
@@ -100,5 +101,35 @@ describe('WorkCalendarPage', () => {
                 `${next.getFullYear()}년 ${next.getMonth() + 1}월`,
             ),
         ).toBeInTheDocument();
+    });
+
+    it('colors the event pill background by the todo cycle', async () => {
+        render(
+            <AppProviders>
+                <WorkCalendarPage />
+            </AppProviders>,
+        );
+
+        const eventText = await screen.findByText('월간 점검 업무');
+        const eventEl = eventText.closest('.rbc-event') as HTMLElement | null;
+
+        expect(eventEl).not.toBeNull();
+        expect(eventEl?.style.backgroundColor).toBe(
+            getWorkCycleSx('월').bgcolor,
+        );
+    });
+
+    it('renders a cycle color legend with 일/주/월/년 chips', async () => {
+        render(
+            <AppProviders>
+                <WorkCalendarPage />
+            </AppProviders>,
+        );
+
+        await screen.findByText('월간 점검 업무');
+
+        (['일', '주', '월', '년'] as const).forEach((cycleLabel) => {
+            expect(screen.getByText(cycleLabel)).toBeInTheDocument();
+        });
     });
 });
