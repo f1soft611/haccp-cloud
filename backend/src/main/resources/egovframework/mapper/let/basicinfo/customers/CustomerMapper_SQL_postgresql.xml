@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CustomerDAO">
+
+    <!-- 거래처 정보 resultMap -->
+    <resultMap id="customerResult"
+               type="egovframework.let.basicinfo.customers.domain.model.CustomerVO">
+        <id property="customerId" column="customerId"/>
+        <result property="tenantCode" column="tenantCode"/>
+        <result property="customerCode" column="customerCode"/>
+        <result property="customerName" column="customerName"/>
+        <result property="custNameAbbr" column="custNameAbbr"/>
+        <result property="presidentName" column="presidentName"/>
+        <result property="businessNo" column="businessNo"/>
+        <result property="juridNo" column="juridNo"/>
+        <result property="businessStatus1" column="businessStatus1"/>
+        <result property="businessItem1" column="businessItem1"/>
+        <result property="postCode" column="postCode"/>
+        <result property="address" column="address"/>
+        <result property="telephoneNo" column="telephoneNo"/>
+        <result property="facsimileNo" column="facsimileNo"/>
+        <result property="custMemo" column="custMemo"/>
+        <result property="active" column="active"/>
+    </resultMap>
+
+    <!-- 거래처 페이징 목록 조회 -->
+    <select id="CustomerDAO.selectCustomerPagedList"
+            parameterType="egovframework.let.basicinfo.customers.domain.model.CustomerSearchConditionVO"
+            resultMap="customerResult">
+        SELECT *
+        FROM (
+            SELECT
+                c.customer_id                        AS customerId,
+                t.tenant_code                        AS tenantCode,
+                c.customer_code                      AS customerCode,
+                c.customer_name                      AS customerName,
+                c.cust_name_abbr                     AS custNameAbbr,
+                c.president_name                     AS presidentName,
+                c.business_no                        AS businessNo,
+                c.jurid_no                            AS juridNo,
+                c.business_status_1                  AS businessStatus1,
+                c.business_item_1                    AS businessItem1,
+                c.post_code                          AS postCode,
+                c.address                            AS address,
+                c.telephone_no                       AS telephoneNo,
+                c.facsimile_no                       AS facsimileNo,
+                c.cust_memo                          AS custMemo,
+                CASE WHEN c.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+                ROW_NUMBER() OVER (ORDER BY c.customer_code) AS rn
+            FROM tb_customer_info c
+            JOIN tb_tenant t ON t.tenant_id = c.tenant_id
+            WHERE 1 = 1
+            <if test="tenantCode != null and tenantCode != ''">
+                AND t.tenant_code = #{tenantCode}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    LOWER(c.customer_name) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR LOWER(COALESCE(c.cust_name_abbr, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR LOWER(COALESCE(c.president_name, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR c.customer_code LIKE '%' || #{keyword} || '%'
+                    OR COALESCE(c.business_no, '') LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+            <if test='filterActive != null and filterActive == "Y"'>
+                AND c.use_at = 'Y'
+            </if>
+            <if test='filterActive != null and filterActive == "N"'>
+                AND c.use_at = 'N'
+            </if>
+        ) customer_query
+        WHERE rn BETWEEN #{firstIndex} AND #{lastIndex}
+        ORDER BY rn
+    </select>
+
+    <!-- 거래처 페이징 개수 조회 -->
+    <select id="CustomerDAO.selectCustomerPagedCount"
+            parameterType="egovframework.let.basicinfo.customers.domain.model.CustomerSearchConditionVO"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_customer_info c
+        JOIN tb_tenant t ON t.tenant_id = c.tenant_id
+        WHERE 1 = 1
+        <if test="tenantCode != null and tenantCode != ''">
+            AND t.tenant_code = #{tenantCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                LOWER(c.customer_name) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(COALESCE(c.cust_name_abbr, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(COALESCE(c.president_name, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR c.customer_code LIKE '%' || #{keyword} || '%'
+                OR COALESCE(c.business_no, '') LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+        <if test='filterActive != null and filterActive == "Y"'>
+            AND c.use_at = 'Y'
+        </if>
+        <if test='filterActive != null and filterActive == "N"'>
+            AND c.use_at = 'N'
+        </if>
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="CustomerDAO.selectCustomerById"
+            parameterType="map"
+            resultMap="customerResult">
+        SELECT
+            c.customer_id                        AS customerId,
+            t.tenant_code                        AS tenantCode,
+            c.customer_code                      AS customerCode,
+            c.customer_name                      AS customerName,
+            c.cust_name_abbr                     AS custNameAbbr,
+            c.president_name                     AS presidentName,
+            c.business_no                        AS businessNo,
+            c.jurid_no                            AS juridNo,
+            c.business_status_1                  AS businessStatus1,
+            c.business_item_1                    AS businessItem1,
+            c.post_code                          AS postCode,
+            c.address                            AS address,
+            c.telephone_no                       AS telephoneNo,
+            c.facsimile_no                       AS facsimileNo,
+            c.cust_memo                          AS custMemo,
+            CASE WHEN c.use_at = 'Y' THEN TRUE ELSE FALSE END AS active
+        FROM tb_customer_info c
+        JOIN tb_tenant t ON t.tenant_id = c.tenant_id
+        WHERE c.customer_id = #{customerId}
+          AND c.tenant_id   = #{tenantId}
+    </select>
+
+    <!-- 테넌트 ID 조회 -->
+    <select id="CustomerDAO.selectTenantIdByCode"
+            parameterType="string"
+            resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+        LIMIT 1
+    </select>
+
+    <!-- 로그인코드로 사용자 ID 조회 (created_by/updated_by 기록용) -->
+    <select id="CustomerDAO.selectUserIdByLoginCode"
+            parameterType="map"
+            resultType="long">
+        SELECT u.user_id
+        FROM tb_user u
+        JOIN tb_login_account la ON la.login_id = u.login_id
+        WHERE la.tenant_id = #{tenantId}
+          AND la.login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <!-- 거래처코드 채번을 위한 테넌트 단위 트랜잭션 잠금 -->
+    <select id="CustomerDAO.lockTenantForCodeGeneration"
+            parameterType="long"
+            resultType="string">
+        SELECT pg_advisory_xact_lock(#{value})::text
+    </select>
+
+    <!-- 테넌트 내 최대 거래처코드 조회 -->
+    <select id="CustomerDAO.selectMaxCustomerCode"
+            parameterType="long"
+            resultType="string">
+        SELECT MAX(customer_code)
+        FROM tb_customer_info
+        WHERE tenant_id = #{value}
+    </select>
+
+    <!-- 거래처 등록 (PostgreSQL RETURNING으로 신규 ID 반환) -->
+    <select id="CustomerDAO.insertCustomer"
+            parameterType="map"
+            resultType="long">
+        INSERT INTO tb_customer_info (
+            tenant_id,
+            customer_code,
+            customer_name,
+            cust_name_abbr,
+            president_name,
+            business_no,
+            jurid_no,
+            business_status_1,
+            business_item_1,
+            post_code,
+            address,
+            telephone_no,
+            facsimile_no,
+            cust_memo,
+            use_at,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        ) VALUES (
+            #{tenantId},
+            #{customerCode},
+            #{customerName},
+            #{custNameAbbr, jdbcType=VARCHAR},
+            #{presidentName, jdbcType=VARCHAR},
+            #{businessNo, jdbcType=VARCHAR},
+            #{juridNo, jdbcType=VARCHAR},
+            #{businessStatus1, jdbcType=VARCHAR},
+            #{businessItem1, jdbcType=VARCHAR},
+            #{postCode, jdbcType=VARCHAR},
+            #{address, jdbcType=VARCHAR},
+            #{telephoneNo, jdbcType=VARCHAR},
+            #{facsimileNo, jdbcType=VARCHAR},
+            #{custMemo, jdbcType=VARCHAR},
+            #{useAt},
+            #{createdBy, jdbcType=VARCHAR},
+            CURRENT_TIMESTAMP,
+            #{updatedBy, jdbcType=VARCHAR},
+            CURRENT_TIMESTAMP
+        )
+        RETURNING customer_id
+    </select>
+
+    <!-- 거래처 수정 -->
+    <update id="CustomerDAO.updateCustomer"
+            parameterType="map">
+        UPDATE tb_customer_info
+        SET
+            customer_name      = #{customerName},
+            cust_name_abbr     = #{custNameAbbr, jdbcType=VARCHAR},
+            president_name     = #{presidentName, jdbcType=VARCHAR},
+            business_no        = #{businessNo, jdbcType=VARCHAR},
+            jurid_no           = #{juridNo, jdbcType=VARCHAR},
+            business_status_1  = #{businessStatus1, jdbcType=VARCHAR},
+            business_item_1    = #{businessItem1, jdbcType=VARCHAR},
+            post_code          = #{postCode, jdbcType=VARCHAR},
+            address            = #{address, jdbcType=VARCHAR},
+            telephone_no       = #{telephoneNo, jdbcType=VARCHAR},
+            facsimile_no       = #{facsimileNo, jdbcType=VARCHAR},
+            cust_memo          = #{custMemo, jdbcType=VARCHAR},
+            use_at             = #{useAt},
+            updated_by         = #{updatedBy, jdbcType=VARCHAR},
+            updated_at         = CURRENT_TIMESTAMP
+        WHERE customer_id = #{customerId}
+          AND tenant_id   = #{tenantId}
+    </update>
+
+    <!-- 거래처 삭제 -->
+    <delete id="CustomerDAO.deleteCustomer"
+            parameterType="map">
+        DELETE FROM tb_customer_info
+        WHERE customer_id = #{customerId}
+          AND tenant_id   = #{tenantId}
+    </delete>
+
+</mapper>

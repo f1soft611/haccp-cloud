@@ -50,13 +50,18 @@ export const loadHaccpPortalPage = () =>
   import('../../pages/documents/portal/HaccpPortalPage');
 export const loadApprovalDraftWritePage = () =>
   import('../../pages/documents/approvals/ApprovalDraftWritePage');
+export const loadCustomersPage = () =>
+  import('../../pages/basicinfo/customers/CustomersPage');
+export const loadMaterialsPage = () =>
+  import('../../pages/basicinfo/materials/MaterialsPage');
+export const loadEquipmentPage = () =>
+  import('../../pages/basicinfo/equipment/EquipmentPage');
 export const loadWorkCalendarPage = () =>
     import('../../pages/documents/work-calendar/WorkCalendarPage');
 export const loadWorkOrderPage = () =>
     import('../../pages/documents/work-order/WorkOrderPage');
 export const loadCommonCodePage = () =>
     import('../../pages/basicinfo/common-code/CommonCodePage');
-
 
 const prefetchedRouteKeys = new Set<string>();
 const inflightRoutePrefetches = new Map<string, Promise<void>>();
@@ -180,6 +185,21 @@ const routeLoaders: RouteLoader[] = [
     key: 'approval-draft',
     matches: (path) => path.startsWith('/approvals/draft/'),
     load: loadApprovalDraftWritePage,
+  },
+  {
+    key: 'basicinfo-customers',
+    matches: (path) => path === '/basicinfo/customers',
+    load: loadCustomersPage,
+  },
+  {
+    key: 'basicinfo-materials',
+    matches: (path) => path === '/basicinfo/materials',
+    load: loadMaterialsPage,
+  },
+  {
+    key: 'basicinfo-equipment',
+    matches: (path) => path === '/basicinfo/equipment',
+    load: loadEquipmentPage,
   },
   {
     key: 'work-calendar',

@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MaterialDAO">
+
+    <!-- 품목 정보 resultMap -->
+    <resultMap id="materialResult"
+               type="egovframework.let.basicinfo.materials.domain.model.MaterialVO">
+        <id property="materialId" column="materialId"/>
+        <result property="tenantCode" column="tenantCode"/>
+        <result property="materialCode" column="materialCode"/>
+        <result property="materialName" column="materialName"/>
+        <result property="itemType" column="itemType"/>
+        <result property="materialSpec" column="materialSpec"/>
+        <result property="materialWeight" column="materialWeight"/>
+        <result property="unit" column="unit"/>
+        <result property="etc" column="etc"/>
+    </resultMap>
+
+    <!-- 품목 페이징 목록 조회 (삭제되지 않은 품목만) -->
+    <select id="MaterialDAO.selectMaterialPagedList"
+            parameterType="egovframework.let.basicinfo.materials.domain.model.MaterialSearchConditionVO"
+            resultMap="materialResult">
+        SELECT *
+        FROM (
+            SELECT
+                m.material_id                        AS materialId,
+                t.tenant_code                        AS tenantCode,
+                m.material_code                      AS materialCode,
+                m.material_name                      AS materialName,
+                m.item_type                          AS itemType,
+                m.material_spec                      AS materialSpec,
+                m.material_weight                    AS materialWeight,
+                m.unit                               AS unit,
+                m.etc                                AS etc,
+                ROW_NUMBER() OVER (ORDER BY m.material_code) AS rn
+            FROM tb_material_info m
+            JOIN tb_tenant t ON t.tenant_id = m.tenant_id
+            WHERE m.delete_status = 'N'
+            <if test="tenantCode != null and tenantCode != ''">
+                AND t.tenant_code = #{tenantCode}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    LOWER(m.material_name) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR LOWER(COALESCE(m.material_spec, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR LOWER(COALESCE(m.item_type, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                    OR m.material_code LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+        ) material_query
+        WHERE rn BETWEEN #{firstIndex} AND #{lastIndex}
+        ORDER BY rn
+    </select>
+
+    <!-- 품목 페이징 개수 조회 -->
+    <select id="MaterialDAO.selectMaterialPagedCount"
+            parameterType="egovframework.let.basicinfo.materials.domain.model.MaterialSearchConditionVO"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_material_info m
+        JOIN tb_tenant t ON t.tenant_id = m.tenant_id
+        WHERE m.delete_status = 'N'
+        <if test="tenantCode != null and tenantCode != ''">
+            AND t.tenant_code = #{tenantCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                LOWER(m.material_name) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(COALESCE(m.material_spec, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(COALESCE(m.item_type, '')) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR m.material_code LIKE '%' || #{keyword} || '%'
+            )
+        </if>
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="MaterialDAO.selectMaterialById"
+            parameterType="map"
+            resultMap="materialResult">
+        SELECT
+            m.material_id                        AS materialId,
+            t.tenant_code                        AS tenantCode,
+            m.material_code                      AS materialCode,
+            m.material_name                      AS materialName,
+            m.item_type                          AS itemType,
+            m.material_spec                      AS materialSpec,
+            m.material_weight                    AS materialWeight,
+            m.unit                               AS unit,
+            m.etc                                AS etc
+        FROM tb_material_info m
+        JOIN tb_tenant t ON t.tenant_id = m.tenant_id
+        WHERE m.material_id = #{materialId}
+          AND m.tenant_id   = #{tenantId}
+    </select>
+
+    <!-- 테넌트 ID 조회 -->
+    <select id="MaterialDAO.selectTenantIdByCode"
+            parameterType="string"
+            resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+        LIMIT 1
+    </select>
+
+    <!-- 로그인코드로 사용자 ID 조회 (created_by/updated_by 기록용) -->
+    <select id="MaterialDAO.selectUserIdByLoginCode"
+            parameterType="map"
+            resultType="long">
+        SELECT u.user_id
+        FROM tb_user u
+        JOIN tb_login_account la ON la.login_id = u.login_id
+        WHERE la.tenant_id = #{tenantId}
+          AND la.login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <!-- 품목코드 채번을 위한 테넌트 단위 트랜잭션 잠금 -->
+    <select id="MaterialDAO.lockTenantForCodeGeneration"
+            parameterType="long"
+            resultType="string">
+        SELECT pg_advisory_xact_lock(#{value})::text
+    </select>
+
+    <!-- 테넌트 내 최대 품목코드 조회 (소프트 삭제된 품목 포함 - 코드 재사용 방지) -->
+    <select id="MaterialDAO.selectMaxMaterialCode"
+            parameterType="long"
+            resultType="string">
+        SELECT MAX(material_code)
+        FROM tb_material_info
+        WHERE tenant_id = #{value}
+    </select>
+
+    <!-- 품목 등록 (PostgreSQL RETURNING으로 신규 ID 반환) -->
+    <select id="MaterialDAO.insertMaterial"
+            parameterType="map"
+            resultType="long">
+        INSERT INTO tb_material_info (
+            tenant_id,
+            material_code,
+            material_name,
+            item_type,
+            material_type_code,
+            material_spec,
+            material_weight,
+            unit,
+            etc,
+            mat_cata_type,
+            delete_status,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        ) VALUES (
+            #{tenantId},
+            #{materialCode},
+            #{materialName},
+            #{itemType, jdbcType=VARCHAR},
+            #{materialTypeCode},
+            #{materialSpec, jdbcType=VARCHAR},
+            #{materialWeight, jdbcType=BIGINT},
+            #{unit, jdbcType=VARCHAR},
+            #{etc, jdbcType=VARCHAR},
+            '',
+            'N',
+            #{createdBy, jdbcType=VARCHAR},
+            CURRENT_TIMESTAMP,
+            #{updatedBy, jdbcType=VARCHAR},
+            CURRENT_TIMESTAMP
+        )
+        RETURNING material_id
+    </select>
+
+    <!-- 품목 수정 -->
+    <update id="MaterialDAO.updateMaterial"
+            parameterType="map">
+        UPDATE tb_material_info
+        SET
+            material_name       = #{materialName},
+            item_type           = #{itemType, jdbcType=VARCHAR},
+            material_type_code  = #{materialTypeCode},
+            material_spec       = #{materialSpec, jdbcType=VARCHAR},
+            material_weight     = #{materialWeight, jdbcType=BIGINT},
+            unit                = #{unit, jdbcType=VARCHAR},
+            etc                 = #{etc, jdbcType=VARCHAR},
+            updated_by          = #{updatedBy, jdbcType=VARCHAR},
+            updated_at          = CURRENT_TIMESTAMP
+        WHERE material_id = #{materialId}
+          AND tenant_id   = #{tenantId}
+          AND delete_status = 'N'
+    </update>
+
+    <!-- 품목 소프트 삭제 -->
+    <update id="MaterialDAO.softDeleteMaterial"
+            parameterType="map">
+        UPDATE tb_material_info
+        SET
+            delete_status = 'Y',
+            deleted_at    = CURRENT_TIMESTAMP,
+            updated_at    = CURRENT_TIMESTAMP
+        WHERE material_id = #{materialId}
+          AND tenant_id   = #{tenantId}
+    </update>
+
+</mapper>
