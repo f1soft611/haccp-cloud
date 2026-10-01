@@ -30,6 +30,7 @@ import {
   loadTenantFirstLoginSetupPage,
   loadUsersPage,
     loadWorkCalendarPage,
+    loadWorkOrderPage,
 } from './routePrefetch';
 
 const LoginPage = lazy(() =>
@@ -151,6 +152,11 @@ const ApprovalDraftWritePage = lazy(() =>
 const WorkCalendarPage = lazy(() =>
     loadWorkCalendarPage().then((module) => ({
         default: module.WorkCalendarPage,
+    })),
+);
+const WorkOrderPage = lazy(() =>
+    loadWorkOrderPage().then((module) => ({
+        default: module.WorkOrderPage,
     })),
 );
 
@@ -320,6 +326,14 @@ export function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <WorkCalendarPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/docs/work-order"
+                element={
+                    <ProtectedRoute enforceMenuAccess>
+                        <WorkOrderPage />
                     </ProtectedRoute>
                 }
             />

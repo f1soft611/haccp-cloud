@@ -52,6 +52,8 @@ export const loadApprovalDraftWritePage = () =>
   import('../../pages/documents/approvals/ApprovalDraftWritePage');
 export const loadWorkCalendarPage = () =>
     import('../../pages/documents/work-calendar/WorkCalendarPage');
+export const loadWorkOrderPage = () =>
+    import('../../pages/documents/work-order/WorkOrderPage');
 
 const prefetchedRouteKeys = new Set<string>();
 const inflightRoutePrefetches = new Map<string, Promise<void>>();
@@ -180,6 +182,11 @@ const routeLoaders: RouteLoader[] = [
     key: 'work-calendar',
     matches: (path) => path === '/docs/work-calendar',
     load: loadWorkCalendarPage,
+  },
+  {
+    key: 'work-order',
+    matches: (path) => path === '/docs/work-order',
+    load: loadWorkOrderPage,
   },
   {
     key: 'account-my-page',
