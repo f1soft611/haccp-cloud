@@ -25,9 +25,9 @@ describe('Dashboard page', () => {
     );
 
     // 기존 -> KPI 카드(kpi-card-ccp-rate) 존재 확인
-    // 변경 -> KPI 카드 제거됨, 할 일 헤딩으로 렌더링 확인
+    // 변경 -> KPI 카드 제거됨, 당일현황 그리드로 렌더링 확인
     expect(
-      await screen.findByRole('heading', { name: '할 일' }),
+      await screen.findByRole('table', { name: '당일현황' }),
     ).toBeInTheDocument();
     expect(screen.queryByTestId('kpi-card-ccp-rate')).not.toBeInTheDocument();
     // 기존 -> 결재 알림 헤딩 존재 확인
@@ -43,7 +43,7 @@ describe('Dashboard page', () => {
     expect(screen.queryByTestId('tenant-dashboard-calendar')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '캘린더형' }));
     expect(screen.getByTestId('tenant-dashboard-calendar')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: '할 일' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: '당일현황' })).not.toBeInTheDocument();
     expect(
         screen.queryByRole('heading', { name: '관리자 허브' }),
     ).not.toBeInTheDocument();

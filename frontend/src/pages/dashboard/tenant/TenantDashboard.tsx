@@ -75,7 +75,8 @@ export function TenantDashboard() {
               data-testid="tenant-dashboard-calendar"
               sx={{
                 p: 2,
-                borderRadius: 3,
+                // 기존 -> 둥근 모서리(borderRadius 3)
+                // 변경 -> 검색필터와 같은 테마 기본 모서리
                 border: '1px solid',
                 borderColor: 'divider',
               }}
