@@ -54,6 +54,9 @@ export const loadWorkCalendarPage = () =>
     import('../../pages/documents/work-calendar/WorkCalendarPage');
 export const loadWorkOrderPage = () =>
     import('../../pages/documents/work-order/WorkOrderPage');
+export const loadCommonCodePage = () =>
+    import('../../pages/basicinfo/common-code/CommonCodePage');
+
 
 const prefetchedRouteKeys = new Set<string>();
 const inflightRoutePrefetches = new Map<string, Promise<void>>();
@@ -187,6 +190,11 @@ const routeLoaders: RouteLoader[] = [
     key: 'work-order',
     matches: (path) => path === '/docs/work-order',
     load: loadWorkOrderPage,
+  },
+  {
+    key: 'common-code',
+    matches: (path) => path === '/basicinfo/cmmnCode',
+    load: loadCommonCodePage,
   },
   {
     key: 'account-my-page',

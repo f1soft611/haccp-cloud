@@ -31,6 +31,7 @@ import {
   loadUsersPage,
     loadWorkCalendarPage,
     loadWorkOrderPage,
+    loadCommonCodePage,
 } from './routePrefetch';
 
 const LoginPage = lazy(() =>
@@ -157,6 +158,11 @@ const WorkCalendarPage = lazy(() =>
 const WorkOrderPage = lazy(() =>
     loadWorkOrderPage().then((module) => ({
         default: module.WorkOrderPage,
+    })),
+);
+const CommonCodePage = lazy(() =>
+    loadCommonCodePage().then((module) => ({
+        default: module.CommonCodePage,
     })),
 );
 
@@ -334,6 +340,14 @@ export function AppRoutes() {
                 element={
                     <ProtectedRoute enforceMenuAccess>
                         <WorkOrderPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/basicinfo/cmmnCode"
+                element={
+                    <ProtectedRoute enforceMenuAccess>
+                        <CommonCodePage />
                     </ProtectedRoute>
                 }
             />
