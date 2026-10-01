@@ -1,24 +1,26 @@
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import {
   Button,
-  Box,
   Chip,
-  CircularProgress,
-  Grid,
   IconButton,
-  Paper,
   Skeleton,
   Stack,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   Tooltip,
   Typography,
-} from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
-import { APP_LABELS } from '../../../../shared/constants/labels';
-import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
-import type { TenantTodoSectionModel } from '../hooks/useTenantDashboardData';
-import { getWorkCycleLabel, getWorkCycleSx } from '../utils';
+} from "@mui/material";
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { AdminGrid } from "../../../../shared/components/data/AdminGrid";
+import { APP_LABELS } from "../../../../shared/constants/labels";
+import { resolveApprovalStatusView } from "../../../../shared/utils/approvalStatus";
+import type { TenantTodoSectionModel } from "../hooks/useTenantDashboardData";
+import { getWorkCycleLabel, getWorkCycleSx } from "../utils";
+import { resolveDraftRoute } from "../../../../shared/utils/workDraftRoute";
 
 type TenantTodoSectionProps = {
   isLoading: boolean;
@@ -26,10 +28,12 @@ type TenantTodoSectionProps = {
   sections: TenantTodoSectionModel[];
 };
 
+const COLUMN_COUNT = 7;
+
 function formatDate(date: Date): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -43,252 +47,160 @@ function getCurrentMonthDateRange(today: Date = new Date()): {
   };
 }
 
+// 기존 -> 업무분류별 카드 안에 업무를 박스로 나열
+// 변경 -> 업무 1건 = 1행인 그리드(AdminGrid)로 표시, 분류는 행마다 반복, 최대 높이 내 스크롤
 export function TenantTodoSection(props: TenantTodoSectionProps) {
   const { isLoading, isError, sections } = props;
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
 
+  const rows = useMemo(
+    () =>
+      sections.flatMap((section) =>
+        section.items.map((item) => ({
+          sectionLabel: section.label,
+          sectionKey: section.key,
+          item,
+        })),
+      ),
+    [sections],
+  );
+
+  // 기존 -> Paper 카드 + 제목/설명 헤더 안에 그리드 표시
+  // 변경 -> 껍데기 없이 그리드만 표시
   return (
-    <Paper
-      sx={{
-        p: 2.25,
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
-      <Stack spacing={1.5}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={0.75}
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
-          justifyContent="space-between"
-        >
-          <Stack direction="row" spacing={0.75} alignItems="center">
-            <Typography variant="h6" fontWeight={800}>
-              {APP_LABELS.dashboard.blocks.todos}
-            </Typography>
-          </Stack>
-          <Typography variant="body2" color="text.secondary">
-            업무 분류별 우선업무와 주기를 함께 표시합니다.
-          </Typography>
-        </Stack>
+    <AdminGrid ariaLabel={APP_LABELS.dashboard.blocks.todos} maxHeight={560}>
+      <TableHead>
+        <TableRow>
+          <TableCell align="center" width={160}>
+            업무분류
+          </TableCell>
+          <TableCell align="center" sx={{ minWidth: 200 }}>
+            업무명
+          </TableCell>
+          <TableCell align="center" width={90}>
+            주기
+          </TableCell>
+          <TableCell align="center" width={110}>
+            상태
+          </TableCell>
+          <TableCell align="center" width={110}>
+            담당자
+          </TableCell>
+          <TableCell align="center" width={150}>
+            최근일시
+          </TableCell>
+          <TableCell align="center" width={140}>
+            작업
+          </TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {isLoading ? (
+          [1, 2, 3].map((skeletonId) => (
+            <TableRow key={`todo-skeleton-${skeletonId}`}>
+              {Array.from({ length: COLUMN_COUNT }, (_, cellIndex) => (
+                <TableCell key={cellIndex}>
+                  <Skeleton variant="text" />
+                </TableCell>
+              ))}
+            </TableRow>
+          ))
+        ) : rows.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={COLUMN_COUNT} align="center">
+              <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                {isError
+                  ? "할일 목록을 불러오지 못했습니다."
+                  : "등록된 업무가 없습니다."}
+              </Typography>
+            </TableCell>
+          </TableRow>
+        ) : (
+          rows.map(({ sectionLabel, sectionKey, item }) => {
+            const cycleLabel = getWorkCycleLabel(item);
+            const { label: statusLabel, color: statusColor } =
+              resolveApprovalStatusView({
+                approvalStatusType: item.approvalStatusType,
+                approvalStatusTypeName: item.approvalStatusTypeName,
+                todoStatus: item.status,
+                writtenInCycle: item.writtenInCycle,
+              });
 
-        {isLoading ? <CircularProgress size={18} /> : null}
-
-        <Grid container spacing={1.2}>
-          {isLoading ? (
-            [1, 2, 3].map((skeletonId) => (
-              <Grid key={`todo-skeleton-${skeletonId}`} size={{ xs: 12 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 1.2,
-                    borderRadius: 2,
-                    height: '100%',
-                    borderColor: isDarkMode
-                      ? 'rgba(148,163,184,0.24)'
-                      : 'rgba(15,23,42,0.12)',
-                    background: isDarkMode
-                      ? 'linear-gradient(180deg, rgba(15,23,42,0.92), rgba(2,6,23,0.92))'
-                      : 'linear-gradient(180deg, rgba(248,250,252,0.95), rgba(255,255,255,0.95))',
-                  }}
-                >
-                  <Stack direction="row" alignItems="center" spacing={0.8}>
-                    <Skeleton variant="text" width={140} height={28} />
-                    <Skeleton variant="rounded" width={36} height={22} />
-                  </Stack>
-                  <Stack spacing={0.7} sx={{ mt: 1 }}>
-                    <Skeleton variant="rounded" height={64} />
-                    <Skeleton variant="rounded" height={64} />
-                  </Stack>
-                </Paper>
-              </Grid>
-            ))
-          ) : sections.length === 0 ? (
-            <Grid size={{ xs: 12 }}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 1.8,
-                  borderRadius: 2,
-                  borderColor: isDarkMode
-                    ? 'rgba(148,163,184,0.24)'
-                    : 'rgba(15,23,42,0.12)',
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  {isError
-                    ? '할일 목록을 불러오지 못했습니다.'
-                    : '등록된 업무가 없습니다.'}
-                </Typography>
-              </Paper>
-            </Grid>
-          ) : (
-            sections.map((section) => {
-              const items = section.items;
-
-              return (
-                <Grid key={section.key} size={{ xs: 12 }}>
-                  <Paper
-                    variant="outlined"
+            return (
+              <TableRow key={`${sectionKey}-${item.id}`} hover>
+                <TableCell align="center">{sectionLabel}</TableCell>
+                <TableCell>
+                  <Typography variant="body2" fontWeight={600}>
+                    {item.divisionName || item.title || "-"}
+                  </Typography>
+                </TableCell>
+                <TableCell align="center">
+                  <Chip
+                    size="small"
+                    label={cycleLabel}
                     sx={{
-                      p: 1.2,
-                      borderRadius: 2,
-                      height: '100%',
-                      borderColor: isDarkMode
-                        ? 'rgba(148,163,184,0.24)'
-                        : 'rgba(15,23,42,0.12)',
-                      background: isDarkMode
-                        ? 'linear-gradient(180deg, rgba(15,23,42,0.92), rgba(2,6,23,0.92))'
-                        : 'linear-gradient(180deg, rgba(248,250,252,0.95), rgba(255,255,255,0.95))',
+                      height: 22,
+                      fontWeight: 700,
+                      ...getWorkCycleSx(cycleLabel),
                     }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Chip
+                    size="small"
+                    label={statusLabel}
+                    color={statusColor}
+                    sx={{ height: 20, fontWeight: 700 }}
+                  />
+                </TableCell>
+                <TableCell align="center">{item.updatedBy}</TableCell>
+                <TableCell align="center">{item.updatedAt || "-"}</TableCell>
+                <TableCell align="center">
+                  <Stack
+                    direction="row"
+                    spacing={0.6}
+                    alignItems="center"
+                    justifyContent="center"
                   >
-                    <Stack direction="row" alignItems="center" spacing={0.8}>
-                      <Typography variant="subtitle1" fontWeight={800}>
-                        {section.label}
-                      </Typography>
-                      <Chip
+                    <Tooltip title="작성하러 가기">
+                      <IconButton
                         size="small"
-                        label={String(items.length)}
-                        sx={{ height: 22, fontWeight: 800 }}
-                      />
-                    </Stack>
-
-                    <Stack spacing={0.7} sx={{ mt: 1 }}>
-                      {items.map((item) => {
-                        const { label: statusLabel, color: statusColor } =
-                          resolveApprovalStatusView({
-                            approvalStatusType: item.approvalStatusType,
-                            approvalStatusTypeName: item.approvalStatusTypeName,
-                            todoStatus: item.status,
-                            writtenInCycle: item.writtenInCycle,
-                          });
-
-                        return (
-                          <Box
-                            key={`${section.key}-${item.id}`}
-                            sx={{
-                              p: 1,
-                              borderRadius: 1.5,
-                              border: '1px solid',
-                              borderColor: isDarkMode
-                                ? 'rgba(148,163,184,0.24)'
-                                : 'rgba(15,23,42,0.1)',
-                              bgcolor: 'background.paper',
-                            }}
-                          >
-                            {(() => {
-                              const cycleLabel = getWorkCycleLabel(item);
-
-                              return (
-                                <Stack
-                                  direction="row"
-                                  alignItems="center"
-                                  justifyContent="space-between"
-                                  spacing={1}
-                                  sx={{ mb: 0.4 }}
-                                >
-                                  <Chip
-                                    size="small"
-                                    label={`주기 ${cycleLabel}`}
-                                    sx={{
-                                      height: 22,
-                                      fontWeight: 700,
-                                      ...getWorkCycleSx(cycleLabel),
-                                    }}
-                                  />
-                                  <Chip
-                                    size="small"
-                                    label={statusLabel}
-                                    color={statusColor}
-                                    sx={{ height: 20, fontWeight: 700 }}
-                                  />
-                                </Stack>
-                              );
-                            })()}
-
-                            <Stack
-                              direction="row"
-                              alignItems="center"
-                              justifyContent="space-between"
-                              spacing={1}
-                              sx={{ mt: 0.6 }}
-                            >
-                              <Typography variant="body2" fontWeight={600}>
-                                {item.divisionName || item.title || '-'}
-                              </Typography>
-
-                              <Stack
-                                direction="row"
-                                spacing={0.6}
-                                alignItems="center"
-                              >
-                                <Tooltip title="작성하러 가기">
-                                  <IconButton
-                                    size="small"
-                                    color="primary"
-                                    aria-label="작성하러 가기"
-                                    onClick={() => {
-                                      // In todo list, draft entry must be based on "my write in this cycle".
-                                      // If not written, always open by work id to start my own draft.
-                                      const approvalId = (
-                                        item.approvalId || ''
-                                      ).trim();
-                                      const workId = (item.id || '').trim();
-                                      const openApproval =
-                                        Boolean(item.writtenInCycle) &&
-                                        Boolean(approvalId);
-                                      const targetId = openApproval
-                                        ? approvalId
-                                        : workId;
-                                      if (!targetId) {
-                                        return;
-                                      }
-
-                                      const query = openApproval
-                                        ? '?idType=approval'
-                                        : '?idType=work';
-                                      navigate(
-                                        `/approvals/draft/${targetId}${query}`,
-                                      );
-                                    }}
-                                  >
-                                    <EditOutlinedIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  endIcon={<ArrowForwardRoundedIcon />}
-                                  onClick={() => {
-                                    const range = getCurrentMonthDateRange();
-                                    const query = new URLSearchParams({
-                                      workType: section.label,
-                                      startDate: range.startDate,
-                                      endDate: range.endDate,
-                                    });
-                                    navigate(
-                                      `/docs/haccp-doc?${query.toString()}`,
-                                    );
-                                  }}
-                                >
-                                  이동
-                                </Button>
-                              </Stack>
-                            </Stack>
-                          </Box>
-                        );
-                      })}
-                    </Stack>
-                  </Paper>
-                </Grid>
-              );
-            })
-          )}
-        </Grid>
-      </Stack>
-    </Paper>
+                        color="primary"
+                        aria-label="작성하러 가기"
+                        onClick={() => {
+                          const path = resolveDraftRoute(item);
+                          if (!path) {
+                            return;
+                          }
+                          navigate(path);
+                        }}
+                      >
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      endIcon={<ArrowForwardRoundedIcon />}
+                      onClick={() => {
+                        const range = getCurrentMonthDateRange();
+                        const query = new URLSearchParams({
+                          workType: sectionLabel,
+                          startDate: range.startDate,
+                          endDate: range.endDate,
+                        });
+                        navigate(`/docs/haccp-doc?${query.toString()}`);
+                      }}
+                    >
+                      이동
+                    </Button>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            );
+          })
+        )}
+      </TableBody>
+    </AdminGrid>
   );
 }

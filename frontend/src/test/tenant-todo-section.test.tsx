@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { TenantTodoSection } from '../pages/dashboard/tenant/sections/TenantTodoSection';
@@ -19,6 +19,55 @@ vi.mock('react-router-dom', async () => {
 });
 
 describe('TenantTodoSection', () => {
+  it('renders one grid row per todo item with the category repeated', () => {
+    const baseItem = {
+      routeIdType: 'work' as const,
+      category: 'HACCP (HA)',
+      status: 'DRAFT' as const,
+      updatedBy: '관리자',
+      updatedAt: '2026-07-20 09:00',
+      writtenInCycle: false,
+      tenantCode: 'PLATFORM',
+      categoryGroupId: '10',
+      categoryCode: 'HA',
+      categoryName: 'HACCP (HA)',
+      categorySortOrder: 1,
+      cycle: '월',
+      active: true,
+      assigneeIds: [],
+      referenceIds: [],
+      assigneeMapped: true,
+      hasDocument: true,
+    };
+
+    render(
+      <AppProviders>
+        <TenantTodoSection
+          isLoading={false}
+          isError={false}
+          sections={[
+            {
+              key: 'ha',
+              label: 'HACCP (HA)',
+              sortOrder: 1,
+              items: [
+                { ...baseItem, id: '1', routeId: '1', title: '점검 A', divisionCode: '001', divisionName: '점검 A' },
+                { ...baseItem, id: '2', routeId: '2', title: '점검 B', divisionCode: '002', divisionName: '점검 B' },
+              ],
+            },
+          ]}
+        />
+      </AppProviders>,
+    );
+
+    const grid = screen.getByRole('table', { name: '당일현황' });
+    // 헤더 1행 + 데이터 2행
+    expect(within(grid).getAllByRole('row')).toHaveLength(3);
+    expect(within(grid).getAllByText('HACCP (HA)')).toHaveLength(2);
+    expect(within(grid).getByText('점검 A')).toBeInTheDocument();
+    expect(within(grid).getByText('점검 B')).toBeInTheDocument();
+  });
+
   it('navigates to haccp document page with work type and current month range', () => {
     navigateMock.mockReset();
 

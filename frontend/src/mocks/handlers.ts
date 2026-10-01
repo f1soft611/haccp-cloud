@@ -7,6 +7,7 @@ import type {
   DocumentTemplate,
 } from '../services/documents/documentsService';
 import type { UserItem } from '../services/organization/usersService';
+import type { CommonCodeData } from '../services/basicinfo/commonCodeService';
 
 type TenantItem = {
   tenantCode: string;
@@ -157,7 +158,9 @@ let platformMenus: PlatformMenuItem[] = [
     menuDc: '공통코드 관리 페이지',
     parentMenuId: 'PM-2',
     menuOrdr: 1,
-    menuUrl: '/base/common-code',
+    // 기존 -> menuUrl: '/base/common-code',
+    // 변경 -> 실제 등록 메뉴 URL과 일치
+    menuUrl: '/basicinfo/cmmnCode',
     iconNm: 'Menu',
     useAt: 'Y',
     frstRegistPnttm: '2026-06-15T10:06:00.000Z',
@@ -828,6 +831,25 @@ const attachmentStore = {
       uploadStatus: 'COMPLETED',
       previewableYn: 'Y',
     },
+  ],
+};
+
+// ponytail: PUT이 통째로 교체하는 메모리 저장소. 테스트 간 공유되므로 성공 저장 테스트를 추가하면 초기화 필요
+let commonCodeStore: CommonCodeData = {
+  groups: [
+    { groupCode: 'OCCUR_CYCLE', groupName: '발생 주기', groupDesc: '발생 주기 공통코드' },
+    { groupCode: 'UNIT', groupName: '단위', groupDesc: '단위 공통코드' },
+  ],
+  details: [
+    { groupCode: 'OCCUR_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '발생 주기 - 일' },
+    { groupCode: 'OCCUR_CYCLE', code: 'WEEK', codeName: '주', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '발생 주기 - 주' },
+    { groupCode: 'OCCUR_CYCLE', code: 'MONTH', codeName: '월', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '발생 주기 - 월' },
+    { groupCode: 'OCCUR_CYCLE', code: 'EVENT', codeName: '발생시', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '발생 주기 - 발생시' },
+    { groupCode: 'UNIT', code: 'KG', codeName: '킬로그램', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'UNIT', code: 'G', codeName: '그램', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+    { groupCode: 'UNIT', code: 'L', codeName: '리터', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
+    { groupCode: 'UNIT', code: 'EA', codeName: '개', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
+    { groupCode: 'UNIT', code: 'BOX', codeName: '박스', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '' },
   ],
 };
 
@@ -2582,5 +2604,13 @@ export const handlers = [
         .length,
       updatedToday,
     });
+  }),
+  http.get(/.*\/api\/v1\/common-codes$/, () =>
+    HttpResponse.json({ resultCode: 200, result: commonCodeStore }),
+  ),
+
+  http.put(/.*\/api\/v1\/common-codes$/, async ({ request }) => {
+    commonCodeStore = (await request.json()) as CommonCodeData;
+    return HttpResponse.json({ resultCode: 200, result: { message: '저장되었습니다.' } });
   }),
 ];
