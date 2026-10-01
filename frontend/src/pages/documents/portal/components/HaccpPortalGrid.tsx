@@ -40,6 +40,8 @@ export function HaccpPortalGrid({
           </TableCell>
           <TableCell align="center" sx={{ minWidth: 200 }}>구분명</TableCell>
           <TableCell align="center" width={200}>분류</TableCell>
+          {/* 기존 -> 없음 / 변경 -> 분류 뒤 자동기록 칼럼 추가 */}
+          <TableCell align="center" width={100}>자동기록</TableCell>
           <TableCell width={120} align="center">등록주기</TableCell>
           <TableCell align="center" width={200}>담당자</TableCell>
         </TableRow>
@@ -51,7 +53,7 @@ export function HaccpPortalGrid({
                 key={index}
                 data-testid={`haccp-portal-grid-skeleton-row-${index}`}
               >
-                {Array.from({ length: 5 }).map((__, cellIndex) => (
+                {Array.from({ length: 6 }).map((__, cellIndex) => (
                   <TableCell key={cellIndex}>
                     <Skeleton variant="text" />
                   </TableCell>
@@ -62,7 +64,7 @@ export function HaccpPortalGrid({
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={5} align="center">
+            <TableCell colSpan={6} align="center">
               조회된 문서가 없습니다.
             </TableCell>
           </TableRow>
@@ -84,6 +86,8 @@ export function HaccpPortalGrid({
                   </Link>
                 </TableCell>
                 <TableCell>{row.categoryName}</TableCell>
+                {/* ponytail: 자동기록 데이터 필드 미정, API에 추가되면 값 연결 */}
+                <TableCell align="center">-</TableCell>
                 <TableCell align="center">
                   <Chip
                     size="small"
