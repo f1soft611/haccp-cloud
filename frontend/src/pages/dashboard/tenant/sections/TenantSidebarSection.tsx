@@ -1,117 +1,15 @@
-import { Box, Chip, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { NOTICE_ITEMS } from '../constants';
-import type { TenantTodoCardItem } from '../hooks/useTenantDashboardData';
-import { formatDate } from '../utils';
 
-type TenantSidebarSectionProps = {
-  approvalAlerts: TenantTodoCardItem[];
-  isLoading: boolean;
-  isError: boolean;
-};
-
-export function TenantSidebarSection(props: TenantSidebarSectionProps) {
-  const { approvalAlerts, isLoading, isError } = props;
+// 기존 -> 결재 알림(approvalAlerts) + 공지사항 두 패널 표시
+// 변경 -> 결재 알림 패널 제거, 공지사항만 표시
+export function TenantSidebarSection() {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
 
-  const resolveDraftNoWithId = (item: TenantTodoCardItem): string => {
-    const draftNo = (item.draftNumber || '-').trim() || '-';
-    const draftId = (item.approvalId || item.id || '-').trim() || '-';
-    return `${draftNo}/${draftId}`;
-  };
-
   return (
     <Stack spacing={2}>
-      <Paper
-        sx={{
-          p: 2,
-          borderRadius: 2.5,
-          border: '1px solid',
-          borderColor: isDarkMode
-            ? 'rgba(245, 158, 11, 0.45)'
-            : 'rgba(245, 158, 11, 0.35)',
-          bgcolor: isDarkMode
-            ? 'rgba(30, 21, 8, 0.9)'
-            : 'rgba(255, 251, 235, 0.88)',
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="h6" fontWeight={800}>
-            결재 알림
-          </Typography>
-          <Chip
-            size="small"
-            label={String(approvalAlerts.length)}
-            color={approvalAlerts.length > 0 ? 'warning' : 'default'}
-            sx={{ fontWeight: 700 }}
-          />
-        </Stack>
-        <Stack spacing={0.8} sx={{ mt: 1.1 }}>
-          {isLoading ? (
-            <>
-              <Skeleton variant="rounded" height={52} />
-              <Skeleton variant="rounded" height={52} />
-            </>
-          ) : approvalAlerts.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              {isError
-                ? '결재 알림을 불러오지 못했습니다.'
-                : '현재 결재 대상 업무가 없습니다.'}
-            </Typography>
-          ) : (
-            approvalAlerts.map((item, index) => (
-              <Box
-                key={`approval-${item.routeId || item.approvalId || item.id || index}`}
-                sx={{
-                  px: 1,
-                  py: 0.9,
-                  borderRadius: 1,
-                  border: '1px solid',
-                  borderColor: isDarkMode
-                    ? 'rgba(245, 158, 11, 0.4)'
-                    : 'rgba(245, 158, 11, 0.35)',
-                  bgcolor: isDarkMode
-                    ? 'rgba(17,24,39,0.85)'
-                    : 'rgba(255,255,255,0.7)',
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 1,
-                  }}
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    {`${item.divisionName || '-'} - ${item.categoryName || '-'}`}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ whiteSpace: 'nowrap', textAlign: 'right' }}
-                  >
-                    {resolveDraftNoWithId(item)}
-                  </Typography>
-                </Box>
-                <Typography variant="body2" fontWeight={700} sx={{ mt: 0.3 }}>
-                  {item.title || '-'}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ mt: 0.25, display: 'block' }}
-                >
-                  요청일: {formatDate(item.updatedAt)} · 기안자:{' '}
-                  {item.createdBy || '-'}
-                </Typography>
-              </Box>
-            ))
-          )}
-        </Stack>
-      </Paper>
-
       <Paper
         sx={{
           p: 2,

@@ -195,7 +195,9 @@ export const APP_LABELS = {
     blocks: {
       quickActions: '빠른 작업',
       loginPanel: '로그인 상태',
-      todos: '할 일',
+      // 기존 -> 할 일
+      // 변경 -> 당일현황
+      todos: '당일현황',
       recentHistory: '최근 변경 이력',
       alerts: '점검 및 공지',
     },

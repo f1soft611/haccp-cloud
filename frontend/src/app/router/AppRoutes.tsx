@@ -29,6 +29,9 @@ import {
   loadPlatformTenantManagementPage,
   loadTenantFirstLoginSetupPage,
   loadUsersPage,
+    loadWorkCalendarPage,
+    loadWorkOrderPage,
+    loadCommonCodePage,
 } from './routePrefetch';
 
 const LoginPage = lazy(() =>
@@ -146,6 +149,21 @@ const ApprovalDraftWritePage = lazy(() =>
   loadApprovalDraftWritePage().then((module) => ({
     default: module.ApprovalDraftWritePage,
   })),
+);
+const WorkCalendarPage = lazy(() =>
+    loadWorkCalendarPage().then((module) => ({
+        default: module.WorkCalendarPage,
+    })),
+);
+const WorkOrderPage = lazy(() =>
+    loadWorkOrderPage().then((module) => ({
+        default: module.WorkOrderPage,
+    })),
+);
+const CommonCodePage = lazy(() =>
+    loadCommonCodePage().then((module) => ({
+        default: module.CommonCodePage,
+    })),
 );
 
 function DefaultHomeRoute() {
@@ -309,6 +327,30 @@ export function AppRoutes() {
               </ProtectedRoute>
             }
           />
+            <Route
+                path="/docs/work-calendar"
+                element={
+                    <ProtectedRoute>
+                        <WorkCalendarPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/docs/work-order"
+                element={
+                    <ProtectedRoute enforceMenuAccess>
+                        <WorkOrderPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/basicinfo/cmmnCode"
+                element={
+                    <ProtectedRoute enforceMenuAccess>
+                        <CommonCodePage />
+                    </ProtectedRoute>
+                }
+            />
           <Route
             path="/approvals/draft/:baseId"
             element={
