@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { HaccpPortalPage } from '../pages/documents/portal/HaccpPortalPage';
@@ -101,17 +101,11 @@ describe('HaccpPortalPage', () => {
       await screen.findByRole('heading', { name: 'HACCP 문서포탈' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByTestId('haccp-portal-grid-skeleton-0-0'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByTestId('haccp-portal-grid-skeleton-1-0'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByTestId('haccp-portal-grid-skeleton-2-0'),
+      screen.getByTestId('haccp-portal-grid-skeleton-row-0'),
     ).toBeInTheDocument();
   });
 
-  it('renders dynamic category panels and rows from actual category names', async () => {
+  it('renders grid rows with category names', async () => {
     useAuthStore.setState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -139,5 +133,22 @@ describe('HaccpPortalPage', () => {
     expect(screen.getByText('CCP-1B 검증기록')).toBeInTheDocument();
     expect(screen.getByText('기안서')).toBeInTheDocument();
     expect(screen.getByText('생산일지 점검표')).toBeInTheDocument();
+  });
+
+  it('filters rows by keyword on search', async () => {
+    render(
+      <AppProviders>
+        <HaccpPortalPage />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByText('기안서')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('구분명, 담당자 검색'), {
+      target: { value: 'CCP' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+
+    expect(screen.getByText('CCP-1B 검증기록')).toBeInTheDocument();
+    expect(screen.queryByText('기안서')).not.toBeInTheDocument();
   });
 });

@@ -1,9 +1,13 @@
 import type { HaccpPortalDocumentItem } from '../../../services/documents/haccpPortalService';
 
-export type PortalSectionKey = string;
+// 기존 -> PortalSection { key, title, items } (분류별 패널)
+// 변경 -> 그리드 행 + 검색값
+export type PortalRow = HaccpPortalDocumentItem & {
+  cycleLabel: string;
+};
 
-export type PortalSection = {
-  key: PortalSectionKey;
-  title: string;
-  items: HaccpPortalDocumentItem[];
+export type PortalSearchValue = {
+  category: 'ALL' | string;
+  cycle: 'ALL' | string;
+  keyword: string;
 };
