@@ -1,0 +1,353 @@
+BEGIN;
+
+-- 1) Ensure platform tenant exists
+INSERT INTO public.tb_tenant (
+    tenant_code,
+    tenant_nm,
+    admin_email,
+    onboarding_status,
+    use_at,
+    created_by,
+    created_at,
+    updated_at
+)
+SELECT
+    'PLATFORM',
+    '?먰봽?먯냼?꾪듃',
+    'socra710@f1soft.co.kr',
+    'EMAIL_VERIFIED',
+    'Y',
+    NULL,
+    NOW(),
+    NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.tb_tenant WHERE tenant_code = 'PLATFORM'
+);
+
+-- 2) Ensure platform domain exists
+INSERT INTO public.tb_tenant_domain (
+    tenant_id,
+    email_domain,
+    is_primary,
+    use_at,
+    created_at,
+    updated_at
+)
+SELECT
+    t.tenant_id,
+    'f1soft.co.kr',
+    'Y',
+    'Y',
+    NOW(),
+    NOW()
+FROM public.tb_tenant t
+WHERE t.tenant_code = 'PLATFORM'
+  AND NOT EXISTS (
+      SELECT 1 FROM public.tb_tenant_domain td WHERE td.email_domain = 'f1soft.co.kr'
+  );
+
+-- 3) Ensure platform admin role exists
+INSERT INTO public.tb_role (
+    tenant_id,
+    role_code,
+    role_nm,
+    use_at,
+    is_system_role,
+    created_at,
+    updated_at
+)
+SELECT
+    t.tenant_id,
+    'PLATFORM_ADMIN',
+    '?뚮옯??愿由ъ옄',
+    'Y',
+    'Y',
+    NOW(),
+    NOW()
+FROM public.tb_tenant t
+WHERE t.tenant_code = 'PLATFORM'
+  AND NOT EXISTS (
+      SELECT 1 FROM public.tb_role r
+      WHERE r.tenant_id = t.tenant_id AND r.role_code = 'PLATFORM_ADMIN'
+  );
+
+INSERT INTO public.tb_role (
+    tenant_id,
+    role_code,
+    role_nm,
+    use_at,
+    is_system_role,
+    created_at,
+    updated_at
+)
+SELECT
+    t.tenant_id,
+    'TENANT_ADMIN',
+    '?낆껜 愿由ъ옄',
+    'Y',
+    'Y',
+    NOW(),
+    NOW()
+FROM public.tb_tenant t
+WHERE t.tenant_code = 'PLATFORM'
+  AND NOT EXISTS (
+      SELECT 1 FROM public.tb_role r
+      WHERE r.tenant_id = t.tenant_id AND r.role_code = 'TENANT_ADMIN'
+  );
+
+INSERT INTO public.tb_role (
+    tenant_id,
+    role_code,
+    role_nm,
+    use_at,
+    is_system_role,
+    created_at,
+    updated_at
+)
+SELECT
+    t.tenant_id,
+    'TENANT_USER',
+    '?낆껜 ?ъ슜??,
+    'Y',
+    'Y',
+    NOW(),
+    NOW()
+FROM public.tb_tenant t
+WHERE t.tenant_code = 'PLATFORM'
+  AND NOT EXISTS (
+      SELECT 1 FROM public.tb_role r
+      WHERE r.tenant_id = t.tenant_id AND r.role_code = 'TENANT_USER'
+  );
+
+-- 4) Ensure platform permissions exist
+INSERT INTO public.tb_permission (
+    tenant_id,
+    permission_code,
+    permission_nm,
+    use_at,
+    created_at
+)
+SELECT
+    t.tenant_id,
+    'PERM_READ',
+    '議고쉶',
+    'Y',
+    NOW()
+FROM public.tb_tenant t
+WHERE t.tenant_code = 'PLATFORM'
+  AND NOT EXISTS (
+      SELECT 1 FROM public.tb_permission p
+      WHERE p.tenant_id = t.tenant_id AND p.permission_code = 'PERM_READ'
+  );
+
+INSERT INTO public.tb_permission (
+    tenant_id,
+    permission_code,
+    permission_nm,
+    use_at,
+    created_at
+)
+SELECT
+    t.tenant_id,
+    'PERM_WRITE',
+    '?깅줉/?섏젙',
+    'Y',
+    NOW()
+FROM public.tb_tenant t
+WHERE t.tenant_code = 'PLATFORM'
+  AND NOT EXISTS (
+      SELECT 1 FROM public.tb_permission p
+      WHERE p.tenant_id = t.tenant_id AND p.permission_code = 'PERM_WRITE'
+  );
+
+-- 5) Ensure platform admin account exists
+INSERT INTO public.tb_login_account (
+    tenant_id,
+    login_code,
+    password_hash,
+    login_attempt_count,
+    locked_at,
+    password_changed_at,
+    use_at,
+    created_at,
+    updated_at
+)
+SELECT
+    t.tenant_id,
+    'socra710',
+    'tHaU6E4leMVISzSKoByGd9DG/6uEhXmmxp9yt9soRvQ=',
+    0,
+    NULL,
+    NOW(),
+    'Y',
+    NOW(),
+    NOW()
+FROM public.tb_tenant t
+WHERE t.tenant_code = 'PLATFORM'
+  AND NOT EXISTS (
+      SELECT 1 FROM public.tb_login_account la
+      WHERE la.tenant_id = t.tenant_id AND la.login_code = 'socra710'
+  );
+
+INSERT INTO public.tb_user (
+    tenant_id,
+    login_id,
+    user_nm,
+    email_addr,
+    department_id,
+    mobile_no,
+    use_at,
+    created_at,
+    updated_at
+)
+SELECT
+    t.tenant_id,
+    la.login_id,
+    '?뚰겕??10',
+    'socra710@f1soft.co.kr',
+    NULL,
+    NULL,
+    'Y',
+    NOW(),
+    NOW()
+FROM public.tb_tenant t
+JOIN public.tb_login_account la
+  ON la.tenant_id = t.tenant_id
+ AND la.login_code = 'socra710'
+WHERE t.tenant_code = 'PLATFORM'
+  AND NOT EXISTS (
+      SELECT 1 FROM public.tb_user u
+      WHERE u.tenant_id = t.tenant_id AND u.email_addr = 'socra710@f1soft.co.kr'
+  );
+
+INSERT INTO public.tb_login_account_role (
+    login_id,
+    role_id,
+    created_at
+)
+SELECT
+    la.login_id,
+    r.role_id,
+    NOW()
+FROM public.tb_tenant t
+JOIN public.tb_login_account la
+  ON la.tenant_id = t.tenant_id
+ AND la.login_code = 'socra710'
+JOIN public.tb_role r
+  ON r.tenant_id = t.tenant_id
+ AND r.role_code = 'PLATFORM_ADMIN'
+WHERE t.tenant_code = 'PLATFORM'
+ON CONFLICT (login_id, role_id) DO NOTHING;
+
+-- 6) Ensure platform tenant has a P plan subscription
+INSERT INTO public.tb_tenant_subscription (
+    tenant_id,
+    plan_id,
+    subscription_status,
+    starts_at,
+    ends_at,
+    auto_renew,
+    created_by,
+    created_at,
+    updated_at
+)
+SELECT
+    t.tenant_id,
+    p.plan_id,
+    'ACTIVE',
+    NOW(),
+    NULL,
+    TRUE,
+    NULL,
+    NOW(),
+    NOW()
+FROM public.tb_tenant t
+JOIN public.tb_plan p
+  ON p.plan_code = 'P'
+WHERE t.tenant_code = 'PLATFORM'
+  AND NOT EXISTS (
+      SELECT 1 FROM public.tb_tenant_subscription s
+      WHERE s.tenant_id = t.tenant_id
+  );
+
+UPDATE public.tb_tenant_subscription s
+SET plan_id = p.plan_id,
+    subscription_status = 'ACTIVE',
+    updated_at = NOW()
+FROM public.tb_tenant t
+JOIN public.tb_plan p ON p.plan_code = 'P'
+WHERE s.tenant_id = t.tenant_id
+  AND t.tenant_code = 'PLATFORM';
+
+-- 7) Cleanup all non-platform tenant data, while keeping plan/menu/permission catalog intact
+DELETE FROM public.tb_role_menu_permission
+WHERE role_id IN (
+    SELECT r.role_id
+    FROM public.tb_role r
+    JOIN public.tb_tenant t ON t.tenant_id = r.tenant_id
+    WHERE t.tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_login_account_role
+WHERE login_id IN (
+    SELECT la.login_id
+    FROM public.tb_login_account la
+    JOIN public.tb_tenant t ON t.tenant_id = la.tenant_id
+    WHERE t.tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_login_history
+WHERE tenant_id IN (
+    SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_user
+WHERE tenant_id IN (
+    SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_department
+WHERE tenant_id IN (
+    SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_login_account
+WHERE tenant_id IN (
+    SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_tenant_database
+WHERE tenant_id IN (
+    SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_tenant_domain
+WHERE tenant_id IN (
+    SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_tenant_subscription
+WHERE tenant_id IN (
+    SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_permission
+WHERE tenant_id IN (
+    SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_role
+WHERE tenant_id IN (
+    SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'
+);
+
+DELETE FROM public.tb_tenant
+WHERE tenant_code <> 'PLATFORM';
+
+COMMIT;
+
+-- verification
+-- SELECT tenant_code, tenant_nm FROM public.tb_tenant ORDER BY tenant_id;
+-- SELECT login_code, tenant_id FROM public.tb_login_account ORDER BY tenant_id, login_id;
+-- SELECT plan_id, plan_code, plan_nm FROM public.tb_plan ORDER BY plan_id;
+-- SELECT tenant_id, plan_id, subscription_status FROM public.tb_tenant_subscription ORDER BY tenant_id;

@@ -397,7 +397,7 @@ describe('PlatformAuthorityManagementPage', () => {
     await waitFor(() => {
       expect(savePlatformRoleMenuMappingMock.mock.calls[0]?.[0]).toEqual(
         expect.objectContaining({
-          roleCode: 'PR-2',
+          roleCode: 'TENANT_ADMIN',
           tenantCode: '000001',
           menuIds: expect.arrayContaining([
             'MENU_DASHBOARD',

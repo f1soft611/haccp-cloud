@@ -38,6 +38,9 @@ public class RoleInfoVO implements Serializable {
     @Schema(description = "테넌트 범위 여부")
     private String tenantScoped = "Y";
 
+    @Schema(description = "테넌트 ID")
+    private Long tenantId;
+
     @Schema(description = "테넌트 코드")
     private String tenantCode = "";
 

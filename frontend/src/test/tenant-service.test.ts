@@ -36,7 +36,7 @@ describe('tenantService', () => {
 
     const issued = await issueTenantCode({
       companyName: '테스트푸드',
-      planCode: 'BASIC',
+      planCode: 'A',
       businessRegistrationNumber: '123-45-67890',
       corporateNumber: '1101111234567',
       representativeName: '홍길동',

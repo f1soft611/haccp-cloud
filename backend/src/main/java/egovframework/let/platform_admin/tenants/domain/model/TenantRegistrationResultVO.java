@@ -43,11 +43,17 @@ public class TenantRegistrationResultVO {
     @Schema(description = "법인번호")
     private String corporateNumber;
 
+    @Schema(description = "사업자번호")
+    private String businessRegistrationNumber;
+
     @Schema(description = "업종")
     private String businessType;
 
     @Schema(description = "업태")
     private String businessCategory;
+
+    @Schema(description = "사업자 등록일")
+    private String registrationDate;
 
     @Schema(description = "플랜 코드")
     private String planCode;

@@ -174,9 +174,7 @@
             AND COALESCE(m.delete_status, 'N') != 'Y'
             AND COALESCE(m.updated_at, m.created_at) >= cb.cycle_start
         ) appr ON TRUE
-        WHERE w.tenant_id = (
-            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
-        )
+        WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
             AND EXISTS (
               SELECT 1
@@ -220,9 +218,7 @@
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND COALESCE(m.delete_status, 'N') != 'Y'
         ) appr ON TRUE
-        WHERE w.tenant_id = (
-            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
-        )
+        WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
           AND EXISTS (
             SELECT 1
@@ -301,9 +297,7 @@
         LEFT JOIN tb_login_account la
           ON la.tenant_id = m.tenant_id
          AND la.login_id = m.login_id
-        WHERE w.tenant_id = (
-            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
-        )
+        WHERE w.tenant_id = #{tenantId}
           AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
           AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
           AND li.arrival_at IS NOT NULL

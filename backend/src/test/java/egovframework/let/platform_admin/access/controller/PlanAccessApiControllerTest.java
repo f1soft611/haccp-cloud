@@ -55,22 +55,22 @@ class PlanAccessApiControllerTest {
     @Test
     void listPlans_usesV1Path_andResultVoEnvelope() throws Exception {
         PlanSummaryVO planSummaryVO = new PlanSummaryVO();
-        planSummaryVO.setPlanCode("BASIC");
+        planSummaryVO.setPlanCode("A");
         when(planAccessService.listPlans()).thenReturn(Arrays.asList(planSummaryVO));
 
         mockMvc.perform(get("/api/v1/platform-admin/plan-access/plans"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.resultCode").value(200))
-            .andExpect(jsonPath("$.result.data[0].planCode").value("BASIC"));
+            .andExpect(jsonPath("$.result.data[0].planCode").value("A"));
     }
 
     @Test
     void getPlanFeatures_usesV1Path_andResultVoEnvelope() throws Exception {
-        when(planAccessService.resolvePlanFeatureItems(eq("BASIC"))).thenReturn(Collections.emptyList());
+        when(planAccessService.resolvePlanFeatureItems(eq("A"))).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/api/v1/platform-admin/plan-access/plans/basic/features"))
+        mockMvc.perform(get("/api/v1/platform-admin/plan-access/plans/a/features"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.resultCode").value(200))
-            .andExpect(jsonPath("$.result.data.planCode").value("BASIC"));
+            .andExpect(jsonPath("$.result.data.planCode").value("A"));
     }
 }

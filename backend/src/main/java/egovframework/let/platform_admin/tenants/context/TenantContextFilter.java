@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
+import egovframework.let.platform_admin.tenants.service.TenantDatabaseRegistryService;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,14 +34,17 @@ public class TenantContextFilter extends OncePerRequestFilter {
     @Autowired
     private PlatformTenantService tenantService;
 
+    @Autowired
+    private TenantDatabaseRegistryService tenantDatabaseRegistryService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
-            // 1. URL에서 테넌트 도메인 추출
+            // 1. Host / X-Forwarded-Host 우선으로 테넌트 도메인 추출
             String requestUri = request.getRequestURI();
-            String tenantDomain = extractTenantDomain(requestUri);
+            String tenantDomain = resolveTenantDomain(request);
 
             log.debug("요청 URI: {}, 추출된 테넌트 도메인: {}", requestUri, tenantDomain);
 
@@ -52,9 +56,12 @@ public class TenantContextFilter extends OncePerRequestFilter {
                     if (tenant != null && "Y".equals(tenant.getUseAt())) {
                         // 3. TenantContext 설정
                         TenantContextHolder.setTenantId(tenant.getTenantId());
+                        TenantContextHolder.setTenantCode(tenant.getTenantCode());
+                        TenantContextHolder.setDbKey(resolveDbKey(tenant));
 
                         // 4. 요청 속성에 테넌트 정보 저장 (View에서 사용 가능)
                         request.setAttribute("tenantId", tenant.getTenantId());
+                        request.setAttribute("tenantCode", tenant.getTenantCode());
                         request.setAttribute("tenantLogo", tenant.getLogoImage());
                         request.setAttribute("tenantName", tenant.getTenantNm());
 
@@ -91,6 +98,55 @@ public class TenantContextFilter extends OncePerRequestFilter {
         }
 
         return false;
+    }
+
+    private String resolveDbKey(TenantVO tenant) {
+        if (PlatformTenantCodes.isPlatform(tenant.getTenantCode())) {
+            return PlatformTenantCodes.CANONICAL;
+        }
+        return tenantDatabaseRegistryService.resolveDbKeyByTenantId(tenant.getTenantId());
+    }
+
+    private String resolveTenantDomain(HttpServletRequest request) {
+        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        if (forwardedHost != null && !forwardedHost.trim().isEmpty()) {
+            String normalized = normalizeHost(forwardedHost);
+            if (normalized != null) {
+                return normalized;
+            }
+        }
+
+        String host = request.getHeader("Host");
+        if (host != null && !host.trim().isEmpty()) {
+            String normalized = normalizeHost(host);
+            if (normalized != null) {
+                return normalized;
+            }
+        }
+
+        return extractTenantDomain(request.getRequestURI());
+    }
+
+    private String normalizeHost(String rawHost) {
+        if (rawHost == null || rawHost.trim().isEmpty()) {
+            return null;
+        }
+
+        String host = rawHost.trim();
+        if (host.contains(",")) {
+            host = host.split(",")[0].trim();
+        }
+
+        if (host.contains(":")) {
+            host = host.split(":")[0];
+        }
+
+        String normalized = host.toLowerCase();
+        if (normalized.contains(".") && !normalized.startsWith("http")) {
+            return normalized;
+        }
+
+        return null;
     }
 
     /**

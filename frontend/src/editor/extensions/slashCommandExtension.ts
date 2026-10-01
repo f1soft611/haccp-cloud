@@ -129,7 +129,7 @@ function runSlashCommand(editor: Editor, range: Range, key: SlashCommandKey) {
       .chain()
       .focus()
       .deleteRange(range)
-      .insertTable({ rows: 3, cols: 4, withHeaderRow: false })
+      .insertTable({ rows: 4, cols: 4, withHeaderRow: false })
       .run();
     return;
   }

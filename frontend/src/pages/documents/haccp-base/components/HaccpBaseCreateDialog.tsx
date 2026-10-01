@@ -35,7 +35,6 @@ export function HaccpBaseCreateDialog(props: {
   } = props;
 
   const isSubmitDisabled =
-    !value.divisionCode.trim() ||
     !value.divisionName.trim() ||
     !value.categoryId ||
     !value.reviewerId ||
@@ -70,19 +69,9 @@ export function HaccpBaseCreateDialog(props: {
             fullWidth
             label="구분코드"
             value={value.divisionCode}
-            onChange={(event) =>
-              onChange({
-                ...value,
-                divisionCode: event.target.value,
-              })
-            }
-            inputProps={{ maxLength: 3 }}
-            required
-            autoFocus={mode === 'create'}
-            disabled={mode === 'edit'}
-            helperText={
-              mode === 'edit' ? '구분코드는 수정할 수 없습니다.' : undefined
-            }
+            placeholder="자동 채번됩니다"
+            disabled
+            helperText="구분코드는 자동으로 채번됩니다."
           />
 
           <TextField
@@ -96,6 +85,7 @@ export function HaccpBaseCreateDialog(props: {
               })
             }
             required
+            autoFocus={mode === 'create'}
           />
         </Stack>
 

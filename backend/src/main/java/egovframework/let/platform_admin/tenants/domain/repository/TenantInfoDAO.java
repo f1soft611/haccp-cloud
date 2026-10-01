@@ -5,6 +5,7 @@ import java.util.List;
 import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO;
 import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardQueryVO;
 import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantDatabaseInfoVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 
 /**
@@ -35,7 +36,23 @@ public interface TenantInfoDAO {
             String businessType,
             String businessCategory);
 
+        int insertTenantWithBusinessInfo(
+            String tenantSerialCode,
+            String tenantNm,
+            String adminEmail,
+            String businessRegistrationNumber,
+            String corporateNumber,
+            String businessType,
+            String businessCategory,
+            String registrationDate);
+
+    int insertTenantDatabase(Long tenantId, String dbKey, String dbName, String schemaName);
+
+    int updateTenantDatabaseProvisioningStatus(Long tenantId, String provisioningStatus);
+
     Long selectTenantIdByCode(String tenantCode);
+
+    int selectTenantDatabaseCountByDbName(String dbName);
 
     String selectOnboardingStatusByTenantCode(String tenantCode);
 
@@ -76,6 +93,8 @@ public interface TenantInfoDAO {
 
     int selectActiveTenantCountByCorporateNumber(String normalizedCorporateNumber);
 
+    int selectActiveTenantCountByBusinessRegistrationNumber(String normalizedBusinessRegistrationNumber);
+
     int selectTenantCount(PlatformTenantDashboardQueryVO queryVO, String useAtOnly);
 
     List<PlatformTenantDashboardItemVO> selectDashboardTenantItems(PlatformTenantDashboardQueryVO queryVO);
@@ -92,6 +111,10 @@ public interface TenantInfoDAO {
      * @return 테넌트 VO
      */
     TenantVO selectByAdminEmailDomain(String domain);
+
+    TenantDatabaseInfoVO selectTenantDatabaseByTenantId(Long tenantId);
+
+    TenantDatabaseInfoVO selectTenantDatabaseByDomainHost(String domainHost);
 
     /**
      * 테넌트 ID로 테넌트 조회

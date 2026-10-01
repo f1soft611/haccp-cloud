@@ -31,6 +31,22 @@
 - `tb_login_history` - 로그인 이력
 - `tb_schedulerconfig` - 스케줄러 설정
 
+## 테넌트 DB 일괄 마이그레이션
+
+테넌트마다 물리적으로 분리된 PostgreSQL DB(`tenant_<사업자번호>`)를 쓰기 때문에, 센트럴 스키마(`backend/DATABASE/create_postgresql_schema_active_tables.sql`)에 컬럼/테이블을 추가했으면 기존에 생성되어 있는 테넌트 DB에도 같은 변경을 적용하는 마이그레이션 스크립트를 별도로 작성해야 한다. 신규 테넌트는 가입 시 최신 스키마 파일을 그대로 적용받으므로 자동으로 반영된다.
+
+1. `backend/DATABASE/migrate_postgresql_add_role_dc_column.sql`처럼 `ADD COLUMN IF NOT EXISTS` 형태의 멱등 마이그레이션 SQL을 작성한다.
+2. `apply_migration_to_all_tenants.ps1`로 센트럴 DB(`tb_tenant_database` 레지스트리에 등록된) + 모든 테넌트 DB에 순서대로 적용한다.
+
+```bash
+cd backend/DATABASE
+.\apply_migration_to_all_tenants.ps1 -MigrationFile .\migrate_postgresql_add_role_dc_column.sql
+```
+
+- `-PgBin`을 생략하면 PATH에 있는 `psql.exe`를 자동으로 찾는다.
+- 센트럴에 이미 적용된 변경이면 `-SkipCentral`로 테넌트 DB만 대상으로 돌릴 수 있다 (멱등 SQL이면 안 붙여도 안전).
+- 대상 DB 목록은 `tb_tenant_database.db_name` (use_at='Y') 기준이므로, 신규 테넌트가 늘어나도 스크립트 수정 없이 그대로 재사용 가능하다.
+
 ## 초기 로그인
 
 플랫폼 초기 관리자 계정은 스키마 seed로 함께 생성한다.

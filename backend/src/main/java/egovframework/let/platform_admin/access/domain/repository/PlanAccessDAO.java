@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import egovframework.let.platform_admin.access.domain.model.PlanFeatureItemVO;
@@ -29,6 +30,9 @@ import egovframework.let.platform_admin.access.domain.model.PlanSummaryVO;
  */
 @Repository("planAccessDAO")
 public class PlanAccessDAO extends EgovAbstractMapper {
+
+    @Qualifier("centralDataSource")
+    private Object centralDataSource;
 
     /**
      * 플랜 스키마 준비 여부를 위한 테이블 수를 조회한다.

@@ -1,6 +1,8 @@
 package egovframework.com.jwt;
 
 import egovframework.com.cmm.LoginVO;
+import egovframework.let.platform_admin.tenants.context.PlatformTenantCodes;
+import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
 import egovframework.let.utl.fcc.service.EgovStringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -71,6 +73,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            applyTenantContext(loginVO);
 
             logger.debug("authentication ===>>> " + authentication);
         } catch (InvalidJwtException e) {
@@ -79,6 +82,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(req, res);
+    }
+
+    private void applyTenantContext(LoginVO loginVO) {
+        if (loginVO == null) {
+            return;
+        }
+
+        if (loginVO.getTenantId() != null) {
+            TenantContextHolder.setTenantId(loginVO.getTenantId());
+        }
+
+        String tenantCode = loginVO.getTenantCode();
+        if (tenantCode == null || tenantCode.trim().isEmpty()) {
+            return;
+        }
+
+        String normalizedTenantCode = PlatformTenantCodes.normalize(tenantCode);
+        TenantContextHolder.setTenantCode(normalizedTenantCode);
+        if (PlatformTenantCodes.isPlatform(normalizedTenantCode)) {
+            TenantContextHolder.setDbKey(PlatformTenantCodes.CANONICAL);
+        } else {
+            TenantContextHolder.setDbKey("TENANT_" + normalizedTenantCode);
+        }
     }
 
     private String mapRoleCode(LoginVO loginVO) {

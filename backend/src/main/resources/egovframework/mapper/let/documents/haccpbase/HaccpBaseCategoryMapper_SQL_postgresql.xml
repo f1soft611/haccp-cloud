@@ -35,9 +35,7 @@
         LEFT JOIN tb_user u
           ON u.tenant_id = g.tenant_id
          AND u.login_id = g.created_by
-        WHERE g.tenant_id = (
-            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
-        )
+        WHERE g.tenant_id = #{tenantId}
           AND COALESCE(g.delete_status, 'N') != 'Y'
         <if test='active != null and active == "Y"'>
             AND g.use_at = 'Y'
@@ -75,7 +73,7 @@
                     ON u.tenant_id = g.tenant_id
                  AND u.login_id = g.created_by
         WHERE g.drafting_work_category_group_id = #{id}
-          AND t.tenant_code = #{tenantCode}
+          AND g.tenant_id = #{tenantId}
           AND COALESCE(g.delete_status, 'N') != 'Y'
     </select>
 
@@ -97,6 +95,18 @@
         FROM tb_login_account
         WHERE tenant_id = #{tenantId}
           AND login_code = #{loginCode}
+        LIMIT 1
+    </select>
+
+    <!-- 동일 테넌트의 분류 코드 존재 여부 조회 -->
+    <select id="HaccpBaseCategoryDAO.selectCategoryIdByCode"
+            parameterType="map"
+            resultType="long">
+        SELECT drafting_work_category_group_id
+        FROM tb_drafting_work_category_group
+        WHERE tenant_id = #{tenantId}
+          AND cata_code = #{categoryCode}
+          AND COALESCE(delete_status, 'N') != 'Y'
         LIMIT 1
     </select>
 

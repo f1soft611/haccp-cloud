@@ -7,11 +7,14 @@ import { useAuthStore } from '../../../shared/store/authStore';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
+
 import {
   createDepartment,
-  deleteDepartment,
   listDepartments,
   updateDepartment,
+  // 기존 -> deleteDepartment를 import
+  // 변경 -> updateDepartmentStatus를 import
+  updateDepartmentStatus,
   type DepartmentFormData,
   type DepartmentItem,
 } from '../../../services/organization/departmentsService';
@@ -53,13 +56,16 @@ export function DepartmentsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<DepartmentItem | null>(null);
   const [formData, setFormData] = useState<DepartmentFormData>(DEFAULT_FORM);
+  // 기존 -> type: 'save' | 'delete', confirmColor: 'primary' | 'error'
+  // 변경 -> type: 'save' | 'toggle', confirmColor: 'primary' | 'warning', 토글 대상 다음 상태(nextActive) 추가
   const [confirmState, setConfirmState] = useState<{
-    type: 'save' | 'delete';
+    type: 'save' | 'toggle';
     title: string;
     description: string;
     confirmText: string;
-    confirmColor: 'primary' | 'error';
+    confirmColor: 'primary' | 'warning';
     targetId?: string;
+    nextActive?: boolean;
   } | null>(null);
 
   const departmentsQuery = useQuery({
@@ -107,17 +113,19 @@ export function DepartmentsPage() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteDepartment,
+  // 기존 -> deleteMutation: deleteDepartment 호출, 성공 시 "부서가 삭제되었습니다."
+  // 변경 -> statusMutation: updateDepartmentStatus 호출, 성공 시 "부서 상태가 변경되었습니다."
+  const statusMutation = useMutation({
+    mutationFn: updateDepartmentStatus,
     onSuccess: () => {
       setConfirmState(null);
-      showSuccess('부서가 삭제되었습니다.');
+      showSuccess('부서 상태가 변경되었습니다.');
       void queryClient.invalidateQueries({
         queryKey: ['departments', tenantCode],
       });
     },
     onError: (error) => {
-      showError(extractApiErrorMessage(error, '부서 삭제에 실패했습니다.'));
+      showError(extractApiErrorMessage(error, '부서 상태 변경에 실패했습니다.'));
     },
   });
 
@@ -213,21 +221,30 @@ export function DepartmentsPage() {
     });
   };
 
-  const handleDelete = (dept: DepartmentItem) => {
+  // 기존 -> handleDelete: 삭제 확인 다이얼로그(confirmColor 'error')
+  // 변경 -> handleToggleActive: 사용/미사용 전환 확인 다이얼로그(confirmColor 'warning'/'primary')
+  const handleToggleActive = (dept: DepartmentItem) => {
     setConfirmState({
-      type: 'delete',
-      title: '부서 삭제 확인',
-      description: `'${dept.name}' 부서를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.`,
-      confirmText: '삭제',
-      confirmColor: 'error',
+      type: 'toggle',
+      title: dept.active ? '부서 미사용 확인' : '부서 사용 확인',
+      description: `'${dept.name}' 부서의 상태를 변경하시겠습니까?`,
+      confirmText: dept.active ? '미사용' : '사용',
+      confirmColor: dept.active ? 'warning' : 'primary',
       targetId: dept.id,
+      nextActive: !dept.active,
     });
   };
 
   const handleConfirmAction = () => {
     if (!confirmState) return;
-    if (confirmState.type === 'delete' && confirmState.targetId) {
-      deleteMutation.mutate({ tenantCode, id: confirmState.targetId });
+    // 기존 -> confirmState.type === 'delete'일 때 deleteMutation 호출
+    // 변경 -> confirmState.type === 'toggle'일 때 statusMutation 호출
+    if (confirmState.type === 'toggle' && confirmState.targetId) {
+      statusMutation.mutate({
+        tenantCode,
+        id: confirmState.targetId,
+        active: confirmState.nextActive ?? false,
+      });
       return;
     }
     executeSave();
@@ -248,7 +265,7 @@ export function DepartmentsPage() {
   const isMutating =
     createMutation.isPending ||
     updateMutation.isPending ||
-    deleteMutation.isPending;
+      statusMutation.isPending;
 
   return (
     <Stack spacing={2}>
@@ -279,14 +296,18 @@ export function DepartmentsPage() {
       <DepartmentTreeGrid
         rows={gridRows}
         loading={departmentsQuery.isLoading}
-        deletePending={deleteMutation.isPending}
+          // 기존 -> deletePending={deleteMutation.isPending}
+          // 변경 -> statusPending={statusMutation.isPending}
+        statusPending={statusMutation.isPending}
         expandedIds={expandedIds}
         pageIndex={pageIndex}
         pageSize={pageSize}
         totalCount={totalCount}
         onToggleExpand={toggleExpanded}
         onEdit={handleOpenEditModal}
-        onDelete={handleDelete}
+          // 기존 -> onDelete={handleDelete}
+          // 변경 -> onToggleActive={handleToggleActive}
+        onToggleActive={handleToggleActive}
         onPageChange={setPageIndex}
         onPageSizeChange={setPageSize}
       />

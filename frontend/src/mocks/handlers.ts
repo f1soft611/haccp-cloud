@@ -909,13 +909,13 @@ export const handlers = [
 
     return HttpResponse.json({
       resultCode: '200',
-      jToken: `token-000001-${payload.id}`,
-      refreshToken: `refresh-000001-${payload.id}`,
+      jToken: `token-PLATFORM-${payload.id}`,
+      refreshToken: `refresh-PLATFORM-${payload.id}`,
       loginHistoryId: Date.now(),
       onboardingRequired: onboardingStatus !== 'COMPLETED',
       onboardingStatus,
       resultVO: {
-        factoryCode: '000001',
+        factoryCode: 'PLATFORM',
         id: payload.id,
         name: normalizedUserId === 'platform_admin' ? '플랫폼관리자' : '홍길동',
         groupNm: role === 'PLATFORM_ADMIN' ? 'ROLE_ADMIN' : 'ROLE_USER',
@@ -955,11 +955,11 @@ export const handlers = [
 
     return HttpResponse.json({
       resultCode: '200',
-      jToken: `admin-token-000001-${payload.id}`,
-      refreshToken: `admin-refresh-000001-${payload.id}`,
+      jToken: `admin-token-PLATFORM-${payload.id}`,
+      refreshToken: `admin-refresh-PLATFORM-${payload.id}`,
       loginHistoryId: Date.now(),
       resultVO: {
-        factoryCode: '000001',
+        factoryCode: 'PLATFORM',
         id: payload.id,
         name: '플랫폼관리자',
         groupNm: 'ROLE_ADMIN',

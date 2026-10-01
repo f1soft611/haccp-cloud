@@ -35,7 +35,7 @@ describe('planAccessService', () => {
       {
         headers: {
           Authorization: 'Bearer token-platform-admin',
-          'x-tenant-code': '000001',
+          'x-tenant-code': 'PLATFORM',
         },
       },
     );

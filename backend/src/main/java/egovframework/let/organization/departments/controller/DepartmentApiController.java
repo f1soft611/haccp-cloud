@@ -9,17 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.LoginVO;
@@ -115,6 +105,28 @@ public class DepartmentApiController {
         resultMap.put("message", "부서가 성공적으로 삭제되었습니다.");
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
+
+    // 신규 -> 사용여부만 변경하는 PATCH 엔드포인트. 하드 삭제(DELETE, 위 deleteDepartment)는 그대로 유지, 별도 경로로 추가
+    @PatchMapping("/{id}")
+    public ResultVO updateDepartmentStatus(
+            @PathVariable Long id,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @RequestBody Map<String, Object> payload,
+            HttpServletRequest request) throws Exception {
+        if (payload == null || !payload.containsKey("active")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "active 값은 필수입니다.");
+        }
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        boolean active = Boolean.TRUE.equals(payload.get("active"));
+
+        DepartmentVO item = departmentService.updateDepartmentActive(id, tenantCode, active);
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("item", item);
+        resultMap.put("message", "부서 상태가 성공적으로 변경되었습니다.");
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+
 
     // ── 헬퍼 ─────────────────────────────────────────
 

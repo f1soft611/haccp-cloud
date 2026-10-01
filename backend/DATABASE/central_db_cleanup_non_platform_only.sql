@@ -1,0 +1,11 @@
+﻿BEGIN;
+DELETE FROM public.tb_tenant_domain WHERE tenant_id IN (SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM');
+DELETE FROM public.tb_tenant_auth_token WHERE tenant_id IN (SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM');
+DELETE FROM public.tb_tenant_database WHERE tenant_id IN (SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM');
+DELETE FROM public.tb_login_account_role WHERE login_id IN (SELECT login_id FROM public.tb_login_account WHERE tenant_id IN (SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM'));
+DELETE FROM public.tb_login_account WHERE tenant_id IN (SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM');
+DELETE FROM public.tb_user WHERE tenant_id IN (SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM');
+DELETE FROM public.tb_role WHERE tenant_id IN (SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM');
+DELETE FROM public.tb_permission WHERE tenant_id IN (SELECT tenant_id FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM');
+DELETE FROM public.tb_tenant WHERE tenant_code <> 'PLATFORM';
+COMMIT;

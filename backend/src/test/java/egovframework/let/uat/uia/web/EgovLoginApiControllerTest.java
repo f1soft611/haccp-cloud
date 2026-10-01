@@ -76,7 +76,7 @@ public class EgovLoginApiControllerTest {
 
         Map<String,Object> params = new HashMap<>();
         params.put("id","admin");
-        params.put("password","f1soft@611");
+        params.put("password","test-password");
         params.put("userSe","USR");
 
         HttpEntity request = new HttpEntity(params,headers);

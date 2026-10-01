@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -23,6 +25,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import egovframework.let.common.idgen.service.EgovConditionalIdService;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
@@ -200,6 +203,78 @@ class HaccpWorkFlowServiceImplTest {
         verify(haccpWorkDAO, never()).deleteApprovalCommentLike(anyMap());
     }
 
+    @DisplayName("기안번호는 일자별로 순번을 초기화한다")
+    @Test
+    void buildEaExeId_resetsSequenceByDate() throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, haccpWorkDAO);
+
+        EgovConditionalIdService idService = mock(EgovConditionalIdService.class);
+        when(idService.getNextStringId(eq("EA_EXE_ID"), eq("20250825"), eq("SEQ"), eq("20250825"), eq(4), eq('0')))
+            .thenReturn("202508250001");
+        when(idService.getNextStringId(eq("EA_EXE_ID"), eq("20250826"), eq("SEQ"), eq("20250826"), eq(4), eq('0')))
+            .thenReturn("202508260001");
+
+        Field idGnrField = HaccpWorkFlowServiceImpl.class.getDeclaredField("electronicApprovalExeIdGnrService");
+        idGnrField.setAccessible(true);
+        idGnrField.set(service, idService);
+
+        java.lang.reflect.Method buildMethod = HaccpWorkFlowServiceImpl.class.getDeclaredMethod("buildEaExeId", java.time.LocalDate.class);
+        buildMethod.setAccessible(true);
+
+        assertEquals("202508250001", buildMethod.invoke(service, java.time.LocalDate.of(2025, 8, 25)));
+        assertEquals("202508260001", buildMethod.invoke(service, java.time.LocalDate.of(2025, 8, 26)));
+        verify(idService).getNextStringId(eq("EA_EXE_ID"), eq("20250825"), eq("SEQ"), eq("20250825"), eq(4), eq('0'));
+        verify(idService).getNextStringId(eq("EA_EXE_ID"), eq("20250826"), eq("SEQ"), eq("20250826"), eq(4), eq('0'));
+    }
+
+    @DisplayName("기안선 생성 시 arrival_at/exe_at/open_at은 null이 아니어야 한다")
+    @Test
+    void rebuildPreApplyApprovalLines_setsRequiredTimestamps() throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, haccpWorkDAO);
+
+        when(haccpWorkDAO.upsertElectronicApprovalLine(anyMap())).thenReturn(101L, 102L, 103L, 104L);
+
+        java.lang.reflect.Method method = HaccpWorkFlowServiceImpl.class.getDeclaredMethod(
+                "rebuildPreApplyApprovalLines",
+                Long.class,
+                Long.class,
+                Long.class,
+                Long.class,
+                Long.class,
+                Map.class,
+                Map.class,
+                Map.class,
+                java.util.List.class,
+                java.time.LocalDateTime.class,
+                String.class);
+        method.setAccessible(true);
+
+        LocalDateTime now = LocalDateTime.of(2026, 8, 25, 13, 44, 5, 285379000);
+        Map<String, Object> drafterProfile = new HashMap<String, Object>();
+        drafterProfile.put("departmentId", 1L);
+        Map<String, Object> reviewerProfile = new HashMap<String, Object>();
+        reviewerProfile.put("departmentId", 2L);
+        Map<String, Object> approverProfile = new HashMap<String, Object>();
+        approverProfile.put("departmentId", 3L);
+
+        method.invoke(service, 1L, 37L, 1L, 2L, 3L, drafterProfile, reviewerProfile, approverProfile, java.util.Collections.emptyList(), now, "202608250002");
+
+        ArgumentCaptor<Map> insertCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(haccpWorkDAO, times(4)).upsertElectronicApprovalLine(insertCaptor.capture());
+        for (Map<String, Object> params : insertCaptor.getAllValues()) {
+            assertTrue(params.get("arrivalAt") != null);
+            assertTrue(params.get("exeAt") != null);
+            assertTrue(params.get("openAt") != null);
+            assertEquals(now, params.get("arrivalAt"));
+            assertEquals(now, params.get("exeAt"));
+            assertEquals(now, params.get("openAt"));
+        }
+    }
+
     @DisplayName("최종기안 확인이 완료된 문서는 최종승인자가 결재취소할 수 없다")
     @Test
     void updateApprovalStatus_submitCancelRejectedAfterFinalOwnerConfirm() throws Exception {
@@ -366,6 +441,32 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("approved", lineCaptor.getAllValues().get(0).get("appStatus"));
         assertEquals(3, lineCaptor.getAllValues().get(1).get("exeSeq"));
         assertEquals("approved", lineCaptor.getAllValues().get(1).get("appStatus"));
+    }
+
+    @DisplayName("결재신청 시 다음 결재자는 arrival만 세팅되고 exe/open은 대기 상태를 유지한다")
+    @Test
+    void submitDraft_keepsNextApproverPendingUntilAction() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("제출 테스트");
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> upsertCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(4)).upsertElectronicApprovalLine(upsertCaptor.capture());
+
+        Map<String, Object> drafterLine = upsertCaptor.getAllValues().get(0);
+        assertTrue(drafterLine.get("arrivalAt") != null);
+        assertTrue(drafterLine.get("exeAt") != null);
+        assertTrue(drafterLine.get("openAt") != null);
+
+        for (int i = 1; i < upsertCaptor.getAllValues().size(); i++) {
+            Map<String, Object> params = upsertCaptor.getAllValues().get(i);
+            assertTrue(params.get("arrivalAt") != null);
+            assertTrue(params.get("exeAt") == null);
+            assertTrue(params.get("openAt") == null);
+        }
     }
 
     @DisplayName("검토자만 같고 승인자가 다르면 결재신청 후 검토승인까지만 자동 처리된다")
@@ -543,8 +644,9 @@ class HaccpWorkFlowServiceImplTest {
         HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
         serviceHaccpWorkDAO = mock(HaccpWorkDAO.class);
         HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, serviceHaccpWorkDAO);
-        EgovIdGnrService idGnrService = mock(EgovIdGnrService.class);
-        when(idGnrService.getNextStringId()).thenReturn("1");
+        EgovConditionalIdService idGnrService = mock(EgovConditionalIdService.class);
+        when(idGnrService.getNextStringId(eq("EA_EXE_ID"), anyString(), eq("SEQ"), anyString(), eq(4), eq('0')))
+            .thenReturn("202608250001");
         Field idGnrField = HaccpWorkFlowServiceImpl.class.getDeclaredField("electronicApprovalExeIdGnrService");
         idGnrField.setAccessible(true);
         idGnrField.set(service, idGnrService);

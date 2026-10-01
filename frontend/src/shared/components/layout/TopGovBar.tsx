@@ -246,7 +246,7 @@ export function TopGovBar() {
                 alt={tenantBrand.logoAlt}
                 sx={{
                   display: 'block',
-                  width: 163,
+                  maxWidth: 163,
                   height: 28,
                   objectFit: 'contain',
                   imageRendering: '-webkit-optimize-contrast',

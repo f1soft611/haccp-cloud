@@ -1,4 +1,5 @@
 import { apiClient } from '../api/apiClient';
+import { normalizePlatformTenantCode } from '../../shared/tenant/platformTenant';
 
 type ResultEnvelope<T> = {
   result?: T;
@@ -144,7 +145,9 @@ export async function listPlatformRolesPaged(
     {
       params: {
         ...params,
-        tenantCode: params.tenantCode,
+        tenantCode: params.tenantCode
+          ? normalizePlatformTenantCode(params.tenantCode)
+          : undefined,
       },
     },
   );
@@ -173,7 +176,9 @@ export async function createPlatformRole(
       authorityCode: payload.code,
       authorityNm: payload.name,
       useAt: payload.active ? 'Y' : 'N',
-      tenantCode: payload.tenantCode,
+      tenantCode: payload.tenantCode
+        ? normalizePlatformTenantCode(payload.tenantCode)
+        : undefined,
     },
   );
   return normalizePlatformRoleItem(data?.result?.item ?? {});

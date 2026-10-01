@@ -4,6 +4,7 @@ import {
   createDepartment,
   listDepartments,
   updateDepartment,
+  updateDepartmentStatus,
 } from '../services/organization/departmentsService';
 
 vi.mock('../services/api/apiClient', () => ({
@@ -11,6 +12,7 @@ vi.mock('../services/api/apiClient', () => ({
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
+    patch: vi.fn(),
   },
 }));
 
@@ -118,6 +120,41 @@ describe('departmentsService', () => {
       parentId: null,
       active: false,
       hasChildren: true,
+    });
+  });
+
+  it('maps status-toggle response envelope (result.item) to ui model', async () => {
+    vi.mocked(apiClient.patch).mockResolvedValueOnce({
+      data: {
+        result: {
+          item: {
+            departmentId: '401',
+            tenantCode: 'TENANT_A',
+            name: '개선팀',
+            parentDepartmentId: null,
+            parentName: null,
+            sortOrder: 7,
+            active: false,
+            hasChildren: false,
+          },
+        },
+      },
+    });
+
+    const updated = await updateDepartmentStatus({
+      tenantCode: 'TENANT_A',
+      id: '401',
+      active: false,
+    });
+
+    expect(apiClient.patch).toHaveBeenCalledWith(
+        '/v1/departments/401',
+        { active: false },
+        { headers: { 'x-tenant-code': 'TENANT_A' } },
+    );
+    expect(updated).toMatchObject({
+      id: '401',
+      active: false,
     });
   });
 });

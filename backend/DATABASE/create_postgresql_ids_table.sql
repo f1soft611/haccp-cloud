@@ -16,4 +16,9 @@ INSERT INTO ids (table_name, next_id)
 VALUES ('EA_EXE_ID', 1)
 ON CONFLICT (table_name) DO NOTHING;
 
+-- HACCP 양식관리 코드 자동생성용 시드
+INSERT INTO ids (table_name, next_id)
+VALUES ('HACCP_CATEGORY_CODE', 1), ('HACCP_WORK_CODE', 1)
+ON CONFLICT (table_name) DO NOTHING;
+
 COMMIT;

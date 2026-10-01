@@ -8,7 +8,9 @@ import { appTheme } from '../app/theme';
 import { FeedbackProvider } from '../shared/providers/FeedbackProvider';
 
 vi.mock('../services/organization/tenantService', async () => {
-  const actual = await vi.importActual('../services/organization/tenantService');
+  const actual = await vi.importActual(
+    '../services/organization/tenantService',
+  );
 
   return {
     ...actual,

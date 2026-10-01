@@ -33,8 +33,12 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
 
     @Override
     public List<DepartmentVO> listDepartments(String tenantCode, String name, String active) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+
         DepartmentSearchConditionVO condition = new DepartmentSearchConditionVO();
-        condition.setTenantCode(normalizeTenantCode(tenantCode));
+        condition.setTenantId(tenantId);
+        condition.setTenantCode(normalizedTenantCode);
         condition.setName(normalizeNullable(name));
         condition.setActive(normalizeActive(active));
         return departmentDAO.selectDepartmentList(condition);
@@ -61,6 +65,7 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
 
         Map<String, Object> lookupParams = new HashMap<String, Object>();
         lookupParams.put("departmentId", newId);
+        lookupParams.put("tenantId", tenantId);
         lookupParams.put("tenantCode", tenantCode);
         return departmentDAO.selectDepartmentById(lookupParams);
     }
@@ -86,6 +91,7 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
 
         Map<String, Object> lookupParams = new HashMap<String, Object>();
         lookupParams.put("departmentId", departmentId);
+        lookupParams.put("tenantId", tenantId);
         lookupParams.put("tenantCode", tenantCode);
         return departmentDAO.selectDepartmentById(lookupParams);
     }
@@ -109,6 +115,37 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
         deleteParams.put("departmentId", departmentId);
         deleteParams.put("tenantId", tenantId);
         departmentDAO.deleteDepartment(deleteParams);
+    }
+
+    @Override
+    @Transactional
+    // 신규 -> 미사용 전환 요청일 때만 하위 부서 체크 후 use_at만 UPDATE. 하드 삭제(deleteDepartment)는 그대로 유지, 별도 경로로 추가
+    public DepartmentVO updateDepartmentActive(Long departmentId, String tenantCode, boolean active) throws Exception {
+        String normalizedCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedCode);
+
+        if (!active) {
+            Map<String, Object> checkParams = new HashMap<String, Object>();
+            checkParams.put("departmentId", departmentId);
+            checkParams.put("tenantId", tenantId);
+
+            int childCount = departmentDAO.countChildDepartments(checkParams);
+            if (childCount > 0) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "하위 부서가 있어 미사용으로 변경할 수 없습니다.");
+            }
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("departmentId", departmentId);
+        params.put("tenantId", tenantId);
+        params.put("useAt", active ? "Y" : "N");
+        departmentDAO.updateDepartmentActive(params);
+
+        Map<String, Object> lookupParams = new HashMap<String, Object>();
+        lookupParams.put("departmentId", departmentId);
+        lookupParams.put("tenantId", tenantId);
+        lookupParams.put("tenantCode", normalizedCode);
+        return departmentDAO.selectDepartmentById(lookupParams);
     }
 
     // ── 헬퍼 ─────────────────────────────────────────

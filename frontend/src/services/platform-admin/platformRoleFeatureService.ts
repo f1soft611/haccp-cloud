@@ -1,5 +1,6 @@
 import type { PlanFeatureItem } from './planAccessService';
 import { apiClient } from '../api/apiClient';
+import { normalizePlatformTenantCode } from '../../shared/tenant/platformTenant';
 
 function normalizeFeatureCode(value: unknown): string {
   return String(value ?? '')
@@ -120,7 +121,9 @@ export async function getPlatformRoleFeatures(
   }>('/v1/platform-admin/role-features', {
     params: {
       roleCode: normalizedRoleCode,
-      tenantCode: tenantCode?.trim().toUpperCase(),
+      tenantCode: tenantCode
+        ? normalizePlatformTenantCode(tenantCode)
+        : undefined,
     },
   });
 
@@ -164,7 +167,9 @@ export async function savePlatformRoleFeatures(payload: {
     },
     {
       params: {
-        tenantCode: payload.tenantCode?.trim().toUpperCase(),
+        tenantCode: payload.tenantCode
+          ? normalizePlatformTenantCode(payload.tenantCode)
+          : undefined,
       },
     },
   );

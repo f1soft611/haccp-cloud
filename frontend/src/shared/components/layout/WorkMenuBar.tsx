@@ -278,6 +278,7 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                         key={item.path}
                         component={NavLink}
                         to={item.path}
+                        onClick={() => setExpandedGroupKey(null)}
                         onMouseEnter={() => {
                           void prefetchRouteByPath(item.path);
                         }}

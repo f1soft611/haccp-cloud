@@ -1,119 +1,53 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { appTheme } from '../app/theme';
+import { MemoryRouter } from 'react-router-dom';
 import { OnboardingVerifyPage } from '../pages/platform-admin/tenants/OnboardingVerifyPage';
+import * as tenantService from '../services/organization/tenantService';
+import { appTheme } from '../app/theme';
 
-const { verifyTenantEmailByTokenMock, getTenantByDomainMock } = vi.hoisted(
-  () => ({
-    verifyTenantEmailByTokenMock: vi.fn(),
-    getTenantByDomainMock: vi.fn(),
-  }),
-);
-
-vi.mock('../services/organization/tenantService', () => ({
-  verifyTenantEmailByToken: verifyTenantEmailByTokenMock,
-  getTenantByDomain: getTenantByDomainMock,
-}));
-
-function renderPage(
-  initialPath = '/onboarding/verify?token=test-token&domain=test.com',
-) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
   });
 
   render(
-    <MemoryRouter initialEntries={[initialPath]}>
-      <QueryClientProvider client={client}>
+    <MemoryRouter initialEntries={['/onboarding/verify?token=abc123']}>
+      <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={appTheme}>
-          <Routes>
-            <Route
-              path="/onboarding/verify"
-              element={<OnboardingVerifyPage />}
-            />
-          </Routes>
+          <OnboardingVerifyPage />
         </ThemeProvider>
       </QueryClientProvider>
     </MemoryRouter>,
   );
 }
 
-describe('OnboardingVerifyPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    getTenantByDomainMock.mockResolvedValue({
-      tenantCode: 'TENANT-A',
-      tenantId: 1,
+describe('OnboardingVerifyPage login domain field', () => {
+  it('keeps a manually entered domain instead of resetting to the email domain', async () => {
+    vi.spyOn(tenantService, 'verifyTenantEmailByToken').mockResolvedValue({
+      tenantCode: 'TENANT-1',
       tenantNm: '테스트푸드',
-    });
-  });
-
-  it('verifies token automatically and shows success state', async () => {
-    verifyTenantEmailByTokenMock.mockResolvedValueOnce({
-      tenantCode: 'TENANT-A',
-      tenantNm: '테스트푸드',
-      adminEmail: 'admin@test.com',
+      adminEmail: 'admin@testfood.com',
       loginAccountId: 1,
+      adminLoginCode: 'admin',
       verified: true,
-      message: '이메일 인증이 완료되었습니다',
+      message: '인증되었습니다.',
     });
 
     renderPage();
 
-    expect(
-      await screen.findByText('이메일 인증이 완료되었습니다'),
-    ).toBeInTheDocument();
-    expect(verifyTenantEmailByTokenMock).toHaveBeenCalledWith('test-token');
-  });
+    const domainField = (await screen.findByLabelText(
+      '회사 로그인 도메인',
+    )) as HTMLInputElement;
 
-  it('verifies token automatically even without domain query', async () => {
-    verifyTenantEmailByTokenMock.mockResolvedValueOnce({
-      tenantCode: 'TENANT-B',
-      tenantNm: '샘플업체',
-      adminEmail: 'owner@sample.com',
-      loginAccountId: 22,
-      adminLoginCode: 'tenant.owner',
-      verified: true,
-      message: '이메일 인증이 완료되었습니다',
-    });
+    await waitFor(() => expect(domainField.value).toBe('testfood.com'));
 
-    renderPage('/onboarding/verify?token=test-token-only');
+    fireEvent.change(domainField, { target: { value: '' } });
 
-    expect(
-      await screen.findByText('이메일 인증이 완료되었습니다'),
-    ).toBeInTheDocument();
-    expect(verifyTenantEmailByTokenMock).toHaveBeenCalledWith(
-      'test-token-only',
-    );
-  });
+    await waitFor(() => expect(domainField.value).toBe(''));
 
-  it('shows missing token message when token is absent', async () => {
-    renderPage('/onboarding/verify');
+    fireEvent.change(domainField, { target: { value: 'custom-login.co.kr' } });
 
-    await waitFor(() => {
-      expect(screen.getByText('인증 토큰이 없습니다.')).toBeInTheDocument();
-    });
-  });
-
-  it('shows invalid token message when api returns strict token error code', async () => {
-    verifyTenantEmailByTokenMock.mockRejectedValueOnce({
-      response: {
-        data: {
-          statusCode: '400',
-          errorCode: 'INVALID_AUTH_TOKEN',
-          errorMessage: '토큰이 존재하지 않습니다: invalid-token',
-        },
-      },
-    });
-
-    renderPage('/onboarding/verify?token=invalid-token');
-
-    expect(
-      await screen.findByText('인증 링크가 유효하지 않습니다.'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('이메일 인증')).toBeInTheDocument();
+    expect(domainField.value).toBe('custom-login.co.kr');
   });
 });

@@ -21,7 +21,7 @@
             resultMap="departmentResult">
         SELECT
             d.department_id                     AS departmentId,
-            t.tenant_code                       AS tenantCode,
+            #{tenantCode}                       AS tenantCode,
             d.department_nm                     AS name,
             d.parent_department_id              AS parentId,
             pd.department_nm                    AS parentName,
@@ -32,18 +32,25 @@
                 WHERE cd.parent_department_id = d.department_id
             ) THEN TRUE ELSE FALSE END          AS hasChildren
         FROM tb_department d
-        JOIN tb_tenant t ON t.tenant_id = d.tenant_id
         LEFT JOIN tb_department pd ON pd.department_id = d.parent_department_id
-        WHERE d.tenant_id = (
-            SELECT tenant_id FROM tb_tenant WHERE tenant_code = #{tenantCode} LIMIT 1
-        )
-        <if test="name != null and name != ''">
-            AND LOWER(d.department_nm) LIKE '%' || LOWER(#{name}) || '%'
+        WHERE 1 = 1
+        <if test="tenantId != null">
+            AND d.tenant_id = #{tenantId}
         </if>
-        <if test="active != null and active == 'Y'">
+        <if test="name != null and name != ''">
+            AND (
+                LOWER(d.department_nm) LIKE '%' || LOWER(#{name}) || '%'
+                OR EXISTS (
+                    SELECT 1 FROM tb_department cd
+                    WHERE cd.parent_department_id = d.department_id
+                      AND LOWER(cd.department_nm) LIKE '%' || LOWER(#{name}) || '%'
+                )
+            )
+        </if>
+        <if test="active != null and active == &quot;Y&quot;">
             AND d.use_at = 'Y'
         </if>
-        <if test="active != null and active == 'N'">
+        <if test="active != null and active == &quot;N&quot;">
             AND d.use_at = 'N'
         </if>
         ORDER BY d.parent_department_id NULLS FIRST, COALESCE(d.sort_order, 0), d.department_id
@@ -55,7 +62,7 @@
             resultMap="departmentResult">
         SELECT
             d.department_id                     AS departmentId,
-            t.tenant_code                       AS tenantCode,
+            #{tenantCode}                       AS tenantCode,
             d.department_nm                     AS name,
             d.parent_department_id              AS parentId,
             pd.department_nm                    AS parentName,
@@ -66,10 +73,9 @@
                 WHERE cd.parent_department_id = d.department_id
             ) THEN TRUE ELSE FALSE END          AS hasChildren
         FROM tb_department d
-        JOIN tb_tenant t ON t.tenant_id = d.tenant_id
         LEFT JOIN tb_department pd ON pd.department_id = d.parent_department_id
         WHERE d.department_id = #{departmentId}
-          AND t.tenant_code   = #{tenantCode}
+          AND d.tenant_id = #{tenantId}
     </select>
 
     <!-- 테넌트 ID 조회 -->
@@ -127,6 +133,17 @@
         WHERE department_id = #{departmentId}
           AND tenant_id     = #{tenantId}
     </delete>
+
+    <!-- 신규 -> 부서 사용여부만 UPDATE (하드 삭제와 별도 경로) -->
+    <update id="DepartmentDAO.updateDepartmentActive"
+            parameterType="map">
+        UPDATE tb_department
+        SET
+            use_at     = #{useAt},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE department_id = #{departmentId}
+          AND tenant_id     = #{tenantId}
+    </update>
 
     <!-- 하위 부서 수 조회 (삭제 전 검증) -->
     <select id="DepartmentDAO.countChildDepartments"

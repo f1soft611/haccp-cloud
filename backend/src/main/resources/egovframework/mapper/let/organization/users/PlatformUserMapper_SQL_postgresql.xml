@@ -26,7 +26,7 @@
         SELECT
             u.user_id AS userId,
             la.login_id AS loginId,
-            t.tenant_code AS tenantCode,
+            #{tenantCode} AS tenantCode,
             u.user_nm AS userNm,
             u.email_addr AS emailAddr,
             COALESCE(d.department_nm, '') AS departmentNm,
@@ -59,11 +59,10 @@
             COALESCE(la.use_at, 'N') AS loginUseAt
         FROM tb_user u
         JOIN tb_login_account la ON la.login_id = u.login_id
-        JOIN tb_tenant t ON t.tenant_id = u.tenant_id
         LEFT JOIN tb_department d ON d.department_id = u.department_id
         WHERE 1 = 1
-        <if test="tenantCode != null and tenantCode != ''">
-            AND t.tenant_code = #{tenantCode}
+        <if test="tenantId != null">
+            AND u.tenant_id = #{tenantId}
         </if>
         ORDER BY u.created_at DESC, u.user_id DESC
     </select>
@@ -75,7 +74,7 @@
             SELECT
                 u.user_id AS userId,
                 la.login_id AS loginId,
-                t.tenant_code AS tenantCode,
+                #{tenantCode} AS tenantCode,
                 u.user_nm AS userNm,
                 u.email_addr AS emailAddr,
                 COALESCE(d.department_nm, '') AS departmentNm,
@@ -109,11 +108,10 @@
                 ROW_NUMBER() OVER (ORDER BY u.created_at DESC, u.user_id DESC) AS rn
             FROM tb_user u
             JOIN tb_login_account la ON la.login_id = u.login_id
-            JOIN tb_tenant t ON t.tenant_id = u.tenant_id
             LEFT JOIN tb_department d ON d.department_id = u.department_id
             WHERE 1 = 1
-            <if test="tenantCode != null and tenantCode != ''">
-                AND t.tenant_code = #{tenantCode}
+            <if test="tenantId != null">
+                AND u.tenant_id = #{tenantId}
             </if>
             <if test="keyword != null and keyword != ''">
                 AND (
@@ -138,11 +136,10 @@
         SELECT COUNT(1)
         FROM tb_user u
         JOIN tb_login_account la ON la.login_id = u.login_id
-        JOIN tb_tenant t ON t.tenant_id = u.tenant_id
         LEFT JOIN tb_department d ON d.department_id = u.department_id
         WHERE 1 = 1
-        <if test="tenantCode != null and tenantCode != ''">
-            AND t.tenant_code = #{tenantCode}
+        <if test="tenantId != null">
+            AND u.tenant_id = #{tenantId}
         </if>
         <if test="keyword != null and keyword != ''">
             AND (
@@ -164,7 +161,7 @@
         SELECT
             u.user_id AS userId,
             la.login_id AS loginId,
-            t.tenant_code AS tenantCode,
+            #{tenantCode} AS tenantCode,
             u.user_nm AS userNm,
             u.email_addr AS emailAddr,
             COALESCE(d.department_nm, '') AS departmentNm,
@@ -197,7 +194,6 @@
             COALESCE(la.use_at, 'N') AS loginUseAt
         FROM tb_user u
         JOIN tb_login_account la ON la.login_id = u.login_id
-        JOIN tb_tenant t ON t.tenant_id = u.tenant_id
         LEFT JOIN tb_department d ON d.department_id = u.department_id
         WHERE u.tenant_id = #{tenantId}
           AND u.user_id = #{userId}
@@ -208,7 +204,7 @@
         SELECT
             u.user_id AS userId,
             la.login_id AS loginId,
-            t.tenant_code AS tenantCode,
+            #{tenantCode} AS tenantCode,
             u.user_nm AS userNm,
             u.email_addr AS emailAddr,
             COALESCE(d.department_nm, '') AS departmentNm,
@@ -241,9 +237,8 @@
             COALESCE(la.use_at, 'N') AS loginUseAt
         FROM tb_user u
         JOIN tb_login_account la ON la.login_id = u.login_id
-        JOIN tb_tenant t ON t.tenant_id = u.tenant_id
         LEFT JOIN tb_department d ON d.department_id = u.department_id
-        WHERE t.tenant_code = #{tenantCode}
+        WHERE u.tenant_id = #{tenantId}
           AND la.login_code = #{loginCode}
         LIMIT 1
     </select>
@@ -255,8 +250,7 @@
             la.password_hash AS "passwordHash",
             COALESCE(la.use_at, 'N') AS "useAt"
         FROM tb_login_account la
-        JOIN tb_tenant t ON t.tenant_id = la.tenant_id
-        WHERE t.tenant_code = #{tenantCode}
+        WHERE la.tenant_id = #{tenantId}
           AND la.login_code = #{loginCode}
         LIMIT 1
     </select>
@@ -316,8 +310,21 @@
     <select id="PlatformUserDAO.selectRoleIdByCode" parameterType="map" resultType="long">
         SELECT role_id
         FROM tb_role
-        WHERE tenant_id = #{tenantId}
-          AND role_code = #{roleCode}
+        WHERE role_code = #{roleCode}
+          <choose>
+              <when test="tenantCode != null and tenantCode != ''">
+                  AND tenant_id = (
+                      SELECT tenant_id
+                      FROM tb_tenant
+                      WHERE tenant_code = #{tenantCode}
+                      LIMIT 1
+                  )
+              </when>
+              <otherwise>
+                  AND tenant_id = #{tenantId}
+              </otherwise>
+          </choose>
+        ORDER BY role_id
         LIMIT 1
     </select>
 

@@ -9,7 +9,13 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   completeTenantOnboarding,
@@ -163,8 +169,10 @@ export function OnboardingVerifyPage() {
     verifyMutation.mutate();
   }, [authToken, verifyMutation]);
 
+  const hasAutoFilledDomainRef = useRef(false);
+
   useEffect(() => {
-    if (!verifyMutation.data?.adminEmail || loginDomainInput.trim()) {
+    if (!verifyMutation.data?.adminEmail || hasAutoFilledDomainRef.current) {
       return;
     }
 
@@ -173,8 +181,9 @@ export function OnboardingVerifyPage() {
       return;
     }
 
+    hasAutoFilledDomainRef.current = true;
     setLoginDomainInput(verifyMutation.data.adminEmail.slice(atIndex + 1));
-  }, [loginDomainInput, verifyMutation.data?.adminEmail]);
+  }, [verifyMutation.data?.adminEmail]);
 
   const loginDomain = useMemo(() => {
     const explicitDomain = normalizeDomainInput(loginDomainInput);

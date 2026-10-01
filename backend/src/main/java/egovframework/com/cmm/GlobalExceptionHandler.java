@@ -2,6 +2,7 @@ package egovframework.com.cmm;
 
 import egovframework.com.cmm.exception.BizException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -20,6 +21,16 @@ public class GlobalExceptionHandler {
         res.put("resultMessage", e.getMessage());
         res.put("message", e.getMessage());
         return ResponseEntity.status(400).body(res);
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateKeyException(DuplicateKeyException e) {
+        String msg = "이미 존재하는 데이터입니다.";
+        Map<String, Object> res = new HashMap<>();
+        res.put("resultCode", "FAIL");
+        res.put("message", msg);
+        res.put("resultMessage", msg);
+        return ResponseEntity.status(409).body(res);
     }
 
     @ExceptionHandler(DataAccessException.class)

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO;
 import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardQueryVO;
 import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
+import egovframework.let.platform_admin.tenants.domain.model.TenantDatabaseInfoVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 
 /**
@@ -55,8 +56,57 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
     }
 
     @Override
+    public int insertTenantWithBusinessInfo(
+            String tenantSerialCode,
+            String tenantNm,
+            String adminEmail,
+            String businessRegistrationNumber,
+            String corporateNumber,
+            String businessType,
+            String businessCategory,
+            String registrationDate) {
+        Map<String, Object> param = new HashMap<String, Object>();
+        param.put("tenantSerialCode", tenantSerialCode);
+        param.put("tenantNm", tenantNm);
+        param.put("adminEmail", adminEmail);
+        param.put("businessRegistrationNumber", businessRegistrationNumber);
+        param.put("corporateNumber", corporateNumber);
+        param.put("businessType", businessType);
+        param.put("businessCategory", businessCategory);
+        param.put("registrationDate", registrationDate);
+        return insert("TenantInfoDAO.insertTenantWithBusinessInfo", param);
+    }
+
+    @Override
+    public int insertTenantDatabase(Long tenantId, String dbKey, String dbName, String schemaName) {
+        Map<String, Object> param = new HashMap<String, Object>();
+        param.put("tenantId", tenantId);
+        param.put("dbKey", dbKey);
+        param.put("dbName", dbName);
+        param.put("jdbcUrl", "");
+        param.put("jdbcUsername", "");
+        param.put("jdbcPasswordSecretRef", "");
+        param.put("schemaName", schemaName == null ? "public" : schemaName);
+        return insert("TenantInfoDAO.insertTenantDatabase", param);
+    }
+
+    @Override
+    public int updateTenantDatabaseProvisioningStatus(Long tenantId, String provisioningStatus) {
+        Map<String, Object> param = new HashMap<String, Object>();
+        param.put("tenantId", tenantId);
+        param.put("provisioningStatus", provisioningStatus);
+        return update("TenantInfoDAO.updateTenantDatabaseProvisioningStatus", param);
+    }
+
+    @Override
     public Long selectTenantIdByCode(String tenantCode) {
         return selectOne("TenantInfoDAO.selectTenantIdByCode", tenantCode);
+    }
+
+    @Override
+    public int selectTenantDatabaseCountByDbName(String dbName) {
+        Integer count = selectOne("TenantInfoDAO.selectTenantDatabaseCountByDbName", dbName);
+        return count == null ? 0 : count;
     }
 
     @Override
@@ -175,6 +225,12 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
     }
 
     @Override
+    public int selectActiveTenantCountByBusinessRegistrationNumber(String normalizedBusinessRegistrationNumber) {
+        Integer count = selectOne("TenantInfoDAO.selectActiveTenantCountByBusinessRegistrationNumber", normalizedBusinessRegistrationNumber);
+        return count == null ? 0 : count;
+    }
+
+    @Override
     public int selectTenantCount(PlatformTenantDashboardQueryVO queryVO, String useAtOnly) {
         Map<String, Object> param = new HashMap<String, Object>();
         param.put("searchField", queryVO.getSearchField());
@@ -216,6 +272,16 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
     @Override
     public TenantVO selectByAdminEmailDomain(String domain) {
         return selectOne("TenantInfoDAO.selectByAdminEmailDomain", domain);
+    }
+
+    @Override
+    public TenantDatabaseInfoVO selectTenantDatabaseByTenantId(Long tenantId) {
+        return selectOne("TenantInfoDAO.selectTenantDatabaseByTenantId", tenantId);
+    }
+
+    @Override
+    public TenantDatabaseInfoVO selectTenantDatabaseByDomainHost(String domainHost) {
+        return selectOne("TenantInfoDAO.selectTenantDatabaseByDomainHost", domainHost);
     }
 
     @Override

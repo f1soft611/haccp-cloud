@@ -36,16 +36,26 @@ export function PlatformRoleMenuManagementPage() {
   });
 
   const effectiveRoleId = selectedRoleId || rolesQuery.data?.[0]?.id || '';
+  const effectiveRoleCode =
+    rolesQuery.data?.find((role) => role.id === effectiveRoleId)?.code ??
+    effectiveRoleId;
 
   const mappingQuery = useQuery({
-    queryKey: ['platform-admin', 'role-menus', effectiveRoleId, tenantCode],
-    queryFn: () => getPlatformRoleMenuMapping(effectiveRoleId, tenantCode),
-    enabled: effectiveRoleId.length > 0,
+    queryKey: ['platform-admin', 'role-menus', effectiveRoleCode, tenantCode],
+    queryFn: () => getPlatformRoleMenuMapping(effectiveRoleCode, tenantCode),
+    enabled: effectiveRoleCode.length > 0,
   });
 
-  const selectedMenuIds = draftMenuIds ?? mappingQuery.data?.menuIds ?? [];
-
   const candidateCodeSet = new Set(menuCandidatesQuery.data ?? []);
+  const normalizedSelectedMenuIds = (
+    draftMenuIds ??
+    mappingQuery.data?.menuIds ??
+    []
+  )
+    .map((menuId) => menuId.trim().toUpperCase())
+    .filter((menuId) => menuId.length > 0 && candidateCodeSet.has(menuId));
+  const selectedMenuIds = normalizedSelectedMenuIds;
+
   const filteredMenus = (menusQuery.data ?? []).filter((menu) => {
     const menuCode = menu.menuCode?.trim().toUpperCase() || '';
     return menuCode.length > 0 && candidateCodeSet.has(menuCode);
@@ -62,17 +72,23 @@ export function PlatformRoleMenuManagementPage() {
 
   const handleToggleMenu = (menuId: string) => {
     setDraftMenuIds((prev) => {
-      const base = prev ?? mappingQuery.data?.menuIds ?? [];
-      return base.includes(menuId)
-        ? base.filter((id) => id !== menuId)
-        : [...base, menuId];
+      const base = (prev ?? mappingQuery.data?.menuIds ?? [])
+        .map((id) => id.trim().toUpperCase())
+        .filter((id) => id.length > 0 && candidateCodeSet.has(id));
+      const normalizedMenuId = menuId.trim().toUpperCase();
+      if (!candidateCodeSet.has(normalizedMenuId)) {
+        return base;
+      }
+      return base.includes(normalizedMenuId)
+        ? base.filter((id) => id !== normalizedMenuId)
+        : [...base, normalizedMenuId];
     });
   };
 
   const handleSave = () => {
-    if (!effectiveRoleId) return;
+    if (!effectiveRoleCode) return;
     saveMutation.mutate({
-      roleCode: effectiveRoleId,
+      roleCode: effectiveRoleCode,
       tenantCode,
       menuIds: selectedMenuIds,
     });

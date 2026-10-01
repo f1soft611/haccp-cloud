@@ -118,18 +118,15 @@ export function PlatformAuthorityManagementPage() {
     retry: false,
   });
 
-  const effectiveRoleIdentifier = selectedRole?.id ?? '';
+  const effectiveRoleCode =
+    selectedRole?.code ??
+    rolesQuery.data?.items.find((role) => role.id === selectedRole?.id)?.code ??
+    '';
 
   const mappingQuery = useQuery({
-    queryKey: [
-      'platform-admin',
-      'role-menus',
-      effectiveRoleIdentifier,
-      tenantCode,
-    ],
-    queryFn: () =>
-      getPlatformRoleMenuMapping(effectiveRoleIdentifier, tenantCode),
-    enabled: mappingModalOpen && effectiveRoleIdentifier.length > 0,
+    queryKey: ['platform-admin', 'role-menus', effectiveRoleCode, tenantCode],
+    queryFn: () => getPlatformRoleMenuMapping(effectiveRoleCode, tenantCode),
+    enabled: mappingModalOpen && effectiveRoleCode.length > 0,
     retry: false,
   });
 
@@ -203,8 +200,9 @@ export function PlatformAuthorityManagementPage() {
         queryKey: ['platform-admin', 'roles-paged'],
       });
     },
-    onError: () => {
-      showError('권한 등록 처리에 실패했습니다.');
+    onError: (error) => {
+      setConfirmState(null);
+      showError(extractApiErrorMessage(error, '권한 등록 처리에 실패했습니다.'));
     },
   });
 
@@ -220,8 +218,9 @@ export function PlatformAuthorityManagementPage() {
         queryKey: ['platform-admin', 'roles-paged'],
       });
     },
-    onError: () => {
-      showError('권한 상태 변경에 실패했습니다.');
+    onError: (error) => {
+      setConfirmState(null);
+      showError(extractApiErrorMessage(error, '권한 상태 변경에 실패했습니다.'));
     },
   });
 
@@ -239,8 +238,9 @@ export function PlatformAuthorityManagementPage() {
         queryKey: ['platform-admin', 'roles-paged'],
       });
     },
-    onError: () => {
-      showError('권한 수정 처리에 실패했습니다.');
+    onError: (error) => {
+      setConfirmState(null);
+      showError(extractApiErrorMessage(error, '권한 수정 처리에 실패했습니다.'));
     },
   });
 
@@ -261,8 +261,9 @@ export function PlatformAuthorityManagementPage() {
         ],
       });
     },
-    onError: () => {
-      showError('권한별 메뉴 저장에 실패했습니다.');
+    onError: (error) => {
+      setConfirmState(null);
+      showError(extractApiErrorMessage(error, '권한별 메뉴 저장에 실패했습니다.'));
     },
   });
 
@@ -363,7 +364,7 @@ export function PlatformAuthorityManagementPage() {
   };
 
   const handleSaveMapping = () => {
-    if (!selectedRole || !effectiveRoleIdentifier) {
+    if (!selectedRole || !effectiveRoleCode) {
       return;
     }
 
@@ -373,7 +374,7 @@ export function PlatformAuthorityManagementPage() {
       confirmText: '저장',
       action: () => {
         saveMutation.mutate({
-          roleCode: effectiveRoleIdentifier,
+          roleCode: effectiveRoleCode,
           tenantCode,
           menuIds: selectedMenuIds,
         });

@@ -128,6 +128,9 @@ export const APP_LABELS = {
       '이미 등록된 업체 관리자 이메일입니다. 이메일을 확인하고 수정해주세요.',
     onboardingBrnFormatError: '사업자번호 형식: 000-00-00000',
     onboardingCorporateNumberFormatError: '법인번호는 숫자 13자리 형식입니다.',
+    onboardingAdminEmailFormatError: '올바른 이메일 형식을 입력하세요.',
+    onboardingRegistrationDateFormatError:
+      '등록일은 1900-01-01 이후, 오늘 이전 날짜여야 합니다.',
     tenantFirstSetupGuide:
       '사용자 1명 이상과 부서 1개 이상을 생성한 뒤 초기 설정 완료를 진행하세요.',
     tenantFirstSetupStatusError:

@@ -29,6 +29,7 @@ public class TenantIssueCodeResponseVO {
     private String companyName;
     private String businessRegistrationNumber;
     private String corporateNumber;
+    private String registrationDate;
     private String adminEmail;
     private String createdAt;
     private String mailDispatchStatus;

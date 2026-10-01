@@ -39,6 +39,11 @@ export function UsersSearchBar({
               keyword: event.target.value,
             })
           }
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              onSearch();
+            }
+          }}
         />
 
         <TextField

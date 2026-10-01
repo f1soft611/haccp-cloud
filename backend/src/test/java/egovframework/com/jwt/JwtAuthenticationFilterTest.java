@@ -1,6 +1,8 @@
 package egovframework.com.jwt;
 
 import egovframework.com.cmm.LoginVO;
+import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,6 +39,12 @@ public class JwtAuthenticationFilterTest {
         response = new MockHttpServletResponse();
         filterChain = mock(FilterChain.class);
         SecurityContextHolder.clearContext();
+    }
+
+    @AfterEach
+    public void tearDown() {
+        SecurityContextHolder.clearContext();
+        TenantContextHolder.clear();
     }
 
     @DisplayName("유효한 토큰이 주어지면 인증 객체가 설정된다")
@@ -78,6 +86,27 @@ public class JwtAuthenticationFilterTest {
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertTrue(SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
                 .anyMatch(a -> "ROLE_TENANT_ADMIN".equals(a.getAuthority())));
+    }
+
+    @DisplayName("테넌트 JWT 인증은 요청 범위 테넌트 DB 컨텍스트를 설정한다")
+    @Test
+    public void testTenantTokenSetsTenantContext() throws Exception {
+        String fakeToken = "tenant.context.jwt";
+
+        LoginVO loginVO = new LoginVO();
+        loginVO.setId("erpsystem");
+        loginVO.setTenantId(4L);
+        loginVO.setTenantCode("TENANT_8163628798");
+        loginVO.setRoleCode("TENANT_ADMIN");
+
+        request.addHeader("Authorization", fakeToken);
+        when(jwtTokenUtil.getLoginVOFromToken(fakeToken)).thenReturn(loginVO);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertEquals(Long.valueOf(4L), TenantContextHolder.getTenantId());
+        assertEquals("8163628798", TenantContextHolder.getTenantCode());
+        assertEquals("TENANT_8163628798", TenantContextHolder.getDbKey());
     }
 
     @DisplayName("유효하지 않은 토큰이 주어지면 인증 객체가 설정되지 않는다")

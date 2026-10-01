@@ -4,6 +4,8 @@ import egovframework.com.cmm.LoginVO;
 import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
 import egovframework.let.platform_admin.tenants.context.TenantContextHolder;
+import egovframework.let.platform_admin.tenants.context.PlatformTenantCodes;
+import egovframework.let.platform_admin.tenants.service.TenantDatabaseRegistryService;
 import egovframework.let.uat.uia.service.EgovLoginService;
 import egovframework.let.utl.fcc.service.EgovNumberUtil;
 import egovframework.let.utl.fcc.service.EgovStringUtil;
@@ -45,6 +47,9 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	@Resource(name = "tenantInfoDAO")
 	private TenantInfoDAO tenantInfoDAO;
 
+	@Resource
+	private TenantDatabaseRegistryService tenantDatabaseRegistryService;
+
 	/**
 	 * 일반 로그인을 처리한다
 	 * @param vo LoginVO
@@ -53,6 +58,10 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 	 */
 	@Override
 	public LoginVO actionLogin(LoginVO vo) throws Exception {
+		if (vo != null && PlatformTenantCodes.isPlatform(vo.getTenantCode())) {
+			vo.setTenantCode(PlatformTenantCodes.CANONICAL);
+		}
+
 		String inputId = vo.getId();
 		if (inputId != null) {
 			inputId = inputId.trim();
@@ -62,11 +71,19 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 
 		// 1. TenantContextHolder에서 tenantId 추출
 		Long tenantId = TenantContextHolder.getTenantId();
+		TenantVO resolvedTenant = null;
 		if (tenantId == null) {
 			tenantId = resolveTenantIdByTenantCode(vo.getTenantCode());
 		}
 		if (tenantId == null && !isPlatformAdminLogin(vo)) {
-			tenantId = resolveTenantIdByLoginIdDomain(vo.getId());
+			resolvedTenant = resolveTenantByLoginIdDomain(vo.getId());
+			if (resolvedTenant != null) {
+				tenantId = resolvedTenant.getTenantId();
+			}
+		}
+		if (tenantId == null && isPlatformAdminLogin(vo)) {
+			tenantId = 1L;
+			log.info("Platform admin login without tenant metadata; using canonical platform tenantId=1");
 		}
 		if (tenantId == null) {
 			log.warn("TenantContextHolder: tenantId is null. login attempt by id={}", vo.getId());
@@ -74,11 +91,12 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 		}
 		vo.setTenantId(tenantId);
 		if (!StringUtils.hasText(vo.getTenantCode())) {
-			TenantVO tenant = tenantInfoDAO.selectById(tenantId);
+			TenantVO tenant = resolvedTenant != null ? resolvedTenant : tenantInfoDAO.selectById(tenantId);
 			if (tenant != null && StringUtils.hasText(tenant.getTenantCode())) {
 				vo.setTenantCode(tenant.getTenantCode());
 			}
 		}
+		applyTenantContext(vo, tenantId);
 
 		// 2. 입력한 비밀번호를 암호화한다.
 		String enpassword = EgovFileScrty.encryptPassword(plainPassword, vo.getId());
@@ -86,27 +104,48 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 
 		// 3. 아이디와 암호화된 비밀번호가 DB와 일치하는지 확인한다.
 		LoginVO loginVO = loginDAO.actionLogin(vo);
-		if (!isValidLogin(loginVO) && isEmailFormat(vo.getId())) {
-			String canonicalLoginCode = loginDAO.selectLoginCodeByTenantIdAndEmail(tenantId, vo.getId());
-			if (canonicalLoginCode != null && !canonicalLoginCode.trim().isEmpty()) {
-				String retryHash = EgovFileScrty.encryptPassword(plainPassword, canonicalLoginCode);
-				vo.setPassword(retryHash);
-				loginVO = loginDAO.actionLogin(vo);
-			}
-
-			if (!isValidLogin(loginVO)) {
-				String localPartLoginCode = extractLocalPart(vo.getId());
-				if (localPartLoginCode != null) {
-					String retryHash = EgovFileScrty.encryptPassword(plainPassword, localPartLoginCode);
-					vo.setId(localPartLoginCode);
+		if (!isValidLogin(loginVO)) {
+			if (isEmailFormat(vo.getId())) {
+				String canonicalLoginCode = loginDAO.selectLoginCodeByTenantIdAndEmail(tenantId, vo.getId());
+				if (canonicalLoginCode != null && !canonicalLoginCode.trim().isEmpty()) {
+					String retryHash = EgovFileScrty.encryptPassword(plainPassword, canonicalLoginCode);
 					vo.setPassword(retryHash);
 					loginVO = loginDAO.actionLogin(vo);
+				}
+
+				if (!isValidLogin(loginVO)) {
+					String localPartLoginCode = extractLocalPart(vo.getId());
+					if (localPartLoginCode != null) {
+						String retryHash = EgovFileScrty.encryptPassword(plainPassword, localPartLoginCode);
+						vo.setId(localPartLoginCode);
+						vo.setPassword(retryHash);
+						loginVO = loginDAO.actionLogin(vo);
+					}
+				}
+			}
+
+			if (!isValidLogin(loginVO) && isPlatformAdminLogin(vo)) {
+				for (String candidateLoginCode : resolvePlatformAdminLoginCandidates(vo.getId())) {
+					if (candidateLoginCode == null || candidateLoginCode.equalsIgnoreCase(vo.getId())) {
+						continue;
+					}
+					String retryHash = EgovFileScrty.encryptPassword(plainPassword, candidateLoginCode);
+					vo.setId(candidateLoginCode);
+					vo.setPassword(retryHash);
+					loginVO = loginDAO.actionLogin(vo);
+					if (isValidLogin(loginVO)) {
+						break;
+					}
 				}
 			}
 		}
 
 		// 4. 결과를 리턴한다.
 		if (isValidLogin(loginVO)) {
+			if (PlatformTenantCodes.isPlatform(loginVO.getTenantCode())
+					|| "PLATFORM_ADMIN".equals(loginVO.getRoleCode())) {
+				loginVO.setTenantCode(PlatformTenantCodes.CANONICAL);
+			}
 			log.info("Login successful: userId={}, tenantId={}", loginVO.getId(), tenantId);
 			return loginVO;
 		} else {
@@ -115,6 +154,32 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 		}
 
 		return loginVO;
+	}
+
+	private void applyTenantContext(LoginVO vo, Long tenantId) {
+		String tenantCode = StringUtils.hasText(vo.getTenantCode()) ? vo.getTenantCode().trim() : null;
+		if (!StringUtils.hasText(tenantCode)) {
+			TenantVO tenant = tenantInfoDAO.selectById(tenantId);
+			if (tenant != null) {
+				tenantCode = tenant.getTenantCode();
+				vo.setTenantCode(tenantCode);
+			}
+		}
+		if (StringUtils.hasText(tenantCode)) {
+			TenantContextHolder.setTenantId(tenantId);
+			TenantContextHolder.setTenantCode(tenantCode);
+			TenantContextHolder.setDbKey(resolveDbKey(tenantCode, tenantId));
+			return;
+		}
+		TenantContextHolder.setTenantId(tenantId);
+		TenantContextHolder.setDbKey(tenantDatabaseRegistryService.resolveDbKeyByTenantId(tenantId));
+	}
+
+	private String resolveDbKey(String tenantCode, Long tenantId) {
+		if (PlatformTenantCodes.isPlatform(tenantCode)) {
+			return PlatformTenantCodes.CANONICAL;
+		}
+		return tenantDatabaseRegistryService.resolveDbKeyByTenantId(tenantId);
 	}
 
 	private boolean isValidLogin(LoginVO loginVO) {
@@ -150,15 +215,52 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 		return vo != null && "PLATFORM_ADMIN".equals(vo.getRoleCode());
 	}
 
+	private java.util.List<String> resolvePlatformAdminLoginCandidates(String requestedLoginCode) {
+		java.util.Set<String> candidateCodes = new java.util.LinkedHashSet<>();
+		candidateCodes.add("socra710");
+		candidateCodes.add("platform_admin");
+		if (StringUtils.hasText(requestedLoginCode)) {
+			candidateCodes.add(requestedLoginCode.trim());
+		}
+		java.util.List<String> result = new java.util.ArrayList<>();
+		for (String code : candidateCodes) {
+			if (StringUtils.hasText(code)) {
+				result.add(code);
+			}
+		}
+		return result;
+	}
+
 	private Long resolveTenantIdByTenantCode(String tenantCode) {
-		if (tenantCode == null || tenantCode.trim().isEmpty()) {
+		if (tenantCode == null) {
 			return null;
 		}
 
-		return tenantInfoDAO.selectTenantIdByCode(tenantCode.trim());
+		String trimmed = tenantCode.trim();
+		if (trimmed.isEmpty()) {
+			return null;
+		}
+
+		java.util.LinkedHashSet<String> candidates = new java.util.LinkedHashSet<String>();
+		candidates.add(trimmed);
+		candidates.add(PlatformTenantCodes.normalize(trimmed));
+		if (trimmed.startsWith("TENANT_")) {
+			candidates.add(trimmed.substring("TENANT_".length()));
+		}
+
+		for (String candidate : candidates) {
+			if (!StringUtils.hasText(candidate)) {
+				continue;
+			}
+			Long resolvedTenantId = tenantInfoDAO.selectTenantIdByCode(candidate);
+			if (resolvedTenantId != null) {
+				return resolvedTenantId;
+			}
+		}
+		return null;
 	}
 
-	private Long resolveTenantIdByLoginIdDomain(String loginId) {
+	private TenantVO resolveTenantByLoginIdDomain(String loginId) {
 		if (loginId == null) {
 			return null;
 		}
@@ -173,7 +275,11 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 			return null;
 		}
 
-		TenantVO tenant = tenantInfoDAO.selectByAdminEmailDomain(domain);
+		return tenantInfoDAO.selectByAdminEmailDomain(domain);
+	}
+
+	private Long resolveTenantIdByLoginIdDomain(String loginId) {
+		TenantVO tenant = resolveTenantByLoginIdDomain(loginId);
 		return tenant != null ? tenant.getTenantId() : null;
 	}
 

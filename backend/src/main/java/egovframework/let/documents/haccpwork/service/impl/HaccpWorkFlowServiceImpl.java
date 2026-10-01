@@ -12,8 +12,9 @@ import java.util.Set;
 
 import javax.annotation.Resource;
 
-import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
+
+import egovframework.let.common.idgen.service.EgovConditionalIdService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,14 +54,15 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
     private static final String HISTORY_TYPE_USER = "USER";
     private static final String HISTORY_TYPE_DELETED = "DELETED";
     private static final String DELETED_COMMENT_TEXT = "사용자에 의해 삭제 되었습니다.";
+    private static final int EA_EXE_ID_SEQUENCE_LENGTH = 4;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HHmm");
 
     private final HaccpWorkDraftService haccpWorkDraftService;
     private final HaccpWorkDAO haccpWorkDAO;
 
-    @Resource(name = "egovElectronicApprovalExeIdGnrService")
-    private EgovIdGnrService electronicApprovalExeIdGnrService;
+    @Resource(name = "egovConditionalIdService")
+    private EgovConditionalIdService electronicApprovalExeIdGnrService;
 
     @Override
     @Transactional
@@ -355,7 +357,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 "",
                 "N",
                 "Y",
-                null,
+                now,
                 null,
                 null,
                 eaExeId
@@ -382,9 +384,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                     "",
                     "N",
                     "N",
-                        now,
-                        null,
-                        null,
+                    now,
+                    null,
+                    null,
                     eaExeId
             );
             sequence++;
@@ -401,7 +403,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                     "",
                     "Y",
                     "N",
-                    null,
+                    now,
                     null,
                     null,
                     eaExeId
@@ -1046,21 +1048,15 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
     }
 
     private String buildEaExeId(LocalDate nowDate) throws Exception {
-        String seqRaw = electronicApprovalExeIdGnrService.getNextStringId();
-        String numericPart = trimToEmpty(seqRaw).replaceAll("[^0-9]", "");
-        if (!StringUtils.hasText(numericPart)) {
-            numericPart = "0";
-        }
-
-        if (numericPart.length() > 4) {
-            numericPart = numericPart.substring(numericPart.length() - 4);
-        }
-
-        while (numericPart.length() < 4) {
-            numericPart = "0" + numericPart;
-        }
-
-        return nowDate.format(DATE_FORMATTER) + numericPart;
+        String dateKey = nowDate.format(DATE_FORMATTER);
+        return electronicApprovalExeIdGnrService.getNextStringId(
+                "EA_EXE_ID",
+                dateKey,
+                "SEQ",
+                dateKey,
+                EA_EXE_ID_SEQUENCE_LENGTH,
+                '0'
+        );
     }
 
     private Map<String, Object> selectApprovalActorProfile(Long tenantId, Long loginId) throws Exception {
@@ -1194,9 +1190,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             "",
             "N",
             "N",
-            null,
-            null,
-            null,
+            now,
+            now,
+            now,
             eaExeId
         );
         insertApprovalLine(
@@ -1210,9 +1206,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             "",
             "N",
             "N",
-            null,
-            null,
-            null,
+            now,
+            now,
+            now,
             eaExeId
         );
         insertApprovalLine(
@@ -1226,9 +1222,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             "",
             "N",
             "Y",
-            null,
-            null,
-            null,
+            now,
+            now,
+            now,
             eaExeId
         );
 
@@ -1250,9 +1246,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 "",
                 "N",
                 "N",
-                null,
-                null,
-                null,
+                now,
+                now,
+                now,
                 eaExeId
             );
             sequence++;
@@ -1269,9 +1265,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             "",
             "Y",
             "N",
-            null,
-            null,
-            null,
+            now,
+            now,
+            now,
             eaExeId
         );
 

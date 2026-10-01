@@ -1,4 +1,5 @@
 import { apiClient } from '../api/apiClient';
+import { normalizePlatformTenantCode } from '../../shared/tenant/platformTenant';
 
 export type FeatureAccessMap = Record<string, boolean>;
 
@@ -250,7 +251,9 @@ export async function getCurrentPlanAccess(
     headers.Authorization = `Bearer ${normalizedAccessToken}`;
   }
 
-  const normalizedTenantCode = authContext?.tenantCode?.trim();
+  const normalizedTenantCode = authContext?.tenantCode
+    ? normalizePlatformTenantCode(authContext.tenantCode)
+    : undefined;
   if (normalizedTenantCode) {
     headers['x-tenant-code'] = normalizedTenantCode;
   }

@@ -65,6 +65,7 @@ public class SecurityConfig {
             "/login/**",
             "/api/tenants/**", // 도메인 기반 로그인 페이지 테넌트 정보 조회
             "/api/v1/platform-admin/tenants/domains/**", // 로그인 페이지 도메인 기반 테넌트 조회
+            "/api/v1/onboarding/**", // 외부 이메일 인증 링크용 공개 API
             "/api/v1/platform-admin/tenants/onboarding/**", // 토큰 단독 온보딩 인증 API
             "/api/v1/platform-admin/tenants/*/onboarding/**", // 테넌트 코드 기반 온보딩 인증/완료 API
             "/auth/login-jwt", // JWT 로그인
