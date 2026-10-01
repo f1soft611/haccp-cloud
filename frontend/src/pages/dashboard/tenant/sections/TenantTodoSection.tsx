@@ -19,6 +19,7 @@ import { APP_LABELS } from '../../../../shared/constants/labels';
 import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import type { TenantTodoSectionModel } from '../hooks/useTenantDashboardData';
 import { getWorkCycleLabel, getWorkCycleSx } from '../utils';
+import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
 
 type TenantTodoSectionProps = {
   isLoading: boolean;
@@ -231,28 +232,11 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                                     color="primary"
                                     aria-label="작성하러 가기"
                                     onClick={() => {
-                                      // In todo list, draft entry must be based on "my write in this cycle".
-                                      // If not written, always open by work id to start my own draft.
-                                      const approvalId = (
-                                        item.approvalId || ''
-                                      ).trim();
-                                      const workId = (item.id || '').trim();
-                                      const openApproval =
-                                        Boolean(item.writtenInCycle) &&
-                                        Boolean(approvalId);
-                                      const targetId = openApproval
-                                        ? approvalId
-                                        : workId;
-                                      if (!targetId) {
+                                      const path = resolveDraftRoute(item);
+                                      if (!path) {
                                         return;
                                       }
-
-                                      const query = openApproval
-                                        ? '?idType=approval'
-                                        : '?idType=work';
-                                      navigate(
-                                        `/approvals/draft/${targetId}${query}`,
-                                      );
+                                      navigate(path);
                                     }}
                                   >
                                     <EditOutlinedIcon fontSize="small" />
