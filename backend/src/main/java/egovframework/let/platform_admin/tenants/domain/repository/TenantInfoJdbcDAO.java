@@ -86,6 +86,16 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
     }
 
     @Override
+    public TenantVO selectActiveTenantByTenantNo(String tenantNo) {
+        return selectOne("TenantInfoDAO.selectActiveTenantByTenantNo", tenantNo);
+    }
+
+    @Override
+    public String selectTenantNoByCode(String tenantCode) {
+        return selectOne("TenantInfoDAO.selectTenantNoByCode", tenantCode);
+    }
+
+    @Override
     public int insertTenantDatabase(Long tenantId, String dbKey, String dbName, String schemaName) {
         Map<String, Object> param = new HashMap<String, Object>();
         param.put("tenantId", tenantId);

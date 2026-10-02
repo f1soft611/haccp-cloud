@@ -69,25 +69,35 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 		}
 		String plainPassword = vo.getPassword();
 
-		// 1. TenantContextHolder에서 tenantId 추출
-		Long tenantId = TenantContextHolder.getTenantId();
+		// 기존 -> 1. TenantContextHolder → tenantCode → 로그인 ID의 이메일 도메인 순서로 tenantId 결정
+		// 변경 -> 1. 업체번호 → TenantContextHolder → tenantCode 순서로 결정. 이메일 도메인으로는 찾지 않음
+		Long tenantId = null;
 		TenantVO resolvedTenant = null;
+		if (StringUtils.hasText(vo.getTenantNo())) {
+			resolvedTenant = tenantInfoDAO.selectActiveTenantByTenantNo(vo.getTenantNo().trim());
+			if (resolvedTenant == null) {
+				// 업체번호 존재 여부를 따로 알려주지 않고 아이디/비밀번호 오류와 같은 실패로 처리
+				log.warn("Login failed: unknown tenantNo={}, id={}", vo.getTenantNo(), vo.getId());
+				return new LoginVO();
+			}
+			tenantId = resolvedTenant.getTenantId();
+			vo.setTenantCode(resolvedTenant.getTenantCode());
+		}
+		if (tenantId == null) {
+			tenantId = TenantContextHolder.getTenantId();
+		}
 		if (tenantId == null) {
 			tenantId = resolveTenantIdByTenantCode(vo.getTenantCode());
-		}
-		if (tenantId == null && !isPlatformAdminLogin(vo)) {
-			resolvedTenant = resolveTenantByLoginIdDomain(vo.getId());
-			if (resolvedTenant != null) {
-				tenantId = resolvedTenant.getTenantId();
-			}
 		}
 		if (tenantId == null && isPlatformAdminLogin(vo)) {
 			tenantId = 1L;
 			log.info("Platform admin login without tenant metadata; using canonical platform tenantId=1");
 		}
 		if (tenantId == null) {
-			log.warn("TenantContextHolder: tenantId is null. login attempt by id={}", vo.getId());
-			throw new IllegalStateException("업체 도메인 경로로 접속했는지 확인해주세요.");
+			log.warn("Login failed: tenant is not resolved. id={}", vo.getId());
+			// 기존 -> "업체 도메인 경로로 접속했는지 확인해주세요."
+			// 변경 -> 업체번호 입력 안내
+			throw new IllegalStateException("업체번호를 입력해주세요.");
 		}
 		vo.setTenantId(tenantId);
 		if (!StringUtils.hasText(vo.getTenantCode())) {
@@ -260,28 +270,32 @@ public class EgovLoginServiceImpl extends EgovAbstractServiceImpl implements Ego
 		return null;
 	}
 
-	private TenantVO resolveTenantByLoginIdDomain(String loginId) {
-		if (loginId == null) {
-			return null;
-		}
+	// 기존 -> resolveTenantByLoginIdDomain / resolveTenantIdByLoginIdDomain: 로그인 ID의 이메일 도메인으로 테넌트 조회
+	// 변경 -> 업체번호 로그인으로 대체되어 제거
+//	private TenantVO resolveTenantByLoginIdDomain(String loginId) {
+//		if (loginId == null) {
+//			return null;
+//		}
+//
+//		int atIndex = loginId.indexOf('@');
+//		if (atIndex < 0 || atIndex == loginId.length() - 1) {
+//			return null;
+//		}
+//
+//		String domain = loginId.substring(atIndex + 1).trim();
+//		if (domain.isEmpty()) {
+//			return null;
+//		}
+//
+//		return tenantInfoDAO.selectByAdminEmailDomain(domain);
+//	}
 
-		int atIndex = loginId.indexOf('@');
-		if (atIndex < 0 || atIndex == loginId.length() - 1) {
-			return null;
-		}
-
-		String domain = loginId.substring(atIndex + 1).trim();
-		if (domain.isEmpty()) {
-			return null;
-		}
-
-		return tenantInfoDAO.selectByAdminEmailDomain(domain);
-	}
-
-	private Long resolveTenantIdByLoginIdDomain(String loginId) {
-		TenantVO tenant = resolveTenantByLoginIdDomain(loginId);
-		return tenant != null ? tenant.getTenantId() : null;
-	}
+	// 기존 -> resolveTenantByLoginIdDomain / resolveTenantIdByLoginIdDomain: 로그인 ID의 이메일 도메인으로 테넌트 조회
+	// 변경 -> 업체번호 로그인으로 대체되어 제거
+//	private Long resolveTenantIdByLoginIdDomain(String loginId) {
+//		TenantVO tenant = resolveTenantByLoginIdDomain(loginId);
+//		return tenant != null ? tenant.getTenantId() : null;
+//	}
 
 	/**
 	 * 아이디를 찾는다.

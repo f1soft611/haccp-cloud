@@ -49,6 +49,10 @@ public interface TenantInfoDAO {
 
     int selectTenantCountByTenantNo(String tenantNo);
 
+    TenantVO selectActiveTenantByTenantNo(String tenantNo);
+
+    String selectTenantNoByCode(String tenantCode);
+
     int insertTenantDatabase(Long tenantId, String dbKey, String dbName, String schemaName);
 
     int updateTenantDatabaseProvisioningStatus(Long tenantId, String provisioningStatus);
