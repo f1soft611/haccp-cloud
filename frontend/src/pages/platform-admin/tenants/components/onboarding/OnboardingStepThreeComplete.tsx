@@ -44,6 +44,10 @@ export function OnboardingStepThreeComplete({
               label={APP_LABELS.onboarding.issuedTenantCode}
               value={result.tenantCode}
             />
+              <OnboardingLabelValue
+                  label={APP_LABELS.onboarding.issuedTenantNo}
+                  value={result.tenantNo || '-'}
+              />
             <OnboardingLabelValue
               label={APP_LABELS.field.companyName}
               value={result.companyName}

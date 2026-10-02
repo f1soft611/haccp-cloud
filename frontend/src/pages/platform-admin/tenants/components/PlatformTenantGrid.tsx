@@ -57,6 +57,7 @@ export function PlatformTenantGrid({
         <TableHead>
           <TableRow>
             <TableCell>업체코드</TableCell>
+            <TableCell>업체번호</TableCell>
             <TableCell>업체명</TableCell>
             <TableCell align="center">플랜</TableCell>
             <TableCell>관리자명</TableCell>
@@ -75,6 +76,9 @@ export function PlatformTenantGrid({
                 >
                   <TableCell>
                     <Skeleton variant="text" width="80%" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width="60%" />
                   </TableCell>
                   <TableCell>
                     <Skeleton variant="text" width="72%" />
@@ -118,7 +122,7 @@ export function PlatformTenantGrid({
 
           {!loading && rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} align="center">
+              <TableCell colSpan={9} align="center">
                 조회 결과가 없습니다.
               </TableCell>
             </TableRow>
@@ -139,6 +143,7 @@ export function PlatformTenantGrid({
                   }
                 >
                   <TableCell>{row.tenantCode}</TableCell>
+                  <TableCell>{row.tenantNo || '-'}</TableCell>
                   <TableCell>{row.companyName}</TableCell>
                   <TableCell align="center">
                     <Chip

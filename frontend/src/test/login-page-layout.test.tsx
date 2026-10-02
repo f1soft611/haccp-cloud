@@ -29,7 +29,7 @@ describe('Login page layout', () => {
 
     expect(await screen.findByTestId('login-notice-bar')).toBeInTheDocument();
     expect(
-      screen.getByText(/도메인 기반 로그인 라우팅이 적용되었습니다\./),
+        screen.getByText(/업체번호로 로그인할 수 있습니다\./),
     ).toBeInTheDocument();
     expect(screen.getByTestId('login-footer-copyright')).toHaveTextContent(
       '© F1soft Inc.',

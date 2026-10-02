@@ -1,86 +1,39 @@
-const LAST_LOGIN_DOMAIN_STORAGE_KEY = 'haccp.last-login-domain';
+// 기존 -> 마지막 로그인 "도메인"을 저장하고 /login/{도메인} 경로를 만들었음
+// 변경 -> 마지막 로그인 "업체번호(6자리)"를 저장하고 /login/{업체번호} 경로를 만듦.
+//         예전 키(haccp.last-login-domain)는 읽지 않음
+const LAST_LOGIN_TENANT_NO_STORAGE_KEY = 'haccp.last-login-tenant-no';
 
-const DOMAIN_PATTERN =
-  /^(?=.{3,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+const TENANT_NO_PATTERN = /^[1-9][0-9]{5}$/;
 
-function extractDomainFromCandidate(value: string): string {
-  const trimmed = value.trim().toLowerCase();
-  if (!trimmed) {
-    return '';
-  }
-
-  if (trimmed.includes('@')) {
-    return trimmed.split('@').pop() ?? '';
-  }
-
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    try {
-      return new URL(trimmed).hostname;
-    } catch {
-      return '';
-    }
-  }
-
-  if (trimmed.startsWith('/login/')) {
-    const pathValue = trimmed.replace(/^\/login\//, '').split(/[/?#]/)[0] ?? '';
-    try {
-      return decodeURIComponent(pathValue);
-    } catch {
-      return pathValue;
-    }
-  }
-
-  if (trimmed.includes('/')) {
-    return trimmed.split('/')[0] ?? '';
-  }
-
-  return trimmed;
+export function normalizeTenantNo(value: string): string {
+  const trimmed = (value ?? '').trim();
+  return TENANT_NO_PATTERN.test(trimmed) ? trimmed : '';
 }
 
-export function normalizeLoginDomain(value: string): string {
-  const normalized = extractDomainFromCandidate(value);
-  if (!normalized || !DOMAIN_PATTERN.test(normalized)) {
-    return '';
-  }
-
-  return normalized;
-}
-
-export function loadLastLoginDomain(): string {
+export function loadLastLoginTenantNo(): string {
   if (typeof window === 'undefined') {
     return '';
   }
 
-  const localRaw =
-    window.localStorage.getItem(LAST_LOGIN_DOMAIN_STORAGE_KEY) ?? '';
-  const localDomain = normalizeLoginDomain(localRaw);
-  if (localDomain) {
-    return localDomain;
-  }
-
-  const sessionRaw =
-    window.sessionStorage.getItem(LAST_LOGIN_DOMAIN_STORAGE_KEY) ?? '';
-  return normalizeLoginDomain(sessionRaw);
+  return normalizeTenantNo(
+      window.localStorage.getItem(LAST_LOGIN_TENANT_NO_STORAGE_KEY) ?? '',
+  );
 }
 
-export function persistLastLoginDomain(domain: string): void {
+export function persistLastLoginTenantNo(tenantNo: string): void {
   if (typeof window === 'undefined') {
     return;
   }
 
-  const normalized = normalizeLoginDomain(domain);
+  const normalized = normalizeTenantNo(tenantNo);
   if (!normalized) {
     return;
   }
 
-  window.localStorage.setItem(LAST_LOGIN_DOMAIN_STORAGE_KEY, normalized);
+  window.localStorage.setItem(LAST_LOGIN_TENANT_NO_STORAGE_KEY, normalized);
 }
 
-export function resolveLoginPathWithLastDomain(): string {
-  const domain = loadLastLoginDomain();
-  if (!domain) {
-    return '/login';
-  }
-
-  return `/login/${encodeURIComponent(domain)}`;
+export function resolveLoginPathWithLastTenantNo(): string {
+  const tenantNo = loadLastLoginTenantNo();
+  return tenantNo ? `/login/${tenantNo}` : '/login';
 }

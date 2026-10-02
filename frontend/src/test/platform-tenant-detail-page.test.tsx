@@ -152,4 +152,21 @@ describe('PlatformTenantDetailPage', () => {
       await screen.findByText('SMTP 계정/비밀번호 확인 필요'),
     ).toBeInTheDocument();
   });
+
+  it('업체번호 칩을 표시한다', async () => {
+    getPlatformTenantByCodeMock.mockResolvedValue({
+      tenantCode: 'TENANT-A',
+      tenantNo: '482913',
+      companyName: '테스트푸드',
+      adminName: '홍길동',
+      adminEmail: 'admin@test.com',
+      status: 'ACTIVE',
+      onboardingStatus: 'ACTIVE',
+      createdAt: '2026-06-21T10:30:00.000Z',
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('업체번호 482913')).toBeInTheDocument();
+  });
 });

@@ -2,8 +2,11 @@ package egovframework.let.uat.uia.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -65,7 +68,7 @@ class EgovLoginServiceImplTest {
 		verify(tenantInfoDAO).selectTenantIdByCode("0007");
 	}
 
-	@DisplayName("테넌트 사용자 로그인은 tenant db key를 설정해 tenant DB로 로그인한다")
+	@DisplayName("테넌트 사용자 로그인은 업체번호로 테넌트를 찾아 tenant DB로 로그인한다")
 	@Test
 	void actionLogin_setsTenantDbKeyForTenantUserLogin() throws Exception {
 		LoginDAO loginDAO = mock(LoginDAO.class);
@@ -80,18 +83,19 @@ class EgovLoginServiceImplTest {
 		TenantVO tenant = new TenantVO();
 		tenant.setTenantId(7L);
 		tenant.setTenantCode("TENANT_0007");
-		when(tenantInfoDAO.selectByAdminEmailDomain("company.onhiworks.com")).thenReturn(tenant);
+		when(tenantInfoDAO.selectActiveTenantByTenantNo("482913")).thenReturn(tenant);
 
 		LoginVO storedLoginVO = new LoginVO();
-		storedLoginVO.setId("tenant_user@company.onhiworks.com");
+		storedLoginVO.setId("tenant_user");
 		storedLoginVO.setPassword("encoded-password");
 		storedLoginVO.setTenantCode("TENANT_0007");
 		storedLoginVO.setRoleCode("TENANT_USER");
 		when(loginDAO.actionLogin(any(LoginVO.class))).thenReturn(storedLoginVO);
 
 		LoginVO requestVO = new LoginVO();
-		requestVO.setId("tenant_user@company.onhiworks.com");
+		requestVO.setId("tenant_user");
 		requestVO.setPassword("plain-password");
+		requestVO.setTenantNo(" 482913 ");
 
 		LoginVO result = service.actionLogin(requestVO);
 
@@ -99,7 +103,8 @@ class EgovLoginServiceImplTest {
 		assertEquals("0007", TenantContextHolder.getTenantCode());
 		assertEquals("TENANT_7", TenantContextHolder.getDbKey());
 		assertEquals(Long.valueOf(7L), requestVO.getTenantId());
-		verify(tenantInfoDAO).selectByAdminEmailDomain("company.onhiworks.com");
+		assertEquals("TENANT_0007", requestVO.getTenantCode());
+		verify(tenantInfoDAO).selectActiveTenantByTenantNo("482913");
 		verify(loginDAO).actionLogin(eq(requestVO));
 	}
 
@@ -236,9 +241,9 @@ class EgovLoginServiceImplTest {
 		assertEquals("TENANT_ADMIN", loginHistory.getRoleCode());
 	}
 
-	@DisplayName("루트 로그인은 도메인이 포함된 로그인 ID로 tenantId를 해석할 수 있다")
+	@DisplayName("업체번호 없이 아이디@도메인만 보내면 도메인으로 테넌트를 찾지 않고 실패한다")
 	@Test
-	void actionLogin_resolvesTenantIdFromLoginIdDomain() throws Exception {
+	void actionLogin_doesNotResolveTenantFromLoginIdDomain() throws Exception {
 		LoginDAO loginDAO = mock(LoginDAO.class);
 		TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
 		TenantDatabaseRegistryService tenantDatabaseRegistryService = mock(TenantDatabaseRegistryService.class);
@@ -246,27 +251,16 @@ class EgovLoginServiceImplTest {
 		ReflectionTestUtils.setField(service, "loginDAO", loginDAO);
 		ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
 		ReflectionTestUtils.setField(service, "tenantDatabaseRegistryService", tenantDatabaseRegistryService);
-		when(tenantDatabaseRegistryService.resolveDbKeyByTenantId(7L)).thenReturn("TENANT_7");
-
-		TenantVO tenant = new TenantVO();
-		tenant.setTenantId(7L);
-		when(tenantInfoDAO.selectByAdminEmailDomain("company.onhiworks.com")).thenReturn(tenant);
-
-		LoginVO storedLoginVO = new LoginVO();
-		storedLoginVO.setId("tenant_user@company.onhiworks.com");
-		storedLoginVO.setPassword("encoded-password");
-		when(loginDAO.actionLogin(any(LoginVO.class))).thenReturn(storedLoginVO);
 
 		LoginVO requestVO = new LoginVO();
 		requestVO.setId("tenant_user@company.onhiworks.com");
 		requestVO.setPassword("plain-password");
 
-		LoginVO result = service.actionLogin(requestVO);
+		IllegalStateException ex = assertThrows(IllegalStateException.class, () -> service.actionLogin(requestVO));
 
-		assertNotNull(result);
-		assertEquals(Long.valueOf(7L), requestVO.getTenantId());
-		verify(tenantInfoDAO).selectByAdminEmailDomain("company.onhiworks.com");
-		verify(loginDAO).actionLogin(eq(requestVO));
+		assertEquals("업체번호를 입력해주세요.", ex.getMessage());
+		verify(tenantInfoDAO, never()).selectByAdminEmailDomain(any());
+		verify(loginDAO, never()).actionLogin(any(LoginVO.class));
 	}
 
 	@DisplayName("이메일 ID 로그인 실패 시 login_code salt로 재시도해 로그인할 수 있다")
@@ -283,7 +277,9 @@ class EgovLoginServiceImplTest {
 
 		TenantVO tenant = new TenantVO();
 		tenant.setTenantId(1L);
-		when(tenantInfoDAO.selectByAdminEmailDomain("f1soft.co.kr")).thenReturn(tenant);
+		// 기존 -> 이메일 도메인(f1soft.co.kr)으로 테넌트 조회
+		// 변경 -> 업체번호로 테넌트 조회
+		when(tenantInfoDAO.selectActiveTenantByTenantNo("100001")).thenReturn(tenant);
 		when(loginDAO.selectLoginCodeByTenantIdAndEmail(1L, "socra710@f1soft.co.kr")).thenReturn("socra710");
 
 		LoginVO storedLoginVO = new LoginVO();
@@ -296,6 +292,7 @@ class EgovLoginServiceImplTest {
 		LoginVO requestVO = new LoginVO();
 		requestVO.setId("socra710@f1soft.co.kr");
 		requestVO.setPassword("plain-password");
+		requestVO.setTenantNo("100001");
 
 		LoginVO result = service.actionLogin(requestVO);
 
@@ -354,7 +351,7 @@ class EgovLoginServiceImplTest {
 
 		TenantVO tenant = new TenantVO();
 		tenant.setTenantId(3L);
-		when(tenantInfoDAO.selectByAdminEmailDomain("onbording4.co.kr")).thenReturn(tenant);
+		when(tenantInfoDAO.selectActiveTenantByTenantNo("300003")).thenReturn(tenant);
 		when(loginDAO.selectLoginCodeByTenantIdAndEmail(3L, "socra710@onbording4.co.kr")).thenReturn(null);
 
 		LoginVO storedLoginVO = new LoginVO();
@@ -367,6 +364,7 @@ class EgovLoginServiceImplTest {
 		LoginVO requestVO = new LoginVO();
 		requestVO.setId("socra710@onbording4.co.kr");
 		requestVO.setPassword("test-password");
+		requestVO.setTenantNo("300003");
 
 		LoginVO result = service.actionLogin(requestVO);
 
@@ -376,5 +374,64 @@ class EgovLoginServiceImplTest {
 		assertEquals("socra710", requestVO.getId());
 		verify(loginDAO, times(2)).actionLogin(eq(requestVO));
 		verify(loginDAO).selectLoginCodeByTenantIdAndEmail(3L, "socra710@onbording4.co.kr");
+	}
+
+	@DisplayName("없거나 비활성인 업체번호면 로그인 조회 없이 빈 결과로 실패한다")
+	@Test
+	void actionLogin_failsWhenTenantNoNotFound() throws Exception {
+		LoginDAO loginDAO = mock(LoginDAO.class);
+		TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+		TenantDatabaseRegistryService tenantDatabaseRegistryService = mock(TenantDatabaseRegistryService.class);
+		EgovLoginServiceImpl service = new EgovLoginServiceImpl();
+		ReflectionTestUtils.setField(service, "loginDAO", loginDAO);
+		ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+		ReflectionTestUtils.setField(service, "tenantDatabaseRegistryService", tenantDatabaseRegistryService);
+		when(tenantInfoDAO.selectActiveTenantByTenantNo("999999")).thenReturn(null);
+
+		LoginVO requestVO = new LoginVO();
+		requestVO.setId("tenant_user");
+		requestVO.setPassword("plain-password");
+		requestVO.setTenantNo("999999");
+
+		LoginVO result = service.actionLogin(requestVO);
+
+		assertNotNull(result);
+		assertNull(result.getId());
+		verify(loginDAO, never()).actionLogin(any(LoginVO.class));
+	}
+
+	@DisplayName("업체번호가 있으면 TenantContextHolder의 테넌트보다 업체번호 테넌트를 우선한다")
+	@Test
+	void actionLogin_prefersTenantNoOverTenantContext() throws Exception {
+		LoginDAO loginDAO = mock(LoginDAO.class);
+		TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+		TenantDatabaseRegistryService tenantDatabaseRegistryService = mock(TenantDatabaseRegistryService.class);
+		EgovLoginServiceImpl service = new EgovLoginServiceImpl();
+		ReflectionTestUtils.setField(service, "loginDAO", loginDAO);
+		ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+		ReflectionTestUtils.setField(service, "tenantDatabaseRegistryService", tenantDatabaseRegistryService);
+		TenantContextHolder.setTenantId(9L);
+		TenantContextHolder.setTenantCode("TENANT_0009");
+		when(tenantDatabaseRegistryService.resolveDbKeyByTenantId(7L)).thenReturn("TENANT_7");
+
+		TenantVO tenant = new TenantVO();
+		tenant.setTenantId(7L);
+		tenant.setTenantCode("TENANT_0007");
+		when(tenantInfoDAO.selectActiveTenantByTenantNo("482913")).thenReturn(tenant);
+
+		LoginVO storedLoginVO = new LoginVO();
+		storedLoginVO.setId("tenant_user");
+		storedLoginVO.setPassword("encoded-password");
+		when(loginDAO.actionLogin(any(LoginVO.class))).thenReturn(storedLoginVO);
+
+		LoginVO requestVO = new LoginVO();
+		requestVO.setId("tenant_user");
+		requestVO.setPassword("plain-password");
+		requestVO.setTenantNo("482913");
+
+		service.actionLogin(requestVO);
+
+		assertEquals(Long.valueOf(7L), requestVO.getTenantId());
+		assertEquals("TENANT_7", TenantContextHolder.getDbKey());
 	}
 }

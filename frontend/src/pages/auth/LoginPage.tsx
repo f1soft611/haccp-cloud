@@ -16,16 +16,13 @@ import { appTheme } from '../../app/theme';
 import { login, loginPlatformAdmin } from '../../services/auth/authService';
 import { getCurrentPlanAccess } from '../../services/platform-admin/planAccessService';
 import { extractApiErrorMessage } from '../../services/api/errorMessage';
-import {
-  getTenantByDomain,
-  type TenantDomainInfo,
-} from '../../services/organization/tenantService';
+import { getTenantByTenantNo } from '../../services/organization/tenantService';
 import { useAuthStore } from '../../shared/store/authStore';
 import { APP_LABELS } from '../../shared/constants/labels';
 import {
-  loadLastLoginDomain,
-  normalizeLoginDomain,
-  persistLastLoginDomain,
+  loadLastLoginTenantNo,
+  normalizeTenantNo,
+  persistLastLoginTenantNo,
 } from '../../shared/utils/loginDomainRouting';
 import { resolveDashboardLandingPath } from '../../shared/utils/dashboardRouting';
 
@@ -34,9 +31,9 @@ type TenantBrandCache = {
   logoImage?: string;
 };
 
-function normalizeDomainCandidate(value: string): string {
-  return normalizeLoginDomain(value);
-}
+// function normalizeDomainCandidate(value: string): string {
+//   return normalizeLoginDomain(value);
+// }
 
 function resolveSafeLogoSrc(logoImage?: string): string {
   const value = (logoImage ?? '').trim();
@@ -65,26 +62,26 @@ function resolveSafeLogoSrc(logoImage?: string): string {
   return '';
 }
 
-function resolveTenantBrandStorageKey(domain: string): string {
-  return `haccp.tenant-brand.${domain}`;
+function resolveTenantBrandStorageKey(tenantNo: string): string {
+  return `haccp.tenant-brand.${tenantNo}`;
 }
 
-function resolveLastLoginUserIdStorageKey(domain: string): string {
-  return `haccp.last-login-userid.${domain}`;
+function resolveLastLoginUserIdStorageKey(tenantNo: string): string {
+  return `haccp.last-login-userid.${tenantNo}`;
 }
 
-function loadLastLoginUserId(domain: string): string {
+function loadLastLoginUserId(tenantNo: string): string {
   if (typeof window === 'undefined') {
     return '';
   }
 
   const raw = window.localStorage.getItem(
-    resolveLastLoginUserIdStorageKey(domain),
+    resolveLastLoginUserIdStorageKey(tenantNo),
   );
   return (raw ?? '').trim();
 }
 
-function persistLastLoginUserId(domain: string, userId: string): void {
+function persistLastLoginUserId(tenantNo: string, userId: string): void {
   if (typeof window === 'undefined') {
     return;
   }
@@ -95,41 +92,41 @@ function persistLastLoginUserId(domain: string, userId: string): void {
   }
 
   window.localStorage.setItem(
-    resolveLastLoginUserIdStorageKey(domain),
+    resolveLastLoginUserIdStorageKey(tenantNo),
     normalized,
   );
 }
 
-function loadTenantBrandCache(domain: string): TenantBrandCache | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  try {
-    const raw = window.sessionStorage.getItem(
-      resolveTenantBrandStorageKey(domain),
-    );
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw) as Partial<TenantBrandCache>;
-    const tenantNm = (parsed.tenantNm ?? '').trim();
-    if (!tenantNm) {
-      return null;
-    }
-
-    return {
-      tenantNm,
-      logoImage: parsed.logoImage,
-    };
-  } catch {
-    return null;
-  }
-}
+// function loadTenantBrandCache(domain: string): TenantBrandCache | null {
+//   if (typeof window === 'undefined') {
+//     return null;
+//   }
+//
+//   try {
+//     const raw = window.sessionStorage.getItem(
+//       resolveTenantBrandStorageKey(domain),
+//     );
+//     if (!raw) {
+//       return null;
+//     }
+//
+//     const parsed = JSON.parse(raw) as Partial<TenantBrandCache>;
+//     const tenantNm = (parsed.tenantNm ?? '').trim();
+//     if (!tenantNm) {
+//       return null;
+//     }
+//
+//     return {
+//       tenantNm,
+//       logoImage: parsed.logoImage,
+//     };
+//   } catch {
+//     return null;
+//   }
+// }
 
 function persistTenantBrandCache(
-  domain: string,
+    tenantNo: string,
   brand: TenantBrandCache,
 ): void {
   if (typeof window === 'undefined') {
@@ -137,19 +134,19 @@ function persistTenantBrandCache(
   }
 
   window.sessionStorage.setItem(
-    resolveTenantBrandStorageKey(domain),
+    resolveTenantBrandStorageKey(tenantNo),
     JSON.stringify(brand),
   );
 }
 
-function resolveDomainFromLocation(routeDomain?: string): string {
-  const normalizedRouteDomain = normalizeDomainCandidate(routeDomain ?? '');
-  if (normalizedRouteDomain) {
-    return normalizedRouteDomain;
-  }
-
-  return '';
-}
+// function resolveDomainFromLocation(routeDomain?: string): string {
+//   const normalizedRouteDomain = normalizeDomainCandidate(routeDomain ?? '');
+//   if (normalizedRouteDomain) {
+//     return normalizedRouteDomain;
+//   }
+//
+//   return '';
+// }
 
 type LoginPageProps = {
   adminMode?: boolean;
@@ -160,7 +157,9 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
   const isDarkMode = theme.palette.mode === 'dark';
   const navigate = useNavigate();
   const location = useLocation();
-  const { domain: routeDomain } = useParams<{ domain?: string }>();
+  // 기존 -> URL 파라미터 domain
+  // 변경 -> URL 파라미터 tenantNo
+  const { tenantNo: routeTenantNo } = useParams<{ tenantNo?: string }>();
   const setAuth = useAuthStore((state) => state.login);
 
   const [userId, setUserId] = useState('');
@@ -168,117 +167,69 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
   const [loginStep, setLoginStep] = useState<'id' | 'password'>('id');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [tenantInfo, setTenantInfo] = useState<TenantDomainInfo | null>(null);
   const [tenantBrand, setTenantBrand] = useState<TenantBrandCache | null>(null);
-  const [recommendedDomain, setRecommendedDomain] = useState('');
-  const [tenantCode, setTenantCode] = useState('');
-  const [domain, setDomain] = useState('');
+  // 기존 -> tenantInfo / recommendedDomain / tenantCode / domain 상태
+  // 변경 -> 업체번호 화면의 확정된 업체번호(tenantNo), 3칸 화면의 업체번호 입력값(tenantNoInput)
+  const [tenantNo, setTenantNo] = useState('');
+  const [tenantNoInput, setTenantNoInput] = useState('');
   const userIdInputRef = useRef<HTMLInputElement | null>(null);
   const passwordInputRef = useRef<HTMLInputElement | null>(null);
-  const shouldSkipAutoDomainRedirect =
-    (location.state as { skipAutoDomainRedirect?: boolean } | null)
-      ?.skipAutoDomainRedirect === true;
+  // 기존 -> skipAutoDomainRedirect: 마지막 도메인으로 자동 이동 생략
+  // 변경 -> skipPrefill: "다른 업체번호로 로그인"으로 왔을 때 마지막 업체번호/아이디 미리 채우기 생략
+  const shouldSkipPrefill =
+      (location.state as { skipPrefill?: boolean } | null)?.skipPrefill === true;
   const isAdminRoute = adminMode;
 
   useEffect(() => {
     if (isAdminRoute) {
-      setDomain('');
+      setTenantNo('');
       setLoginStep('id');
       setPassword('');
-      setTenantInfo(null);
-      setTenantCode('');
       setTenantBrand(null);
-      setRecommendedDomain('');
       return;
     }
     let mounted = true;
-    let hasNavigatedFallback = false;
 
+    // 기존 -> 도메인으로 업체 조회, 도메인이 없으면 마지막 도메인 경로로 자동 이동
+    // 변경 -> 업체번호로 업체 조회(실패/형식 불일치 시 /login), /login이면 마지막 업체번호·아이디 미리 채우기
     const loadTenant = async () => {
-      const resolvedDomain = resolveDomainFromLocation(routeDomain);
+      setTenantNo('');
+      setLoginStep('password');
+      setPassword('');
+      setTenantBrand(null);
+
+      if (!routeTenantNo) {
+        const lastTenantNo = shouldSkipPrefill ? '' : loadLastLoginTenantNo();
+        setTenantNoInput(lastTenantNo);
+        setUserId(lastTenantNo ? loadLastLoginUserId(lastTenantNo) : '');
+        return;
+      }
+
+      const normalizedTenantNo = normalizeTenantNo(routeTenantNo);
+      const info = normalizedTenantNo
+          ? await getTenantByTenantNo(normalizedTenantNo)
+          : null;
       if (!mounted) {
         return;
       }
 
-      setDomain('');
-      setLoginStep('password');
-      setPassword('');
-      setTenantInfo(null);
-      setTenantCode('');
-      setTenantBrand(null);
-      setRecommendedDomain('');
-
-      if (!resolvedDomain) {
-        const lastDomain = loadLastLoginDomain();
-        if (lastDomain) {
-          setRecommendedDomain(lastDomain);
-        }
-
-        if (lastDomain && !shouldSkipAutoDomainRedirect) {
-          navigate(`/login/${encodeURIComponent(lastDomain)}`, {
-            replace: true,
-          });
-          return;
-        }
+      if (!info) {
+        navigate('/login', { replace: true });
         return;
       }
 
-      try {
-        const info = await getTenantByDomain(resolvedDomain);
-        if (!mounted) {
-          return;
-        }
+      setTenantNo(normalizedTenantNo);
+      setLoginStep('id');
 
-        if (!info) {
-          if (!hasNavigatedFallback) {
-            hasNavigatedFallback = true;
-            navigate('/login', {
-              replace: true,
-              state: { skipAutoDomainRedirect: true },
-            });
-          }
-          return;
-        }
-
-        setDomain(resolvedDomain);
-        setLoginStep('id');
-
-        const rememberedUserId = loadLastLoginUserId(resolvedDomain);
-        if (rememberedUserId) {
-          setUserId(rememberedUserId);
-          setLoginStep('password');
-        }
-
-        const cachedBrand = loadTenantBrandCache(resolvedDomain);
-        if (cachedBrand) {
-          setTenantBrand(cachedBrand);
-        }
-
-        setTenantInfo(info);
-        if (info?.tenantNm) {
-          const nextBrand = {
-            tenantNm: info.tenantNm,
-            logoImage: info.logoImage,
-          };
-          setTenantBrand(nextBrand);
-          persistTenantBrandCache(resolvedDomain, nextBrand);
-        }
-        if (info?.tenantCode) {
-          setTenantCode(info.tenantCode);
-        }
-      } catch {
-        if (!mounted) {
-          return;
-        }
-
-        if (!hasNavigatedFallback) {
-          hasNavigatedFallback = true;
-          navigate('/login', {
-            replace: true,
-            state: { skipAutoDomainRedirect: true },
-          });
-        }
+      const rememberedUserId = loadLastLoginUserId(normalizedTenantNo);
+      if (rememberedUserId) {
+        setUserId(rememberedUserId);
+        setLoginStep('password');
       }
+
+      const nextBrand = { tenantNm: info.tenantNm, logoImage: info.logoImage };
+      setTenantBrand(nextBrand);
+      persistTenantBrandCache(normalizedTenantNo, nextBrand);
     };
 
     void loadTenant();
@@ -286,73 +237,96 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
     return () => {
       mounted = false;
     };
-  }, [routeDomain, navigate, shouldSkipAutoDomainRedirect]);
+  }, [routeTenantNo, isAdminRoute, navigate, shouldSkipPrefill]);
 
-  const applyRecommendedDomain = () => {
-    if (!recommendedDomain) {
-      return;
-    }
-
-    navigate(`/login/${encodeURIComponent(recommendedDomain)}`, {
-      replace: true,
-    });
-  };
 
   const logoSrc = resolveSafeLogoSrc(tenantBrand?.logoImage);
-  const isDomainScopedLogin = !!domain && !isAdminRoute;
+  // 기존 -> 도메인 경로 로그인 여부(isDomainScopedLogin)
+  // 변경 -> 업체번호 경로 로그인 여부
+  const isTenantScopedLogin = !!tenantNo && !isAdminRoute;
   const normalizedIdInput = userId.trim();
-  const effectiveUserId =
-    isDomainScopedLogin && normalizedIdInput && !normalizedIdInput.includes('@')
-      ? `${normalizedIdInput}@${domain}`
-      : normalizedIdInput;
+  // 기존 -> 도메인 로그인이면 아이디 뒤에 @도메인을 붙여 전송(effectiveUserId)
+  // 변경 -> 아이디는 입력한 그대로 보내고 업체번호를 따로 보냄
+  const effectiveTenantNo = isTenantScopedLogin
+      ? tenantNo
+      : normalizeTenantNo(tenantNoInput);
   const canSubmitIdStep = normalizedIdInput.length > 0;
+  // 기존 -> 아이디와 비밀번호만 확인
+  // 변경 -> 테넌트 로그인은 업체번호 6자리도 있어야 제출 가능
   const canSubmitPasswordStep =
-    normalizedIdInput.length > 0 && password.trim().length > 0;
-  const tenantDisplayName =
-    tenantBrand?.tenantNm?.trim() || tenantInfo?.tenantNm?.trim() || '';
+      normalizedIdInput.length > 0 &&
+      password.trim().length > 0 &&
+      (isAdminRoute || effectiveTenantNo.length > 0);
+  // 기존 -> tenantBrand 또는 tenantInfo의 업체명
+  // 변경 -> tenantBrand의 업체명
+  const tenantDisplayName = tenantBrand?.tenantNm?.trim() || '';
   const appLogoSrc = isDarkMode ? '/f1foodlink_wh.png' : '/f1foodlink_midd.png';
   const fallbackLogoSrc = appLogoSrc;
   const lightPalette = appTheme.palette;
   const fieldDefaultBorder = '1px solid #cbd5e1';
   const fieldFocusBorder = `1px solid ${lightPalette.primary.main}`;
   const fieldFocusShadow = `0 0 0 3px ${alpha(lightPalette.primary.main, 0.18)}`;
+  // 업체번호 입력란과 비밀번호 입력란이 같이 쓰는 스타일
+  const plainInputSx = {
+    width: '100%',
+    height: 56,
+    borderRadius: 1.5,
+    border: fieldDefaultBorder,
+    outline: 0,
+    transition: 'border-color 0.16s ease, box-shadow 0.16s ease',
+    backgroundColor: '#ffffff',
+    px: 1.6,
+    boxSizing: 'border-box',
+    fontSize: 16,
+    color: '#0f172a',
+    '&:focus': {
+      border: fieldFocusBorder,
+      boxShadow: fieldFocusShadow,
+    },
+    '&::placeholder': {
+      color: '#94a3b8',
+    },
+  } as const;
+  // 기존 -> 업체명이 없으면 `${domain} 오피스에 로그인`
+  // 변경 -> 업체명이 없으면 `업체번호 ${tenantNo} 로그인`
   const loginTitle = isAdminRoute
-    ? '플랫폼 관리자 로그인'
-    : tenantDisplayName
-      ? `${tenantDisplayName}에 로그인`
-      : isDomainScopedLogin
-        ? `${domain} 오피스에 로그인`
-        : APP_LABELS.pageTitle.login;
+      ? '플랫폼 관리자 로그인'
+      : tenantDisplayName
+          ? `${tenantDisplayName}에 로그인`
+          : isTenantScopedLogin
+              ? `업체번호 ${tenantNo} 로그인`
+              : APP_LABELS.pageTitle.login;
   const loginHelpText = isAdminRoute
-    ? '중앙 관리자 계정으로 로그인하세요.'
-    : isDomainScopedLogin
-      ? loginStep === 'id'
-        ? '로그인 ID를 입력하세요.'
-        : '본인 확인을 위해 비밀번호를 입력하세요.'
-      : APP_LABELS.message.loginHelp;
+      ? '중앙 관리자 계정으로 로그인하세요.'
+      : isTenantScopedLogin
+          ? loginStep === 'id'
+              ? '로그인 ID를 입력하세요.'
+              : '본인 확인을 위해 비밀번호를 입력하세요.'
+          : APP_LABELS.message.loginHelp;
 
   useEffect(() => {
-    if (!isDomainScopedLogin || loginStep !== 'password') {
+    if (!isTenantScopedLogin || loginStep !== 'password') {
       return;
     }
 
     passwordInputRef.current?.focus();
-  }, [isDomainScopedLogin, loginStep]);
+  }, [isTenantScopedLogin, loginStep]);
 
   const performLogin = async () => {
     setError('');
 
     setIsLoading(true);
     try {
+      // 변경 -> 아이디는 입력값 그대로, 테넌트 로그인은 업체번호 전송
       const result = isAdminRoute
-        ? await loginPlatformAdmin({
-            userId: effectiveUserId,
+          ? await loginPlatformAdmin({
+            userId: normalizedIdInput,
             password,
           })
-        : await login({
-            userId: effectiveUserId,
+          : await login({
+            userId: normalizedIdInput,
             password,
-            tenantCode,
+            tenantNo: effectiveTenantNo,
           });
 
       let planCode: string | undefined;
@@ -379,20 +353,9 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
         onboardingRequired: result.onboardingRequired,
         onboardingStatus: result.onboardingStatus,
       });
-      const userIdDomain = normalizeLoginDomain(
-        effectiveUserId.includes('@')
-          ? (effectiveUserId.split('@').pop() ?? '')
-          : '',
-      );
-      const domainToPersist = normalizeLoginDomain(domain) || userIdDomain;
-      if (domainToPersist) {
-        persistLastLoginDomain(domainToPersist);
-        const localPart = normalizedIdInput.includes('@')
-          ? (normalizedIdInput.split('@')[0] ?? '').trim()
-          : normalizedIdInput;
-        if (localPart) {
-          persistLastLoginUserId(domainToPersist, localPart);
-        }
+      if (!isAdminRoute) {
+        persistLastLoginTenantNo(effectiveTenantNo);
+        persistLastLoginUserId(effectiveTenantNo, normalizedIdInput);
       }
       navigate(resolveDashboardLandingPath({ role: result.role, planCode }), {
         replace: true,
@@ -419,7 +382,7 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
       return;
     }
 
-    if (isDomainScopedLogin && loginStep === 'id') {
+    if (isTenantScopedLogin && loginStep === 'id') {
       event.preventDefault();
       handleNextStep();
     }
@@ -449,7 +412,7 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
         backgroundColor: '#f3f4f6',
       }}
     >
-      {!isDomainScopedLogin && (
+      {!isTenantScopedLogin && (
         <Box
           component="img"
           src={appLogoSrc}
@@ -504,7 +467,7 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
                       }}
                     />
                   )}
-                  {!logoSrc && isDomainScopedLogin && (
+                  {!logoSrc && isTenantScopedLogin && (
                     <Box
                       component="img"
                       data-testid="login-fallback-logo"
@@ -545,24 +508,41 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
 
                 {error && <Alert severity="error">{error}</Alert>}
 
-                {!domain && recommendedDomain && (
-                  <Alert
-                    severity="info"
-                    action={
-                      <Button
-                        color="inherit"
-                        size="small"
-                        onClick={applyRecommendedDomain}
-                      >
-                        적용
-                      </Button>
-                    }
-                  >
-                    최근 로그인 도메인: {recommendedDomain}
-                  </Alert>
-                )}
+                {/*{!domain && recommendedDomain && (*/}
+                {/*  <Alert*/}
+                {/*    severity="info"*/}
+                {/*    action={*/}
+                {/*      <Button*/}
+                {/*        color="inherit"*/}
+                {/*        size="small"*/}
+                {/*        onClick={applyRecommendedDomain}*/}
+                {/*      >*/}
+                {/*        적용*/}
+                {/*      </Button>*/}
+                {/*    }*/}
+                {/*  >*/}
+                {/*    최근 로그인 도메인: {recommendedDomain}*/}
+                {/*  </Alert>*/}
+                {/*)}*/}
 
                 <Stack spacing={1.9}>
+                  {!isTenantScopedLogin && !isAdminRoute && (
+                      <Box
+                          component="input"
+                          value={tenantNoInput}
+                          onChange={(e) =>
+                              setTenantNoInput(
+                                  e.target.value.replace(/\D/g, '').slice(0, 6),
+                              )
+                          }
+                          inputMode="numeric"
+                          maxLength={6}
+                          disabled={isLoading}
+                          placeholder="업체번호 6자리"
+                          aria-label="업체번호"
+                          sx={plainInputSx}
+                      />
+                  )}
                   <Box
                     sx={{
                       width: '100%',
@@ -586,17 +566,9 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
                       component="input"
                       ref={userIdInputRef}
                       value={userId}
-                      onChange={(e) => {
-                        const nextValue = e.target.value;
-                        if (isDomainScopedLogin) {
-                          setUserId(nextValue.split('@')[0] ?? '');
-                          return;
-                        }
-
-                        setUserId(nextValue);
-                      }}
+                      onChange={(e) => setUserId(e.target.value)}
                       disabled={isLoading}
-                      readOnly={isDomainScopedLogin && loginStep === 'password'}
+                      readOnly={isTenantScopedLogin && loginStep === 'password'}
                       placeholder="로그인 ID"
                       aria-label={APP_LABELS.field.userId}
                       onKeyDown={handleIdFieldEnter}
@@ -613,14 +585,14 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
                         },
                       }}
                     />
-                    {isDomainScopedLogin && (
-                      <Typography sx={{ color: '#64748b', fontSize: 15 }}>
-                        @{domain}
-                      </Typography>
-                    )}
+                    {/*{isTenantScopedLogin && (*/}
+                    {/*  <Typography sx={{ color: '#64748b', fontSize: 15 }}>*/}
+                    {/*    @{domain}*/}
+                    {/*  </Typography>*/}
+                    {/*)}*/}
                   </Box>
 
-                  {(!isDomainScopedLogin || loginStep === 'password') && (
+                  {(!isTenantScopedLogin || loginStep === 'password') && (
                     <Box
                       component="input"
                       type="password"
@@ -631,49 +603,50 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
                       onKeyDown={handlePasswordFieldEnter}
                       disabled={isLoading}
                       placeholder={APP_LABELS.field.password}
-                      sx={{
-                        width: '100%',
-                        height: 56,
-                        borderRadius: 1.5,
-                        border: fieldDefaultBorder,
-                        outline: 0,
-                        transition:
-                          'border-color 0.16s ease, box-shadow 0.16s ease',
-                        backgroundColor: '#ffffff',
-                        px: 1.6,
-                        boxSizing: 'border-box',
-                        fontSize: 16,
-                        color: '#0f172a',
-                        '&:focus': {
-                          border: fieldFocusBorder,
-                          boxShadow: fieldFocusShadow,
-                        },
-                        '&::placeholder': {
-                          color: '#94a3b8',
-                        },
-                      }}
+                      sx={plainInputSx}
+                      // sx={{
+                      //   width: '100%',
+                      //   height: 56,
+                      //   borderRadius: 1.5,
+                      //   border: fieldDefaultBorder,
+                      //   outline: 0,
+                      //   transition:
+                      //     'border-color 0.16s ease, box-shadow 0.16s ease',
+                      //   backgroundColor: '#ffffff',
+                      //   px: 1.6,
+                      //   boxSizing: 'border-box',
+                      //   fontSize: 16,
+                      //   color: '#0f172a',
+                      //   '&:focus': {
+                      //     border: fieldFocusBorder,
+                      //     boxShadow: fieldFocusShadow,
+                      //   },
+                      //   '&::placeholder': {
+                      //     color: '#94a3b8',
+                      //   },
+                      // }}
                     />
                   )}
                 </Stack>
 
-                {tenantInfo?.tenantCode && (
-                  <Typography
-                    sx={{
-                      textAlign: 'center',
-                      fontSize: 12,
-                      color: lightPalette.primary.dark,
-                      fontWeight: 600,
-                    }}
-                  >
-                    업체 코드: {tenantInfo.tenantCode}
-                  </Typography>
-                )}
+                {/*{tenantInfo?.tenantCode && (*/}
+                {/*  <Typography*/}
+                {/*    sx={{*/}
+                {/*      textAlign: 'center',*/}
+                {/*      fontSize: 12,*/}
+                {/*      color: lightPalette.primary.dark,*/}
+                {/*      fontWeight: 600,*/}
+                {/*    }}*/}
+                {/*  >*/}
+                {/*    업체 코드: {tenantInfo.tenantCode}*/}
+                {/*  </Typography>*/}
+                {/*)}*/}
 
                 <Box
                   component="button"
                   type="button"
                   onClick={() => {
-                    if (isDomainScopedLogin && loginStep === 'id') {
+                    if (isTenantScopedLogin && loginStep === 'id') {
                       handleNextStep();
                       return;
                     }
@@ -682,7 +655,7 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
                   }}
                   disabled={
                     isLoading ||
-                    (isDomainScopedLogin && loginStep === 'id'
+                    (isTenantScopedLogin && loginStep === 'id'
                       ? !canSubmitIdStep
                       : !canSubmitPasswordStep)
                   }
@@ -707,14 +680,14 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
                 >
                   {isLoading ? (
                     <CircularProgress size={24} color="inherit" />
-                  ) : isDomainScopedLogin && loginStep === 'id' ? (
+                  ) : isTenantScopedLogin && loginStep === 'id' ? (
                     '다음'
                   ) : (
                     APP_LABELS.action.login
                   )}
                 </Box>
 
-                {isDomainScopedLogin && (
+                {isTenantScopedLogin && (
                   <Stack
                     direction="row"
                     spacing={1}
@@ -740,26 +713,29 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
                     )}
 
                     {loginStep === 'id' && (
-                      <Button
-                        variant="text"
-                        onClick={() => {
-                          setUserId('');
-                          setPassword('');
-                          setError('');
-                          navigate('/login', {
-                            replace: true,
-                            state: { skipAutoDomainRedirect: true },
-                          });
-                        }}
-                        sx={{
-                          px: 0,
-                          minWidth: 'auto',
-                          textTransform: 'none',
-                          color: lightPalette.primary.main,
-                        }}
-                      >
-                        다른 도메인으로 로그인
-                      </Button>
+                        <Button
+                            variant="text"
+                            onClick={() => {
+                              setUserId('');
+                              setPassword('');
+                              setError('');
+                              // 기존 -> state: skipAutoDomainRedirect
+                              // 변경 -> /login에서 미리 채우기 생략
+                              navigate('/login', {
+                                replace: true,
+                                state: { skipPrefill: true },
+                              });
+                            }}
+                            sx={{
+                              px: 0,
+                              minWidth: 'auto',
+                              textTransform: 'none',
+                              color: lightPalette.primary.main,
+                            }}
+                        >
+                          {/* 기존 -> 다른 도메인으로 로그인 / 변경 -> 다른 업체번호로 로그인 */}
+                          다른 업체번호로 로그인
+                        </Button>
                     )}
                   </Stack>
                 )}
@@ -794,7 +770,7 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
                 textOverflow: 'ellipsis',
               }}
             >
-              공지사항 - 도메인 기반 로그인 라우팅이 적용되었습니다.
+              공지사항 - 업체번호로 로그인할 수 있습니다.
             </Typography>
           </Box>
         </Stack>

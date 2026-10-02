@@ -39,6 +39,9 @@ public class LoginVO implements Serializable{
 	@Schema(description = "테넌트 코드")
 	private String tenantCode;
 
+	@Schema(description = "업체번호(6자리) - 테넌트 사용자 로그인 시 업체 식별")
+	private String tenantNo;
+
 	@Schema(description = "아이디")
 	private String id;
 	

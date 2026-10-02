@@ -2,14 +2,19 @@ package egovframework.let.platform_admin.tenants.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DuplicateKeyException;
@@ -41,7 +46,8 @@ class PlatformTenantServiceImplTest {
                 eq("123456-1234567"),
                 eq("식품제조"),
             eq("즉석조리식품"),
-            eq("2026-08-19")))
+            eq("2026-08-19"),
+                anyString()))
             .thenReturn(1);
         when(tenantInfoDAO.selectTenantIdByCode(TENANT_CODE)).thenReturn(124L);
 
@@ -73,7 +79,8 @@ class PlatformTenantServiceImplTest {
                 eq("123456-1234567"),
                 eq("식품제조"),
             eq("즉석조리식품"),
-            eq("2026-08-19"));
+            eq("2026-08-19"),
+                anyString());
     }
 
     @DisplayName("법인번호가 10자리 또는 13자리면 업체 등록을 허용한다")
@@ -92,7 +99,8 @@ class PlatformTenantServiceImplTest {
                 eq("1234567890"),
                 eq("식품제조"),
                 eq("즉석조리식품"),
-                eq("2026-08-19")))
+                eq("2026-08-19"),
+                anyString()))
             .thenReturn(1);
         when(tenantInfoDAO.selectTenantIdByCode(TENANT_CODE)).thenReturn(124L);
 
@@ -178,7 +186,8 @@ class PlatformTenantServiceImplTest {
                 eq("123456-1234567"),
                 eq("식품제조"),
                 eq("즉석조리식품"),
-                eq("2026-08-19")))
+                eq("2026-08-19"),
+                anyString()))
             .thenReturn(1);
         when(tenantInfoDAO.selectTenantIdByCode(anyString())).thenReturn(null);
 
@@ -202,7 +211,8 @@ class PlatformTenantServiceImplTest {
                 eq("123456-1234567"),
                 eq("식품제조"),
                 eq("즉석조리식품"),
-                eq("2026-08-19"));
+                eq("2026-08-19"),
+                anyString());
     }
 
     @DisplayName("활성 업체에 동일 법인번호가 있으면 등록에 실패한다")
@@ -270,7 +280,8 @@ class PlatformTenantServiceImplTest {
                 eq("123456-1234567"),
                 eq("식품제조"),
                 eq("즉석조리식품"),
-                eq(null)))
+                eq(null),
+                anyString()))
             .thenReturn(1);
 
         TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
@@ -292,7 +303,8 @@ class PlatformTenantServiceImplTest {
                 eq("123456-1234567"),
                 eq("식품제조"),
                 eq("즉석조리식품"),
-                eq(null));
+                eq(null),
+                anyString());
         verify(tenantDatabaseProvisioningService, never()).provisionNewTenantDatabase(any(), any(), any(), any(), any(), any());
     }
 
@@ -319,7 +331,8 @@ class PlatformTenantServiceImplTest {
                 eq("123456-1234567"),
                 eq("식품제조"),
                 eq("즉석조리식품"),
-                eq(null)))
+                eq(null),
+                anyString()))
             .thenReturn(1);
 
         TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
@@ -366,7 +379,8 @@ class PlatformTenantServiceImplTest {
                 eq("123456-1234567"),
                 eq("식품제조"),
                 eq("즉석조리식품"),
-                eq(null)))
+                eq(null)
+                ,anyString()))
             .thenThrow(new DuplicateKeyException("duplicate tenant code"));
 
         TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
@@ -457,5 +471,90 @@ class PlatformTenantServiceImplTest {
         assertEquals(211L, result.getTenantId());
         verify(tenantInfoDAO, never()).expireActiveTenantSubscription(211L);
         verify(tenantInfoDAO, never()).insertActiveTenantSubscriptionByPlanCode(eq(211L), any());
+    }
+
+    private static TenantRegistrationRequestVO tenantNoRequest() {
+        TenantRegistrationRequestVO requestVO = new TenantRegistrationRequestVO();
+        requestVO.setTenantNm("테스트업체");
+        requestVO.setAdminEmail("admin@test.com");
+        requestVO.setBusinessRegistrationNumber(BRN);
+        requestVO.setBusinessType("식품제조");
+        requestVO.setBusinessCategory("즉석조리식품");
+        return requestVO;
+    }
+
+    @DisplayName("업체 등록 시 6자리 업체번호를 발급해 저장하고 결과에 담는다")
+    @Test
+    void registerTenant_issuesTenantNo() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+        when(tenantInfoDAO.selectTenantCountByTenantNo(anyString())).thenReturn(0);
+        when(tenantInfoDAO.selectTenantIdByCode(TENANT_CODE)).thenReturn(124L);
+
+        TenantRegistrationResultVO result = service.registerTenant(tenantNoRequest());
+
+        assertTrue(result.getTenantNo().matches("^[1-9][0-9]{5}$"));
+        verify(tenantInfoDAO).insertTenantWithBusinessInfo(
+                eq(TENANT_CODE), eq("테스트업체"), eq("admin@test.com"), eq(BRN),
+                any(), any(), any(), any(), eq(result.getTenantNo()));
+    }
+
+    @DisplayName("업체번호가 중복이면 다시 생성해서 저장한다")
+    @Test
+    void registerTenant_retriesWhenTenantNoDuplicated() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+        when(tenantInfoDAO.selectTenantCountByTenantNo(anyString())).thenReturn(1, 1, 0);
+        when(tenantInfoDAO.selectTenantIdByCode(TENANT_CODE)).thenReturn(124L);
+
+        service.registerTenant(tenantNoRequest());
+
+        verify(tenantInfoDAO, times(3)).selectTenantCountByTenantNo(anyString());
+        verify(tenantInfoDAO).insertTenantWithBusinessInfo(
+                any(), any(), any(), any(), any(), any(), any(), any(), anyString());
+    }
+
+    @DisplayName("업체번호가 10회 모두 중복이면 등록을 실패시킨다")
+    @Test
+    void registerTenant_failsWhenTenantNoExhausted() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+        when(tenantInfoDAO.selectTenantCountByTenantNo(anyString())).thenReturn(1);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.registerTenant(tenantNoRequest()));
+
+        assertEquals("업체번호 발급에 실패했습니다", ex.getMessage());
+        verify(tenantInfoDAO, times(10)).selectTenantCountByTenantNo(anyString());
+        verify(tenantInfoDAO, never()).insertTenantWithBusinessInfo(
+                any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @DisplayName("업체번호 형식이 아니면 DB를 조회하지 않고 null을 반환한다")
+    @Test
+    void findActiveByTenantNo_returnsNullForInvalidFormat() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+
+        assertNull(service.findActiveByTenantNo("f1soft.co.kr"));
+        assertNull(service.findActiveByTenantNo("012345"));
+        assertNull(service.findActiveByTenantNo(null));
+        verify(tenantInfoDAO, never()).selectActiveTenantByTenantNo(any());
+    }
+
+    @DisplayName("업체번호로 활성 테넌트를 조회한다")
+    @Test
+    void findActiveByTenantNo_returnsTenant() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+        TenantVO tenant = new TenantVO();
+        when(tenantInfoDAO.selectActiveTenantByTenantNo("482913")).thenReturn(tenant);
+
+        assertSame(tenant, service.findActiveByTenantNo(" 482913 "));
     }
 }

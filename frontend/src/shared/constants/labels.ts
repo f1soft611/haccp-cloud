@@ -114,7 +114,9 @@ export const APP_LABELS = {
     summary: '요약',
   },
   message: {
-    loginHelp: '도메인을 포함한 로그인 ID를 입력하세요.',
+    // 기존 -> '도메인을 포함한 로그인 ID를 입력하세요.'
+    // 변경 -> 업체번호 3칸 로그인 안내
+    loginHelp: '업체번호와 로그인 ID, 비밀번호를 입력하세요.',
     loginFailed: '로그인 실패: 사용자 ID 또는 비밀번호를 확인하세요.',
     platformAdminLoginFailed:
       '플랫폼 관리자 로그인 실패: 계정 정보를 확인하세요.',
@@ -147,6 +149,7 @@ export const APP_LABELS = {
   },
   onboarding: {
     issuedTenantCode: '발급된 업체 코드',
+    issuedTenantNo: '발급된 업체번호',
     mailDispatchStatus: '메일 발송 상태',
     mailStatus: {
       MOCK_SENT: '발송 완료 (테스트)',

@@ -259,6 +259,7 @@ class TenantOnboardingServiceImplTest {
         when(tenantInfoDAO.selectTenantNameByCode("TEST_TENANT")).thenReturn("테스트 테넌트");
         when(tenantInfoDAO.selectAdminEmailByLoginAccountId(101L)).thenReturn("admin@test.com");
         when(tenantInfoDAO.selectLoginCodeByLoginAccountId(101L)).thenReturn("tenant-admin");
+        when(tenantInfoDAO.selectTenantNoByCode("TEST_TENANT")).thenReturn("482913");
 
         // When
         TenantVerificationResponseVO response = tenantOnboardingService.verifyEmailToken("TEST_TENANT", authToken);
@@ -268,6 +269,7 @@ class TenantOnboardingServiceImplTest {
         assertEquals("TEST_TENANT", response.getTenantCode());
         assertEquals(101L, response.getLoginAccountId());
         assertEquals("tenant-admin", response.getAdminLoginCode());
+        assertEquals("482913", response.getTenantNo());
         assertTrue(response.isVerified());
 
         verify(tenantInfoDAO, times(1)).updateLoginAccountOnboardingStatus(101L, "EMAIL_VERIFIED");

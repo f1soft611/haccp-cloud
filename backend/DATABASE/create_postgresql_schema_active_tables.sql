@@ -12,6 +12,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS tb_tenant (
     tenant_id BIGSERIAL PRIMARY KEY,
     tenant_code VARCHAR(50) UNIQUE NOT NULL,
+    tenant_no VARCHAR(6) UNIQUE, -- 랜덤 6자리 업체번호 컬럼 추가 (테넌트 DB 부트스트랩 INSERT 때문에 NULL 허용)
     tenant_nm VARCHAR(200) NOT NULL,
     admin_email VARCHAR(100) UNIQUE NOT NULL,
     business_registration_number VARCHAR(12),

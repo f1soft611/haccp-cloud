@@ -1,4 +1,5 @@
 import { apiClient } from '../api/apiClient';
+import { normalizeTenantNo } from '../../shared/utils/loginDomainRouting';
 
 const DOMAIN_PATTERN =
   /^(?=.{3,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
@@ -83,6 +84,7 @@ export type MailDispatchStatus = 'MOCK_SENT' | 'QUEUED' | 'SENT' | 'FAILED';
 
 export type IssueTenantCodeResponse = {
   tenantCode: string;
+  tenantNo?: string;
   companyName: string;
   businessRegistrationNumber: string;
   adminEmail: string;
@@ -108,8 +110,15 @@ export type TenantDomainInfo = {
   tenantCode?: string;
 };
 
+export type TenantNoInfo = {
+  tenantNo: string;
+  tenantNm: string;
+  logoImage?: string;
+};
+
 export type TenantVerificationResult = {
   tenantCode: string;
+  tenantNo?: string;
   tenantNm: string;
   adminEmail: string;
   loginAccountId: number;
@@ -130,6 +139,7 @@ export type TenantOnboardingCompleteRequest = {
 type IssueTenantCodePayload = Partial<IssueTenantCodeResponse> & {
   tenantCode?: string;
   tenant_code?: string;
+  tenant_no?: string;
   tenantNm?: string;
   tenant_nm?: string;
   companyName?: string;
@@ -221,6 +231,7 @@ function normalizeIssueTenantCodeResponse(
 
   return {
     tenantCode: String(payload.tenantCode ?? payload.tenant_code ?? '').trim(),
+    tenantNo: String(payload.tenantNo ?? payload.tenant_no ?? '').trim() || undefined,
     companyName: String(
       payload.companyName ??
         payload.company_name ??
@@ -286,6 +297,7 @@ export async function verifyTenantEmail(
     tenantCode: String(
       payload.tenantCode ?? verification.tenantCode ?? '',
     ).trim(),
+    tenantNo: String(verification.tenantNo ?? '').trim() || undefined,
     tenantNm: String(verification.tenantNm ?? '').trim(),
     adminEmail: String(verification.adminEmail ?? '').trim(),
     loginAccountId: Number(verification.loginAccountId ?? 0),
@@ -311,6 +323,7 @@ export async function verifyTenantEmailByToken(
     tenantCode: String(
       payload.tenantCode ?? verification.tenantCode ?? '',
     ).trim(),
+    tenantNo: String(verification.tenantNo ?? '').trim() || undefined,
     tenantNm: String(verification.tenantNm ?? '').trim(),
     adminEmail: String(verification.adminEmail ?? '').trim(),
     loginAccountId: Number(verification.loginAccountId ?? 0),
@@ -419,4 +432,32 @@ export async function getTenantByDomain(
           '',
       ).trim() || undefined,
   };
+}
+
+export async function getTenantByTenantNo(
+    tenantNo: string,
+): Promise<TenantNoInfo | null> {
+  const normalizedTenantNo = normalizeTenantNo(tenantNo);
+  if (!normalizedTenantNo) {
+    return null;
+  }
+
+  try {
+    const { data } = await apiClient.get<
+        ResultEnvelope<Partial<TenantNoInfo>>
+    >(`/v1/platform-admin/tenants/numbers/${normalizedTenantNo}`);
+    const payload = unwrapResult(data);
+    const tenantNm = String(payload?.tenantNm ?? '').trim();
+    if (!tenantNm) {
+      return null;
+    }
+
+    return {
+      tenantNo: normalizedTenantNo,
+      tenantNm,
+      logoImage: String(payload.logoImage ?? '').trim() || undefined,
+    };
+  } catch {
+    return null;
+  }
 }

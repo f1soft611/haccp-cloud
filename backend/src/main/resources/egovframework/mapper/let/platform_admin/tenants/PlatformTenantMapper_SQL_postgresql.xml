@@ -3,9 +3,11 @@
 <mapper namespace="TenantInfoDAO">
 
     <!-- 업체 대시보드 item resultMap -->
-    <resultMap id="platformTenantDashboardItemResultMap" type="egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO">
+    <resultMap id="platformTenantDashboardItemResultMap"
+               type="egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO">
         <result property="tenantId" column="tenant_id"/>
         <result property="tenantCode" column="tenant_code"/>
+        <result property="tenantNo" column="tenant_no"/>
         <result property="companyName" column="company_name"/>
         <result property="adminName" column="admin_name"/>
         <result property="adminEmail" column="admin_email"/>
@@ -55,6 +57,7 @@
     <insert id="TenantInfoDAO.insertTenantWithBusinessInfo" parameterType="map">
         INSERT INTO tb_tenant (
             tenant_code,
+            tenant_no,
             tenant_nm,
             admin_email,
             business_registration_number,
@@ -64,17 +67,46 @@
             registration_date,
             use_at
         ) VALUES (
-            #{tenantSerialCode},
-            #{tenantNm},
-            #{adminEmail},
-            #{businessRegistrationNumber},
-            #{corporateNumber},
-            #{businessType},
-            #{businessCategory},
-            NULLIF(#{registrationDate}, '')::date,
-            'Y'
-        )
+                     #{tenantSerialCode},
+                     #{tenantNo},
+                     #{tenantNm},
+                     #{adminEmail},
+                     #{businessRegistrationNumber},
+                     #{corporateNumber},
+                     #{businessType},
+                     #{businessCategory},
+                     NULLIF(#{registrationDate}, '')::date,
+                     'Y'
+                 )
     </insert>
+
+    <!-- 업체번호 중복 건수 조회 -->
+    <select id="TenantInfoDAO.selectTenantCountByTenantNo" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tb_tenant
+        WHERE tenant_no = #{value}
+    </select>
+
+    <!-- 업체번호 기준 활성 테넌트 조회 (로그인용) -->
+    <select id="TenantInfoDAO.selectActiveTenantByTenantNo" parameterType="string" resultMap="tenantResultMap">
+        SELECT
+            tenant_id,
+            tenant_code,
+            tenant_no,
+            tenant_nm,
+            logo_image,
+            use_at
+        FROM tb_tenant
+        WHERE tenant_no = #{value}
+          AND use_at = 'Y'
+    </select>
+
+    <!-- 테넌트 코드 기준 업체번호 조회 -->
+    <select id="TenantInfoDAO.selectTenantNoByCode" parameterType="string" resultType="string">
+        SELECT tenant_no
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+    </select>
 
     <!-- 테넌트 코드 기준 테넌트 ID 조회 -->
     <select id="TenantInfoDAO.selectTenantIdByCode" parameterType="string" resultType="long">
@@ -309,10 +341,13 @@
     </select>
 
     <!-- 대시보드 테넌트 목록 조회 -->
-    <select id="TenantInfoDAO.selectDashboardTenantItems" parameterType="map" resultMap="platformTenantDashboardItemResultMap">
+    <select id="TenantInfoDAO.selectDashboardTenantItems"
+            parameterType="map"
+            resultMap="platformTenantDashboardItemResultMap">
         SELECT
             t.tenant_id,
             t.tenant_code,
+            t.tenant_no,
             t.tenant_nm AS company_name,
             COALESCE(
                 NULLIF(TRIM(u.user_nm), ''),
@@ -367,10 +402,12 @@
     </select>
 
     <!-- 테넌트 코드 기준 대시보드 항목 조회 -->
-    <select id="TenantInfoDAO.selectDashboardTenantItemByCode" parameterType="string" resultMap="platformTenantDashboardItemResultMap">
+    <select id="TenantInfoDAO.selectDashboardTenantItemByCode"
+            parameterType="string" resultMap="platformTenantDashboardItemResultMap">
         SELECT
             t.tenant_id,
             t.tenant_code,
+            t.tenant_no,
             t.tenant_nm AS company_name,
             COALESCE(
                 NULLIF(TRIM(u.user_nm), ''),
@@ -552,6 +589,7 @@
     <resultMap id="tenantResultMap" type="egovframework.let.platform_admin.tenants.domain.model.TenantVO">
         <result property="tenantId" column="tenant_id"/>
         <result property="tenantCode" column="tenant_code"/>
+        <result property="tenantNo" column="tenant_no"/>
         <result property="tenantNm" column="tenant_nm"/>
         <result property="adminEmail" column="admin_email"/>
         <result property="corporateNumber" column="corporate_number"/>

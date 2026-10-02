@@ -197,7 +197,8 @@ export function AppRoutes() {
       <Routes>
         <Route path="/admin" element={<LoginPage adminMode />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/login/:domain" element={<LoginPage />} />
+          {/* 기존 -> /login/:domain (도메인 로그인) / 변경 -> /login/:tenantNo (업체번호 로그인) */}
+          <Route path="/login/:tenantNo" element={<LoginPage />} />
         <Route path="/onboarding/verify" element={<OnboardingVerifyPage />} />
         <Route
           path="/login/platform"

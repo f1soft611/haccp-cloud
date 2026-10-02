@@ -11,6 +11,7 @@ import type { CommonCodeData } from '../services/basicinfo/commonCodeService';
 
 type TenantItem = {
   tenantCode: string;
+  tenantNo?: string;
   companyName: string;
   businessRegistrationNumber: string;
   planCode?: string;
@@ -64,6 +65,7 @@ const roleByUserId: Record<string, UserRole> = {
 let tenants: TenantItem[] = [
   {
     tenantCode: 'TENANT-A',
+    tenantNo: '482913',
     companyName: '알파푸드',
     businessRegistrationNumber: '123-45-67890',
     planCode: 'C',
@@ -71,6 +73,7 @@ let tenants: TenantItem[] = [
   },
   {
     tenantCode: 'TENANT-B',
+    tenantNo: '730518',
     companyName: '베타HACCP',
     businessRegistrationNumber: '234-56-78901',
     planCode: 'B',
@@ -897,12 +900,39 @@ export const handlers = [
     });
   }),
 
+  http.get('/api/v1/platform-admin/tenants/numbers/:tenantNo', ({ params }) => {
+    const tenant = tenants.find(
+        (item) => item.tenantNo === String(params.tenantNo),
+    );
+    if (!tenant) {
+      return HttpResponse.json({
+        resultCode: 600,
+        resultMessage: '처리할 수 없는 상태입니다.',
+        result: {
+          errorCode: 'TENANT_NOT_FOUND',
+          errorMessage: '테넌트를 찾을 수 없습니다.',
+        },
+      });
+    }
+
+    return HttpResponse.json({
+      resultCode: 200,
+      resultMessage: '성공했습니다.',
+      result: {
+        tenantNo: tenant.tenantNo,
+        tenantNm: tenant.companyName,
+        logoImage: '',
+      },
+    });
+  }),
+
   http.post('/api/auth/login-jwt', async ({ request }) => {
     const payload = (await request.json()) as {
       id?: string;
       password?: string;
       tenantCode?: string;
       factoryCode?: string;
+      tenantNo?: string;
     };
 
     if (!payload.id || !payload.password) {
@@ -921,7 +951,13 @@ export const handlers = [
 
     const normalizedUserId = payload.id.trim().toLowerCase();
     const role = roleByUserId[normalizedUserId] ?? 'USER';
-    const tenantCode = payload.tenantCode || payload.factoryCode || 'TENANT-A';
+    // 변경 -> 업체번호가 있으면 목 테넌트 목록에서 업체번호로 먼저 찾음
+    const tenantCode =
+        tenants.find((tenant) => tenant.tenantNo === payload.tenantNo)
+            ?.tenantCode ||
+        payload.tenantCode ||
+        payload.factoryCode ||
+        'TENANT-A';
     const userCount = tenantScoped(users, tenantCode).length;
     const departmentCount = tenantScoped(departments, tenantCode).length;
     const onboardingStatus = resolveOnboardingStatus(
@@ -1278,6 +1314,7 @@ export const handlers = [
 
     const created: TenantItem = {
       tenantCode,
+      tenantNo: String(100000 + Math.floor(Math.random() * 900000)),
       companyName,
       businessRegistrationNumber,
       createdAt: new Date().toISOString(),
@@ -1840,6 +1877,7 @@ export const handlers = [
       .slice(0, 5)
       .map((tenant) => ({
         tenantCode: tenant.tenantCode,
+        tenantNo: tenant.tenantNo,
         companyName: tenant.companyName,
         issuedAt: tenant.createdAt,
         status: 'ACTIVE' as const,

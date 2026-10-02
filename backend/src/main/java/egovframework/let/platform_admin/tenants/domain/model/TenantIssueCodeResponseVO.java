@@ -26,6 +26,7 @@ import lombok.Setter;
 public class TenantIssueCodeResponseVO {
 
     private String tenantCode;
+    private String tenantNo;
     private String companyName;
     private String businessRegistrationNumber;
     private String corporateNumber;

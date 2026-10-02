@@ -22,6 +22,9 @@ public class TenantVO {
     @Schema(description = "테넌트 코드")
     private String tenantCode;
 
+    @Schema(description = "업체번호(6자리)")
+    private String tenantNo;
+
     @Schema(description = "테넌트명")
     private String tenantNm;
 
