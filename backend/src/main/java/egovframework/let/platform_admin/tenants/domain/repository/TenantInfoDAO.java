@@ -44,7 +44,10 @@ public interface TenantInfoDAO {
             String corporateNumber,
             String businessType,
             String businessCategory,
-            String registrationDate);
+            String registrationDate,
+            String tenantNo);
+
+    int selectTenantCountByTenantNo(String tenantNo);
 
     int insertTenantDatabase(Long tenantId, String dbKey, String dbName, String schemaName);
 

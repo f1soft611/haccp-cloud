@@ -27,6 +27,7 @@ public class PlatformTenantDashboardItemVO {
 
     private Long tenantId;
     private String tenantCode;
+    private String tenantNo;
     private String companyName;
     private String adminName;
     private String adminEmail;

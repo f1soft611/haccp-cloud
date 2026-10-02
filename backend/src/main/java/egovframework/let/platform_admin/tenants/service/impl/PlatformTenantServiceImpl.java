@@ -45,6 +45,8 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
     private static final Pattern EMAIL_PATTERN =
             Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
+    private static final int TENANT_NO_MAX_ATTEMPTS = 10;
+
     @Resource(name = "tenantInfoDAO")
     private TenantInfoDAO tenantInfoDAO;
 
@@ -94,15 +96,18 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
             }
         }
 
+        String tenantNo = issueTenantNo();
+
         tenantInfoDAO.insertTenantWithBusinessInfo(
-            tenantSerialCode,
-            tenantNm,
-            adminEmail,
-            businessRegistrationNumber,
-            corporateNumber,
-            businessType,
-            businessCategory,
-            registrationDate);
+                tenantSerialCode,
+                tenantNm,
+                adminEmail,
+                businessRegistrationNumber,
+                corporateNumber,
+                businessType,
+                businessCategory,
+                registrationDate,
+                tenantNo);
 
         Long existingTenantId = tenantInfoDAO.selectTenantIdByCode(tenantSerialCode);
 
@@ -136,7 +141,18 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
             registrationDate,
             planCode);
         resultVO.setAdminName(adminName);
+        resultVO.setTenantNo(tenantNo);
         return resultVO;
+    }
+
+    private String issueTenantNo() {
+        for (int attempt = 0; attempt < TENANT_NO_MAX_ATTEMPTS; attempt++) {
+            String candidate = TenantNoGenerator.generate();
+            if (tenantInfoDAO.selectTenantCountByTenantNo(candidate) == 0) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("업체번호 발급에 실패했습니다");
     }
 
     private TenantRegistrationResultVO buildTenantRegistrationResult(

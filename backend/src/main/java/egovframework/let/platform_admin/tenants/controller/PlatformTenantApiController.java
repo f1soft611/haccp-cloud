@@ -118,6 +118,7 @@ public class PlatformTenantApiController {
 
             TenantIssueCodeResponseVO response = new TenantIssueCodeResponseVO();
             response.setTenantCode(created.getTenantCode());
+            response.setTenantNo(created.getTenantNo());
             response.setCompanyName(created.getTenantNm());
             response.setBusinessRegistrationNumber(trimToEmpty(requestVO.getBusinessRegistrationNumber()));
             response.setCorporateNumber(created.getCorporateNumber());
@@ -128,6 +129,7 @@ public class PlatformTenantApiController {
 
             Map<String, Object> resultMap = new HashMap<String, Object>();
             resultMap.put("tenantCode", response.getTenantCode());
+            resultMap.put("tenantNo", response.getTenantNo());
             resultMap.put("companyName", response.getCompanyName());
             resultMap.put("businessRegistrationNumber", response.getBusinessRegistrationNumber());
             resultMap.put("corporateNumber", response.getCorporateNumber());
