@@ -5,6 +5,30 @@ import type {
 } from '../../../services/basicinfo/commonCodeService';
 import type { CommonCodeDetailRow, CommonCodeGroupRow, CommonCodeRowState } from './types';
 
+// ponytail: 백엔드 API 전까지 화면 확인용 샘플 데이터
+export const SAMPLE_COMMON_CODES: CommonCodeData = {
+    groups: [
+        { groupCode: 'OCCUR_CYCLE', groupName: '발생 주기', groupDesc: '발생 주기 공통코드' },
+        { groupCode: 'UNIT', groupName: '단위', groupDesc: '단위 공통코드' },
+        { groupCode: 'STORAGE', groupName: '보관 조건', groupDesc: '보관 조건 공통코드' },
+    ],
+    details: [
+        { groupCode: 'OCCUR_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '발생 주기 - 일' },
+        { groupCode: 'OCCUR_CYCLE', code: 'WEEK', codeName: '주', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '발생 주기 - 주' },
+        { groupCode: 'OCCUR_CYCLE', code: 'MONTH', codeName: '월', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '발생 주기 - 월' },
+        { groupCode: 'OCCUR_CYCLE', code: 'YEAR', codeName: '연', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '발생 주기 - 연' },
+        { groupCode: 'OCCUR_CYCLE', code: 'EVENT', codeName: '발생시', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '발생 주기 - 발생시' },
+        { groupCode: 'UNIT', code: 'KG', codeName: '킬로그램', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+        { groupCode: 'UNIT', code: 'G', codeName: '그램', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+        { groupCode: 'UNIT', code: 'L', codeName: '리터', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
+        { groupCode: 'UNIT', code: 'EA', codeName: '개', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
+        { groupCode: 'UNIT', code: 'BOX', codeName: '박스', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '' },
+        { groupCode: 'STORAGE', code: 'ROOM', codeName: '실온', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '1~35℃' },
+        { groupCode: 'STORAGE', code: 'COLD', codeName: '냉장', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '0~10℃' },
+        { groupCode: 'STORAGE', code: 'FROZEN', codeName: '냉동', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '-18℃ 이하' },
+    ],
+};
+
 let newRowSeq = 0;
 const newRowId = (prefix: string) => `${prefix}-new-${Date.now()}-${++newRowSeq}`;
 
