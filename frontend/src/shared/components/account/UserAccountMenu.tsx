@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { logout as logoutApi } from '../../../services/auth/logoutService';
 import { useAuthStore } from '../../store/authStore';
 import { getRoleLabel } from '../../constants/labels';
-import { resolveLoginPathWithLastDomain } from '../../utils/loginDomainRouting';
+import { resolveLoginPathWithLastTenantNo } from '../../utils/loginDomainRouting';
 
 function resolveAvatarLabel(displayName: string, userId: string): string {
   const visibleName = displayName.trim();
@@ -95,7 +95,9 @@ export function UserAccountMenu() {
       // Force local logout even if backend call fails.
     } finally {
       clearAuth();
-      navigate(resolveLoginPathWithLastDomain(), { replace: true });
+      // 기존 -> resolveLoginPathWithLastDomain()
+      // 변경 -> 마지막 업체번호 기준 로그인 경로
+      navigate(resolveLoginPathWithLastTenantNo(), { replace: true });
     }
   };
 

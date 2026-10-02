@@ -49,6 +49,14 @@ public interface PlatformTenantService {
     TenantVO findByAdminEmailDomain(String domain);
 
     /**
+     * 업체번호(6자리)로 활성 테넌트를 조회한다. 로그인 화면에서 사용한다.
+     *
+     * @param tenantNo 업체번호
+     * @return 테넌트 VO, 형식이 맞지 않거나 없거나 비활성이면 null
+     */
+    TenantVO findActiveByTenantNo(String tenantNo);
+
+    /**
      * 테넌트 ID로 테넌트 조회
      * 
      * @param tenantId 테넌트 ID

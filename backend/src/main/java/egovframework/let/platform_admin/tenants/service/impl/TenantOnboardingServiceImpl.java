@@ -338,6 +338,7 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
 
         TenantVerificationResponseVO responseVO = TenantVerificationResponseVO.builder()
                 .tenantCode(tokenVO.getTenantCode())
+                .tenantNo(tenantInfoDAO.selectTenantNoByCode(tokenVO.getTenantCode()))
                 .tenantNm(tenantNm)
                 .adminEmail(adminEmail)
                 .loginAccountId(tokenVO.getLoginAccountId())

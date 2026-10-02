@@ -164,6 +164,7 @@ class PlatformAdminPolicyCoverageTest {
         if (PlatformTenantApiController.class.equals(controllerClass)
                 && ("issueTenantCode".equals(method.getName())
                 || "getTenantByDomain".equals(method.getName())
+                || "getTenantByTenantNo".equals(method.getName()) // 로그인 화면용 공개 API라 정책 대상에서 제외
                 || "getTenantLogo".equals(method.getName())
                 || "listSampleTenants".equals(method.getName()))) {
             return true;

@@ -1,44 +1,44 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import {
-  loadLastLoginDomain,
-  normalizeLoginDomain,
-  persistLastLoginDomain,
-  resolveLoginPathWithLastDomain,
+  loadLastLoginTenantNo,
+  normalizeTenantNo,
+  persistLastLoginTenantNo,
+  resolveLoginPathWithLastTenantNo,
 } from '../shared/utils/loginDomainRouting';
 
-describe('loginDomainRouting', () => {
+describe('loginDomainRouting (업체번호)', () => {
   beforeEach(() => {
     window.localStorage.clear();
-    window.sessionStorage.clear();
   });
 
-  it('normalizes valid domain and rejects invalid values', () => {
-    expect(normalizeLoginDomain('F1SOFT.CO.KR')).toBe('f1soft.co.kr');
-    expect(normalizeLoginDomain('socra710@f1soft.co.kr')).toBe('f1soft.co.kr');
-    expect(normalizeLoginDomain('https://f1soft.co.kr')).toBe('f1soft.co.kr');
-    expect(normalizeLoginDomain('/login/f1soft.co.kr')).toBe('f1soft.co.kr');
-    expect(normalizeLoginDomain('localhost')).toBe('');
-    expect(normalizeLoginDomain('javascript:alert(1)')).toBe('');
+  it('accepts only 6-digit tenant numbers without leading zero', () => {
+    expect(normalizeTenantNo(' 482913 ')).toBe('482913');
+    expect(normalizeTenantNo('012345')).toBe('');
+    expect(normalizeTenantNo('48291')).toBe('');
+    expect(normalizeTenantNo('f1soft.co.kr')).toBe('');
+    expect(normalizeTenantNo('')).toBe('');
   });
 
-  it('persists and resolves domain login path', () => {
-    persistLastLoginDomain('f1soft.co.kr');
+  it('persists tenant number and resolves login path', () => {
+    persistLastLoginTenantNo('482913');
 
-    expect(loadLastLoginDomain()).toBe('f1soft.co.kr');
-    expect(resolveLoginPathWithLastDomain()).toBe('/login/f1soft.co.kr');
+    expect(loadLastLoginTenantNo()).toBe('482913');
+    expect(resolveLoginPathWithLastTenantNo()).toBe('/login/482913');
   });
 
-  it('falls back to /login when no domain is stored', () => {
-    expect(resolveLoginPathWithLastDomain()).toBe('/login');
+  it('ignores invalid tenant numbers when persisting', () => {
+    persistLastLoginTenantNo('abc');
+
+    expect(loadLastLoginTenantNo()).toBe('');
   });
 
-  it('falls back to session storage when local storage is empty', () => {
-    window.sessionStorage.setItem(
-      'haccp.last-login-domain',
-      '/login/f1soft.co.kr',
-    );
+  it('falls back to /login when nothing is stored', () => {
+    expect(resolveLoginPathWithLastTenantNo()).toBe('/login');
+  });
 
-    expect(loadLastLoginDomain()).toBe('f1soft.co.kr');
-    expect(resolveLoginPathWithLastDomain()).toBe('/login/f1soft.co.kr');
+  it('does not read the legacy last-login-domain key', () => {
+    window.localStorage.setItem('haccp.last-login-domain', 'f1soft.co.kr');
+
+    expect(resolveLoginPathWithLastTenantNo()).toBe('/login');
   });
 });

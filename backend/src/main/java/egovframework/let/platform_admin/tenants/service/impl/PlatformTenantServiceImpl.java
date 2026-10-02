@@ -263,6 +263,15 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
     }
 
     @Override
+    public TenantVO findActiveByTenantNo(String tenantNo) {
+        String normalized = tenantNo == null ? "" : tenantNo.trim();
+        if (!normalized.matches("^[1-9][0-9]{5}$")) {
+            return null;
+        }
+        return tenantInfoDAO.selectActiveTenantByTenantNo(normalized);
+    }
+
+    @Override
     public TenantVO findById(Long tenantId) {
         if (tenantId == null || tenantId <= 0) {
             throw new IllegalArgumentException("tenantId is required and must be positive");

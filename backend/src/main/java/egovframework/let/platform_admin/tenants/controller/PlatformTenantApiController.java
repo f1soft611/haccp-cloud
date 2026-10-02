@@ -284,6 +284,35 @@ public class PlatformTenantApiController {
         }
     }
 
+    @GetMapping("/numbers/{tenantNo}")
+    @Operation(
+            summary = "업체번호로 테넌트 정보 조회",
+            description = "업체번호(6자리)로 로그인 화면에 표시할 업체명과 로고를 조회한다. 인증 없이 호출되므로 표시용 값만 반환한다."
+    )
+    public ResultVO getTenantByTenantNo(@PathVariable String tenantNo) {
+        try {
+            TenantVO tenant = platformTenantService.findActiveByTenantNo(tenantNo);
+            if (tenant == null) {
+                Map<String, Object> errorMap = new HashMap<String, Object>();
+                errorMap.put("errorCode", "TENANT_NOT_FOUND");
+                errorMap.put("errorMessage", "테넌트를 찾을 수 없습니다.");
+                return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
+            }
+
+            Map<String, Object> resultMap = new HashMap<String, Object>();
+            resultMap.put("tenantNo", tenant.getTenantNo());
+            resultMap.put("tenantNm", tenant.getTenantNm());
+            resultMap.put("logoImage", tenant.getLogoImage());
+            return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+        } catch (Exception ex) {
+            log.error("getTenantByTenantNo: unexpected error for tenantNo={}", tenantNo, ex);
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("errorCode", "INTERNAL_ERROR");
+            errorMap.put("errorMessage", "서버 오류가 발생했습니다.");
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/domains/{domain}/logo")
     @Operation(
             summary = "테넌트 로고 이미지 조회",

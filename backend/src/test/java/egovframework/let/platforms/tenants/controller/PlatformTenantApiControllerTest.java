@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Arrays;
 
+import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -149,5 +150,35 @@ class PlatformTenantApiControllerTest {
 
         verify(platformTenantService).updateOnboardingStatusByTenantCode(eq("TENANT_001"), eq("EMAIL_SENT"));
         verify(platformTenantService, never()).updateOnboardingStatusByTenantCode(eq("  TENANT_001  "), eq("EMAIL_SENT"));
+    }
+
+    @Test
+    void getTenantByTenantNo_returnsOnlyDisplayFields() throws Exception {
+        TenantVO tenant = new TenantVO();
+        tenant.setTenantId(7L);
+        tenant.setTenantCode("2607030003");
+        tenant.setTenantNo("482913");
+        tenant.setTenantNm("알파푸드");
+        tenant.setLogoImage("data:image/png;base64,AAAA");
+        when(platformTenantService.findActiveByTenantNo("482913")).thenReturn(tenant);
+
+        mockMvc.perform(get("/api/v1/platform-admin/tenants/numbers/482913"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value(ResponseCode.SUCCESS.getCode()))
+                .andExpect(jsonPath("$.result.tenantNo").value("482913"))
+                .andExpect(jsonPath("$.result.tenantNm").value("알파푸드"))
+                .andExpect(jsonPath("$.result.logoImage").value("data:image/png;base64,AAAA"))
+                .andExpect(jsonPath("$.result.tenantId").doesNotExist())
+                .andExpect(jsonPath("$.result.tenantCode").doesNotExist());
+    }
+
+    @Test
+    void getTenantByTenantNo_returnsNotFoundWhenMissing() throws Exception {
+        when(platformTenantService.findActiveByTenantNo("999999")).thenReturn(null);
+
+        mockMvc.perform(get("/api/v1/platform-admin/tenants/numbers/999999"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resultCode").value(ResponseCode.BUSINESS_ERROR.getCode()))
+                .andExpect(jsonPath("$.result.errorCode").value("TENANT_NOT_FOUND"));
     }
 }

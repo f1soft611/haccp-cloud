@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore, type UserRole } from '../../shared/store/authStore';
 import { listAccessibleMenuPaths } from '../../services/platform-admin/platformUserMenuService';
-import { resolveLoginPathWithLastDomain } from '../../shared/utils/loginDomainRouting';
+import { resolveLoginPathWithLastTenantNo } from '../../shared/utils/loginDomainRouting';
 import { prefetchRouteByPath } from './routePrefetch';
 
 type ProtectedRouteProps = PropsWithChildren<{
@@ -36,7 +36,9 @@ export function ProtectedRoute({
   });
 
   if (!isAuthenticated) {
-    return <Navigate to={resolveLoginPathWithLastDomain()} replace />;
+    // 기존 -> resolveLoginPathWithLastDomain()
+    // 변경 -> 마지막 업체번호 기준 로그인 경로
+    return <Navigate to={resolveLoginPathWithLastTenantNo()} replace />;
   }
 
   if (tenantOnboardingRequired && !isTenantFirstSetupRoute) {

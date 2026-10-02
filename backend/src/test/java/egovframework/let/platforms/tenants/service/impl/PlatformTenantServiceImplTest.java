@@ -3,6 +3,8 @@ package egovframework.let.platform_admin.tenants.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -12,6 +14,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DuplicateKeyException;
@@ -528,5 +531,30 @@ class PlatformTenantServiceImplTest {
         verify(tenantInfoDAO, times(10)).selectTenantCountByTenantNo(anyString());
         verify(tenantInfoDAO, never()).insertTenantWithBusinessInfo(
                 any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @DisplayName("업체번호 형식이 아니면 DB를 조회하지 않고 null을 반환한다")
+    @Test
+    void findActiveByTenantNo_returnsNullForInvalidFormat() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+
+        assertNull(service.findActiveByTenantNo("f1soft.co.kr"));
+        assertNull(service.findActiveByTenantNo("012345"));
+        assertNull(service.findActiveByTenantNo(null));
+        verify(tenantInfoDAO, never()).selectActiveTenantByTenantNo(any());
+    }
+
+    @DisplayName("업체번호로 활성 테넌트를 조회한다")
+    @Test
+    void findActiveByTenantNo_returnsTenant() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+        TenantVO tenant = new TenantVO();
+        when(tenantInfoDAO.selectActiveTenantByTenantNo("482913")).thenReturn(tenant);
+
+        assertSame(tenant, service.findActiveByTenantNo(" 482913 "));
     }
 }

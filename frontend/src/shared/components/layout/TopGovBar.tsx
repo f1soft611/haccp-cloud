@@ -18,7 +18,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { APP_LABELS } from '../../constants/labels';
-import { loadLastLoginDomain } from '../../utils/loginDomainRouting';
+import { loadLastLoginTenantNo } from '../../utils/loginDomainRouting';
 import {
   getStoredThemeMode,
   storeThemeMode,
@@ -47,8 +47,13 @@ type TenantBrandCache = {
   logoImage?: string;
 };
 
-function resolveTenantBrandStorageKey(domain: string): string {
-  return `haccp.tenant-brand.${domain}`;
+// function resolveTenantBrandStorageKey(domain: string): string {
+//   return `haccp.tenant-brand.${domain}`;
+// }
+// 기존 -> 도메인 기준 브랜드 캐시 키
+// 변경 -> 업체번호 기준 브랜드 캐시 키
+function resolveTenantBrandStorageKey(tenantNo: string): string {
+    return `haccp.tenant-brand.${tenantNo}`;
 }
 
 function resolveSafeLogoSrc(logoImage?: string): string {
@@ -110,14 +115,16 @@ export function TopGovBar() {
       return { logoSrc: '', logoAlt: '업체 로고' };
     }
 
-    const domain = loadLastLoginDomain();
-    if (!domain) {
-      return { logoSrc: '', logoAlt: '업체 로고' };
-    }
+      // 기존 -> 마지막 로그인 도메인으로 브랜드 캐시 조회
+      // 변경 -> 마지막 로그인 업체번호로 브랜드 캐시 조회
+      const tenantNo = loadLastLoginTenantNo();
+      if (!tenantNo) {
+          return { logoSrc: '', logoAlt: '업체 로고' };
+      }
 
     try {
       const raw = window.sessionStorage.getItem(
-        resolveTenantBrandStorageKey(domain),
+          resolveTenantBrandStorageKey(tenantNo),
       );
       if (!raw) {
         return { logoSrc: '', logoAlt: '업체 로고' };

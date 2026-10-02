@@ -74,6 +74,10 @@ describe('Login page error flow', () => {
 
     renderAt('/login');
 
+    fireEvent.change(screen.getByLabelText('업체번호'), {
+      target: { value: '482913' },
+    });
+
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
       target: { value: 'tenant_user' },
     });
@@ -111,6 +115,10 @@ describe('Login page error flow', () => {
     );
 
     renderAt('/login');
+
+    fireEvent.change(screen.getByLabelText('업체번호'), {
+      target: { value: '482913' },
+    });
 
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
       target: { value: 'tenant_admin' },
@@ -150,6 +158,10 @@ describe('Login page error flow', () => {
     );
 
     renderAt('/login');
+
+    fireEvent.change(screen.getByLabelText('업체번호'), {
+      target: { value: '482913' },
+    });
 
     fireEvent.change(screen.getByLabelText(APP_LABELS.field.userId), {
       target: { value: 'tenant_admin' },

@@ -900,12 +900,39 @@ export const handlers = [
     });
   }),
 
+  http.get('/api/v1/platform-admin/tenants/numbers/:tenantNo', ({ params }) => {
+    const tenant = tenants.find(
+        (item) => item.tenantNo === String(params.tenantNo),
+    );
+    if (!tenant) {
+      return HttpResponse.json({
+        resultCode: 600,
+        resultMessage: '처리할 수 없는 상태입니다.',
+        result: {
+          errorCode: 'TENANT_NOT_FOUND',
+          errorMessage: '테넌트를 찾을 수 없습니다.',
+        },
+      });
+    }
+
+    return HttpResponse.json({
+      resultCode: 200,
+      resultMessage: '성공했습니다.',
+      result: {
+        tenantNo: tenant.tenantNo,
+        tenantNm: tenant.companyName,
+        logoImage: '',
+      },
+    });
+  }),
+
   http.post('/api/auth/login-jwt', async ({ request }) => {
     const payload = (await request.json()) as {
       id?: string;
       password?: string;
       tenantCode?: string;
       factoryCode?: string;
+      tenantNo?: string;
     };
 
     if (!payload.id || !payload.password) {
@@ -924,7 +951,13 @@ export const handlers = [
 
     const normalizedUserId = payload.id.trim().toLowerCase();
     const role = roleByUserId[normalizedUserId] ?? 'USER';
-    const tenantCode = payload.tenantCode || payload.factoryCode || 'TENANT-A';
+    // 변경 -> 업체번호가 있으면 목 테넌트 목록에서 업체번호로 먼저 찾음
+    const tenantCode =
+        tenants.find((tenant) => tenant.tenantNo === payload.tenantNo)
+            ?.tenantCode ||
+        payload.tenantCode ||
+        payload.factoryCode ||
+        'TENANT-A';
     const userCount = tenantScoped(users, tenantCode).length;
     const departmentCount = tenantScoped(departments, tenantCode).length;
     const onboardingStatus = resolveOnboardingStatus(

@@ -7,6 +7,7 @@ export type LoginRequest = {
   userId: string;
   password: string;
   tenantCode?: string;
+  tenantNo?: string;
 };
 
 export type PlatformAdminLoginRequest = {
@@ -227,6 +228,7 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
             factoryCode: request.tenantCode,
           }
         : {}),
+      ...(request.tenantNo ? { tenantNo: request.tenantNo } : {}),
     },
   );
 
