@@ -11,6 +11,7 @@ import type { CommonCodeData } from '../services/basicinfo/commonCodeService';
 
 type TenantItem = {
   tenantCode: string;
+  tenantNo?: string;
   companyName: string;
   businessRegistrationNumber: string;
   planCode?: string;
@@ -64,6 +65,7 @@ const roleByUserId: Record<string, UserRole> = {
 let tenants: TenantItem[] = [
   {
     tenantCode: 'TENANT-A',
+    tenantNo: '482913',
     companyName: '알파푸드',
     businessRegistrationNumber: '123-45-67890',
     planCode: 'C',
@@ -71,6 +73,7 @@ let tenants: TenantItem[] = [
   },
   {
     tenantCode: 'TENANT-B',
+    tenantNo: '730518',
     companyName: '베타HACCP',
     businessRegistrationNumber: '234-56-78901',
     planCode: 'B',
@@ -1278,6 +1281,7 @@ export const handlers = [
 
     const created: TenantItem = {
       tenantCode,
+      tenantNo: String(100000 + Math.floor(Math.random() * 900000)),
       companyName,
       businessRegistrationNumber,
       createdAt: new Date().toISOString(),
@@ -1840,6 +1844,7 @@ export const handlers = [
       .slice(0, 5)
       .map((tenant) => ({
         tenantCode: tenant.tenantCode,
+        tenantNo: tenant.tenantNo,
         companyName: tenant.companyName,
         issuedAt: tenant.createdAt,
         status: 'ACTIVE' as const,

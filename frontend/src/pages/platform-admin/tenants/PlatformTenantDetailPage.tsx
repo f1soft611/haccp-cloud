@@ -222,6 +222,11 @@ export function PlatformTenantDetailPage() {
                   size="small"
                   variant="outlined"
                 />
+                <Chip
+                    label={`업체번호 ${detailValue(row.tenantNo)}`}
+                    size="small"
+                    variant="outlined"
+                />
               </Stack>
             </Stack>
           </Paper>

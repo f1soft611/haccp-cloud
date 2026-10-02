@@ -30,6 +30,7 @@ describe('tenantService', () => {
           adminEmail: 'admin@test.com',
           createdAt: '2026-07-03T00:00:00',
           mailDispatchStatus: 'SENT',
+          tenantNo: '482913',
         },
       },
     });
@@ -54,6 +55,7 @@ describe('tenantService', () => {
       expect.any(Object),
     );
     expect(issued.tenantCode).toBe('TENANT_000001');
+    expect(issued.tenantNo).toBe('482913');
   });
 
   it('reads sample tenants from result.items envelope', async () => {

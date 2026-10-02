@@ -11,6 +11,7 @@ export type PlatformTenantOnboardingStatus =
 export type PlatformTenantManagementItem = {
   tenantId?: number;
   tenantCode: string;
+  tenantNo?: string;
   companyName: string;
   adminName: string;
   adminEmail: string;

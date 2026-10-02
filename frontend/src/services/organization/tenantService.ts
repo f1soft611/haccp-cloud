@@ -83,6 +83,7 @@ export type MailDispatchStatus = 'MOCK_SENT' | 'QUEUED' | 'SENT' | 'FAILED';
 
 export type IssueTenantCodeResponse = {
   tenantCode: string;
+  tenantNo?: string;
   companyName: string;
   businessRegistrationNumber: string;
   adminEmail: string;
@@ -130,6 +131,7 @@ export type TenantOnboardingCompleteRequest = {
 type IssueTenantCodePayload = Partial<IssueTenantCodeResponse> & {
   tenantCode?: string;
   tenant_code?: string;
+  tenant_no?: string;
   tenantNm?: string;
   tenant_nm?: string;
   companyName?: string;
@@ -221,6 +223,7 @@ function normalizeIssueTenantCodeResponse(
 
   return {
     tenantCode: String(payload.tenantCode ?? payload.tenant_code ?? '').trim(),
+    tenantNo: String(payload.tenantNo ?? payload.tenant_no ?? '').trim() || undefined,
     companyName: String(
       payload.companyName ??
         payload.company_name ??

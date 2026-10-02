@@ -147,6 +147,7 @@ export const APP_LABELS = {
   },
   onboarding: {
     issuedTenantCode: '발급된 업체 코드',
+    issuedTenantNo: '발급된 업체번호',
     mailDispatchStatus: '메일 발송 상태',
     mailStatus: {
       MOCK_SENT: '발송 완료 (테스트)',
