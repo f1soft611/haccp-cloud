@@ -185,22 +185,23 @@ export function OnboardingVerifyPage() {
     setLoginDomainInput(verifyMutation.data.adminEmail.slice(atIndex + 1));
   }, [verifyMutation.data?.adminEmail]);
 
-  const loginDomain = useMemo(() => {
-    const explicitDomain = normalizeDomainInput(loginDomainInput);
-    if (explicitDomain) {
-      return explicitDomain;
-    }
-
-    const email = verifyMutation.data?.adminEmail ?? '';
-    const atIndex = email.indexOf('@');
-    if (atIndex < 0) {
-      return '';
-    }
-    return email
-      .slice(atIndex + 1)
-      .trim()
-      .toLowerCase();
-  }, [loginDomainInput, verifyMutation.data?.adminEmail]);
+  // 기존 -> loginDomain: 로그인 이동용 도메인 계산 / 변경 -> 업체번호로 이동하므로 제거
+  // const loginDomain = useMemo(() => {
+  //   const explicitDomain = normalizeDomainInput(loginDomainInput);
+  //   if (explicitDomain) {
+  //     return explicitDomain;
+  //   }
+  //
+  //   const email = verifyMutation.data?.adminEmail ?? '';
+  //   const atIndex = email.indexOf('@');
+  //   if (atIndex < 0) {
+  //     return '';
+  //   }
+  //   return email
+  //     .slice(atIndex + 1)
+  //     .trim()
+  //     .toLowerCase();
+  // }, [loginDomainInput, verifyMutation.data?.adminEmail]);
 
   const verificationMessage = verifyMutation.isError
     ? resolveVerificationErrorMessage(verifyMutation.error)
@@ -301,11 +302,10 @@ export function OnboardingVerifyPage() {
   };
 
   const handleMoveToLogin = () => {
-    if (loginDomain) {
-      navigate(`/login/${encodeURIComponent(loginDomain)}`);
-      return;
-    }
-    navigate('/login');
+    // 기존 -> 로그인 도메인이 있으면 /login/{도메인}으로 이동
+    // 변경 -> 인증 응답의 업체번호가 있으면 /login/{업체번호}로 이동
+    const tenantNo = verifyMutation.data?.tenantNo;
+    navigate(tenantNo ? `/login/${tenantNo}` : '/login');
   };
 
   return (
@@ -442,9 +442,8 @@ export function OnboardingVerifyPage() {
                 ) : null}
 
                 <Button variant="outlined" onClick={handleMoveToLogin}>
-                  {loginDomain
-                    ? `${loginDomain} 로그인으로 이동`
-                    : '로그인으로 이동'}
+                  {/* 기존 -> `${loginDomain} 로그인으로 이동` / 변경 -> 업체번호로 이동하므로 고정 문구 */}
+                  로그인으로 이동
                 </Button>
               </Stack>
             ) : null}
