@@ -8,10 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import egovframework.com.cmm.LoginVO;
 import egovframework.com.cmm.ResponseCode;
@@ -63,6 +60,34 @@ public class DashboardApiController {
         Map<String, Object> resultMap = new HashMap<String, Object>();
         resultMap.put("resultList", resultList);
         resultMap.put("user", user);
+
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @Operation(
+            summary = "대시보드 캘린더 주기별 문서 상태 조회",
+            description = "기간 내 업무별·주기 기준일(cycle_date)별 최신 결재문서 상태를 조회한다",
+            security = { @SecurityRequirement(name = "Authorization") },
+            tags = { "DashboardApiController" }
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "400", description = "조회 기간 형식 오류"),
+            @ApiResponse(responseCode = "403", description = "인가된 사용자가 아님")
+    })
+    @GetMapping("/todo-cycles")
+    public ResultVO listMyTodoCycles(
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @RequestParam("fromDate") String fromDate,
+            @RequestParam("toDate") String toDate,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        List<Map<String, Object>> resultList =
+                dashboardService.listMyTodoCycles(tenantCode, resolveLoginCode(user), fromDate, toDate);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("resultList", resultList);
 
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }

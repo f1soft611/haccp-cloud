@@ -30,4 +30,10 @@ public class DashboardSearchConditionVO implements Serializable {
 
     @Schema(description = "요청 사용자 로그인 코드")
     private String actorLoginCode;
+
+    @Schema(description = "조회 시작일(yyyyMMdd)")
+    private String fromDate;
+
+    @Schema(description = "조회 종료일(yyyyMMdd)")
+    private String toDate;
 }

@@ -172,7 +172,7 @@
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
             AND COALESCE(m.delete_status, 'N') != 'Y'
-            AND COALESCE(m.updated_at, m.created_at) >= cb.cycle_start
+            AND m.cycle_date = TO_CHAR(cb.cycle_start, 'YYYYMMDD')
         ) appr ON TRUE
         WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
@@ -196,6 +196,25 @@
                 )
             )
         ORDER BY COALESCE(appr.latest_updated_at, w.updated_at, w.created_at) DESC, w.drafting_work_category_id DESC
+    </select>
+
+    <!-- 캘린더용: 기간 내 업무별·주기 기준일별 최신 결재문서 상태 -->
+    <select id="DashboardDAO.selectMyTodoCycleList"
+            parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
+            resultType="map">
+        SELECT DISTINCT ON (m.drafting_work_category_id, m.cycle_date)
+            CAST(m.drafting_work_category_id AS varchar) AS "workId",
+            m.cycle_date AS "cycleDate",
+            CAST(m.electronic_approval_id AS varchar) AS "approvalId",
+            COALESCE(m.status_type, '') AS "statusType"
+        FROM tb_electronic_approval_main m
+        WHERE m.tenant_id = #{tenantId}
+          AND m.drafting_work_category_id IS NOT NULL
+          AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
+          AND COALESCE(m.delete_status, 'N') != 'Y'
+          AND m.cycle_date BETWEEN #{fromDate} AND #{toDate}
+        ORDER BY m.drafting_work_category_id, m.cycle_date,
+            COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
     </select>
 
     <select id="DashboardDAO.selectSummary"
