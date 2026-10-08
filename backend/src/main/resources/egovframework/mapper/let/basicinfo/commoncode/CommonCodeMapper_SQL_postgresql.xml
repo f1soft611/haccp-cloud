@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CommonCodeDAO">
+
+    <!-- 테넌트 코드로 테넌트 ID 조회 -->
+    <select id="CommonCodeDAO.selectTenantIdByCode" parameterType="string" resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+            LIMIT 1
+    </select>
+
+    <!-- 로그인코드로 사용자 ID 조회 (created_by/updated_by 기록용) -->
+    <select id="CommonCodeDAO.selectUserIdByLoginCode" parameterType="map" resultType="long">
+        SELECT u.user_id
+        FROM tb_user u
+                 JOIN tb_login_account la ON la.login_id = u.login_id
+        WHERE la.tenant_id = #{tenantId}
+          AND la.login_code = #{loginCode}
+            LIMIT 1
+    </select>
+
+    <!-- 그룹 목록 -->
+    <select id="CommonCodeDAO.selectGroupList" parameterType="long"
+            resultType="egovframework.let.basicinfo.commoncode.domain.model.CommonCodeGroupVO">
+        SELECT
+            group_code               AS groupCode,
+            group_nm                 AS groupName,
+            COALESCE(group_dc, '')   AS groupDesc
+        FROM tb_common_code_group
+        WHERE tenant_id = #{value}
+        ORDER BY sort_order, group_code
+    </select>
+
+    <!-- 상세 목록 (상위코드명은 self join, 표시 전용) -->
+    <select id="CommonCodeDAO.selectItemList" parameterType="long"
+            resultType="egovframework.let.basicinfo.commoncode.domain.model.CommonCodeItemVO">
+        SELECT
+            g.group_code             AS groupCode,
+            i.item_code              AS code,
+            i.item_nm                AS codeName,
+            COALESCE(p.item_nm, '')  AS parentCodeName,
+            (i.use_at = 'Y')         AS useAt,
+            i.sort_order             AS sortOrder,
+            COALESCE(i.item_dc, '')  AS codeDesc
+        FROM tb_common_code_item i
+                 JOIN tb_common_code_group g ON g.common_code_group_id = i.group_id
+                 LEFT JOIN tb_common_code_item p ON p.common_code_item_id = i.parent_item_id
+        WHERE i.tenant_id = #{value}
+        ORDER BY g.sort_order, g.group_code, i.sort_order, i.item_code
+    </select>
+
+    <!-- 그룹 upsert: 신규는 정렬순서 max+10, 기존은 명/설명만 갱신 -->
+    <select id="CommonCodeDAO.upsertGroup" parameterType="map" resultType="long">
+        INSERT INTO tb_common_code_group (
+            tenant_id, group_code, group_nm, group_dc, sort_order, use_at, created_by, updated_by
+        ) VALUES (
+                     #{tenantId},
+                     #{groupCode},
+                     #{groupName},
+                     #{groupDesc, jdbcType=VARCHAR},
+                     (SELECT COALESCE(MAX(sort_order), 0) + 10 FROM tb_common_code_group WHERE tenant_id = #{tenantId}),
+                     'Y',
+                     #{userId, jdbcType=BIGINT},
+                     #{userId, jdbcType=BIGINT}
+                 )
+            ON CONFLICT (tenant_id, group_code) DO UPDATE SET
+            group_nm   = EXCLUDED.group_nm,
+                                                       group_dc   = EXCLUDED.group_dc,
+                                                       updated_at = CURRENT_TIMESTAMP,
+                                                       updated_by = EXCLUDED.updated_by
+                                                       RETURNING common_code_group_id
+    </select>
+
+    <!-- 상세 upsert -->
+    <insert id="CommonCodeDAO.upsertItem" parameterType="map">
+        INSERT INTO tb_common_code_item (
+            tenant_id, group_id, item_code, item_nm, item_dc, sort_order, use_at, created_by, updated_by
+        ) VALUES (
+                     #{tenantId},
+                     #{groupId},
+                     #{code},
+                     #{codeName},
+                     #{codeDesc, jdbcType=VARCHAR},
+                     #{sortOrder},
+                     #{useAt},
+                     #{userId, jdbcType=BIGINT},
+                     #{userId, jdbcType=BIGINT}
+                 )
+            ON CONFLICT (group_id, item_code) DO UPDATE SET
+            item_nm    = EXCLUDED.item_nm,
+                                                     item_dc    = EXCLUDED.item_dc,
+                                                     sort_order = EXCLUDED.sort_order,
+                                                     use_at     = EXCLUDED.use_at,
+                                                     updated_at = CURRENT_TIMESTAMP,
+                                                     updated_by = EXCLUDED.updated_by
+    </insert>
+
+    <!-- payload에 없는 상세 ID (목록이 비면 테넌트 전체) -->
+    <sql id="missingItemIds">
+        SELECT i.common_code_item_id
+        FROM tb_common_code_item i
+        JOIN tb_common_code_group g ON g.common_code_group_id = i.group_id
+        WHERE i.tenant_id = #{tenantId}
+        <if test="details != null and details.size() > 0">
+            AND (g.group_code, i.item_code) NOT IN
+            <foreach collection="details" item="d" open="(" separator="," close=")">
+                (#{d.groupCode}, #{d.code})
+            </foreach>
+        </if>
+    </sql>
+
+    <!-- payload에 없는 그룹 ID (목록이 비면 테넌트 전체) -->
+    <sql id="missingGroupIds">
+        SELECT common_code_group_id
+        FROM tb_common_code_group
+        WHERE tenant_id = #{tenantId}
+        <if test="groups != null and groups.size() > 0">
+            AND group_code NOT IN
+            <foreach collection="groups" item="g" open="(" separator="," close=")">
+                #{g.groupCode}
+            </foreach>
+        </if>
+    </sql>
+
+    <update id="CommonCodeDAO.clearDeletedItemParentRefs" parameterType="map">
+        UPDATE tb_common_code_item
+        SET parent_item_id = NULL
+        WHERE parent_item_id IN (<include refid="missingItemIds"/>)
+    </update>
+
+    <delete id="CommonCodeDAO.deleteMissingItems" parameterType="map">
+        DELETE FROM tb_common_code_item
+        WHERE common_code_item_id IN (<include refid="missingItemIds"/>)
+    </delete>
+
+    <update id="CommonCodeDAO.clearDeletedGroupParentRefs" parameterType="map">
+        UPDATE tb_common_code_group
+        SET parent_group_id = NULL
+        WHERE parent_group_id IN (<include refid="missingGroupIds"/>)
+    </update>
+
+    <delete id="CommonCodeDAO.deleteMissingGroups" parameterType="map">
+        DELETE FROM tb_common_code_group
+        WHERE common_code_group_id IN (<include refid="missingGroupIds"/>)
+    </delete>
+</mapper>
