@@ -20,6 +20,7 @@ type UseApprovalDraftWriteActionsParams = {
   idType: 'work' | 'approval';
   tenantCode: string;
   workId?: string;
+  cycleDate?: string;
   isStatusResolved?: boolean;
   approvalStatusType?: string;
   title: string;
@@ -69,6 +70,7 @@ export function useApprovalDraftWriteActions(
     approvalStatusType,
     title,
     referenceIds,
+    cycleDate,
     editorContent,
     editorHtml,
     documentFieldValues,
@@ -184,6 +186,7 @@ export function useApprovalDraftWriteActions(
         templateJson: JSON.stringify(snapshotContent),
         templateHtml: snapshotHtml,
         referenceIds,
+        cycleDate,
       });
     },
     onSuccess: async (result) => {

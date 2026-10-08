@@ -44,6 +44,8 @@ export function WorkCalendarView(props: WorkCalendarViewProps) {
                         backgroundColor: sx.bgcolor,
                         color: sx.color,
                         border: sx.border,
+                        opacity: event.isFuture ? 0.45 : 1,
+                        cursor: event.isFuture ? 'default' : 'pointer',
                     },
                 };
             }}
@@ -57,7 +59,10 @@ export function WorkCalendarView(props: WorkCalendarViewProps) {
                 showMore: (count) => `+${count}건 더보기`,
             }}
             onSelectEvent={(event) => {
-                const path = resolveDraftRoute(event.resource);
+                if (event.isFuture) {
+                    return;
+                }
+                const path = resolveDraftRoute(event.resource, event.cycleDate);
                 if (!path) {
                     return;
                 }

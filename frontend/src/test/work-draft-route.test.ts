@@ -31,4 +31,19 @@ describe('resolveDraftRoute', () => {
             '/approvals/draft/101?idType=work',
         );
     });
+
+    it('adds the cycle date to the work route', () => {
+        expect(
+            resolveDraftRoute({ id: '101', writtenInCycle: false }, '2026-10-02'),
+        ).toBe('/approvals/draft/101?idType=work&cycleDate=2026-10-02');
+    });
+
+    it('does not add the cycle date to the approval route', () => {
+        expect(
+            resolveDraftRoute(
+                { id: '101', approvalId: '9001', writtenInCycle: true },
+                '2026-10-02',
+            ),
+        ).toBe('/approvals/draft/9001?idType=approval');
+    });
 });

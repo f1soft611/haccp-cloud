@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -14,6 +15,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -531,6 +534,46 @@ class HaccpWorkFlowServiceImplTest {
         assertTrue(afterTwfDate instanceof String && ((String) afterTwfDate).matches("^\\d{8}$"));
     }
 
+    @DisplayName("결재신청 시 요청 주기(cycle_date) 기준으로 임시저장 건과 결재 상태를 찾는다")
+    @Test
+    void submitDraft_looksUpSameCycle() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        LocalDate pastDay = LocalDate.now().minusDays(3);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("지연 작성 테스트");
+        payload.setCycleDate(pastDay.toString());
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        String expected = pastDay.format(DateTimeFormatter.BASIC_ISO_DATE);
+        ArgumentCaptor<Map> preApplyCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).selectLatestPreApplyApprovalIdByWorkAndLogin(preApplyCaptor.capture());
+        assertEquals(expected, preApplyCaptor.getValue().get("cycleDate"));
+
+        ArgumentCaptor<Map> statusCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).selectLatestApprovalStatusByWorkAndLogin(statusCaptor.capture());
+        assertEquals(expected, statusCaptor.getValue().get("cycleDate"));
+    }
+
+    @DisplayName("미래 주기로 결재신청하면 400 오류를 내고 저장하지 않는다")
+    @Test
+    void submitDraft_rejectsFutureCycle() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("미래 작성 테스트");
+        payload.setCycleDate(LocalDate.now().plusDays(1).toString());
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.submitDraft(77L, "tenant_001", payload, "3001"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
+    }
+
     private HaccpWorkDAO serviceHaccpWorkDAO;
 
     private HaccpWorkFlowServiceImpl createServiceForSubmitCancelMessageTest(int latestCompletedSeq) throws Exception {
@@ -671,8 +714,7 @@ class HaccpWorkFlowServiceImplTest {
         draftWork.setApproverId(approverLoginId);
         draftWork.setTemplateJson("{}");
         draftWork.setTemplateHtml("<p>본문</p>");
-        when(draftService.getDraftTemplate(eq("TENANT_001"), eq(77L), eq("work"), eq("3001"))).thenReturn(draftWork);
-
+        when(draftService.getDraftTemplate(eq("TENANT_001"), eq(77L), eq("work"), eq("3001"), nullable(String.class))).thenReturn(draftWork);
         when(serviceHaccpWorkDAO.upsertElectronicApprovalLine(anyMap())).thenReturn(101L, 102L, 103L, 104L);
         AtomicBoolean approverArrived = new AtomicBoolean(false);
 

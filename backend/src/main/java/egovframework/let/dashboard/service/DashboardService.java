@@ -1,6 +1,7 @@
 package egovframework.let.dashboard.service;
 
 import java.util.List;
+import java.util.Map;
 
 import egovframework.let.dashboard.domain.model.DashboardNoticeVO;
 import egovframework.let.dashboard.domain.model.DashboardOverviewVO;
@@ -13,6 +14,8 @@ import egovframework.let.dashboard.domain.model.DashboardTodoVO;
 public interface DashboardService {
 
     public List<DashboardTodoVO> listMyTodos(String tenantCode, String actorLoginCode) throws Exception;
+
+    public List<Map<String, Object>> listMyTodoCycles(String tenantCode, String actorLoginCode, String fromDate, String toDate) throws Exception;
 
     public List<DashboardTodoVO> listMyApprovalAlerts(String tenantCode, String actorLoginCode) throws Exception;
 

@@ -21,6 +21,10 @@ public class DashboardDAO extends EgovAbstractMapper {
         return selectList("DashboardDAO.selectMyTodoList", condition);
     }
 
+    public List<Map<String, Object>> selectMyTodoCycleList(DashboardSearchConditionVO condition) throws Exception {
+        return selectList("DashboardDAO.selectMyTodoCycleList", condition);
+    }
+
     public List<DashboardTodoVO> selectMyApprovalAlertList(DashboardSearchConditionVO condition) throws Exception {
         return selectList("DashboardDAO.selectMyApprovalAlertList", condition);
     }

@@ -59,6 +59,9 @@ public class HaccpWorkVO implements Serializable {
     @Schema(description = "등록주기")
     private String cycle;
 
+    @Schema(description = "주기 기준일(yyyy-MM-dd)")
+    private String cycleDate;
+
     @Schema(description = "사용 여부")
     private boolean active;
 

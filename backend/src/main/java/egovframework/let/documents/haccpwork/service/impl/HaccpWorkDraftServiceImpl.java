@@ -191,6 +191,11 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
 
     @Override
     public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode) throws Exception {
+        return getDraftTemplate(tenantCode, id, idType, actorLoginCode, null);
+    }
+
+    @Override
+    public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode, String cycleDate) throws Exception {
         String normalizedTenantCode = normalizeTenantCode(tenantCode);
         if (id == null || id.longValue() <= 0L) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "조회 ID가 올바르지 않습니다.");

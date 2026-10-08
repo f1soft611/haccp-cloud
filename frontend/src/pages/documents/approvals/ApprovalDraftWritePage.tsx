@@ -103,6 +103,7 @@ export function ApprovalDraftWritePage() {
     idType,
     tenantCode,
     workId: work?.id,
+    cycleDate: work?.cycleDate,
     isStatusResolved,
     approvalStatusType: work?.approvalStatusType,
     title,
