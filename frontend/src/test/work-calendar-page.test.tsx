@@ -23,6 +23,7 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('../services/documents/haccpBaseWorkService', () => ({
     listHaccpWorkTodos: vi.fn(),
+    listHaccpWorkTodoCycles: vi.fn(),
 }));
 
 describe('WorkCalendarPage', () => {
@@ -133,10 +134,11 @@ describe('WorkCalendarPage', () => {
             </AppProviders>,
         );
 
-        await screen.findByText('월간 점검 업무');
-
-        (['일', '주', '월', '년'] as const).forEach((cycleLabel) => {
-            expect(screen.getByText(cycleLabel)).toBeInTheDocument();
-        });
+        // 기존 -> 화면 전체에서 일/주/월/년 텍스트 검색 (요일 헤더 '일'과 중복, '년' 칩 없음)
+        // 변경 -> 범례 칩 라벨 안에서 일/주/월만 확인
+        const chipLabels = Array.from(
+            document.querySelectorAll('.MuiChip-label'),
+        ).map((el) => el.textContent);
+        expect(chipLabels).toEqual(['일', '주', '월']);
     });
 });
