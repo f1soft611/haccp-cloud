@@ -50,4 +50,8 @@ public interface HaccpWorkDraftService {
             ) throws Exception;
 
     public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode) throws Exception;
+
+    /** cycleDate(yyyy-MM-dd, null이면 현재 주기): idType=work일 때 그 주기의 임시저장 건을 불러온다. */
+    public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode, String cycleDate) throws Exception;
+
 }

@@ -15,6 +15,7 @@
         <result property="divisionCode" column="cata_type_code"/>
         <result property="divisionName" column="code_name"/>
         <result property="cycle" column="reg_term"/>
+        <result property="cycleDate" column="cycle_date"/>
         <result property="active" column="active"/>
         <result property="createdBy" column="created_by"/>
         <result property="createdAt" column="created_at"/>
@@ -558,6 +559,17 @@
           </if>
     </select>
 
+    <!-- 요청 일자(#{cycleDate}, yyyy-MM-dd, 없으면 오늘)가 속한 주기의 시작일. 판정 값은 HaccpWorkCycleDates와 같다. -->
+    <sql id="requestedCycleStart">
+        CASE
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
+          THEN date_trunc('month', COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP))
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
+        THEN date_trunc('week', COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP))
+        ELSE date_trunc('day', COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP))
+        END
+    </sql>
+
     <select id="HaccpWorkDAO.selectDraftTemplateByWorkId"
             parameterType="map"
             resultMap="haccpWorkResult">
@@ -577,6 +589,7 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+        TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYY-MM-DD') AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(
               NULLIF(TRIM(CAST(cu_pre.user_id AS varchar)), ''),
@@ -708,15 +721,6 @@
             AND COALESCE(a.delete_status, 'N') != 'Y'
         ) wa ON TRUE
         LEFT JOIN LATERAL (
-          WITH cycle_base AS (
-            SELECT CASE
-                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
-                  THEN date_trunc('month', CURRENT_TIMESTAMP)
-                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
-                  THEN date_trunc('week', CURRENT_TIMESTAMP)
-                ELSE date_trunc('day', CURRENT_TIMESTAMP)
-              END AS cycle_start
-          )
           SELECT
               m.electronic_approval_id,
               m.ea_exe_id,
@@ -731,14 +735,13 @@
               m.created_at,
               m.updated_at
           FROM tb_electronic_approval_main m
-          CROSS JOIN cycle_base cb
           WHERE m.tenant_id = w.tenant_id
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND COALESCE(m.delete_status, 'N') != 'Y'
             AND COALESCE(m.status_type, '') = 'pre_apply'
             AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
             AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
-            AND COALESCE(m.updated_at, m.created_at) >= cb.cycle_start
+            AND m.cycle_date = TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYYMMDD')
           ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
         ) pre ON TRUE
@@ -795,6 +798,10 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            CASE
+                WHEN NULLIF(TRIM(m.cycle_date), '') ~ '^[0-9]{8}$' THEN TO_CHAR(TO_DATE(m.cycle_date, 'YYYYMMDD'), 'YYYY-MM-DD')
+                ELSE NULL
+                END AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(
               NULLIF(TRIM(CAST(cu_main.user_id AS varchar)), ''),
@@ -1196,6 +1203,7 @@
         eabus_no,
         ea_exe_id,
         reg_date,
+        cycle_date,
         login_id,
         status_type,
         department_id,
@@ -1227,6 +1235,7 @@
         #{eabusNo},
         #{eaExeId},
         #{regDate},
+        #{cycleDate, jdbcType=VARCHAR},
         #{loginId},
         #{statusType},
         #{departmentId, jdbcType=BIGINT},
@@ -1856,6 +1865,7 @@
         AND login_id = #{loginId}
         AND COALESCE(delete_status, 'N') != 'Y'
         AND COALESCE(status_type, '') = 'pre_apply'
+        AND cycle_date = #{cycleDate}
       ORDER BY COALESCE(updated_at, created_at) DESC, electronic_approval_id DESC
       LIMIT 1
     </select>
@@ -1863,30 +1873,15 @@
     <select id="HaccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin"
         parameterType="map"
         resultType="map">
-      WITH cycle_base AS (
-        SELECT CASE
-            WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
-              THEN date_trunc('month', CURRENT_TIMESTAMP)
-            WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
-              THEN date_trunc('week', CURRENT_TIMESTAMP)
-            ELSE date_trunc('day', CURRENT_TIMESTAMP)
-          END AS cycle_start
-        FROM tb_drafting_work_category w
-        WHERE w.tenant_id = #{tenantId}
-          AND w.drafting_work_category_id = #{workId}
-          AND COALESCE(w.delete_status, 'N') != 'Y'
-        LIMIT 1
-      )
       SELECT
         electronic_approval_id AS approvalId,
         COALESCE(status_type, '') AS statusType
       FROM tb_electronic_approval_main
-      CROSS JOIN cycle_base cb
       WHERE tenant_id = #{tenantId}
         AND drafting_work_category_id = #{workId}
         AND login_id = #{loginId}
         AND COALESCE(delete_status, 'N') != 'Y'
-        AND COALESCE(updated_at, created_at) >= cb.cycle_start
+        AND cycle_date = #{cycleDate}
       ORDER BY COALESCE(updated_at, created_at) DESC, electronic_approval_id DESC
       LIMIT 1
     </select>

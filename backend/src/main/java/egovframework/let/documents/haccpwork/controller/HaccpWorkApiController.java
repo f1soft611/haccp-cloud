@@ -203,6 +203,7 @@ public class HaccpWorkApiController {
     public ResultVO getDraftTemplate(
             @PathVariable Long id,
             @RequestParam(name = "idType", required = false, defaultValue = "work") String idType,
+            @RequestParam(name = "cycleDate", required = false) String cycleDate,
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
             HttpServletRequest request) throws Exception {
@@ -211,7 +212,8 @@ public class HaccpWorkApiController {
                 tenantCode,
                 id,
                 idType,
-                resolveLoginCode(user)
+                resolveLoginCode(user),
+                cycleDate
         );
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
