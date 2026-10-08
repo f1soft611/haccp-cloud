@@ -28,4 +28,7 @@ public class HaccpWorkDraftTempSaveRequestVO implements Serializable {
 
     @Schema(description = "참조자 ID 목록(userId/loginId)")
     private List<String> referenceIds;
+
+    @Schema(description = "주기 기준일(yyyy-MM-dd). 비우면 현재 주기")
+    private String cycleDate;
 }

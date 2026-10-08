@@ -79,9 +79,12 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "임시저장 사용자 정보를 확인할 수 없습니다.");
         }
 
-        ensureSubmissionEditableState(tenantId, workId, actorLoginId, "임시저장");
-
-        HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
+        // 기존 -> 현재 주기 기준으로 결재 상태 확인 후 템플릿 조회
+        // 변경 -> 요청 주기 템플릿 조회 후 주기 기준일 확정(미래면 400), 같은 주기 기준으로 결재 상태 확인
+        String requestedCycleDate = payload.getCycleDate();
+        HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
+        String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
+        ensureSubmissionEditableState(tenantId, workId, actorLoginId, cycleDate, "임시저장");
 
         LocalDateTime now = LocalDateTime.now();
         String regDate = now.format(DATE_FORMATTER);
@@ -95,7 +98,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         Long targetApprovalId;
         Map<String, Object> actorProfile = selectApprovalActorProfile(tenantId, actorLoginId);
 
-        Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId);
+        Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId, cycleDate);
         if (preApplyApprovalId == null) {
             eaExeId = buildEaExeId(now.toLocalDate());
             Map<String, Object> mainParams = new HashMap<String, Object>();
@@ -105,6 +108,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("eabusNo", DEFAULT_EABUS_NO);
             mainParams.put("eaExeId", eaExeId);
             mainParams.put("regDate", regDate);
+            mainParams.put("cycleDate", cycleDate);
             mainParams.put("loginId", actorLoginId);
             mainParams.put("statusType", "pre_apply");
             mainParams.put("departmentId", getLong(actorProfile, "departmentId"));
@@ -164,8 +168,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 
         if (!StringUtils.hasText(work.getReviewerId() == null ? "" : String.valueOf(work.getReviewerId()))
             || !StringUtils.hasText(work.getApproverId() == null ? "" : String.valueOf(work.getApproverId()))) {
-            return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
-        }
+            return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);        }
 
         List<Long> referenceLoginIds = resolveReferenceLoginIds(
             tenantId,
@@ -190,7 +193,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             eaExeId
         );
 
-        return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
+        return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
     }
 
     @Override
@@ -213,9 +216,13 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재신청 사용자 정보를 확인할 수 없습니다.");
         }
 
-        ensureSubmissionEditableState(tenantId, workId, actorLoginId, "결재신청");
+        // 기존 -> 현재 주기 기준으로 결재 상태 확인 후 템플릿 조회
+        // 변경 -> 요청 주기 템플릿 조회 후 주기 기준일 확정(미래면 400), 같은 주기 기준으로 결재 상태 확인
+        String requestedCycleDate = payload.getCycleDate();
+        HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
+        String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
+        ensureSubmissionEditableState(tenantId, workId, actorLoginId, cycleDate, "결재신청");
 
-        HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode);
         if (work.getReviewerId() == null || work.getApproverId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "검토자/승인자 지정 후 결재신청할 수 있습니다.");
         }
@@ -236,7 +243,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         Map<String, Object> reviewerProfile = selectApprovalActorProfile(tenantId, work.getReviewerId());
         Map<String, Object> approverProfile = selectApprovalActorProfile(tenantId, work.getApproverId());
 
-        Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId);
+        Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId, cycleDate);
         Long electronicApprovalId;
         if (preApplyApprovalId == null) {
             Map<String, Object> mainParams = new HashMap<String, Object>();
@@ -246,6 +253,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("eabusNo", DEFAULT_EABUS_NO);
             mainParams.put("eaExeId", eaExeId);
             mainParams.put("regDate", regDate);
+            mainParams.put("cycleDate", cycleDate);
             mainParams.put("loginId", actorLoginId);
             mainParams.put("statusType", "in_progress");
             mainParams.put("departmentId", getLong(actorProfile, "departmentId"));
@@ -1331,11 +1339,12 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         return haccpWorkDAO.selectLoginIdByTenantAndUserOrLoginId(params);
     }
 
-    private Long findLatestPreApplyApprovalId(Long tenantId, Long workId, Long loginId) throws Exception {
+    private Long findLatestPreApplyApprovalId(Long tenantId, Long workId, Long loginId, String cycleDate) throws Exception {
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("tenantId", tenantId);
         params.put("workId", workId);
         params.put("loginId", loginId);
+        params.put("cycleDate", cycleDate);
         return haccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(params);
     }
 
@@ -1888,11 +1897,12 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         return "";
     }
 
-    private void ensureSubmissionEditableState(Long tenantId, Long workId, Long loginId, String actionLabel) throws Exception {
+    private void ensureSubmissionEditableState(Long tenantId, Long workId, Long loginId, String cycleDate, String actionLabel) throws Exception {
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("tenantId", tenantId);
         params.put("workId", workId);
         params.put("loginId", loginId);
+        params.put("cycleDate", cycleDate);
 
         Map<String, Object> latest = haccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin(params);
         String latestStatus = trimToEmpty(String.valueOf(latest == null ? "" : latest.get("statusType"))).toLowerCase();
