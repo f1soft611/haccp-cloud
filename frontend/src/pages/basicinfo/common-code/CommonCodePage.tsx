@@ -1,11 +1,11 @@
 import { Stack } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { CommonCodeData } from '../../../services/basicinfo/commonCodeService';
+import { getCommonCodes, saveCommonCodes } from '../../../services/basicinfo/commonCodeService';
+import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import {
-    SAMPLE_COMMON_CODES,
     createEmptyDetailRow,
     createEmptyGroupRow,
     filterGroupRows,
@@ -19,9 +19,6 @@ import { CommonCodeGroupGrid } from './components/CommonCodeGroupGrid';
 import { CommonCodeSearchPanel } from './components/CommonCodeSearchPanel';
 import { SplitPane } from './components/SplitPane';
 import type { CommonCodeDetailRow, CommonCodeGroupRow } from './types';
-
-// ponytail: 백엔드 API 전까지 메모리 저장소 (페이지 이동해도 유지, 새로고침 시 초기화). API 연동 시 getCommonCodes/saveCommonCodes로 복원
-let commonCodeStore: CommonCodeData = SAMPLE_COMMON_CODES;
 
 type ConfirmState = {
     title: string;
@@ -40,6 +37,7 @@ export function CommonCodePage() {
     // 삭제는 행이 사라져 rowState로 추적할 수 없으므로 별도 플래그 (PUT이 전체 교체라 삭제 키 목록은 불필요)
     const [hasDeleted, setHasDeleted] = useState(false);
     const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+    const [saving, setSaving] = useState(false);
 
     const hasChanges =
         hasDeleted ||
@@ -53,17 +51,25 @@ export function CommonCodePage() {
         [details, selectedGroupId],
     );
 
-    // 기존 -> async load: await getCommonCodes() + 실패 시 showError
-    // 변경 -> 샘플 저장소(commonCodeStore)에서 조회
-    const load = useCallback(() => {
-        const nextGroups = toGroupRows(commonCodeStore.groups);
-        setGroups(nextGroups);
-        setDetails(toDetailRows(commonCodeStore.details));
-        setHasDeleted(false);
-        setSelectedGroupId((prev) =>
-            nextGroups.some((group) => group.id === prev) ? prev : (nextGroups[0]?.id ?? null),
-        );
-    }, []);
+    const load = useCallback(async () => {
+        try {
+            const data = await getCommonCodes();
+            const nextGroups = toGroupRows(data.groups);
+            setGroups(nextGroups);
+            setDetails(toDetailRows(data.details));
+            setHasDeleted(false);
+            setSelectedGroupId((prev) =>
+                nextGroups.some((group) => group.id === prev) ? prev : (nextGroups[0]?.id ?? null),
+            );
+        } catch (error) {
+            showError(extractApiErrorMessage(error, '공통코드를 불러오지 못했습니다.'));
+        }
+    }, [showError]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void load();
+    }, [load]);
 
     useEffect(() => {
         // 기존 -> void load(); (lint: react-hooks/set-state-in-effect 오류)
@@ -74,7 +80,7 @@ export function CommonCodePage() {
 
     const handleSearch = () => {
         if (!hasChanges) {
-            load();
+            void load()
             return;
         }
         setConfirmState({
@@ -86,17 +92,22 @@ export function CommonCodePage() {
         });
     };
 
-    // 기존 -> await saveCommonCodes(payload) + saving 상태 + 실패 시 showError
-    // 변경 -> 샘플 저장소에 통째로 교체 저장
-    const handleSave = () => {
+    const handleSave = async () => {
         const error = validateCommonCodes(groups, details);
         if (error) {
             showError(error);
             return;
         }
-        commonCodeStore = toCommonCodePayload(groups, details);
-        showSuccess('저장되었습니다.');
-        load();
+        setSaving(true);
+        try {
+            await saveCommonCodes(toCommonCodePayload(groups, details));
+            showSuccess('저장되었습니다.');
+            await load();
+        } catch (saveError) {
+            showError(extractApiErrorMessage(saveError, '저장에 실패했습니다.'));
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleAddGroup = () => {
@@ -172,8 +183,8 @@ export function CommonCodePage() {
                 keyword={keyword}
                 onKeywordChange={setKeyword}
                 onSearch={handleSearch}
-                onSave={handleSave}
-                saveDisabled={!hasChanges}
+                onSave={() => void handleSave()}
+                saveDisabled={!hasChanges || saving}
             />
 
             <SplitPane

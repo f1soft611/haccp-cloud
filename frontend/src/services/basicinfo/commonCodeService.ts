@@ -36,7 +36,7 @@ function assertSuccess(data: ResultEnvelope): void {
 }
 
 export async function getCommonCodes(): Promise<CommonCodeData> {
-    const { data } = await apiClient.get<ResultEnvelope>('/v1/common-codes');
+    const { data } = await apiClient.get<ResultEnvelope>('/v1/basicinfo/common-codes');
     assertSuccess(data);
     return {
         groups: data?.result?.groups ?? [],
@@ -45,6 +45,6 @@ export async function getCommonCodes(): Promise<CommonCodeData> {
 }
 
 export async function saveCommonCodes(payload: CommonCodeData): Promise<void> {
-    const { data } = await apiClient.put<ResultEnvelope>('/v1/common-codes', payload);
+    const { data } = await apiClient.put<ResultEnvelope>('/v1/basicinfo/common-codes', payload);
     assertSuccess(data);
 }
