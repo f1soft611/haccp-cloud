@@ -13,6 +13,7 @@ export type HaccpBaseWorkItem = {
   divisionCode: string;
   divisionName: string;
   cycle: string;
+  cycleDate?: string;
   active: boolean;
   createdBy?: string;
   createdAt?: string;
@@ -91,6 +92,8 @@ type RawHaccpBaseWorkItem = {
   codeName?: string | null;
   cycle?: string | null;
   regTerm?: string | null;
+  cycleDate?: string | null;
+  cycle_date?: string | null;
   active?: boolean | string | null;
   useAt?: string | null;
   createdBy?: string | number | null;
@@ -313,6 +316,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     divisionCode: normalizeText(raw.divisionCode ?? raw.cataTypeCode),
     divisionName: normalizeText(raw.divisionName ?? raw.codeName),
     cycle: normalizeText(raw.cycle ?? raw.regTerm),
+    cycleDate: normalizeText(raw.cycleDate ?? raw.cycle_date),
     active: normalizeBoolean(raw.active ?? raw.useAt),
     createdBy: normalizeText(raw.createdBy),
     createdAt: normalizeText(raw.createdAt),
@@ -400,6 +404,51 @@ export async function listHaccpWorkTodos(params: {
   return items.map(normalizeItem);
 }
 
+// 캘린더용: 업무별·주기 기준일별 결재문서 상태 (날짜는 YYYY-MM-DD로 주고받는다)
+export type HaccpWorkCycleInstance = {
+  workId: string;
+  cycleDate: string;
+  approvalId: string;
+  statusType: string;
+};
+
+type RawHaccpWorkCycleInstance = {
+  workId?: string | number | null;
+  cycleDate?: string | null;
+  approvalId?: string | number | null;
+  statusType?: string | null;
+};
+
+export async function listHaccpWorkTodoCycles(params: {
+  tenantCode: string;
+  fromDate: string;
+  toDate: string;
+}): Promise<HaccpWorkCycleInstance[]> {
+  const toCompact = (date: string) => date.replace(/-/g, '');
+  const { data } = await apiClient.get<
+      RawHaccpWorkCycleInstance[] | ResultEnvelope<RawHaccpWorkCycleInstance>
+  >('/v1/dashboard/todo-cycles', {
+    headers: { 'x-tenant-code': params.tenantCode },
+    params: {
+      fromDate: toCompact(params.fromDate),
+      toDate: toCompact(params.toDate),
+    },
+  });
+
+  const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
+  return items
+  .filter((item) => /^\d{8}$/.test(item.cycleDate ?? ''))
+  .map((item) => {
+    const compact = item.cycleDate as string;
+    return {
+      workId: String(item.workId ?? ''),
+      cycleDate: `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}`,
+      approvalId: String(item.approvalId ?? ''),
+      statusType: item.statusType ?? '',
+    };
+  });
+}
+
 export async function listHaccpWorkApprovalAlerts(params: {
   tenantCode: string;
 }): Promise<HaccpBaseWorkItem[]> {
@@ -417,6 +466,7 @@ export async function getHaccpWorkDraftTemplate(params: {
   tenantCode: string;
   id: string;
   idType?: 'work' | 'approval';
+  cycleDate?: string;
 }): Promise<HaccpBaseWorkItem> {
   const { data } = await apiClient.get<
     RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
@@ -424,6 +474,7 @@ export async function getHaccpWorkDraftTemplate(params: {
     headers: { 'x-tenant-code': params.tenantCode },
     params: {
       idType: params.idType || 'work',
+      ...(params.cycleDate ? { cycleDate: params.cycleDate } : {}),
     },
   });
 
@@ -566,6 +617,7 @@ export async function saveHaccpWorkTempDraft(payload: {
   templateJson: string;
   templateHtml: string;
   referenceIds?: string[];
+  cycleDate?: string;
 }): Promise<HaccpBaseWorkItem> {
   const { data } = await apiClient.post<
     RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
@@ -576,6 +628,7 @@ export async function saveHaccpWorkTempDraft(payload: {
       templateJson: payload.templateJson,
       templateHtml: payload.templateHtml,
       referenceIds: payload.referenceIds ?? [],
+      cycleDate: payload.cycleDate || undefined,
     },
     {
       headers: { 'x-tenant-code': payload.tenantCode },
@@ -600,6 +653,7 @@ export async function submitHaccpWorkDraft(payload: {
   templateHtml: string;
   submitComment?: string;
   referenceIds?: string[];
+  cycleDate?: string;
 }): Promise<{ message: string; approvalId?: string }> {
   const { data } = await apiClient.post<
     | { message?: string; item?: { approvalId?: string | number } }
@@ -615,6 +669,7 @@ export async function submitHaccpWorkDraft(payload: {
       templateHtml: payload.templateHtml,
       submitComment: payload.submitComment,
       referenceIds: payload.referenceIds ?? [],
+      cycleDate: payload.cycleDate || undefined,
     },
     {
       headers: { 'x-tenant-code': payload.tenantCode },

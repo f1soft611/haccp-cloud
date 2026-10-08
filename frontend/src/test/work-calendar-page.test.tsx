@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { WorkCalendarPage } from '../pages/documents/work-calendar/WorkCalendarPage';
-import { listHaccpWorkTodos } from '../services/documents/haccpBaseWorkService';
+import {listHaccpWorkTodoCycles, listHaccpWorkTodos} from '../services/documents/haccpBaseWorkService';
 import { useAuthStore } from '../shared/store/authStore';
 import { getWorkCycleSx } from '../pages/dashboard/tenant/utils';
 
@@ -50,6 +50,8 @@ describe('WorkCalendarPage', () => {
                 writtenInCycle: false,
             },
         ]);
+        vi.mocked(listHaccpWorkTodoCycles).mockReset();
+        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue([]);
     });
 
     it('shows the current month label and the monthly-cycle todo', async () => {
@@ -78,8 +80,13 @@ describe('WorkCalendarPage', () => {
         fireEvent.click(await screen.findByText('월간 점검 업무'));
 
         await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
+
+        // 기존 -> '/approvals/draft/wc-1?idType=work'
+        // 변경 -> 이번 달 월주기 기준일(1일)을 cycleDate로 붙임
+        const now = new Date();
+        const firstDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
         expect(navigateMock).toHaveBeenCalledWith(
-            '/approvals/draft/wc-1?idType=work',
+            `/approvals/draft/wc-1?idType=work&cycleDate=${firstDay}`,
         );
     });
 
