@@ -51,7 +51,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
-            CYCLE_NAME_COL,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
@@ -150,7 +151,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
-            CYCLE_NAME_COL,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,

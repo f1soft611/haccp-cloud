@@ -69,7 +69,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
-            CYCLE_NAME_COL,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(COALESCE(pre.updated_at, pre.created_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS created_at,
@@ -219,7 +220,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
-            CYCLE_NAME_COL,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar)) AS created_by,
             TO_CHAR(
@@ -604,7 +606,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
-            CYCLE_NAME_COL,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
         TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYY-MM-DD') AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(
@@ -820,7 +823,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
-            CYCLE_NAME_COL,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE
                 WHEN NULLIF(TRIM(m.cycle_date), '') ~ '^[0-9]{8}$' THEN TO_CHAR(TO_DATE(m.cycle_date, 'YYYYMMDD'), 'YYYY-MM-DD')
                 ELSE NULL

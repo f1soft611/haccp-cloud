@@ -63,7 +63,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
-            CYCLE_NAME_COL,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             COALESCE(pending.pending_drafter_name, pending.pending_login_code, CAST(pending.pending_login_id AS varchar), '-') AS created_by,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
@@ -283,7 +284,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
-            CYCLE_NAME_COL,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar), '-') AS created_by,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             'IN_PROGRESS' AS todo_status,
