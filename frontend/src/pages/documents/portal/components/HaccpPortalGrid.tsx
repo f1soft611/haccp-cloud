@@ -90,13 +90,13 @@ export function HaccpPortalGrid({
                 <TableCell align="center">-</TableCell>
                 <TableCell align="center">
                   <Chip
-                    size="small"
-                    label={row.cycleLabel}
-                    sx={{
-                      height: 22,
-                      fontWeight: 700,
-                      ...getWorkCycleSx(row.cycleLabel),
-                    }}
+                      size="small"
+                      label={row.cycleName || row.cycle || '-'}
+                      sx={{
+                        height: 22,
+                        fontWeight: 700,
+                        ...getWorkCycleSx(row.cycle),
+                      }}
                   />
                 </TableCell>
                 <TableCell>{row.assigneeSummary || '-'}</TableCell>

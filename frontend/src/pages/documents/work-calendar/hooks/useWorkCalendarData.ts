@@ -42,13 +42,16 @@ export function useWorkCalendarData() {
         retry: 0,
     });
 
-    const year = viewDate.getFullYear();
-    const monthIndex0 = viewDate.getMonth();
-    // 이번 주 월요일이 이전 달일 수 있어 조회 시작일을 6일 앞당긴다.
-    const fromDate = dayjs(new Date(year, monthIndex0, 1))
+    // 기존 -> 보는 달 1일 - 6일 ~ 말일을 조회하고 보는 달에만 표시
+    // 변경 -> 달력에 보이는 첫 칸(일요일) ~ 마지막 칸(토요일)에 표시
+    const rangeStart = dayjs(viewDate).startOf('month').startOf('week').format('YYYY-MM-DD');
+    const rangeEnd = dayjs(viewDate).endOf('month').endOf('week').format('YYYY-MM-DD');
+    // 진행 중인 주기의 기준일(이번 주 월요일, 이번 달 1일)이 범위 시작일보다 앞일 수 있어 조회는 그 달 1일부터 한다.
+    const fromDate = dayjs(rangeStart)
     .subtract(6, 'day')
+    .startOf('month')
     .format('YYYY-MM-DD');
-    const toDate = dayjs(new Date(year, monthIndex0 + 1, 0)).format('YYYY-MM-DD');
+    const toDate = rangeEnd;
 
     const { data: cycleInstances = [] } = useQuery({
         queryKey: ['haccp-work-todo-cycles', tenantCode, fromDate, toDate],
@@ -59,8 +62,8 @@ export function useWorkCalendarData() {
     const events = useMemo<WorkCalendarEvent[]>(() => {
         const mapped = mapTodosToCalendarEvents(
             todoDocuments,
-            year,
-            monthIndex0,
+            rangeStart,
+            rangeEnd,
             cycleInstances,
         );
 
@@ -90,7 +93,7 @@ export function useWorkCalendarData() {
                 resource: mappedEvent.item,
             };
         });
-    }, [todoDocuments, year, monthIndex0, cycleInstances]);
+    }, [todoDocuments, rangeStart, rangeEnd, cycleInstances]);
 
     return {
         viewDate,

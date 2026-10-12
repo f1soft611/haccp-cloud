@@ -19,7 +19,7 @@ import { AdminGrid } from "../../../../shared/components/data/AdminGrid";
 import { APP_LABELS } from "../../../../shared/constants/labels";
 import { resolveApprovalStatusView } from "../../../../shared/utils/approvalStatus";
 import type { TenantTodoSectionModel } from "../hooks/useTenantDashboardData";
-import { getWorkCycleLabel, getWorkCycleSx } from "../utils";
+import { getWorkCycleSx } from "../utils";
 import { resolveDraftRoute } from "../../../../shared/utils/workDraftRoute";
 
 type TenantTodoSectionProps = {
@@ -117,7 +117,6 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
           </TableRow>
         ) : (
           rows.map(({ sectionLabel, sectionKey, item }) => {
-            const cycleLabel = getWorkCycleLabel(item);
             const { label: statusLabel, color: statusColor } =
               resolveApprovalStatusView({
                 approvalStatusType: item.approvalStatusType,
@@ -136,13 +135,13 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                 </TableCell>
                 <TableCell align="center">
                   <Chip
-                    size="small"
-                    label={cycleLabel}
-                    sx={{
-                      height: 22,
-                      fontWeight: 700,
-                      ...getWorkCycleSx(cycleLabel),
-                    }}
+                      size="small"
+                      label={item.cycleName || item.cycle || "-"}
+                      sx={{
+                        height: 22,
+                        fontWeight: 700,
+                        ...getWorkCycleSx(item.cycle),
+                      }}
                   />
                 </TableCell>
                 <TableCell align="center">

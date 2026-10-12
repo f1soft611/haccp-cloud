@@ -2,12 +2,16 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Button, Chip, IconButton, Stack, Typography } from '@mui/material';
 import type { ToolbarProps } from 'react-big-calendar';
-import { APP_LABELS } from '../../../../shared/constants/labels';
 import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
 
-const [DAILY, MONTHLY, WEEKLY] = APP_LABELS.dashboard.cycles;
-const CYCLE_LEGEND_ORDER = [DAILY, WEEKLY, MONTHLY];
+// 기존 -> APP_LABELS.dashboard.cycles 한글 라벨로 범례 구성
+// 변경 -> 색 범례는 고정 코드(캘린더에 표시되는 주기)와 고정 이름
+const CYCLE_LEGEND = [
+    { code: 'DAY', name: '일' },
+    { code: 'WEEK', name: '주' },
+    { code: 'MONTH', name: '월' },
+];
 
 export function WorkCalendarToolbar({
                                         date,
@@ -51,12 +55,12 @@ export function WorkCalendarToolbar({
                 </Button>
             </Stack>
             <Stack direction="row" justifyContent="center" spacing={1}>
-                {CYCLE_LEGEND_ORDER.map((cycleLabel) => (
+                {CYCLE_LEGEND.map((legend) => (
                     <Chip
-                        key={cycleLabel}
+                        key={legend.code}
                         size="small"
-                        label={cycleLabel}
-                        sx={{ height: 20, fontWeight: 700, ...getWorkCycleSx(cycleLabel) }}
+                        label={legend.name}
+                        sx={{ height: 20, fontWeight: 700, ...getWorkCycleSx(legend.code) }}
                     />
                 ))}
             </Stack>

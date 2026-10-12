@@ -13,7 +13,8 @@ export type HaccpBaseRow = {
   divisionName: string;
   categoryId: string;
   categoryName: string;
-  cycle: HaccpCycle;
+  cycle: string;
+  cycleName: string;
   createdBy: string;
   createdAt: string;
   owner: string;
@@ -32,11 +33,11 @@ export type HaccpBaseCreateForm = {
   divisionCode: string;
   divisionName: string;
   categoryId: string;
-  cycle: HaccpCycle;
+  cycle: string;
   reviewerId: string;
   approverId: string;
   assigneeIds: string[];
   useAt: 'Y' | 'N';
 };
 
-export const HACCP_CYCLE_OPTIONS: HaccpCycle[] = ['일', '주', '월', '발생시'];
+// 기존 -> HACCP_CYCLE_OPTIONS = ['일', '주', '월', '발생시'] / 변경 -> 공통코드로 대체

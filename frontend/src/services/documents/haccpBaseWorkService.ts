@@ -13,6 +13,7 @@ export type HaccpBaseWorkItem = {
   divisionCode: string;
   divisionName: string;
   cycle: string;
+  cycleName: string;
   cycleDate?: string;
   active: boolean;
   createdBy?: string;
@@ -92,6 +93,7 @@ type RawHaccpBaseWorkItem = {
   codeName?: string | null;
   cycle?: string | null;
   regTerm?: string | null;
+  cycleName?: string | null;
   cycleDate?: string | null;
   cycle_date?: string | null;
   active?: boolean | string | null;
@@ -316,6 +318,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     divisionCode: normalizeText(raw.divisionCode ?? raw.cataTypeCode),
     divisionName: normalizeText(raw.divisionName ?? raw.codeName),
     cycle: normalizeText(raw.cycle ?? raw.regTerm),
+    cycleName: normalizeText(raw.cycleName) || normalizeText(raw.cycle ?? raw.regTerm),
     cycleDate: normalizeText(raw.cycleDate ?? raw.cycle_date),
     active: normalizeBoolean(raw.active ?? raw.useAt),
     createdBy: normalizeText(raw.createdBy),

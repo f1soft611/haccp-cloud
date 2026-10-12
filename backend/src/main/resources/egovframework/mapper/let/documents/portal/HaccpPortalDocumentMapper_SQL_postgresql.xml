@@ -8,6 +8,7 @@
         <result property="categoryName" column="category_name"/>
         <result property="divisionName" column="division_name"/>
         <result property="cycle" column="reg_term"/>
+        <result property="cycleName" column="reg_term_nm"/>
         <result property="assigneeSummary" column="assignee_summary"/>
     </resultMap>
 
@@ -18,7 +19,8 @@
             w.drafting_work_category_id,
             COALESCE(NULLIF(TRIM(g.cata_name), ''), '기타문서') AS category_name,
             COALESCE(NULLIF(TRIM(w.code_name), ''), '-') AS division_name,
-            COALESCE(NULLIF(TRIM(w.reg_term), ''), '발생시') AS reg_term,
+            COALESCE(NULLIF(TRIM(w.reg_term), ''), 'ANYTIME') AS reg_term,
+            COALESCE(cci.item_nm, NULLIF(TRIM(w.reg_term), ''), 'ANYTIME') AS reg_term_nm,
             '관리자 외 2명' AS assignee_summary
         FROM tb_drafting_work_category w
         JOIN tb_tenant t
@@ -26,6 +28,12 @@
         LEFT JOIN tb_drafting_work_category_group g
           ON g.tenant_id = w.tenant_id
          AND g.drafting_work_category_group_id = w.drafting_work_category_group_id
+        LEFT JOIN tb_common_code_group ccg
+          ON ccg.tenant_id = w.tenant_id
+          AND ccg.group_code = 'WF_FORM_CYCLE'
+        LEFT JOIN tb_common_code_item cci
+          ON cci.group_id = ccg.common_code_group_id
+          AND cci.item_code = COALESCE(NULLIF(TRIM(w.reg_term), ''), 'ANYTIME')
         WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
           AND COALESCE(w.use_at, 'N') = 'Y'

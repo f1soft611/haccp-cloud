@@ -177,7 +177,7 @@ export const APP_LABELS = {
     monthlyChecks: '월간 점검',
     issueResponse: '발생시 대응',
     cycleLabel: '주기 필터',
-    cycles: ['일', '월', '주', '년', '발생시'] as const,
+    // 기존 -> cycles: ['일', '월', '주', '년', '발생시'] / 변경 -> 공통코드 WF_FORM_CYCLE(useWorkCycleOptions)로 대체
     columns: {
       no: '번호',
       name: '구분명',

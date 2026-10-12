@@ -4,7 +4,7 @@ import 'dayjs/locale/ko';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, dayjsLocalizer } from 'react-big-calendar';
 import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
-import { getWorkCycleLabel, getWorkCycleSx } from '../../../dashboard/tenant/utils';
+import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
 import { WorkCalendarEventContent } from './WorkCalendarEvent';
 import { WorkCalendarToolbar } from './WorkCalendarToolbar';
@@ -37,8 +37,7 @@ export function WorkCalendarView(props: WorkCalendarViewProps) {
             startAccessor="start"
             endAccessor="end"
             eventPropGetter={(event) => {
-                const cycleLabel = getWorkCycleLabel(event.resource);
-                const sx = getWorkCycleSx(cycleLabel);
+                const sx = getWorkCycleSx(event.resource.cycle);
                 return {
                     style: {
                         backgroundColor: sx.bgcolor,

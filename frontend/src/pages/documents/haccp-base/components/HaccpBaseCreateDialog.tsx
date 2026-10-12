@@ -6,9 +6,9 @@ import {
   TextField,
 } from '@mui/material';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
+import type { WorkCycleOption } from '../../../../shared/hooks/useWorkCycleOptions';
 import type { UserItem } from '../../../../services/organization/usersService';
 import {
-  HACCP_CYCLE_OPTIONS,
   type HaccpCategoryOption,
   type HaccpBaseCreateForm,
 } from '../types';
@@ -22,6 +22,7 @@ export function HaccpBaseCreateDialog(props: {
   onClose: () => void;
   onChange: (next: HaccpBaseCreateForm) => void;
   onSubmit: () => void;
+  cycleOptions: WorkCycleOption[];
 }) {
   const {
     open,
@@ -32,9 +33,11 @@ export function HaccpBaseCreateDialog(props: {
     onClose,
     onChange,
     onSubmit,
+    cycleOptions,
   } = props;
 
   const isSubmitDisabled =
+      !value.cycle ||
     !value.divisionName.trim() ||
     !value.categoryId ||
     !value.reviewerId ||
@@ -111,21 +114,27 @@ export function HaccpBaseCreateDialog(props: {
           </TextField>
 
           <TextField
-            fullWidth
-            select
-            label="등록주기"
-            value={value.cycle}
-            onChange={(event) =>
-              onChange({
-                ...value,
-                cycle: event.target.value as HaccpBaseCreateForm['cycle'],
-              })
-            }
+              fullWidth
+              select
+              label="등록주기"
+              value={value.cycle}
+              onChange={(event) =>
+                  onChange({
+                    ...value,
+                    cycle: event.target.value,
+                  })
+              }
+              required
+              helperText={
+                cycleOptions.length === 0
+                    ? '공통코드 WF_FORM_CYCLE(등록주기)을 먼저 등록하세요.'
+                    : undefined
+              }
           >
-            {HACCP_CYCLE_OPTIONS.map((cycle) => (
-              <MenuItem key={cycle} value={cycle}>
-                {cycle}
-              </MenuItem>
+            {cycleOptions.map((option) => (
+                <MenuItem key={option.code} value={option.code}>
+                  {option.name}
+                </MenuItem>
             ))}
           </TextField>
         </Stack>

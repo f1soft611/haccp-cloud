@@ -5,6 +5,17 @@ import type { HaccpWorkCycleInstance } from '../services/documents/haccpBaseWork
 
 // 2026-10-08 목요일 (이번 주 월요일 10-05, 이번 달 1일 10-01)
 const TODAY = new Date(2026, 9, 8);
+// 2026-10-12 월요일 (이번 주 월요일 10-12, 이번 달 1일 10-01)
+const TODAY_1012 = new Date(2026, 9, 12);
+
+// 기존 -> (year, monthIndex0)로 보는 달 지정
+// 변경 -> 달력에 보이는 범위(일요일 ~ 토요일)로 지정
+const JAN_2026 = ['2025-12-28', '2026-01-31'] as const;
+const FEB_2026 = ['2026-02-01', '2026-02-28'] as const;
+const SEP_2026 = ['2026-08-30', '2026-10-03'] as const;
+const OCT_2026 = ['2026-09-27', '2026-10-31'] as const;
+const NOV_2026 = ['2026-11-01', '2026-12-05'] as const;
+const DEC_2026 = ['2026-11-29', '2027-01-02'] as const;
 
 function buildItem(
     overrides: Partial<TenantTodoCardItem> = {},
@@ -18,7 +29,8 @@ function buildItem(
         categorySortOrder: 1,
         divisionCode: '001',
         divisionName: '점검 문서',
-        cycle: '월',
+        cycle: 'MONTH',
+        cycleName: '월',
         active: true,
         assigneeIds: [],
         referenceIds: [],
@@ -47,7 +59,7 @@ function instance(
 describe('mapTodosToCalendarEvents', () => {
     it('places a daily item on every day of a past month', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '일' })], 2026, 1, [], TODAY,
+            [buildItem({ cycle: 'DAY' })], ...FEB_2026, [], TODAY,
         );
 
         expect(events).toHaveLength(28);
@@ -59,7 +71,7 @@ describe('mapTodosToCalendarEvents', () => {
 
     it('attaches status per daily instance and leaves other days unwritten', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '일' })], 2026, 9,
+            [buildItem({ cycle: 'DAY' })], ...OCT_2026,
             [instance('2026-10-02', 'pre_apply')], TODAY,
         );
         const byDate = new Map(events.map((event) => [event.date, event]));
@@ -82,7 +94,7 @@ describe('mapTodosToCalendarEvents', () => {
 
     it('marks daily events after today as future', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '일' })], 2026, 9, [], TODAY,
+            [buildItem({ cycle: 'DAY' })], ...OCT_2026, [], TODAY,
         );
         const byDate = new Map(events.map((event) => [event.date, event]));
 
@@ -92,7 +104,7 @@ describe('mapTodosToCalendarEvents', () => {
 
     it('places weekly items on Mondays of a past month', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '주' })], 2026, 1, [], TODAY,
+            [buildItem({ cycle: 'WEEK' })], ...FEB_2026, [], TODAY,
         );
 
         expect(events.map((event) => event.date)).toEqual([
@@ -100,14 +112,16 @@ describe('mapTodosToCalendarEvents', () => {
         ]);
     });
 
-    it('places the current week on today and later weeks on Mondays as future', () => {
+    // 기존 -> 보는 달의 월요일만 / 변경 -> 범위 밖 월요일(09-28)도 포함
+    it('places the current week on today and other weeks on Mondays', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '주' })], 2026, 9, [], TODAY,
+            [buildItem({ cycle: 'WEEK' })], ...OCT_2026, [], TODAY,
         );
 
         expect(
             events.map(({ date, cycleDate, isFuture }) => ({ date, cycleDate, isFuture })),
         ).toEqual([
+            { date: '2026-09-28', cycleDate: '2026-09-28', isFuture: false },
             { date: '2026-10-08', cycleDate: '2026-10-05', isFuture: false },
             { date: '2026-10-12', cycleDate: '2026-10-12', isFuture: true },
             { date: '2026-10-19', cycleDate: '2026-10-19', isFuture: true },
@@ -115,47 +129,126 @@ describe('mapTodosToCalendarEvents', () => {
         ]);
     });
 
-    it('shows the current week on today even when its Monday is in the previous month', () => {
+    // 기존 -> 9월 화면에는 10-01 칸 없음 / 변경 -> 9월·10월 화면 모두 10-01 칸에 같은 이벤트
+    it('shows the current week on today in both months when its Monday is in the previous month', () => {
         const octFirst = new Date(2026, 9, 1); // 목요일, 이번 주 월요일 = 09-28
         const october = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '주' })], 2026, 9, [], octFirst,
+            [buildItem({ cycle: 'WEEK' })], ...OCT_2026, [], octFirst,
         );
         const september = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '주' })], 2026, 8, [], octFirst,
+            [buildItem({ cycle: 'WEEK' })], ...SEP_2026, [], octFirst,
         );
 
         expect(october[0]).toMatchObject({ date: '2026-10-01', cycleDate: '2026-09-28' });
         expect(september.map((event) => event.date)).toEqual([
-            '2026-09-07', '2026-09-14', '2026-09-21',
+            '2026-08-31', '2026-09-07', '2026-09-14', '2026-09-21', '2026-10-01',
         ]);
+        expect(september[4]).toMatchObject({ date: '2026-10-01', cycleDate: '2026-09-28' });
     });
 
+    // 기존 -> 11월 화면은 11-01만 / 변경 -> 범위 밖 12-01도 포함
     it('places the current month on today, other months on the 1st', () => {
-        const item = buildItem({ cycle: '월' });
+        const item = buildItem({ cycle: 'MONTH' });
 
-        expect(mapTodosToCalendarEvents([item], 2026, 9, [], TODAY)).toMatchObject([
+        expect(mapTodosToCalendarEvents([item], ...OCT_2026, [], TODAY)).toMatchObject([
             { date: '2026-10-08', cycleDate: '2026-10-01', isFuture: false },
         ]);
-        expect(mapTodosToCalendarEvents([item], 2026, 1, [], TODAY)).toMatchObject([
+        expect(mapTodosToCalendarEvents([item], ...FEB_2026, [], TODAY)).toMatchObject([
             { date: '2026-02-01', cycleDate: '2026-02-01', isFuture: false },
         ]);
-        expect(mapTodosToCalendarEvents([item], 2026, 10, [], TODAY)).toMatchObject([
+        expect(mapTodosToCalendarEvents([item], ...NOV_2026, [], TODAY)).toMatchObject([
             { date: '2026-11-01', cycleDate: '2026-11-01', isFuture: true },
+            { date: '2026-12-01', cycleDate: '2026-12-01', isFuture: true },
         ]);
     });
 
-    it('places a yearly item on January 1st only when viewing January', () => {
-        const item = buildItem({ cycle: '매년' });
+    it('places a yearly item on January 1st when it is visible', () => {
+        const item = buildItem({ cycle: 'YEAR' });
 
-        expect(mapTodosToCalendarEvents([item], 2026, 0, [], TODAY)).toMatchObject([
+        expect(mapTodosToCalendarEvents([item], ...JAN_2026, [], TODAY)).toMatchObject([
             { date: '2026-01-01', cycleDate: '2026-01-01' },
         ]);
-        expect(mapTodosToCalendarEvents([item], 2026, 1, [], TODAY)).toEqual([]);
+        expect(mapTodosToCalendarEvents([item], ...FEB_2026, [], TODAY)).toEqual([]);
     });
 
-    it('does not place event-based ("발생시") items on the calendar', () => {
+    // 기존 -> '발생시' 미표시 / 변경 -> 고정 기준일 규칙이 없는 ANYTIME/QUARTER/HALF 미표시
+    it.each(['ANYTIME', 'QUARTER', 'HALF'])('does not place %s items on the calendar', (cycle) => {
         expect(
-            mapTodosToCalendarEvents([buildItem({ cycle: '발생시' })], 2026, 1, [], TODAY),
+            mapTodosToCalendarEvents([buildItem({ cycle })], ...FEB_2026, [], TODAY),
         ).toEqual([]);
+    });
+
+    describe('off-range days', () => {
+        it('places a daily item on every visible day including other months', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'DAY' })], ...SEP_2026, [], TODAY_1012,
+            );
+            const dates = events.map((event) => event.date);
+
+            expect(events).toHaveLength(35);
+            expect(dates.slice(0, 2)).toEqual(['2026-08-30', '2026-08-31']);
+            expect(dates.slice(-3)).toEqual(['2026-10-01', '2026-10-02', '2026-10-03']);
+            expect(events.every((event) => !event.isFuture)).toBe(true);
+        });
+
+        it('places weekly items on visible Mondays of other months', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...SEP_2026, [], TODAY_1012,
+            );
+
+            expect(events.map((event) => event.date)).toEqual([
+                '2026-08-31', '2026-09-07', '2026-09-14', '2026-09-21', '2026-09-28',
+            ]);
+        });
+
+        it('skips the current month when today is not visible', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'MONTH' })], ...SEP_2026, [], TODAY_1012,
+            );
+
+            expect(events).toMatchObject([
+                { date: '2026-09-01', cycleDate: '2026-09-01', isFuture: false },
+            ]);
+        });
+
+        it('places a yearly item on next January 1st when it is visible', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'YEAR' })], ...DEC_2026, [], TODAY_1012,
+            );
+
+            expect(events).toMatchObject([
+                { date: '2027-01-01', cycleDate: '2027-01-01', isFuture: true },
+            ]);
+        });
+
+        it('shows the current week on today when its Monday is before the visible range', () => {
+            const novFirst = new Date(2026, 10, 1); // 일요일, 이번 주 월요일 = 10-26
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...NOV_2026, [], novFirst,
+            );
+
+            expect(events.map(({ date, cycleDate }) => ({ date, cycleDate }))).toEqual([
+                { date: '2026-11-02', cycleDate: '2026-11-02' },
+                { date: '2026-11-09', cycleDate: '2026-11-09' },
+                { date: '2026-11-16', cycleDate: '2026-11-16' },
+                { date: '2026-11-23', cycleDate: '2026-11-23' },
+                { date: '2026-11-30', cycleDate: '2026-11-30' },
+                { date: '2026-11-01', cycleDate: '2026-10-26' },
+            ]);
+        });
+
+        it('shows the current month on today when its 1st is before the visible range', () => {
+            const sep29 = new Date(2026, 8, 29); // 화요일, 이번 달 1일 = 09-01
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'MONTH' })], ...OCT_2026, [], sep29,
+            );
+
+            expect(
+                events.map(({ date, cycleDate, isFuture }) => ({ date, cycleDate, isFuture })),
+            ).toEqual([
+                { date: '2026-10-01', cycleDate: '2026-10-01', isFuture: true },
+                { date: '2026-09-29', cycleDate: '2026-09-01', isFuture: false },
+            ]);
+        });
     });
 });

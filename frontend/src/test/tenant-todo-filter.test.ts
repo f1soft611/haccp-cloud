@@ -10,7 +10,7 @@ const item = {
   title: '냉장고 온도 점검',
   divisionName: '냉장고 온도 점검',
   categoryName: '위생관리',
-  cycle: '일',
+  cycle: 'DAY',
   status: 'DRAFT',
   writtenInCycle: false,
 } as TenantTodoCardItem;
@@ -28,8 +28,8 @@ describe('matchesTodoFilter', () => {
     expect(f({ keyword: '세척' })).toBe(false);
     expect(f({ category: '위생관리' })).toBe(true);
     expect(f({ category: '공정관리' })).toBe(false);
-    expect(f({ cycle: '일' })).toBe(true);
-    expect(f({ cycle: '월' })).toBe(false);
+    expect(f({ cycle: 'DAY' })).toBe(true);
+    expect(f({ cycle: 'MONTH' })).toBe(false);
     expect(f({ status: '미작성' })).toBe(true);
     expect(f({ status: '승인' })).toBe(false);
   });

@@ -15,6 +15,7 @@
         <result property="divisionCode" column="cata_type_code"/>
         <result property="divisionName" column="code_name"/>
         <result property="cycle" column="reg_term"/>
+        <result property="cycleName" column="reg_term_nm"/>
         <result property="cycleDate" column="cycle_date"/>
         <result property="active" column="active"/>
         <result property="createdBy" column="created_by"/>
@@ -68,6 +69,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(COALESCE(pre.updated_at, pre.created_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS created_at,
@@ -129,6 +132,12 @@
         LEFT JOIN tb_drafting_work_category_group g
           ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
          AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_common_code_group ccg
+                  ON ccg.tenant_id = w.tenant_id
+                      AND ccg.group_code = 'WF_FORM_CYCLE'
+        LEFT JOIN tb_common_code_item cci
+                  ON cci.group_id = ccg.common_code_group_id
+                      AND cci.item_code = w.reg_term
         LEFT JOIN tb_user cu
           ON cu.tenant_id = w.tenant_id
          AND cu.login_id = w.created_by
@@ -211,6 +220,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar)) AS created_by,
             TO_CHAR(
@@ -281,6 +292,12 @@
         LEFT JOIN tb_drafting_work_category_group g
           ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
          AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_common_code_group ccg
+        ON ccg.tenant_id = w.tenant_id
+        AND ccg.group_code = 'WF_FORM_CYCLE'
+        LEFT JOIN tb_common_code_item cci
+        ON cci.group_id = ccg.common_code_group_id
+        AND cci.item_code = w.reg_term
         LEFT JOIN tb_login_account la
           ON la.tenant_id = m.tenant_id
          AND la.login_id = m.login_id
@@ -589,6 +606,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
         TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYY-MM-DD') AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(
@@ -691,6 +710,12 @@
         LEFT JOIN tb_drafting_work_category_group g
           ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
          AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_common_code_group ccg
+        ON ccg.tenant_id = w.tenant_id
+        AND ccg.group_code = 'WF_FORM_CYCLE'
+        LEFT JOIN tb_common_code_item cci
+        ON cci.group_id = ccg.common_code_group_id
+        AND cci.item_code = w.reg_term
         LEFT JOIN tb_user cu
           ON cu.tenant_id = w.tenant_id
          AND CAST(cu.user_id AS varchar) = CAST(w.created_by AS varchar)
@@ -798,6 +823,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE
                 WHEN NULLIF(TRIM(m.cycle_date), '') ~ '^[0-9]{8}$' THEN TO_CHAR(TO_DATE(m.cycle_date, 'YYYYMMDD'), 'YYYY-MM-DD')
                 ELSE NULL
@@ -971,6 +998,12 @@
         LEFT JOIN tb_drafting_work_category_group g
           ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
          AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_common_code_group ccg
+                  ON ccg.tenant_id = w.tenant_id
+                      AND ccg.group_code = 'WF_FORM_CYCLE'
+        LEFT JOIN tb_common_code_item cci
+                  ON cci.group_id = ccg.common_code_group_id
+                      AND cci.item_code = w.reg_term
         LEFT JOIN tb_user cu
           ON cu.tenant_id = w.tenant_id
          AND CAST(cu.user_id AS varchar) = CAST(w.created_by AS varchar)

@@ -27,6 +27,7 @@ class HaccpBaseWorkServiceImplTest {
         when(dao.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
         when(dao.selectWorkIdByCode(eq(10L), eq(1L), eq("001"))).thenReturn(null);
         when(idGnrService.getNextStringId()).thenReturn("001");
+        when(dao.countWorkCycleCode(10L, "DAY")).thenReturn(1);
         when(dao.insertWork(anyMap())).thenReturn(1L);
         when(dao.selectWorkById(anyMap())).thenReturn(new egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkVO());
 
@@ -35,7 +36,7 @@ class HaccpBaseWorkServiceImplTest {
         payload.setCategoryGroupId(1L);
         payload.setDivisionCode("");
         payload.setDivisionName("위생점검");
-        payload.setCycle("일");
+        payload.setCycle("DAY");
         payload.setActive(true);
         payload.setReviewerId(1001L);
         payload.setApproverId(1002L);
@@ -60,7 +61,7 @@ class HaccpBaseWorkServiceImplTest {
         payload.setCategoryGroupId(1L);
         payload.setDivisionCode("001");
         payload.setDivisionName("위생점검");
-        payload.setCycle("일");
+        payload.setCycle("DAY");
         payload.setActive(true);
         payload.setReviewerId(1001L);
         payload.setApproverId(1002L);
@@ -71,5 +72,35 @@ class HaccpBaseWorkServiceImplTest {
         );
 
         assertEquals("이미 사용 중인 구분코드입니다.", ex.getMessage());
+    }
+
+    @DisplayName("공통코드 WF_FORM_CYCLE에 없는 등록주기는 저장할 수 없다")
+    @Test
+    void createWork_throwsWhenCycleCodeIsNotRegistered() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        EgovIdGnrService idGnrService = mock(EgovIdGnrService.class);
+        HaccpBaseWorkServiceImpl service = new HaccpBaseWorkServiceImpl(dao, idGnrService);
+
+        when(dao.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(dao.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(dao.selectWorkIdByCode(eq(10L), eq(1L), eq("001"))).thenReturn(null);
+        when(dao.countWorkCycleCode(10L, "FOO")).thenReturn(0);
+
+        HaccpBaseWorkSaveRequestVO payload = new HaccpBaseWorkSaveRequestVO();
+        payload.setTenantCode("TENANT_001");
+        payload.setCategoryGroupId(1L);
+        payload.setDivisionCode("001");
+        payload.setDivisionName("위생점검");
+        payload.setCycle("FOO");
+        payload.setActive(true);
+        payload.setReviewerId(1001L);
+        payload.setApproverId(1002L);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createWork(payload, "3001")
+        );
+
+        assertEquals("등록주기가 올바르지 않습니다.", ex.getMessage());
     }
 }

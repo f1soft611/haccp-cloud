@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listHaccpPortalDocuments } from '../../../../services/documents/haccpPortalService';
 import { useAuthStore } from '../../../../shared/store/authStore';
-import { getWorkCycleLabel } from '../../../dashboard/tenant/utils';
 import type { PortalRow, PortalSearchValue } from '../types';
 
 // 기존 -> 분류별 섹션(PortalSection[])으로 그룹핑
@@ -32,11 +31,6 @@ export function useHaccpPortalPage() {
         return {
           ...item,
           categoryName,
-          cycleLabel: getWorkCycleLabel({
-            cycle: item.cycle,
-            title: item.divisionName,
-            category: categoryName,
-          }),
         };
       }),
     [documentsQuery.data],
@@ -55,7 +49,7 @@ export function useHaccpPortalPage() {
         (appliedSearch.category === 'ALL' ||
           row.categoryName === appliedSearch.category) &&
         (appliedSearch.cycle === 'ALL' ||
-          row.cycleLabel === appliedSearch.cycle) &&
+            row.cycle === appliedSearch.cycle) &&
         (!keyword ||
           row.divisionName.toLowerCase().includes(keyword) ||
           row.assigneeSummary.toLowerCase().includes(keyword)),

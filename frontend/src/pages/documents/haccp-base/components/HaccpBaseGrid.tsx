@@ -15,7 +15,6 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useTheme } from '@mui/material/styles';
 import {
-  getWorkCycleLabel,
   getWorkCycleSx,
 } from '../../../dashboard/tenant/utils';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
@@ -183,25 +182,15 @@ export function HaccpBaseGrid(props: {
                 </TableCell>
                 <TableCell>{row.categoryName}</TableCell>
                 <TableCell align="center">
-                  {(() => {
-                    const cycleLabel = getWorkCycleLabel({
-                      cycle: row.cycle,
-                      title: row.divisionName,
-                      category: row.categoryName,
-                    });
-
-                    return (
-                      <Chip
-                        size="small"
-                        label={cycleLabel}
-                        sx={{
-                          height: 22,
-                          fontWeight: 700,
-                          ...getWorkCycleSx(cycleLabel),
-                        }}
-                      />
-                    );
-                  })()}
+                  <Chip
+                      size="small"
+                      label={row.cycleName || row.cycle || '-'}
+                      sx={{
+                        height: 22,
+                        fontWeight: 700,
+                        ...getWorkCycleSx(row.cycle),
+                      }}
+                  />
                 </TableCell>
                 <TableCell align="center">{row.createdBy}</TableCell>
                 <TableCell align="center">{row.createdAt}</TableCell>

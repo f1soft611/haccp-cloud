@@ -13,6 +13,7 @@
         <result property="divisionCode" column="cata_type_code"/>
         <result property="divisionName" column="code_name"/>
         <result property="cycle" column="reg_term"/>
+        <result property="cycleName" column="reg_term_nm"/>
         <result property="active" column="active"/>
         <result property="createdBy" column="created_by"/>
         <result property="createdAt" column="created_at"/>
@@ -50,6 +51,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
@@ -81,6 +84,12 @@
         LEFT JOIN tb_drafting_work_category_group g
           ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
          AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_common_code_group ccg
+        ON ccg.tenant_id = w.tenant_id
+        AND ccg.group_code = 'WF_FORM_CYCLE'
+        LEFT JOIN tb_common_code_item cci
+        ON cci.group_id = ccg.common_code_group_id
+        AND cci.item_code = w.reg_term
         LEFT JOIN tb_user cu
           ON cu.tenant_id = w.tenant_id
          AND cu.login_id = w.created_by
@@ -142,6 +151,8 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
+            COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
@@ -173,6 +184,12 @@
         LEFT JOIN tb_drafting_work_category_group g
           ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
          AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_common_code_group ccg
+                  ON ccg.tenant_id = w.tenant_id
+                      AND ccg.group_code = 'WF_FORM_CYCLE'
+        LEFT JOIN tb_common_code_item cci
+                  ON cci.group_id = ccg.common_code_group_id
+                      AND cci.item_code = w.reg_term
         LEFT JOIN tb_user cu
           ON cu.tenant_id = w.tenant_id
          AND cu.login_id = w.created_by
@@ -247,6 +264,20 @@
           AND cata_type_code = #{divisionCode}
           AND COALESCE(delete_status, 'N') != 'Y'
         LIMIT 1
+    </select>
+
+    <!-- 등록주기 공통코드(WF_FORM_CYCLE) 존재 확인 -->
+    <select id="HaccpBaseWorkDAO.countWorkCycleCode"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_common_code_item cci
+                 JOIN tb_common_code_group ccg
+                      ON ccg.common_code_group_id = cci.group_id
+        WHERE ccg.tenant_id = #{tenantId}
+          AND ccg.group_code = 'WF_FORM_CYCLE'
+          AND cci.item_code = #{cycleCode}
+          AND cci.use_at = 'Y'
     </select>
 
     <select id="HaccpBaseWorkDAO.insertWork"

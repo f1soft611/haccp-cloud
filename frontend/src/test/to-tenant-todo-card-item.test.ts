@@ -14,7 +14,7 @@ function buildRawItem(
         categorySortOrder: 1,
         divisionCode: '001',
         divisionName: '점검 문서',
-        cycle: '월',
+        cycle: 'MONTH', cycleName: '월',
         active: true,
         assigneeIds: [],
         referenceIds: [],

@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { useWorkCalendarData } from '../pages/documents/work-calendar/hooks/useWorkCalendarData';
 import {
@@ -15,6 +15,9 @@ vi.mock('../services/documents/haccpBaseWorkService', () => ({
 
 describe('useWorkCalendarData', () => {
     beforeEach(() => {
+        // 실제 날짜에 따라 다음 달 1일이 화면에 보이면 이벤트 개수가 달라지므로 오늘을 고정한다.
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date(2026, 9, 12));
         useAuthStore.setState({ tenantCode: 'TENANT-A' });
         vi.mocked(listHaccpWorkTodos).mockReset();
         vi.mocked(listHaccpWorkTodos).mockResolvedValue([
@@ -27,7 +30,7 @@ describe('useWorkCalendarData', () => {
                 categorySortOrder: 1,
                 divisionCode: '001',
                 divisionName: '월간 점검',
-                cycle: '월간',
+                cycle: 'MONTH', cycleName: '월',
                 title: '월간 점검 업무',
                 active: true,
                 assigneeIds: [],
@@ -42,6 +45,10 @@ describe('useWorkCalendarData', () => {
         vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue([]);
     });
 
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     // 기존 -> 이번 달 월주기 업무는 1일에 표시
     // 변경 -> 이번 달(진행 중) 월주기 업무는 오늘 칸에 표시
     it('places a current-month monthly item on today', async () => {
@@ -53,48 +60,42 @@ describe('useWorkCalendarData', () => {
 
         expect(result.current.events).toHaveLength(1);
         expect(result.current.events[0].title).toBe('월간 점검 업무');
-        expect(result.current.events[0].start.getDate()).toBe(new Date().getDate());
+        expect(result.current.events[0].start).toEqual(new Date(2026, 9, 12));
         expect(result.current.events[0].isFuture).toBe(false);
     });
 
-    it('moves the event to next month after navigating forward', async () => {
+    // 기존 -> 다음 달 1일 이벤트 1건 / 변경 -> 보이는 범위의 12-01 이벤트도 포함
+    it('moves events to the next month view after navigating forward', async () => {
         const { result } = renderHook(() => useWorkCalendarData(), {
             wrapper: AppProviders,
         });
 
         await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-        const now = result.current.viewDate;
-        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
         act(() => {
-            result.current.setViewDate(nextMonth);
+            result.current.setViewDate(new Date(2026, 10, 1));
         });
 
         await waitFor(() => {
-            expect(result.current.events[0].start.getMonth()).toBe(
-                nextMonth.getMonth(),
-            );
+            expect(result.current.events.map((event) => event.start)).toEqual([
+                new Date(2026, 10, 1),
+                new Date(2026, 11, 1),
+            ]);
         });
     });
 
-    it('requests cycle instances from 6 days before the 1st to the month end', async () => {
+    // 기존 -> 1일 - 6일 ~ 말일
+    // 변경 -> (보이는 범위 시작일 - 6일)이 속한 달 1일 ~ 보이는 범위 종료일
+    it('requests cycle instances covering the visible range', async () => {
         renderHook(() => useWorkCalendarData(), { wrapper: AppProviders });
 
         await waitFor(() => expect(listHaccpWorkTodoCycles).toHaveBeenCalled());
 
-        const now = new Date();
-        const first = new Date(now.getFullYear(), now.getMonth(), 1);
-        const from = new Date(first);
-        from.setDate(first.getDate() - 6);
-        const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        const fmt = (d: Date) =>
-            `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
+        // 10월 화면 범위 = 2026-09-27 ~ 2026-10-31, 09-27 - 6일 = 09-21 → 09-01
         expect(listHaccpWorkTodoCycles).toHaveBeenCalledWith({
             tenantCode: 'TENANT-A',
-            fromDate: fmt(from),
-            toDate: fmt(last),
+            fromDate: '2026-09-01',
+            toDate: '2026-10-31',
         });
     });
 });

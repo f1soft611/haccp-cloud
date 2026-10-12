@@ -1,6 +1,5 @@
 import { resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
 import type { TenantTodoCardItem } from './hooks/useTenantDashboardData';
-import { getWorkCycleLabel } from './utils';
 
 export type TenantViewMode = 'list' | 'calendar';
 
@@ -48,7 +47,7 @@ export function matchesTodoFilter(
         .filter(Boolean)
         .some((text) => text.toLowerCase().includes(keyword))) &&
     (!filter.category || category === filter.category) &&
-    (!filter.cycle || getWorkCycleLabel(item) === filter.cycle) &&
+    (!filter.cycle || item.cycle === filter.cycle) &&
     (!filter.status || getTodoStatusLabel(item) === filter.status)
   );
 }

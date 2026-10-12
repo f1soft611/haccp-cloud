@@ -59,6 +59,10 @@ public class HaccpWorkVO implements Serializable {
     @Schema(description = "등록주기")
     private String cycle;
 
+    // 등록주기 공통코드 이름(WF_FORM_CYCLE)
+    @Schema(description = "등록주기명")
+    private String cycleName;
+
     @Schema(description = "주기 기준일(yyyy-MM-dd)")
     private String cycleDate;
 
