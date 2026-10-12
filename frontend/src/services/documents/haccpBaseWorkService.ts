@@ -408,11 +408,14 @@ export async function listHaccpWorkTodos(params: {
 }
 
 // 캘린더용: 업무별·주기 기준일별 결재문서 상태 (날짜는 YYYY-MM-DD로 주고받는다)
+// 기존 -> workId, cycleDate, approvalId, statusType
+// 변경 -> 등록일 칸 표시용 registeredDate 추가 (없으면 '')
 export type HaccpWorkCycleInstance = {
   workId: string;
   cycleDate: string;
   approvalId: string;
   statusType: string;
+  registeredDate: string;
 };
 
 type RawHaccpWorkCycleInstance = {
@@ -420,7 +423,14 @@ type RawHaccpWorkCycleInstance = {
   cycleDate?: string | null;
   approvalId?: string | number | null;
   statusType?: string | null;
+  registeredDate?: string | null;
 };
+
+function toDashedDate(compact: string | null | undefined): string {
+  return /^\d{8}$/.test(compact ?? '')
+      ? `${compact!.slice(0, 4)}-${compact!.slice(4, 6)}-${compact!.slice(6, 8)}`
+      : '';
+}
 
 export async function listHaccpWorkTodoCycles(params: {
   tenantCode: string;
@@ -441,15 +451,13 @@ export async function listHaccpWorkTodoCycles(params: {
   const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
   return items
   .filter((item) => /^\d{8}$/.test(item.cycleDate ?? ''))
-  .map((item) => {
-    const compact = item.cycleDate as string;
-    return {
-      workId: String(item.workId ?? ''),
-      cycleDate: `${compact.slice(0, 4)}-${compact.slice(4, 6)}-${compact.slice(6, 8)}`,
-      approvalId: String(item.approvalId ?? ''),
-      statusType: item.statusType ?? '',
-    };
-  });
+  .map((item) => ({
+    workId: String(item.workId ?? ''),
+    cycleDate: toDashedDate(item.cycleDate),
+    approvalId: String(item.approvalId ?? ''),
+    statusType: item.statusType ?? '',
+    registeredDate: toDashedDate(item.registeredDate),
+  }));
 }
 
 export async function listHaccpWorkApprovalAlerts(params: {

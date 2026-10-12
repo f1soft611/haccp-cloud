@@ -5,6 +5,11 @@ import { WorkCalendarPage } from '../pages/documents/work-calendar/WorkCalendarP
 import {listHaccpWorkTodoCycles, listHaccpWorkTodos} from '../services/documents/haccpBaseWorkService';
 import { useAuthStore } from '../shared/store/authStore';
 import { getWorkCycleSx } from '../pages/dashboard/tenant/utils';
+import { getCommonCodes } from '../services/basicinfo/commonCodeService';
+
+vi.mock('../services/basicinfo/commonCodeService', () => ({
+    getCommonCodes: vi.fn(),
+}));
 
 const { navigateMock } = vi.hoisted(() => ({
     navigateMock: vi.fn(),
@@ -52,7 +57,15 @@ describe('WorkCalendarPage', () => {
             },
         ]);
         vi.mocked(listHaccpWorkTodoCycles).mockReset();
-        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue([]);
+        vi.mocked(getCommonCodes).mockResolvedValue({
+            groups: [],
+            details: [
+                { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일간', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+                { groupCode: 'WF_FORM_CYCLE', code: 'WEEK', codeName: '주간', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+                { groupCode: 'WF_FORM_CYCLE', code: 'MONTH', codeName: '월간', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
+                { groupCode: 'WF_FORM_CYCLE', code: 'YEAR', codeName: '연간', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '' },
+            ],
+        });
     });
 
     it('shows the current month label and the monthly-cycle todo', async () => {
@@ -127,18 +140,77 @@ describe('WorkCalendarPage', () => {
         );
     });
 
-    it('renders a cycle color legend with 일/주/월/년 chips', async () => {
+    it('renders a legend with common-code cycle names and status badges', async () => {
         render(
             <AppProviders>
                 <WorkCalendarPage />
             </AppProviders>,
         );
 
-        // 기존 -> 화면 전체에서 일/주/월/년 텍스트 검색 (요일 헤더 '일'과 중복, '년' 칩 없음)
-        // 변경 -> 범례 칩 라벨 안에서 일/주/월만 확인
+        await waitFor(() => {
+            const chipLabels = Array.from(
+                document.querySelectorAll('.MuiChip-label'),
+            ).map((el) => el.textContent);
+            expect(chipLabels).toEqual(['일간', '주간', '월간', '연간']);
+        });
+        const legendBadges = Array.from(
+            document.querySelectorAll('[data-legend] [data-status-badge]'),
+        ).map((el) => el.textContent);
+        expect(legendBadges).toEqual(['임시저장', '결재중', '반려']);
+    });
+
+    it('falls back to cycle codes when common codes fail to load', async () => {
+        vi.mocked(getCommonCodes).mockRejectedValue(new Error('fail'));
+        render(
+            <AppProviders>
+                <WorkCalendarPage />
+            </AppProviders>,
+        );
+
+        await screen.findByText('월간 점검 업무');
         const chipLabels = Array.from(
             document.querySelectorAll('.MuiChip-label'),
         ).map((el) => el.textContent);
-        expect(chipLabels).toEqual(['일', '주', '월']);
+        expect(chipLabels).toEqual(['DAY', 'WEEK', 'MONTH', 'YEAR']);
+    });
+
+    it('shows status badges for temp-saved, in-progress and rejected, none for approved', async () => {
+        const now = new Date();
+        const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const base = {
+            tenantCode: 'TENANT-A', categoryGroupId: '10', categoryCode: 'HA',
+            categoryName: 'HACCP (HA)', categorySortOrder: 1, divisionCode: '001',
+            divisionName: '점검', cycle: 'MONTH', cycleName: '월', active: true,
+            assigneeIds: [], referenceIds: [], assigneeMapped: true, hasDocument: true,
+            writtenInCycle: false,
+        };
+        vi.mocked(listHaccpWorkTodos).mockResolvedValue([
+            { ...base, id: 'a', title: '임시저장 업무' },
+            { ...base, id: 'b', title: '결재중 업무' },
+            { ...base, id: 'c', title: '반려 업무' },
+            { ...base, id: 'd', title: '승인 업무' },
+        ]);
+        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue([
+            { workId: 'a', cycleDate: `${ym}-01`, approvalId: '1', statusType: 'pre_apply', registeredDate: `${ym}-01` },
+            { workId: 'b', cycleDate: `${ym}-01`, approvalId: '2', statusType: 'in_progress', registeredDate: `${ym}-01` },
+            { workId: 'c', cycleDate: `${ym}-01`, approvalId: '3', statusType: 'rejected', registeredDate: `${ym}-01` },
+            { workId: 'd', cycleDate: `${ym}-01`, approvalId: '4', statusType: 'approved', registeredDate: `${ym}-01` },
+        ]);
+
+        render(
+            <AppProviders>
+                <WorkCalendarPage />
+            </AppProviders>,
+        );
+
+        const badgeOf = (title: string) =>
+            screen.getByText(title)
+            .closest('.rbc-event')
+            ?.querySelector('[data-status-badge]')?.textContent ?? null;
+
+        await waitFor(() => expect(badgeOf('임시저장 업무')).toBe('임시저장'));
+        expect(badgeOf('결재중 업무')).toBe('결재중');
+        expect(badgeOf('반려 업무')).toBe('반려');
+        expect(badgeOf('승인 업무')).toBeNull();
     });
 });

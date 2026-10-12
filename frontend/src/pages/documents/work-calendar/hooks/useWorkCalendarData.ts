@@ -46,11 +46,12 @@ export function useWorkCalendarData() {
     // 변경 -> 달력에 보이는 첫 칸(일요일) ~ 마지막 칸(토요일)에 표시
     const rangeStart = dayjs(viewDate).startOf('month').startOf('week').format('YYYY-MM-DD');
     const rangeEnd = dayjs(viewDate).endOf('month').endOf('week').format('YYYY-MM-DD');
-    // 진행 중인 주기의 기준일(이번 주 월요일, 이번 달 1일)이 범위 시작일보다 앞일 수 있어 조회는 그 달 1일부터 한다.
-    const fromDate = dayjs(rangeStart)
+    const monthFrom = dayjs(rangeStart)
     .subtract(6, 'day')
     .startOf('month')
     .format('YYYY-MM-DD');
+    const yearFrom = dayjs().startOf('year').format('YYYY-MM-DD');
+    const fromDate = monthFrom < yearFrom ? monthFrom : yearFrom;
     const toDate = rangeEnd;
 
     const { data: cycleInstances = [] } = useQuery({

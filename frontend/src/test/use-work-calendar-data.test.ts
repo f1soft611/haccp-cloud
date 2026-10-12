@@ -84,17 +84,16 @@ describe('useWorkCalendarData', () => {
         });
     });
 
-    // 기존 -> 1일 - 6일 ~ 말일
-    // 변경 -> (보이는 범위 시작일 - 6일)이 속한 달 1일 ~ 보이는 범위 종료일
-    it('requests cycle instances covering the visible range', async () => {
+    // 기존 -> (보이는 범위 시작일 - 6일)이 속한 달 1일 ~ 보이는 범위 종료일
+    // 변경 -> 위 시작일과 올해 1월 1일 중 이른 날 ~ 보이는 범위 종료일 (연간 진행 주기 인스턴스 포함)
+    it('requests cycle instances covering the visible range and the current year', async () => {
         renderHook(() => useWorkCalendarData(), { wrapper: AppProviders });
 
         await waitFor(() => expect(listHaccpWorkTodoCycles).toHaveBeenCalled());
 
-        // 10월 화면 범위 = 2026-09-27 ~ 2026-10-31, 09-27 - 6일 = 09-21 → 09-01
         expect(listHaccpWorkTodoCycles).toHaveBeenCalledWith({
             tenantCode: 'TENANT-A',
-            fromDate: '2026-09-01',
+            fromDate: '2026-01-01',
             toDate: '2026-10-31',
         });
     });

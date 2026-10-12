@@ -52,8 +52,9 @@ function instance(
     cycleDate: string,
     statusType: string,
     approvalId = '900',
+    registeredDate = '',
 ): HaccpWorkCycleInstance {
-    return { workId: '1', cycleDate, approvalId, statusType };
+    return { workId: '1', cycleDate, approvalId, statusType, registeredDate };
 }
 
 describe('mapTodosToCalendarEvents', () => {
@@ -162,12 +163,13 @@ describe('mapTodosToCalendarEvents', () => {
         ]);
     });
 
-    it('places a yearly item on January 1st when it is visible', () => {
+    it('places the current year on today, not on January 1st', () => {
         const item = buildItem({ cycle: 'YEAR' });
 
-        expect(mapTodosToCalendarEvents([item], ...JAN_2026, [], TODAY)).toMatchObject([
-            { date: '2026-01-01', cycleDate: '2026-01-01' },
+        expect(mapTodosToCalendarEvents([item], ...OCT_2026, [], TODAY)).toMatchObject([
+            { date: '2026-10-08', cycleDate: '2026-01-01', isFuture: false },
         ]);
+        expect(mapTodosToCalendarEvents([item], ...JAN_2026, [], TODAY)).toEqual([]);
         expect(mapTodosToCalendarEvents([item], ...FEB_2026, [], TODAY)).toEqual([]);
     });
 
@@ -249,6 +251,65 @@ describe('mapTodosToCalendarEvents', () => {
                 { date: '2026-10-01', cycleDate: '2026-10-01', isFuture: true },
                 { date: '2026-09-29', cycleDate: '2026-09-01', isFuture: false },
             ]);
+        });
+    });
+
+    describe('registered date', () => {
+        const dates = (events: ReturnType<typeof mapTodosToCalendarEvents>) =>
+            events.map(({ date, cycleDate }) => ({ date, cycleDate }));
+
+        it('pins the current week on its registered date once registered', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
+                [instance('2026-10-05', 'in_progress', '900', '2026-10-06')], TODAY,
+            );
+
+            expect(dates(events)).toContainEqual({ date: '2026-10-06', cycleDate: '2026-10-05' });
+            expect(events.some((event) => event.date === '2026-10-08')).toBe(false);
+        });
+
+        it('pins the current week on its registered date when only temp-saved', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
+                [instance('2026-10-05', 'pre_apply', '900', '2026-10-07')], TODAY,
+            );
+
+            expect(dates(events)).toContainEqual({ date: '2026-10-07', cycleDate: '2026-10-05' });
+        });
+
+        it('keeps a rejected current week on today', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
+                [instance('2026-10-05', 'rejected', '900', '2026-10-06')], TODAY,
+            );
+
+            expect(dates(events)).toContainEqual({ date: '2026-10-08', cycleDate: '2026-10-05' });
+            expect(events.some((event) => event.date === '2026-10-06')).toBe(false);
+        });
+
+        it('pins a rejected past week on its registered date, not today', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
+                [instance('2026-09-28', 'rejected', '900', '2026-09-30')], TODAY,
+            );
+
+            expect(dates(events)).toContainEqual({ date: '2026-09-30', cycleDate: '2026-09-28' });
+            expect(dates(events)).toContainEqual({ date: '2026-10-08', cycleDate: '2026-10-05' });
+            expect(events.filter((event) => event.date === '2026-10-08')).toHaveLength(1);
+        });
+
+        it('pins the current month and year on their registered dates', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ id: '1', cycle: 'MONTH' })], ...OCT_2026,
+                [instance('2026-10-01', 'approved', '900', '2026-10-03')], TODAY,
+            );
+            expect(dates(events)).toEqual([{ date: '2026-10-03', cycleDate: '2026-10-01' }]);
+
+            const yearly = mapTodosToCalendarEvents(
+                [buildItem({ id: '1', cycle: 'YEAR' })], ...OCT_2026,
+                [instance('2026-01-01', 'approved', '900', '2026-10-02')], TODAY,
+            );
+            expect(dates(yearly)).toEqual([{ date: '2026-10-02', cycleDate: '2026-01-01' }]);
         });
     });
 });

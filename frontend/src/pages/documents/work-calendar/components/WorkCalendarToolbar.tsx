@@ -2,21 +2,22 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Button, Chip, IconButton, Stack, Typography } from '@mui/material';
 import type { ToolbarProps } from 'react-big-calendar';
+import { useWorkCycleOptions } from '../../../../shared/hooks/useWorkCycleOptions';
 import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
+import { STATUS_BADGE_LEGEND, WorkCalendarStatusBadge } from './WorkCalendarEvent';
 
-// 기존 -> APP_LABELS.dashboard.cycles 한글 라벨로 범례 구성
-// 변경 -> 색 범례는 고정 코드(캘린더에 표시되는 주기)와 고정 이름
-const CYCLE_LEGEND = [
-    { code: 'DAY', name: '일' },
-    { code: 'WEEK', name: '주' },
-    { code: 'MONTH', name: '월' },
-];
+// 기존 -> 고정 코드 DAY/WEEK/MONTH + 고정 이름 일/주/월
+// 변경 -> 캘린더에 그려지는 주기 4개(YEAR 포함), 이름은 공통코드(WF_FORM_CYCLE)명, 없으면 코드값
+const LEGEND_CYCLE_CODES = ['DAY', 'WEEK', 'MONTH', 'YEAR'];
 
 export function WorkCalendarToolbar({
                                         date,
                                         onNavigate,
                                     }: ToolbarProps<WorkCalendarEvent>) {
+
+    const cycleOptions = useWorkCycleOptions();
+
     return (
         <Stack spacing={0.75} sx={{ mb: 1.5 }}>
             <Stack
@@ -54,14 +55,17 @@ export function WorkCalendarToolbar({
                     오늘
                 </Button>
             </Stack>
-            <Stack direction="row" justifyContent="center" spacing={1}>
-                {CYCLE_LEGEND.map((legend) => (
+            <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} data-legend>
+                {LEGEND_CYCLE_CODES.map((code) => (
                     <Chip
-                        key={legend.code}
+                        key={code}
                         size="small"
-                        label={legend.name}
-                        sx={{ height: 20, fontWeight: 700, ...getWorkCycleSx(legend.code) }}
+                        label={cycleOptions.find((option) => option.code === code)?.name ?? code}
+                        sx={{ height: 20, fontWeight: 700, ...getWorkCycleSx(code) }}
                     />
+                ))}
+                {STATUS_BADGE_LEGEND.map((badge) => (
+                    <WorkCalendarStatusBadge key={badge.label} {...badge} />
                 ))}
             </Stack>
         </Stack>
