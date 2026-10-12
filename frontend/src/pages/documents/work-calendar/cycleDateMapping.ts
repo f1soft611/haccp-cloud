@@ -1,5 +1,6 @@
 import type { TenantTodoCardItem } from '../../dashboard/tenant/hooks/useTenantDashboardData';
 import type { HaccpWorkCycleInstance } from '../../../services/documents/haccpBaseWorkService';
+import { resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
 
 // 기존 -> { date, item }: 업무 1건(현재 주기 상태)을 모든 칸에 그대로 복사
 // 변경 -> { date, cycleDate, isFuture, item }: 주기 기준일별 문서 상태를 붙이고 미래 여부 표시
@@ -107,21 +108,29 @@ export function mapTodosToCalendarEvents(
         });
     };
 
-    // 진행 중인 주기(이번 주/이번 달)는 오늘 칸, 나머지는 주기 시작일(월요일/1일)에 표시
-    // 기존 -> 이번 주 월요일이 이전 달일 때만 따로 끼워 넣음
-    // 변경 -> 진행 중인 주기 기준일이 범위 밖이어도 오늘이 범위 안이면 오늘 칸에 표시
+    // 기존 -> 진행 중인 주기는 등록 여부와 무관하게 오늘 칸, 나머지는 주기 시작일
+    // 변경 -> 문서가 있으면 등록일 칸 (단, 진행 중 주기가 반려면 오늘 칸), 문서가 없으면 기존 규칙
+    const isRejected = (statusType: string) =>
+        resolveApprovalStatusView({ approvalStatusType: statusType }).label === '반려';
+    const displayDate = (
+        item: TenantTodoCardItem,
+        cycleDate: string,
+        currentCycleDate: string,
+    ) => {
+        const isCurrent = cycleDate === currentCycleDate;
+        const instance = instances.get(`${item.id}|${cycleDate}`);
+        if (instance?.registeredDate && !(isCurrent && isRejected(instance.statusType))) {
+            return instance.registeredDate;
+        }
+        return isCurrent ? todayString : cycleDate;
+    };
     const pushCycles = (
         item: TenantTodoCardItem,
         cycleDates: string[],
         currentCycleDate: string,
     ) => {
         new Set([...cycleDates, currentCycleDate]).forEach((cycleDate) => {
-            push(
-                cycleDate === currentCycleDate ? todayString : cycleDate,
-                item,
-                cycleDate,
-                currentCycleDate,
-            );
+            push(displayDate(item, cycleDate, currentCycleDate), item, cycleDate, currentCycleDate);
         });
     };
 
@@ -145,7 +154,7 @@ export function mapTodosToCalendarEvents(
         }
 
         if (cycle === 'YEAR') {
-            yearFirsts.forEach((firstDay) => push(firstDay, item, firstDay, currentYearFirst));
+            pushCycles(item, yearFirsts, currentYearFirst);
             return;
         }
 

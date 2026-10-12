@@ -124,6 +124,7 @@ export function useApprovalDraftWriteActions(
         templateJson: JSON.stringify(snapshotContent),
         templateHtml: snapshotHtml,
         referenceIds,
+        cycleDate,
       });
     },
     onSuccess: async (result) => {

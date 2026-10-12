@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../services/api/apiClient';
-import { listHaccpBaseWorks } from '../services/documents/haccpBaseWorkService';
+import { listHaccpBaseWorks, listHaccpWorkTodoCycles } from '../services/documents/haccpBaseWorkService';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {
@@ -42,5 +42,25 @@ describe('haccpBaseWorkService', () => {
         }),
       ]),
     );
+  });
+
+  it('converts cycle instance registeredDate to YYYY-MM-DD', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: [
+        { workId: 1, cycleDate: '20261005', approvalId: 9, statusType: 'in_progress', registeredDate: '20261006' },
+        { workId: 2, cycleDate: '20261005', approvalId: 10, statusType: 'approved', registeredDate: null },
+      ],
+    });
+
+    const result = await listHaccpWorkTodoCycles({
+      tenantCode: 'TENANT-A',
+      fromDate: '2026-10-01',
+      toDate: '2026-10-31',
+    });
+
+    expect(result).toEqual([
+      { workId: '1', cycleDate: '2026-10-05', approvalId: '9', statusType: 'in_progress', registeredDate: '2026-10-06' },
+      { workId: '2', cycleDate: '2026-10-05', approvalId: '10', statusType: 'approved', registeredDate: '' },
+    ]);
   });
 });

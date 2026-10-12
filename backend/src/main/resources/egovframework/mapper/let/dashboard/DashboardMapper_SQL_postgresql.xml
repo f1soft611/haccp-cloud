@@ -215,7 +215,8 @@
             CAST(m.drafting_work_category_id AS varchar) AS "workId",
             m.cycle_date AS "cycleDate",
             CAST(m.electronic_approval_id AS varchar) AS "approvalId",
-            COALESCE(m.status_type, '') AS "statusType"
+            COALESCE(m.status_type, '') AS "statusType",
+            TO_CHAR(m.created_at, 'YYYYMMDD') AS "registeredDate"
         FROM tb_electronic_approval_main m
         WHERE m.tenant_id = #{tenantId}
           AND m.drafting_work_category_id IS NOT NULL

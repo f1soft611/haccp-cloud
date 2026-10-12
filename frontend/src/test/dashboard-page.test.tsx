@@ -53,6 +53,25 @@ describe('Dashboard page', () => {
     expect(screen.queryByText('최근 변경 이력')).not.toBeInTheDocument();
   });
 
+  it('keeps the calendar view after leaving and returning to the dashboard', async () => {
+    const first = render(
+      <AppProviders>
+        <DashboardPage />
+      </AppProviders>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: '캘린더형' }));
+    first.unmount();
+
+    render(
+      <AppProviders>
+        <DashboardPage />
+      </AppProviders>,
+    );
+    expect(
+      await screen.findByTestId('tenant-dashboard-calendar'),
+    ).toBeInTheDocument();
+  });
+
   it('renders the platform admin dashboard top section without the legacy login panel', async () => {
     useAuthStore.setState({
       tenantCode: 'TENANT-A',

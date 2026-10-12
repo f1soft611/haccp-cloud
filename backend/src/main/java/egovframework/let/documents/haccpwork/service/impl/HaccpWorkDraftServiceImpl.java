@@ -1,5 +1,6 @@
 package egovframework.let.documents.haccpwork.service.impl;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -208,6 +209,10 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         params.put("id", id);
         params.put("tenantCode", normalizedTenantCode);
         params.put("actorLoginId", actorLoginId);
+        // 기존 -> cycleDate를 params에 넣지 않아 SQL(requestedCycleStart)이 항상 오늘 주기로 조회
+        // 변경 -> 요청 주기 기준일 전달 (형식 오류면 400, 없으면 null → 오늘)
+        LocalDate requestedCycleDate = HaccpWorkCycleDates.parseOrNull(cycleDate);
+        params.put("cycleDate", requestedCycleDate == null ? null : requestedCycleDate.toString());
 
         HaccpWorkVO item;
         if ("approval".equalsIgnoreCase(idType)) {
