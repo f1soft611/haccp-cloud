@@ -20,6 +20,7 @@ import {
 import { listUsers } from '../../../services/organization/usersService';
 import { HaccpBaseCreateDialog } from './components/HaccpBaseCreateDialog';
 import { HaccpBaseGrid } from './components/HaccpBaseGrid';
+import { useWorkCycleOptions } from '../../../shared/hooks/useWorkCycleOptions'
 import {
   HaccpBaseSearchBar,
   type HaccpBaseSearchValue,
@@ -28,7 +29,6 @@ import type {
   HaccpBaseCreateForm,
   HaccpBaseRow,
   HaccpCategoryOption,
-  HaccpCycle,
 } from './types';
 
 const DEFAULT_SEARCH_VALUE: HaccpBaseSearchValue = {
@@ -47,18 +47,6 @@ const DEFAULT_CREATE_FORM: HaccpBaseCreateForm = {
   useAt: 'Y',
 };
 
-function toCycle(cycle: string): HaccpCycle {
-  if (
-    cycle === '일' ||
-    cycle === '주' ||
-    cycle === '월' ||
-    cycle === '발생시'
-  ) {
-    return cycle;
-  }
-  return '일';
-}
-
 function toCategoryOption(item: HaccpBaseCategoryItem): HaccpCategoryOption {
   return {
     id: item.id,
@@ -75,7 +63,8 @@ function toRow(item: HaccpBaseWorkItem, index: number): HaccpBaseRow {
     divisionName: item.divisionName,
     categoryId: item.categoryGroupId,
     categoryName: item.categoryName,
-    cycle: toCycle(item.cycle),
+    cycle: item.cycle,
+    cycleName: item.cycleName,
     createdBy: item.createdBy || '-',
     createdAt: item.createdAt || '-',
     owner: item.owner || '-',
@@ -96,6 +85,7 @@ export function HaccpBaseManagementPage() {
   const queryClient = useQueryClient();
   const tenantCode = useAuthStore((state) => state.tenantCode || 'PLATFORM');
   const { showError, showSuccess } = useFeedback();
+  const cycleOptions = useWorkCycleOptions();
 
   const [searchValue, setSearchValue] =
     useState<HaccpBaseSearchValue>(DEFAULT_SEARCH_VALUE);
@@ -197,6 +187,7 @@ export function HaccpBaseManagementPage() {
 
   const handleCreate = () => {
     if (
+        !createForm.cycle ||
       !createForm.categoryId ||
       !createForm.divisionName.trim() ||
       !createForm.reviewerId ||
@@ -236,6 +227,7 @@ export function HaccpBaseManagementPage() {
   const handleEdit = () => {
     if (
       !editTargetId ||
+        !editForm.cycle ||
       !editForm.categoryId ||
       !editForm.divisionName.trim() ||
       !editForm.reviewerId ||
@@ -306,9 +298,11 @@ export function HaccpBaseManagementPage() {
         onCreate={() => {
           setCreateForm({
             ...DEFAULT_CREATE_FORM,
+            cycle: cycleOptions[0]?.code ?? '',
             categoryId: categoryOptions[0]?.id ?? '',
             reviewerId: '',
             approverId: '',
+
           });
           setCreateOpen(true);
         }}
@@ -333,6 +327,7 @@ export function HaccpBaseManagementPage() {
         onChange={setCreateForm}
         onSubmit={handleCreate}
         onClose={() => setCreateOpen(false)}
+        cycleOptions={cycleOptions}
       />
 
       <HaccpBaseCreateDialog
@@ -347,6 +342,7 @@ export function HaccpBaseManagementPage() {
           setEditOpen(false);
           setEditTargetId(null);
         }}
+        cycleOptions={cycleOptions}
       />
     </Stack>
   );

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { HaccpBaseManagementPage } from '../pages/documents/haccp-base/HaccpBaseManagementPage';
 
-const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock } =
+const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, createHaccpBaseWorkMock } =
   vi.hoisted(() => ({
     listHaccpBaseCategoriesMock: vi.fn(async () => [
       {
@@ -26,7 +26,7 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock } =
         categoryName: 'HACCP문서(HA)',
         divisionCode: '001',
         divisionName: '기안서',
-        cycle: '일',
+        cycle: 'DAY', cycleName: '일',
         active: true,
         createdBy: '고대성',
         createdAt: '2026-07-07 10:00',
@@ -62,6 +62,7 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock } =
         active: true,
       },
     ]),
+    createHaccpBaseWorkMock: vi.fn<(payload: unknown) => Promise<object>>(async () => ({})),
   }));
 
 const navigateMock = vi.fn();
@@ -83,7 +84,7 @@ vi.mock('../services/documents/haccpBaseCategoryService', () => ({
 
 vi.mock('../services/documents/haccpBaseWorkService', () => ({
   listHaccpBaseWorks: listHaccpBaseWorksMock,
-  createHaccpBaseWork: vi.fn(),
+  createHaccpBaseWork: createHaccpBaseWorkMock,
   updateHaccpBaseWork: vi.fn(),
 }));
 
@@ -149,5 +150,41 @@ describe('HaccpBaseManagementPage', () => {
     expect(
       screen.getByRole('dialog', { name: /업무 수정/ }),
     ).toBeInTheDocument();
+  });
+
+  it('lists cycle options from common codes and submits the selected code', async () => {
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+
+    await screen.findByText('001.기안서');
+    fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
+    const options = await screen.findAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual([
+      '일', '주', '월', '분기', '반기', '연간', '수시',
+    ]);
+    fireEvent.click(screen.getByRole('option', { name: '분기' }));
+
+    fireEvent.change(screen.getByRole('textbox', { name: /구분명/ }), {
+      target: { value: '분기 점검' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: /검토자/ }), {
+      target: { value: '금도연' },
+    });
+    fireEvent.click(await screen.findByRole('option', { name: '금도연' }));
+    fireEvent.change(screen.getByRole('combobox', { name: /승인자/ }), {
+      target: { value: '고대성' },
+    });
+    fireEvent.click(await screen.findByRole('option', { name: '고대성' }));
+
+    fireEvent.click(screen.getByRole('button', { name: '등록' }));
+
+    // mutationFn 두 번째 인자(React Query context) 유무와 무관하게 첫 인자만 검사
+    await vi.waitFor(() => expect(createHaccpBaseWorkMock).toHaveBeenCalled());
+    expect(createHaccpBaseWorkMock.mock.calls[0][0]).toMatchObject({ cycle: 'QUARTER' });
   });
 });
