@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useSessionState } from '../../../../shared/hooks/useSessionState';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import {
@@ -26,7 +27,14 @@ export type WorkCalendarEvent = {
 
 export function useWorkCalendarData() {
     const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
-    const [viewDate, setViewDate] = useState(() => new Date());
+    // 기존 -> useState(new Date()) : 문서 화면에서 돌아오면 이번 달로 초기화
+    // 변경 -> 보던 달을 sessionStorage에 저장해 돌아와도 유지 (Date는 문자열로 저장)
+    const [viewDateText, setViewDateText] = useSessionState(
+        'workCalendar.viewDate',
+        () => new Date().toISOString(),
+    );
+    const viewDate = useMemo(() => new Date(viewDateText), [viewDateText]);
+    const setViewDate = (date: Date) => setViewDateText(date.toISOString());
 
     const {
         data: todoDocuments = [],

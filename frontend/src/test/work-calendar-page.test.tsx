@@ -208,9 +208,11 @@ describe('WorkCalendarPage', () => {
             .closest('.rbc-event')
             ?.querySelector('[data-status-badge]')?.textContent ?? null;
 
-        await waitFor(() => expect(badgeOf('임시저장 업무')).toBe('임시저장'));
-        expect(badgeOf('결재중 업무')).toBe('결재중');
-        expect(badgeOf('반려 업무')).toBe('반려');
+        // 기존 -> '임시저장' / '결재중' / '반려'
+        // 변경 -> 이벤트 배지는 한 글자
+        await waitFor(() => expect(badgeOf('임시저장 업무')).toBe('임'));
+        expect(badgeOf('결재중 업무')).toBe('중');
+        expect(badgeOf('반려 업무')).toBe('반');
         expect(badgeOf('승인 업무')).toBeNull();
     });
 });
