@@ -840,14 +840,17 @@ const attachmentStore = {
 // ponytail: PUT이 통째로 교체하는 메모리 저장소. 테스트 간 공유되므로 성공 저장 테스트를 추가하면 초기화 필요
 let commonCodeStore: CommonCodeData = {
   groups: [
-    { groupCode: 'OCCUR_CYCLE', groupName: '발생 주기', groupDesc: '발생 주기 공통코드' },
+    { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '업무 등록주기' },
     { groupCode: 'UNIT', groupName: '단위', groupDesc: '단위 공통코드' },
   ],
   details: [
-    { groupCode: 'OCCUR_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '발생 주기 - 일' },
-    { groupCode: 'OCCUR_CYCLE', code: 'WEEK', codeName: '주', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '발생 주기 - 주' },
-    { groupCode: 'OCCUR_CYCLE', code: 'MONTH', codeName: '월', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '발생 주기 - 월' },
-    { groupCode: 'OCCUR_CYCLE', code: 'EVENT', codeName: '발생시', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '발생 주기 - 발생시' },
+    { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'WF_FORM_CYCLE', code: 'WEEK', codeName: '주', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+    { groupCode: 'WF_FORM_CYCLE', code: 'MONTH', codeName: '월', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
+    { groupCode: 'WF_FORM_CYCLE', code: 'QUARTER', codeName: '분기', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
+    { groupCode: 'WF_FORM_CYCLE', code: 'HALF', codeName: '반기', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '' },
+    { groupCode: 'WF_FORM_CYCLE', code: 'YEAR', codeName: '연간', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '' },
+    { groupCode: 'WF_FORM_CYCLE', code: 'ANYTIME', codeName: '수시', parentCodeName: '', useAt: true, sortOrder: 70, codeDesc: '' },
     { groupCode: 'UNIT', code: 'KG', codeName: '킬로그램', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
     { groupCode: 'UNIT', code: 'G', codeName: '그램', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
     { groupCode: 'UNIT', code: 'L', codeName: '리터', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
