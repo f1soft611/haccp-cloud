@@ -26,6 +26,11 @@ function toLocalDateString(date: Date): string {
     return toDateString(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+function parseLocalDate(value: string): Date {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+}
+
 // 인스턴스가 없으면 미작성(상태값 비움, 업무 경로)
 function withCycleInstance(
     item: TenantTodoCardItem,
@@ -46,15 +51,12 @@ function withCycleInstance(
 
 export function mapTodosToCalendarEvents(
     items: TenantTodoCardItem[],
-    year: number,
-    monthIndex0: number,
+    rangeStart: string,
+    rangeEnd: string,
     cycleInstances: HaccpWorkCycleInstance[] = [],
     today: Date = new Date(),
 ): CalendarWorkEvent[] {
-    const daysInMonth = new Date(year, monthIndex0 + 1, 0).getDate();
-    const monthPrefix = `${year}-${pad2(monthIndex0 + 1)}-`;
     const todayString = toLocalDateString(today);
-    const isTodayInMonth = todayString.startsWith(monthPrefix);
     const currentWeekMonday = toLocalDateString(
         new Date(
             today.getFullYear(),
@@ -71,16 +73,20 @@ export function mapTodosToCalendarEvents(
         ]),
     );
 
+    const days: string[] = [];
     const mondays: string[] = [];
-    for (let day = 1; day <= daysInMonth; day += 1) {
-        if (new Date(year, monthIndex0, day).getDay() === 1) {
-            mondays.push(toDateString(year, monthIndex0, day));
+    for (
+        const cursor = parseLocalDate(rangeStart);
+        toLocalDateString(cursor) <= rangeEnd;
+        cursor.setDate(cursor.getDate() + 1)
+    ) {
+        days.push(toLocalDateString(cursor));
+        if (cursor.getDay() === 1) {
+            mondays.push(toLocalDateString(cursor));
         }
     }
-    // 이번 주 월요일이 이전 달이어도 이번 주 업무는 오늘 칸에 표시한다.
-    if (isTodayInMonth && !mondays.includes(currentWeekMonday)) {
-        mondays.unshift(currentWeekMonday);
-    }
+    const monthFirsts = days.filter((date) => date.endsWith('-01'));
+    const yearFirsts = days.filter((date) => date.endsWith('-01-01'));
 
     const events: CalendarWorkEvent[] = [];
     const push = (
@@ -89,7 +95,8 @@ export function mapTodosToCalendarEvents(
         cycleDate: string,
         currentCycleDate: string,
     ) => {
-        if (!date.startsWith(monthPrefix)) {
+        // 기존 -> 보는 달 날짜만 표시 / 변경 -> 보이는 범위 안이면 표시
+        if (date < rangeStart || date > rangeEnd) {
             return;
         }
         events.push({
@@ -100,42 +107,45 @@ export function mapTodosToCalendarEvents(
         });
     };
 
+    // 진행 중인 주기(이번 주/이번 달)는 오늘 칸, 나머지는 주기 시작일(월요일/1일)에 표시
+    // 기존 -> 이번 주 월요일이 이전 달일 때만 따로 끼워 넣음
+    // 변경 -> 진행 중인 주기 기준일이 범위 밖이어도 오늘이 범위 안이면 오늘 칸에 표시
+    const pushCycles = (
+        item: TenantTodoCardItem,
+        cycleDates: string[],
+        currentCycleDate: string,
+    ) => {
+        new Set([...cycleDates, currentCycleDate]).forEach((cycleDate) => {
+            push(
+                cycleDate === currentCycleDate ? todayString : cycleDate,
+                item,
+                cycleDate,
+                currentCycleDate,
+            );
+        });
+    };
+
     items.forEach((item) => {
         // 기존 -> getWorkCycleLabel(item) 한글 라벨 비교 / 변경 -> reg_term 공통코드 비교
         const cycle = item.cycle;
 
         if (cycle === 'DAY') {
-            for (let day = 1; day <= daysInMonth; day += 1) {
-                const date = toDateString(year, monthIndex0, day);
-                push(date, item, date, todayString);
-            }
+            days.forEach((date) => push(date, item, date, todayString));
             return;
         }
 
-        // 진행 중인 주기(이번 주/이번 달)는 오늘 칸, 나머지는 주기 시작일(월요일/1일)에 표시
         if (cycle === 'WEEK') {
-            mondays.forEach((monday) => {
-                push(
-                    monday === currentWeekMonday ? todayString : monday,
-                    item,
-                    monday,
-                    currentWeekMonday,
-                );
-            });
+            pushCycles(item, mondays, currentWeekMonday);
             return;
         }
 
         if (cycle === 'MONTH') {
-            const firstDay = toDateString(year, monthIndex0, 1);
-            push(isTodayInMonth ? todayString : firstDay, item, firstDay, currentMonthFirst);
+            pushCycles(item, monthFirsts, currentMonthFirst);
             return;
         }
 
         if (cycle === 'YEAR') {
-            if (monthIndex0 === 0) {
-                const firstDay = toDateString(year, 0, 1);
-                push(firstDay, item, firstDay, currentYearFirst);
-            }
+            yearFirsts.forEach((firstDay) => push(firstDay, item, firstDay, currentYearFirst));
             return;
         }
 
