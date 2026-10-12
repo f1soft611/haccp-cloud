@@ -18,7 +18,8 @@ function buildItem(
         categorySortOrder: 1,
         divisionCode: '001',
         divisionName: '점검 문서',
-        cycle: '월',
+        cycle: 'MONTH',
+        cycleName: '월',
         active: true,
         assigneeIds: [],
         referenceIds: [],
@@ -47,7 +48,7 @@ function instance(
 describe('mapTodosToCalendarEvents', () => {
     it('places a daily item on every day of a past month', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '일' })], 2026, 1, [], TODAY,
+            [buildItem({ cycle: 'DAY' })], 2026, 1, [], TODAY,
         );
 
         expect(events).toHaveLength(28);
@@ -59,7 +60,7 @@ describe('mapTodosToCalendarEvents', () => {
 
     it('attaches status per daily instance and leaves other days unwritten', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '일' })], 2026, 9,
+            [buildItem({ cycle: 'DAY' })], 2026, 9,
             [instance('2026-10-02', 'pre_apply')], TODAY,
         );
         const byDate = new Map(events.map((event) => [event.date, event]));
@@ -82,7 +83,7 @@ describe('mapTodosToCalendarEvents', () => {
 
     it('marks daily events after today as future', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '일' })], 2026, 9, [], TODAY,
+            [buildItem({ cycle: 'DAY' })], 2026, 9, [], TODAY,
         );
         const byDate = new Map(events.map((event) => [event.date, event]));
 
@@ -92,7 +93,7 @@ describe('mapTodosToCalendarEvents', () => {
 
     it('places weekly items on Mondays of a past month', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '주' })], 2026, 1, [], TODAY,
+            [buildItem({ cycle: 'WEEK' })], 2026, 1, [], TODAY,
         );
 
         expect(events.map((event) => event.date)).toEqual([
@@ -102,7 +103,7 @@ describe('mapTodosToCalendarEvents', () => {
 
     it('places the current week on today and later weeks on Mondays as future', () => {
         const events = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '주' })], 2026, 9, [], TODAY,
+            [buildItem({ cycle: 'WEEK' })], 2026, 9, [], TODAY,
         );
 
         expect(
@@ -118,10 +119,10 @@ describe('mapTodosToCalendarEvents', () => {
     it('shows the current week on today even when its Monday is in the previous month', () => {
         const octFirst = new Date(2026, 9, 1); // 목요일, 이번 주 월요일 = 09-28
         const october = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '주' })], 2026, 9, [], octFirst,
+            [buildItem({ cycle: 'WEEK' })], 2026, 9, [], octFirst,
         );
         const september = mapTodosToCalendarEvents(
-            [buildItem({ cycle: '주' })], 2026, 8, [], octFirst,
+            [buildItem({ cycle: 'WEEK' })], 2026, 8, [], octFirst,
         );
 
         expect(october[0]).toMatchObject({ date: '2026-10-01', cycleDate: '2026-09-28' });
@@ -131,7 +132,7 @@ describe('mapTodosToCalendarEvents', () => {
     });
 
     it('places the current month on today, other months on the 1st', () => {
-        const item = buildItem({ cycle: '월' });
+        const item = buildItem({ cycle: 'MONTH' });
 
         expect(mapTodosToCalendarEvents([item], 2026, 9, [], TODAY)).toMatchObject([
             { date: '2026-10-08', cycleDate: '2026-10-01', isFuture: false },
@@ -145,7 +146,7 @@ describe('mapTodosToCalendarEvents', () => {
     });
 
     it('places a yearly item on January 1st only when viewing January', () => {
-        const item = buildItem({ cycle: '매년' });
+        const item = buildItem({ cycle: 'YEAR' });
 
         expect(mapTodosToCalendarEvents([item], 2026, 0, [], TODAY)).toMatchObject([
             { date: '2026-01-01', cycleDate: '2026-01-01' },
@@ -153,9 +154,10 @@ describe('mapTodosToCalendarEvents', () => {
         expect(mapTodosToCalendarEvents([item], 2026, 1, [], TODAY)).toEqual([]);
     });
 
-    it('does not place event-based ("발생시") items on the calendar', () => {
+    // 기존 -> '발생시' 미표시 / 변경 -> 고정 기준일 규칙이 없는 ANYTIME/QUARTER/HALF 미표시
+    it.each(['ANYTIME', 'QUARTER', 'HALF'])('does not place %s items on the calendar', (cycle) => {
         expect(
-            mapTodosToCalendarEvents([buildItem({ cycle: '발생시' })], 2026, 1, [], TODAY),
+            mapTodosToCalendarEvents([buildItem({ cycle })], 2026, 1, [], TODAY),
         ).toEqual([]);
     });
 });

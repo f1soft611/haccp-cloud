@@ -27,7 +27,7 @@ describe('useWorkCalendarData', () => {
                 categorySortOrder: 1,
                 divisionCode: '001',
                 divisionName: '월간 점검',
-                cycle: '월간',
+                cycle: 'MONTH', cycleName: '월',
                 title: '월간 점검 업무',
                 active: true,
                 assigneeIds: [],

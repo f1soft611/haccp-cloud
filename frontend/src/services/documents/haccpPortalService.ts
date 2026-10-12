@@ -5,6 +5,7 @@ export type HaccpPortalDocumentItem = {
   categoryName: string;
   divisionName: string;
   cycle: string;
+  cycleName: string;
   assigneeSummary: string;
 };
 
@@ -18,6 +19,8 @@ type RawHaccpPortalDocumentItem = {
   code_name?: string | null;
   cycle?: string | null;
   reg_term?: string | null;
+  cycleName?: string | null;
+  reg_term_nm?: string | null;
   assigneeSummary?: string | null;
   assignee_summary?: string | null;
 };
@@ -49,7 +52,11 @@ function normalizeItem(
     divisionName: normalizeText(
       raw.divisionName ?? raw.division_name ?? raw.code_name,
     ),
+    // 기존 -> cycle(한글 이름) / 변경 -> cycle(공통코드) + cycleName(공통코드 이름, 없으면 코드)
     cycle: normalizeText(raw.cycle ?? raw.reg_term),
+    cycleName:
+        normalizeText(raw.cycleName ?? raw.reg_term_nm) ||
+        normalizeText(raw.cycle ?? raw.reg_term),
     assigneeSummary: normalizeText(raw.assigneeSummary ?? raw.assignee_summary),
   };
 }

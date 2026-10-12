@@ -41,7 +41,7 @@ describe('WorkCalendarPage', () => {
                 categorySortOrder: 1,
                 divisionCode: '001',
                 divisionName: '월간 점검',
-                cycle: '월간',
+                cycle: 'MONTH', cycleName: '월',
                 title: '월간 점검 업무',
                 active: true,
                 assigneeIds: [],
@@ -123,7 +123,7 @@ describe('WorkCalendarPage', () => {
 
         expect(eventEl).not.toBeNull();
         expect(eventEl?.style.backgroundColor).toBe(
-            getWorkCycleSx('월').bgcolor,
+            getWorkCycleSx('MONTH').bgcolor,
         );
     });
 

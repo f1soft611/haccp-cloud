@@ -10,28 +10,28 @@ const { listHaccpPortalDocumentsMock } = vi.hoisted(() => ({
       id: '1',
       categoryName: 'HACCP(선행)',
       divisionName: '위생교육일지-품질',
-      cycle: '월',
+      cycle: 'MONTH', cycleName: '월',
       assigneeSummary: '관리자 외 2명',
     },
     {
       id: '2',
       categoryName: 'HACCP(HA)',
       divisionName: 'CCP-1B 검증기록',
-      cycle: '일',
+      cycle: 'DAY', cycleName: '일',
       assigneeSummary: '관리자 외 2명',
     },
     {
       id: '3',
       categoryName: '기타문서',
       divisionName: '기안서',
-      cycle: '발생시',
+      cycle: 'ANYTIME', cycleName: '수시',
       assigneeSummary: '관리자 외 2명',
     },
     {
       id: '4',
       categoryName: '생산일지',
       divisionName: '생산일지 점검표',
-      cycle: '주',
+      cycle: 'WEEK', cycleName: '주',
       assigneeSummary: '관리자 외 2명',
     },
   ]),
@@ -49,28 +49,28 @@ describe('HaccpPortalPage', () => {
         id: '1',
         categoryName: 'HACCP(선행)',
         divisionName: '위생교육일지-품질',
-        cycle: '월',
+        cycle: 'MONTH', cycleName: '월',
         assigneeSummary: '관리자 외 2명',
       },
       {
         id: '2',
         categoryName: 'HACCP(HA)',
         divisionName: 'CCP-1B 검증기록',
-        cycle: '일',
+        cycle: 'DAY', cycleName: '일',
         assigneeSummary: '관리자 외 2명',
       },
       {
         id: '3',
         categoryName: '기타문서',
         divisionName: '기안서',
-        cycle: '발생시',
+        cycle: 'ANYTIME', cycleName: '수시',
         assigneeSummary: '관리자 외 2명',
       },
       {
         id: '4',
         categoryName: '생산일지',
         divisionName: '생산일지 점검표',
-        cycle: '주',
+        cycle: 'WEEK', cycleName: '주',
         assigneeSummary: '관리자 외 2명',
       },
     ]);
@@ -149,6 +149,22 @@ describe('HaccpPortalPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
 
     expect(screen.getByText('CCP-1B 검증기록')).toBeInTheDocument();
+    expect(screen.queryByText('기안서')).not.toBeInTheDocument();
+  });
+
+  it('filters rows by cycle code from common codes', async () => {
+    render(
+        <AppProviders>
+          <HaccpPortalPage />
+        </AppProviders>,
+    );
+
+    expect(await screen.findByText('기안서')).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
+    fireEvent.click(await screen.findByRole('option', { name: '주' }));
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+
+    expect(screen.getByText('생산일지 점검표')).toBeInTheDocument();
     expect(screen.queryByText('기안서')).not.toBeInTheDocument();
   });
 });

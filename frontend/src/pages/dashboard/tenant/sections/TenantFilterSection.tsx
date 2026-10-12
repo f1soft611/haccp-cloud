@@ -9,7 +9,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import { APP_LABELS } from '../../../../shared/constants/labels';
+import { useWorkCycleOptions } from '../../../../shared/hooks/useWorkCycleOptions';
 import {
   TODO_STATUS_OPTIONS,
   type TenantTodoFilter,
@@ -38,8 +38,10 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
     onViewModeChange,
   } = props;
 
+  const cycleOptions = useWorkCycleOptions();
+
   const selectField = (
-    key: 'category' | 'cycle' | 'status',
+    key: 'category' | 'status',
     label: string,
     options: readonly string[],
     minWidth: number,
@@ -94,7 +96,21 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
           alignItems={{ xs: 'stretch', md: 'flex-end' }}
         >
           {selectField('category', '업무분류', categoryOptions, 140)}
-          {selectField('cycle', '주기', APP_LABELS.dashboard.cycles, 120)}
+          <TextField
+              select
+              size="small"
+              label="주기"
+              value={value.cycle}
+              onChange={(event) => onChange({ ...value, cycle: event.target.value })}
+              sx={{ minWidth: 120 }}
+          >
+            <MenuItem value="">전체</MenuItem>
+            {cycleOptions.map((option) => (
+                <MenuItem key={option.code} value={option.code}>
+                  {option.name}
+                </MenuItem>
+            ))}
+          </TextField>
           {selectField('status', '상태', TODO_STATUS_OPTIONS, 140)}
 
           <TextField

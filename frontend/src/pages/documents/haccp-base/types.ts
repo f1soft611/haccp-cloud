@@ -13,7 +13,8 @@ export type HaccpBaseRow = {
   divisionName: string;
   categoryId: string;
   categoryName: string;
-  cycle: HaccpCycle;
+  cycle: string;
+  cycleName: string;
   createdBy: string;
   createdAt: string;
   owner: string;

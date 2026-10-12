@@ -14,10 +14,13 @@ import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { HaccpPortalGrid } from './components/HaccpPortalGrid';
 import { useHaccpPortalPage } from './hooks/useHaccpPortalPage';
+import { useWorkCycleOptions } from '../../../shared/hooks/useWorkCycleOptions';
 
 export function HaccpPortalPage() {
   const { documentsQuery, search, setSearch, onSearch, categoryOptions, rows } =
     useHaccpPortalPage();
+
+  const cycleOptions = useWorkCycleOptions();
 
   return (
     <Stack spacing={2} data-testid="haccp-portal-page">
@@ -64,10 +67,10 @@ export function HaccpPortalPage() {
               }
             >
               <MenuItem value="ALL">전체</MenuItem>
-              {APP_LABELS.dashboard.cycles.map((cycle) => (
-                <MenuItem key={cycle} value={cycle}>
-                  {cycle}
-                </MenuItem>
+              {cycleOptions.map((option) => (
+                  <MenuItem key={option.code} value={option.code}>
+                    {option.name}
+                  </MenuItem>
               ))}
             </Select>
           </FormControl>

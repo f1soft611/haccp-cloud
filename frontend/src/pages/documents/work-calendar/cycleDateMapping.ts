@@ -1,5 +1,3 @@
-import { APP_LABELS } from '../../../shared/constants/labels';
-import { getWorkCycleLabel } from '../../dashboard/tenant/utils';
 import type { TenantTodoCardItem } from '../../dashboard/tenant/hooks/useTenantDashboardData';
 import type { HaccpWorkCycleInstance } from '../../../services/documents/haccpBaseWorkService';
 
@@ -10,9 +8,7 @@ export type CalendarWorkEvent = {
     cycleDate: string;
     isFuture: boolean;
     item: TenantTodoCardItem;
-};
-
-const [DAILY, MONTHLY, WEEKLY, YEARLY] = APP_LABELS.dashboard.cycles;
+}
 
 function pad2(value: number): string {
     return String(value).padStart(2, '0');
@@ -105,9 +101,10 @@ export function mapTodosToCalendarEvents(
     };
 
     items.forEach((item) => {
-        const cycleLabel = getWorkCycleLabel(item);
+        // 기존 -> getWorkCycleLabel(item) 한글 라벨 비교 / 변경 -> reg_term 공통코드 비교
+        const cycle = item.cycle;
 
-        if (cycleLabel === DAILY) {
+        if (cycle === 'DAY') {
             for (let day = 1; day <= daysInMonth; day += 1) {
                 const date = toDateString(year, monthIndex0, day);
                 push(date, item, date, todayString);
@@ -116,7 +113,7 @@ export function mapTodosToCalendarEvents(
         }
 
         // 진행 중인 주기(이번 주/이번 달)는 오늘 칸, 나머지는 주기 시작일(월요일/1일)에 표시
-        if (cycleLabel === WEEKLY) {
+        if (cycle === 'WEEK') {
             mondays.forEach((monday) => {
                 push(
                     monday === currentWeekMonday ? todayString : monday,
@@ -128,13 +125,13 @@ export function mapTodosToCalendarEvents(
             return;
         }
 
-        if (cycleLabel === MONTHLY) {
+        if (cycle === 'MONTH') {
             const firstDay = toDateString(year, monthIndex0, 1);
             push(isTodayInMonth ? todayString : firstDay, item, firstDay, currentMonthFirst);
             return;
         }
 
-        if (cycleLabel === YEARLY) {
+        if (cycle === 'YEAR') {
             if (monthIndex0 === 0) {
                 const firstDay = toDateString(year, 0, 1);
                 push(firstDay, item, firstDay, currentYearFirst);
@@ -142,7 +139,7 @@ export function mapTodosToCalendarEvents(
             return;
         }
 
-        // '발생시'(이벤트성) 업무는 고정 주기가 없어 캘린더에 표시하지 않는다.
+        // ANYTIME(수시)·QUARTER·HALF는 고정 기준일 규칙이 없어 캘린더에 표시하지 않는다. (분기/반기 계산은 범위 밖)
     });
 
     return events;
