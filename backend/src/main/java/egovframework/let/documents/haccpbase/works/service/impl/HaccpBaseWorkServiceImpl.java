@@ -89,6 +89,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
 
         Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
         validateWorkCodeDuplication(tenantId, payload.getCategoryGroupId(), divisionCode, null);
+        validateWorkCycleCode(tenantId, payload.getCycle());    // 공통코드 WF_FORM_CYCLE 코드인지 확인
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("tenantId", tenantId);
@@ -132,6 +133,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
 
         Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
         validateWorkCodeDuplication(tenantId, payload.getCategoryGroupId(), divisionCode, id);
+        validateWorkCycleCode(tenantId, payload.getCycle());    // 공통코드 WF_FORM_CYCLE 코드인지 확인
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("id", id);
@@ -249,6 +251,12 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         Long existingId = haccpBaseWorkDAO.selectWorkIdByCode(tenantId, categoryGroupId, divisionCode);
         if (existingId != null && (excludeId == null || !Objects.equals(excludeId, existingId))) {
             throw new IllegalArgumentException("이미 사용 중인 구분코드입니다.");
+        }
+    }
+
+    private void validateWorkCycleCode(Long tenantId, String cycle) throws Exception {
+        if (haccpBaseWorkDAO.countWorkCycleCode(tenantId, normalizeCycle(cycle)) == 0) {
+            throw new IllegalArgumentException("등록주기가 올바르지 않습니다.");
         }
     }
 

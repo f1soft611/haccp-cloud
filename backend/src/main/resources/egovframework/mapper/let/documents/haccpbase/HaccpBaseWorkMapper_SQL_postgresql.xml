@@ -249,6 +249,20 @@
         LIMIT 1
     </select>
 
+    <!-- 등록주기 공통코드(WF_FORM_CYCLE) 존재 확인 -->
+    <select id="HaccpBaseWorkDAO.countWorkCycleCode"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_common_code_item cci
+                 JOIN tb_common_code_group ccg
+                      ON ccg.common_code_group_id = cci.group_id
+        WHERE ccg.tenant_id = #{tenantId}
+          AND ccg.group_code = 'WF_FORM_CYCLE'
+          AND cci.item_code = #{cycleCode}
+          AND cci.use_at = 'Y'
+    </select>
+
     <select id="HaccpBaseWorkDAO.insertWork"
             parameterType="map"
             resultType="long">

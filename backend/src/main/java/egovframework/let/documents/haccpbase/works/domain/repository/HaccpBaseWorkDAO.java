@@ -47,6 +47,15 @@ public class HaccpBaseWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpBaseWorkDAO.selectWorkIdByCode", params);
     }
 
+    // 등록주기 코드가 테넌트 공통코드(WF_FORM_CYCLE, 사용중)에 있는지 확인
+    public int countWorkCycleCode(Long tenantId, String cycleCode) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("cycleCode", cycleCode);
+        Integer count = selectOne("HaccpBaseWorkDAO.countWorkCycleCode", params);
+        return count == null ? 0 : count;
+    }
+
     public Long insertWork(Map<String, Object> payload) throws Exception {
         return selectOne("HaccpBaseWorkDAO.insertWork", payload);
     }
