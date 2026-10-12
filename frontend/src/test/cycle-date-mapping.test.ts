@@ -54,7 +54,7 @@ function instance(
     approvalId = '900',
     registeredDate = '',
 ): HaccpWorkCycleInstance {
-    return { workId: '1', cycleDate, approvalId, statusType, registeredDate };
+    return { workId: '1', cycleDate, approvalId, statusType, registeredDate, title: '' };
 }
 
 describe('mapTodosToCalendarEvents', () => {
@@ -322,5 +322,15 @@ describe('mapTodosToCalendarEvents', () => {
             );
             expect(dates(yearly)).toEqual([{ date: '2026-10-02', cycleDate: '2026-01-01' }]);
         });
+    });
+    it('uses each day own document title, falling back to the work name', () => {
+        const events = mapTodosToCalendarEvents(
+            [buildItem({ id: '1', cycle: 'DAY', title: '대기문서 제목', divisionName: '일일점검' })],
+            ...OCT_2026,
+            [{ ...instance('2026-10-01', 'in_progress'), title: '10/1 일일점검' }],
+            TODAY,
+        );
+        expect(events.find((e) => e.date === '2026-10-01')?.item.title).toBe('10/1 일일점검');
+        expect(events.find((e) => e.date === '2026-10-02')?.item.title).toBe('일일점검');
     });
 });

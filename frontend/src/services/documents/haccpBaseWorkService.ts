@@ -416,6 +416,9 @@ export type HaccpWorkCycleInstance = {
   approvalId: string;
   statusType: string;
   registeredDate: string;
+  // 기존 -> 없음 (업무 단위 title을 모든 날짜가 공유)
+  // 변경 -> 날짜별 문서 제목 (없으면 '')
+  title: string;
 };
 
 type RawHaccpWorkCycleInstance = {
@@ -424,6 +427,7 @@ type RawHaccpWorkCycleInstance = {
   approvalId?: string | number | null;
   statusType?: string | null;
   registeredDate?: string | null;
+  title?: string | null;
 };
 
 function toDashedDate(compact: string | null | undefined): string {
@@ -457,6 +461,7 @@ export async function listHaccpWorkTodoCycles(params: {
     approvalId: String(item.approvalId ?? ''),
     statusType: item.statusType ?? '',
     registeredDate: toDashedDate(item.registeredDate),
+    title: (item.title ?? '').trim(),
   }));
 }
 

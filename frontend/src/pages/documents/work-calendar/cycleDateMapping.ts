@@ -39,6 +39,9 @@ function withCycleInstance(
 ): TenantTodoCardItem {
     return {
         ...item,
+        // 기존 -> item.title(업무 단위, 결재 대기 문서 제목)을 모든 칸이 공유
+        // 변경 -> 그 날짜 문서 제목, 문서가 없으면 업무명
+        title: instance?.title || item.divisionName || item.categoryName || '업무',
         approvalId: instance?.approvalId ?? '',
         approvalStatusType: instance?.statusType ?? '',
         approvalStatusTypeName: '',
