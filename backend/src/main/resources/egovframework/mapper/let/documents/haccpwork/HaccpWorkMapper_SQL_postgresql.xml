@@ -614,18 +614,9 @@
               NULLIF(TRIM(CAST(cu_pre.user_id AS varchar)), ''),
               CAST(pre.login_id AS varchar)
             ) AS created_by,
-            TO_CHAR(
-              COALESCE(
-                CASE
-                  WHEN NULLIF(TRIM(pre.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(pre.twf_date), ''), 'YYYYMMDD')
-                  ELSE NULL
-                END,
-                DATE(pre.updated_at),
-                DATE(pre.created_at),
-                DATE(w.created_at)
-              ),
-              'YYYY-MM-DD'
-            ) AS created_at,
+            <!-- 기존 -> 임시저장 twf_date → 수정일 → 생성일 → 업무 등록일 순 (미작성이면 업무 등록일이 기안일로 표시) -->
+            <!-- 변경 -> 업무 경로는 결재신청 전 문서만 다루므로 기안일은 항상 오늘 -->
+            TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') AS created_at,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
               WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
@@ -834,16 +825,20 @@
               NULLIF(TRIM(CAST(cu_main.user_id AS varchar)), ''),
               CAST(m.login_id AS varchar)
             ) AS created_by,
+            <!-- 기존 -> twf_date → 수정일 → 생성일 → 업무 등록일 순 -->
+            <!-- 변경 -> 결재신청 전(pre_apply)이면 오늘, 신청 후면 결재신청일(twf_date) -->
             TO_CHAR(
-              COALESCE(
-                CASE
-                  WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
-                  ELSE NULL
-                END,
-                DATE(m.updated_at),
-                DATE(m.created_at),
-                DATE(w.created_at)
-              ),
+              CASE
+                WHEN COALESCE(m.status_type, '') = 'pre_apply' THEN CURRENT_DATE
+                ELSE COALESCE(
+                  CASE
+                    WHEN NULLIF(TRIM(m.twf_date), '') ~ '^[0-9]{8}$' THEN TO_DATE(NULLIF(TRIM(m.twf_date), ''), 'YYYYMMDD')
+                    ELSE NULL
+                  END,
+                  DATE(m.updated_at),
+                  DATE(m.created_at)
+                )
+              END,
               'YYYY-MM-DD'
             ) AS created_at,
             CONCAT(
