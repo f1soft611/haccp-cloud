@@ -15,6 +15,7 @@
         <result property="divisionCode" column="cata_type_code"/>
         <result property="divisionName" column="code_name"/>
         <result property="cycle" column="reg_term"/>
+        <result property="cycleName" column="reg_term_nm"/>
         <result property="createdBy" column="created_by"/>
         <result property="owner" column="owner"/>
         <result property="todoStatus" column="todo_status"/>
@@ -62,6 +63,7 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            CYCLE_NAME_COL,
             COALESCE(pending.pending_drafter_name, pending.pending_login_code, CAST(pending.pending_login_id AS varchar), '-') AS created_by,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
@@ -102,6 +104,12 @@
         LEFT JOIN tb_drafting_work_category_group g
           ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
          AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_common_code_group ccg
+                  ON ccg.tenant_id = w.tenant_id
+                      AND ccg.group_code = 'WF_FORM_CYCLE'
+        LEFT JOIN tb_common_code_item cci
+                  ON cci.group_id = ccg.common_code_group_id
+                      AND cci.item_code = w.reg_term
         LEFT JOIN tb_user ru
           ON ru.tenant_id = w.tenant_id
          AND ru.login_id = w.reviewer_id
@@ -275,6 +283,7 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
+            CYCLE_NAME_COL,
             COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar), '-') AS created_by,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             'IN_PROGRESS' AS todo_status,
@@ -304,6 +313,12 @@
         LEFT JOIN tb_drafting_work_category_group g
           ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
          AND g.tenant_id = w.tenant_id
+        LEFT JOIN tb_common_code_group ccg
+          ON ccg.tenant_id = w.tenant_id
+          AND ccg.group_code = 'WF_FORM_CYCLE'
+        LEFT JOIN tb_common_code_item cci
+          ON cci.group_id = ccg.common_code_group_id
+          AND cci.item_code = w.reg_term
         LEFT JOIN tb_user ru
           ON ru.tenant_id = w.tenant_id
          AND ru.login_id = w.reviewer_id
