@@ -45,7 +45,7 @@ describe('WorkCalendarPage', () => {
                 categoryName: 'HACCP (HA)',
                 categorySortOrder: 1,
                 divisionCode: '001',
-                divisionName: '월간 점검',
+                divisionName: '월간 점검 업무',
                 cycle: 'MONTH', cycleName: '월',
                 title: '월간 점검 업무',
                 active: true,
@@ -156,7 +156,7 @@ describe('WorkCalendarPage', () => {
         const legendBadges = Array.from(
             document.querySelectorAll('[data-legend] [data-status-badge]'),
         ).map((el) => el.textContent);
-        expect(legendBadges).toEqual(['임시저장', '결재중', '반려']);
+        expect(legendBadges).toEqual(['임시저장', '결재중', '반려', '승인']);
     });
 
     it('falls back to cycle codes when common codes fail to load', async () => {
@@ -174,7 +174,7 @@ describe('WorkCalendarPage', () => {
         expect(chipLabels).toEqual(['DAY', 'WEEK', 'MONTH', 'YEAR']);
     });
 
-    it('shows status badges for temp-saved, in-progress and rejected, none for approved', async () => {
+    it('shows status badges for temp-saved, in-progress and rejected and approved', async () => {
         const now = new Date();
         const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         const base = {
@@ -191,10 +191,10 @@ describe('WorkCalendarPage', () => {
             { ...base, id: 'd', title: '승인 업무' },
         ]);
         vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue([
-            { workId: 'a', cycleDate: `${ym}-01`, approvalId: '1', statusType: 'pre_apply', registeredDate: `${ym}-01` },
-            { workId: 'b', cycleDate: `${ym}-01`, approvalId: '2', statusType: 'in_progress', registeredDate: `${ym}-01` },
-            { workId: 'c', cycleDate: `${ym}-01`, approvalId: '3', statusType: 'rejected', registeredDate: `${ym}-01` },
-            { workId: 'd', cycleDate: `${ym}-01`, approvalId: '4', statusType: 'approved', registeredDate: `${ym}-01` },
+            { workId: 'a', cycleDate: `${ym}-01`, approvalId: '1', statusType: 'pre_apply', registeredDate: `${ym}-01`, title: '임시저장 업무' },
+            { workId: 'b', cycleDate: `${ym}-01`, approvalId: '2', statusType: 'in_progress', registeredDate: `${ym}-01`, title: '결재중 업무' },
+            { workId: 'c', cycleDate: `${ym}-01`, approvalId: '3', statusType: 'rejected', registeredDate: `${ym}-01`, title: '반려 업무' },
+            { workId: 'd', cycleDate: `${ym}-01`, approvalId: '4', statusType: 'approved', registeredDate: `${ym}-01`, title: '승인 업무' },
         ]);
 
         render(
@@ -213,6 +213,6 @@ describe('WorkCalendarPage', () => {
         await waitFor(() => expect(badgeOf('임시저장 업무')).toBe('임'));
         expect(badgeOf('결재중 업무')).toBe('중');
         expect(badgeOf('반려 업무')).toBe('반');
-        expect(badgeOf('승인 업무')).toBeNull();
+        expect(badgeOf('승인 업무')).toBe('승');
     });
 });

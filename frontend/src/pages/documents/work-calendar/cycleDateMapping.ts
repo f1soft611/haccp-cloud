@@ -39,6 +39,9 @@ function withCycleInstance(
 ): TenantTodoCardItem {
     return {
         ...item,
+        // 기존 -> item.title(업무 단위, 결재 대기 문서 제목)을 모든 칸이 공유
+        // 변경 -> 그 날짜 문서 제목, 문서가 없으면 업무명
+        title: instance?.title || item.divisionName || item.categoryName || '업무',
         approvalId: instance?.approvalId ?? '',
         approvalStatusType: instance?.statusType ?? '',
         approvalStatusTypeName: '',
@@ -110,8 +113,10 @@ export function mapTodosToCalendarEvents(
 
     // 기존 -> 진행 중인 주기는 등록 여부와 무관하게 오늘 칸, 나머지는 주기 시작일
     // 변경 -> 문서가 있으면 등록일 칸 (단, 진행 중 주기가 반려면 오늘 칸), 문서가 없으면 기존 규칙
-    const isRejected = (statusType: string) =>
-        resolveApprovalStatusView({ approvalStatusType: statusType }).label === '반려';
+    const followsToday = (statusType: string) =>
+        ['반려', '임시저장'].includes(
+            resolveApprovalStatusView({ approvalStatusType: statusType }).label,
+        );
     const displayDate = (
         item: TenantTodoCardItem,
         cycleDate: string,
@@ -119,7 +124,7 @@ export function mapTodosToCalendarEvents(
     ) => {
         const isCurrent = cycleDate === currentCycleDate;
         const instance = instances.get(`${item.id}|${cycleDate}`);
-        if (instance?.registeredDate && !(isCurrent && isRejected(instance.statusType))) {
+        if (instance?.registeredDate && !(isCurrent && followsToday(instance.statusType))) {
             return instance.registeredDate;
         }
         return isCurrent ? todayString : cycleDate;

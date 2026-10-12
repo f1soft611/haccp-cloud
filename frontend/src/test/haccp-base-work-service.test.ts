@@ -59,8 +59,8 @@ describe('haccpBaseWorkService', () => {
     });
 
     expect(result).toEqual([
-      { workId: '1', cycleDate: '2026-10-05', approvalId: '9', statusType: 'in_progress', registeredDate: '2026-10-06' },
-      { workId: '2', cycleDate: '2026-10-05', approvalId: '10', statusType: 'approved', registeredDate: '' },
+      { workId: '1', cycleDate: '2026-10-05', approvalId: '9', statusType: 'in_progress', registeredDate: '2026-10-06', title: '' },
+      { workId: '2', cycleDate: '2026-10-05', approvalId: '10', statusType: 'approved', registeredDate: '', title: '' },
     ]);
   });
 });

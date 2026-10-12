@@ -54,7 +54,7 @@ function instance(
     approvalId = '900',
     registeredDate = '',
 ): HaccpWorkCycleInstance {
-    return { workId: '1', cycleDate, approvalId, statusType, registeredDate };
+    return { workId: '1', cycleDate, approvalId, statusType, registeredDate, title: '' };
 }
 
 describe('mapTodosToCalendarEvents', () => {
@@ -268,13 +268,24 @@ describe('mapTodosToCalendarEvents', () => {
             expect(events.some((event) => event.date === '2026-10-08')).toBe(false);
         });
 
-        it('pins the current week on its registered date when only temp-saved', () => {
+        it('keeps a temp-saved current week on today', () => {
             const events = mapTodosToCalendarEvents(
                 [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
                 [instance('2026-10-05', 'pre_apply', '900', '2026-10-07')], TODAY,
             );
 
-            expect(dates(events)).toContainEqual({ date: '2026-10-07', cycleDate: '2026-10-05' });
+            expect(dates(events)).toContainEqual({ date: '2026-10-08', cycleDate: '2026-10-05' });
+            expect(events.some((event) => event.date === '2026-10-07')).toBe(false);
+        });
+
+        it('pins a temp-saved past week on its registered date, not today', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
+                [instance('2026-09-28', 'pre_apply', '900', '2026-09-30')], TODAY,
+            );
+
+            expect(dates(events)).toContainEqual({ date: '2026-09-30', cycleDate: '2026-09-28' });
+            expect(events.filter((event) => event.date === '2026-10-08')).toHaveLength(1);
         });
 
         it('keeps a rejected current week on today', () => {
@@ -311,5 +322,15 @@ describe('mapTodosToCalendarEvents', () => {
             );
             expect(dates(yearly)).toEqual([{ date: '2026-10-02', cycleDate: '2026-01-01' }]);
         });
+    });
+    it('uses each day own document title, falling back to the work name', () => {
+        const events = mapTodosToCalendarEvents(
+            [buildItem({ id: '1', cycle: 'DAY', title: '대기문서 제목', divisionName: '일일점검' })],
+            ...OCT_2026,
+            [{ ...instance('2026-10-01', 'in_progress'), title: '10/1 일일점검' }],
+            TODAY,
+        );
+        expect(events.find((e) => e.date === '2026-10-01')?.item.title).toBe('10/1 일일점검');
+        expect(events.find((e) => e.date === '2026-10-02')?.item.title).toBe('일일점검');
     });
 });
