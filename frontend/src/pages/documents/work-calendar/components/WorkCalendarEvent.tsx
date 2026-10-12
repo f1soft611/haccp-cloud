@@ -3,15 +3,20 @@ import type { EventProps } from 'react-big-calendar';
 import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
 
-type StatusBadge = { label: string; short: string; color: 'info' | 'warning' | 'error' };
+// 기존 -> color: 'info' | 'warning' | 'error'
+// 변경 -> 승인 배지용 'success' 추가
+type StatusBadge = { label: string; short: string; color: 'info' | 'warning' | 'error' | 'success' };
 
-// 공통 상태 라벨 → 캘린더 배지 (승인·미작성은 배지 없음, 결재진행중은 칸이 좁아 '결재중')
+// 공통 상태 라벨 → 캘린더 배지 (미작성은 배지 없음, 결재진행중은 칸이 좁아 '결재중')
 // 기존 -> label만 (범례·이벤트 공용)
 // 변경 -> 이벤트 칸용 한 글자 short 추가 (범례는 label 그대로)
 const STATUS_BADGES: Record<string, StatusBadge> = {
     임시저장: { label: '임시저장', short: '임', color: 'info' },
     결재진행중: { label: '결재중', short: '중', color: 'warning' },
     반려: { label: '반려', short: '반', color: 'error' },
+    // 기존 -> 승인은 배지 없음
+    // 변경 -> 승인 배지·범례 추가
+    승인: { label: '승인', short: '승', color: 'success' },
 };
 
 export const STATUS_BADGE_LEGEND = Object.values(STATUS_BADGES);
@@ -44,7 +49,7 @@ export function WorkCalendarStatusBadge({ label, color }: Pick<StatusBadge, 'lab
 }
 
 // 기존 -> 제목만 표시
-// 변경 -> 임시저장·결재중·반려면 제목 앞에 상태 배지 (제목은 별도 span으로 검색 가능하게 유지)
+// 변경 -> 임시저장·결재중·반려·승인이면 제목 앞에 상태 배지 (제목은 별도 span으로 검색 가능하게 유지)
 export function WorkCalendarEventContent({
                                              event,
                                          }: EventProps<WorkCalendarEvent>) {
@@ -52,7 +57,7 @@ export function WorkCalendarEventContent({
     return (
         <Typography variant="caption" noWrap sx={{ display: 'block' }}>
             {/* 기존 -> {badge && <WorkCalendarStatusBadge {...badge} />} */}
-            {/* 변경 -> 이벤트 칸에서는 한 글자(임·중·반)로 표시 */}
+            {/* 변경 -> 이벤트 칸에서는 한 글자(임·중·반·승)로 표시 */}
             {badge && <WorkCalendarStatusBadge label={badge.short} color={badge.color} />}
             <span>{event.title}</span>
         </Typography>

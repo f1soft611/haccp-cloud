@@ -156,7 +156,7 @@ describe('WorkCalendarPage', () => {
         const legendBadges = Array.from(
             document.querySelectorAll('[data-legend] [data-status-badge]'),
         ).map((el) => el.textContent);
-        expect(legendBadges).toEqual(['임시저장', '결재중', '반려']);
+        expect(legendBadges).toEqual(['임시저장', '결재중', '반려', '승인']);
     });
 
     it('falls back to cycle codes when common codes fail to load', async () => {
@@ -174,7 +174,7 @@ describe('WorkCalendarPage', () => {
         expect(chipLabels).toEqual(['DAY', 'WEEK', 'MONTH', 'YEAR']);
     });
 
-    it('shows status badges for temp-saved, in-progress and rejected, none for approved', async () => {
+    it('shows status badges for temp-saved, in-progress and rejected and approved', async () => {
         const now = new Date();
         const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         const base = {
@@ -213,6 +213,6 @@ describe('WorkCalendarPage', () => {
         await waitFor(() => expect(badgeOf('임시저장 업무')).toBe('임'));
         expect(badgeOf('결재중 업무')).toBe('중');
         expect(badgeOf('반려 업무')).toBe('반');
-        expect(badgeOf('승인 업무')).toBeNull();
+        expect(badgeOf('승인 업무')).toBe('승');
     });
 });

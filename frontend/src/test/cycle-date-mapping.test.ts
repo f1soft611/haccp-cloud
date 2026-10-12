@@ -268,13 +268,24 @@ describe('mapTodosToCalendarEvents', () => {
             expect(events.some((event) => event.date === '2026-10-08')).toBe(false);
         });
 
-        it('pins the current week on its registered date when only temp-saved', () => {
+        it('keeps a temp-saved current week on today', () => {
             const events = mapTodosToCalendarEvents(
                 [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
                 [instance('2026-10-05', 'pre_apply', '900', '2026-10-07')], TODAY,
             );
 
-            expect(dates(events)).toContainEqual({ date: '2026-10-07', cycleDate: '2026-10-05' });
+            expect(dates(events)).toContainEqual({ date: '2026-10-08', cycleDate: '2026-10-05' });
+            expect(events.some((event) => event.date === '2026-10-07')).toBe(false);
+        });
+
+        it('pins a temp-saved past week on its registered date, not today', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
+                [instance('2026-09-28', 'pre_apply', '900', '2026-09-30')], TODAY,
+            );
+
+            expect(dates(events)).toContainEqual({ date: '2026-09-30', cycleDate: '2026-09-28' });
+            expect(events.filter((event) => event.date === '2026-10-08')).toHaveLength(1);
         });
 
         it('keeps a rejected current week on today', () => {
