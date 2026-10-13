@@ -2646,12 +2646,27 @@ export const handlers = [
       updatedToday,
     });
   }),
-  http.get(/.*\/api\/v1\/common-codes$/, () =>
-    HttpResponse.json({ resultCode: 200, result: commonCodeStore }),
+  http.get(/.*\/api\/v1\/basicinfo\/common-codes$/, () =>
+      HttpResponse.json({ resultCode: 200, result: commonCodeStore }),
   ),
 
-  http.put(/.*\/api\/v1\/common-codes$/, async ({ request }) => {
-    commonCodeStore = (await request.json()) as CommonCodeData;
+  // ponytail: 실제 서버는 빠진 그룹을 use_at='N'으로 숨기지만 목은 조회 결과가 같으므로 그냥 교체
+  http.put(/.*\/api\/v1\/basicinfo\/common-codes\/groups$/, async ({ request }) => {
+    const { groups } = (await request.json()) as Pick<CommonCodeData, 'groups'>;
+    commonCodeStore = { ...commonCodeStore, groups };
+    return HttpResponse.json({ resultCode: 200, result: { message: '저장되었습니다.' } });
+  }),
+
+  http.put(/.*\/api\/v1\/basicinfo\/common-codes\/items$/, async ({ request }) => {
+    const { details } = (await request.json()) as Pick<CommonCodeData, 'details'>;
+    const keyOf = (detail: CommonCodeData['details'][number]) => `${detail.groupCode}:${detail.code}`;
+    const incoming = new Map(details.map((detail) => [keyOf(detail), detail]));
+    const updated = commonCodeStore.details.map((detail) => incoming.get(keyOf(detail)) ?? detail);
+    const existingKeys = new Set(commonCodeStore.details.map(keyOf));
+    commonCodeStore = {
+      ...commonCodeStore,
+      details: [...updated, ...details.filter((detail) => !existingKeys.has(keyOf(detail)))],
+    };
     return HttpResponse.json({ resultCode: 200, result: { message: '저장되었습니다.' } });
   }),
 ];

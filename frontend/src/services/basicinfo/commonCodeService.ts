@@ -44,7 +44,14 @@ export async function getCommonCodes(): Promise<CommonCodeData> {
     };
 }
 
-export async function saveCommonCodes(payload: CommonCodeData): Promise<void> {
-    const { data } = await apiClient.put<ResultEnvelope>('/v1/basicinfo/common-codes', payload);
+// 기존 -> saveCommonCodes(payload): PUT /v1/basicinfo/common-codes (그룹+상세 전체 교체, 누락 행 삭제)
+// 변경 -> 그룹 저장(플랫폼관리자 전용, 없는 그룹은 미사용)과 상세 저장(삭제 없음)을 분리
+export async function saveCommonCodeGroups(groups: CommonCodeGroupItem[]): Promise<void> {
+    const { data } = await apiClient.put<ResultEnvelope>('/v1/basicinfo/common-codes/groups', { groups });
+    assertSuccess(data);
+}
+
+export async function saveCommonCodeItems(details: CommonCodeDetailItem[]): Promise<void> {
+    const { data } = await apiClient.put<ResultEnvelope>('/v1/basicinfo/common-codes/items', { details });
     assertSuccess(data);
 }
