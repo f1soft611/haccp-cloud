@@ -1,7 +1,7 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import { Box, Button, Checkbox, Paper, Stack, Typography } from '@mui/material';
-import { DataGrid, useGridApiRef, type GridColDef } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { koKR } from '@mui/x-data-grid/locales';
 import { markEdited } from '../commonCodeRows';
 import type { CommonCodeDetailRow } from '../types';
@@ -12,13 +12,13 @@ const EDITABLE_FIELDS = ['code', 'codeName', 'useAt', 'sortOrder', 'codeDesc'] a
 export function CommonCodeDetailGrid(props: {
     rows: CommonCodeDetailRow[];
     groupName: string | null;
+    saveDisabled: boolean;
     onRowUpdate: (row: CommonCodeDetailRow) => void;
     onToggleAllUse: (useAt: boolean) => void;
     onAdd: () => void;
-    onDelete: (ids: string[]) => void;
+    onSave: () => void;
 }) {
-    const { rows, groupName, onRowUpdate, onToggleAllUse, onAdd, onDelete } = props;
-    const apiRef = useGridApiRef();
+    const { rows, groupName, saveDisabled, onRowUpdate, onToggleAllUse, onAdd, onSave } = props;
     const allUsed = rows.length > 0 && rows.every((row) => row.useAt);
 
     // 기존 -> const columns: GridColDef<CommonCodeDetailRow>[] = [ ... ];  (컬럼별 기본 정렬)
@@ -69,11 +69,6 @@ export function CommonCodeDetailGrid(props: {
         return updated;
     };
 
-    const handleDelete = () => {
-        const selected = apiRef.current?.getSelectedRows() ?? new Map();
-        onDelete(Array.from(selected.keys(), String));
-    };
-
     return (
         <Paper variant="outlined" sx={{ height: '100%', p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
@@ -89,20 +84,18 @@ export function CommonCodeDetailGrid(props: {
                     <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<AddRoundedIcon />} aria-label="상세 추가" onClick={onAdd}>
                         추가
                     </Button>
-                    <Button size="small" variant="outlined" color="error" sx={TOOLBAR_BUTTON_SX} startIcon={<DeleteOutlineRoundedIcon />} aria-label="상세 삭제" onClick={handleDelete}>
-                        삭제
+                    <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<SaveOutlinedIcon />} aria-label="상세 저장" disabled={saveDisabled} onClick={onSave}>
+                        저장
                     </Button>
                 </Stack>
             </Stack>
             <Box sx={{ flex: 1, minHeight: 0 }}>
                 <DataGrid
-                    apiRef={apiRef}
                     rows={rows}
                     columns={columns}
                     editMode="cell"
                     processRowUpdate={processRowUpdate}
                     isCellEditable={(params) => params.field !== 'code' || params.row.rowState === 'new'}
-                    checkboxSelection
                     disableRowSelectionOnClick
                     // ponytail: 그룹당 상세 수십 건 수준이라 가상화/페이지 불필요, jsdom 테스트에서도 행이 렌더됨
                     disableVirtualization
