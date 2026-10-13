@@ -49,7 +49,7 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
     public void saveCommonCodes(CommonCodeSaveRequestVO payload) throws Exception {
         List<CommonCodeGroupVO> groups = payload.getGroups();
         List<CommonCodeItemVO> details = payload.getDetails();
-        validate(groups, details);
+        validateGroups(groups);
 
         Long tenantId = resolveTenantId(payload.getTenantCode());
         Long userId = resolveOperatorUserId(payload);
@@ -113,8 +113,10 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
 
     // ── 검증 ─────────────────────────────────────────
 
-    // 화면 validateCommonCodes와 같은 문구. 코드/명은 trim 해서 VO에 다시 넣는다.
-    static void validate(List<CommonCodeGroupVO> groups, List<CommonCodeItemVO> details) {
+    // 기존 -> validate(groups, details): 그룹/상세를 한 번에 검증 (상세 그룹은 payload 그룹에 있어야 함)
+    // 변경 -> 그룹 저장/상세 저장이 분리되어 검증도 분리. 상세 그룹은 DB의 사용 중(use_at='Y') 그룹이어야 함.
+    // 화면 검증과 같은 문구. 코드/명은 trim 해서 VO에 다시 넣는다.
+    static void validateGroups(List<CommonCodeGroupVO> groups) {
         Set<String> groupCodes = new HashSet<String>();
         for (CommonCodeGroupVO group : groups) {
             group.setGroupCode(trim(group.getGroupCode()));
@@ -133,15 +135,17 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
                 throw new IllegalArgumentException(label + ": 그룹코드가 중복됩니다.");
             }
         }
+    }
 
+    static void validateItems(List<CommonCodeItemVO> details, Set<String> activeGroupCodes) {
         Set<String> itemKeys = new HashSet<String>();
         for (CommonCodeItemVO detail : details) {
             detail.setGroupCode(trim(detail.getGroupCode()));
             detail.setCode(trim(detail.getCode()));
             detail.setCodeName(trim(detail.getCodeName()));
             String label = labelOf(detail.getGroupCode());
-            if (!groupCodes.contains(detail.getGroupCode())) {
-                throw new IllegalArgumentException(label + ": 그룹을 찾을 수 없습니다.");
+            if (!activeGroupCodes.contains(detail.getGroupCode())) {
+                throw new IllegalArgumentException(label + ": 사용 중인 그룹이 아닙니다.");
             }
             if (detail.getCode().isEmpty()) {
                 throw new IllegalArgumentException(label + ": 상세코드를 입력하세요.");
