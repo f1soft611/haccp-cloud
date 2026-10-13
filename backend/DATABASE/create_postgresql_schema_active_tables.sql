@@ -234,6 +234,49 @@ CREATE INDEX IF NOT EXISTS idx_scheduler_history_scheduler_id ON tb_scheduler_hi
 CREATE INDEX IF NOT EXISTS idx_scheduler_history_status ON tb_scheduler_history(status);
 CREATE INDEX IF NOT EXISTS idx_scheduler_history_reg_dt ON tb_scheduler_history(reg_dt DESC);
 
+CREATE TABLE IF NOT EXISTS tb_common_code_group (
+                                                    common_code_group_id BIGSERIAL PRIMARY KEY,
+                                                    tenant_id BIGINT NOT NULL,
+                                                    group_code VARCHAR(50) NOT NULL,
+    group_nm VARCHAR(200) NOT NULL,
+    group_dc VARCHAR(500),
+    parent_group_id BIGINT,
+    sort_order INTEGER DEFAULT 0 NOT NULL,
+    use_at CHAR(1) DEFAULT 'Y' NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+    CONSTRAINT chk_common_code_group_use_at CHECK (use_at IN ('Y', 'N')),
+    CONSTRAINT uk_common_code_group_tenant_code UNIQUE (tenant_id, group_code),
+    CONSTRAINT fk_common_code_group_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE,
+    CONSTRAINT fk_common_code_group_parent FOREIGN KEY (parent_group_id) REFERENCES tb_common_code_group(common_code_group_id) ON DELETE RESTRICT
+    );
+
+CREATE TABLE IF NOT EXISTS tb_common_code_item (
+                                                   common_code_item_id BIGSERIAL PRIMARY KEY,
+                                                   tenant_id BIGINT NOT NULL,
+                                                   group_id BIGINT NOT NULL,
+                                                   item_code VARCHAR(50) NOT NULL,
+    item_nm VARCHAR(200) NOT NULL,
+    item_dc VARCHAR(500),
+    parent_item_id BIGINT,
+    sort_order INTEGER DEFAULT 0 NOT NULL,
+    use_at CHAR(1) DEFAULT 'Y' NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+    CONSTRAINT chk_common_code_item_use_at CHECK (use_at IN ('Y', 'N')),
+    CONSTRAINT uk_common_code_item_group_code UNIQUE (group_id, item_code),
+    CONSTRAINT fk_common_code_item_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE,
+    CONSTRAINT fk_common_code_item_group FOREIGN KEY (group_id) REFERENCES tb_common_code_group(common_code_group_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_common_code_item_parent FOREIGN KEY (parent_item_id) REFERENCES tb_common_code_item(common_code_item_id) ON DELETE RESTRICT
+    );
+
+CREATE INDEX IF NOT EXISTS ix_common_code_group_tenant_parent ON tb_common_code_group(tenant_id, parent_group_id, sort_order);
+CREATE INDEX IF NOT EXISTS ix_common_code_item_group_parent ON tb_common_code_item(group_id, parent_item_id, sort_order);
+
 -- Create Indexes for Performance
 CREATE INDEX IF NOT EXISTS idx_tenant_department ON tb_department(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_parent_department ON tb_department(parent_department_id);

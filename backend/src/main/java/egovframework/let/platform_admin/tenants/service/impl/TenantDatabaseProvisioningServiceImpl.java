@@ -124,6 +124,7 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
             runScript(tenantJdbcUrl, tenantSchemaFile, Collections.<String, String>emptyMap());
             runScript(tenantJdbcUrl, tenantBootstrapFile, bootstrapVariables);
             upsertTenantMenuCatalog(tenantJdbcUrl, expandedMenuCodes);
+            copyCommonCodes(tenantJdbcUrl, tenantId);
 
             List<String> optionalScripts = Arrays.asList(
                     tenantDraftingCategoryFile,
@@ -275,6 +276,118 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // central(플랫폼) 공통코드 중 사용 그룹(use_at='Y')과 그 상세 전부를 PK 그대로 복사한다.
+    // FK(parent)는 순서 상관없이 넣기 위해 parent=NULL로 insert 후 복사 대상 안의 parent만 update.
+    // ponytail: 업체 생성 시 1회 복사. 이후 플랫폼 변경은 운영 업체에 전파하지 않음 (별도 마이그레이션)
+    private void copyCommonCodes(String tenantJdbcUrl, Long tenantId) throws Exception {
+        List<long[]> groupParents = new ArrayList<long[]>();
+        List<long[]> itemParents = new ArrayList<long[]>();
+        Set<Long> groupIds = new LinkedHashSet<Long>();
+        Set<Long> itemIds = new LinkedHashSet<Long>();
+
+        try (Connection central = openConnection(postgresUrl);
+             Connection tenant = openConnection(tenantJdbcUrl)) {
+            tenant.setAutoCommit(false);
+            try {
+                try (PreparedStatement select = central.prepareStatement(
+                        "SELECT g.common_code_group_id, g.group_code, g.group_nm, g.group_dc, g.parent_group_id, g.sort_order " +
+                                "FROM public.tb_common_code_group g " +
+                                "JOIN public.tb_tenant t ON t.tenant_id = g.tenant_id " +
+                                "WHERE UPPER(t.tenant_code) IN ('PLATFORM', '000001') AND g.use_at = 'Y' " +
+                                "ORDER BY g.common_code_group_id");
+                     PreparedStatement insert = tenant.prepareStatement(
+                             "INSERT INTO public.tb_common_code_group " +
+                                     "(common_code_group_id, tenant_id, group_code, group_nm, group_dc, sort_order, use_at) " +
+                                     "VALUES (?, ?, ?, ?, ?, ?, 'Y')");
+                     ResultSet rs = select.executeQuery()) {
+                    while (rs.next()) {
+                        long id = rs.getLong("common_code_group_id");
+                        insert.setLong(1, id);
+                        insert.setLong(2, tenantId);
+                        insert.setString(3, rs.getString("group_code"));
+                        insert.setString(4, rs.getString("group_nm"));
+                        insert.setString(5, rs.getString("group_dc"));
+                        insert.setInt(6, rs.getInt("sort_order"));
+                        insert.executeUpdate();
+                        groupIds.add(id);
+                        if (rs.getObject("parent_group_id") != null) {
+                            groupParents.add(new long[] {id, rs.getLong("parent_group_id")});
+                        }
+                    }
+                }
+
+                if (!groupIds.isEmpty()) {
+                    String placeholders = groupIds.stream().map(id -> "?").collect(Collectors.joining(","));
+                    try (PreparedStatement select = central.prepareStatement(
+                            "SELECT common_code_item_id, group_id, item_code, item_nm, item_dc, parent_item_id, sort_order, use_at " +
+                                    "FROM public.tb_common_code_item WHERE group_id IN (" + placeholders + ") " +
+                                    "ORDER BY common_code_item_id");
+                         PreparedStatement insert = tenant.prepareStatement(
+                                 "INSERT INTO public.tb_common_code_item " +
+                                         "(common_code_item_id, tenant_id, group_id, item_code, item_nm, item_dc, sort_order, use_at) " +
+                                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+                        int index = 1;
+                        for (Long groupId : groupIds) {
+                            select.setLong(index++, groupId);
+                        }
+                        try (ResultSet rs = select.executeQuery()) {
+                            while (rs.next()) {
+                                long id = rs.getLong("common_code_item_id");
+                                insert.setLong(1, id);
+                                insert.setLong(2, tenantId);
+                                insert.setLong(3, rs.getLong("group_id"));
+                                insert.setString(4, rs.getString("item_code"));
+                                insert.setString(5, rs.getString("item_nm"));
+                                insert.setString(6, rs.getString("item_dc"));
+                                insert.setInt(7, rs.getInt("sort_order"));
+                                insert.setString(8, rs.getString("use_at"));
+                                insert.executeUpdate();
+                                itemIds.add(id);
+                                if (rs.getObject("parent_item_id") != null) {
+                                    itemParents.add(new long[] {id, rs.getLong("parent_item_id")});
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 복사 대상 밖을 가리키는 parent는 NULL 그대로 둔다
+                try (PreparedStatement update = tenant.prepareStatement(
+                        "UPDATE public.tb_common_code_group SET parent_group_id = ? WHERE common_code_group_id = ?")) {
+                    for (long[] pair : groupParents) {
+                        if (groupIds.contains(pair[1])) {
+                            update.setLong(1, pair[1]);
+                            update.setLong(2, pair[0]);
+                            update.executeUpdate();
+                        }
+                    }
+                }
+                try (PreparedStatement update = tenant.prepareStatement(
+                        "UPDATE public.tb_common_code_item SET parent_item_id = ? WHERE common_code_item_id = ?")) {
+                    for (long[] pair : itemParents) {
+                        if (itemIds.contains(pair[1])) {
+                            update.setLong(1, pair[1]);
+                            update.setLong(2, pair[0]);
+                            update.executeUpdate();
+                        }
+                    }
+                }
+
+                // PK를 직접 넣었으므로 시퀀스를 최대값에 맞춘다 (빈 테이블이면 HAVING으로 건너뜀)
+                try (Statement statement = tenant.createStatement()) {
+                    statement.execute("SELECT setval(pg_get_serial_sequence('public.tb_common_code_group', 'common_code_group_id'), MAX(common_code_group_id)) " +
+                            "FROM public.tb_common_code_group HAVING MAX(common_code_group_id) IS NOT NULL");
+                    statement.execute("SELECT setval(pg_get_serial_sequence('public.tb_common_code_item', 'common_code_item_id'), MAX(common_code_item_id)) " +
+                            "FROM public.tb_common_code_item HAVING MAX(common_code_item_id) IS NOT NULL");
+                }
+                tenant.commit();
+            } catch (Exception ex) {
+                tenant.rollback();
+                throw new IllegalStateException("Failed to copy common codes to tenant database", ex);
             }
         }
     }
