@@ -46,15 +46,56 @@ public class CommonCodeApiController {
         return resultVoHelper.buildFromMap(result, ResponseCode.SUCCESS);
     }
 
-    @PutMapping
-    public ResultVO saveCommonCodes(
+//    @PutMapping
+//    public ResultVO saveCommonCodes(
+//            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+//            @RequestBody CommonCodeSaveRequestVO payload) throws Exception {
+//        payload.setTenantCode(resolveTenantCode(tenantHeader));
+//        applyOperatorContext(payload);
+//        Map<String, Object> resultMap = new HashMap<String, Object>();
+//        try {
+//            commonCodeService.saveCommonCodes(payload);
+//            resultMap.put("message", "저장되었습니다.");
+//            return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+//        } catch (IllegalArgumentException ex) {
+//            resultMap.put("message", ex.getMessage());
+//            return resultVoHelper.buildFromMap(resultMap, ResponseCode.INPUT_CHECK_ERROR);
+//        }
+//    }
+
+    @PutMapping("/groups")
+    public ResultVO saveGroups(
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @RequestBody CommonCodeSaveRequestVO payload) throws Exception {
+        if (!isPlatformAdmin()) {
+            Map<String, Object> resultMap = new HashMap<String, Object>();
+            resultMap.put("message", "공통코드 그룹은 플랫폼관리자만 관리할 수 있습니다.");
+            return resultVoHelper.buildFromMap(resultMap, ResponseCode.AUTH_ERROR);
+        }
+        payload.setTenantCode(resolveTenantCode(tenantHeader));
+        applyOperatorContext(payload);
+        return save(() -> commonCodeService.saveGroups(payload));
+    }
+
+    @PutMapping("/items")
+    public ResultVO saveItems(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @RequestBody CommonCodeSaveRequestVO payload) throws Exception {
         payload.setTenantCode(resolveTenantCode(tenantHeader));
         applyOperatorContext(payload);
+        return save(() -> commonCodeService.saveItems(payload));
+    }
+
+    // ── 헬퍼 ─────────────────────────────────────────
+
+    private interface SaveAction {
+        void run() throws Exception;
+    }
+
+    private ResultVO save(SaveAction action) throws Exception {
         Map<String, Object> resultMap = new HashMap<String, Object>();
         try {
-            commonCodeService.saveCommonCodes(payload);
+            action.run();
             resultMap.put("message", "저장되었습니다.");
             return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
         } catch (IllegalArgumentException ex) {
@@ -63,7 +104,15 @@ public class CommonCodeApiController {
         }
     }
 
-    // ── 헬퍼 ─────────────────────────────────────────
+    private boolean isPlatformAdmin() {
+        try {
+            Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+            return userDetails instanceof LoginVO
+                    && "PLATFORM_ADMIN".equalsIgnoreCase(((LoginVO) userDetails).getRoleCode());
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
 
     private void applyOperatorContext(CommonCodeSaveRequestVO payload) {
         try {

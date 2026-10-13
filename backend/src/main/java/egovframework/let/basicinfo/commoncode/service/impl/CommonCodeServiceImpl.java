@@ -43,18 +43,59 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
         return result;
     }
 
+//    @Override
+//    @Transactional
+//    public void saveCommonCodes(CommonCodeSaveRequestVO payload) throws Exception {
+//        List<CommonCodeGroupVO> groups = payload.getGroups();
+//        List<CommonCodeItemVO> details = payload.getDetails();
+//        validateGroups(groups);
+//
+//        Long tenantId = resolveTenantId(payload.getTenantCode());
+//        Long userId = resolveOperatorUserId(payload);
+//
+//        Map<String, Long> groupIdByCode = new HashMap<String, Long>();
+//        for (CommonCodeGroupVO group : groups) {
+//            Map<String, Object> params = new HashMap<String, Object>();
+//            params.put("tenantId", tenantId);
+//            params.put("groupCode", group.getGroupCode());
+//            params.put("groupName", group.getGroupName());
+//            params.put("groupDesc", normalizeNullable(group.getGroupDesc()));
+//            params.put("userId", userId);
+//            groupIdByCode.put(group.getGroupCode(), commonCodeDAO.upsertGroup(params));
+//        }
+//
+//        for (CommonCodeItemVO detail : details) {
+//            Map<String, Object> params = new HashMap<String, Object>();
+//            params.put("tenantId", tenantId);
+//            params.put("groupId", groupIdByCode.get(detail.getGroupCode()));
+//            params.put("code", detail.getCode());
+//            params.put("codeName", detail.getCodeName());
+//            params.put("codeDesc", normalizeNullable(detail.getCodeDesc()));
+//            // sort_order는 NOT NULL 컬럼, 화면에서 비우면 0
+//            params.put("sortOrder", detail.getSortOrder() != null ? detail.getSortOrder() : 0);
+//            params.put("useAt", detail.isUseAt() ? "Y" : "N");
+//            params.put("userId", userId);
+//            commonCodeDAO.upsertItem(params);
+//        }
+//
+//        Map<String, Object> deleteParams = new HashMap<String, Object>();
+//        deleteParams.put("tenantId", tenantId);
+//        deleteParams.put("groups", groups);
+//        deleteParams.put("details", details);
+//        commonCodeDAO.deleteMissing(deleteParams);
+//    }
+
+    // 변경 -> saveGroups / saveItems 로 분리, 물리 삭제 없음
     // ponytail: 마지막 저장이 이김. 동시 편집 충돌 감지가 필요해지면 updated_at 비교 추가
     @Override
     @Transactional
-    public void saveCommonCodes(CommonCodeSaveRequestVO payload) throws Exception {
+    public void saveGroups(CommonCodeSaveRequestVO payload) throws Exception {
         List<CommonCodeGroupVO> groups = payload.getGroups();
-        List<CommonCodeItemVO> details = payload.getDetails();
         validateGroups(groups);
 
         Long tenantId = resolveTenantId(payload.getTenantCode());
         Long userId = resolveOperatorUserId(payload);
 
-        Map<String, Long> groupIdByCode = new HashMap<String, Long>();
         for (CommonCodeGroupVO group : groups) {
             Map<String, Object> params = new HashMap<String, Object>();
             params.put("tenantId", tenantId);
@@ -62,13 +103,33 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
             params.put("groupName", group.getGroupName());
             params.put("groupDesc", normalizeNullable(group.getGroupDesc()));
             params.put("userId", userId);
-            groupIdByCode.put(group.getGroupCode(), commonCodeDAO.upsertGroup(params));
+            commonCodeDAO.upsertGroup(params);
         }
 
+        Map<String, Object> disableParams = new HashMap<String, Object>();
+        disableParams.put("tenantId", tenantId);
+        disableParams.put("userId", userId);
+        disableParams.put("groups", groups);
+        commonCodeDAO.disableMissingGroups(disableParams);
+    }
+
+    @Override
+    @Transactional
+    public void saveItems(CommonCodeSaveRequestVO payload) throws Exception {
+        List<CommonCodeItemVO> details = payload.getDetails();
+        Long tenantId = resolveTenantId(payload.getTenantCode());
+
+        Set<String> activeGroupCodes = new HashSet<String>();
+        for (CommonCodeGroupVO group : commonCodeDAO.selectGroupList(tenantId)) {
+            activeGroupCodes.add(group.getGroupCode());
+        }
+        validateItems(details, activeGroupCodes);
+
+        Long userId = resolveOperatorUserId(payload);
         for (CommonCodeItemVO detail : details) {
             Map<String, Object> params = new HashMap<String, Object>();
             params.put("tenantId", tenantId);
-            params.put("groupId", groupIdByCode.get(detail.getGroupCode()));
+            params.put("groupCode", detail.getGroupCode());
             params.put("code", detail.getCode());
             params.put("codeName", detail.getCodeName());
             params.put("codeDesc", normalizeNullable(detail.getCodeDesc()));
@@ -78,12 +139,6 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
             params.put("userId", userId);
             commonCodeDAO.upsertItem(params);
         }
-
-        Map<String, Object> deleteParams = new HashMap<String, Object>();
-        deleteParams.put("tenantId", tenantId);
-        deleteParams.put("groups", groups);
-        deleteParams.put("details", details);
-        commonCodeDAO.deleteMissing(deleteParams);
     }
 
     // ── 헬퍼 ─────────────────────────────────────────

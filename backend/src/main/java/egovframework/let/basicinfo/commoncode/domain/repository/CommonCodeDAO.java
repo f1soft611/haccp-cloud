@@ -34,13 +34,20 @@ public class CommonCodeDAO extends EgovAbstractMapper {
         return selectList("CommonCodeDAO.selectItemList", tenantId);
     }
 
-    /** 그룹 upsert 후 그룹 PK 반환 */
-    public Long upsertGroup(Map<String, Object> params) throws Exception {
-        return selectOne("CommonCodeDAO.upsertGroup", params);
+    // 기존 -> public Long upsertGroup(...) { return selectOne(...); }  (그룹 PK 반환)
+    // 변경 -> 상세가 그룹코드로 그룹을 찾으므로 PK 불필요
+    public void upsertGroup(Map<String, Object> params) throws Exception {
+        insert("CommonCodeDAO.upsertGroup", params);
     }
 
     public void upsertItem(Map<String, Object> params) throws Exception {
         insert("CommonCodeDAO.upsertItem", params);
+    }
+
+    // 기존 -> deleteMissing(params): 참조 해제 → 상세 → 그룹 물리 삭제
+    // 변경 -> 물리 삭제 금지. params: tenantId, userId, groups (payload에 없는 그룹이 미사용 대상)
+    public void disableMissingGroups(Map<String, Object> params) throws Exception {
+        update("CommonCodeDAO.disableMissingGroups", params);
     }
 
     /** params: tenantId, groups, details (payload에 없는 행이 삭제 대상) */

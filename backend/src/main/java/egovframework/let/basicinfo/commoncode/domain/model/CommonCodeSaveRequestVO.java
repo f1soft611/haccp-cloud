@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 공통코드 전체 저장 요청 VO 클래스 (화면 전체를 보내면 서버가 DB를 동기화)
+ * 공통코드 저장 요청 VO 클래스 (그룹 저장은 groups, 상세 저장은 details만 사용)
  * @author SHMT-MES
  * @since 2026.10.08
  * @version 1.0
