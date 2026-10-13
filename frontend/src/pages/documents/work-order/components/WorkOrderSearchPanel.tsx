@@ -1,3 +1,4 @@
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import { Button, Paper, Stack, TextField } from '@mui/material';
 import type { WorkOrderSearchValue } from '../types';
 
@@ -6,8 +7,9 @@ export function WorkOrderSearchPanel(props: {
     onChange: (next: WorkOrderSearchValue) => void;
     onReset: () => void;
     onSearch: () => void;
+    onCreate: () => void;
 }) {
-    const { value, onChange, onReset, onSearch } = props;
+    const { value, onChange, onReset, onSearch, onCreate } = props;
 
     return (
         <Paper sx={{ p: 2 }}>
@@ -47,6 +49,9 @@ export function WorkOrderSearchPanel(props: {
                     </Button>
                     <Button variant="contained" onClick={onSearch}>
                         조회
+                    </Button>
+                    <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={onCreate}>
+                        신규
                     </Button>
                 </Stack>
             </Stack>

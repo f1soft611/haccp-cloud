@@ -29,28 +29,57 @@ describe('WorkOrderPage', () => {
         vi.restoreAllMocks();
     });
 
-    it('샘플 작업지시를 그리드에 보여준다', () => {
+    it('샘플 작업지시를 테이블과 총 건수로 보여준다', () => {
         renderPage();
-        expect(screen.getByRole('grid')).toBeInTheDocument();
-        expect(screen.getByText('배추김치')).toBeInTheDocument();
-        expect(screen.getByText('깍두기')).toBeInTheDocument();
+        const table = screen.getByRole('table', { name: '작업지시 목록' });
+        expect(within(table).getByText('배추김치')).toBeInTheDocument();
+        expect(within(table).getByText('깍두기')).toBeInTheDocument();
+        expect(screen.getByText('총 3건')).toBeInTheDocument();
     });
 
-    it('신규 행을 비운 채 저장하면 필수값 오류를 보여준다', () => {
+    it('신규 다이얼로그를 비운 채 저장하면 필드 오류를 보여준다', () => {
         renderPage();
         fireEvent.click(screen.getByRole('button', { name: '신규' }));
-        fireEvent.click(screen.getByRole('button', { name: '저장' }));
-        expect(screen.getByText('신규 행: 품명을 입력하세요.')).toBeInTheDocument();
+        const dialog = screen.getByRole('dialog');
+        fireEvent.click(within(dialog).getByRole('button', { name: '저장' }));
+        expect(within(dialog).getByText('품명을 입력하세요.')).toBeInTheDocument();
+        expect(within(dialog).getByText('생산량은 0보다 커야 합니다.')).toBeInTheDocument();
     });
 
-    it('선택한 행을 확인 후 삭제한다', () => {
+    it('신규 다이얼로그로 작업지시를 등록한다', () => {
         renderPage();
-        // [0]은 헤더 전체선택, [1]이 첫 행(배추김치)
-        fireEvent.click(screen.getAllByRole('checkbox')[1]);
-        fireEvent.click(screen.getByRole('button', { name: '삭제' }));
-        // ConfirmDialog의 삭제 버튼
+        fireEvent.click(screen.getByRole('button', { name: '신규' }));
+        const dialog = screen.getByRole('dialog');
+        fireEvent.change(within(dialog).getByLabelText(/^품명/), { target: { value: '열무김치' } });
+        fireEvent.change(within(dialog).getByLabelText(/^생산일자/), { target: { value: '2026-10-01' } });
+        fireEvent.change(within(dialog).getByLabelText(/^소비기한/), { target: { value: '2026-10-31' } });
+        fireEvent.change(within(dialog).getByLabelText(/^생산량/), { target: { value: '100' } });
+        fireEvent.click(within(dialog).getByRole('button', { name: '저장' }));
+
+        expect(screen.getByText('등록되었습니다.')).toBeInTheDocument();
+        expect(within(screen.getByRole('table')).getByText('열무김치')).toBeInTheDocument();
+        expect(screen.getByText('총 4건')).toBeInTheDocument();
+    });
+
+    it('수정 아이콘으로 작업지시를 수정한다', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByRole('button', { name: '작업지시 수정' })[0]);
+        const dialog = screen.getByRole('dialog');
+        expect(within(dialog).getByLabelText(/^품명/)).toHaveValue('배추김치');
+        fireEvent.change(within(dialog).getByLabelText(/^품명/), { target: { value: '백김치' } });
+        fireEvent.click(within(dialog).getByRole('button', { name: '저장' }));
+
+        expect(screen.getByText('수정되었습니다.')).toBeInTheDocument();
+        const table = screen.getByRole('table');
+        expect(within(table).getByText('백김치')).toBeInTheDocument();
+        expect(within(table).queryByText('배추김치')).not.toBeInTheDocument();
+    });
+
+    it('삭제 아이콘으로 확인 후 삭제한다', () => {
+        renderPage();
+        fireEvent.click(screen.getAllByRole('button', { name: '작업지시 삭제' })[0]);
         fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: '삭제' }));
-        expect(screen.queryByText('배추김치')).not.toBeInTheDocument();
+        expect(within(screen.getByRole('table')).queryByText('배추김치')).not.toBeInTheDocument();
         expect(screen.getByText('삭제되었습니다.')).toBeInTheDocument();
     });
 
@@ -60,13 +89,8 @@ describe('WorkOrderPage', () => {
             target: { value: '깍두기' },
         });
         fireEvent.click(screen.getByRole('button', { name: '조회' }));
-        expect(screen.getByText('깍두기')).toBeInTheDocument();
-        expect(screen.queryByText('배추김치')).not.toBeInTheDocument();
-    });
-
-    it('결재요청은 준비 중 안내를 보여준다', () => {
-        renderPage();
-        fireEvent.click(screen.getByRole('button', { name: '결재요청' }));
-        expect(screen.getByText('준비 중인 기능입니다.')).toBeInTheDocument();
+        const table = screen.getByRole('table');
+        expect(within(table).getByText('깍두기')).toBeInTheDocument();
+        expect(within(table).queryByText('배추김치')).not.toBeInTheDocument();
     });
 });

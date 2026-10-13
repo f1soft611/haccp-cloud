@@ -1,55 +1,72 @@
 import { describe, expect, it } from 'vitest';
-import type { WorkOrderRow } from '../pages/documents/work-order/types';
+import type { WorkOrderFormValue } from '../pages/documents/work-order/types';
 import {
-    createEmptyWorkOrderRow,
     filterWorkOrderRows,
     SAMPLE_WORK_ORDERS,
-    validateWorkOrderRows,
+    validateWorkOrderForm,
 } from '../pages/documents/work-order/workOrderRows';
 
-const validNewRow = (): WorkOrderRow => ({
-    ...createEmptyWorkOrderRow(),
+const validValue = (): WorkOrderFormValue => ({
     itemName: '열무김치',
     productionDate: '2026-10-01',
     expiryDate: '2026-10-31',
     quantity: 100,
+    unit: 'kg',
+    spec: '',
+    remark: '',
 });
 
-describe('validateWorkOrderRows', () => {
-    it('빈 신규 행은 품명 누락을 신규 행으로 알린다', () => {
-        expect(validateWorkOrderRows([createEmptyWorkOrderRow()])).toBe(
-            '신규 행: 품명을 입력하세요.',
-        );
+describe('validateWorkOrderForm', () => {
+    it('필수값이 비면 필드별 오류를 돌려준다', () => {
+        expect(
+            validateWorkOrderForm({
+                ...validValue(),
+                itemName: '  ',
+                productionDate: '',
+                expiryDate: '',
+                quantity: null,
+            }),
+        ).toEqual({
+            itemName: '품명을 입력하세요.',
+            productionDate: '생산일자를 입력하세요.',
+            expiryDate: '소비기한을 입력하세요.',
+            quantity: '생산량은 0보다 커야 합니다.',
+        });
     });
 
-    it('생산량이 비었거나 0 이하이면 오류', () => {
-        expect(validateWorkOrderRows([{ ...validNewRow(), quantity: null }])).toBe(
-            '열무김치: 생산량은 0보다 커야 합니다.',
-        );
-        expect(validateWorkOrderRows([{ ...validNewRow(), quantity: 0 }])).toBe(
-            '열무김치: 생산량은 0보다 커야 합니다.',
-        );
+    it('생산량이 0 이하이면 오류', () => {
+        expect(validateWorkOrderForm({ ...validValue(), quantity: 0 })).toEqual({
+            quantity: '생산량은 0보다 커야 합니다.',
+        });
     });
 
     it('소비기한이 생산일자보다 빠르면 오류', () => {
-        expect(
-            validateWorkOrderRows([{ ...validNewRow(), expiryDate: '2026-09-30' }]),
-        ).toBe('열무김치: 소비기한은 생산일자 이후여야 합니다.');
+        expect(validateWorkOrderForm({ ...validValue(), expiryDate: '2026-09-30' })).toEqual({
+            expiryDate: '소비기한은 생산일자 이후여야 합니다.',
+        });
     });
 
-    it('저장된 행은 검사하지 않고, 유효하면 null', () => {
-        expect(validateWorkOrderRows([...SAMPLE_WORK_ORDERS, validNewRow()])).toBeNull();
+    it('유효하면 빈 객체', () => {
+        expect(validateWorkOrderForm(validValue())).toEqual({});
     });
 });
 
 describe('filterWorkOrderRows', () => {
-    it('품명/생산일자로 거르고 신규 행은 항상 남긴다', () => {
-        const rows = [createEmptyWorkOrderRow(), ...SAMPLE_WORK_ORDERS];
-        const result = filterWorkOrderRows(rows, {
+    it('생산일자 기간으로 거른다', () => {
+        const result = filterWorkOrderRows(SAMPLE_WORK_ORDERS, {
             startDate: '2026-09-29',
             endDate: '2026-09-29',
             itemName: '',
         });
-        expect(result.map((row) => row.itemName)).toEqual(['', '깍두기']);
+        expect(result.map((row) => row.itemName)).toEqual(['깍두기']);
+    });
+
+    it('품명 부분일치로 거른다', () => {
+        const result = filterWorkOrderRows(SAMPLE_WORK_ORDERS, {
+            startDate: '',
+            endDate: '',
+            itemName: '김치',
+        });
+        expect(result.map((row) => row.itemName)).toEqual(['배추김치', '총각김치']);
     });
 });
