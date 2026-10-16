@@ -62,6 +62,18 @@ vi.mock('../../../services/basicinfo/materialsService', () => ({
     listMaterialsPaged: listMaterialsPagedMock,
 }));
 
+// 품목계정 필터에 공통코드 이름(제품/반제품)을 표시하기 위해 공통코드 조회를 모킹
+vi.mock('../../../services/basicinfo/commonCodeService', () => ({
+    getCommonCodes: async () => ({
+        groups: [],
+        details: [
+            { groupCode: 'ITEM_TYPE', code: 'PRODUCT', codeName: '제품', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+            { groupCode: 'ITEM_TYPE', code: 'SEMI', codeName: '반제품', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+            { groupCode: 'ITEM_TYPE', code: 'RAW', codeName: '원재료', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
+        ],
+    }),
+}));
+
 function renderPage() {
     render(
         <AppProviders>
@@ -107,10 +119,18 @@ describe('WorkOrderPage', () => {
         fireEvent.click(await screen.findByRole('button', { name: '신규' }));
         const dialog = screen.getByRole('dialog');
 
-        fireEvent.change(within(dialog).getByRole('combobox', { name: /품목/ }), {
-            target: { value: '깍' },
-        });
-        fireEvent.click(await screen.findByRole('option', { name: '깍두기' }));
+        fireEvent.click(within(dialog).getByRole('textbox', { name: /^품목/ }));
+        const selectDialog = await screen.findByRole('dialog', { name: /품목 선택/ });
+        await vi.waitFor(() =>
+            expect(listMaterialsPagedMock).toHaveBeenLastCalledWith(
+                expect.objectContaining({ itemTypes: ['PRODUCT', 'SEMI'], pageIndex: 1 }),
+            ),
+        );
+        fireEvent.click(await within(selectDialog).findByRole('row', { name: /깍두기/ }));
+        await vi.waitFor(() =>
+            expect(screen.queryByRole('dialog', { name: /품목 선택/ })).not.toBeInTheDocument(),
+        );
+        expect(within(dialog).getByRole('textbox', { name: /^품목/ })).toHaveValue('깍두기');
         expect(within(dialog).getByLabelText('단위')).toHaveValue('kg');
         expect(within(dialog).getByLabelText('규격')).toHaveValue('5kg/박스');
 
@@ -131,12 +151,41 @@ describe('WorkOrderPage', () => {
         expect(await screen.findByText('등록되었습니다.')).toBeInTheDocument();
     });
 
+    it('품목 선택 Dialog 에서 품목계정과 검색어로 조회한다', async () => {
+        renderPage();
+        fireEvent.click(await screen.findByRole('button', { name: '신규' }));
+        const dialog = screen.getByRole('dialog');
+        fireEvent.click(within(dialog).getByRole('textbox', { name: /^품목/ }));
+        const selectDialog = await screen.findByRole('dialog', { name: /품목 선택/ });
+
+        // 품목계정 옵션은 전체/제품/반제품만 (원재료 없음)
+        fireEvent.mouseDown(within(selectDialog).getByRole('combobox', { name: '품목계정' }));
+        const listbox = await screen.findByRole('listbox');
+        expect(within(listbox).getAllByRole('option').map((option) => option.textContent)).toEqual([
+            '전체',
+            '제품',
+            '반제품',
+        ]);
+        fireEvent.click(within(listbox).getByRole('option', { name: '반제품' }));
+
+        fireEvent.change(within(selectDialog).getByRole('textbox', { name: '검색어' }), {
+            target: { value: '깍' },
+        });
+        fireEvent.click(within(selectDialog).getByRole('button', { name: '검색' }));
+
+        await vi.waitFor(() =>
+            expect(listMaterialsPagedMock).toHaveBeenLastCalledWith(
+                expect.objectContaining({ itemTypes: ['SEMI'], keyword: '깍', pageIndex: 1 }),
+            ),
+        );
+    });
+
     it('수정 다이얼로그는 작업지시번호와 기존 값을 보여주고 수정 API를 호출한다', async () => {
         renderPage();
         fireEvent.click((await screen.findAllByRole('button', { name: '작업지시 수정' }))[0]);
         const dialog = screen.getByRole('dialog');
         expect(within(dialog).getByLabelText('작업지시번호')).toHaveValue('202610150001');
-        expect(within(dialog).getByRole('combobox', { name: /품목/ })).toHaveValue('배추김치');
+        expect(within(dialog).getByRole('textbox', { name: /^품목/ })).toHaveValue('배추김치');
 
         fireEvent.change(within(dialog).getByLabelText(/^생산량/), { target: { value: '300' } });
         fireEvent.click(within(dialog).getByRole('button', { name: '저장' }));
