@@ -4,6 +4,11 @@ import { IconButton, Stack, TableBody, TableCell, TableHead, TableRow } from '@m
 import { useTheme } from '@mui/material/styles';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import type { WorkOrderRow } from '../types';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import {
+    getCommonCodeName,
+    useCommonCodeOptions,
+} from '../../../../shared/hooks/useCommonCodeOptions';
 
 export function WorkOrderGrid(props: {
     rows: WorkOrderRow[];
@@ -12,6 +17,7 @@ export function WorkOrderGrid(props: {
 }) {
     const { rows, onEdit, onDelete } = props;
     const isDarkMode = useTheme().palette.mode === 'dark';
+    const unitOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_UNIT);
 
     return (
         <AdminGrid ariaLabel="작업지시 목록">
@@ -44,7 +50,7 @@ export function WorkOrderGrid(props: {
                         <TableCell align="center">{row.productionDate}</TableCell>
                         <TableCell align="center">{row.expiryDate}</TableCell>
                         <TableCell align="center">{row.quantity?.toLocaleString() ?? '-'}</TableCell>
-                        <TableCell align="center">{row.unit || '-'}</TableCell>
+                        <TableCell align="center">{getCommonCodeName(unitOptions, row.unit) || '-'}</TableCell>
                         <TableCell align="center">{row.spec || '-'}</TableCell>
                         <TableCell align="center">{row.remark || '-'}</TableCell>
                         <TableCell align="center">
