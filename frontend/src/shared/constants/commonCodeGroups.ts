@@ -2,6 +2,7 @@
 export const COMMON_CODE_GROUP = {
     WORK_CYCLE: 'WF_FORM_CYCLE',
     ITEM_UNIT: 'ITEM_UNIT',
+    ITEM_TYPE: 'ITEM_TYPE',
 } as const;
 
 export type CommonCodeGroupCode = (typeof COMMON_CODE_GROUP)[keyof typeof COMMON_CODE_GROUP];

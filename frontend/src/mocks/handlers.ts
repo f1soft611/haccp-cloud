@@ -842,6 +842,7 @@ let commonCodeStore: CommonCodeData = {
   groups: [
     { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '업무 등록주기' },
     { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 단위' },
+    { groupCode: 'ITEM_TYPE', groupName: '품목 계정', groupDesc: '품목 계정' },
   ],
   details: [
     { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
@@ -863,6 +864,13 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'ITEM_UNIT', code: 'BAG', codeName: '봉', parentCodeName: '', useAt: true, sortOrder: 90, codeDesc: '봉지' },
     { groupCode: 'ITEM_UNIT', code: 'CAN', codeName: '캔', parentCodeName: '', useAt: true, sortOrder: 100, codeDesc: '캔' },
     { groupCode: 'ITEM_UNIT', code: 'BTL', codeName: '병', parentCodeName: '', useAt: true, sortOrder: 110, codeDesc: '병' },
+
+    { groupCode: 'ITEM_TYPE', code: 'PRODUCT', codeName: '제품', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '자사 제조 완제품' },
+    { groupCode: 'ITEM_TYPE', code: 'SEMI', codeName: '반제품', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '제조 공정 중간 산출물' },
+    { groupCode: 'ITEM_TYPE', code: 'GOODS', codeName: '상품', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '매입 후 그대로 판매' },
+    { groupCode: 'ITEM_TYPE', code: 'RAW', codeName: '원재료', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '제조 투입 주원료' },
+    { groupCode: 'ITEM_TYPE', code: 'SUB', codeName: '부재료', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '포장재·첨가 부재료' },
+    { groupCode: 'ITEM_TYPE', code: 'SUPPLY', codeName: '소모품', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '소모성 자재' },
   ],
 };
 
