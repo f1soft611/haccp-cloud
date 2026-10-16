@@ -841,7 +841,7 @@ const attachmentStore = {
 let commonCodeStore: CommonCodeData = {
   groups: [
     { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '업무 등록주기' },
-    { groupCode: 'UNIT', groupName: '단위', groupDesc: '단위 공통코드' },
+    { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 단위' },
   ],
   details: [
     { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
@@ -851,11 +851,18 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'WF_FORM_CYCLE', code: 'HALF', codeName: '반기', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '' },
     { groupCode: 'WF_FORM_CYCLE', code: 'YEAR', codeName: '연간', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '' },
     { groupCode: 'WF_FORM_CYCLE', code: 'ANYTIME', codeName: '수시', parentCodeName: '', useAt: true, sortOrder: 70, codeDesc: '' },
-    { groupCode: 'UNIT', code: 'KG', codeName: '킬로그램', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
-    { groupCode: 'UNIT', code: 'G', codeName: '그램', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
-    { groupCode: 'UNIT', code: 'L', codeName: '리터', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
-    { groupCode: 'UNIT', code: 'EA', codeName: '개', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
-    { groupCode: 'UNIT', code: 'BOX', codeName: '박스', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '' },
+
+    { groupCode: 'ITEM_UNIT', code: 'KG', codeName: 'kg', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '킬로그램' },
+    { groupCode: 'ITEM_UNIT', code: 'G', codeName: 'g', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '그램' },
+    { groupCode: 'ITEM_UNIT', code: 'TON', codeName: '톤', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '톤' },
+    { groupCode: 'ITEM_UNIT', code: 'L', codeName: 'L', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '리터' },
+    { groupCode: 'ITEM_UNIT', code: 'ML', codeName: 'mL', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '밀리리터' },
+    { groupCode: 'ITEM_UNIT', code: 'EA', codeName: '개', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '개수' },
+    { groupCode: 'ITEM_UNIT', code: 'BOX', codeName: '박스', parentCodeName: '', useAt: true, sortOrder: 70, codeDesc: '박스' },
+    { groupCode: 'ITEM_UNIT', code: 'PACK', codeName: '팩', parentCodeName: '', useAt: true, sortOrder: 80, codeDesc: '팩' },
+    { groupCode: 'ITEM_UNIT', code: 'BAG', codeName: '봉', parentCodeName: '', useAt: true, sortOrder: 90, codeDesc: '봉지' },
+    { groupCode: 'ITEM_UNIT', code: 'CAN', codeName: '캔', parentCodeName: '', useAt: true, sortOrder: 100, codeDesc: '캔' },
+    { groupCode: 'ITEM_UNIT', code: 'BTL', codeName: '병', parentCodeName: '', useAt: true, sortOrder: 110, codeDesc: '병' },
   ],
 };
 
