@@ -35,11 +35,12 @@ public class MaterialServiceImpl extends EgovAbstractServiceImpl implements Mate
     private MaterialDAO materialDAO;
 
     @Override
-    public Map<String, Object> listMaterialsPaged(int pageIndex, int pageSize, String keyword, String tenantCode) throws Exception {
+    public Map<String, Object> listMaterialsPaged(int pageIndex, int pageSize, String keyword, List<String> itemTypes, String tenantCode) throws Exception {
         MaterialSearchConditionVO condition = new MaterialSearchConditionVO();
         condition.setPageIndex(pageIndex);
         condition.setPageSize(pageSize);
         condition.setKeyword(normalizeNullable(keyword));
+        condition.setItemTypes(itemTypes == null || itemTypes.isEmpty() ? null : itemTypes);
         condition.setTenantCode(normalizeTenantCode(tenantCode));
 
         PaginationInfo paginationInfo = new PaginationInfo();

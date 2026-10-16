@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 /**
  * 품목 검색 조건을 위한 VO 클래스
  * @author SHMT-MES
@@ -23,4 +25,7 @@ public class MaterialSearchConditionVO extends ComDefaultVO {
 
     @Schema(description = "검색 키워드")
     private String keyword;
+
+    @Schema(description = "품목계정 코드 목록")
+    private List<String> itemTypes;
 }

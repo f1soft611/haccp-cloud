@@ -1,5 +1,6 @@
 package egovframework.let.basicinfo.materials.service;
 
+import java.util.List;
 import java.util.Map;
 
 import egovframework.let.basicinfo.materials.domain.model.MaterialSaveRequestVO;
@@ -13,11 +14,12 @@ import egovframework.let.basicinfo.materials.domain.model.MaterialVO;
  */
 public interface MaterialService {
 
-    Map<String, Object> listMaterialsPaged(int pageIndex, int pageSize, String keyword, String tenantCode) throws Exception;
+    Map<String, Object> listMaterialsPaged(int pageIndex, int pageSize, String keyword, List<String> itemTypes, String tenantCode) throws Exception;
 
     MaterialVO createMaterial(MaterialSaveRequestVO payload) throws Exception;
 
     MaterialVO updateMaterial(Long materialId, MaterialSaveRequestVO payload) throws Exception;
 
     void deleteMaterial(Long materialId, String tenantCode) throws Exception;
+
 }
