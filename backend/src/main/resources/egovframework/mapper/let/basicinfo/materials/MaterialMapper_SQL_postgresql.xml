@@ -39,6 +39,12 @@
             <if test="tenantCode != null and tenantCode != ''">
                 AND t.tenant_code = #{tenantCode}
             </if>
+            <if test="itemTypes != null and itemTypes.size() > 0">
+                AND m.item_type IN
+                <foreach collection="itemTypes" item="itemType" open="(" separator="," close=")">
+                    #{itemType}
+                </foreach>
+            </if>
             <if test="keyword != null and keyword != ''">
                 AND (
                     LOWER(m.material_name) LIKE '%' || LOWER(#{keyword}) || '%'
@@ -70,6 +76,12 @@
         WHERE m.delete_status = 'N'
         <if test="tenantCode != null and tenantCode != ''">
             AND t.tenant_code = #{tenantCode}
+        </if>
+        <if test="itemTypes != null and itemTypes.size() > 0">
+            AND m.item_type IN
+            <foreach collection="itemTypes" item="itemType" open="(" separator="," close=")">
+                #{itemType}
+            </foreach>
         </if>
         <if test="keyword != null and keyword != ''">
             AND (

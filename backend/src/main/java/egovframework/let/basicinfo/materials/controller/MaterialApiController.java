@@ -2,6 +2,7 @@ package egovframework.let.basicinfo.materials.controller;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
@@ -56,10 +57,11 @@ public class MaterialApiController {
             @RequestParam(defaultValue = "1") int pageIndex,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) List<String> itemTypes,
             HttpServletRequest request) throws Exception {
         validatePage(pageIndex, pageSize);
         String tenantCode = resolveTenantCode(tenantHeader, request);
-        Map<String, Object> result = materialService.listMaterialsPaged(pageIndex, pageSize, keyword, tenantCode);
+        Map<String, Object> result = materialService.listMaterialsPaged(pageIndex, pageSize, keyword, itemTypes, tenantCode);
 
         Map<String, Object> response = new LinkedHashMap<String, Object>();
         response.put("items", result.get("materialList"));
