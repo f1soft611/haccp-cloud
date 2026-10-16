@@ -2,8 +2,6 @@ import type { TenantTodoCardItem } from '../../dashboard/tenant/hooks/useTenantD
 import type { HaccpWorkCycleInstance } from '../../../services/documents/haccpBaseWorkService';
 import { resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
 
-// 기존 -> { date, item }: 업무 1건(현재 주기 상태)을 모든 칸에 그대로 복사
-// 변경 -> { date, cycleDate, isFuture, item }: 주기 기준일별 문서 상태를 붙이고 미래 여부 표시
 export type CalendarWorkEvent = {
     date: string;
     cycleDate: string;
@@ -111,8 +109,8 @@ export function mapTodosToCalendarEvents(
         });
     };
 
-    // 기존 -> 진행 중인 주기는 등록 여부와 무관하게 오늘 칸, 나머지는 주기 시작일
-    // 변경 -> 문서가 있으면 등록일 칸 (단, 진행 중 주기가 반려면 오늘 칸), 문서가 없으면 기존 규칙
+    // 기존 -> 문서가 있으면 등록일 칸 (단, 진행 중 주기가 반려·임시저장이면 오늘 칸), 문서가 없으면 진행 중은 오늘·지난 주기는 주기 시작일
+    // 변경 -> 지난 주기는 문서 유무와 관계없이 주기 시작일 칸, 진행 중 주기만 등록일/오늘 칸 판정
     const followsToday = (statusType: string) =>
         ['반려', '임시저장'].includes(
             resolveApprovalStatusView({ approvalStatusType: statusType }).label,
@@ -122,13 +120,16 @@ export function mapTodosToCalendarEvents(
         cycleDate: string,
         currentCycleDate: string,
     ) => {
-        const isCurrent = cycleDate === currentCycleDate;
+        if (cycleDate !== currentCycleDate) {
+            return cycleDate;
+        }
         const instance = instances.get(`${item.id}|${cycleDate}`);
-        if (instance?.registeredDate && !(isCurrent && followsToday(instance.statusType))) {
+        if (instance?.registeredDate && !followsToday(instance.statusType)) {
             return instance.registeredDate;
         }
-        return isCurrent ? todayString : cycleDate;
+        return todayString;
     };
+
     const pushCycles = (
         item: TenantTodoCardItem,
         cycleDates: string[],

@@ -278,13 +278,14 @@ describe('mapTodosToCalendarEvents', () => {
             expect(events.some((event) => event.date === '2026-10-07')).toBe(false);
         });
 
-        it('pins a temp-saved past week on its registered date, not today', () => {
+        it('pins a temp-saved past week on its cycle start date, not today', () => {
             const events = mapTodosToCalendarEvents(
                 [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
                 [instance('2026-09-28', 'pre_apply', '900', '2026-09-30')], TODAY,
             );
 
-            expect(dates(events)).toContainEqual({ date: '2026-09-30', cycleDate: '2026-09-28' });
+            expect(dates(events)).toContainEqual({ date: '2026-09-28', cycleDate: '2026-09-28' });
+            expect(events.some((event) => event.date === '2026-09-30')).toBe(false);
             expect(events.filter((event) => event.date === '2026-10-08')).toHaveLength(1);
         });
 
@@ -298,14 +299,15 @@ describe('mapTodosToCalendarEvents', () => {
             expect(events.some((event) => event.date === '2026-10-06')).toBe(false);
         });
 
-        it('pins a rejected past week on its registered date, not today', () => {
+        it('pins a rejected past week on its cycle start date, not today', () => {
             const events = mapTodosToCalendarEvents(
                 [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
                 [instance('2026-09-28', 'rejected', '900', '2026-09-30')], TODAY,
             );
 
-            expect(dates(events)).toContainEqual({ date: '2026-09-30', cycleDate: '2026-09-28' });
+            expect(dates(events)).toContainEqual({ date: '2026-09-28', cycleDate: '2026-09-28' });
             expect(dates(events)).toContainEqual({ date: '2026-10-08', cycleDate: '2026-10-05' });
+            expect(events.some((event) => event.date === '2026-09-30')).toBe(false);
             expect(events.filter((event) => event.date === '2026-10-08')).toHaveLength(1);
         });
 
@@ -321,6 +323,27 @@ describe('mapTodosToCalendarEvents', () => {
                 [instance('2026-01-01', 'approved', '900', '2026-10-02')], TODAY,
             );
             expect(dates(yearly)).toEqual([{ date: '2026-10-02', cycleDate: '2026-01-01' }]);
+        });
+
+        it('pins a past week registered this week on its cycle start date', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
+                [instance('2026-09-28', 'approved', '900', '2026-10-06')], TODAY,
+            );
+
+            expect(dates(events)).toContainEqual({ date: '2026-09-28', cycleDate: '2026-09-28' });
+            expect(events.some((event) => event.date === '2026-10-06')).toBe(false);
+        });
+
+        it('pins a past month registered this month on its 1st', () => {
+            // 2026-11-10 화요일 기준, 10월 문서를 11-03에 임시저장
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'MONTH' })], '2026-09-27', '2026-11-14',
+                [instance('2026-10-01', 'pre_apply', '900', '2026-11-03')], new Date(2026, 10, 10),
+            );
+
+            expect(dates(events)).toContainEqual({ date: '2026-10-01', cycleDate: '2026-10-01' });
+            expect(events.some((event) => event.date === '2026-11-03')).toBe(false);
         });
     });
     it('uses each day own document title, falling back to the work name', () => {
