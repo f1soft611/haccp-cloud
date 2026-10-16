@@ -13,6 +13,11 @@ import {
     validateWorkOrderForm,
     type WorkOrderFormErrors,
 } from '../workOrderRows';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import {
+    getCommonCodeName,
+    useCommonCodeOptions,
+} from '../../../../shared/hooks/useCommonCodeOptions';
 
 type MaterialOption = Pick<MaterialItem, 'id' | 'materialName' | 'unit' | 'materialSpec'>;
 
@@ -44,6 +49,7 @@ export function WorkOrderFormDialog(props: {
     const [value, setValue] = useState<WorkOrderFormValue>(EMPTY_VALUE);
     const [errors, setErrors] = useState<WorkOrderFormErrors>({});
     const [materialKeyword, setMaterialKeyword] = useState('');
+    const unitOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_UNIT);
 
     useEffect(() => {
         if (!open) return;
@@ -188,7 +194,7 @@ export function WorkOrderFormDialog(props: {
                 </Grid>
                 {/* 기존 -> 단위·규격 직접 입력 / 변경 -> 품목 정보에서 가져와 읽기 전용 */}
                 <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField size="small" label="단위" value={value.unit} disabled />
+                    <TextField size="small" label="단위" value={getCommonCodeName(unitOptions, value.unit)} disabled />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField size="small" label="규격" value={value.spec} disabled />

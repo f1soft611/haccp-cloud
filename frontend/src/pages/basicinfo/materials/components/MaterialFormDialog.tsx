@@ -1,7 +1,8 @@
-import { Button, Grid, MenuItem, Stack, TextField } from '@mui/material';
+import { Button, Grid, Stack, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
-import { MATERIAL_ITEM_TYPES } from '../../../../services/basicinfo/materialsService';
+import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 
 export type MaterialFormValue = {
   materialName: string;
@@ -110,24 +111,13 @@ export function MaterialFormDialog({
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              select
-              label="품목계정"
-              value={value.itemType}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, itemType: e.target.value }))
-              }
-              fullWidth
-            >
-              <MenuItem value="">
-                <em>선택 안 함</em>
-              </MenuItem>
-              {MATERIAL_ITEM_TYPES.map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </TextField>
+            <CommonCodeSelect
+                groupCode={COMMON_CODE_GROUP.ITEM_TYPE}
+                label="품목계정"
+                value={value.itemType}
+                onChange={(itemType) => setValue((prev) => ({ ...prev, itemType }))}
+                fullWidth
+            />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
@@ -154,13 +144,13 @@ export function MaterialFormDialog({
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="단위"
-              value={value.unit}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, unit: e.target.value }))
-              }
-              fullWidth
+            {/* 기존 -> 단위 자유 입력 TextField / 변경 -> 공통코드 ITEM_UNIT 셀렉트(코드 저장) */}
+            <CommonCodeSelect
+                groupCode={COMMON_CODE_GROUP.ITEM_UNIT}
+                label="단위"
+                value={value.unit}
+                onChange={(unit) => setValue((prev) => ({ ...prev, unit }))}
+                fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12 }}>

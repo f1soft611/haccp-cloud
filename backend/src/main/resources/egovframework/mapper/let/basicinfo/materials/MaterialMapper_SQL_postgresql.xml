@@ -44,7 +44,15 @@
                     LOWER(m.material_name) LIKE '%' || LOWER(#{keyword}) || '%'
                     OR LOWER(COALESCE(m.material_spec, '')) LIKE '%' || LOWER(#{keyword}) || '%'
                     OR LOWER(COALESCE(m.item_type, '')) LIKE '%' || LOWER(#{keyword}) || '%'
-                    OR m.material_code LIKE '%' || #{keyword} || '%'
+                    OR EXISTS (
+                        SELECT 1
+                        FROM tb_common_code_item ci
+                        JOIN tb_common_code_group cg ON cg.common_code_group_id = ci.group_id
+                        WHERE cg.tenant_id = m.tenant_id
+                        AND cg.group_code = 'ITEM_TYPE'
+                        AND ci.item_code = m.item_type
+                        AND LOWER(ci.item_nm) LIKE '%' || LOWER(#{keyword}) || '%'
+                    )
                 )
             </if>
         ) material_query
@@ -68,7 +76,15 @@
                 LOWER(m.material_name) LIKE '%' || LOWER(#{keyword}) || '%'
                 OR LOWER(COALESCE(m.material_spec, '')) LIKE '%' || LOWER(#{keyword}) || '%'
                 OR LOWER(COALESCE(m.item_type, '')) LIKE '%' || LOWER(#{keyword}) || '%'
-                OR m.material_code LIKE '%' || #{keyword} || '%'
+                OR EXISTS (
+                    SELECT 1
+                    FROM tb_common_code_item ci
+                    JOIN tb_common_code_group cg ON cg.common_code_group_id = ci.group_id
+                    WHERE cg.tenant_id = m.tenant_id
+                    AND cg.group_code = 'ITEM_TYPE'
+                    AND ci.item_code = m.item_type
+                    AND LOWER(ci.item_nm) LIKE '%' || LOWER(#{keyword}) || '%'
+                )
             )
         </if>
     </select>

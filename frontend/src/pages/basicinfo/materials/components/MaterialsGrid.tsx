@@ -12,6 +12,11 @@ import {
 import { useTheme } from '@mui/material/styles';
 import type { MaterialItem } from '../../../../services/basicinfo/materialsService';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import {
+  getCommonCodeName,
+  useCommonCodeOptions,
+} from '../../../../shared/hooks/useCommonCodeOptions';
 
 type MaterialsGridProps = {
   rows: MaterialItem[];
@@ -27,6 +32,8 @@ export function MaterialsGrid({
   onDelete,
 }: MaterialsGridProps) {
   const theme = useTheme();
+  const unitOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_UNIT);
+  const itemTypeOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_TYPE);
   const isDarkMode = theme.palette.mode === 'dark';
 
   return (
@@ -35,8 +42,8 @@ export function MaterialsGrid({
         <TableRow>
           <TableCell width={100}>품목코드</TableCell>
           <TableCell>품목명</TableCell>
-          <TableCell width={100}>품목계정</TableCell>
           <TableCell>규격</TableCell>
+          <TableCell width={100}>품목계정</TableCell>
           <TableCell width={100}>중량</TableCell>
           <TableCell width={80}>단위</TableCell>
           <TableCell width={120} align="center">
@@ -89,12 +96,12 @@ export function MaterialsGrid({
               <TableRow key={row.id} hover>
                 <TableCell>{row.materialCode}</TableCell>
                 <TableCell>{row.materialName}</TableCell>
-                <TableCell>{row.itemType || '-'}</TableCell>
                 <TableCell>{row.materialSpec || '-'}</TableCell>
+                <TableCell>{getCommonCodeName(itemTypeOptions, row.itemType) || '-'}</TableCell>
                 <TableCell>
                   {row.materialWeight !== null ? row.materialWeight : '-'}
                 </TableCell>
-                <TableCell>{row.unit || '-'}</TableCell>
+                <TableCell>{getCommonCodeName(unitOptions, row.unit) || '-'}</TableCell>
                 <TableCell align="center">
                   <Stack direction="row" spacing={1} justifyContent="center">
                     <IconButton

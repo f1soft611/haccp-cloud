@@ -4,14 +4,6 @@ type ResultEnvelope<T> = {
   result?: T;
 };
 
-export const MATERIAL_ITEM_TYPES = [
-  '제품',
-  '상품',
-  '원재료',
-  '부재료',
-  '소모품',
-] as const;
-
 export type MaterialItem = {
   id: string;
   materialCode: string;
