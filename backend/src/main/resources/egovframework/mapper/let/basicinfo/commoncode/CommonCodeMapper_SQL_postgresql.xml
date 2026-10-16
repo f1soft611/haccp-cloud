@@ -21,7 +21,8 @@
     </select>
 
     <!-- 그룹 목록 -->
-    <select id="CommonCodeDAO.selectGroupList" parameterType="long"
+    <select id="CommonCodeDAO.selectGroupList"
+            parameterType="long"
             resultType="egovframework.let.basicinfo.commoncode.domain.model.CommonCodeGroupVO">
         SELECT
             group_code               AS groupCode,
@@ -33,7 +34,8 @@
     </select>
 
     <!-- 상세 목록 (상위코드명은 self join, 표시 전용) -->
-    <select id="CommonCodeDAO.selectItemList" parameterType="long"
+    <select id="CommonCodeDAO.selectItemList"
+            parameterType="long"
             resultType="egovframework.let.basicinfo.commoncode.domain.model.CommonCodeItemVO">
         SELECT
             g.group_code             AS groupCode,
@@ -78,7 +80,10 @@
             tenant_id, group_id, item_code, item_nm, item_dc, sort_order, use_at, created_by, updated_by
         ) VALUES (
                      #{tenantId},
-                     #{groupId},
+                     <!-- 기존 -> #{groupId}, -->
+                     <!-- 변경 -> 그룹 저장과 분리되어 그룹 PK를 모르므로 사용 중인 그룹코드로 조회 -->
+                     (SELECT common_code_group_id FROM tb_common_code_group
+                     WHERE tenant_id = #{tenantId} AND group_code = #{groupCode} AND use_at = 'Y'),
                      #{code},
                      #{codeName},
                      #{codeDesc, jdbcType=VARCHAR},
@@ -95,6 +100,22 @@
                                                      updated_at = CURRENT_TIMESTAMP,
                                                      updated_by = EXCLUDED.updated_by
     </insert>
+
+
+    <update id="CommonCodeDAO.disableMissingGroups" parameterType="map">
+        UPDATE tb_common_code_group
+        SET use_at     = 'N',
+        updated_at = CURRENT_TIMESTAMP,
+        updated_by = #{userId, jdbcType=BIGINT}
+        WHERE tenant_id = #{tenantId}
+        AND use_at = 'Y'
+        <if test="groups != null and groups.size() > 0">
+            AND group_code NOT IN
+            <foreach collection="groups" item="g" open="(" separator="," close=")">
+                #{g.groupCode}
+            </foreach>
+        </if>
+    </update>
 
     <!-- payload에 없는 상세 ID (목록이 비면 테넌트 전체) -->
     <sql id="missingItemIds">

@@ -1,16 +1,10 @@
-export type WorkOrderRowState = 'saved' | 'new' | 'modified';
+import type {WorkOrderItem, WorkOrderSaveValue} from "../../../services/documents/workOrderService.ts";
 
-export type WorkOrderRow = {
-    id: string;
-    itemName: string;
-    productionDate: string;
-    expiryDate: string;
-    quantity: number | null;
-    unit: string;
-    spec: string;
-    remark: string;
-    rowState: WorkOrderRowState;
-};
+// 변경 -> tb_workdirect 연동, 서비스 타입(작업지시번호·품목ID 포함)을 그대로 사용
+export type WorkOrderRow = WorkOrderItem;
+
+// 변경 -> 작업지시번호는 서버 채번이므로 폼에서 제외
+export type WorkOrderFormValue = WorkOrderSaveValue;
 
 export type WorkOrderSearchValue = {
     startDate: string;

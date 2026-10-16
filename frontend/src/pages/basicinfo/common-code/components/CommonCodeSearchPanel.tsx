@@ -1,14 +1,14 @@
 import { Button, Paper, Stack, TextField } from '@mui/material';
 
 // 작업지시 WorkOrderSearchPanel과 동일한 검색영역 구성
+// 기존 -> 검색 + 조회 + 저장(전체 저장) 버튼
+// 변경 -> 저장은 그룹/상세 그리드별로 분리되어 검색영역에는 조회만
 export function CommonCodeSearchPanel(props: {
     keyword: string;
     onKeywordChange: (next: string) => void;
     onSearch: () => void;
-    onSave: () => void;
-    saveDisabled: boolean;
 }) {
-    const { keyword, onKeywordChange, onSearch, onSave, saveDisabled } = props;
+    const { keyword, onKeywordChange, onSearch } = props;
 
     return (
         <Paper sx={{ p: 2 }}>
@@ -26,13 +26,8 @@ export function CommonCodeSearchPanel(props: {
                     onChange={(event) => onKeywordChange(event.target.value)}
                     sx={{ minWidth: { md: 320 } }}
                 />
-                {/* 기존 -> 조회/저장 버튼을 함께 오른쪽 정렬 */}
-                {/* 변경 -> 조회는 검색 필드 옆, 저장만 오른쪽 끝 정렬 */}
                 <Button variant="contained" onClick={onSearch}>
                     조회
-                </Button>
-                <Button variant="outlined" disabled={saveDisabled} onClick={onSave} sx={{ ml: { md: 'auto' } }}>
-                    저장
                 </Button>
             </Stack>
         </Paper>

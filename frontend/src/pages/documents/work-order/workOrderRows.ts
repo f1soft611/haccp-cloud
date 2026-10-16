@@ -1,85 +1,41 @@
-import type { WorkOrderRow, WorkOrderSearchValue } from './types';
+import type { WorkOrderFormValue } from './types';
 
-// ponytail: 백엔드 API 전까지 화면 확인용 샘플 데이터
-export const SAMPLE_WORK_ORDERS: WorkOrderRow[] = [
-    {
-        id: 'wo-1',
-        itemName: '배추김치',
-        productionDate: '2026-09-28',
-        expiryDate: '2026-10-28',
-        quantity: 500,
-        unit: 'kg',
-        spec: '10kg/박스',
-        remark: '',
-        rowState: 'saved',
-    },
-    {
-        id: 'wo-2',
-        itemName: '깍두기',
-        productionDate: '2026-09-29',
-        expiryDate: '2026-10-29',
-        quantity: 200,
-        unit: 'kg',
-        spec: '5kg/박스',
-        remark: '',
-        rowState: 'saved',
-    },
-    {
-        id: 'wo-3',
-        itemName: '총각김치',
-        productionDate: '2026-09-30',
-        expiryDate: '2026-10-30',
-        quantity: 150,
-        unit: 'kg',
-        spec: '5kg/박스',
-        remark: '시즌 한정',
-        rowState: 'saved',
-    },
-];
+// 기존 -> SAMPLE_WORK_ORDERS: 백엔드 API 전까지 화면 확인용 샘플 데이터
+// 변경 -> tb_workdirect 조회로 대체되어 제거
 
-export function createEmptyWorkOrderRow(): WorkOrderRow {
-    return {
-        id: crypto.randomUUID(),
-        itemName: '',
-        productionDate: '',
-        expiryDate: '',
-        quantity: null,
-        unit: '',
-        spec: '',
-        remark: '',
-        rowState: 'new',
-    };
-}
+// 기존 -> filterWorkOrderRows(rows, search): 기간·품명 클라이언트 필터
+// 변경 -> 서버 조회 조건으로 대체되어 제거
 
-// 신규 행은 아직 값이 비어 있을 수 있으므로 검색 조건과 무관하게 항상 표시한다.
-export function filterWorkOrderRows(
-    rows: WorkOrderRow[],
-    search: WorkOrderSearchValue,
-): WorkOrderRow[] {
-    const keyword = search.itemName.trim();
-    return rows.filter(
-        (row) =>
-            row.rowState === 'new' ||
-            ((!search.startDate || row.productionDate >= search.startDate) &&
-                (!search.endDate || row.productionDate <= search.endDate) &&
-                (!keyword || row.itemName.includes(keyword))),
-    );
-}
+export type WorkOrderFormErrors = Partial<Record<keyof WorkOrderFormValue, string>>;
 
-// 오류가 있으면 첫 번째 오류 메시지, 없으면 null
-export function validateWorkOrderRows(rows: WorkOrderRow[]): string | null {
-    for (const row of rows) {
-        if (row.rowState === 'saved') continue;
-        const label = row.itemName.trim() || '신규 행';
-        if (!row.itemName.trim()) return `${label}: 품명을 입력하세요.`;
-        if (!row.productionDate) return `${label}: 생산일자를 입력하세요.`;
-        if (!row.expiryDate) return `${label}: 소비기한을 입력하세요.`;
-        if (row.quantity === null || row.quantity <= 0) {
-            return `${label}: 생산량은 0보다 커야 합니다.`;
-        }
-        if (row.expiryDate < row.productionDate) {
-            return `${label}: 소비기한은 생산일자 이후여야 합니다.`;
-        }
+const MAX_REMARK_LENGTH = 255;
+
+// 기존 -> itemName 필수, 메시지 '생산일자'
+// 변경 -> 품목 선택(materialId) 필수, 메시지 '생산계획일', 비고 길이 검사 추가 (서버 검증 메시지와 동일)
+export function validateWorkOrderForm(value: WorkOrderFormValue): WorkOrderFormErrors {
+    const errors: WorkOrderFormErrors = {};
+    if (!value.materialId) errors.materialId = '품목을 선택하세요.';
+    if (!value.productionDate) errors.productionDate = '생산계획일을 입력하세요.';
+    if (!value.expiryDate) {
+        errors.expiryDate = '소비기한을 입력하세요.';
+    } else if (value.productionDate && value.expiryDate < value.productionDate) {
+        errors.expiryDate = '소비기한은 생산계획일 이후여야 합니다.';
     }
-    return null;
+    if (value.quantity === null || value.quantity <= 0) {
+        errors.quantity = '생산량은 0보다 커야 합니다.';
+    }
+    if (value.remark.trim().length > MAX_REMARK_LENGTH) {
+        errors.remark = '비고는 255자 이하로 입력하세요.';
+    }
+    return errors;
+}
+
+// ponytail: 품목에 소비기한 기준이 없어 생산계획일 + 1년 고정. 품목 기준이 생기면 이 함수만 교체
+export function calcDefaultExpiryDate(prodPlanDate: string): string {
+    if (!prodPlanDate) return '';
+    const [year, month, day] = prodPlanDate.split('-').map(Number);
+    const next = new Date(Date.UTC(year + 1, month - 1, day));
+    // 2/29 + 1년이 3/1 로 넘어가면 전달 말일(2/28)로 맞춘다
+    if (next.getUTCMonth() !== month - 1) next.setUTCDate(0);
+    return next.toISOString().slice(0, 10);
 }

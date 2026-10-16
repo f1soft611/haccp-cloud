@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WorkOrderDAO">
+
+    <!-- 작업지시 resultMap -->
+    <resultMap id="workOrderResult"
+               type="egovframework.let.documents.workorder.domain.model.WorkOrderVO">
+        <id property="workdirectId" column="workdirectId"/>
+        <result property="tenantCode" column="tenantCode"/>
+        <result property="workdtNo" column="workdtNo"/>
+        <result property="workdtDate" column="workdtDate"/>
+        <result property="materialId" column="materialId"/>
+        <result property="materialName" column="materialName"/>
+        <result property="materialSpec" column="materialSpec"/>
+        <result property="unit" column="unit"/>
+        <result property="prodPlanDate" column="prodPlanDate"/>
+        <result property="expirationDate" column="expirationDate"/>
+        <result property="prodplanQty" column="prodplanQty"/>
+        <result property="prodMemo" column="prodMemo"/>
+    </resultMap>
+
+    <sql id="workOrderColumns">
+        w.workdirect_id                              AS workdirectId,
+        t.tenant_code                                AS tenantCode,
+        w.workdt_no                                  AS workdtNo,
+        TO_CHAR(w.workdt_date, 'YYYY-MM-DD')         AS workdtDate,
+        w.material_id                                AS materialId,
+        m.material_name                              AS materialName,
+        m.material_spec                              AS materialSpec,
+        m.unit                                       AS unit,
+        TO_CHAR(w.prod_plan_date, 'YYYY-MM-DD')      AS prodPlanDate,
+        TO_CHAR(w.expiration_date, 'YYYY-MM-DD')     AS expirationDate,
+        w.prodplan_qty                               AS prodplanQty,
+        w.prod_memo                                  AS prodMemo
+    </sql>
+
+    <sql id="workOrderSearchWhere">
+        WHERE w.use_at = 'Y'
+        <if test="tenantCode != null and tenantCode != ''">
+            AND t.tenant_code = #{tenantCode}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND w.prod_plan_date &gt;= CAST(#{startDate} AS date)
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND w.prod_plan_date &lt;= CAST(#{endDate} AS date)
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND LOWER(m.material_name) LIKE '%' || LOWER(#{keyword}) || '%'
+        </if>
+    </sql>
+
+    <!-- 작업지시 페이징 목록 (삭제되지 않은 것만, 작업지시번호 역순) -->
+    <select id="WorkOrderDAO.selectWorkOrderPagedList"
+            parameterType="egovframework.let.documents.workorder.domain.model.WorkOrderSearchConditionVO"
+            resultMap="workOrderResult">
+        SELECT *
+        FROM (
+        SELECT
+        <include refid="workOrderColumns"/>,
+        ROW_NUMBER() OVER (ORDER BY w.workdt_no DESC) AS rn
+        FROM tb_workdirect w
+        JOIN tb_tenant t ON t.tenant_id = w.tenant_id
+        JOIN tb_material_info m ON m.material_id = w.material_id AND m.tenant_id = w.tenant_id
+        <include refid="workOrderSearchWhere"/>
+        ) work_order_query
+        WHERE rn BETWEEN #{firstIndex} AND #{lastIndex}
+        ORDER BY rn
+    </select>
+
+    <!-- 작업지시 페이징 개수 -->
+    <select id="WorkOrderDAO.selectWorkOrderPagedCount"
+            parameterType="egovframework.let.documents.workorder.domain.model.WorkOrderSearchConditionVO"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_workdirect w
+        JOIN tb_tenant t ON t.tenant_id = w.tenant_id
+        JOIN tb_material_info m ON m.material_id = w.material_id AND m.tenant_id = w.tenant_id
+        <include refid="workOrderSearchWhere"/>
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="WorkOrderDAO.selectWorkOrderById"
+            parameterType="map"
+            resultMap="workOrderResult">
+        SELECT
+        <include refid="workOrderColumns"/>
+        FROM tb_workdirect w
+        JOIN tb_tenant t ON t.tenant_id = w.tenant_id
+        JOIN tb_material_info m ON m.material_id = w.material_id AND m.tenant_id = w.tenant_id
+        WHERE w.workdirect_id = #{workdirectId}
+        AND w.tenant_id     = #{tenantId}
+        AND w.use_at        = 'Y'
+    </select>
+
+    <!-- 테넌트 ID 조회 -->
+    <select id="WorkOrderDAO.selectTenantIdByCode"
+            parameterType="string"
+            resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+            LIMIT 1
+    </select>
+
+    <!-- 로그인코드로 사용자 ID 조회 (created_by/updated_by 기록용) -->
+    <select id="WorkOrderDAO.selectUserIdByLoginCode"
+            parameterType="map"
+            resultType="long">
+        SELECT u.user_id
+        FROM tb_user u
+                 JOIN tb_login_account la ON la.login_id = u.login_id
+        WHERE la.tenant_id = #{tenantId}
+          AND la.login_code = #{loginCode}
+            LIMIT 1
+    </select>
+
+    <!-- 같은 테넌트의 삭제되지 않은 품목인지 확인 -->
+    <select id="WorkOrderDAO.selectActiveMaterialCount"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_material_info
+        WHERE material_id   = #{materialId}
+          AND tenant_id     = #{tenantId}
+          AND delete_status = 'N'
+    </select>
+
+    <!-- 작업지시번호 채번 잠금 (품목코드 잠금과 키가 겹치지 않도록 2-인자 형식) -->
+    <select id="WorkOrderDAO.lockTenantForNoGeneration"
+            parameterType="long"
+            resultType="string">
+        SELECT pg_advisory_xact_lock(hashtext('tb_workdirect'), CAST(#{value} AS integer))::text
+    </select>
+
+    <!-- 같은 테넌트·같은 날짜의 최대 작업지시번호 (삭제건 포함 - 번호 재사용 방지) -->
+    <select id="WorkOrderDAO.selectMaxWorkdtNo"
+            parameterType="map"
+            resultType="string">
+        SELECT MAX(workdt_no)
+        FROM tb_workdirect
+        WHERE tenant_id = #{tenantId}
+          AND workdt_no LIKE #{datePrefix} || '%'
+    </select>
+
+    <!-- 작업지시 등록 (RETURNING으로 신규 ID 반환) -->
+    <select id="WorkOrderDAO.insertWorkOrder"
+            parameterType="map"
+            resultType="long">
+        INSERT INTO tb_workdirect (
+            tenant_id,
+            workdt_no,
+            workdt_date,
+            prod_plan_date,
+            material_id,
+            expiration_date,
+            prodplan_qty,
+            prod_memo,
+            use_at,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        ) VALUES (
+                     #{tenantId},
+                     #{workdtNo},
+                     CAST(#{workdtDate} AS date),
+                     CAST(#{prodPlanDate} AS date),
+                     #{materialId},
+                     CAST(#{expirationDate} AS date),
+                     #{prodplanQty},
+                     #{prodMemo, jdbcType=VARCHAR},
+                     'Y',
+                     #{createdBy, jdbcType=VARCHAR},
+                     CURRENT_TIMESTAMP,
+                     #{updatedBy, jdbcType=VARCHAR},
+                     CURRENT_TIMESTAMP
+                 )
+            RETURNING workdirect_id
+    </select>
+
+    <!-- 작업지시 수정 (작업지시번호·등록일은 변경하지 않음) -->
+    <update id="WorkOrderDAO.updateWorkOrder"
+            parameterType="map">
+        UPDATE tb_workdirect
+        SET
+            material_id     = #{materialId},
+            prod_plan_date  = CAST(#{prodPlanDate} AS date),
+            expiration_date = CAST(#{expirationDate} AS date),
+            prodplan_qty    = #{prodplanQty},
+            prod_memo       = #{prodMemo, jdbcType=VARCHAR},
+            updated_by      = #{updatedBy, jdbcType=VARCHAR},
+            updated_at      = CURRENT_TIMESTAMP
+        WHERE workdirect_id = #{workdirectId}
+          AND tenant_id     = #{tenantId}
+          AND use_at        = 'Y'
+    </update>
+
+    <!-- 작업지시 논리 삭제 -->
+    <update id="WorkOrderDAO.softDeleteWorkOrder"
+            parameterType="map">
+        UPDATE tb_workdirect
+        SET
+            use_at     = 'N',
+            updated_by = #{updatedBy, jdbcType=VARCHAR},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE workdirect_id = #{workdirectId}
+          AND tenant_id     = #{tenantId}
+          AND use_at        = 'Y'
+    </update>
+
+</mapper>

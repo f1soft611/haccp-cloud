@@ -1,5 +1,4 @@
 import type {
-    CommonCodeData,
     CommonCodeDetailItem,
     CommonCodeGroupItem,
 } from '../../../services/basicinfo/commonCodeService';
@@ -60,10 +59,9 @@ export function markEdited<T extends { rowState: CommonCodeRowState }>(
     return { ...newRow, rowState: oldRow.rowState === 'new' ? 'new' : 'modified' };
 }
 
-export function validateCommonCodes(
-    groups: CommonCodeGroupRow[],
-    details: CommonCodeDetailRow[],
-): string | null {
+// 기존 -> validateCommonCodes(groups, details) / toCommonCodePayload(groups, details): 그룹+상세 한 번에 저장
+// 변경 -> 그룹 저장(플랫폼관리자)과 상세 저장이 분리되어 검증/페이로드도 분리
+export function validateGroupRows(groups: CommonCodeGroupRow[]): string | null {
     const seenGroupCodes = new Set<string>();
     for (const group of groups) {
         const code = group.groupCode.trim();
@@ -73,11 +71,16 @@ export function validateCommonCodes(
         if (seenGroupCodes.has(code)) return `${label}: 그룹코드가 중복됩니다.`;
         seenGroupCodes.add(code);
     }
+    return null;
+}
 
-    const groupCodeById = new Map(groups.map((group) => [group.id, group.groupCode.trim()]));
+export function validateDetailRows(groups: CommonCodeGroupRow[], details: CommonCodeDetailRow[]): string | null {
+    const groupById = new Map(groups.map((group) => [group.id, group]));
     const seenDetailKeys = new Set<string>();
     for (const detail of details) {
-        const label = groupCodeById.get(detail.groupId) || '신규 그룹';
+        const group = groupById.get(detail.groupId);
+        const label = group?.groupCode.trim() || '신규 그룹';
+        if (group?.rowState === 'new') return `${label}: 그룹을 먼저 저장하세요.`;
         const code = detail.code.trim();
         if (!code) return `${label}: 상세코드를 입력하세요.`;
         if (!detail.codeName.trim()) return `${label}: 상세코드명을 입력하세요.`;
@@ -88,25 +91,26 @@ export function validateCommonCodes(
     return null;
 }
 
-export function toCommonCodePayload(
-    groups: CommonCodeGroupRow[],
-    details: CommonCodeDetailRow[],
-): CommonCodeData {
+export function toGroupPayload(groups: CommonCodeGroupRow[]): CommonCodeGroupItem[] {
+    return groups.map((group) => ({
+        groupCode: group.groupCode.trim(),
+        groupName: group.groupName.trim(),
+        groupDesc: group.groupDesc,
+    }));
+}
+
+// 변경된 상세만 보낸다 (서버는 upsert만 하고 삭제하지 않음)
+export function toDetailPayload(groups: CommonCodeGroupRow[], details: CommonCodeDetailRow[]): CommonCodeDetailItem[] {
     const groupCodeById = new Map(groups.map((group) => [group.id, group.groupCode.trim()]));
-    return {
-        groups: groups.map((group) => ({
-            groupCode: group.groupCode.trim(),
-            groupName: group.groupName.trim(),
-            groupDesc: group.groupDesc,
-        })),
-        details: details.map((detail) => ({
-            groupCode: groupCodeById.get(detail.groupId) ?? '',
-            code: detail.code.trim(),
-            codeName: detail.codeName.trim(),
-            parentCodeName: detail.parentCodeName,
-            useAt: detail.useAt,
-            sortOrder: detail.sortOrder,
-            codeDesc: detail.codeDesc,
-        })),
-    };
+    return details
+    .filter((detail) => detail.rowState !== 'saved')
+    .map((detail) => ({
+        groupCode: groupCodeById.get(detail.groupId) ?? '',
+        code: detail.code.trim(),
+        codeName: detail.codeName.trim(),
+        parentCodeName: detail.parentCodeName,
+        useAt: detail.useAt,
+        sortOrder: detail.sortOrder,
+        codeDesc: detail.codeDesc,
+    }));
 }
