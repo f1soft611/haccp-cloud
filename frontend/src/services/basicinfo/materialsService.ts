@@ -20,6 +20,7 @@ export type ListMaterialsPagedParams = {
   pageIndex: number;
   pageSize: number;
   keyword?: string;
+  itemTypes?: string[];
 };
 
 export type ListMaterialsPagedResult = {
@@ -98,6 +99,7 @@ export async function listMaterialsPaged(
         pageIndex: params.pageIndex,
         pageSize: params.pageSize,
         keyword: params.keyword || undefined,
+        itemTypes: params.itemTypes?.length ? params.itemTypes.join(',') : undefined,
       },
     },
   );
