@@ -12,6 +12,7 @@ type CommonCodeSelectProps = {
     fullWidth?: boolean;
     size?: TextFieldProps['size'];
     disabled?: boolean;
+    emptyLabel?: string;
 };
 
 export function CommonCodeSelect({
@@ -24,6 +25,7 @@ export function CommonCodeSelect({
                                      fullWidth,
                                      size,
                                      disabled,
+                                     emptyLabel = '선택 안 함',
                                  }: CommonCodeSelectProps) {
     const options = useCommonCodeOptions(groupCode);
     // 미사용 처리된 코드 등 옵션에 없는 값도 MUI out-of-range 경고 없이 표시
@@ -41,7 +43,7 @@ export function CommonCodeSelect({
             disabled={disabled}
             helperText={options.length === 0 ? `공통코드 ${groupCode}를 먼저 등록하세요.` : undefined}
         >
-            {allowEmpty ? <MenuItem value="">선택 안 함</MenuItem> : null}
+            {allowEmpty ? <MenuItem value="">{emptyLabel}</MenuItem> : null}
             {hasOrphanValue ? <MenuItem value={value}>{value}</MenuItem> : null}
             {options.map((option) => (
                 <MenuItem key={option.code} value={option.code}>

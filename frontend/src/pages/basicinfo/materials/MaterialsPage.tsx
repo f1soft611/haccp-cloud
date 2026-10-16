@@ -31,8 +31,12 @@ export function MaterialsPage() {
 
   const [searchValue, setSearchValue] = useState<MaterialsSearchValue>({
     keyword: '',
+    itemType: '',
   });
-  const [appliedKeyword, setAppliedKeyword] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState<MaterialsSearchValue>({
+    keyword: '',
+    itemType: '',
+  });
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<MaterialItem | null>(
@@ -46,15 +50,17 @@ export function MaterialsPage() {
       tenantCode || 'self',
       pageIndex,
       pageSize,
-      appliedKeyword,
+      appliedSearch.keyword,
+      appliedSearch.itemType,
     ],
     queryFn: () =>
-      listMaterialsPaged({
-        tenantCode: tenantCode || undefined,
-        pageIndex,
-        pageSize,
-        keyword: appliedKeyword || undefined,
-      }),
+        listMaterialsPaged({
+          tenantCode: tenantCode || undefined,
+          pageIndex,
+          pageSize,
+          keyword: appliedSearch.keyword || undefined,
+          itemTypes: appliedSearch.itemType ? [appliedSearch.itemType] : undefined,
+        }),
     retry: false,
   });
 
@@ -94,7 +100,10 @@ export function MaterialsPage() {
 
   const handleSearch = () => {
     resetPage();
-    setAppliedKeyword(searchValue.keyword.trim());
+    setAppliedSearch({
+      keyword: searchValue.keyword.trim(),
+      itemType: searchValue.itemType,
+    });
   };
 
   const handleOpenCreate = () => {
