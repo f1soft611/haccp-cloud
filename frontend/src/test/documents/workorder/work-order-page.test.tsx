@@ -40,7 +40,7 @@ const {
                 id: 'm-2',
                 materialCode: '000002',
                 materialName: '깍두기',
-                itemType: '제품',
+                itemType: 'PRODUCT',
                 materialSpec: '5kg/박스',
                 materialWeight: null,
                 unit: 'kg',
