@@ -5,6 +5,8 @@ import {
     normalizeAttendees,
     toStyleText,
 } from '../utils/documentFieldAttendees';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import { DocumentFieldAttendeesNodeView } from '../components/DocumentFieldAttendeesNodeView';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -94,5 +96,9 @@ export const DocumentFieldAttendeesExtension = Node.create({
                         ])
                         .run(),
         };
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(DocumentFieldAttendeesNodeView);
     },
 });
