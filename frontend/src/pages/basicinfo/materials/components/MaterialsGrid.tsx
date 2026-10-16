@@ -12,6 +12,11 @@ import {
 import { useTheme } from '@mui/material/styles';
 import type { MaterialItem } from '../../../../services/basicinfo/materialsService';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import {
+  getCommonCodeName,
+  useCommonCodeOptions,
+} from '../../../../shared/hooks/useCommonCodeOptions';
 
 type MaterialsGridProps = {
   rows: MaterialItem[];
@@ -27,6 +32,7 @@ export function MaterialsGrid({
   onDelete,
 }: MaterialsGridProps) {
   const theme = useTheme();
+  const unitOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_UNIT);
   const isDarkMode = theme.palette.mode === 'dark';
 
   return (
@@ -94,7 +100,7 @@ export function MaterialsGrid({
                 <TableCell>
                   {row.materialWeight !== null ? row.materialWeight : '-'}
                 </TableCell>
-                <TableCell>{row.unit || '-'}</TableCell>
+                <TableCell>{getCommonCodeName(unitOptions, row.unit) || '-'}</TableCell>
                 <TableCell align="center">
                   <Stack direction="row" spacing={1} justifyContent="center">
                     <IconButton
