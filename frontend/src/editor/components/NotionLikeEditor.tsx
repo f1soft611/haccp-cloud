@@ -18,6 +18,7 @@ import {
   type DocumentFieldDisplayMode,
 } from '../extensions/documentFieldExtension';
 import { DocumentFieldImageExtension } from '../extensions/documentFieldImageExtension';
+import { DocumentFieldAttendeesExtension } from '../extensions/documentFieldAttendeesExtension';
 import { EditorImageExtension } from '../extensions/imageExtension';
 import { SlashCommandExtension } from '../extensions/slashCommandExtension';
 import {
@@ -200,6 +201,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
         displayMode: documentFieldDisplayMode,
       }),
       DocumentFieldImageExtension,
+      DocumentFieldAttendeesExtension,
       EditorImageExtension,
       TaskList,
       TaskItem.configure({

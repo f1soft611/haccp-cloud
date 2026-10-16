@@ -24,7 +24,8 @@ type SlashCommandKey =
   | 'todo'
   | 'documentFieldCreatedAt'
   | 'documentFieldDepartment'
-  | 'documentFieldAuthor';
+    | 'documentFieldAuthor'
+    | 'documentFieldAttendees';
 
 type SlashCommandOption = {
   key: SlashCommandKey;
@@ -100,6 +101,12 @@ const SLASH_OPTIONS: SlashCommandOption[] = [
     title: '문서필드: 작성자',
     description: '현재 로그인 사용자를 자동 표시합니다.',
     searchTerms: ['문서필드', '작성자', 'author', 'user'],
+  },
+  {
+    key: 'documentFieldAttendees',
+    title: '문서필드: 참석자',
+    description: '클릭해서 참석자를 고르면 이름과 서명칸을 표시합니다.',
+    searchTerms: ['문서필드', '참석자', '서명', 'attendee', 'signature'],
   },
 ];
 
@@ -187,6 +194,16 @@ function runSlashCommand(editor: Editor, range: Range, key: SlashCommandKey) {
     return;
   }
 
+  if (key === 'documentFieldAttendees') {
+    editor
+    .chain()
+    .focus()
+    .deleteRange(range)
+    .insertDocumentFieldAttendees()
+    .run();
+    return;
+  }
+
   if (key === 'code') {
     editor.chain().focus().deleteRange(range).toggleCodeBlock().run();
     return;
@@ -240,7 +257,7 @@ export const SlashCommandExtension = Extension.create({
               option.searchTerms.some((term) => term.includes(normalized))
             );
           })
-            .slice(0, 8)
+            // .slice(0, 8)
             .map(toSlashItem);
         },
         command: ({ editor, range, props }) => {
