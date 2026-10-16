@@ -21,7 +21,7 @@ export function WorkOrderSearchPanel(props: {
                 <TextField
                     size="small"
                     type="date"
-                    label="생산일자 시작"
+                    label="생산계획일 시작"
                     value={value.startDate}
                     onChange={(event) => onChange({ ...value, startDate: event.target.value })}
                     slotProps={{ inputLabel: { shrink: true } }}
@@ -29,7 +29,7 @@ export function WorkOrderSearchPanel(props: {
                 <TextField
                     size="small"
                     type="date"
-                    label="생산일자 종료"
+                    label="생산계획일 종료"
                     value={value.endDate}
                     onChange={(event) => onChange({ ...value, endDate: event.target.value })}
                     slotProps={{ inputLabel: { shrink: true } }}

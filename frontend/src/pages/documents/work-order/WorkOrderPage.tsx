@@ -1,11 +1,20 @@
-import { Stack } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { Alert, Stack } from '@mui/material';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import {
+    createWorkOrder,
+    deleteWorkOrder,
+    listWorkOrdersPaged,
+    updateWorkOrder,
+} from '../../../services/documents/workOrderService';
+import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import { GridPaginationBar } from '../../../shared/components/data/GridPaginationBar';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
+import { useAuthStore } from '../../../shared/store/authStore';
 import { WorkOrderFormDialog } from './components/WorkOrderFormDialog';
 import { WorkOrderGrid } from './components/WorkOrderGrid';
 import { WorkOrderSearchPanel } from './components/WorkOrderSearchPanel';
@@ -15,28 +24,80 @@ import {
     type WorkOrderRow,
     type WorkOrderSearchValue,
 } from './types';
-import { SAMPLE_WORK_ORDERS, filterWorkOrderRows } from './workOrderRows';
 
 export function WorkOrderPage() {
-    // ponytail: 백엔드 API 연동 전까지 화면 state 로만 보관
-    const [rows, setRows] = useState<WorkOrderRow[]>(SAMPLE_WORK_ORDERS);
+    // 기존 -> useState(SAMPLE_WORK_ORDERS) 화면 state 보관 + filterWorkOrderRows/slice 클라이언트 페이징
+    // 변경 -> tb_workdirect API 를 React Query 로 서버 페이징 조회/저장
+    const queryClient = useQueryClient();
+    const tenantCode = useAuthStore((state) => state.tenantCode);
     const [searchValue, setSearchValue] = useState<WorkOrderSearchValue>(EMPTY_WORK_ORDER_SEARCH);
     const [appliedSearch, setAppliedSearch] = useState<WorkOrderSearchValue>(EMPTY_WORK_ORDER_SEARCH);
     const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } = useGridPagination();
-    const { showSuccess } = useFeedback();
+    const { showSuccess, showError } = useFeedback();
 
     const [formOpen, setFormOpen] = useState(false);
     const [editingRow, setEditingRow] = useState<WorkOrderRow | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<WorkOrderRow | null>(null);
 
-    const filteredRows = useMemo(
-        () => filterWorkOrderRows(rows, appliedSearch),
-        [rows, appliedSearch],
-    );
-    // 삭제로 마지막 페이지가 비면 이전 페이지를 보여준다
-    const lastPage = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-    const currentPage = Math.min(pageIndex, lastPage);
-    const pagedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const queryKeyBase = ['documents-work-orders', tenantCode || 'self'];
+
+    const workOrdersQuery = useQuery({
+        queryKey: [...queryKeyBase, pageIndex, pageSize, appliedSearch],
+        queryFn: () =>
+            listWorkOrdersPaged({
+                tenantCode: tenantCode || undefined,
+                pageIndex,
+                pageSize,
+                startDate: appliedSearch.startDate || undefined,
+                endDate: appliedSearch.endDate || undefined,
+                keyword: appliedSearch.itemName.trim() || undefined,
+            }),
+        retry: false,
+    });
+
+    const refreshList = () => void queryClient.invalidateQueries({ queryKey: queryKeyBase });
+    const handleError = (error: unknown) =>
+        showError(extractApiErrorMessage(error, '작업지시를 처리하지 못했습니다.'));
+
+    const handleCloseForm = () => {
+        setFormOpen(false);
+        setEditingRow(null);
+    };
+
+    const createMutation = useMutation({
+        mutationFn: createWorkOrder,
+        onSuccess: () => {
+            handleCloseForm();
+            resetPage();
+            refreshList();
+            showSuccess('등록되었습니다.');
+        },
+        onError: handleError,
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: updateWorkOrder,
+        onSuccess: () => {
+            handleCloseForm();
+            refreshList();
+            showSuccess('수정되었습니다.');
+        },
+        onError: handleError,
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: deleteWorkOrder,
+        onSuccess: () => {
+            setDeleteTarget(null);
+            // 기존 -> 마지막 페이지가 비면 이전 페이지로 이동 / 변경 -> 서버 페이징이므로 1페이지로 이동
+            resetPage();
+            refreshList();
+            showSuccess('삭제되었습니다.');
+        },
+        onError: handleError,
+    });
+
+    const saving = createMutation.isPending || updateMutation.isPending;
 
     const handleSearch = () => {
         resetPage();
@@ -59,30 +120,18 @@ export function WorkOrderPage() {
         setFormOpen(true);
     };
 
-    const handleCloseForm = () => {
-        setFormOpen(false);
-        setEditingRow(null);
-    };
-
     const handleSubmit = (value: WorkOrderFormValue) => {
+        const payload = { tenantCode: tenantCode || undefined, ...value };
         if (editingRow) {
-            setRows((prev) =>
-                prev.map((row) => (row.id === editingRow.id ? { ...value, id: editingRow.id } : row)),
-            );
-            showSuccess('수정되었습니다.');
-        } else {
-            setRows((prev) => [{ ...value, id: crypto.randomUUID() }, ...prev]);
-            resetPage();
-            showSuccess('등록되었습니다.');
+            updateMutation.mutate({ ...payload, id: editingRow.id });
+            return;
         }
-        handleCloseForm();
+        createMutation.mutate(payload);
     };
 
     const handleConfirmDelete = () => {
         if (!deleteTarget) return;
-        setRows((prev) => prev.filter((row) => row.id !== deleteTarget.id));
-        setDeleteTarget(null);
-        showSuccess('삭제되었습니다.');
+        deleteMutation.mutate({ tenantCode: tenantCode || undefined, id: deleteTarget.id });
     };
 
     return (
@@ -93,6 +142,10 @@ export function WorkOrderPage() {
                 description="생산 품목별 작업지시를 등록하고 관리합니다."
             />
 
+            {workOrdersQuery.isError ? (
+                <Alert severity="warning">작업지시 목록을 불러오지 못했습니다.</Alert>
+            ) : null}
+
             <WorkOrderSearchPanel
                 value={searchValue}
                 onChange={setSearchValue}
@@ -101,12 +154,16 @@ export function WorkOrderPage() {
                 onCreate={handleOpenCreate}
             />
 
-            <WorkOrderGrid rows={pagedRows} onEdit={handleOpenEdit} onDelete={setDeleteTarget} />
+            <WorkOrderGrid
+                rows={workOrdersQuery.data?.items ?? []}
+                onEdit={handleOpenEdit}
+                onDelete={setDeleteTarget}
+            />
 
             <GridPaginationBar
-                pageIndex={currentPage}
+                pageIndex={pageIndex}
                 pageSize={pageSize}
-                totalCount={filteredRows.length}
+                totalCount={workOrdersQuery.data?.totalCount ?? 0}
                 onPageChange={setPageIndex}
                 onPageSizeChange={setPageSize}
             />
@@ -114,19 +171,28 @@ export function WorkOrderPage() {
             <WorkOrderFormDialog
                 open={formOpen}
                 mode={editingRow ? 'edit' : 'create'}
+                saving={saving}
+                workdtNo={editingRow?.workdtNo}
                 initialValue={editingRow ?? undefined}
-                onClose={handleCloseForm}
+                onClose={() => {
+                    if (saving) return;
+                    handleCloseForm();
+                }}
                 onSubmit={handleSubmit}
             />
 
             <ConfirmDialog
                 open={deleteTarget !== null}
                 title="작업지시 삭제"
-                description={`'${deleteTarget?.itemName ?? ''}' 작업지시를 삭제하시겠습니까?`}
+                description={`'${deleteTarget?.workdtNo ?? ''} ${deleteTarget?.itemName ?? ''}' 작업지시를 삭제하시겠습니까?`}
                 confirmText="삭제"
                 confirmColor="error"
+                loading={deleteMutation.isPending}
                 onConfirm={handleConfirmDelete}
-                onClose={() => setDeleteTarget(null)}
+                onClose={() => {
+                    if (deleteMutation.isPending) return;
+                    setDeleteTarget(null);
+                }}
             />
         </Stack>
     );

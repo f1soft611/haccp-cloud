@@ -17,8 +17,9 @@ export function WorkOrderGrid(props: {
         <AdminGrid ariaLabel="작업지시 목록">
             <TableHead>
                 <TableRow>
+                    <TableCell align="center" width={140}>작업지시번호</TableCell>
                     <TableCell align="center">품명</TableCell>
-                    <TableCell align="center" width={120}>생산일자</TableCell>
+                    <TableCell align="center" width={120}>생산계획일</TableCell>
                     <TableCell align="center" width={120}>소비기한</TableCell>
                     <TableCell align="center" width={100}>생산량</TableCell>
                     <TableCell align="center" width={80}>단위</TableCell>
@@ -30,7 +31,7 @@ export function WorkOrderGrid(props: {
             <TableBody>
                 {rows.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={8} align="center">
+                        <TableCell colSpan={9} align="center">
                             조회된 작업지시가 없습니다.
                         </TableCell>
                     </TableRow>
@@ -38,6 +39,7 @@ export function WorkOrderGrid(props: {
 
                 {rows.map((row) => (
                     <TableRow key={row.id} hover>
+                        <TableCell align="center">{row.workdtNo}</TableCell>
                         <TableCell align="center">{row.itemName}</TableCell>
                         <TableCell align="center">{row.productionDate}</TableCell>
                         <TableCell align="center">{row.expiryDate}</TableCell>
