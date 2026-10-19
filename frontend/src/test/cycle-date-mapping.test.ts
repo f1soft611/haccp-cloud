@@ -258,13 +258,15 @@ describe('mapTodosToCalendarEvents', () => {
         const dates = (events: ReturnType<typeof mapTodosToCalendarEvents>) =>
             events.map(({ date, cycleDate }) => ({ date, cycleDate }));
 
-        it('pins the current week on its registered date once registered', () => {
+        // 변경 -> 진행 중 주 상신 문서는 주기 시작일(월요일 10-05) 칸
+        it('pins a submitted current week on its cycle start date', () => {
             const events = mapTodosToCalendarEvents(
                 [buildItem({ cycle: 'WEEK' })], ...OCT_2026,
                 [instance('2026-10-05', 'in_progress', '900', '2026-10-06')], TODAY,
             );
 
-            expect(dates(events)).toContainEqual({ date: '2026-10-06', cycleDate: '2026-10-05' });
+            expect(dates(events)).toContainEqual({ date: '2026-10-05', cycleDate: '2026-10-05' });
+            expect(events.some((event) => event.date === '2026-10-06')).toBe(false);
             expect(events.some((event) => event.date === '2026-10-08')).toBe(false);
         });
 
@@ -311,18 +313,25 @@ describe('mapTodosToCalendarEvents', () => {
             expect(events.filter((event) => event.date === '2026-10-08')).toHaveLength(1);
         });
 
-        it('pins the current month and year on their registered dates', () => {
+        it('pins a submitted current month and year on their cycle start dates', () => {
             const events = mapTodosToCalendarEvents(
                 [buildItem({ id: '1', cycle: 'MONTH' })], ...OCT_2026,
                 [instance('2026-10-01', 'approved', '900', '2026-10-03')], TODAY,
             );
-            expect(dates(events)).toEqual([{ date: '2026-10-03', cycleDate: '2026-10-01' }]);
+            expect(dates(events)).toEqual([{ date: '2026-10-01', cycleDate: '2026-10-01' }]);
 
+            // 1월 1일이 보이는 1월 화면에서 확인 (10월 화면에는 1월 1일 칸이 없어 표시되지 않음)
             const yearly = mapTodosToCalendarEvents(
+                [buildItem({ id: '1', cycle: 'YEAR' })], ...JAN_2026,
+                [instance('2026-01-01', 'approved', '900', '2026-10-02')], TODAY,
+            );
+            expect(dates(yearly)).toEqual([{ date: '2026-01-01', cycleDate: '2026-01-01' }]);
+
+            const yearlyInOctober = mapTodosToCalendarEvents(
                 [buildItem({ id: '1', cycle: 'YEAR' })], ...OCT_2026,
                 [instance('2026-01-01', 'approved', '900', '2026-10-02')], TODAY,
             );
-            expect(dates(yearly)).toEqual([{ date: '2026-10-02', cycleDate: '2026-01-01' }]);
+            expect(yearlyInOctober).toEqual([]);
         });
 
         it('pins a past week registered this week on its cycle start date', () => {

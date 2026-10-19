@@ -37,9 +37,8 @@ function withCycleInstance(
 ): TenantTodoCardItem {
     return {
         ...item,
-        // 기존 -> item.title(업무 단위, 결재 대기 문서 제목)을 모든 칸이 공유
-        // 변경 -> 그 날짜 문서 제목, 문서가 없으면 업무명
         title: instance?.title || item.divisionName || item.categoryName || '업무',
+        // title: item.divisionName || item.categoryName || '업무',
         approvalId: instance?.approvalId ?? '',
         approvalStatusType: instance?.statusType ?? '',
         approvalStatusTypeName: '',
@@ -109,8 +108,7 @@ export function mapTodosToCalendarEvents(
         });
     };
 
-    // 기존 -> 문서가 있으면 등록일 칸 (단, 진행 중 주기가 반려·임시저장이면 오늘 칸), 문서가 없으면 진행 중은 오늘·지난 주기는 주기 시작일
-    // 변경 -> 지난 주기는 문서 유무와 관계없이 주기 시작일 칸, 진행 중 주기만 등록일/오늘 칸 판정
+    // 지난 주기·진행 중 주기 상신 문서는 주기 시작일 칸, 진행 중 주기의 미작성·반려·임시저장만 오늘 칸
     const followsToday = (statusType: string) =>
         ['반려', '임시저장'].includes(
             resolveApprovalStatusView({ approvalStatusType: statusType }).label,
@@ -124,8 +122,9 @@ export function mapTodosToCalendarEvents(
             return cycleDate;
         }
         const instance = instances.get(`${item.id}|${cycleDate}`);
-        if (instance?.registeredDate && !followsToday(instance.statusType)) {
-            return instance.registeredDate;
+        // 상신 이후 문서는 주기 시작일 칸
+        if (instance && !followsToday(instance.statusType)) {
+            return cycleDate;
         }
         return todayString;
     };
