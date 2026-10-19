@@ -74,7 +74,9 @@ export function matchesTodoFilter(
         .filter(Boolean)
         .some((text) => text.toLowerCase().includes(keyword))) &&
     (!filter.category || category === filter.category) &&
-    (!filter.cycle || item.cycle === filter.cycle) &&
+    // 기존 -> (!filter.cycle || item.cycle === filter.cycle) &&
+    // 변경 -> 전체('')는 수시 제외, 수시는 직접 선택했을 때만 조회
+    (filter.cycle ? item.cycle === filter.cycle : item.cycle !== 'ANYTIME') &&
     matchesTodoStatus(item, filter.status)
   );
 }

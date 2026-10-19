@@ -104,7 +104,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
               onChange={(event) => onChange({ ...value, cycle: event.target.value })}
               sx={{ minWidth: 120 }}
           >
-            <MenuItem value="">전체</MenuItem>
+            <MenuItem value="">전체(수시제외)</MenuItem>
             {cycleOptions.map((option) => (
                 <MenuItem key={option.code} value={option.code}>
                   {option.name}
