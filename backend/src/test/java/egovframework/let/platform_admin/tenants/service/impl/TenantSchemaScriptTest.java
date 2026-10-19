@@ -254,6 +254,27 @@ class TenantSchemaScriptTest {
         }
     }
 
+    @DisplayName("테넌트 스키마는 기초정보·작업지시 테이블을 FK 참조 순서대로 만든다")
+    @Test
+    void schema_createsBasicInfoAndWorkOrderTablesInFkOrder() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "create_postgresql_schema_active_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        int tenant = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_tenant (");
+        int material = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_material_info (");
+        int customer = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_customer_info (");
+        int equipment = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_equipment_info (");
+        int workdirect = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_workdirect (");
+
+        assertTrue(material > tenant && customer > tenant && equipment > tenant, "기초정보 테이블은 tb_tenant 다음에 있어야 합니다");
+        assertTrue(workdirect > material && workdirect > customer && workdirect > equipment, "tb_workdirect는 참조 테이블 다음에 있어야 합니다");
+        // tb_workdirect의 (customer_id, tenant_id) FK가 참조할 UNIQUE 제약
+        assertTrue(sql.contains("CONSTRAINT uq_customer_id_tenant_id UNIQUE (customer_id, tenant_id)"));
+        assertTrue(sql.contains("CONSTRAINT uq_material_id_tenant_id UNIQUE (material_id, tenant_id)"));
+        assertTrue(sql.contains("CONSTRAINT uq_equipment_id_tenant_id UNIQUE (equipment_id, tenant_id)"));
+    }
+
     @DisplayName("테넌트 부트스트랩은 하드코딩된 메뉴 목록 대신 중앙 플랜의 menu_codes를 바인딩한다")
     @Test
     void bootstrapTenantScript_usesCentralPlanMenuCodesInsteadOfHardcodedCatalog() throws Exception {
