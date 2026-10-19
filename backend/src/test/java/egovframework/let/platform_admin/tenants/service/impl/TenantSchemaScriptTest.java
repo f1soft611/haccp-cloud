@@ -224,6 +224,36 @@ class TenantSchemaScriptTest {
         assertTrue(!sql.contains("tb_tenant_domain"));
     }
 
+    @DisplayName("프로비저닝이 실제로 읽는 classpath 스키마에 공통코드 테이블과 role_dc가 있다")
+    @Test
+    void classpathSchema_containsCommonCodeTablesAndRoleDc() throws Exception {
+        String sql = TenantSchemaScript.readScript(
+                "sql/postgresql/create_postgresql_schema_active_tables.sql",
+                System.getProperty("user.dir"));
+
+        assertTrue(sql.contains("CREATE TABLE IF NOT EXISTS tb_common_code_group"));
+        assertTrue(sql.contains("CREATE TABLE IF NOT EXISTS tb_common_code_item"));
+        assertTrue(sql.contains("role_dc VARCHAR(500)"));
+    }
+
+    @DisplayName("classpath 테넌트 SQL 사본은 DATABASE 원본과 같아야 한다")
+    @Test
+    void classpathTenantScripts_matchDatabaseOriginals() throws Exception {
+        for (String name : Arrays.asList(
+                "create_postgresql_schema_active_tables.sql",
+                "bootstrap_postgresql_tenant.sql")) {
+            String original = new String(
+                    Files.readAllBytes(Paths.get("DATABASE", name)),
+                    StandardCharsets.UTF_8).replace("\r\n", "\n");
+            String copy = new String(
+                    Files.readAllBytes(Paths.get("src", "main", "resources", "sql", "postgresql", name)),
+                    StandardCharsets.UTF_8).replace("\r\n", "\n");
+
+            assertEquals(original, copy,
+                    name + ": src/main/resources/sql/postgresql 사본이 DATABASE 원본과 다릅니다. 원본을 복사하세요");
+        }
+    }
+
     @DisplayName("테넌트 부트스트랩은 하드코딩된 메뉴 목록 대신 중앙 플랜의 menu_codes를 바인딩한다")
     @Test
     void bootstrapTenantScript_usesCentralPlanMenuCodesInsteadOfHardcodedCatalog() throws Exception {

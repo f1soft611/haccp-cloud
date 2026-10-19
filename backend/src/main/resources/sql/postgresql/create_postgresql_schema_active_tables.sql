@@ -8,31 +8,11 @@
 
 BEGIN;
 
--- Shared ID generator tables used by eGov and conditional per-date sequence generation.
-CREATE TABLE IF NOT EXISTS ids (
-    table_name VARCHAR(50) PRIMARY KEY,
-    next_id BIGINT NOT NULL DEFAULT 1,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS ids2 (
-    table_name  VARCHAR(30) NOT NULL,
-    condition1  VARCHAR(50) NOT NULL DEFAULT '__NONE__',
-    condition2  VARCHAR(50) NOT NULL DEFAULT '__NONE__',
-    next_id     BIGINT NOT NULL DEFAULT 1,
-    PRIMARY KEY (table_name, condition1, condition2)
-);
-
-INSERT INTO ids (table_name, next_id)
-VALUES ('EA_EXE_ID', 1)
-ON CONFLICT (table_name) DO NOTHING;
-
 -- Tenant/Multi-tenancy Foundation
 CREATE TABLE IF NOT EXISTS tb_tenant (
     tenant_id BIGSERIAL PRIMARY KEY,
     tenant_code VARCHAR(50) UNIQUE NOT NULL,
-    tenant_no VARCHAR(6) UNIQUE,
+    tenant_no VARCHAR(6) UNIQUE, -- 랜덤 6자리 업체번호 컬럼 추가 (테넌트 DB 부트스트랩 INSERT 때문에 NULL 허용)
     tenant_nm VARCHAR(200) NOT NULL,
     admin_email VARCHAR(100) UNIQUE NOT NULL,
     business_registration_number VARCHAR(12),
@@ -118,6 +98,7 @@ CREATE TABLE IF NOT EXISTS tb_role (
     tenant_id BIGINT NOT NULL,
     role_code VARCHAR(50) NOT NULL,
     role_nm VARCHAR(100) NOT NULL,
+    role_dc VARCHAR(500),
     use_at CHAR(1) DEFAULT 'Y' NOT NULL,
     is_system_role CHAR(1) DEFAULT 'N' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -252,6 +233,49 @@ CREATE TABLE IF NOT EXISTS tb_scheduler_history (
 CREATE INDEX IF NOT EXISTS idx_scheduler_history_scheduler_id ON tb_scheduler_history(scheduler_id);
 CREATE INDEX IF NOT EXISTS idx_scheduler_history_status ON tb_scheduler_history(status);
 CREATE INDEX IF NOT EXISTS idx_scheduler_history_reg_dt ON tb_scheduler_history(reg_dt DESC);
+
+CREATE TABLE IF NOT EXISTS tb_common_code_group (
+                                                    common_code_group_id BIGSERIAL PRIMARY KEY,
+                                                    tenant_id BIGINT NOT NULL,
+                                                    group_code VARCHAR(50) NOT NULL,
+    group_nm VARCHAR(200) NOT NULL,
+    group_dc VARCHAR(500),
+    parent_group_id BIGINT,
+    sort_order INTEGER DEFAULT 0 NOT NULL,
+    use_at CHAR(1) DEFAULT 'Y' NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+    CONSTRAINT chk_common_code_group_use_at CHECK (use_at IN ('Y', 'N')),
+    CONSTRAINT uk_common_code_group_tenant_code UNIQUE (tenant_id, group_code),
+    CONSTRAINT fk_common_code_group_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE,
+    CONSTRAINT fk_common_code_group_parent FOREIGN KEY (parent_group_id) REFERENCES tb_common_code_group(common_code_group_id) ON DELETE RESTRICT
+    );
+
+CREATE TABLE IF NOT EXISTS tb_common_code_item (
+                                                   common_code_item_id BIGSERIAL PRIMARY KEY,
+                                                   tenant_id BIGINT NOT NULL,
+                                                   group_id BIGINT NOT NULL,
+                                                   item_code VARCHAR(50) NOT NULL,
+    item_nm VARCHAR(200) NOT NULL,
+    item_dc VARCHAR(500),
+    parent_item_id BIGINT,
+    sort_order INTEGER DEFAULT 0 NOT NULL,
+    use_at CHAR(1) DEFAULT 'Y' NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+    CONSTRAINT chk_common_code_item_use_at CHECK (use_at IN ('Y', 'N')),
+    CONSTRAINT uk_common_code_item_group_code UNIQUE (group_id, item_code),
+    CONSTRAINT fk_common_code_item_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE,
+    CONSTRAINT fk_common_code_item_group FOREIGN KEY (group_id) REFERENCES tb_common_code_group(common_code_group_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_common_code_item_parent FOREIGN KEY (parent_item_id) REFERENCES tb_common_code_item(common_code_item_id) ON DELETE RESTRICT
+    );
+
+CREATE INDEX IF NOT EXISTS ix_common_code_group_tenant_parent ON tb_common_code_group(tenant_id, parent_group_id, sort_order);
+CREATE INDEX IF NOT EXISTS ix_common_code_item_group_parent ON tb_common_code_item(group_id, parent_item_id, sort_order);
 
 -- Create Indexes for Performance
 CREATE INDEX IF NOT EXISTS idx_tenant_department ON tb_department(tenant_id);
