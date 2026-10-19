@@ -27,6 +27,7 @@ import {
 } from '../extensions/tableCellStyleExtensions';
 import { Selection } from '@tiptap/pm/state';
 import type { DocumentFieldValues } from '../utils/documentFieldValues';
+import { convertExcelCheckboxImages } from '../utils/excelPasteHtml';
 import { ResetEditorToolbar } from './reset/ResetEditorToolbar';
 import './slashCommand.css';
 
@@ -220,6 +221,10 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       StyledTableCell,
     ],
     content,
+    // 엑셀 체크박스 이미지를 에디터 체크박스(taskList)로 바꾼 뒤 파싱
+    editorProps: {
+      transformPastedHTML: convertExcelCheckboxImages,
+    },
     onUpdate: ({ editor: currentEditor }) => {
       const nextContent = currentEditor.getJSON();
       lastSerializedContentRef.current = JSON.stringify(nextContent);
