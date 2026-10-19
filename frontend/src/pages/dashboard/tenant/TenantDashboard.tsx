@@ -7,11 +7,14 @@ import { useTenantDashboardData } from './hooks/useTenantDashboardData';
 import { TenantFilterSection } from './sections/TenantFilterSection';
 import { TenantSidebarSection } from './sections/TenantSidebarSection';
 import { TenantTodoSection } from './sections/TenantTodoSection';
+import { TenantStatusCardSection } from './sections/TenantStatusCardSection';
 import {
-  EMPTY_TODO_FILTER,
-  matchesTodoFilter,
-  type TenantTodoFilter,
-  type TenantViewMode,
+    countTodoStatuses,
+    EMPTY_TODO_FILTER,
+    matchesTodoFilter,
+    PENDING_APPROVAL_STATUS,
+    type TenantTodoFilter,
+    type TenantViewMode,
 } from './todoFilter';
 
 // 기존 -> 상단 요약 배너(TenantSummarySection) + KPI 카드 4개(TenantKpiSection) + 할 일 그리드 + 우측 사이드바
@@ -32,8 +35,14 @@ export function TenantDashboard() {
     'tenantDashboard.filter',
     EMPTY_TODO_FILTER,
   );
-  const { todoSections, isTodoLoading, isTodoError } =
-    useTenantDashboardData();
+
+    const {
+        todoSections,
+        approvalSections,
+        isTodoLoading,
+        isTodoError,
+        isApprovalLoading,
+    } = useTenantDashboardData();
   const calendar = useWorkCalendarData();
 
   const categoryOptions = useMemo(
@@ -41,16 +50,30 @@ export function TenantDashboard() {
     [todoSections],
   );
 
-  const filteredSections = useMemo(
-    () =>
-      todoSections
-        .map((section) => ({
-          ...section,
-          items: section.items.filter((item) => matchesTodoFilter(item, filter)),
-        }))
-        .filter((section) => section.items.length > 0),
-    [todoSections, filter],
-  );
+    // 검색조건과 무관한 전체 기준 건수
+    const statusCounts = useMemo(
+        () =>
+            countTodoStatuses(
+                todoSections.flatMap((section) => section.items),
+                approvalSections.reduce((sum, section) => sum + section.items.length, 0),
+            ),
+        [todoSections, approvalSections],
+    );
+
+    const isPendingApproval = filter.status === PENDING_APPROVAL_STATUS;
+
+    // 기존 -> todoSections에 검색조건 적용
+    // 변경 -> 결재대기중이면 내가 결재할 문서(approvalSections)에 검색조건 적용
+    const filteredSections = useMemo(
+        () =>
+            (isPendingApproval ? approvalSections : todoSections)
+            .map((section) => ({
+                ...section,
+                items: section.items.filter((item) => matchesTodoFilter(item, filter)),
+            }))
+            .filter((section) => section.items.length > 0),
+        [todoSections, approvalSections, isPendingApproval, filter],
+    );
 
   const filteredEvents = useMemo(
     () =>
@@ -62,8 +85,19 @@ export function TenantDashboard() {
 
   return (
     <Grid container spacing={2}>
-      <Grid size={{ xs: 12, lg: 9 }}>
+      <Grid size={{ xs: 12, lg: 12 }}>
         <Stack spacing={2}>
+            {viewMode === 'list' ? (
+                <TenantStatusCardSection
+                    counts={statusCounts}
+                    selected={filter.status}
+                    isLoading={isTodoLoading || isApprovalLoading}
+                    onSelect={(status) => {
+                        setDraft({ ...draft, status });
+                        setFilter({ ...filter, status });
+                    }}
+                />
+            ) : null}
           <TenantFilterSection
             value={draft}
             categoryOptions={categoryOptions}
@@ -82,6 +116,7 @@ export function TenantDashboard() {
               isLoading={isTodoLoading}
               isError={isTodoError}
               sections={filteredSections}
+              pendingApproval={isPendingApproval}
             />
           ) : (
             <Paper
@@ -103,7 +138,7 @@ export function TenantDashboard() {
           )}
         </Stack>
       </Grid>
-      <Grid size={{ xs: 12, lg: 3 }}>
+      <Grid size={{ xs: 12, lg: 3 }} sx={{ display: 'none' }}>
         <TenantSidebarSection />
       </Grid>
     </Grid>

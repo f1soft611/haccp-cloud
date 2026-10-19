@@ -42,6 +42,44 @@ export function toTenantTodoCardItem(
     routeId: item.approvalId || item.id,
   };
 }
+
+// todos·결재할 문서 공통: 업무분류별로 묶고 분류 정렬순서 → 이름순 정렬
+function groupTodoSections(
+    items: TenantTodoCardItem[],
+): TenantTodoSectionModel[] {
+  const grouped = new Map<
+      string,
+      { label: string; sortOrder: number; items: TenantTodoCardItem[] }
+  >();
+
+  items.forEach((item) => {
+    const key = item.categoryCode || item.categoryName || 'uncategorized';
+    const label = item.categoryName || item.categoryCode || '기타문서';
+    const sortOrder = Number.isFinite(item.categorySortOrder)
+        ? item.categorySortOrder
+        : 0;
+    const bucket = grouped.get(key) ?? { label, sortOrder, items: [] };
+    bucket.label = label;
+    bucket.sortOrder = Math.min(bucket.sortOrder, sortOrder);
+    bucket.items.push(item);
+    grouped.set(key, bucket);
+  });
+
+  return [...grouped.entries()]
+  .map(([key, value]) => ({
+    key,
+    label: value.label,
+    sortOrder: value.sortOrder,
+    items: value.items,
+  }))
+  .sort((left, right) => {
+    if (left.sortOrder !== right.sortOrder) {
+      return left.sortOrder - right.sortOrder;
+    }
+    return left.label.localeCompare(right.label, 'ko');
+  });
+}
+
 export function useTenantDashboardData() {
   const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
 
@@ -67,7 +105,10 @@ export function useTenantDashboardData() {
     retry: 0,
   });
 
-  const { data: approvalAlertDocuments = [] } = useQuery({
+  const {
+    data: approvalAlertDocuments = [],
+    isLoading: isApprovalLoading,
+  } = useQuery({
     queryKey: ['haccp-work-approval-alerts', tenantCode],
     queryFn: async () => {
       const items = await listHaccpWorkApprovalAlerts({ tenantCode });
@@ -100,46 +141,17 @@ export function useTenantDashboardData() {
   const uncheckedCount = Math.max(totalDocuments - updatedToday, 0);
   const todayActionCount = uncheckedCount + draftDocuments;
 
-  const todoSections = useMemo<TenantTodoSectionModel[]>(() => {
-    const grouped = new Map<
-      string,
-      { label: string; sortOrder: number; items: TenantTodoCardItem[] }
-    >();
+  const todoSections = useMemo(
+      () => groupTodoSections(todoDocuments),
+      [todoDocuments],
+  );
 
-    todoDocuments.forEach((item) => {
-      const key = item.categoryCode || item.categoryName || 'uncategorized';
-      const label = item.categoryName || item.categoryCode || '기타문서';
-      const sortOrder = Number.isFinite(item.categorySortOrder)
-        ? item.categorySortOrder
-        : 0;
-      const bucket = grouped.get(key) ?? { label, sortOrder, items: [] };
-      bucket.label = label;
-      bucket.sortOrder = Math.min(bucket.sortOrder, sortOrder);
-      bucket.items.push(item);
-      grouped.set(key, bucket);
-    });
-
-    return [...grouped.entries()]
-      .map(([key, value]) => ({
-        key,
-        label: value.label,
-        sortOrder: value.sortOrder,
-        items: value.items,
-      }))
-      .sort((left, right) => {
-        if (left.sortOrder !== right.sortOrder) {
-          return left.sortOrder - right.sortOrder;
-        }
-        return left.label.localeCompare(right.label, 'ko');
-      });
-  }, [todoDocuments]);
-
-  const approvalAlerts = useMemo(() => {
+  const pendingApprovals = useMemo(() => {
     const unique = new Map<string, TenantTodoCardItem>();
 
     approvalAlertDocuments.forEach((item) => {
       const routeId = String(
-        item.routeId || item.approvalId || item.id || '',
+          item.routeId || item.approvalId || item.id || '',
       ).trim();
       if (!routeId) {
         return;
@@ -150,8 +162,18 @@ export function useTenantDashboardData() {
       }
     });
 
-    return [...unique.values()].slice(0, 6);
+    return [...unique.values()];
   }, [approvalAlertDocuments]);
+
+  const approvalAlerts = useMemo(
+      () => pendingApprovals.slice(0, 6),
+      [pendingApprovals],
+  );
+
+  const approvalSections = useMemo(
+      () => groupTodoSections(pendingApprovals),
+      [pendingApprovals],
+  );
 
   return {
     ccpCompletion,
@@ -164,5 +186,7 @@ export function useTenantDashboardData() {
     isTodoLoading: isDocumentsLoading,
     isMetricsError,
     isTodoError,
+    approvalSections,
+    isApprovalLoading,
   };
 }

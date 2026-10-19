@@ -224,6 +224,57 @@ class TenantSchemaScriptTest {
         assertTrue(!sql.contains("tb_tenant_domain"));
     }
 
+    @DisplayName("프로비저닝이 실제로 읽는 classpath 스키마에 공통코드 테이블과 role_dc가 있다")
+    @Test
+    void classpathSchema_containsCommonCodeTablesAndRoleDc() throws Exception {
+        String sql = TenantSchemaScript.readScript(
+                "sql/postgresql/create_postgresql_schema_active_tables.sql",
+                System.getProperty("user.dir"));
+
+        assertTrue(sql.contains("CREATE TABLE IF NOT EXISTS tb_common_code_group"));
+        assertTrue(sql.contains("CREATE TABLE IF NOT EXISTS tb_common_code_item"));
+        assertTrue(sql.contains("role_dc VARCHAR(500)"));
+    }
+
+    @DisplayName("classpath 테넌트 SQL 사본은 DATABASE 원본과 같아야 한다")
+    @Test
+    void classpathTenantScripts_matchDatabaseOriginals() throws Exception {
+        for (String name : Arrays.asList(
+                "create_postgresql_schema_active_tables.sql",
+                "bootstrap_postgresql_tenant.sql")) {
+            String original = new String(
+                    Files.readAllBytes(Paths.get("DATABASE", name)),
+                    StandardCharsets.UTF_8).replace("\r\n", "\n");
+            String copy = new String(
+                    Files.readAllBytes(Paths.get("src", "main", "resources", "sql", "postgresql", name)),
+                    StandardCharsets.UTF_8).replace("\r\n", "\n");
+
+            assertEquals(original, copy,
+                    name + ": src/main/resources/sql/postgresql 사본이 DATABASE 원본과 다릅니다. 원본을 복사하세요");
+        }
+    }
+
+    @DisplayName("테넌트 스키마는 기초정보·작업지시 테이블을 FK 참조 순서대로 만든다")
+    @Test
+    void schema_createsBasicInfoAndWorkOrderTablesInFkOrder() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "create_postgresql_schema_active_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        int tenant = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_tenant (");
+        int material = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_material_info (");
+        int customer = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_customer_info (");
+        int equipment = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_equipment_info (");
+        int workdirect = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_workdirect (");
+
+        assertTrue(material > tenant && customer > tenant && equipment > tenant, "기초정보 테이블은 tb_tenant 다음에 있어야 합니다");
+        assertTrue(workdirect > material && workdirect > customer && workdirect > equipment, "tb_workdirect는 참조 테이블 다음에 있어야 합니다");
+        // tb_workdirect의 (customer_id, tenant_id) FK가 참조할 UNIQUE 제약
+        assertTrue(sql.contains("CONSTRAINT uq_customer_id_tenant_id UNIQUE (customer_id, tenant_id)"));
+        assertTrue(sql.contains("CONSTRAINT uq_material_id_tenant_id UNIQUE (material_id, tenant_id)"));
+        assertTrue(sql.contains("CONSTRAINT uq_equipment_id_tenant_id UNIQUE (equipment_id, tenant_id)"));
+    }
+
     @DisplayName("테넌트 부트스트랩은 하드코딩된 메뉴 목록 대신 중앙 플랜의 menu_codes를 바인딩한다")
     @Test
     void bootstrapTenantScript_usesCentralPlanMenuCodesInsteadOfHardcodedCatalog() throws Exception {

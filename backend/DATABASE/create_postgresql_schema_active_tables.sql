@@ -277,6 +277,158 @@ CREATE TABLE IF NOT EXISTS tb_common_code_item (
 CREATE INDEX IF NOT EXISTS ix_common_code_group_tenant_parent ON tb_common_code_group(tenant_id, parent_group_id, sort_order);
 CREATE INDEX IF NOT EXISTS ix_common_code_item_group_parent ON tb_common_code_item(group_id, parent_item_id, sort_order);
 
+-- 기준정보 관리 > 품목 관리
+CREATE TABLE IF NOT EXISTS tb_material_info (
+                                                material_id           BIGSERIAL NOT NULL,
+                                                tenant_id             BIGINT NOT NULL,
+                                                material_code         VARCHAR(20) NOT NULL,        -- 품목코드 (테넌트별 자동채번)
+    material_name         VARCHAR(200) NOT NULL,       -- 품목명
+    material_eng_name     VARCHAR(200),
+    material_model_name   VARCHAR(200),
+    material_spec         VARCHAR(100),                -- 규격
+    material_weight       BIGINT,                      -- 중량
+    unit                  VARCHAR(6),                  -- 단위
+    material_type_code    VARCHAR(14) NOT NULL,        -- 품목계정코드
+    customer_code         VARCHAR(10),                 -- 제조사
+    safe_invoice          DOUBLE PRECISION,
+    accounting_code       VARCHAR(7),
+    warehouse_code        VARCHAR(10),
+    drawing               VARCHAR(10),
+    etc                   VARCHAR(100),                -- 비고
+    part_no               VARCHAR(30),
+    manufactory           VARCHAR(100),
+    deleted_at            TIMESTAMP,
+    mat_cata_type         VARCHAR(10) NOT NULL DEFAULT '',
+    location              VARCHAR(1000),
+    material_spec2        VARCHAR(100),
+    item_type             VARCHAR(10),                 -- 품목계정 (제품/상품/원재료/부재료/소모품)
+    search_item_name      VARCHAR(200),
+    material_quality      VARCHAR(6),
+    item_barcode          VARCHAR(20),
+    material_no           VARCHAR(20),
+    delete_status         VARCHAR(10) NOT NULL DEFAULT 'N',  -- 삭제여부(Y=삭제됨, N=정상)
+    created_by            VARCHAR(10),
+    created_at            TIMESTAMP,
+    updated_by            VARCHAR(10),
+    updated_at            TIMESTAMP,
+    CONSTRAINT tb_material_info_pkey PRIMARY KEY (material_id),
+    CONSTRAINT uq_material_id_tenant_id UNIQUE (material_id, tenant_id),
+    CONSTRAINT uq_tb_material_info_tenant_material_code UNIQUE (tenant_id, material_code),
+    CONSTRAINT fk_tb_material_info_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id)
+    );
+
+CREATE INDEX IF NOT EXISTS ix_tb_material_info_tenant_id ON tb_material_info(tenant_id);
+CREATE INDEX IF NOT EXISTS ix_tb_material_info_material_name ON tb_material_info(material_name);
+
+-- 기준정보 관리 > 거래처관리
+CREATE TABLE IF NOT EXISTS tb_customer_info (
+                                                customer_id         BIGSERIAL NOT NULL,
+                                                tenant_id           BIGINT NOT NULL,
+                                                customer_code       VARCHAR(6) NOT NULL,         -- 거래처코드 (테넌트별 자동채번, 000001~)
+    customer_name       VARCHAR(200) NOT NULL,       -- 거래처명
+    cust_name_abbr      VARCHAR(100),                -- 거래처약어명
+    president_name      VARCHAR(100),                -- 대표자명
+    business_no         VARCHAR(10),                 -- 사업자번호 (숫자 10자리)
+    jurid_no            VARCHAR(13),                 -- 법인번호 (숫자 13자리)
+    business_status_1   VARCHAR(100),                -- 업태
+    business_item_1     VARCHAR(100),                -- 종목
+    post_code           VARCHAR(7),                  -- 우편번호
+    address             VARCHAR(200),                -- 주소
+    telephone_no        VARCHAR(50),                 -- 전화번호
+    facsimile_no        VARCHAR(50),                 -- 팩스번호
+    cust_memo           VARCHAR(3000) DEFAULT '',    -- 비고
+    use_at              CHAR(1) NOT NULL DEFAULT 'Y',
+    created_by          BIGINT,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by          BIGINT,
+    updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT tb_customer_info_pkey PRIMARY KEY (customer_id),
+    CONSTRAINT uq_customer_id_tenant_id UNIQUE (customer_id, tenant_id),
+    CONSTRAINT uq_tb_customer_info_tenant_code UNIQUE (tenant_id, customer_code),
+    CONSTRAINT tb_customer_info_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id) ON DELETE CASCADE,
+    CONSTRAINT tb_customer_info_use_at_check CHECK (use_at IN ('Y', 'N'))
+    );
+
+CREATE INDEX IF NOT EXISTS idx_tb_customer_info_tenant ON tb_customer_info(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_tb_customer_info_use_at ON tb_customer_info(use_at);
+
+-- 기준정보 관리 > 설비관리
+CREATE TABLE IF NOT EXISTS tb_equipment_info (
+                                                 equipment_id         BIGSERIAL NOT NULL,
+                                                 tenant_id            BIGINT NOT NULL,
+                                                 equip_sys_cd         VARCHAR(6) NOT NULL,         -- 관리코드 (테넌트별 자동채번)
+    equip_cd             VARCHAR(20) NOT NULL,        -- 설비코드 (사용자 직접입력)
+    equip_nm             VARCHAR(99),                 -- 설비명
+    equip_kind           VARCHAR(6),                  -- 설비종류
+    pur_date             VARCHAR(12),                 -- 구입일 (YYYY-MM-DD)
+    pur_amount           NUMERIC(19, 4),
+    pur_cust             VARCHAR(100),                -- 구입처
+    mak_cust             VARCHAR(99),                 -- 제조사
+    manager1_code        CHAR(10),
+    manager2_code        CHAR(10),
+    location             VARCHAR(1000),               -- 설치장소
+    disuse_status        VARCHAR(10),
+    disuse_date          CHAR(8),
+    disuse_reg_charge    VARCHAR(10),
+    equip_status         VARCHAR(10),
+    equip_spec           VARCHAR(99),                 -- 설비규격
+    bigo                 VARCHAR(1000),               -- 비고
+    use_status           VARCHAR(10),
+    use_at               CHAR(1) NOT NULL DEFAULT 'Y',
+    created_by           VARCHAR(10),
+    created_at           TIMESTAMP,
+    updated_by           CHAR(10),
+    updated_at           TIMESTAMP,
+    CONSTRAINT tb_equipment_info_pkey PRIMARY KEY (equipment_id),
+    CONSTRAINT uq_equipment_id_tenant_id UNIQUE (equipment_id, tenant_id),
+    CONSTRAINT fk_tb_equipment_info_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id)
+    );
+
+CREATE INDEX IF NOT EXISTS ix_tb_equipment_info_tenant_id ON tb_equipment_info(tenant_id);
+
+-- 작업관리 > 작업지시 (품목·거래처·설비 다음에 생성: FK 참조)
+CREATE TABLE IF NOT EXISTS tb_workdirect (
+                                             workdirect_id     BIGSERIAL PRIMARY KEY,                 -- 작업지시ID
+                                             tenant_id         BIGINT NOT NULL,                       -- 사업장(테넌트)ID
+                                             workdt_no         VARCHAR(12) NOT NULL,                  -- 작업지시번호(yyyyMMdd+순번4자리)
+    workdt_date       DATE,                                  -- 작업등록일
+    prod_plan_date    DATE,                                  -- 생산계획일
+    material_id       BIGINT NOT NULL,                       -- 품목ID(tb_material_info)
+    customer_id       BIGINT,                                -- 거래처ID(tb_customer_info)
+    expiration_date   DATE,                                  -- 소비기한
+    prod_dept_id      BIGINT,                                -- 생산부서
+    prodplan_qty      NUMERIC(10,5),                         -- 생산량(직접입력)
+    mix_qty_kg        DOUBLE PRECISION,                      -- 배합량(생산량 기준 자동계산, 수정가능)
+    mix_workdt_status VARCHAR(20),                           -- 작업지시구분(포장계획/배합계획)
+    mix_batch_cnt     NUMERIC(10,5),                         -- 배치수량
+    batch_seq         INTEGER,                               -- 배치순번
+    prod_memo         VARCHAR(255),                          -- 비고
+    mix_qty_stdunit   NUMERIC(10,5),                         -- 표준배합량(적정량)
+    limit_mix_qty     NUMERIC(10,5),                         -- 배합한도량(총한도)
+    prodqty_boxcan    NUMERIC(10,5),                         -- 생산량(BOX/CAN)
+    mix_equip_id      BIGINT,                                -- 배합설비ID(tb_equipment_info)
+    packing_equip_id  BIGINT,                                -- 포장설비ID(tb_equipment_info)
+    finish_status     VARCHAR(20),                           -- 생산완료구분
+    system_lot_no     VARCHAR(20),                           -- LOT번호
+    work_proc_status  VARCHAR(20),                           -- 작업취소구분
+    use_at            CHAR(1) NOT NULL DEFAULT 'Y',          -- 사용(삭제)여부
+    created_by        VARCHAR(10),                           -- 등록자
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,   -- 등록일시
+    updated_by        VARCHAR(10),                           -- 수정자
+    updated_at        TIMESTAMP,                             -- 수정일시
+    FOREIGN KEY (tenant_id) REFERENCES tb_tenant (tenant_id),
+    FOREIGN KEY (material_id, tenant_id) REFERENCES tb_material_info (material_id, tenant_id),
+    FOREIGN KEY (customer_id, tenant_id) REFERENCES tb_customer_info (customer_id, tenant_id),
+    FOREIGN KEY (mix_equip_id, tenant_id) REFERENCES tb_equipment_info (equipment_id, tenant_id),
+    FOREIGN KEY (packing_equip_id, tenant_id) REFERENCES tb_equipment_info (equipment_id, tenant_id)
+    );
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_workdirect_id_tenant_id ON tb_workdirect(workdirect_id, tenant_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tb_workdirect_tenant_workdt_no ON tb_workdirect(tenant_id, workdt_no);
+CREATE INDEX IF NOT EXISTS ix_tb_workdirect_tenant_plan_date ON tb_workdirect(tenant_id, prod_plan_date);
+CREATE INDEX IF NOT EXISTS ix_tb_workdirect_material_id ON tb_workdirect(material_id);
+CREATE INDEX IF NOT EXISTS ix_tb_workdirect_customer_id ON tb_workdirect(customer_id);
+
 -- Create Indexes for Performance
 CREATE INDEX IF NOT EXISTS idx_tenant_department ON tb_department(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_parent_department ON tb_department(parent_department_id);

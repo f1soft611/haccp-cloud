@@ -26,6 +26,7 @@ type TenantTodoSectionProps = {
   isLoading: boolean;
   isError: boolean;
   sections: TenantTodoSectionModel[];
+  pendingApproval?: boolean;
 };
 
 const COLUMN_COUNT = 7;
@@ -50,7 +51,7 @@ function getCurrentMonthDateRange(today: Date = new Date()): {
 // 기존 -> 업무분류별 카드 안에 업무를 박스로 나열
 // 변경 -> 업무 1건 = 1행인 그리드(AdminGrid)로 표시, 분류는 행마다 반복, 최대 높이 내 스크롤
 export function TenantTodoSection(props: TenantTodoSectionProps) {
-  const { isLoading, isError, sections } = props;
+  const { isLoading, isError, sections, pendingApproval = false } = props;
   const navigate = useNavigate();
 
   const rows = useMemo(
@@ -117,16 +118,17 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
           </TableRow>
         ) : (
           rows.map(({ sectionLabel, sectionKey, item }) => {
-            const { label: statusLabel, color: statusColor } =
-              resolveApprovalStatusView({
-                approvalStatusType: item.approvalStatusType,
-                approvalStatusTypeName: item.approvalStatusTypeName,
-                todoStatus: item.status,
-                writtenInCycle: item.writtenInCycle,
-              });
+            const { label: statusLabel, color: statusColor } = pendingApproval
+                ? { label: '결재대기중', color: 'secondary' as const }
+                : resolveApprovalStatusView({
+                  approvalStatusType: item.approvalStatusType,
+                  approvalStatusTypeName: item.approvalStatusTypeName,
+                  todoStatus: item.status,
+                  writtenInCycle: item.writtenInCycle,
+                });
 
             return (
-              <TableRow key={`${sectionKey}-${item.id}`} hover>
+              <TableRow key={`${sectionKey}-${item.routeId}`} hover>
                 <TableCell align="center">{sectionLabel}</TableCell>
                 <TableCell>
                   <Typography variant="body2" fontWeight={600}>
