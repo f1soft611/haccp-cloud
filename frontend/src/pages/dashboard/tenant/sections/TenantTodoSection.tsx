@@ -128,7 +128,7 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                 });
 
             return (
-              <TableRow key={`${sectionKey}-${item.id}`} hover>
+              <TableRow key={`${sectionKey}-${item.routeId}`} hover>
                 <TableCell align="center">{sectionLabel}</TableCell>
                 <TableCell>
                   <Typography variant="body2" fontWeight={600}>
