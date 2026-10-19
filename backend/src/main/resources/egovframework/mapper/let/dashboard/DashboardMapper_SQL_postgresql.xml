@@ -143,6 +143,7 @@
             AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
             AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
             AND li.arrival_at IS NOT NULL
+            AND COALESCE(li.muldec_status, '') = 'drafted'
             AND li.exe_at IS NULL
             AND COALESCE(m.delete_status, 'N') != 'Y'
           GROUP BY m.electronic_approval_id, COALESCE(m.ea_exe_id, ''), m.ea_title, m.login_id, la.login_code, COALESCE(NULLIF(TRIM(pu.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(m.login_id AS varchar))
@@ -341,10 +342,8 @@
           AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
           AND li.arrival_at IS NOT NULL
           AND li.exe_at IS NULL
-          AND (
-            (COALESCE(li.muldec_status, '') = 'drafted' AND COALESCE(m.status_type, '') = 'in_progress')
-            OR (COALESCE(li.muldec_status, '') = 'cooperated' AND COALESCE(m.status_type, '') IN ('in_progress', 'approved', 'rejected'))
-          )
+            AND COALESCE(li.muldec_status, '') = 'drafted'
+            AND COALESCE(m.status_type, '') = 'in_progress'
           AND COALESCE(m.delete_status, 'N') != 'Y'
           AND COALESCE(w.delete_status, 'N') != 'Y'
         ORDER BY li.arrival_at DESC, m.electronic_approval_id DESC
