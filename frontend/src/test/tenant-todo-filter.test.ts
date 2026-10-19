@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { TenantTodoCardItem } from '../pages/dashboard/tenant/hooks/useTenantDashboardData';
 import {
+  countTodoStatuses,
   EMPTY_TODO_FILTER,
   matchesTodoFilter,
+  PENDING_APPROVAL_STATUS,
 } from '../pages/dashboard/tenant/todoFilter';
 
 const item = {
@@ -32,5 +34,67 @@ describe('matchesTodoFilter', () => {
     expect(f({ cycle: 'MONTH' })).toBe(false);
     expect(f({ status: '미작성' })).toBe(true);
     expect(f({ status: '승인' })).toBe(false);
+  });
+});
+
+const withStatus = (
+    approvalStatusTypeName: string,
+    approvalStatusType?: string,
+) =>
+    ({
+      ...item,
+      approvalStatusType,
+      approvalStatusTypeName,
+    }) as TenantTodoCardItem;
+
+describe('matchesTodoFilter status rules', () => {
+  it('includes 임시저장 items in the 미작성 filter', () => {
+    const preApply = withStatus('임시저장');
+    expect(
+        matchesTodoFilter(preApply, { ...EMPTY_TODO_FILTER, status: '미작성' }),
+    ).toBe(true);
+    expect(
+        matchesTodoFilter(preApply, { ...EMPTY_TODO_FILTER, status: '임시저장' }),
+    ).toBe(true);
+  });
+
+  it('ignores the status condition for 결재대기중 but keeps other conditions', () => {
+    const approved = withStatus('승인', 'approved');
+    expect(
+        matchesTodoFilter(approved, {
+          ...EMPTY_TODO_FILTER,
+          status: PENDING_APPROVAL_STATUS,
+        }),
+    ).toBe(true);
+    expect(
+        matchesTodoFilter(approved, {
+          ...EMPTY_TODO_FILTER,
+          status: PENDING_APPROVAL_STATUS,
+          keyword: '세척',
+        }),
+    ).toBe(false);
+  });
+});
+
+describe('countTodoStatuses', () => {
+  it('counts card statuses, folding 임시저장 into 미작성', () => {
+    const counts = countTodoStatuses(
+        [
+          item,
+          withStatus('임시저장'),
+          withStatus('결재중', 'in_progress'),
+          withStatus('승인', 'approved'),
+          withStatus('승인', 'approved'),
+          withStatus('반송', 'rejected'),
+        ],
+        3,
+    );
+    expect(counts).toEqual({
+      미작성: 2,
+      결재대기중: 3,
+      결재진행중: 1,
+      승인: 2,
+      반려: 1,
+    });
   });
 });

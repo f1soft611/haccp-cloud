@@ -62,7 +62,7 @@ export function TenantDashboard() {
 
   return (
     <Grid container spacing={2}>
-      <Grid size={{ xs: 12, lg: 9 }}>
+      <Grid size={{ xs: 12, lg: 12 }}>
         <Stack spacing={2}>
           <TenantFilterSection
             value={draft}
@@ -103,7 +103,7 @@ export function TenantDashboard() {
           )}
         </Stack>
       </Grid>
-      <Grid size={{ xs: 12, lg: 3 }}>
+      <Grid size={{ xs: 12, lg: 3 }} sx={{ display: 'none' }}>
         <TenantSidebarSection />
       </Grid>
     </Grid>
