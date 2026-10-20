@@ -190,12 +190,17 @@ describe('WorkCalendarPage', () => {
             { ...base, id: 'c', title: '반려 업무' },
             { ...base, id: 'd', title: '승인 업무' },
         ]);
-        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue([
-            { workId: 'a', cycleDate: `${ym}-01`, approvalId: '1', statusType: 'pre_apply', registeredDate: `${ym}-01`, title: '임시저장 업무' },
-            { workId: 'b', cycleDate: `${ym}-01`, approvalId: '2', statusType: 'in_progress', registeredDate: `${ym}-01`, title: '결재중 업무' },
-            { workId: 'c', cycleDate: `${ym}-01`, approvalId: '3', statusType: 'rejected', registeredDate: `${ym}-01`, title: '반려 업무' },
-            { workId: 'd', cycleDate: `${ym}-01`, approvalId: '4', statusType: 'approved', registeredDate: `${ym}-01`, title: '승인 업무' },
-        ]);
+        // 기존 -> mockResolvedValue([...인스턴스])
+        // 변경 -> instances + displayStartDate
+        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({
+            displayStartDate: '',
+            instances: [
+                { workId: 'a', cycleDate: `${ym}-01`, approvalId: '1', statusType: 'pre_apply', registeredDate: `${ym}-01`, title: '임시저장 업무' },
+                { workId: 'b', cycleDate: `${ym}-01`, approvalId: '2', statusType: 'in_progress', registeredDate: `${ym}-01`, title: '결재중 업무' },
+                { workId: 'c', cycleDate: `${ym}-01`, approvalId: '3', statusType: 'rejected', registeredDate: `${ym}-01`, title: '반려 업무' },
+                { workId: 'd', cycleDate: `${ym}-01`, approvalId: '4', statusType: 'approved', registeredDate: `${ym}-01`, title: '승인 업무' },
+            ],
+        });
 
         render(
             <AppProviders>
