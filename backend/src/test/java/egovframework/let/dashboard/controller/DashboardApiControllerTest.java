@@ -76,4 +76,27 @@ class DashboardApiControllerTest {
 
         SecurityContextHolder.clearContext();
     }
+
+    @Test
+    void listMyTodoCycles_includesDisplayStartDate() throws Exception {
+        LoginVO loginVO = new LoginVO();
+        loginVO.setId("socra710");
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(loginVO, null, java.util.Collections.emptyList())
+        );
+
+        when(dashboardService.listMyTodoCycles(eq("TENANT-A"), eq("socra710"), eq("20261001"), eq("20261031")))
+                .thenReturn(Collections.emptyList());
+        when(dashboardService.getCalendarDisplayStartDate(eq("TENANT-A"), eq("socra710")))
+                .thenReturn("20260610");
+
+        mockMvc.perform(get("/api/v1/dashboard/todo-cycles")
+                        .header("x-tenant-code", "TENANT-A")
+                        .param("fromDate", "20261001")
+                        .param("toDate", "20261031"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.displayStartDate").value("20260610"));
+
+        SecurityContextHolder.clearContext();
+    }
 }

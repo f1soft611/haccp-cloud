@@ -230,6 +230,19 @@
             COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
     </select>
 
+    <!-- 캘린더 표시 시작일: 입사일과 테넌트 생성일 중 늦은 날 (GREATEST는 NULL 무시 → 입사일 없으면 테넌트 생성일) -->
+    <select id="DashboardDAO.selectCalendarDisplayStartDate"
+            parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
+            resultType="string">
+        SELECT TO_CHAR(GREATEST(t.created_at::date, NULLIF(u.join_date, '')::date), 'YYYYMMDD')
+        FROM tb_tenant t
+                 LEFT JOIN tb_user u
+                           ON u.tenant_id = t.tenant_id
+                               AND u.login_id = #{actorLoginId, jdbcType=BIGINT}
+        WHERE t.tenant_id = #{tenantId, jdbcType=BIGINT}
+            LIMIT 1
+    </select>
+
     <select id="DashboardDAO.selectSummary"
             parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
             resultMap="dashboardSummaryResult">

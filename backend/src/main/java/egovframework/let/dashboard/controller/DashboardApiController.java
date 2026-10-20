@@ -83,11 +83,11 @@ public class DashboardApiController {
             @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
             HttpServletRequest request) throws Exception {
         String tenantCode = resolveTenantCode(tenantHeader, request);
-        List<Map<String, Object>> resultList =
-                dashboardService.listMyTodoCycles(tenantCode, resolveLoginCode(user), fromDate, toDate);
+        List<Map<String, Object>> resultList =  dashboardService.listMyTodoCycles(tenantCode, resolveLoginCode(user), fromDate, toDate);
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
         resultMap.put("resultList", resultList);
+        resultMap.put("displayStartDate", dashboardService.getCalendarDisplayStartDate(tenantCode, resolveLoginCode(user)));
 
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }

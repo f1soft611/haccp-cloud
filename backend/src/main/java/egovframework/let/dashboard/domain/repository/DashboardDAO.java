@@ -25,6 +25,10 @@ public class DashboardDAO extends EgovAbstractMapper {
         return selectList("DashboardDAO.selectMyTodoCycleList", condition);
     }
 
+    public String selectCalendarDisplayStartDate(DashboardSearchConditionVO condition) throws Exception {
+        return selectOne("DashboardDAO.selectCalendarDisplayStartDate", condition);
+    }
+
     public List<DashboardTodoVO> selectMyApprovalAlertList(DashboardSearchConditionVO condition) throws Exception {
         return selectList("DashboardDAO.selectMyApprovalAlertList", condition);
     }
