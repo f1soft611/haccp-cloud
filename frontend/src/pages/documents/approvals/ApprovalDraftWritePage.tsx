@@ -8,6 +8,7 @@ import { ApprovalDraftHeader } from './components/ApprovalDraftHeader';
 import { useApprovalDraftComments } from './hooks/useApprovalDraftComments';
 import { useApprovalDraftWriteActions } from './hooks/useApprovalDraftWriteActions';
 import { useApprovalDraftWriteData } from './hooks/useApprovalDraftWriteData';
+import { canDeleteDraft } from './utils/approvalDraftUtils';
 
 export function ApprovalDraftWritePage() {
   const theme = useTheme();
@@ -17,6 +18,7 @@ export function ApprovalDraftWritePage() {
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const isDarkMode = theme.palette.mode === 'dark';
 
   const {
@@ -63,6 +65,14 @@ export function ApprovalDraftWritePage() {
       ? (baseId ?? '').trim()
       : (work?.approvalId ?? '').trim();
 
+  const handleBack = () => {
+    if (returnTo) {
+      navigate(returnTo);
+      return;
+    }
+    navigate('/dashboard');
+  };
+
   const {
     comments,
     replyDraftByCommentId,
@@ -91,18 +101,20 @@ export function ApprovalDraftWritePage() {
     tempSaveDisabled,
     submitDisabled,
     cancelSubmitDisabled,
-    confirmDisabled,
+    confirmDisabled,deleteDisabled,
     handleApprove,
     handleConfirm,
     handleReject,
     handleCancelSubmit,
     handleTempSave,
-    handleSubmitApproval,
+    handleSubmitApproval,handleDelete,
   } = useApprovalDraftWriteActions({
     baseId,
     idType,
     tenantCode,
     workId: work?.id,
+    approvalId: approvalIdForComments,
+    onDeleted: handleBack,
     cycleDate: work?.cycleDate,
     isStatusResolved,
     approvalStatusType: work?.approvalStatusType,
@@ -130,12 +142,20 @@ export function ApprovalDraftWritePage() {
     canSubmitCancel && idType === 'approval' && !canApprove;
   const showTempSave = canTempSave;
   const showSubmit = canSubmit;
+
+  const showDelete = canDeleteDraft({
+    isOwner,
+    approvalStatusType: work?.approvalStatusType,
+    draftNumber: work?.draftNumber,
+    approvalId: approvalIdForComments,
+  });
+
   const normalizedApprovalStatus = String(work?.approvalStatusType ?? '')
     .trim()
     .toLowerCase();
-  const canUploadAttachmentsWhileInProgress =
-    isOwner && normalizedApprovalStatus === 'in_progress';
+  const canUploadAttachmentsWhileInProgress = isOwner && normalizedApprovalStatus === 'in_progress';
   const attachmentReadOnly = isReadOnly && !canUploadAttachmentsWhileInProgress;
+
   const approveLabel = showConfirm
     ? isFinalOwnerConfirm
       ? '최종 확인'
@@ -147,14 +167,10 @@ export function ApprovalDraftWritePage() {
   return (
     <Stack spacing={2.25}>
       <ApprovalDraftHeader
-        onBack={() => {
-          if (returnTo) {
-            navigate(returnTo);
-            return;
-          }
-          navigate('/dashboard');
-        }}
-        onTempSave={showTempSave ? handleTempSave : undefined}
+          onBack={handleBack}
+          onDelete={showDelete ? () => setDeleteConfirmOpen(true) : undefined}
+          deleteDisabled={deleteDisabled}
+          onTempSave={showTempSave ? handleTempSave : undefined}
         onApprove={
           showConfirm
             ? () => setApproveConfirmOpen(true)
@@ -311,6 +327,20 @@ export function ApprovalDraftWritePage() {
           handleReject();
         }}
         onClose={() => setRejectConfirmOpen(false)}
+      />
+
+      <ConfirmDialog
+          open={deleteConfirmOpen}
+          title="기안 삭제 확인"
+          description="임시저장된 기안을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다."
+          confirmText="삭제"
+          confirmColor="error"
+          loading={isSubmitting}
+          onConfirm={() => {
+            setDeleteConfirmOpen(false);
+            handleDelete();
+          }}
+          onClose={() => setDeleteConfirmOpen(false)}
       />
     </Stack>
   );

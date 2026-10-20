@@ -626,6 +626,15 @@ export async function saveHaccpBaseWorkTemplate(payload: {
   return normalizeItem(item ?? {});
 }
 
+export async function deleteHaccpWorkDraft(payload: {
+  tenantCode: string;
+  approvalId: string;
+}): Promise<void> {
+  await apiClient.delete(`/v1/haccp-work/drafts/${payload.approvalId}`, {
+    headers: { 'x-tenant-code': payload.tenantCode },
+  });
+}
+
 export async function saveHaccpWorkTempDraft(payload: {
   tenantCode: string;
   id: string;

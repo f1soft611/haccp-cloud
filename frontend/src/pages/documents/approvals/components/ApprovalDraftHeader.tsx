@@ -112,7 +112,7 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
             ) : null}
             {onDelete ? (
                 <Button
-                    variant="outlined"
+                    variant="contained"
                     color="error"
                     disableElevation
                     disabled={deleteDisabled || isSubmitting}
