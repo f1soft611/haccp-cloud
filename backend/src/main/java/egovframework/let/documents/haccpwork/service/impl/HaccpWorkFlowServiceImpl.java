@@ -237,7 +237,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         LocalDateTime now = LocalDateTime.now();
         String regDate = now.format(DATE_FORMATTER);
         String twfTime = now.format(TIME_FORMATTER);
-        String eaExeId = buildEaExeId(now.toLocalDate());
+        // 기존 -> String eaExeId = buildEaExeId(now.toLocalDate()); (임시저장 문서 상신 시에도 채번돼 번호 유실)
+        // 변경 -> 새 문서 INSERT 또는 기존 기안번호가 없을 때만 채번
+        String eaExeId;
 
         Map<String, Object> actorProfile = selectApprovalActorProfile(tenantId, actorLoginId);
         Map<String, Object> reviewerProfile = selectApprovalActorProfile(tenantId, work.getReviewerId());
@@ -246,6 +248,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId, cycleDate);
         Long electronicApprovalId;
         if (preApplyApprovalId == null) {
+            eaExeId = buildEaExeId(now.toLocalDate());
             Map<String, Object> mainParams = new HashMap<String, Object>();
             mainParams.put("tenantId", tenantId);
             mainParams.put("workId", workId);
@@ -308,6 +311,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             if (StringUtils.hasText(existingEaExeId)) {
                 eaExeId = existingEaExeId;
             } else {
+                eaExeId = buildEaExeId(now.toLocalDate());
                 Map<String, Object> keyUpdateParams = new HashMap<String, Object>();
                 keyUpdateParams.put("tenantId", tenantId);
                 keyUpdateParams.put("approvalId", preApplyApprovalId);
@@ -463,7 +467,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         if (!actorLoginId.equals(getLong(approvalMain, "loginId"))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인이 작성한 기안만 삭제할 수 있습니다.");
         }
-        String statusType = trimToEmpty(String.valueOf(approvalMain.get("statusType"))).toLowerCase();
+        String statusType = trimToEmpty(String.valueOf(getValueIgnoreCase(approvalMain, "statusType"))).toLowerCase();
         if (!"pre_apply".equals(statusType)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "임시저장 상태의 기안만 삭제할 수 있습니다.");
         }

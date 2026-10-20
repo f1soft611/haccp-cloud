@@ -3,6 +3,8 @@ package egovframework.let.documents.haccpwork.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyChar;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -528,6 +530,8 @@ class HaccpWorkFlowServiceImplTest {
         assertTrue(updateCaptor.getValue().get("regDate") == null);
         assertTrue(twfDate instanceof String && ((String) twfDate).matches("^\\d{8}$"));
         assertTrue(afterTwfDate instanceof String && ((String) afterTwfDate).matches("^\\d{8}$"));
+        // 기존 -> 없음 / 변경 -> 기존 기안번호(EA-001)가 있으면 새로 채번하지 않는다
+        verify(serviceIdGnrService, never()).getNextStringId(anyString(), anyString(), anyString(), anyString(), anyInt(), anyChar());
     }
 
     @DisplayName("결재신청 시 요청 주기(cycle_date) 기준으로 임시저장 건과 결재 상태를 찾는다")
@@ -616,6 +620,9 @@ class HaccpWorkFlowServiceImplTest {
         ArgumentCaptor<Map> insertCaptor = ArgumentCaptor.forClass(Map.class);
         verify(serviceHaccpWorkDAO).insertElectronicApprovalMain(insertCaptor.capture());
         assertEquals(pastDay.format(DateTimeFormatter.BASIC_ISO_DATE), insertCaptor.getValue().get("reportDate"));
+        // 기존 -> 없음 / 변경 -> 바로 결재신청(신규 INSERT)은 채번 1회
+        verify(serviceIdGnrService, times(1)).getNextStringId(anyString(), anyString(), anyString(), anyString(), anyInt(), anyChar());
+        assertEquals("202608250001", insertCaptor.getValue().get("eaExeId"));
     }
 
     private HaccpWorkFlowServiceImpl createServiceForDeleteDraftTest(Map<String, Object> approvalMain) throws Exception {
@@ -630,11 +637,12 @@ class HaccpWorkFlowServiceImplTest {
     }
 
     private Map<String, Object> approvalMainRow(Long loginId, String statusType) {
+        // 기존 -> camelCase 키 / 변경 -> PostgreSQL이 실제로 반환하는 소문자 키
         Map<String, Object> row = new HashMap<String, Object>();
-        row.put("electronicApprovalId", 77L);
-        row.put("loginId", loginId);
-        row.put("statusType", statusType);
-        row.put("eaExeId", "202610200001");
+        row.put("electronicapprovalid", 77L);
+        row.put("loginid", loginId);
+        row.put("statustype", statusType);
+        row.put("eaexeid", "202610200001");
         return row;
     }
 
@@ -693,6 +701,9 @@ class HaccpWorkFlowServiceImplTest {
     }
 
     private HaccpWorkDAO serviceHaccpWorkDAO;
+
+    // 기존 -> 없음 / 변경 -> 결재신청 시 기안번호 채번 횟수 검증용
+    private EgovConditionalIdService serviceIdGnrService;
 
     private HaccpWorkFlowServiceImpl createServiceForSubmitCancelMessageTest(int latestCompletedSeq) throws Exception {
         HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
@@ -805,12 +816,13 @@ class HaccpWorkFlowServiceImplTest {
         HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
         serviceHaccpWorkDAO = mock(HaccpWorkDAO.class);
         HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, serviceHaccpWorkDAO);
-        EgovConditionalIdService idGnrService = mock(EgovConditionalIdService.class);
-        when(idGnrService.getNextStringId(eq("EA_EXE_ID"), anyString(), eq("SEQ"), anyString(), eq(4), eq('0')))
+        // 기존 -> 지역 변수 idGnrService / 변경 -> 채번 호출 여부 검증을 위해 필드로 보관
+        serviceIdGnrService = mock(EgovConditionalIdService.class);
+        when(serviceIdGnrService.getNextStringId(eq("EA_EXE_ID"), anyString(), eq("SEQ"), anyString(), eq(4), eq('0')))
             .thenReturn("202608250001");
         Field idGnrField = HaccpWorkFlowServiceImpl.class.getDeclaredField("electronicApprovalExeIdGnrService");
         idGnrField.setAccessible(true);
-        idGnrField.set(service, idGnrService);
+        idGnrField.set(service, serviceIdGnrService);
 
         when(serviceHaccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
         when(serviceHaccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(reviewerLoginId);
