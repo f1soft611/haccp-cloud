@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listUsers, listUsersPaged } from '../services/organization/usersService';
+import { listUsers, listUsersPaged } from '../../../services/organization/usersService.ts';
 
 describe('usersService', () => {
   it('lists users in tenant scope', async () => {
@@ -21,5 +21,12 @@ describe('usersService', () => {
     expect(page.items.every((user) => user.tenantCode === 'TENANT-A')).toBe(
       true,
     );
+  });
+
+  it('maps join and retire dates from the user list', async () => {
+    const users = await listUsers('TENANT-A');
+    const admin = users.find((user) => user.id === 'U-1');
+    expect(admin?.joinDate).toBe('2024-03-02');
+    expect(admin?.retireDate).toBeUndefined();
   });
 });
