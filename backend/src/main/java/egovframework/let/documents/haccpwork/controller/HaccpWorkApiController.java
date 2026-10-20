@@ -468,6 +468,33 @@ public class HaccpWorkApiController {
     }
 
     @Operation(
+            summary = "임시저장 기안 삭제",
+            description = "작성자 본인의 임시저장(pre_apply) 기안을 소프트 삭제한다",
+            security = {@SecurityRequirement(name = "Authorization")},
+            tags = {"HaccpWorkApiController"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @ApiResponse(responseCode = "403", description = "작성자가 아님"),
+            @ApiResponse(responseCode = "404", description = "기안을 찾을 수 없음"),
+            @ApiResponse(responseCode = "409", description = "임시저장 상태가 아님")
+    })
+    @DeleteMapping("/drafts/{approvalId}")
+    public ResultVO deleteDraft(
+            @PathVariable Long approvalId,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        haccpWorkFlowService.deleteDraft(approvalId, tenantCode, resolveLoginCode(user));
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("message", "기안이 삭제되었습니다.");
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @Operation(
             summary = "결재 상태 업데이트",
             description = "검토 승인/반송/최종 승인 이벤트에 따라 결재선 app_status와 결재 메인 상태를 갱신한다",
             security = {@SecurityRequirement(name = "Authorization")},

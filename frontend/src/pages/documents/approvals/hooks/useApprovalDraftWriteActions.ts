@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '@tiptap/core';
 import {
+  deleteHaccpWorkDraft,
   saveHaccpWorkTempDraft,
   submitHaccpWorkDraft,
   updateHaccpWorkApprovalStatus,
@@ -20,6 +21,8 @@ type UseApprovalDraftWriteActionsParams = {
   idType: 'work' | 'approval';
   tenantCode: string;
   workId?: string;
+  approvalId?: string;
+  onDeleted?: () => void;
   cycleDate?: string;
   isStatusResolved?: boolean;
   approvalStatusType?: string;
@@ -45,12 +48,14 @@ type UseApprovalDraftWriteActionsResult = {
   errorMessage: string;
   clearErrorMessage: () => void;
   cancelSubmitDisabled: boolean;
+  deleteDisabled: boolean;
   tempSaveDisabled: boolean;
   submitDisabled: boolean;
   approveDisabled: boolean;
   confirmDisabled: boolean;
   rejectDisabled: boolean;
   handleCancelSubmit: () => void;
+  handleDelete: () => void;
   handleTempSave: () => void;
   handleSubmitApproval: () => void;
   handleApprove: () => void;
@@ -66,6 +71,8 @@ export function useApprovalDraftWriteActions(
     idType,
     tenantCode,
     workId,
+    approvalId,
+    onDeleted,
     isStatusResolved = true,
     approvalStatusType,
     title,
@@ -269,6 +276,46 @@ export function useApprovalDraftWriteActions(
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const targetId = (approvalId ?? '').trim();
+      if (!targetId) {
+        throw new Error('삭제 대상 기안을 찾을 수 없습니다.');
+      }
+      return deleteHaccpWorkDraft({ tenantCode, approvalId: targetId });
+    },
+    onSuccess: async () => {
+      setErrorMessage('');
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-documents', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-todos', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-work-todos', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-work-todo-cycles', tenantCode],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['haccp-work-draft-template', tenantCode],
+        }),
+      ]);
+      showSuccess('기안이 삭제되었습니다.');
+      onDeleted?.();
+    },
+    onError: (error: unknown) => {
+      const message = extractApiErrorMessage(
+          error,
+          '기안 삭제 중 오류가 발생했습니다.',
+      );
+      setErrorMessage(message);
+      showError(message);
+    },
+  });
+
   const approveMutation = useMutation({
     mutationFn: async () => {
       const approvalId = idType === 'approval' ? (baseId ?? '').trim() : '';
@@ -415,6 +462,7 @@ export function useApprovalDraftWriteActions(
     tempSaveMutation.isPending ||
     submitMutation.isPending ||
     cancelSubmitMutation.isPending ||
+      deleteMutation.isPending ||
     approveMutation.isPending ||
     confirmMutation.isPending ||
     rejectMutation.isPending;
@@ -425,6 +473,7 @@ export function useApprovalDraftWriteActions(
     normalizedApprovalStatus === 'in_progress' ||
     normalizedApprovalStatus === 'approved';
   const isStatusPending = Boolean(baseId) && !isStatusResolved;
+  const deleteDisabled = !(approvalId ?? '').trim() || isStatusPending;
   const tempSaveDisabled =
     !canTempSave || !baseId || isStatusPending || isPostSubmitLocked;
   const submitDisabled =
@@ -459,6 +508,14 @@ export function useApprovalDraftWriteActions(
       return;
     }
     cancelSubmitMutation.mutate();
+  };
+
+  const handleDelete = () => {
+    if (isSubmitting || deleteDisabled) {
+      return;
+    }
+    setErrorMessage('');
+    deleteMutation.mutate();
   };
 
   const handleTempSave = () => {
@@ -527,12 +584,14 @@ export function useApprovalDraftWriteActions(
     errorMessage,
     clearErrorMessage: () => setErrorMessage(''),
     cancelSubmitDisabled,
+    deleteDisabled,
     tempSaveDisabled,
     submitDisabled,
     approveDisabled,
     confirmDisabled,
     rejectDisabled,
     handleCancelSubmit,
+    handleDelete,
     handleTempSave,
     handleSubmitApproval,
     handleApprove,

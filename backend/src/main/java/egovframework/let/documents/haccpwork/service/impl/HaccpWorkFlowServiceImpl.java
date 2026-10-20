@@ -123,7 +123,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
             mainParams.put("endStatus", "pre_apply");
             mainParams.put("statusTypeName", "미완료");
-            mainParams.put("reportDate", regDate);
+            mainParams.put("reportDate", cycleDate);
             mainParams.put("settlePlanDate", regDate);
             mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
             mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
@@ -237,7 +237,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         LocalDateTime now = LocalDateTime.now();
         String regDate = now.format(DATE_FORMATTER);
         String twfTime = now.format(TIME_FORMATTER);
-        String eaExeId = buildEaExeId(now.toLocalDate());
+        // 기존 -> String eaExeId = buildEaExeId(now.toLocalDate()); (임시저장 문서 상신 시에도 채번돼 번호 유실)
+        // 변경 -> 새 문서 INSERT 또는 기존 기안번호가 없을 때만 채번
+        String eaExeId;
 
         Map<String, Object> actorProfile = selectApprovalActorProfile(tenantId, actorLoginId);
         Map<String, Object> reviewerProfile = selectApprovalActorProfile(tenantId, work.getReviewerId());
@@ -246,6 +248,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId, cycleDate);
         Long electronicApprovalId;
         if (preApplyApprovalId == null) {
+            eaExeId = buildEaExeId(now.toLocalDate());
             Map<String, Object> mainParams = new HashMap<String, Object>();
             mainParams.put("tenantId", tenantId);
             mainParams.put("workId", workId);
@@ -268,7 +271,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
             mainParams.put("endStatus", "in_progress");
             mainParams.put("statusTypeName", "진행중");
-            mainParams.put("reportDate", regDate);
+            mainParams.put("reportDate", cycleDate);
             mainParams.put("settlePlanDate", regDate);
             mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
             mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
@@ -290,7 +293,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             updateParams.put("txtJson", templateJson);
             updateParams.put("afterCnt", templateHtml);
             updateParams.put("afterTxtJson", templateJson);
-            updateParams.put("regDate", regDate);
+//            updateParams.put("regDate", regDate); // reg_date(작성일)는 첫 임시저장 값 유지. 매퍼 COALESCE(#{regDate}, reg_date)로 기존값 유지
             updateParams.put("twfDate", regDate);
             updateParams.put("afterTwfDate", regDate);
             updateParams.put("statusType", "in_progress");
@@ -308,6 +311,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             if (StringUtils.hasText(existingEaExeId)) {
                 eaExeId = existingEaExeId;
             } else {
+                eaExeId = buildEaExeId(now.toLocalDate());
                 Map<String, Object> keyUpdateParams = new HashMap<String, Object>();
                 keyUpdateParams.put("tenantId", tenantId);
                 keyUpdateParams.put("approvalId", preApplyApprovalId);
@@ -437,6 +441,46 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         processApprovalChain(tenantId, electronicApprovalId, actorLoginId, submitActorName, now, "submit");
 
         return electronicApprovalId;
+    }
+
+    @Override
+    @Transactional
+    public void deleteDraft(
+            Long approvalId,
+            String tenantCode,
+            String actorLoginCode
+    ) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        if (actorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "삭제 사용자 정보를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> lookupParams = new HashMap<String, Object>();
+        lookupParams.put("tenantId", tenantId);
+        lookupParams.put("approvalId", approvalId);
+        Map<String, Object> approvalMain = haccpWorkDAO.selectApprovalMainById(lookupParams);
+        if (approvalMain == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "삭제할 기안을 찾을 수 없습니다.");
+        }
+        if (!actorLoginId.equals(getLong(approvalMain, "loginId"))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인이 작성한 기안만 삭제할 수 있습니다.");
+        }
+        String statusType = trimToEmpty(String.valueOf(getValueIgnoreCase(approvalMain, "statusType"))).toLowerCase();
+        if (!"pre_apply".equals(statusType)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "임시저장 상태의 기안만 삭제할 수 있습니다.");
+        }
+
+        Map<String, Object> deleteParams = new HashMap<String, Object>();
+        deleteParams.put("tenantId", tenantId);
+        deleteParams.put("approvalId", approvalId);
+        deleteParams.put("updatedBy", actorLoginId);
+        deleteParams.put("updatedAt", LocalDateTime.now());
+        int deletedCount = haccpWorkDAO.softDeleteElectronicApprovalMain(deleteParams);
+        if (deletedCount <= 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "임시저장 상태의 기안만 삭제할 수 있습니다.");
+        }
     }
 
     @Override

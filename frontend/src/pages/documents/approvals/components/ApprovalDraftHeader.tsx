@@ -7,6 +7,8 @@ type ApprovalDraftHeaderProps = {
   approveLabel?: string;
   onReject?: () => void;
   onCancelSubmit?: () => void;
+  onDelete?: () => void;
+  deleteDisabled?: boolean;
   onTempSave?: () => void;
   onSubmitApproval?: () => void;
   submitLabel?: string;
@@ -25,6 +27,7 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
     approveLabel = '결재 승인',
     onReject,
     onCancelSubmit,
+    onDelete,
     onTempSave,
     onSubmitApproval,
     submitLabel = '결재 신청',
@@ -32,6 +35,7 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
     approveDisabled = true,
     rejectDisabled = true,
     cancelSubmitDisabled = true,
+    deleteDisabled = false,
     tempSaveDisabled = false,
     submitDisabled = false,
   } = props;
@@ -106,6 +110,17 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
                 결재 취소
               </Button>
             ) : null}
+            {onDelete ? (
+                <Button
+                    variant="contained"
+                    color="error"
+                    disableElevation
+                    disabled={deleteDisabled || isSubmitting}
+                    onClick={onDelete}
+                >
+                  삭제
+                </Button>
+            ) : null}
             {onTempSave ? (
               <Button
                 variant="contained"
@@ -113,7 +128,7 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
                 disabled={tempSaveDisabled || isSubmitting}
                 onClick={onTempSave}
               >
-                임시 저장
+                저장
               </Button>
             ) : null}
             {onSubmitApproval ? (

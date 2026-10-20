@@ -83,3 +83,18 @@ export function formatNow(value: Date): string {
 export function renderApprovalStampLabel(role: ApprovalRole): string {
   return role === 'reviewer' ? '검토도장' : '승인도장';
 }
+
+export function canDeleteDraft(params: {
+  isOwner: boolean;
+  approvalStatusType?: string;
+  draftNumber?: string;
+  approvalId?: string;
+}): boolean {
+  const status = String(params.approvalStatusType ?? '').trim().toLowerCase();
+  return (
+      params.isOwner &&
+      status === 'pre_apply' &&
+      Boolean((params.draftNumber ?? '').trim()) &&
+      Boolean((params.approvalId ?? '').trim())
+  );
+}
