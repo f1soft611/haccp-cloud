@@ -82,6 +82,8 @@ CREATE TABLE IF NOT EXISTS tb_user (
     email_addr VARCHAR(100),
     department_id BIGINT,
     mobile_no VARCHAR(20),
+    join_date VARCHAR(10),    -- 입사일 (YYYY-MM-DD)
+    retire_date VARCHAR(10),  -- 퇴사일 (YYYY-MM-DD)
     use_at CHAR(1) DEFAULT 'Y' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
