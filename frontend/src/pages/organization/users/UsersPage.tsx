@@ -163,6 +163,8 @@ export function UsersPage() {
       name: value.name,
       email: value.email,
       department: value.department,
+      joinDate: value.joinDate,
+      retireDate: value.retireDate,
       roleCode: value.roleCode,
       active: value.active,
     };
@@ -238,6 +240,8 @@ export function UsersPage() {
                 name: editingUser.name,
                 email: editingUser.email,
                 department: editingUser.department,
+                joinDate: editingUser.joinDate ?? '',
+                retireDate: editingUser.retireDate ?? '',
                 roleCode: editingUser.roleCode,
                 active: editingUser.active,
               }

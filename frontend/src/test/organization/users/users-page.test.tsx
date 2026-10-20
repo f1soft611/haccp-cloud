@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { UsersPage } from '../pages/organization/users/UsersPage';
-import { useAuthStore } from '../shared/store/authStore';
+import { AppProviders } from '../../../app/providers/AppProviders.tsx';
+import { UsersPage } from '../../../pages/organization/users/UsersPage.tsx';
+import { useAuthStore } from '../../../shared/store/authStore.ts';
 
 describe('UsersPage', () => {
   it('shows the shared page header with dashboard group breadcrumb', async () => {
