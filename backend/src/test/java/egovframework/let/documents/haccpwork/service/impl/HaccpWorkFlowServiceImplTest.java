@@ -618,6 +618,80 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals(pastDay.format(DateTimeFormatter.BASIC_ISO_DATE), insertCaptor.getValue().get("reportDate"));
     }
 
+    private HaccpWorkFlowServiceImpl createServiceForDeleteDraftTest(Map<String, Object> approvalMain) throws Exception {
+        HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
+        serviceHaccpWorkDAO = mock(HaccpWorkDAO.class);
+        HaccpWorkFlowServiceImpl service = new HaccpWorkFlowServiceImpl(draftService, serviceHaccpWorkDAO);
+        when(serviceHaccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(serviceHaccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(serviceHaccpWorkDAO.selectApprovalMainById(anyMap())).thenReturn(approvalMain);
+        when(serviceHaccpWorkDAO.softDeleteElectronicApprovalMain(anyMap())).thenReturn(1);
+        return service;
+    }
+
+    private Map<String, Object> approvalMainRow(Long loginId, String statusType) {
+        Map<String, Object> row = new HashMap<String, Object>();
+        row.put("electronicApprovalId", 77L);
+        row.put("loginId", loginId);
+        row.put("statusType", statusType);
+        row.put("eaExeId", "202610200001");
+        return row;
+    }
+
+    @DisplayName("본인 임시저장 기안은 소프트 삭제된다")
+    @Test
+    void deleteDraft_softDeletesOwnPreApply() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForDeleteDraftTest(approvalMainRow(3001L, "pre_apply"));
+
+        service.deleteDraft(77L, "tenant_001", "3001");
+
+        ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).softDeleteElectronicApprovalMain(captor.capture());
+        assertEquals(10L, captor.getValue().get("tenantId"));
+        assertEquals(77L, captor.getValue().get("approvalId"));
+        assertEquals(3001L, captor.getValue().get("updatedBy"));
+        assertTrue(captor.getValue().get("updatedAt") instanceof LocalDateTime);
+    }
+
+    @DisplayName("없는(또는 이미 삭제된) 기안 삭제는 404")
+    @Test
+    void deleteDraft_notFound() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForDeleteDraftTest(null);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.deleteDraft(77L, "tenant_001", "3001"));
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+        verify(serviceHaccpWorkDAO, never()).softDeleteElectronicApprovalMain(anyMap());
+    }
+
+    @DisplayName("다른 사람이 작성한 기안 삭제는 403")
+    @Test
+    void deleteDraft_rejectsOtherOwner() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForDeleteDraftTest(approvalMainRow(4001L, "pre_apply"));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.deleteDraft(77L, "tenant_001", "3001"));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        verify(serviceHaccpWorkDAO, never()).softDeleteElectronicApprovalMain(anyMap());
+    }
+
+    @DisplayName("임시저장이 아닌 기안(결재중) 삭제는 409")
+    @Test
+    void deleteDraft_rejectsNonPreApply() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForDeleteDraftTest(approvalMainRow(3001L, "in_progress"));
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.deleteDraft(77L, "tenant_001", "3001"));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        verify(serviceHaccpWorkDAO, never()).softDeleteElectronicApprovalMain(anyMap());
+    }
+
     private HaccpWorkDAO serviceHaccpWorkDAO;
 
     private HaccpWorkFlowServiceImpl createServiceForSubmitCancelMessageTest(int latestCompletedSeq) throws Exception {

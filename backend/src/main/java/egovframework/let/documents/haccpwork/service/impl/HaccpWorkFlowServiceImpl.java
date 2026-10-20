@@ -441,6 +441,46 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 
     @Override
     @Transactional
+    public void deleteDraft(
+            Long approvalId,
+            String tenantCode,
+            String actorLoginCode
+    ) throws Exception {
+        String normalizedTenantCode = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenantCode);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        if (actorLoginId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "삭제 사용자 정보를 확인할 수 없습니다.");
+        }
+
+        Map<String, Object> lookupParams = new HashMap<String, Object>();
+        lookupParams.put("tenantId", tenantId);
+        lookupParams.put("approvalId", approvalId);
+        Map<String, Object> approvalMain = haccpWorkDAO.selectApprovalMainById(lookupParams);
+        if (approvalMain == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "삭제할 기안을 찾을 수 없습니다.");
+        }
+        if (!actorLoginId.equals(getLong(approvalMain, "loginId"))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인이 작성한 기안만 삭제할 수 있습니다.");
+        }
+        String statusType = trimToEmpty(String.valueOf(approvalMain.get("statusType"))).toLowerCase();
+        if (!"pre_apply".equals(statusType)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "임시저장 상태의 기안만 삭제할 수 있습니다.");
+        }
+
+        Map<String, Object> deleteParams = new HashMap<String, Object>();
+        deleteParams.put("tenantId", tenantId);
+        deleteParams.put("approvalId", approvalId);
+        deleteParams.put("updatedBy", actorLoginId);
+        deleteParams.put("updatedAt", LocalDateTime.now());
+        int deletedCount = haccpWorkDAO.softDeleteElectronicApprovalMain(deleteParams);
+        if (deletedCount <= 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "임시저장 상태의 기안만 삭제할 수 있습니다.");
+        }
+    }
+
+    @Override
+    @Transactional
     public HaccpWorkVO updateApprovalStatus(
             Long approvalId,
             String tenantCode,

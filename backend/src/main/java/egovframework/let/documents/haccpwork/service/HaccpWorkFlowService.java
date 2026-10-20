@@ -29,6 +29,12 @@ public interface HaccpWorkFlowService {
             String actorLoginCode
     ) throws Exception;
 
+    public void deleteDraft(
+            Long approvalId,
+            String tenantCode,
+            String actorLoginCode
+    ) throws Exception;
+
     public HaccpWorkVO updateApprovalStatus(
             Long approvalId,
             String tenantCode,

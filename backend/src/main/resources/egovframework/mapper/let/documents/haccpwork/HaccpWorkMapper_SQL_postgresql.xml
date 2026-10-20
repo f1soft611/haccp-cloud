@@ -1397,7 +1397,8 @@
         drafting_work_category_id AS draftingWorkCategoryId,
         status_type AS statusType,
         eabus_no AS eabusNo,
-        ea_exe_id AS eaExeId
+        ea_exe_id AS eaExeId,
+        login_id AS loginId
       FROM tb_electronic_approval_main
       WHERE tenant_id = #{tenantId}
         AND electronic_approval_id = #{approvalId}
@@ -1963,6 +1964,19 @@
       WHERE tenant_id = #{tenantId}
         AND electronic_approval_id = #{approvalId}
         AND COALESCE(delete_status, 'N') != 'Y'
+    </update>
+
+    <!-- 임시저장 기안 소프트 삭제. 상태 조건은 동시 상신 방지용 -->
+    <update id="HaccpWorkDAO.softDeleteElectronicApprovalMain"
+            parameterType="map">
+        UPDATE tb_electronic_approval_main
+        SET delete_status = 'Y',
+            updated_by = #{updatedBy, jdbcType=BIGINT},
+            updated_at = #{updatedAt, jdbcType=TIMESTAMP}
+        WHERE tenant_id = #{tenantId}
+          AND electronic_approval_id = #{approvalId}
+          AND COALESCE(status_type, '') = 'pre_apply'
+          AND COALESCE(delete_status, 'N') != 'Y'
     </update>
 
       <delete id="HaccpWorkDAO.deleteElectronicApprovalLinesByApprovalId"
