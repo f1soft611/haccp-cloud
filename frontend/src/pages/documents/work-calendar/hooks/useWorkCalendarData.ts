@@ -25,16 +25,8 @@ export type WorkCalendarEvent = {
     resource: TenantTodoCardItem;
 };
 
-export function useWorkCalendarData() {
+export function useCalendarMonthEvents(monthDate: Date) {
     const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
-    // 기존 -> useState(new Date()) : 문서 화면에서 돌아오면 이번 달로 초기화
-    // 변경 -> 보던 달을 sessionStorage에 저장해 돌아와도 유지 (Date는 문자열로 저장)
-    const [viewDateText, setViewDateText] = useSessionState(
-        'workCalendar.viewDate',
-        () => new Date().toISOString(),
-    );
-    const viewDate = useMemo(() => new Date(viewDateText), [viewDateText]);
-    const setViewDate = (date: Date) => setViewDateText(date.toISOString());
 
     const {
         data: todoDocuments = [],
@@ -52,8 +44,8 @@ export function useWorkCalendarData() {
 
     // 기존 -> 보는 달 1일 - 6일 ~ 말일을 조회하고 보는 달에만 표시
     // 변경 -> 달력에 보이는 첫 칸(일요일) ~ 마지막 칸(토요일)에 표시
-    const rangeStart = dayjs(viewDate).startOf('month').startOf('week').format('YYYY-MM-DD');
-    const rangeEnd = dayjs(viewDate).endOf('month').endOf('week').format('YYYY-MM-DD');
+    const rangeStart = dayjs(monthDate).startOf('month').startOf('week').format('YYYY-MM-DD');
+    const rangeEnd = dayjs(monthDate).endOf('month').endOf('week').format('YYYY-MM-DD');
     const monthFrom = dayjs(rangeStart)
     .subtract(6, 'day')
     .startOf('month')
@@ -62,7 +54,8 @@ export function useWorkCalendarData() {
     const fromDate = monthFrom < yearFrom ? monthFrom : yearFrom;
     const toDate = rangeEnd;
 
-    const { data: cycleInstances = [] } = useQuery({
+    // 기존 -> data: cycleInstances = [] / 변경 -> instances + 표시 시작일
+    const { data: cycles } = useQuery({
         queryKey: ['haccp-work-todo-cycles', tenantCode, fromDate, toDate],
         queryFn: () => listHaccpWorkTodoCycles({ tenantCode, fromDate, toDate }),
         retry: 0,
@@ -73,7 +66,9 @@ export function useWorkCalendarData() {
             todoDocuments,
             rangeStart,
             rangeEnd,
-            cycleInstances,
+            cycles?.instances ?? [],
+            new Date(),
+            cycles?.displayStartDate ?? '',
         );
 
         return mapped
@@ -102,7 +97,22 @@ export function useWorkCalendarData() {
                 resource: mappedEvent.item,
             };
         });
-    }, [todoDocuments, rangeStart, rangeEnd, cycleInstances]);
+    }, [todoDocuments, rangeStart, rangeEnd, cycles]);
+
+    return { events, isLoading, isError, error };
+}
+
+export function useWorkCalendarData() {
+    // 기존 -> useState(new Date()) : 문서 화면에서 돌아오면 이번 달로 초기화
+    // 변경 -> 보던 달을 sessionStorage에 저장해 돌아와도 유지 (Date는 문자열로 저장)
+    const [viewDateText, setViewDateText] = useSessionState(
+        'workCalendar.viewDate',
+        () => new Date().toISOString(),
+    );
+    const viewDate = useMemo(() => new Date(viewDateText), [viewDateText]);
+    const setViewDate = (date: Date) => setViewDateText(date.toISOString());
+
+    const { events, isLoading, isError, error } = useCalendarMonthEvents(viewDate);
 
     return {
         viewDate,
