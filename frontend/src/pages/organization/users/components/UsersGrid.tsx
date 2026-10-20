@@ -53,6 +53,8 @@ export function UsersGrid({
           <TableCell>이름</TableCell>
           <TableCell>이메일</TableCell>
           <TableCell>부서</TableCell>
+          <TableCell width={120}>입사일</TableCell>
+          <TableCell width={120}>퇴사일</TableCell>
           <TableCell>권한</TableCell>
           <TableCell width={100} align="center">
             상태
@@ -74,6 +76,12 @@ export function UsersGrid({
                 </TableCell>
                 <TableCell>
                   <Skeleton variant="text" width="64%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="80%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="80%" />
                 </TableCell>
                 <TableCell>
                   <Skeleton variant="text" width="52%" />
@@ -98,7 +106,7 @@ export function UsersGrid({
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} align="center">
+            <TableCell colSpan={8} align="center">
               조회된 사용자가 없습니다.
             </TableCell>
           </TableRow>
@@ -110,6 +118,8 @@ export function UsersGrid({
                 <TableCell>{row.name}</TableCell>
                 <TableCell>{row.email}</TableCell>
                 <TableCell>{row.department || '-'}</TableCell>
+                <TableCell>{row.joinDate || '-'}</TableCell>
+                <TableCell>{row.retireDate || '-'}</TableCell>
                 <TableCell>{roleLabel(row.roleCode, roleNameByCode)}</TableCell>
                 <TableCell align="center">
                   <Chip
