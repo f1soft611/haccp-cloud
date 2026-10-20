@@ -102,3 +102,14 @@ export function countTodoStatuses(
   });
   return counts;
 }
+
+// 오늘이 있는 달 캘린더 이벤트 중 미래가 아닌 것(주기 단위)으로 셈, 결재대기중은 그대로
+export function countCurrentMonthStatuses(
+    events: { isFuture: boolean; resource: TenantTodoCardItem }[],
+    pendingApprovalCount: number,
+): TodoStatusCounts {
+  return countTodoStatuses(
+      events.filter((event) => !event.isFuture).map((event) => event.resource),
+      pendingApprovalCount,
+  );
+}

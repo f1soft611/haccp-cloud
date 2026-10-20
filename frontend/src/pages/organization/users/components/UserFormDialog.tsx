@@ -15,6 +15,8 @@ export type UserFormValue = {
   department: string;
   roleCode: string;
   active: boolean;
+  joinDate: string;
+  retireDate: string;
 };
 
 type UserFormDialogProps = {
@@ -34,6 +36,8 @@ const EMPTY_VALUE: UserFormValue = {
   department: '',
   roleCode: 'TENANT_USER',
   active: true,
+  joinDate: '',
+  retireDate: '',
 };
 
 export function UserFormDialog({
@@ -97,15 +101,26 @@ export function UserFormDialog({
       department: value.department.trim(),
       roleCode: value.roleCode,
       active: value.active,
+      joinDate: value.joinDate,
+      retireDate: value.retireDate,
     });
   };
 
+  // YYYY-MM-DD는 문자열 비교 = 날짜 비교
+  const retireBeforeJoin =
+      value.joinDate.length > 0 &&
+      value.retireDate.length > 0 &&
+      value.retireDate < value.joinDate;
+
+  // 기존 -> 필수값만 검사
+  // 변경 -> 퇴사일 < 입사일이면 저장 비활성
   const disabled =
-    saving ||
-    value.name.trim().length === 0 ||
-    value.email.trim().length === 0 ||
-    value.department.trim().length === 0 ||
-    value.roleCode.trim().length === 0;
+      saving ||
+      value.name.trim().length === 0 ||
+      value.email.trim().length === 0 ||
+      value.department.trim().length === 0 ||
+      value.roleCode.trim().length === 0 ||
+      retireBeforeJoin;
 
   return (
     <FormDialog
@@ -180,6 +195,33 @@ export function UserFormDialog({
             </MenuItem>
           ))}
         </TextField>
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <TextField
+              label="입사일"
+              type="date"
+              value={value.joinDate}
+              onChange={(event) =>
+                  setValue((prev) => ({ ...prev, joinDate: event.target.value }))
+              }
+              slotProps={{ inputLabel: { shrink: true } }}
+              fullWidth
+          />
+          <TextField
+              label="퇴사일"
+              type="date"
+              value={value.retireDate}
+              onChange={(event) =>
+                  setValue((prev) => ({ ...prev, retireDate: event.target.value }))
+              }
+              error={retireBeforeJoin}
+              helperText={
+                retireBeforeJoin ? '퇴사일은 입사일 이후여야 합니다.' : undefined
+              }
+              slotProps={{ inputLabel: { shrink: true } }}
+              fullWidth
+          />
+        </Stack>
 
         <FormControlLabel
           control={

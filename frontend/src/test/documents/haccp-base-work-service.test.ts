@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { apiClient } from '../services/api/apiClient';
-import { listHaccpBaseWorks, listHaccpWorkTodoCycles } from '../services/documents/haccpBaseWorkService';
+import { apiClient } from '../../services/api/apiClient.ts';
+import { listHaccpBaseWorks, listHaccpWorkTodoCycles } from '../../services/documents/haccpBaseWorkService.ts';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {
@@ -58,9 +58,24 @@ describe('haccpBaseWorkService', () => {
       toDate: '2026-10-31',
     });
 
-    expect(result).toEqual([
+    expect(result.instances).toEqual([
       { workId: '1', cycleDate: '2026-10-05', approvalId: '9', statusType: 'in_progress', registeredDate: '2026-10-06', title: '' },
       { workId: '2', cycleDate: '2026-10-05', approvalId: '10', statusType: 'approved', registeredDate: '', title: '' },
     ]);
+    expect(result.displayStartDate).toBe('');
+  });
+
+  it('reads displayStartDate from the result envelope as YYYY-MM-DD', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { result: { resultList: [], displayStartDate: '20260610' } },
+    });
+
+    const result = await listHaccpWorkTodoCycles({
+      tenantCode: 'TENANT-A',
+      fromDate: '2026-10-01',
+      toDate: '2026-10-31',
+    });
+
+    expect(result).toEqual({ instances: [], displayStartDate: '2026-06-10' });
   });
 });

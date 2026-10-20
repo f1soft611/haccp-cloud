@@ -44,6 +44,11 @@ public class DashboardServiceImpl extends EgovAbstractServiceImpl implements Das
         return dashboardDAO.selectMyTodoCycleList(condition);
     }
 
+    @Override
+    public String getCalendarDisplayStartDate(String tenantCode, String actorLoginCode) throws Exception {
+        return dashboardDAO.selectCalendarDisplayStartDate(buildCondition(tenantCode, actorLoginCode));
+    }
+
     private boolean isYyyyMmDd(String value) {
         return value != null && value.matches("\\d{8}");
     }

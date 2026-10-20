@@ -5,6 +5,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verifyNoInteractions;
+
+import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
 
 import java.util.Collections;
 
@@ -35,5 +40,58 @@ class PlatformUserServiceImplTest {
         verify(platformUserDAO).selectUserPagedList(captor.capture());
 
         assertEquals("홍길동", captor.getValue().getKeyword());
+    }
+
+    private static String dateError(String joinDate, String retireDate) {
+        return assertThrows(IllegalArgumentException.class,
+                () -> PlatformUserServiceImpl.validateEmploymentDates(joinDate, retireDate)).getMessage();
+    }
+
+    @DisplayName("입사일/퇴사일이 비어 있거나 올바른 순서면 통과한다")
+    @Test
+    void validateEmploymentDates_acceptsEmptyAndOrderedDates() {
+        assertDoesNotThrow(() -> PlatformUserServiceImpl.validateEmploymentDates(null, null));
+        assertDoesNotThrow(() -> PlatformUserServiceImpl.validateEmploymentDates("", "  "));
+        assertDoesNotThrow(() -> PlatformUserServiceImpl.validateEmploymentDates("2024-03-02", null));
+        assertDoesNotThrow(() -> PlatformUserServiceImpl.validateEmploymentDates(null, "2026-10-20"));
+        assertDoesNotThrow(() -> PlatformUserServiceImpl.validateEmploymentDates("2024-03-02", "2024-03-02"));
+        assertDoesNotThrow(() -> PlatformUserServiceImpl.validateEmploymentDates("2024-03-02", "2026-10-20"));
+    }
+
+    @DisplayName("날짜 형식이 YYYY-MM-DD가 아니거나 존재하지 않는 날짜면 거부한다")
+    @Test
+    void validateEmploymentDates_rejectsInvalidFormat() {
+        assertEquals("입사일/퇴사일 형식이 올바르지 않습니다.", dateError("abc", null));
+        assertEquals("입사일/퇴사일 형식이 올바르지 않습니다.", dateError("2026-13-01", null));
+        assertEquals("입사일/퇴사일 형식이 올바르지 않습니다.", dateError(null, "2026-02-30"));
+        assertEquals("입사일/퇴사일 형식이 올바르지 않습니다.", dateError("2026/10/20", null));
+        assertEquals("입사일/퇴사일 형식이 올바르지 않습니다.", dateError("2026-1-5", null));
+    }
+
+    @DisplayName("퇴사일이 입사일보다 이전이면 거부한다")
+    @Test
+    void validateEmploymentDates_rejectsRetireBeforeJoin() {
+        assertEquals("퇴사일은 입사일 이후여야 합니다.", dateError("2026-10-20", "2026-10-19"));
+    }
+
+    @DisplayName("사용자 수정 시 날짜 순서가 잘못되면 DB 접근 전에 거부한다")
+    @Test
+    void updateUser_rejectsRetireBeforeJoinBeforeDaoAccess() {
+        PlatformUserDAO platformUserDAO = mock(PlatformUserDAO.class);
+        PlatformUserServiceImpl service = new PlatformUserServiceImpl();
+        ReflectionTestUtils.setField(service, "platformUserDAO", platformUserDAO);
+
+        PlatformUserSaveRequestVO payload = new PlatformUserSaveRequestVO();
+        payload.setName("홍길동");
+        payload.setEmail("hong@alpha.com");
+        payload.setDepartment("품질관리팀");
+        payload.setRoleCode("TENANT_USER");
+        payload.setJoinDate("2026-10-20");
+        payload.setRetireDate("2026-01-01");
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.updateUser(1L, payload));
+        assertEquals("퇴사일은 입사일 이후여야 합니다.", ex.getMessage());
+        verifyNoInteractions(platformUserDAO);
     }
 }

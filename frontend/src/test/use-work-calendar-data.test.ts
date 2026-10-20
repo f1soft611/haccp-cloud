@@ -31,7 +31,7 @@ describe('useWorkCalendarData', () => {
                 divisionCode: '001',
                 divisionName: '월간 점검',
                 cycle: 'MONTH', cycleName: '월',
-                title: '월간 점검 업무',
+                title: '월간 점검',
                 active: true,
                 assigneeIds: [],
                 referenceIds: [],
@@ -42,7 +42,7 @@ describe('useWorkCalendarData', () => {
         ]);
 
         vi.mocked(listHaccpWorkTodoCycles).mockReset();
-        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue([]);
+        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({ instances: [], displayStartDate: '' });
     });
 
     afterEach(() => {
@@ -59,7 +59,7 @@ describe('useWorkCalendarData', () => {
         await waitFor(() => expect(result.current.isLoading).toBe(false));
 
         expect(result.current.events).toHaveLength(1);
-        expect(result.current.events[0].title).toBe('월간 점검 업무');
+        expect(result.current.events[0].title).toBe('월간 점검');
         expect(result.current.events[0].start).toEqual(new Date(2026, 9, 12));
         expect(result.current.events[0].isFuture).toBe(false);
     });
@@ -96,5 +96,21 @@ describe('useWorkCalendarData', () => {
             fromDate: '2026-01-01',
             toDate: '2026-10-31',
         });
+    });
+
+    it('hides cycles before the display start date', async () => {
+        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({
+            instances: [],
+            displayStartDate: '2026-11-01',
+        });
+        const { result } = renderHook(() => useWorkCalendarData(), {
+            wrapper: AppProviders,
+        });
+
+        await waitFor(() => expect(listHaccpWorkTodoCycles).toHaveBeenCalled());
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        // 10월 월주기(기준일 10-01)는 표시 시작일(11-01)이 속한 주기보다 이르므로 제외
+        await waitFor(() => expect(result.current.events).toEqual([]));
     });
 });

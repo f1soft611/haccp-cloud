@@ -365,4 +365,54 @@ describe('mapTodosToCalendarEvents', () => {
         expect(events.find((e) => e.date === '2026-10-01')?.item.title).toBe('10/1 일일점검');
         expect(events.find((e) => e.date === '2026-10-02')?.item.title).toBe('일일점검');
     });
+    
+    // 표시 시작일(입사일·테넌트 생성일 중 늦은 날)이 속한 주기부터 표시
+    describe('display start date', () => {
+        it('shows daily items from the display start date', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'DAY' })], ...OCT_2026, [], TODAY, '2026-10-07',
+            );
+
+            expect(events).toHaveLength(25);
+            expect(events[0].date).toBe('2026-10-07');
+        });
+
+        it('shows weekly items from the week containing the display start date', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...OCT_2026, [], TODAY, '2026-10-07',
+            );
+
+            expect(events.map((event) => event.cycleDate).sort()).toEqual([
+                '2026-10-05', '2026-10-12', '2026-10-19', '2026-10-26',
+            ]);
+        });
+
+        it('shows monthly items from the month containing the display start date', () => {
+            const inSeptember = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'MONTH' })], ...SEP_2026, [], TODAY, '2026-09-15',
+            );
+            const inOctober = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'MONTH' })], ...SEP_2026, [], TODAY, '2026-10-02',
+            );
+
+            expect(inSeptember.map((event) => event.cycleDate)).toEqual(['2026-09-01']);
+            expect(inOctober).toEqual([]);
+        });
+
+        it('shows yearly items from the year containing the display start date', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'YEAR' })], ...OCT_2026, [], TODAY, '2026-05-01',
+            );
+
+            expect(events.map((event) => event.cycleDate)).toEqual(['2026-01-01']);
+        });
+
+        it('does not filter when the display start date is empty', () => {
+            const items = [buildItem({ cycle: 'DAY' }), buildItem({ id: '2', cycle: 'WEEK' })];
+
+            expect(mapTodosToCalendarEvents(items, ...OCT_2026, [], TODAY, '')).toEqual(
+                mapTodosToCalendarEvents(items, ...OCT_2026, [], TODAY),
+            );
+        });
+    });
 });

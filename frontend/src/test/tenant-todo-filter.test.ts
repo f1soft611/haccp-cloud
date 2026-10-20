@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { TenantTodoCardItem } from '../pages/dashboard/tenant/hooks/useTenantDashboardData';
 import {
-  countTodoStatuses,
-  EMPTY_TODO_FILTER,
-  matchesTodoFilter,
-  PENDING_APPROVAL_STATUS,
+    countCurrentMonthStatuses,
+    countTodoStatuses,
+    EMPTY_TODO_FILTER,
+    matchesTodoFilter,
+    PENDING_APPROVAL_STATUS,
 } from '../pages/dashboard/tenant/todoFilter';
 
 const item = {
@@ -97,4 +98,25 @@ describe('countTodoStatuses', () => {
       반려: 1,
     });
   });
+});
+
+describe('countCurrentMonthStatuses', () => {
+    it('counts only non-future calendar events and keeps the pending approval count', () => {
+        const counts = countCurrentMonthStatuses(
+            [
+                { isFuture: false, resource: item },
+                { isFuture: false, resource: withStatus('승인', 'approved') },
+                { isFuture: true, resource: item },
+                { isFuture: true, resource: withStatus('반송', 'rejected') },
+            ],
+            2,
+        );
+        expect(counts).toEqual({
+            미작성: 1,
+            결재대기중: 2,
+            결재진행중: 0,
+            승인: 1,
+            반려: 0,
+        });
+    });
 });

@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { UsersPage } from '../pages/organization/users/UsersPage';
-import { useAuthStore } from '../shared/store/authStore';
+import { AppProviders } from '../../../app/providers/AppProviders.tsx';
+import { UsersPage } from '../../../pages/organization/users/UsersPage.tsx';
+import { useAuthStore } from '../../../shared/store/authStore.ts';
 
 describe('UsersPage', () => {
   it('shows the shared page header with dashboard group breadcrumb', async () => {
@@ -50,5 +50,29 @@ describe('UsersPage', () => {
     expect(await screen.findByText('총 2건')).toBeInTheDocument();
 
     expect(await screen.findByText('업체 사용자')).toBeInTheDocument();
+  });
+
+  it('shows join and retire dates in the grid', async () => {
+    useAuthStore.setState({
+      isAuthenticated: true,
+      tenantCode: 'TENANT-A',
+      userId: 'tenant_admin',
+      role: 'TENANT_ADMIN',
+    });
+
+    render(
+        <AppProviders>
+          <UsersPage />
+        </AppProviders>,
+    );
+
+    expect(
+        await screen.findByRole('columnheader', { name: '입사일' }),
+    ).toBeInTheDocument();
+    expect(
+        screen.getByRole('columnheader', { name: '퇴사일' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('2024-03-02')).toBeInTheDocument();
+    expect(screen.getByText('2026-09-30')).toBeInTheDocument();
   });
 });

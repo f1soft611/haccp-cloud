@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 import javax.annotation.Resource;
 
@@ -206,6 +208,8 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         userPayload.put("userNm", trim(payload.getName()));
         userPayload.put("emailAddr", trim(payload.getEmail()));
         userPayload.put("departmentId", departmentId);
+        userPayload.put("joinDate", trim(payload.getJoinDate()));
+        userPayload.put("retireDate", trim(payload.getRetireDate()));
         userPayload.put("useAt", toUseAt(payload.getActive(), true));
         platformUserDAO.insertUser(userPayload);
 
@@ -231,6 +235,8 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         updatePayload.put("userNm", trim(payload.getName()));
         updatePayload.put("emailAddr", trim(payload.getEmail()));
         updatePayload.put("departmentId", departmentId);
+        updatePayload.put("joinDate", trim(payload.getJoinDate()));
+        updatePayload.put("retireDate", trim(payload.getRetireDate()));
         updatePayload.put("useAt", toUseAt(payload.getActive(), null));
         platformUserDAO.updateUser(updatePayload);
 
@@ -386,6 +392,31 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         }
         if (!StringUtils.hasText(resolveRoleCode(payload))) {
             throw new IllegalArgumentException("roleCode는 필수입니다.");
+        }
+        if (!StringUtils.hasText(resolveRoleCode(payload))) {
+            throw new IllegalArgumentException("roleCode는 필수입니다.");
+        }
+        //  입사일/퇴사일 형식과 순서도 검증
+        validateEmploymentDates(payload.getJoinDate(), payload.getRetireDate());
+    }
+
+    static void validateEmploymentDates(String joinDate, String retireDate) {
+        LocalDate join = parseEmploymentDate(joinDate);
+        LocalDate retire = parseEmploymentDate(retireDate);
+        if (join != null && retire != null && retire.isBefore(join)) {
+            throw new IllegalArgumentException("퇴사일은 입사일 이후여야 합니다.");
+        }
+    }
+
+    private static LocalDate parseEmploymentDate(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            // ISO_LOCAL_DATE(STRICT): YYYY-MM-DD만 허용, 2026-02-30 같은 날짜 거부
+            return LocalDate.parse(value.trim());
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("입사일/퇴사일 형식이 올바르지 않습니다.");
         }
     }
 

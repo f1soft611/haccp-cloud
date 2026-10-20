@@ -303,6 +303,7 @@ let users: UserItem[] = [
     name: '관리자A',
     email: 'admin.a@alpha.com',
     department: '품질관리팀',
+    joinDate: '2024-03-02',
     roleCode: 'TENANT_ADMIN',
     roleCodes: ['TENANT_ADMIN'],
     role: 'TENANT_ADMIN',
@@ -314,6 +315,8 @@ let users: UserItem[] = [
     name: '사용자A1',
     email: 'user.a1@alpha.com',
     department: '생산1팀',
+    joinDate: '2025-01-06',
+    retireDate: '2026-09-30',
     roleCode: 'TENANT_USER',
     roleCodes: ['TENANT_USER'],
     role: 'USER',
@@ -1411,7 +1414,10 @@ export const handlers = [
 
   http.get(/.*\/api\/v1\/users$/, ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
-    return HttpResponse.json(tenantScoped(users, tenantCode));
+    return HttpResponse.json({
+      resultCode: 200,
+      result: { resultList: tenantScoped(users, tenantCode) },
+    });
   }),
 
   http.get(/.*\/api\/v1\/users\/paged$/, ({ request }) => {
@@ -1443,8 +1449,8 @@ export const handlers = [
     const items = filtered.slice(offset, offset + pageSize);
 
     return HttpResponse.json({
-      items,
-      totalCount: filtered.length,
+      resultCode: 200,
+      result: { items, totalCount: filtered.length },
     });
   }),
 
@@ -1454,6 +1460,8 @@ export const handlers = [
       name?: string;
       email?: string;
       department?: string;
+      joinDate?: string;
+      retireDate?: string;
       roleCode?: string;
       roleCodes?: string[];
     };
@@ -1486,6 +1494,8 @@ export const handlers = [
       name: payload.name,
       email: payload.email,
       department: payload.department,
+      joinDate: payload.joinDate || undefined,
+      retireDate: payload.retireDate || undefined,
       roleCode: normalizedRoleCode,
       roleCodes: normalizedRoleCodes,
       role:
@@ -1498,7 +1508,7 @@ export const handlers = [
     };
 
     users = [created, ...users];
-    return HttpResponse.json(created, { status: 201 });
+    return HttpResponse.json({ resultCode: 200, result: { item: created } }, { status: 201 });
   }),
 
   http.put(/.*\/api\/v1\/users\/([^/]+)$/, async ({ params, request }) => {
@@ -1508,6 +1518,8 @@ export const handlers = [
       name?: string;
       email?: string;
       department?: string;
+      joinDate?: string;
+      retireDate?: string;
       roleCode?: string;
       roleCodes?: string[];
       active?: boolean;
@@ -1545,6 +1557,8 @@ export const handlers = [
     target.name = payload.name;
     target.email = payload.email;
     target.department = payload.department;
+    target.joinDate = payload.joinDate || undefined;
+    target.retireDate = payload.retireDate || undefined;
     target.roleCode = normalizedRoleCode;
     target.roleCodes = normalizedRoleCodes;
     target.role =
@@ -1555,7 +1569,7 @@ export const handlers = [
         : 'USER';
     target.active = payload.active ?? target.active;
 
-    return HttpResponse.json(target);
+    return HttpResponse.json({ resultCode: 200, result: { item: target } });
   }),
 
   http.patch(/.*\/api\/v1\/users\/([^/]+)$/, async ({ params, request }) => {

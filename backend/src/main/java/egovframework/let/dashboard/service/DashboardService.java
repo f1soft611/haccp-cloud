@@ -17,6 +17,9 @@ public interface DashboardService {
 
     public List<Map<String, Object>> listMyTodoCycles(String tenantCode, String actorLoginCode, String fromDate, String toDate) throws Exception;
 
+    // 캘린더 표시 시작일 (yyyyMMdd, 입사일·테넌트 생성일 중 늦은 날)
+    public String getCalendarDisplayStartDate(String tenantCode, String actorLoginCode) throws Exception;
+
     public List<DashboardTodoVO> listMyApprovalAlerts(String tenantCode, String actorLoginCode) throws Exception;
 
     public List<DashboardNoticeVO> listNotices(String tenantCode, String actorLoginCode) throws Exception;

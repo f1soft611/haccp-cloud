@@ -38,6 +38,12 @@ public class PlatformUserVO implements Serializable {
     @Schema(description = "부서명")
     private String departmentNm;
 
+    @Schema(description = "입사일 (YYYY-MM-DD)")
+    private String joinDate;
+
+    @Schema(description = "퇴사일 (YYYY-MM-DD)")
+    private String retireDate;
+
     @Schema(description = "대표 권한 코드")
     private String roleCode;
 

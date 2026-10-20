@@ -13,6 +13,8 @@ export type UserItem = {
   name: string;
   email: string;
   department: string;
+  joinDate?: string;
+  retireDate?: string;
   roleCode: string;
   roleCodes: string[];
   role?: UserRole;
@@ -42,6 +44,8 @@ export type CreateUserRequest = {
   name: string;
   email: string;
   department: string;
+  joinDate?: string;
+  retireDate?: string;
   roleCode?: string;
   active?: boolean;
 };
@@ -52,6 +56,8 @@ export type UpdateUserRequest = {
   name: string;
   email: string;
   department: string;
+  joinDate?: string;
+  retireDate?: string;
   roleCode?: string;
   active?: boolean;
 };
@@ -151,6 +157,8 @@ function normalizeUserItem(raw: {
   emailAddr?: string;
   department?: string;
   departmentNm?: string;
+  joinDate?: string | null;
+  retireDate?: string | null;
   roleCode?: string;
   roleCodes?: string[];
   roleCodesText?: string;
@@ -169,6 +177,8 @@ function normalizeUserItem(raw: {
     name: String(raw.name ?? raw.userNm ?? '').trim(),
     email: String(raw.email ?? raw.emailAddr ?? '').trim(),
     department: String(raw.department ?? raw.departmentNm ?? '').trim(),
+    joinDate: String(raw.joinDate ?? '').trim() || undefined,
+    retireDate: String(raw.retireDate ?? '').trim() || undefined,
     roleCode,
     roleCodes,
     role:
@@ -236,6 +246,8 @@ export async function createUser(
       name: payload.name,
       email: payload.email,
       department: payload.department,
+      joinDate: payload.joinDate ?? '',
+      retireDate: payload.retireDate ?? '',
       roleCode: roleCode || 'TENANT_USER',
       active: payload.active ?? true,
     },
@@ -254,6 +266,8 @@ export async function updateUser(
       name: payload.name,
       email: payload.email,
       department: payload.department,
+      joinDate: payload.joinDate ?? '',
+      retireDate: payload.retireDate ?? '',
       roleCode: roleCode || 'TENANT_USER',
       active: payload.active,
     },
