@@ -56,6 +56,7 @@ export function mapTodosToCalendarEvents(
     rangeEnd: string,
     cycleInstances: HaccpWorkCycleInstance[] = [],
     today: Date = new Date(),
+    displayStartDate: string = '',
 ): CalendarWorkEvent[] {
     const todayString = toLocalDateString(today);
     const currentWeekMonday = toLocalDateString(
@@ -67,6 +68,22 @@ export function mapTodosToCalendarEvents(
     );
     const currentMonthFirst = toDateString(today.getFullYear(), today.getMonth(), 1);
     const currentYearFirst = toDateString(today.getFullYear(), 0, 1);
+    // 표시 시작일이 속한 주기의 기준일 (이보다 이른 주기는 표시하지 않음, '' 이면 하한 없음)
+    const displayStart = displayStartDate ? parseLocalDate(displayStartDate) : null;
+    const minCycleDates: Record<string, string> = displayStart
+        ? {
+            DAY: displayStartDate,
+            WEEK: toLocalDateString(
+                new Date(
+                    displayStart.getFullYear(),
+                    displayStart.getMonth(),
+                    displayStart.getDate() - ((displayStart.getDay() + 6) % 7),
+                ),
+            ),
+            MONTH: toDateString(displayStart.getFullYear(), displayStart.getMonth(), 1),
+            YEAR: toDateString(displayStart.getFullYear(), 0, 1),
+        }
+        : {};
     const instances = new Map(
         cycleInstances.map((instance) => [
             `${instance.workId}|${instance.cycleDate}`,
@@ -98,6 +115,9 @@ export function mapTodosToCalendarEvents(
     ) => {
         // 기존 -> 보는 달 날짜만 표시 / 변경 -> 보이는 범위 안이면 표시
         if (date < rangeStart || date > rangeEnd) {
+            return;
+        }
+        if (cycleDate < (minCycleDates[item.cycle] ?? '')) {
             return;
         }
         events.push({

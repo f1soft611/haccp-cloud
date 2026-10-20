@@ -436,14 +436,22 @@ function toDashedDate(compact: string | null | undefined): string {
       : '';
 }
 
+export type HaccpWorkCycleResult = {
+  instances: HaccpWorkCycleInstance[];
+  displayStartDate: string;
+};
+
 export async function listHaccpWorkTodoCycles(params: {
   tenantCode: string;
   fromDate: string;
   toDate: string;
-}): Promise<HaccpWorkCycleInstance[]> {
+}): Promise<HaccpWorkCycleResult> {
   const toCompact = (date: string) => date.replace(/-/g, '');
   const { data } = await apiClient.get<
-      RawHaccpWorkCycleInstance[] | ResultEnvelope<RawHaccpWorkCycleInstance>
+      | RawHaccpWorkCycleInstance[]
+      | (ResultEnvelope<RawHaccpWorkCycleInstance> & {
+    result?: { displayStartDate?: string | null };
+  })
   >('/v1/dashboard/todo-cycles', {
     headers: { 'x-tenant-code': params.tenantCode },
     params: {
@@ -453,16 +461,19 @@ export async function listHaccpWorkTodoCycles(params: {
   });
 
   const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
-  return items
-  .filter((item) => /^\d{8}$/.test(item.cycleDate ?? ''))
-  .map((item) => ({
-    workId: String(item.workId ?? ''),
-    cycleDate: toDashedDate(item.cycleDate),
-    approvalId: String(item.approvalId ?? ''),
-    statusType: item.statusType ?? '',
-    registeredDate: toDashedDate(item.registeredDate),
-    title: (item.title ?? '').trim(),
-  }));
+  return {
+    instances: items
+    .filter((item) => /^\d{8}$/.test(item.cycleDate ?? ''))
+    .map((item) => ({
+      workId: String(item.workId ?? ''),
+      cycleDate: toDashedDate(item.cycleDate),
+      approvalId: String(item.approvalId ?? ''),
+      statusType: item.statusType ?? '',
+      registeredDate: toDashedDate(item.registeredDate),
+      title: (item.title ?? '').trim(),
+    })),
+    displayStartDate: Array.isArray(data) ? '' : toDashedDate(data?.result?.displayStartDate),
+  };
 }
 
 export async function listHaccpWorkApprovalAlerts(params: {
