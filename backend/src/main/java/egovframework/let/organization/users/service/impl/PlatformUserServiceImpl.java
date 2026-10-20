@@ -208,6 +208,8 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         userPayload.put("userNm", trim(payload.getName()));
         userPayload.put("emailAddr", trim(payload.getEmail()));
         userPayload.put("departmentId", departmentId);
+        userPayload.put("joinDate", trim(payload.getJoinDate()));
+        userPayload.put("retireDate", trim(payload.getRetireDate()));
         userPayload.put("useAt", toUseAt(payload.getActive(), true));
         platformUserDAO.insertUser(userPayload);
 
@@ -233,6 +235,8 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         updatePayload.put("userNm", trim(payload.getName()));
         updatePayload.put("emailAddr", trim(payload.getEmail()));
         updatePayload.put("departmentId", departmentId);
+        updatePayload.put("joinDate", trim(payload.getJoinDate()));
+        updatePayload.put("retireDate", trim(payload.getRetireDate()));
         updatePayload.put("useAt", toUseAt(payload.getActive(), null));
         platformUserDAO.updateUser(updatePayload);
 
