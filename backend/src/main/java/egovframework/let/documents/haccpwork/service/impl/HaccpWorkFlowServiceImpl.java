@@ -123,7 +123,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
             mainParams.put("endStatus", "pre_apply");
             mainParams.put("statusTypeName", "미완료");
-            mainParams.put("reportDate", regDate);
+            mainParams.put("reportDate", cycleDate);
             mainParams.put("settlePlanDate", regDate);
             mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
             mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
@@ -268,7 +268,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
             mainParams.put("endStatus", "in_progress");
             mainParams.put("statusTypeName", "진행중");
-            mainParams.put("reportDate", regDate);
+            mainParams.put("reportDate", cycleDate);
             mainParams.put("settlePlanDate", regDate);
             mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
             mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
@@ -290,7 +290,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             updateParams.put("txtJson", templateJson);
             updateParams.put("afterCnt", templateHtml);
             updateParams.put("afterTxtJson", templateJson);
-            updateParams.put("regDate", regDate);
+//            updateParams.put("regDate", regDate); // reg_date(작성일)는 첫 임시저장 값 유지. 매퍼 COALESCE(#{regDate}, reg_date)로 기존값 유지
             updateParams.put("twfDate", regDate);
             updateParams.put("afterTwfDate", regDate);
             updateParams.put("statusType", "in_progress");

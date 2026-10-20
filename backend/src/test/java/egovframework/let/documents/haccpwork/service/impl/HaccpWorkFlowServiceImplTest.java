@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import egovframework.let.documents.haccpwork.domain.model.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -29,12 +30,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.let.common.idgen.service.EgovConditionalIdService;
-import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
-import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentUpdateRequestVO;
-import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
 import egovframework.let.documents.haccpwork.domain.repository.HaccpWorkDAO;
 import egovframework.let.documents.haccpwork.service.HaccpWorkDraftService;
-import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 
 class HaccpWorkFlowServiceImplTest {
@@ -512,7 +509,7 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("승인요청", arrivalCaptor.getValue().get("optionName"));
     }
 
-    @DisplayName("기존 임시저장 문서 재결재 신청 시 기안일 필드(twf_date)가 갱신된다")
+    @DisplayName("기존 임시저장 문서 결재신청 시 twf_date만 갱신되고 reg_date(작성일)는 유지된다")
     @Test
     void submitDraft_updatesDraftDateFieldsWhenReSubmittingExistingPreApply() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
@@ -525,11 +522,10 @@ class HaccpWorkFlowServiceImplTest {
         ArgumentCaptor<Map> updateCaptor = ArgumentCaptor.forClass(Map.class);
         verify(serviceHaccpWorkDAO).updateElectronicApprovalMainDraftContent(updateCaptor.capture());
 
-        Object regDate = updateCaptor.getValue().get("regDate");
         Object twfDate = updateCaptor.getValue().get("twfDate");
         Object afterTwfDate = updateCaptor.getValue().get("afterTwfDate");
 
-        assertTrue(regDate instanceof String && ((String) regDate).matches("^\\d{8}$"));
+        assertTrue(updateCaptor.getValue().get("regDate") == null);
         assertTrue(twfDate instanceof String && ((String) twfDate).matches("^\\d{8}$"));
         assertTrue(afterTwfDate instanceof String && ((String) afterTwfDate).matches("^\\d{8}$"));
     }
@@ -572,6 +568,54 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
         verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
+    }
+
+    @DisplayName("임시저장 신규 INSERT 시 report_date는 주기 기준일(cycle_date), reg_date는 오늘이다")
+    @Test
+    void saveTempDraft_insertSetsReportDateToCycleDate() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        when(serviceHaccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(anyMap())).thenReturn(null);
+        doAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            params.put("electronicApprovalId", 88L);
+            return null;
+        }).when(serviceHaccpWorkDAO).insertElectronicApprovalMain(anyMap());
+        LocalDate pastDay = LocalDate.now().minusDays(3);
+
+        HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
+        payload.setTitle("지연 임시저장 테스트");
+        payload.setCycleDate(pastDay.toString());
+
+        service.saveTempDraft(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> insertCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).insertElectronicApprovalMain(insertCaptor.capture());
+        assertEquals(pastDay.format(DateTimeFormatter.BASIC_ISO_DATE), insertCaptor.getValue().get("reportDate"));
+        assertEquals(pastDay.format(DateTimeFormatter.BASIC_ISO_DATE), insertCaptor.getValue().get("cycleDate"));
+        assertEquals(LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE), insertCaptor.getValue().get("regDate"));
+    }
+
+    @DisplayName("결재신청 신규 INSERT 시 report_date는 주기 기준일(cycle_date)이다")
+    @Test
+    void submitDraft_insertSetsReportDateToCycleDate() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        when(serviceHaccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(anyMap())).thenReturn(null);
+        doAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            params.put("electronicApprovalId", 77L);
+            return null;
+        }).when(serviceHaccpWorkDAO).insertElectronicApprovalMain(anyMap());
+        LocalDate pastDay = LocalDate.now().minusDays(3);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("지연 결재신청 테스트");
+        payload.setCycleDate(pastDay.toString());
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> insertCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).insertElectronicApprovalMain(insertCaptor.capture());
+        assertEquals(pastDay.format(DateTimeFormatter.BASIC_ISO_DATE), insertCaptor.getValue().get("reportDate"));
     }
 
     private HaccpWorkDAO serviceHaccpWorkDAO;
