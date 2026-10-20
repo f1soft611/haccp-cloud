@@ -38,6 +38,12 @@ public class PlatformUserSaveRequestVO implements Serializable {
     @Schema(description = "사용 여부")
     private Boolean active;
 
+    @Schema(description = "입사일 (YYYY-MM-DD)")
+    private String joinDate;
+
+    @Schema(description = "퇴사일 (YYYY-MM-DD)")
+    private String retireDate;
+
     @Schema(description = "테넌트 코드")
     private String tenantCode;
 }
