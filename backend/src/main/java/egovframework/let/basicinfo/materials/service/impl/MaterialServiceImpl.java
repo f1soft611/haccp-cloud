@@ -1,8 +1,11 @@
 package egovframework.let.basicinfo.materials.service.impl;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Resource;
 
@@ -30,6 +33,9 @@ import egovframework.let.basicinfo.materials.service.MaterialService;
 public class MaterialServiceImpl extends EgovAbstractServiceImpl implements MaterialService {
 
     private static final int MAX_MATERIAL_CODE = 999999;
+    private static final String EXPIRY_STATUS_NONE = "NONE";
+    private static final Set<String> EXPIRY_STATUSES = new HashSet<String>(Arrays.asList(EXPIRY_STATUS_NONE, "DAY", "MONTH", "YEAR"));
+    private static final int MAX_KFDA_REPORT_NO_LENGTH = 20;
 
     @Resource(name = "materialDAO")
     private MaterialDAO materialDAO;
@@ -132,8 +138,27 @@ public class MaterialServiceImpl extends EgovAbstractServiceImpl implements Mate
 
     // ── 헬퍼 ─────────────────────────────────────────
 
-    private Map<String, Object> buildParams(MaterialSaveRequestVO payload) {
+    static Map<String, Object> buildParams(MaterialSaveRequestVO payload) {
         String itemType = normalizeNullable(payload.getItemType());
+
+        String expiryedStatus = StringUtils.hasText(payload.getExpiryedStatus())
+                ? payload.getExpiryedStatus().trim()
+                : EXPIRY_STATUS_NONE;
+        if (!EXPIRY_STATUSES.contains(expiryedStatus)) {
+            throw new IllegalArgumentException("소비기한 기준이 올바르지 않습니다.");
+        }
+        Integer expiryedCount = null;
+        if (!EXPIRY_STATUS_NONE.equals(expiryedStatus)) {
+            expiryedCount = payload.getExpiryedCount();
+            if (expiryedCount == null || expiryedCount < 1) {
+                throw new IllegalArgumentException("소비기한 계산숫자는 1 이상이어야 합니다.");
+            }
+        }
+
+        String kfdaReportNo = normalizeNullable(payload.getKfdaReportNo());
+        if (kfdaReportNo != null && kfdaReportNo.length() > MAX_KFDA_REPORT_NO_LENGTH) {
+            throw new IllegalArgumentException("품목보고번호는 20자 이하여야 합니다.");
+        }
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("materialName", payload.getMaterialName().trim());
@@ -143,6 +168,11 @@ public class MaterialServiceImpl extends EgovAbstractServiceImpl implements Mate
         params.put("materialSpec", normalizeNullable(payload.getMaterialSpec()));
         params.put("materialWeight", payload.getMaterialWeight());
         params.put("unit", normalizeNullable(payload.getUnit()));
+        params.put("materialKind", normalizeNullable(payload.getMaterialKind()));
+        params.put("storeMethod", normalizeNullable(payload.getStoreMethod()));
+        params.put("expiryedStatus", expiryedStatus);
+        params.put("expiryedCount", expiryedCount);
+        params.put("kfdaReportNo", kfdaReportNo);
         params.put("etc", normalizeNullable(payload.getEtc()));
         return params;
     }
@@ -185,7 +215,7 @@ public class MaterialServiceImpl extends EgovAbstractServiceImpl implements Mate
         return StringUtils.hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "";
     }
 
-    private String normalizeNullable(String value) {
+    private static String normalizeNullable(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
     }
 }
