@@ -16,6 +16,8 @@ function buildRawItem(
         divisionName: '점검 문서',
         cycle: 'MONTH', cycleName: '월',
         active: true,
+        expirationApply: false,
+        approvalApply: true,
         assigneeIds: [],
         referenceIds: [],
         assigneeMapped: true,

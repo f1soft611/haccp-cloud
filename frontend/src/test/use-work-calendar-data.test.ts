@@ -33,6 +33,8 @@ describe('useWorkCalendarData', () => {
                 cycle: 'MONTH', cycleName: '월',
                 title: '월간 점검',
                 active: true,
+                expirationApply: false,
+                approvalApply: true,
                 assigneeIds: [],
                 referenceIds: [],
                 assigneeMapped: true,

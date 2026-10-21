@@ -49,6 +49,8 @@ describe('WorkCalendarPage', () => {
                 cycle: 'MONTH', cycleName: '월',
                 title: '월간 점검 업무',
                 active: true,
+                expirationApply: false,
+                approvalApply: true,
                 assigneeIds: [],
                 referenceIds: [],
                 assigneeMapped: true,
@@ -181,6 +183,7 @@ describe('WorkCalendarPage', () => {
             tenantCode: 'TENANT-A', categoryGroupId: '10', categoryCode: 'HA',
             categoryName: 'HACCP (HA)', categorySortOrder: 1, divisionCode: '001',
             divisionName: '점검', cycle: 'MONTH', cycleName: '월', active: true,
+            expirationApply: false, approvalApply: true,
             assigneeIds: [], referenceIds: [], assigneeMapped: true, hasDocument: true,
             writtenInCycle: false,
         };
