@@ -116,6 +116,7 @@ export function ApprovalDraftWritePage() {
     approvalId: approvalIdForComments,
     onDeleted: handleBack,
     cycleDate: work?.cycleDate,
+    returnTo,
     isStatusResolved,
     approvalStatusType: work?.approvalStatusType,
     title,

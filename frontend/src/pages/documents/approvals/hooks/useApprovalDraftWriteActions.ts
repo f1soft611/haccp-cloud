@@ -24,6 +24,7 @@ type UseApprovalDraftWriteActionsParams = {
   approvalId?: string;
   onDeleted?: () => void;
   cycleDate?: string;
+  returnTo?: string;
   isStatusResolved?: boolean;
   approvalStatusType?: string;
   title: string;
@@ -78,6 +79,7 @@ export function useApprovalDraftWriteActions(
     title,
     referenceIds,
     cycleDate,
+    returnTo,
     editorContent,
     editorHtml,
     documentFieldValues,
@@ -97,6 +99,8 @@ export function useApprovalDraftWriteActions(
   // not work.createdBy (template creator)
 
   const navigate = useNavigate();
+  const withReturnTo = (path: string) =>
+      returnTo ? `${path}&returnTo=${encodeURIComponent(returnTo)}` : path;
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useFeedback();
   const [errorMessage, setErrorMessage] = useState('');
@@ -148,7 +152,7 @@ export function useApprovalDraftWriteActions(
         }),
       ]);
       if (result.approvalId && idType !== 'approval') {
-        navigate(`/approvals/draft/${result.approvalId}?idType=approval`, {
+        navigate(withReturnTo(`/approvals/draft/${result.approvalId}?idType=approval`), {
           replace: true,
         });
       }
@@ -216,12 +220,12 @@ export function useApprovalDraftWriteActions(
 
       showSuccess(result.message || '결재신청이 완료되었습니다.');
       if (result.approvalId) {
-        navigate(`/approvals/draft/${result.approvalId}?idType=approval`, {
+        navigate(withReturnTo(`/approvals/draft/${result.approvalId}?idType=approval`), {
           replace: true,
         });
         return;
       }
-      navigate('/dashboard');
+      navigate(returnTo || '/dashboard');
     },
     onError: (error: unknown) => {
       const message = extractApiErrorMessage(
