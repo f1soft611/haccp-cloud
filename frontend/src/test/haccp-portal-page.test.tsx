@@ -194,8 +194,10 @@ describe('HaccpPortalPage', () => {
         screen.getAllByRole('button', { name: '작성하러 가기' })[0],
     );
 
+    // 포탈 경로를 returnTo로 함께 넘김
+    const returnTo = `${window.location.pathname}${window.location.search}`;
     expect(navigateMock).toHaveBeenCalledWith(
-        '/approvals/draft/1?idType=work',
+        `/approvals/draft/1?idType=work&returnTo=${encodeURIComponent(returnTo)}`,
     );
   });
 });

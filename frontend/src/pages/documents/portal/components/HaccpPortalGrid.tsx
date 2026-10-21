@@ -9,7 +9,7 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
@@ -23,6 +23,7 @@ export function HaccpPortalGrid({
   loading: boolean;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const openDocument = (row: PortalRow) => {
     const query = new URLSearchParams();
@@ -32,10 +33,12 @@ export function HaccpPortalGrid({
     navigate(`/docs/haccp-doc?${query.toString()}`);
   };
 
-  // ponytail: 포탈 API에 approvalId/writtenInCycle이 없어 항상 현재 주기 작성(idType=work)으로 연다
+  // 돌아가기 시 포탈로 오도록 현재 경로를 returnTo로 붙임. resolveDraftRoute는 항상 ?idType=를 포함
   const openDraft = (row: PortalRow) => {
     const path = resolveDraftRoute({ id: row.id });
-    if (path) navigate(path);
+    if (!path) return;
+    const returnTo = encodeURIComponent(`${location.pathname}${location.search}`);
+    navigate(`${path}&returnTo=${returnTo}`);
   };
 
   return (
