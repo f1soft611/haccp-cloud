@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS public.tb_equipment_info (
     disuse_reg_charge    varchar(10),
     equip_status         varchar(10),
     equip_spec           varchar(99),                 -- 설비규격
+    vc_kind              varchar(50),                 -- 검교정구분(공통코드 VC_KIND)
+    vc_cycle             int4,                        -- 검교정주기(개월)
     bigo                 varchar(1000),                -- 비고
     use_status           varchar(10),
     use_at               character(1) NOT NULL DEFAULT 'Y',
@@ -30,6 +32,7 @@ CREATE TABLE IF NOT EXISTS public.tb_equipment_info (
     updated_at           timestamp,
     CONSTRAINT tb_equipment_info_pkey PRIMARY KEY (equipment_id),
     CONSTRAINT uq_equipment_id_tenant_id UNIQUE (equipment_id, tenant_id),
+    CONSTRAINT ck_tb_equipment_info_vc_cycle CHECK (vc_cycle IS NULL OR vc_cycle > 0),
     CONSTRAINT fk_tb_equipment_info_tenant FOREIGN KEY (tenant_id) REFERENCES public.tb_tenant(tenant_id)
 );
 
@@ -45,6 +48,8 @@ COMMENT ON COLUMN public.tb_equipment_info.pur_cust IS '구입처';
 COMMENT ON COLUMN public.tb_equipment_info.mak_cust IS '제조사';
 COMMENT ON COLUMN public.tb_equipment_info.equip_spec IS '설비규격';
 COMMENT ON COLUMN public.tb_equipment_info.location IS '설치장소';
+COMMENT ON COLUMN public.tb_equipment_info.vc_kind IS '검교정구분(공통코드 VC_KIND)';
+COMMENT ON COLUMN public.tb_equipment_info.vc_cycle IS '검교정주기(개월)';
 COMMENT ON COLUMN public.tb_equipment_info.bigo IS '비고';
 COMMENT ON COLUMN public.tb_equipment_info.use_at IS '사용여부';
 

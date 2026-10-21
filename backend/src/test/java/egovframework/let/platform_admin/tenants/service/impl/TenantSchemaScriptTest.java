@@ -275,6 +275,18 @@ class TenantSchemaScriptTest {
         assertTrue(sql.contains("CONSTRAINT uq_equipment_id_tenant_id UNIQUE (equipment_id, tenant_id)"));
     }
 
+    @DisplayName("테넌트 스키마의 설비 테이블에 검교정구분, 검교정주기 컬럼과 주기 CHECK 제약이 있다")
+    @Test
+    void schema_equipmentHasVcColumns() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "create_postgresql_schema_active_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        assertTrue(sql.contains("vc_kind              VARCHAR(50),"));
+        assertTrue(sql.contains("vc_cycle             INT4,"));
+        assertTrue(sql.contains("CONSTRAINT ck_tb_equipment_info_vc_cycle CHECK (vc_cycle IS NULL OR vc_cycle > 0)"));
+    }
+
     @DisplayName("테넌트 부트스트랩은 하드코딩된 메뉴 목록 대신 중앙 플랜의 menu_codes를 바인딩한다")
     @Test
     void bootstrapTenantScript_usesCentralPlanMenuCodesInsteadOfHardcodedCatalog() throws Exception {
