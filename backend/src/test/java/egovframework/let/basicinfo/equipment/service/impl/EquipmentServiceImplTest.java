@@ -41,4 +41,13 @@ class EquipmentServiceImplTest {
                 () -> EquipmentServiceImpl.buildParams(payload(null, 0))).getMessage();
         assertEquals("검교정 주기는 1 이상이어야 합니다.", message);
     }
+
+    @Test
+    void 관리코드는_000001부터_6자리로_채번한다() {
+        assertEquals("000001", EquipmentServiceImpl.generateNextEquipSysCd(null));
+        assertEquals("000001", EquipmentServiceImpl.generateNextEquipSysCd(""));
+        assertEquals("000001", EquipmentServiceImpl.generateNextEquipSysCd("000000"));
+        assertEquals("000002", EquipmentServiceImpl.generateNextEquipSysCd("000001"));
+        assertEquals("000010", EquipmentServiceImpl.generateNextEquipSysCd("000009"));
+    }
 }

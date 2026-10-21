@@ -159,7 +159,7 @@ public class EquipmentServiceImpl extends EgovAbstractServiceImpl implements Equ
         return params;
     }
 
-    private String generateNextEquipSysCd(String maxCode) {
+    static String generateNextEquipSysCd(String maxCode) {
         int next = 1;
         if (StringUtils.hasText(maxCode)) {
             try {
