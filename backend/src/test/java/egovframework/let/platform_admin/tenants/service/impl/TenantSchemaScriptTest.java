@@ -375,6 +375,24 @@ class TenantSchemaScriptTest {
                 > sql.indexOf("CREATE TABLE IF NOT EXISTS tb_drafting_work_category_group"));
     }
 
+    @DisplayName("전자결재 스크립트는 만료일 양식 sub 테이블을 main 다음에 만든다")
+    @Test
+    void electronicApprovalScript_createsSubTable() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "migrate_postgresql_add_electronic_approval_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        int subIndex = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_electronic_approval_sub (");
+        assertTrue(subIndex > sql.indexOf("CREATE TABLE IF NOT EXISTS tb_electronic_approval_main ("));
+        assertTrue(sql.contains("drafting_work_category_id BIGINT NOT NULL,"));
+        assertTrue(sql.contains("material_type VARCHAR(50),"));
+        assertTrue(sql.contains("inspected_date VARCHAR(8) NOT NULL,"));
+        assertTrue(sql.contains("expiration_date VARCHAR(8) NOT NULL,"));
+        assertTrue(sql.contains("CONSTRAINT fk_electronic_approval_sub_category"));
+        assertTrue(sql.contains("CONSTRAINT fk_electronic_approval_sub_main"));
+        assertTrue(sql.contains("CONSTRAINT fk_electronic_approval_sub_tenant"));
+    }
+
     @DisplayName("조건부 ID 생성은 PostgreSQL용 Mapper를 제공한다")
     @Test
     void conditionalIdMapper_postgresqlUsesUpsertStatement() throws Exception {

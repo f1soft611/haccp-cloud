@@ -287,4 +287,44 @@ CREATE INDEX IF NOT EXISTS idx_electronic_approval_open_info_open_at
 CREATE INDEX IF NOT EXISTS idx_electronic_approval_open_info_business_key
     ON tb_electronic_approval_open_info(tenant_id, eabus_no, ea_exe_id);
 
+CREATE TABLE IF NOT EXISTS tb_electronic_approval_sub (
+                                                          electronic_approval_sub_id BIGSERIAL PRIMARY KEY,
+                                                          electronic_approval_id BIGINT NOT NULL,
+                                                          tenant_id BIGINT NOT NULL,
+                                                          drafting_work_category_id BIGINT NOT NULL,
+                                                          equipment_id BIGINT,
+                                                          material_type VARCHAR(50),
+    certification_user_id BIGINT,
+    inspected_date VARCHAR(8) NOT NULL,
+    expiration_date VARCHAR(8) NOT NULL,
+    created_by BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by BIGINT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_electronic_approval_sub_category
+    FOREIGN KEY (drafting_work_category_id)
+    REFERENCES tb_drafting_work_category(drafting_work_category_id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_electronic_approval_sub_main
+    FOREIGN KEY (electronic_approval_id)
+    REFERENCES tb_electronic_approval_main(electronic_approval_id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_electronic_approval_sub_tenant
+    FOREIGN KEY (tenant_id)
+    REFERENCES tb_tenant(tenant_id)
+    ON DELETE CASCADE
+    );
+
+COMMENT ON COLUMN tb_electronic_approval_sub.drafting_work_category_id IS '결재양식id';
+COMMENT ON COLUMN tb_electronic_approval_sub.equipment_id IS '설비id';
+COMMENT ON COLUMN tb_electronic_approval_sub.material_type IS '품목유형(공통코드 MATERIAL_TYPE item_code)';
+COMMENT ON COLUMN tb_electronic_approval_sub.certification_user_id IS '증명서소유_사원정보';
+COMMENT ON COLUMN tb_electronic_approval_sub.inspected_date IS '검사일(검교정,유효성평가,자가 품질평가,보건증등록 등)';
+COMMENT ON COLUMN tb_electronic_approval_sub.expiration_date IS '만료일(검교정예정,유효성평가만료,자가품질검사만료,보건증만료 등)';
+COMMENT ON COLUMN tb_electronic_approval_sub.created_by IS '등록자';
+COMMENT ON COLUMN tb_electronic_approval_sub.created_at IS '등록일시';
+COMMENT ON COLUMN tb_electronic_approval_sub.updated_by IS '변경자';
+COMMENT ON COLUMN tb_electronic_approval_sub.updated_at IS '변경일시';
+
 COMMIT;
