@@ -20,4 +20,6 @@ public interface EquipmentService {
     EquipmentVO updateEquipment(Long equipmentId, EquipmentSaveRequestVO payload) throws Exception;
 
     void deleteEquipment(Long equipmentId, String tenantCode) throws Exception;
+
+    void restoreEquipment(Long equipmentId, String tenantCode) throws Exception;
 }

@@ -247,4 +247,15 @@
           AND tenant_id    = #{tenantId}
     </update>
 
+    <!-- 설비 다시 사용 -->
+    <update id="EquipmentDAO.restoreEquipment"
+            parameterType="map">
+        UPDATE tb_equipment_info
+        SET
+            use_at     = 'Y',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE equipment_id = #{equipmentId}
+          AND tenant_id    = #{tenantId}
+    </update>
+
 </mapper>

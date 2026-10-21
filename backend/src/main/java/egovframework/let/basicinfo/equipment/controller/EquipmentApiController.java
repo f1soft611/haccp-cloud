@@ -12,6 +12,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -120,6 +121,19 @@ public class EquipmentApiController {
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
         resultMap.put("message", "설비가 성공적으로 삭제되었습니다.");
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @PatchMapping("/{id}/restore")
+    public ResultVO restoreEquipment(
+            @PathVariable Long id,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        equipmentService.restoreEquipment(id, tenantCode);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("message", "설비가 다시 사용 상태로 변경되었습니다.");
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 

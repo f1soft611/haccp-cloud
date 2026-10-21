@@ -60,4 +60,8 @@ public class EquipmentDAO extends EgovAbstractMapper {
         // 변경 -> update로 use_at 'N' 소프트 삭제
         update("EquipmentDAO.deleteEquipment", params);
     }
+
+    public void restoreEquipment(Map<String, Object> params) throws Exception {
+        update("EquipmentDAO.restoreEquipment", params);
+    }
 }
