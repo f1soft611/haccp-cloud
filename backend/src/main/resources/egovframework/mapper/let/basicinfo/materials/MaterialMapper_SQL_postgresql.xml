@@ -129,7 +129,7 @@
             m.store_method                       AS storeMethod,
             m.expiryed_status                    AS expiryedStatus,
             m.expiryed_count                     AS expiryedCount,
-            m.kfda_report_no                     AS kfdaReportNo,
+            m.kfda_report_no                     AS kfdaReportNo
         FROM tb_material_info m
         JOIN tb_tenant t ON t.tenant_id = m.tenant_id
         WHERE m.material_id = #{materialId}
