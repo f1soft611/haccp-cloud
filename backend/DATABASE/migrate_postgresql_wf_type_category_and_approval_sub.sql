@@ -20,6 +20,14 @@ WHERE g.group_code = 'WF_TYPE'
   AND i.use_at = 'Y'
 ON CONFLICT (tenant_id, cata_code) DO NOTHING;
 
+-- 전자결재 테이블은 테넌트 DB 에만 있으므로 central 에서는 건너뛴다.
+-- ALTER ... USING 에는 서브쿼리를 쓸 수 없어서 material_type 은 임시 컬럼을 거친다.
+DO $$
+BEGIN
+    IF to_regclass('public.tb_electronic_approval_main') IS NULL THEN
+        RETURN;
+END IF;
+
 CREATE TABLE IF NOT EXISTS public.tb_electronic_approval_sub (
                                                                  electronic_approval_sub_id BIGSERIAL PRIMARY KEY,
                                                                  electronic_approval_id BIGINT NOT NULL,
@@ -49,10 +57,7 @@ CREATE TABLE IF NOT EXISTS public.tb_electronic_approval_sub (
     ON DELETE CASCADE
     );
 
--- ALTER ... USING 에는 서브쿼리를 쓸 수 없어서 임시 컬럼을 거친다.
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1
+IF EXISTS (SELECT 1
                FROM information_schema.columns
                WHERE table_schema = 'public'
                  AND table_name = 'tb_electronic_approval_sub'
@@ -68,17 +73,17 @@ WHERE i.common_code_item_id = s.material_type;
 ALTER TABLE public.tb_electronic_approval_sub DROP COLUMN material_type;
 ALTER TABLE public.tb_electronic_approval_sub RENAME COLUMN material_type_code TO material_type;
 END IF;
-END $$;
 
-COMMENT ON COLUMN public.tb_electronic_approval_sub.drafting_work_category_id IS '결재양식id';
-COMMENT ON COLUMN public.tb_electronic_approval_sub.equipment_id IS '설비id';
-COMMENT ON COLUMN public.tb_electronic_approval_sub.material_type IS '품목유형(공통코드 MATERIAL_TYPE item_code)';
-COMMENT ON COLUMN public.tb_electronic_approval_sub.certification_user_id IS '증명서소유_사원정보';
-COMMENT ON COLUMN public.tb_electronic_approval_sub.inspected_date IS '검사일(검교정,유효성평가,자가 품질평가,보건증등록 등)';
-COMMENT ON COLUMN public.tb_electronic_approval_sub.expiration_date IS '만료일(검교정예정,유효성평가만료,자가품질검사만료,보건증만료 등)';
-COMMENT ON COLUMN public.tb_electronic_approval_sub.created_by IS '등록자';
-COMMENT ON COLUMN public.tb_electronic_approval_sub.created_at IS '등록일시';
-COMMENT ON COLUMN public.tb_electronic_approval_sub.updated_by IS '변경자';
-COMMENT ON COLUMN public.tb_electronic_approval_sub.updated_at IS '변경일시';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.drafting_work_category_id IS '결재양식id';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.equipment_id IS '설비id';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.material_type IS '품목유형(공통코드 MATERIAL_TYPE item_code)';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.certification_user_id IS '증명서소유_사원정보';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.inspected_date IS '검사일(검교정,유효성평가,자가 품질평가,보건증등록 등)';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.expiration_date IS '만료일(검교정예정,유효성평가만료,자가품질검사만료,보건증만료 등)';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.created_by IS '등록자';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.created_at IS '등록일시';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.updated_by IS '변경자';
+    COMMENT ON COLUMN public.tb_electronic_approval_sub.updated_at IS '변경일시';
+END $$;
 
 COMMIT;
