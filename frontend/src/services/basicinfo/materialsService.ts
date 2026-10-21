@@ -12,6 +12,11 @@ export type MaterialItem = {
   materialSpec: string;
   materialWeight: number | null;
   unit: string;
+  materialKind: string;
+  storeMethod: string;
+  expiryedStatus: string;
+  expiryedCount: number | null;
+  kfdaReportNo: string;
   etc: string;
 };
 
@@ -35,6 +40,11 @@ export type CreateMaterialRequest = {
   materialSpec?: string;
   materialWeight: number | null;
   unit?: string;
+  materialKind?: string;
+  storeMethod?: string;
+  expiryedStatus: string;
+  expiryedCount: number | null;
+  kfdaReportNo?: string;
   etc?: string;
 };
 
@@ -50,6 +60,11 @@ type RawMaterialItem = Partial<{
   materialSpec: string;
   materialWeight: number | string | null;
   unit: string;
+  materialKind: string;
+  storeMethod: string;
+  expiryedStatus: string;
+  expiryedCount: number | string | null;
+  kfdaReportNo: string;
   etc: string;
 }>;
 
@@ -62,24 +77,28 @@ type MaterialItemResult = {
   item?: RawMaterialItem;
 };
 
-function normalizeMaterialItem(raw: RawMaterialItem): MaterialItem {
-  const weight = raw.materialWeight;
-  const normalizedWeight =
-    weight === null || weight === undefined || weight === ''
-      ? null
-      : Number(weight);
+function toNullableNumber(value: number | string | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
+function normalizeMaterialItem(raw: RawMaterialItem): MaterialItem {
   return {
     id: String(raw.materialId ?? ''),
     materialCode: String(raw.materialCode ?? ''),
     materialName: String(raw.materialName ?? ''),
     itemType: String(raw.itemType ?? ''),
     materialSpec: String(raw.materialSpec ?? ''),
-    materialWeight:
-      normalizedWeight !== null && Number.isFinite(normalizedWeight)
-        ? normalizedWeight
-        : null,
+    materialWeight: toNullableNumber(raw.materialWeight),
     unit: String(raw.unit ?? ''),
+    materialKind: String(raw.materialKind ?? ''),
+    storeMethod: String(raw.storeMethod ?? ''),
+    expiryedStatus: String(raw.expiryedStatus || 'NONE'),
+    expiryedCount: toNullableNumber(raw.expiryedCount),
+    kfdaReportNo: String(raw.kfdaReportNo ?? ''),
     etc: String(raw.etc ?? ''),
   };
 }
@@ -125,6 +144,11 @@ export async function createMaterial(
       materialSpec: payload.materialSpec,
       materialWeight: payload.materialWeight,
       unit: payload.unit,
+      materialKind: payload.materialKind,
+      storeMethod: payload.storeMethod,
+      expiryedStatus: payload.expiryedStatus,
+      expiryedCount: payload.expiryedCount,
+      kfdaReportNo: payload.kfdaReportNo,
       etc: payload.etc,
     },
     { headers },
@@ -147,6 +171,11 @@ export async function updateMaterial(
       materialSpec: payload.materialSpec,
       materialWeight: payload.materialWeight,
       unit: payload.unit,
+      materialKind: payload.materialKind,
+      storeMethod: payload.storeMethod,
+      expiryedStatus: payload.expiryedStatus,
+      expiryedCount: payload.expiryedCount,
+      kfdaReportNo: payload.kfdaReportNo,
       etc: payload.etc,
     },
     { headers },

@@ -123,10 +123,16 @@ export function MaterialsPage() {
       itemType: value.itemType || undefined,
       materialSpec: value.materialSpec || undefined,
       materialWeight:
-        value.materialWeight.trim().length > 0
-          ? Number(value.materialWeight)
-          : null,
+          value.materialWeight.trim().length > 0
+              ? Number(value.materialWeight)
+              : null,
       unit: value.unit || undefined,
+      materialKind: value.materialKind || undefined,
+      storeMethod: value.storeMethod || undefined,
+      expiryedStatus: value.expiryedStatus,
+      expiryedCount:
+          value.expiryedStatus !== 'NONE' ? Number(value.expiryedCount) : null,
+      kfdaReportNo: value.kfdaReportNo || undefined,
       etc: value.etc || undefined,
     };
 
@@ -202,6 +208,14 @@ export function MaterialsPage() {
                     ? String(editingMaterial.materialWeight)
                     : '',
                 unit: editingMaterial.unit,
+                materialKind: editingMaterial.materialKind,
+                storeMethod: editingMaterial.storeMethod,
+                expiryedStatus: editingMaterial.expiryedStatus,
+                expiryedCount:
+                    editingMaterial.expiryedCount !== null
+                        ? String(editingMaterial.expiryedCount)
+                        : '',
+                kfdaReportNo: editingMaterial.kfdaReportNo,
                 etc: editingMaterial.etc,
               }
             : undefined
