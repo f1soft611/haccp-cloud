@@ -1,3 +1,4 @@
+import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import {
@@ -24,14 +25,16 @@ type EquipmentGridProps = {
   loading?: boolean;
   onEdit: (equipment: EquipmentItem) => void;
   onDelete: (equipment: EquipmentItem) => void;
+  onRestore: (equipment: EquipmentItem) => void;
 };
 
 export function EquipmentGrid({
-  rows,
-  loading,
-  onEdit,
-  onDelete,
-}: EquipmentGridProps) {
+                                rows,
+                                loading,
+                                onEdit,
+                                onDelete,
+                                onRestore,
+                              }: EquipmentGridProps) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const vcKindOptions = useCommonCodeOptions(COMMON_CODE_GROUP.VC_KIND);
@@ -148,24 +151,46 @@ export function EquipmentGrid({
                     >
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      aria-label="설비 삭제"
-                      onClick={() => onDelete(row)}
-                      sx={{
-                        color: isDarkMode ? '#f87171' : '#c53b3b',
-                        bgcolor: isDarkMode
-                          ? 'rgba(248, 113, 113, 0.12)'
-                          : 'rgba(197, 59, 59, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(248, 113, 113, 0.2)'
-                            : 'rgba(197, 59, 59, 0.16)',
-                        },
-                      }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
+                    {row.active ? (
+                        <IconButton
+                            size="small"
+                            aria-label="설비 삭제"
+                            onClick={() => onDelete(row)}
+                            sx={{
+                              color: isDarkMode ? '#f87171' : '#c53b3b',
+                              bgcolor: isDarkMode
+                                  ? 'rgba(248, 113, 113, 0.12)'
+                                  : 'rgba(197, 59, 59, 0.08)',
+                              '&:hover': {
+                                bgcolor: isDarkMode
+                                    ? 'rgba(248, 113, 113, 0.2)'
+                                    : 'rgba(197, 59, 59, 0.16)',
+                              },
+                            }}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                    ) : (
+                        <IconButton
+                            size="small"
+                            aria-label="설비 다시 사용"
+                            title="사용으로 변경"
+                            onClick={() => onRestore(row)}
+                            sx={{
+                              color: isDarkMode ? '#86efac' : '#2e7d32',
+                              bgcolor: isDarkMode
+                                  ? 'rgba(134, 239, 172, 0.12)'
+                                  : 'rgba(46, 125, 50, 0.08)',
+                              '&:hover': {
+                                bgcolor: isDarkMode
+                                    ? 'rgba(134, 239, 172, 0.2)'
+                                    : 'rgba(46, 125, 50, 0.16)',
+                              },
+                            }}
+                        >
+                          <PowerSettingsNewOutlinedIcon fontSize="small" />
+                        </IconButton>
+                    )}
                   </Stack>
                 </TableCell>
               </TableRow>

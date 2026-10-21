@@ -4,20 +4,24 @@ import { AppProviders } from '../../app/providers/AppProviders.tsx';
 import { EquipmentPage } from '../../pages/basicinfo/equipment/EquipmentPage.tsx';
 import type {
     CreateEquipmentRequest,
+    EquipmentItem,
     ListEquipmentPagedResult,
 } from '../../services/basicinfo/equipmentService';
 import { useAuthStore } from '../../shared/store/authStore.ts';
 
-const { listEquipmentPagedMock, createEquipmentMock } = vi.hoisted(() => ({
+const { listEquipmentPagedMock, createEquipmentMock, deleteEquipmentMock, restoreEquipmentMock } = vi.hoisted(() => ({
     listEquipmentPagedMock: vi.fn(async (): Promise<ListEquipmentPagedResult> => ({ items: [], totalCount: 0 })),
     createEquipmentMock: vi.fn<(payload: CreateEquipmentRequest) => Promise<unknown>>(async () => ({})),
+    deleteEquipmentMock: vi.fn<(payload: { tenantCode?: string; id: string }) => Promise<void>>(async () => undefined),
+    restoreEquipmentMock: vi.fn<(payload: { tenantCode?: string; id: string }) => Promise<void>>(async () => undefined),
 }));
 
 vi.mock('../../services/basicinfo/equipmentService', () => ({
     listEquipmentPaged: listEquipmentPagedMock,
     createEquipment: createEquipmentMock,
     updateEquipment: vi.fn(),
-    deleteEquipment: vi.fn(),
+    deleteEquipment: deleteEquipmentMock,
+    restoreEquipment: restoreEquipmentMock,
 }));
 
 vi.mock('../../services/basicinfo/commonCodeService', () => ({
@@ -137,5 +141,84 @@ describe('EquipmentPage 설비 목록', () => {
         const row = (await screen.findByText('온도계')).closest('tr') as HTMLElement;
         expect(await within(row).findByText('공인기관')).toBeInTheDocument();
         expect(within(row).getByText('12개월')).toBeInTheDocument();
+    });
+});
+
+function equipmentRow(overrides: Partial<EquipmentItem>): EquipmentItem {
+    return {
+        id: '1',
+        equipSysCd: '000001',
+        equipCd: 'EQ-01',
+        equipNm: '온도계',
+        equipKind: '',
+        purDate: '',
+        purCust: '',
+        makCust: '',
+        equipSpec: '',
+        location: '',
+        vcKind: '',
+        vcCycle: null,
+        bigo: '',
+        active: true,
+        ...overrides,
+    };
+}
+
+describe('EquipmentPage 설비 삭제와 다시 사용', () => {
+    it('사용 행에는 삭제 버튼, 미사용 행에는 다시 사용 버튼을 보여 준다', async () => {
+        listEquipmentPagedMock.mockResolvedValueOnce({
+            items: [
+                equipmentRow({ id: '1', equipNm: '온도계', active: true }),
+                equipmentRow({ id: '2', equipSysCd: '000002', equipCd: 'EQ-02', equipNm: '저울', active: false }),
+            ],
+            totalCount: 2,
+        });
+        renderPage();
+
+        const activeRow = (await screen.findByText('온도계')).closest('tr') as HTMLElement;
+        const inactiveRow = screen.getByText('저울').closest('tr') as HTMLElement;
+
+        expect(within(activeRow).getByRole('button', { name: '설비 삭제' })).toBeInTheDocument();
+        expect(within(activeRow).queryByRole('button', { name: '설비 다시 사용' })).not.toBeInTheDocument();
+        expect(within(inactiveRow).getByRole('button', { name: '설비 다시 사용' })).toBeInTheDocument();
+        expect(within(inactiveRow).queryByRole('button', { name: '설비 삭제' })).not.toBeInTheDocument();
+    });
+
+    it('삭제 확인 창은 미사용 처리를 안내하고, 확인하면 deleteEquipment를 호출한다', async () => {
+        listEquipmentPagedMock.mockResolvedValueOnce({
+            items: [equipmentRow({ id: '1', equipNm: '온도계', active: true })],
+            totalCount: 1,
+        });
+        renderPage();
+
+        const row = (await screen.findByText('온도계')).closest('tr') as HTMLElement;
+        fireEvent.click(within(row).getByRole('button', { name: '설비 삭제' }));
+
+        const dialog = await screen.findByRole('dialog');
+        expect(
+            within(dialog).getByText("'온도계' 설비를 삭제하시겠습니까? 삭제하면 미사용으로 처리됩니다."),
+        ).toBeInTheDocument();
+        fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+
+        await waitFor(() => expect(deleteEquipmentMock).toHaveBeenCalled());
+        expect(deleteEquipmentMock.mock.calls[0][0]).toEqual({ tenantCode: 'TENANT-A', id: '1' });
+    });
+
+    it('다시 사용을 확인하면 restoreEquipment를 해당 id로 호출한다', async () => {
+        listEquipmentPagedMock.mockResolvedValueOnce({
+            items: [equipmentRow({ id: '2', equipNm: '저울', active: false })],
+            totalCount: 1,
+        });
+        renderPage();
+
+        const row = (await screen.findByText('저울')).closest('tr') as HTMLElement;
+        fireEvent.click(within(row).getByRole('button', { name: '설비 다시 사용' }));
+
+        const dialog = await screen.findByRole('dialog');
+        expect(within(dialog).getByText("'저울' 설비를 다시 사용하시겠습니까?")).toBeInTheDocument();
+        fireEvent.click(within(dialog).getByRole('button', { name: '사용' }));
+
+        await waitFor(() => expect(restoreEquipmentMock).toHaveBeenCalled());
+        expect(restoreEquipmentMock.mock.calls[0][0]).toEqual({ tenantCode: 'TENANT-A', id: '2' });
     });
 });

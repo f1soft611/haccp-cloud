@@ -128,6 +128,17 @@ public class EquipmentServiceImpl extends EgovAbstractServiceImpl implements Equ
         equipmentDAO.deleteEquipment(params);
     }
 
+    @Override
+    @Transactional
+    public void restoreEquipment(Long equipmentId, String tenantCode) throws Exception {
+        Long tenantId = resolveTenantId(normalizeTenantCode(tenantCode));
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("equipmentId", equipmentId);
+        params.put("tenantId", tenantId);
+        equipmentDAO.restoreEquipment(params);
+    }
+
     // ── 헬퍼 ─────────────────────────────────────────
 
     private void validateRequired(EquipmentSaveRequestVO payload) {
@@ -159,7 +170,7 @@ public class EquipmentServiceImpl extends EgovAbstractServiceImpl implements Equ
         return params;
     }
 
-    private String generateNextEquipSysCd(String maxCode) {
+    static String generateNextEquipSysCd(String maxCode) {
         int next = 1;
         if (StringUtils.hasText(maxCode)) {
             try {
