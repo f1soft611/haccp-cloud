@@ -241,7 +241,9 @@ class TenantSchemaScriptTest {
     void classpathTenantScripts_matchDatabaseOriginals() throws Exception {
         for (String name : Arrays.asList(
                 "create_postgresql_schema_active_tables.sql",
-                "bootstrap_postgresql_tenant.sql")) {
+                "bootstrap_postgresql_tenant.sql",
+                "migrate_postgresql_add_drafting_work_category_tables.sql",
+                "migrate_postgresql_add_electronic_approval_tables.sql")) {
             String original = new String(
                     Files.readAllBytes(Paths.get("DATABASE", name)),
                     StandardCharsets.UTF_8).replace("\r\n", "\n");
@@ -354,6 +356,65 @@ class TenantSchemaScriptTest {
         assertTrue(sql.contains("last_owner_status VARCHAR(30) NOT NULL"));
         assertTrue(sql.contains("referencer_view_status VARCHAR(30)"));
         assertTrue(sql.contains("conn_official_status VARCHAR(30)"));
+    }
+
+    @DisplayName("업무 분류 스크립트는 cata_code 를 WF_TYPE 코드 길이로 늘리고 WF_TYPE 분류를 등록한다")
+    @Test
+    void draftingCategoryScript_seedsWfTypeCategories() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "migrate_postgresql_add_drafting_work_category_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        assertTrue(!sql.contains("cata_code VARCHAR(3)"));
+        assertTrue(sql.contains("cata_code VARCHAR(50) NOT NULL,"));
+        assertTrue(sql.contains("cata_code VARCHAR(50),"));
+        assertTrue(sql.contains("INSERT INTO tb_drafting_work_category_group (tenant_id, cata_code, cata_name, view_seq, use_at)"));
+        assertTrue(sql.contains("WHERE g.group_code = 'WF_TYPE'"));
+        assertTrue(sql.contains("ON CONFLICT (tenant_id, cata_code) DO NOTHING"));
+        assertTrue(sql.indexOf("ON CONFLICT (tenant_id, cata_code) DO NOTHING")
+                > sql.indexOf("CREATE TABLE IF NOT EXISTS tb_drafting_work_category_group"));
+    }
+
+    @DisplayName("전자결재 스크립트는 만료일 양식 sub 테이블을 main 다음에 만든다")
+    @Test
+    void electronicApprovalScript_createsSubTable() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "migrate_postgresql_add_electronic_approval_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        int subIndex = sql.indexOf("CREATE TABLE IF NOT EXISTS tb_electronic_approval_sub (");
+        assertTrue(subIndex > sql.indexOf("CREATE TABLE IF NOT EXISTS tb_electronic_approval_main ("));
+        assertTrue(sql.contains("drafting_work_category_id BIGINT NOT NULL,"));
+        assertTrue(sql.contains("material_type VARCHAR(50),"));
+        assertTrue(sql.contains("inspected_date VARCHAR(8) NOT NULL,"));
+        assertTrue(sql.contains("expiration_date VARCHAR(8) NOT NULL,"));
+        assertTrue(sql.contains("CONSTRAINT fk_electronic_approval_sub_category"));
+        assertTrue(sql.contains("CONSTRAINT fk_electronic_approval_sub_main"));
+        assertTrue(sql.contains("CONSTRAINT fk_electronic_approval_sub_tenant"));
+    }
+
+    @DisplayName("기존 DB migration 은 cata_code 확장, WF_TYPE 분류 등록, sub 생성, material_type 변환을 순서대로 한다")
+    @Test
+    void wfTypeCategoryAndApprovalSubMigration_coversExistingDatabases() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "migrate_postgresql_wf_type_category_and_approval_sub.sql")),
+                StandardCharsets.UTF_8);
+
+        int groupAlter = sql.indexOf("ALTER TABLE public.tb_drafting_work_category_group ALTER COLUMN cata_code TYPE VARCHAR(50)");
+        int workAlter = sql.indexOf("ALTER TABLE public.tb_drafting_work_category ALTER COLUMN cata_code TYPE VARCHAR(50)");
+        int seed = sql.indexOf("WHERE g.group_code = 'WF_TYPE'");
+        int createSub = sql.indexOf("CREATE TABLE IF NOT EXISTS public.tb_electronic_approval_sub (");
+        int convert = sql.indexOf("AND data_type = 'bigint'");
+        int comment = sql.indexOf("COMMENT ON COLUMN public.tb_electronic_approval_sub.material_type");
+
+        assertTrue(groupAlter >= 0);
+        assertTrue(workAlter > groupAlter);
+        assertTrue(seed > workAlter);
+        assertTrue(createSub > seed);
+        assertTrue(convert > createSub);
+        assertTrue(comment > convert);
+        assertTrue(sql.contains("RENAME COLUMN material_type_code TO material_type"));
+        assertTrue(sql.contains("ON CONFLICT (tenant_id, cata_code) DO NOTHING"));
     }
 
     @DisplayName("조건부 ID 생성은 PostgreSQL용 Mapper를 제공한다")

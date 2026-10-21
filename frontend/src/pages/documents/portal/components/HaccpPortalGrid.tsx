@@ -1,5 +1,7 @@
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import {
   Chip,
+  IconButton,
   Link,
   Skeleton,
   TableBody,
@@ -7,13 +9,12 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
+import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
 import type { PortalRow } from '../types';
 
-// 기존 -> 분류별 카드 패널(Grid + Paper) 3열 레이아웃
-// 변경 -> AdminGrid 단일 데이터 그리드
 export function HaccpPortalGrid({
   rows,
   loading,
@@ -22,6 +23,7 @@ export function HaccpPortalGrid({
   loading: boolean;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const openDocument = (row: PortalRow) => {
     const query = new URLSearchParams();
@@ -29,6 +31,14 @@ export function HaccpPortalGrid({
     if (row.divisionName) query.set('workDivision', row.divisionName);
     if (row.id) query.set('workDivisionId', row.id);
     navigate(`/docs/haccp-doc?${query.toString()}`);
+  };
+
+  // 돌아가기 시 포탈로 오도록 현재 경로를 returnTo로 붙임. resolveDraftRoute는 항상 ?idType=를 포함
+  const openDraft = (row: PortalRow) => {
+    const path = resolveDraftRoute({ id: row.id });
+    if (!path) return;
+    const returnTo = encodeURIComponent(`${location.pathname}${location.search}`);
+    navigate(`${path}&returnTo=${returnTo}`);
   };
 
   return (
@@ -44,6 +54,7 @@ export function HaccpPortalGrid({
           <TableCell align="center" width={100}>자동기록</TableCell>
           <TableCell width={120} align="center">등록주기</TableCell>
           <TableCell align="center" width={200}>담당자</TableCell>
+          <TableCell align="center" width={80}>작성</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -53,7 +64,7 @@ export function HaccpPortalGrid({
                 key={index}
                 data-testid={`haccp-portal-grid-skeleton-row-${index}`}
               >
-                {Array.from({ length: 6 }).map((__, cellIndex) => (
+                {Array.from({ length: 7 }).map((__, cellIndex) => (
                   <TableCell key={cellIndex}>
                     <Skeleton variant="text" />
                   </TableCell>
@@ -64,7 +75,7 @@ export function HaccpPortalGrid({
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} align="center">
+            <TableCell colSpan={7} align="center">
               조회된 문서가 없습니다.
             </TableCell>
           </TableRow>
@@ -100,6 +111,16 @@ export function HaccpPortalGrid({
                   />
                 </TableCell>
                 <TableCell>{row.assigneeSummary || '-'}</TableCell>
+                <TableCell align="center">
+                  <IconButton
+                      size="small"
+                      color="primary"
+                      aria-label="작성하러 가기"
+                      onClick={() => openDraft(row)}
+                  >
+                    <EditOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </TableCell>
               </TableRow>
             ))
           : null}

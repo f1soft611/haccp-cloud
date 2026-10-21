@@ -120,8 +120,10 @@ export function HaccpBaseCreateDialog(props: {
               value={value.cycle}
               onChange={(event) =>
                   onChange({
-                    ...value,
-                    cycle: event.target.value,
+                      ...value,
+                      cycle: event.target.value,
+                      expirationApply:
+                          event.target.value === 'ANYTIME' ? value.expirationApply : 'N',
                   })
               }
               required
@@ -222,6 +224,46 @@ export function HaccpBaseCreateDialog(props: {
             )}
           />
         </Stack>
+
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                  fullWidth
+                  select
+                  label="만료일 관리 양식"
+                  value={value.expirationApply}
+                  disabled={value.cycle !== 'ANYTIME'}
+                  helperText={
+                      value.cycle !== 'ANYTIME'
+                          ? '등록주기가 수시일 때만 선택할 수 있습니다.'
+                          : undefined
+                  }
+                  onChange={(event) =>
+                      onChange({
+                          ...value,
+                          expirationApply: event.target.value as 'Y' | 'N',
+                      })
+                  }
+              >
+                  <MenuItem value="Y">해당</MenuItem>
+                  <MenuItem value="N">미해당</MenuItem>
+              </TextField>
+
+              <TextField
+                  fullWidth
+                  select
+                  label="결재 적용 여부"
+                  value={value.approvalApply}
+                  onChange={(event) =>
+                      onChange({
+                          ...value,
+                          approvalApply: event.target.value as 'Y' | 'N',
+                      })
+                  }
+              >
+                  <MenuItem value="Y">적용</MenuItem>
+                  <MenuItem value="N">미적용</MenuItem>
+              </TextField>
+          </Stack>
 
         <TextField
           select

@@ -32,6 +32,8 @@ function buildItem(
         cycle: 'MONTH',
         cycleName: '월',
         active: true,
+        expirationApply: false,
+        approvalApply: true,
         assigneeIds: [],
         referenceIds: [],
         assigneeMapped: true,

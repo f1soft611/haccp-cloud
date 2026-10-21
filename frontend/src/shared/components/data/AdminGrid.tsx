@@ -27,13 +27,15 @@ export type AdminGridProps = {
   ariaLabel: string;
   children: ReactNode;
   maxHeight?: number;
+  minWidth?: number;
 };
 
 export function AdminGrid({
   ariaLabel,
   children,
   maxHeight = 620,
-}: AdminGridProps) {
+                            minWidth,
+                          }: AdminGridProps) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
 
@@ -73,7 +75,12 @@ export function AdminGrid({
 
   return (
     <TableContainer component={Paper} sx={containerSx}>
-      <Table size="small" stickyHeader aria-label={ariaLabel} sx={tableSx}>
+      <Table
+          size="small"
+          stickyHeader
+          aria-label={ariaLabel}
+          sx={minWidth ? { ...tableSx, minWidth } : tableSx}
+      >
         {children}
       </Table>
     </TableContainer>

@@ -62,7 +62,7 @@ export function HaccpBaseGrid(props: {
   });
 
   return (
-    <AdminGrid ariaLabel="HACCP 양식 목록">
+      <AdminGrid ariaLabel="HACCP 양식 목록" minWidth={1512}>
       <TableHead>
         <TableRow>
           <TableCell width={72} align="center">
@@ -78,6 +78,12 @@ export function HaccpBaseGrid(props: {
           </TableCell>
           <TableCell width={250} align="center">
             등록일
+          </TableCell>
+          <TableCell width={70} align="center">
+            만료일
+          </TableCell>
+          <TableCell width={70} align="center">
+            결재
           </TableCell>
           <TableCell width={70} align="center">
             사용
@@ -128,6 +134,22 @@ export function HaccpBaseGrid(props: {
                 </TableCell>
                 <TableCell align="center">
                   <Skeleton
+                      variant="rounded"
+                      width={52}
+                      height={24}
+                      sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                      variant="rounded"
+                      width={52}
+                      height={24}
+                      sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton
                     variant="rounded"
                     width={52}
                     height={24}
@@ -167,7 +189,7 @@ export function HaccpBaseGrid(props: {
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={11} align="center">
+            <TableCell colSpan={13} align="center">
               조회된 양식이 없습니다.
             </TableCell>
           </TableRow>
@@ -178,7 +200,7 @@ export function HaccpBaseGrid(props: {
               <TableRow key={row.id} hover>
                 <TableCell align="center">{row.no}</TableCell>
                 <TableCell>
-                  {row.divisionCode}.{row.divisionName}
+                  {row.divisionName}
                 </TableCell>
                 <TableCell>{row.categoryName}</TableCell>
                 <TableCell align="center">
@@ -196,8 +218,22 @@ export function HaccpBaseGrid(props: {
                 <TableCell align="center">{row.createdAt}</TableCell>
                 <TableCell align="center">
                   <Chip
-                    size="small"
-                    label={row.useAt === 'Y' ? '사용' : '미사용'}
+                      size="small"
+                      label={row.expirationApply === 'Y' ? '해당' : '미해당'}
+                      color={row.expirationApply === 'Y' ? 'success' : 'default'}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Chip
+                      size="small"
+                      label={row.approvalApply === 'Y' ? '적용' : '미적용'}
+                      color={row.approvalApply === 'Y' ? 'success' : 'default'}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <Chip
+                      size="small"
+                      label={row.useAt === 'Y' ? '사용' : '미사용'}
                     color={row.useAt === 'Y' ? 'success' : 'default'}
                   />
                 </TableCell>

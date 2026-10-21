@@ -38,6 +38,12 @@ public class HaccpBaseWorkSaveRequestVO implements Serializable {
     @Schema(description = "사용 여부")
     private Boolean active;
 
+    @Schema(description = "만료일 관리 양식 여부(수시 등록주기만 true 허용)")
+    private Boolean expirationApply;
+
+    @Schema(description = "결재 적용 여부")
+    private Boolean approvalApply;
+
     @Schema(description = "검토자 로그인 ID")
     private Long reviewerId;
 

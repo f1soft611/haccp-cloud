@@ -98,6 +98,11 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         params.put("divisionName", payload.getDivisionName().trim());
         params.put("cycle", normalizeCycle(payload.getCycle()));
         params.put("useAt", Boolean.FALSE.equals(payload.getActive()) ? "N" : "Y");
+        // 만료일 관리 양식은 등록주기가 수시(ANYTIME)일 때만 Y 허용, 값이 없으면 N
+        params.put("expirationApply",
+                "ANYTIME".equals(normalizeCycle(payload.getCycle())) && Boolean.TRUE.equals(payload.getExpirationApply()) ? "Y" : "N");
+        // 결재 적용 여부는 값이 없으면 Y
+        params.put("approvalApply", Boolean.FALSE.equals(payload.getApprovalApply()) ? "N" : "Y");
         params.put("reviewerId", payload.getReviewerId());
         params.put("approverId", payload.getApproverId());
         params.put("createdBy", actorLoginId);
@@ -143,6 +148,11 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         params.put("divisionName", payload.getDivisionName().trim());
         params.put("cycle", normalizeCycle(payload.getCycle()));
         params.put("useAt", Boolean.FALSE.equals(payload.getActive()) ? "N" : "Y");
+        // 만료일 관리 양식은 등록주기가 수시(ANYTIME)일 때만 Y 허용, 값이 없으면 N
+        params.put("expirationApply",
+                "ANYTIME".equals(normalizeCycle(payload.getCycle())) && Boolean.TRUE.equals(payload.getExpirationApply()) ? "Y" : "N");
+        // 결재 적용 여부는 값이 없으면 Y
+        params.put("approvalApply", Boolean.FALSE.equals(payload.getApprovalApply()) ? "N" : "Y");
         params.put("reviewerId", payload.getReviewerId());
         params.put("approverId", payload.getApproverId());
         params.put("updatedBy", actorLoginId);

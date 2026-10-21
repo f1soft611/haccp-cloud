@@ -159,7 +159,7 @@ describe('HaccpBaseManagementPage', () => {
         </AppProviders>,
     );
 
-    await screen.findByText('001.기안서');
+    await screen.findByText('기안서');
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
 
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
@@ -186,5 +186,43 @@ describe('HaccpBaseManagementPage', () => {
     // mutationFn 두 번째 인자(React Query context) 유무와 무관하게 첫 인자만 검사
     await vi.waitFor(() => expect(createHaccpBaseWorkMock).toHaveBeenCalled());
     expect(createHaccpBaseWorkMock.mock.calls[0][0]).toMatchObject({ cycle: 'QUARTER' });
+  });
+
+  it('enables expiration select only when cycle is ANYTIME', async () => {
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+
+    await screen.findByText('기안서');
+    fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
+
+    const expiration = screen.getByRole('combobox', { name: '만료일 관리 양식' });
+    expect(expiration).toHaveTextContent('미해당');
+    expect(expiration).toHaveAttribute('aria-disabled', 'true');
+    expect(
+        screen.getByRole('combobox', { name: '결재 적용 여부' }),
+    ).toHaveTextContent(/^적용$/);
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
+    fireEvent.click(await screen.findByRole('option', { name: '수시' }));
+
+    expect(
+        screen.getByRole('combobox', { name: '만료일 관리 양식' }),
+    ).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('keeps the grid table wide enough to scroll horizontally', async () => {
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+
+    await screen.findByText('기안서');
+    expect(
+        screen.getByRole('table', { name: 'HACCP 양식 목록' }),
+    ).toHaveStyle({ minWidth: '1512px' });
   });
 });

@@ -56,6 +56,12 @@ public class HaccpBaseWorkVO implements Serializable {
     @Schema(description = "사용 여부")
     private boolean active;
 
+    @Schema(description = "만료일 관리 양식 여부")
+    private boolean expirationApply;
+
+    @Schema(description = "결재 적용 여부")
+    private boolean approvalApply;
+
     @Schema(description = "등록자")
     private String createdBy;
 

@@ -78,4 +78,22 @@ describe('haccpBaseWorkService', () => {
 
     expect(result).toEqual({ instances: [], displayStartDate: '2026-06-10' });
   });
+
+  it('defaults expirationApply to false and approvalApply to true when missing', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: [
+        { id: 1 },
+        { id: 2, expirationApply: true, approvalApply: false },
+      ],
+    });
+
+    const result = await listHaccpBaseWorks({ tenantCode: 'TENANT-A' });
+
+    expect(
+        result.map(({ expirationApply, approvalApply }) => ({ expirationApply, approvalApply })),
+    ).toEqual([
+      { expirationApply: false, approvalApply: true },
+      { expirationApply: true, approvalApply: false },
+    ]);
+  });
 });

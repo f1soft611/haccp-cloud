@@ -44,6 +44,8 @@ const DEFAULT_CREATE_FORM: HaccpBaseCreateForm = {
   reviewerId: '',
   approverId: '',
   assigneeIds: [],
+  expirationApply: 'N',
+  approvalApply: 'Y',
   useAt: 'Y',
 };
 
@@ -76,6 +78,8 @@ function toRow(item: HaccpBaseWorkItem, index: number): HaccpBaseRow {
     approverName: item.approverName || '-',
     assigneeMapped: item.assigneeMapped,
     hasDocument: item.hasDocument,
+    expirationApply: item.expirationApply ? 'Y' : 'N',
+    approvalApply: item.approvalApply ? 'Y' : 'N',
     useAt: item.active ? 'Y' : 'N',
   };
 }
@@ -203,6 +207,8 @@ export function HaccpBaseManagementPage() {
       divisionName: createForm.divisionName.trim(),
       cycle: createForm.cycle,
       active: createForm.useAt === 'Y',
+      expirationApply: createForm.expirationApply === 'Y',
+      approvalApply: createForm.approvalApply === 'Y',
       reviewerId: createForm.reviewerId,
       approverId: createForm.approverId,
       assigneeIds: createForm.assigneeIds,
@@ -219,6 +225,8 @@ export function HaccpBaseManagementPage() {
       reviewerId: row.reviewerId,
       approverId: row.approverId,
       assigneeIds: row.assigneeIds,
+      expirationApply: row.expirationApply,
+      approvalApply: row.approvalApply,
       useAt: row.useAt,
     });
     setEditOpen(true);
@@ -244,6 +252,8 @@ export function HaccpBaseManagementPage() {
       divisionName: editForm.divisionName.trim(),
       cycle: editForm.cycle,
       active: editForm.useAt === 'Y',
+      expirationApply: editForm.expirationApply === 'Y',
+      approvalApply: editForm.approvalApply === 'Y',
       reviewerId: editForm.reviewerId,
       approverId: editForm.approverId,
       assigneeIds: editForm.assigneeIds,

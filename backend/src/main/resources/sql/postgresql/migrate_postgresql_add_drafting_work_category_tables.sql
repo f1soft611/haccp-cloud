@@ -12,7 +12,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS tb_drafting_work_category_group (
     drafting_work_category_group_id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
-    cata_code VARCHAR(3) NOT NULL,
+    cata_code VARCHAR(50) NOT NULL, -- 변경 -> WF_TYPE 코드(HCP-CALIB 등)를 담도록 VARCHAR(50)
     cata_name VARCHAR(20) NOT NULL,
     view_seq INTEGER NOT NULL DEFAULT 0,
     use_at CHAR(1) NOT NULL DEFAULT 'Y',
@@ -54,7 +54,9 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
     drafting_work_template_json JSONB,
     drafting_work_template_html TEXT,
     duty_charge_code VARCHAR(10),
-    cata_code VARCHAR(3),
+    cata_code VARCHAR(50),
+    expiration_apply CHAR(1) NOT NULL DEFAULT 'N',
+    approval_apply CHAR(1) NOT NULL DEFAULT 'Y',
     use_at CHAR(1) NOT NULL DEFAULT 'Y',
     delete_status VARCHAR(10) DEFAULT 'N',
     created_by BIGINT,
@@ -156,5 +158,15 @@ CREATE INDEX IF NOT EXISTS idx_drafting_work_category_authority_employee_no
 
 CREATE INDEX IF NOT EXISTS idx_drafting_work_category_authority_use_at
     ON tb_drafting_work_category_authority(use_at);
+
+-- 공통코드 WF_TYPE 을 업무 분류로 등록한다. 테넌트 생성 시 copyCommonCodes 다음에 실행된다.
+INSERT INTO tb_drafting_work_category_group (tenant_id, cata_code, cata_name, view_seq, use_at)
+SELECT i.tenant_id, i.item_code, LEFT(i.item_nm, 20), i.sort_order, 'Y'
+FROM tb_common_code_item i
+    JOIN tb_common_code_group g ON g.common_code_group_id = i.group_id
+    JOIN tb_tenant t ON t.tenant_id = i.tenant_id
+WHERE g.group_code = 'WF_TYPE'
+  AND i.use_at = 'Y'
+ON CONFLICT (tenant_id, cata_code) DO NOTHING;
 
 COMMIT;
