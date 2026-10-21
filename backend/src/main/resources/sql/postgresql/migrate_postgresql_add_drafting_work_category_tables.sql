@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
     drafting_work_template_html TEXT,
     duty_charge_code VARCHAR(10),
     cata_code VARCHAR(3),
+    expiration_apply CHAR(1) NOT NULL DEFAULT 'N',
+    approval_apply CHAR(1) NOT NULL DEFAULT 'Y',
     use_at CHAR(1) NOT NULL DEFAULT 'Y',
     delete_status VARCHAR(10) DEFAULT 'N',
     created_by BIGINT,
