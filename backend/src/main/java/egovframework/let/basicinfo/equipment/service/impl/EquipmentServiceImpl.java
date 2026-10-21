@@ -139,7 +139,7 @@ public class EquipmentServiceImpl extends EgovAbstractServiceImpl implements Equ
         }
     }
 
-    private Map<String, Object> buildParams(EquipmentSaveRequestVO payload) {
+    static Map<String, Object> buildParams(EquipmentSaveRequestVO payload) {
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("equipCd", payload.getEquipCd().trim());
         params.put("equipNm", payload.getEquipNm().trim());
@@ -149,6 +149,12 @@ public class EquipmentServiceImpl extends EgovAbstractServiceImpl implements Equ
         params.put("makCust", normalizeNullable(payload.getMakCust()));
         params.put("equipSpec", normalizeNullable(payload.getEquipSpec()));
         params.put("location", normalizeNullable(payload.getLocation()));
+        params.put("vcKind", normalizeNullable(payload.getVcKind()));
+        Integer vcCycle = payload.getVcCycle();
+        if (vcCycle != null && vcCycle < 1) {
+            throw new IllegalArgumentException("검교정 주기는 1 이상이어야 합니다.");
+        }
+        params.put("vcCycle", vcCycle);
         params.put("bigo", normalizeNullable(payload.getBigo()));
         return params;
     }
@@ -191,7 +197,7 @@ public class EquipmentServiceImpl extends EgovAbstractServiceImpl implements Equ
         return StringUtils.hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "";
     }
 
-    private String normalizeNullable(String value) {
+    private static String normalizeNullable(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
     }
 

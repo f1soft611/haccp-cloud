@@ -313,10 +313,17 @@ CREATE TABLE IF NOT EXISTS tb_material_info (
     created_at            TIMESTAMP,
     updated_by            VARCHAR(10),
     updated_at            TIMESTAMP,
+    material_kind         VARCHAR(50),                 -- 품목유형 (공통코드 MATERIAL_TYPE)
+    store_method          VARCHAR(50),                 -- 보관방법 (공통코드 STORE_METHOD)
+    expiryed_status       VARCHAR(10) NOT NULL DEFAULT 'NONE',  -- 소비기한기준 (공통코드 EXPIRY_STATUS: NONE/DAY/MONTH/YEAR)
+    expiryed_count        INT4,                        -- 소비기한계산숫자
+    kfda_report_no        VARCHAR(20),                 -- 품목보고번호
     CONSTRAINT tb_material_info_pkey PRIMARY KEY (material_id),
     CONSTRAINT uq_material_id_tenant_id UNIQUE (material_id, tenant_id),
     CONSTRAINT uq_tb_material_info_tenant_material_code UNIQUE (tenant_id, material_code),
-    CONSTRAINT fk_tb_material_info_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id)
+    CONSTRAINT fk_tb_material_info_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id),
+    CONSTRAINT ck_tb_material_info_expiryed_status CHECK (expiryed_status IN ('NONE', 'DAY', 'MONTH', 'YEAR')),
+    CONSTRAINT ck_tb_material_info_expiryed_count CHECK (expiryed_count IS NULL OR expiryed_count > 0)
     );
 
 CREATE INDEX IF NOT EXISTS ix_tb_material_info_tenant_id ON tb_material_info(tenant_id);
@@ -374,6 +381,8 @@ CREATE TABLE IF NOT EXISTS tb_equipment_info (
     disuse_reg_charge    VARCHAR(10),
     equip_status         VARCHAR(10),
     equip_spec           VARCHAR(99),                 -- 설비규격
+    vc_kind              VARCHAR(50),                 -- 검교정구분(공통코드 VC_KIND)
+    vc_cycle             INT4,                        -- 검교정주기(개월)
     bigo                 VARCHAR(1000),               -- 비고
     use_status           VARCHAR(10),
     use_at               CHAR(1) NOT NULL DEFAULT 'Y',
@@ -383,6 +392,7 @@ CREATE TABLE IF NOT EXISTS tb_equipment_info (
     updated_at           TIMESTAMP,
     CONSTRAINT tb_equipment_info_pkey PRIMARY KEY (equipment_id),
     CONSTRAINT uq_equipment_id_tenant_id UNIQUE (equipment_id, tenant_id),
+    CONSTRAINT ck_tb_equipment_info_vc_cycle CHECK (vc_cycle IS NULL OR vc_cycle > 0),
     CONSTRAINT fk_tb_equipment_info_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant(tenant_id)
     );
 

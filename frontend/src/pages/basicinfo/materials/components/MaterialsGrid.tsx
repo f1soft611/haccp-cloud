@@ -34,7 +34,16 @@ export function MaterialsGrid({
   const theme = useTheme();
   const unitOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_UNIT);
   const itemTypeOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_TYPE);
+  const materialKindOptions = useCommonCodeOptions(COMMON_CODE_GROUP.MATERIAL_TYPE);
+  const storeMethodOptions = useCommonCodeOptions(COMMON_CODE_GROUP.STORE_METHOD);
+  const expiryStatusOptions = useCommonCodeOptions(COMMON_CODE_GROUP.EXPIRY_STATUS);
   const isDarkMode = theme.palette.mode === 'dark';
+
+  // 소비기한: 숫자 + 기준 이름 (예: 12개월), 기준이 없음이면 '-'
+  const formatExpiry = (row: MaterialItem) =>
+      row.expiryedStatus !== 'NONE' && row.expiryedCount !== null
+          ? `${row.expiryedCount}${getCommonCodeName(expiryStatusOptions, row.expiryedStatus)}`
+          : '-';
 
   return (
     <AdminGrid ariaLabel="품목 목록">
@@ -47,6 +56,10 @@ export function MaterialsGrid({
           <TableCell width={100} align="center">품목계정</TableCell>
           <TableCell width={100} align="center">중량</TableCell>
           <TableCell width={80} align="center">단위</TableCell>
+          <TableCell width={100} align="center">품목유형</TableCell>
+          <TableCell width={100} align="center">보관방법</TableCell>
+          <TableCell width={90} align="center">소비기한</TableCell>
+          <TableCell width={130} align="center">품목보고번호</TableCell>
           <TableCell width={120} align="center">
             작업
           </TableCell>
@@ -74,6 +87,18 @@ export function MaterialsGrid({
                 <TableCell>
                   <Skeleton variant="text" width="50%" />
                 </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="60%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="60%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="50%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="70%" />
+                </TableCell>
                 <TableCell align="center">
                   <Stack direction="row" spacing={1} justifyContent="center">
                     <Skeleton variant="rounded" width={32} height={32} />
@@ -86,7 +111,7 @@ export function MaterialsGrid({
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={7} align="center">
+            <TableCell colSpan={11} align="center">
               조회된 품목이 없습니다.
             </TableCell>
           </TableRow>
@@ -104,6 +129,10 @@ export function MaterialsGrid({
                   {row.materialWeight !== null ? row.materialWeight : '-'}
                 </TableCell>
                 <TableCell align="center">{getCommonCodeName(unitOptions, row.unit) || '-'}</TableCell>
+                <TableCell align="center">{getCommonCodeName(materialKindOptions, row.materialKind) || '-'}</TableCell>
+                <TableCell align="center">{getCommonCodeName(storeMethodOptions, row.storeMethod) || '-'}</TableCell>
+                <TableCell align="center">{formatExpiry(row)}</TableCell>
+                <TableCell align="center">{row.kfdaReportNo || '-'}</TableCell>
                 <TableCell align="center">
                   <Stack direction="row" spacing={1} justifyContent="center">
                     <IconButton

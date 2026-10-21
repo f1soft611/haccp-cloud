@@ -8,6 +8,8 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
+import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 
 export type EquipmentFormValue = {
   equipCd: string;
@@ -18,6 +20,8 @@ export type EquipmentFormValue = {
   makCust: string;
   equipSpec: string;
   location: string;
+  vcKind: string;
+  vcCycle: string;
   bigo: string;
   active: boolean;
 };
@@ -41,6 +45,8 @@ const EMPTY_VALUE: EquipmentFormValue = {
   makCust: '',
   equipSpec: '',
   location: '',
+  vcKind: '',
+  vcCycle: '',
   bigo: '',
   active: true,
 };
@@ -60,6 +66,7 @@ export function EquipmentFormDialog({
     if (!open) {
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setValue(initialValue ?? EMPTY_VALUE);
   }, [open, initialValue]);
 
@@ -73,14 +80,19 @@ export function EquipmentFormDialog({
       makCust: value.makCust.trim(),
       equipSpec: value.equipSpec.trim(),
       location: value.location.trim(),
+      vcCycle: value.vcCycle.trim(),
       bigo: value.bigo.trim(),
     });
   };
 
+  const vcCycleInvalid =
+      value.vcCycle.trim() !== '' && !/^[1-9]\d*$/.test(value.vcCycle.trim());
+
   const disabled =
-    saving ||
-    value.equipCd.trim().length === 0 ||
-    value.equipNm.trim().length === 0;
+      saving ||
+      value.equipCd.trim().length === 0 ||
+      value.equipNm.trim().length === 0 ||
+      vcCycleInvalid;
 
   return (
     <FormDialog
@@ -203,6 +215,29 @@ export function EquipmentFormDialog({
                 setValue((prev) => ({ ...prev, location: e.target.value }))
               }
               fullWidth
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <CommonCodeSelect
+                groupCode={COMMON_CODE_GROUP.VC_KIND}
+                label="검교정구분"
+                value={value.vcKind}
+                onChange={(vcKind) => setValue((prev) => ({ ...prev, vcKind }))}
+                fullWidth
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+                label="검교정주기(개월)"
+                type="number"
+                value={value.vcCycle}
+                onChange={(e) =>
+                    setValue((prev) => ({ ...prev, vcCycle: e.target.value }))
+                }
+                error={vcCycleInvalid}
+                helperText={vcCycleInvalid ? '1 이상의 정수를 입력하세요.' : undefined}
+                slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12 }}>

@@ -45,4 +45,19 @@ public class MaterialVO implements Serializable {
 
     @Schema(description = "비고")
     private String etc;
+
+    @Schema(description = "품목유형(공통코드 MATERIAL_TYPE)")
+    private String materialKind;
+
+    @Schema(description = "보관방법(공통코드 STORE_METHOD)")
+    private String storeMethod;
+
+    @Schema(description = "소비기한 기준(공통코드 EXPIRY_STATUS: NONE/DAY/MONTH/YEAR)")
+    private String expiryedStatus;
+
+    @Schema(description = "소비기한 계산숫자")
+    private Integer expiryedCount;
+
+    @Schema(description = "품목보고번호")
+    private String kfdaReportNo;
 }

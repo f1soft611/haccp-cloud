@@ -3,6 +3,10 @@ export const COMMON_CODE_GROUP = {
     WORK_CYCLE: 'WF_FORM_CYCLE',
     ITEM_UNIT: 'ITEM_UNIT',
     ITEM_TYPE: 'ITEM_TYPE',
+    MATERIAL_TYPE: 'MATERIAL_TYPE',
+    STORE_METHOD: 'STORE_METHOD',
+    EXPIRY_STATUS: 'EXPIRY_STATUS',
+    VC_KIND: 'VC_KIND',
 } as const;
 
 export type CommonCodeGroupCode = (typeof COMMON_CODE_GROUP)[keyof typeof COMMON_CODE_GROUP];

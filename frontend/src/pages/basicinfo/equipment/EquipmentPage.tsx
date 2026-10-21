@@ -120,6 +120,7 @@ export function EquipmentPage() {
     const payload = {
       tenantCode: tenantCode || undefined,
       ...value,
+      vcCycle: value.vcCycle ? Number(value.vcCycle) : null,
     };
 
     if (editingEquipment) {
@@ -194,6 +195,11 @@ export function EquipmentPage() {
                 makCust: editingEquipment.makCust,
                 equipSpec: editingEquipment.equipSpec,
                 location: editingEquipment.location,
+                vcKind: editingEquipment.vcKind,
+                vcCycle:
+                    editingEquipment.vcCycle !== null
+                        ? String(editingEquipment.vcCycle)
+                        : '',
                 bigo: editingEquipment.bigo,
                 active: editingEquipment.active,
               }

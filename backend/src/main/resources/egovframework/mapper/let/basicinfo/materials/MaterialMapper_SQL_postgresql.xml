@@ -13,6 +13,11 @@
         <result property="materialSpec" column="materialSpec"/>
         <result property="materialWeight" column="materialWeight"/>
         <result property="unit" column="unit"/>
+        <result property="materialKind" column="materialKind"/>
+        <result property="storeMethod" column="storeMethod"/>
+        <result property="expiryedStatus" column="expiryedStatus"/>
+        <result property="expiryedCount" column="expiryedCount"/>
+        <result property="kfdaReportNo" column="kfdaReportNo"/>
         <result property="etc" column="etc"/>
     </resultMap>
 
@@ -32,6 +37,11 @@
                 m.material_weight                    AS materialWeight,
                 m.unit                               AS unit,
                 m.etc                                AS etc,
+                m.material_kind                      AS materialKind,
+                m.store_method                       AS storeMethod,
+                m.expiryed_status                    AS expiryedStatus,
+                m.expiryed_count                     AS expiryedCount,
+                m.kfda_report_no                     AS kfdaReportNo,
                 ROW_NUMBER() OVER (ORDER BY m.material_code) AS rn
             FROM tb_material_info m
             JOIN tb_tenant t ON t.tenant_id = m.tenant_id
@@ -114,7 +124,12 @@
             m.material_spec                      AS materialSpec,
             m.material_weight                    AS materialWeight,
             m.unit                               AS unit,
-            m.etc                                AS etc
+            m.etc                                AS etc,
+            m.material_kind                      AS materialKind,
+            m.store_method                       AS storeMethod,
+            m.expiryed_status                    AS expiryedStatus,
+            m.expiryed_count                     AS expiryedCount,
+            m.kfda_report_no                     AS kfdaReportNo
         FROM tb_material_info m
         JOIN tb_tenant t ON t.tenant_id = m.tenant_id
         WHERE m.material_id = #{materialId}
@@ -172,6 +187,11 @@
             material_spec,
             material_weight,
             unit,
+            material_kind,
+            store_method,
+            expiryed_status,
+            expiryed_count,
+            kfda_report_no,
             etc,
             mat_cata_type,
             delete_status,
@@ -188,6 +208,11 @@
             #{materialSpec, jdbcType=VARCHAR},
             #{materialWeight, jdbcType=BIGINT},
             #{unit, jdbcType=VARCHAR},
+            #{materialKind, jdbcType=VARCHAR},
+            #{storeMethod, jdbcType=VARCHAR},
+            #{expiryedStatus},
+            #{expiryedCount, jdbcType=INTEGER},
+            #{kfdaReportNo, jdbcType=VARCHAR},
             #{etc, jdbcType=VARCHAR},
             '',
             'N',
@@ -210,6 +235,11 @@
             material_spec       = #{materialSpec, jdbcType=VARCHAR},
             material_weight     = #{materialWeight, jdbcType=BIGINT},
             unit                = #{unit, jdbcType=VARCHAR},
+            material_kind       = #{materialKind, jdbcType=VARCHAR},
+            store_method        = #{storeMethod, jdbcType=VARCHAR},
+            expiryed_status     = #{expiryedStatus},
+            expiryed_count      = #{expiryedCount, jdbcType=INTEGER},
+            kfda_report_no      = #{kfdaReportNo, jdbcType=VARCHAR},
             etc                 = #{etc, jdbcType=VARCHAR},
             updated_by          = #{updatedBy, jdbcType=VARCHAR},
             updated_at          = CURRENT_TIMESTAMP

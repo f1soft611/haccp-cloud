@@ -13,6 +13,11 @@ import {
 import { useTheme } from '@mui/material/styles';
 import type { EquipmentItem } from '../../../../services/basicinfo/equipmentService';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import {
+  getCommonCodeName,
+  useCommonCodeOptions,
+} from '../../../../shared/hooks/useCommonCodeOptions';
 
 type EquipmentGridProps = {
   rows: EquipmentItem[];
@@ -29,6 +34,7 @@ export function EquipmentGrid({
 }: EquipmentGridProps) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
+  const vcKindOptions = useCommonCodeOptions(COMMON_CODE_GROUP.VC_KIND);
 
   return (
     <AdminGrid ariaLabel="설비 목록">
@@ -40,6 +46,8 @@ export function EquipmentGrid({
           <TableCell width={100}>설비종류</TableCell>
           <TableCell width={110}>구입일</TableCell>
           <TableCell>설치장소</TableCell>
+          <TableCell width={110}>검교정구분</TableCell>
+          <TableCell width={100}>검교정주기</TableCell>
           <TableCell width={90} align="center">
             상태
           </TableCell>
@@ -70,6 +78,12 @@ export function EquipmentGrid({
                 <TableCell>
                   <Skeleton variant="text" width="64%" />
                 </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="60%" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton variant="text" width="50%" />
+                </TableCell>
                 <TableCell align="center">
                   <Skeleton
                     variant="rounded"
@@ -90,7 +104,7 @@ export function EquipmentGrid({
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={8} align="center">
+            <TableCell colSpan={10} align="center">
               조회된 설비가 없습니다.
             </TableCell>
           </TableRow>
@@ -105,6 +119,8 @@ export function EquipmentGrid({
                 <TableCell>{row.equipKind || '-'}</TableCell>
                 <TableCell>{row.purDate || '-'}</TableCell>
                 <TableCell>{row.location || '-'}</TableCell>
+                <TableCell>{getCommonCodeName(vcKindOptions, row.vcKind) || '-'}</TableCell>
+                <TableCell>{row.vcCycle !== null ? `${row.vcCycle}개월` : '-'}</TableCell>
                 <TableCell align="center">
                   <Chip
                     size="small"
