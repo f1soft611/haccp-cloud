@@ -241,7 +241,9 @@ class TenantSchemaScriptTest {
     void classpathTenantScripts_matchDatabaseOriginals() throws Exception {
         for (String name : Arrays.asList(
                 "create_postgresql_schema_active_tables.sql",
-                "bootstrap_postgresql_tenant.sql")) {
+                "bootstrap_postgresql_tenant.sql",
+                "migrate_postgresql_add_drafting_work_category_tables.sql",
+                "migrate_postgresql_add_electronic_approval_tables.sql")) {
             String original = new String(
                     Files.readAllBytes(Paths.get("DATABASE", name)),
                     StandardCharsets.UTF_8).replace("\r\n", "\n");
@@ -354,6 +356,23 @@ class TenantSchemaScriptTest {
         assertTrue(sql.contains("last_owner_status VARCHAR(30) NOT NULL"));
         assertTrue(sql.contains("referencer_view_status VARCHAR(30)"));
         assertTrue(sql.contains("conn_official_status VARCHAR(30)"));
+    }
+
+    @DisplayName("업무 분류 스크립트는 cata_code 를 WF_TYPE 코드 길이로 늘리고 WF_TYPE 분류를 등록한다")
+    @Test
+    void draftingCategoryScript_seedsWfTypeCategories() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("DATABASE", "migrate_postgresql_add_drafting_work_category_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        assertTrue(!sql.contains("cata_code VARCHAR(3)"));
+        assertTrue(sql.contains("cata_code VARCHAR(50) NOT NULL,"));
+        assertTrue(sql.contains("cata_code VARCHAR(50),"));
+        assertTrue(sql.contains("INSERT INTO tb_drafting_work_category_group (tenant_id, cata_code, cata_name, view_seq, use_at)"));
+        assertTrue(sql.contains("WHERE g.group_code = 'WF_TYPE'"));
+        assertTrue(sql.contains("ON CONFLICT (tenant_id, cata_code) DO NOTHING"));
+        assertTrue(sql.indexOf("ON CONFLICT (tenant_id, cata_code) DO NOTHING")
+                > sql.indexOf("CREATE TABLE IF NOT EXISTS tb_drafting_work_category_group"));
     }
 
     @DisplayName("조건부 ID 생성은 PostgreSQL용 Mapper를 제공한다")
