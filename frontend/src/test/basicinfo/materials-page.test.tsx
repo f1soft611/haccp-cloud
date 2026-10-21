@@ -151,3 +151,35 @@ describe('MaterialsPage 품목 등록 소비기한', () => {
         );
     });
 });
+
+describe('MaterialsPage 품목 목록', () => {
+    it('품목유형, 보관방법, 소비기한, 품목보고번호를 보여 준다', async () => {
+        listMaterialsPagedMock.mockResolvedValueOnce({
+            items: [
+                {
+                    id: '1',
+                    materialCode: '000001',
+                    materialName: '밀가루',
+                    itemType: 'RAW',
+                    materialSpec: '',
+                    materialWeight: null,
+                    unit: '',
+                    materialKind: 'FOOD',
+                    storeMethod: 'REFRIG',
+                    expiryedStatus: 'MONTH',
+                    expiryedCount: 12,
+                    kfdaReportNo: '2026-0001',
+                    etc: '',
+                },
+            ],
+            totalCount: 1,
+        });
+        renderPage();
+
+        const row = (await screen.findByText('밀가루')).closest('tr') as HTMLElement;
+        expect(await within(row).findByText('식품')).toBeInTheDocument();
+        expect(within(row).getByText('냉장')).toBeInTheDocument();
+        expect(within(row).getByText('12개월')).toBeInTheDocument();
+        expect(within(row).getByText('2026-0001')).toBeInTheDocument();
+    });
+});
