@@ -16,6 +16,8 @@
         <result property="makCust" column="makCust"/>
         <result property="equipSpec" column="equipSpec"/>
         <result property="location" column="location"/>
+        <result property="vcKind" column="vcKind"/>
+        <result property="vcCycle" column="vcCycle"/>
         <result property="bigo" column="bigo"/>
         <result property="active" column="active"/>
     </resultMap>
@@ -38,6 +40,8 @@
                 e.mak_cust                           AS makCust,
                 e.equip_spec                         AS equipSpec,
                 e.location                           AS location,
+                e.vc_kind                            AS vcKind,
+                e.vc_cycle                           AS vcCycle,
                 e.bigo                               AS bigo,
                 CASE WHEN e.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
                 ROW_NUMBER() OVER (ORDER BY e.equip_sys_cd) AS rn
@@ -113,6 +117,8 @@
             e.mak_cust                           AS makCust,
             e.equip_spec                         AS equipSpec,
             e.location                           AS location,
+            e.vc_kind                            AS vcKind,
+            e.vc_cycle                           AS vcCycle,
             e.bigo                               AS bigo,
             CASE WHEN e.use_at = 'Y' THEN TRUE ELSE FALSE END AS active
         FROM tb_equipment_info e
@@ -174,6 +180,8 @@
             mak_cust,
             equip_spec,
             location,
+            vc_kind,
+            vc_cycle,
             bigo,
             use_at,
             created_by,
@@ -191,6 +199,8 @@
             #{makCust, jdbcType=VARCHAR},
             #{equipSpec, jdbcType=VARCHAR},
             #{location, jdbcType=VARCHAR},
+            #{vcKind, jdbcType=VARCHAR},
+            #{vcCycle, jdbcType=INTEGER},
             #{bigo, jdbcType=VARCHAR},
             #{useAt},
             #{createdBy, jdbcType=VARCHAR},
@@ -214,6 +224,8 @@
             mak_cust     = #{makCust, jdbcType=VARCHAR},
             equip_spec   = #{equipSpec, jdbcType=VARCHAR},
             location     = #{location, jdbcType=VARCHAR},
+            vc_kind      = #{vcKind, jdbcType=VARCHAR},
+            vc_cycle     = #{vcCycle, jdbcType=INTEGER},
             bigo         = #{bigo, jdbcType=VARCHAR},
             use_at       = #{useAt},
             updated_by   = #{updatedBy, jdbcType=VARCHAR},
