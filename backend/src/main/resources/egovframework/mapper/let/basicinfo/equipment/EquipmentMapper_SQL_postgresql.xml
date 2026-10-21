@@ -235,11 +235,16 @@
     </update>
 
     <!-- 설비 삭제 -->
-    <delete id="EquipmentDAO.deleteEquipment"
+    <!-- 기존 -> DELETE로 행을 물리 삭제 -->
+    <!-- 변경 -> use_at을 'N'으로 바꾸는 소프트 삭제 -->
+    <update id="EquipmentDAO.deleteEquipment"
             parameterType="map">
-        DELETE FROM tb_equipment_info
+        UPDATE tb_equipment_info
+        SET
+            use_at     = 'N',
+            updated_at = CURRENT_TIMESTAMP
         WHERE equipment_id = #{equipmentId}
           AND tenant_id    = #{tenantId}
-    </delete>
+    </update>
 
 </mapper>

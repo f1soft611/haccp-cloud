@@ -56,6 +56,8 @@ public class EquipmentDAO extends EgovAbstractMapper {
     }
 
     public void deleteEquipment(Map<String, Object> params) throws Exception {
-        delete("EquipmentDAO.deleteEquipment", params);
+        // 기존 -> delete로 물리 삭제
+        // 변경 -> update로 use_at 'N' 소프트 삭제
+        update("EquipmentDAO.deleteEquipment", params);
     }
 }
