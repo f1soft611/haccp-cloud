@@ -16,6 +16,8 @@ export type HaccpBaseWorkItem = {
   cycleName: string;
   cycleDate?: string;
   active: boolean;
+  expirationApply: boolean;
+  approvalApply: boolean;
   createdBy?: string;
   createdAt?: string;
   owner?: string;
@@ -98,6 +100,8 @@ type RawHaccpBaseWorkItem = {
   cycle_date?: string | null;
   active?: boolean | string | null;
   useAt?: string | null;
+  expirationApply?: boolean | string | null;
+  approvalApply?: boolean | string | null;
   createdBy?: string | number | null;
   createdAt?: string | null;
   owner?: string | null;
@@ -321,6 +325,12 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     cycleName: normalizeText(raw.cycleName) || normalizeText(raw.cycle ?? raw.regTerm),
     cycleDate: normalizeText(raw.cycleDate ?? raw.cycle_date),
     active: normalizeBoolean(raw.active ?? raw.useAt),
+    expirationApply: normalizeBoolean(raw.expirationApply),
+    // 값이 없으면 결재 적용(true)
+    approvalApply:
+        normalizeText(raw.approvalApply) === ''
+            ? true
+            : normalizeBoolean(raw.approvalApply),
     createdBy: normalizeText(raw.createdBy),
     createdAt: normalizeText(raw.createdAt),
     owner: normalizeText(raw.owner),
@@ -542,6 +552,8 @@ export async function createHaccpBaseWork(payload: {
   divisionName: string;
   cycle: string;
   active: boolean;
+  expirationApply: boolean;
+  approvalApply: boolean;
   reviewerId?: string;
   approverId?: string;
   assigneeIds?: string[];
@@ -556,6 +568,8 @@ export async function createHaccpBaseWork(payload: {
       divisionName: payload.divisionName,
       cycle: payload.cycle,
       active: payload.active,
+      expirationApply: payload.expirationApply,
+      approvalApply: payload.approvalApply,
       reviewerId: payload.reviewerId ? Number(payload.reviewerId) : null,
       approverId: payload.approverId ? Number(payload.approverId) : null,
       assigneeIds: payload.assigneeIds ?? [],
@@ -579,6 +593,8 @@ export async function updateHaccpBaseWork(payload: {
   divisionName: string;
   cycle: string;
   active: boolean;
+  expirationApply: boolean;
+  approvalApply: boolean;
   reviewerId?: string;
   approverId?: string;
   assigneeIds?: string[];
@@ -593,6 +609,8 @@ export async function updateHaccpBaseWork(payload: {
       divisionName: payload.divisionName,
       cycle: payload.cycle,
       active: payload.active,
+      expirationApply: payload.expirationApply,
+      approvalApply: payload.approvalApply,
       reviewerId: payload.reviewerId ? Number(payload.reviewerId) : null,
       approverId: payload.approverId ? Number(payload.approverId) : null,
       assigneeIds: payload.assigneeIds ?? [],

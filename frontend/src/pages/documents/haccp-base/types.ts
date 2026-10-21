@@ -26,6 +26,8 @@ export type HaccpBaseRow = {
   approverName: string;
   assigneeMapped: boolean;
   hasDocument: boolean;
+  expirationApply: 'Y' | 'N';
+  approvalApply: 'Y' | 'N';
   useAt: 'Y' | 'N';
 };
 
@@ -37,6 +39,8 @@ export type HaccpBaseCreateForm = {
   reviewerId: string;
   approverId: string;
   assigneeIds: string[];
+  expirationApply: 'Y' | 'N';
+  approvalApply: 'Y' | 'N';
   useAt: 'Y' | 'N';
 };
 
