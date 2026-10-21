@@ -15,6 +15,8 @@
         <result property="cycle" column="reg_term"/>
         <result property="cycleName" column="reg_term_nm"/>
         <result property="active" column="active"/>
+        <result property="expirationApply" column="expiration_apply"/>
+        <result property="approvalApply" column="approval_apply"/>
         <result property="createdBy" column="created_by"/>
         <result property="createdAt" column="created_at"/>
         <result property="owner" column="owner"/>
@@ -54,6 +56,8 @@
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
+            CASE WHEN w.approval_apply = 'Y' THEN TRUE ELSE FALSE END AS approval_apply,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
@@ -154,6 +158,8 @@
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
+            CASE WHEN w.approval_apply = 'Y' THEN TRUE ELSE FALSE END AS approval_apply,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
@@ -293,6 +299,8 @@
             reviewer_id,
             approver_id,
             cata_code,
+            expiration_apply,
+            approval_apply,
             use_at,
             delete_status,
             created_by,
@@ -312,6 +320,9 @@
               WHERE drafting_work_category_group_id = #{categoryGroupId}
                 AND tenant_id = #{tenantId}
               LIMIT 1),
+            #{useAt},
+            #{expirationApply},
+            #{approvalApply},
             #{useAt},
             'N',
             #{createdBy, jdbcType=BIGINT},
@@ -336,6 +347,8 @@
                           WHERE drafting_work_category_group_id = #{categoryGroupId}
                             AND tenant_id = #{tenantId}
                           LIMIT 1),
+            expiration_apply = #{expirationApply},
+            approval_apply = #{approvalApply},
             use_at = #{useAt},
             updated_by = #{updatedBy, jdbcType=BIGINT},
             updated_at = CURRENT_TIMESTAMP
