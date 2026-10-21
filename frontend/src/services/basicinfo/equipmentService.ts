@@ -15,6 +15,8 @@ export type EquipmentItem = {
   makCust: string;
   equipSpec: string;
   location: string;
+    vcKind: string;
+    vcCycle: number | null;
   bigo: string;
   active: boolean;
 };
@@ -42,6 +44,8 @@ export type CreateEquipmentRequest = {
   makCust: string;
   equipSpec: string;
   location: string;
+    vcKind: string;
+    vcCycle: number | null;
   bigo: string;
   active: boolean;
 };
@@ -61,6 +65,8 @@ type RawEquipmentItem = Partial<{
   makCust: string;
   equipSpec: string;
   location: string;
+    vcKind: string;
+    vcCycle: number | null;
   bigo: string;
   active: boolean;
 }>;
@@ -86,6 +92,8 @@ function normalizeEquipmentItem(raw: RawEquipmentItem): EquipmentItem {
     makCust: String(raw.makCust ?? ''),
     equipSpec: String(raw.equipSpec ?? ''),
     location: String(raw.location ?? ''),
+      vcKind: String(raw.vcKind ?? ''),
+      vcCycle: typeof raw.vcCycle === 'number' ? raw.vcCycle : null,
     bigo: String(raw.bigo ?? ''),
     active: Boolean(raw.active),
   };
@@ -138,6 +146,8 @@ export async function createEquipment(
       makCust: payload.makCust,
       equipSpec: payload.equipSpec,
       location: payload.location,
+        vcKind: payload.vcKind,
+        vcCycle: payload.vcCycle,
       bigo: payload.bigo,
       active: payload.active,
     },
@@ -164,6 +174,8 @@ export async function updateEquipment(
       makCust: payload.makCust,
       equipSpec: payload.equipSpec,
       location: payload.location,
+        vcKind: payload.vcKind,
+        vcCycle: payload.vcCycle,
       bigo: payload.bigo,
       active: payload.active,
     },
