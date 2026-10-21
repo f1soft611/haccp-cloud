@@ -196,3 +196,16 @@ export async function deleteEquipment(payload: {
     headers,
   });
 }
+
+export async function restoreEquipment(payload: {
+  tenantCode?: string;
+  id: string;
+}): Promise<void> {
+  const headers = payload.tenantCode
+      ? { 'x-tenant-code': payload.tenantCode }
+      : undefined;
+
+  await apiClient.patch(`/v1/basicinfo/equipment/${payload.id}/restore`, null, {
+    headers,
+  });
+}

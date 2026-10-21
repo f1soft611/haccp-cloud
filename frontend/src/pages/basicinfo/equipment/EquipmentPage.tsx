@@ -7,11 +7,12 @@ import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { useAuthStore } from '../../../shared/store/authStore';
 import {
-  createEquipment,
-  deleteEquipment,
-  listEquipmentPaged,
-  updateEquipment,
-  type EquipmentItem,
+    createEquipment,
+    deleteEquipment,
+    listEquipmentPaged,
+    restoreEquipment,
+    updateEquipment,
+    type EquipmentItem,
 } from '../../../services/basicinfo/equipmentService';
 import {
   EquipmentSearchBar,
@@ -43,6 +44,7 @@ export function EquipmentPage() {
     null,
   );
   const [deleteTarget, setDeleteTarget] = useState<EquipmentItem | null>(null);
+    const [restoreTarget, setRestoreTarget] = useState<EquipmentItem | null>(null);
 
   const equipmentQuery = useQuery({
     queryKey: [
@@ -98,6 +100,16 @@ export function EquipmentPage() {
     },
   });
 
+    const restoreMutation = useMutation({
+        mutationFn: restoreEquipment,
+        onSuccess: () => {
+            setRestoreTarget(null);
+            void queryClient.invalidateQueries({
+                queryKey: ['basicinfo-equipment', tenantCode || 'self'],
+            });
+        },
+    });
+
   const handleSearch = () => {
     resetPage();
     setAppliedSearch({
@@ -144,6 +156,16 @@ export function EquipmentPage() {
     });
   };
 
+    const handleConfirmRestore = () => {
+        if (!restoreTarget) {
+            return;
+        }
+        restoreMutation.mutate({
+            tenantCode: tenantCode || undefined,
+            id: restoreTarget.id,
+        });
+    };
+
   return (
     <Stack spacing={2} data-testid="basicinfo-equipment-page">
       <PageHeader
@@ -164,12 +186,13 @@ export function EquipmentPage() {
         onCreate={handleOpenCreate}
       />
 
-      <EquipmentGrid
-        rows={equipmentQuery.data?.items ?? []}
-        loading={equipmentQuery.isLoading}
-        onEdit={handleOpenEdit}
-        onDelete={(equipment) => setDeleteTarget(equipment)}
-      />
+        <EquipmentGrid
+            rows={equipmentQuery.data?.items ?? []}
+            loading={equipmentQuery.isLoading}
+            onEdit={handleOpenEdit}
+            onDelete={(equipment) => setDeleteTarget(equipment)}
+            onRestore={(equipment) => setRestoreTarget(equipment)}
+        />
 
       <GridPaginationBar
         pageIndex={pageIndex}
@@ -219,11 +242,11 @@ export function EquipmentPage() {
         open={Boolean(deleteTarget)}
         title="설비 삭제"
         description={
-          deleteTarget
-            ? `'${deleteTarget.equipNm}' 설비를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.`
-            : '설비를 삭제하시겠습니까?'
+            deleteTarget
+                ? `'${deleteTarget.equipNm}' 미사용으로 처리하시겠습니까?`
+                : '설비를 삭제하시겠습니까?'
         }
-        confirmText="삭제"
+        confirmText="미사용"
         confirmColor="error"
         loading={deleteMutation.isPending}
         onClose={() => {
@@ -234,6 +257,26 @@ export function EquipmentPage() {
         }}
         onConfirm={handleConfirmDelete}
       />
+
+        <ConfirmDialog
+            open={Boolean(restoreTarget)}
+            title="설비 다시 사용"
+            description={
+                restoreTarget
+                    ? `'${restoreTarget.equipNm}' 설비를 다시 사용하시겠습니까?`
+                    : '설비를 다시 사용하시겠습니까?'
+            }
+            confirmText="사용"
+            confirmColor="primary"
+            loading={restoreMutation.isPending}
+            onClose={() => {
+                if (restoreMutation.isPending) {
+                    return;
+                }
+                setRestoreTarget(null);
+            }}
+            onConfirm={handleConfirmRestore}
+        />
     </Stack>
   );
 }
