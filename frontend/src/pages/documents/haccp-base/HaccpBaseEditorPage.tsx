@@ -287,7 +287,7 @@ export function HaccpBaseEditorPage() {
 
           {targetWork ? (
             <Typography variant="body2" color="text.secondary">
-              {targetWork.divisionCode}.{targetWork.divisionName}
+              {targetWork.divisionName}
             </Typography>
           ) : null}
 

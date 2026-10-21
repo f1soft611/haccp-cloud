@@ -320,7 +320,6 @@
               WHERE drafting_work_category_group_id = #{categoryGroupId}
                 AND tenant_id = #{tenantId}
               LIMIT 1),
-            #{useAt},
             #{expirationApply},
             #{approvalApply},
             #{useAt},

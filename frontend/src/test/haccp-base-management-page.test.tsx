@@ -159,7 +159,7 @@ describe('HaccpBaseManagementPage', () => {
         </AppProviders>,
     );
 
-    await screen.findByText('001.기안서');
+    await screen.findByText('기안서');
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
 
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
@@ -195,7 +195,7 @@ describe('HaccpBaseManagementPage', () => {
         </AppProviders>,
     );
 
-    await screen.findByText('001.기안서');
+    await screen.findByText('기안서');
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
 
     const expiration = screen.getByRole('combobox', { name: '만료일 관리 양식' });
@@ -220,7 +220,7 @@ describe('HaccpBaseManagementPage', () => {
         </AppProviders>,
     );
 
-    await screen.findByText('001.기안서');
+    await screen.findByText('기안서');
     expect(
         screen.getByRole('table', { name: 'HACCP 양식 목록' }),
     ).toHaveStyle({ minWidth: '1512px' });

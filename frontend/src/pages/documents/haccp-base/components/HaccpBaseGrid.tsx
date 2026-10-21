@@ -200,7 +200,7 @@ export function HaccpBaseGrid(props: {
               <TableRow key={row.id} hover>
                 <TableCell align="center">{row.no}</TableCell>
                 <TableCell>
-                  {row.divisionCode}.{row.divisionName}
+                  {row.divisionName}
                 </TableCell>
                 <TableCell>{row.categoryName}</TableCell>
                 <TableCell align="center">
