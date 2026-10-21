@@ -46,6 +46,12 @@ public class EquipmentSaveRequestVO implements Serializable {
     @Schema(description = "설치장소")
     private String location;
 
+    @Schema(description = "검교정구분(공통코드 VC_KIND)")
+    private String vcKind;
+
+    @Schema(description = "검교정주기(개월)")
+    private Integer vcCycle;
+
     @Schema(description = "비고")
     private String bigo;
 
