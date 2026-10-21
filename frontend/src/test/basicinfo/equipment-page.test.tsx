@@ -108,3 +108,34 @@ describe('EquipmentPage 설비 등록 검교정', () => {
         );
     });
 });
+
+describe('EquipmentPage 설비 목록', () => {
+    it('검교정구분 이름과 검교정주기(개월)를 보여 준다', async () => {
+        listEquipmentPagedMock.mockResolvedValueOnce({
+            items: [
+                {
+                    id: '1',
+                    equipSysCd: '000001',
+                    equipCd: 'EQ-01',
+                    equipNm: '온도계',
+                    equipKind: '',
+                    purDate: '',
+                    purCust: '',
+                    makCust: '',
+                    equipSpec: '',
+                    location: '',
+                    vcKind: 'ACCREDITED',
+                    vcCycle: 12,
+                    bigo: '',
+                    active: true,
+                },
+            ],
+            totalCount: 1,
+        });
+        renderPage();
+
+        const row = (await screen.findByText('온도계')).closest('tr') as HTMLElement;
+        expect(await within(row).findByText('공인기관')).toBeInTheDocument();
+        expect(within(row).getByText('12개월')).toBeInTheDocument();
+    });
+});
