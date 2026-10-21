@@ -4,6 +4,19 @@ import { AppProviders } from '../app/providers/AppProviders';
 import { HaccpPortalPage } from '../pages/documents/portal/HaccpPortalPage';
 import { useAuthStore } from '../shared/store/authStore';
 
+const navigateMock = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual =
+      await vi.importActual<typeof import('react-router-dom')>(
+          'react-router-dom',
+      );
+  return {
+    ...actual,
+    useNavigate: () => navigateMock,
+  };
+});
+
 const { listHaccpPortalDocumentsMock } = vi.hoisted(() => ({
   listHaccpPortalDocumentsMock: vi.fn(async () => [
     {
@@ -43,6 +56,7 @@ vi.mock('../services/documents/haccpPortalService', () => ({
 
 describe('HaccpPortalPage', () => {
   beforeEach(() => {
+    navigateMock.mockReset();
     vi.mocked(listHaccpPortalDocumentsMock).mockReset();
     vi.mocked(listHaccpPortalDocumentsMock).mockResolvedValue([
       {
@@ -166,5 +180,22 @@ describe('HaccpPortalPage', () => {
 
     expect(screen.getByText('생산일지 점검표')).toBeInTheDocument();
     expect(screen.queryByText('기안서')).not.toBeInTheDocument();
+  });
+
+  it('navigates to draft write page when write button is clicked', async () => {
+    render(
+        <AppProviders>
+          <HaccpPortalPage />
+        </AppProviders>,
+    );
+
+    expect(await screen.findByText('위생교육일지-품질')).toBeInTheDocument();
+    fireEvent.click(
+        screen.getAllByRole('button', { name: '작성하러 가기' })[0],
+    );
+
+    expect(navigateMock).toHaveBeenCalledWith(
+        '/approvals/draft/1?idType=work',
+    );
   });
 });

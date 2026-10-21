@@ -1,5 +1,7 @@
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import {
   Chip,
+  IconButton,
   Link,
   Skeleton,
   TableBody,
@@ -10,10 +12,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
+import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
 import type { PortalRow } from '../types';
 
-// 기존 -> 분류별 카드 패널(Grid + Paper) 3열 레이아웃
-// 변경 -> AdminGrid 단일 데이터 그리드
 export function HaccpPortalGrid({
   rows,
   loading,
@@ -31,6 +32,12 @@ export function HaccpPortalGrid({
     navigate(`/docs/haccp-doc?${query.toString()}`);
   };
 
+  // ponytail: 포탈 API에 approvalId/writtenInCycle이 없어 항상 현재 주기 작성(idType=work)으로 연다
+  const openDraft = (row: PortalRow) => {
+    const path = resolveDraftRoute({ id: row.id });
+    if (path) navigate(path);
+  };
+
   return (
     <AdminGrid ariaLabel="HACCP 문서포탈 목록">
       <TableHead>
@@ -44,6 +51,7 @@ export function HaccpPortalGrid({
           <TableCell align="center" width={100}>자동기록</TableCell>
           <TableCell width={120} align="center">등록주기</TableCell>
           <TableCell align="center" width={200}>담당자</TableCell>
+          <TableCell align="center" width={80}>작성</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -53,7 +61,7 @@ export function HaccpPortalGrid({
                 key={index}
                 data-testid={`haccp-portal-grid-skeleton-row-${index}`}
               >
-                {Array.from({ length: 6 }).map((__, cellIndex) => (
+                {Array.from({ length: 7 }).map((__, cellIndex) => (
                   <TableCell key={cellIndex}>
                     <Skeleton variant="text" />
                   </TableCell>
@@ -64,7 +72,7 @@ export function HaccpPortalGrid({
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} align="center">
+            <TableCell colSpan={7} align="center">
               조회된 문서가 없습니다.
             </TableCell>
           </TableRow>
@@ -100,6 +108,16 @@ export function HaccpPortalGrid({
                   />
                 </TableCell>
                 <TableCell>{row.assigneeSummary || '-'}</TableCell>
+                <TableCell align="center">
+                  <IconButton
+                      size="small"
+                      color="primary"
+                      aria-label="작성하러 가기"
+                      onClick={() => openDraft(row)}
+                  >
+                    <EditOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </TableCell>
               </TableRow>
             ))
           : null}
