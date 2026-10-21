@@ -62,7 +62,7 @@ export function HaccpBaseGrid(props: {
   });
 
   return (
-    <AdminGrid ariaLabel="HACCP 양식 목록">
+      <AdminGrid ariaLabel="HACCP 양식 목록" minWidth={1512}>
       <TableHead>
         <TableRow>
           <TableCell width={72} align="center">

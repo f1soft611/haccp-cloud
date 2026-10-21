@@ -212,4 +212,17 @@ describe('HaccpBaseManagementPage', () => {
         screen.getByRole('combobox', { name: '만료일 관리 양식' }),
     ).not.toHaveAttribute('aria-disabled');
   });
+
+  it('keeps the grid table wide enough to scroll horizontally', async () => {
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+
+    await screen.findByText('001.기안서');
+    expect(
+        screen.getByRole('table', { name: 'HACCP 양식 목록' }),
+    ).toHaveStyle({ minWidth: '1512px' });
+  });
 });
