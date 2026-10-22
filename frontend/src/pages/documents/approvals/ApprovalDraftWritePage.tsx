@@ -34,6 +34,9 @@ export function ApprovalDraftWritePage() {
     setReferenceIds,
     reportDate,
     changeReportDate,
+    sub,
+    setSub,
+    users,
     workDetailQuery,
     work,
     documentFieldValues,
@@ -244,6 +247,9 @@ export function ApprovalDraftWritePage() {
         onTitleChange={isReadOnly ? undefined : setTitle}
         reportDate={reportDate}
         onReportDateChange={isReadOnly ? undefined : changeReportDate}
+        sub={sub}
+        onSubChange={isReadOnly ? undefined : setSub}
+        users={users}
         drafterDisplayName={drafterDisplayName}
         userId={userId}
         content={resolvedEditorContent}

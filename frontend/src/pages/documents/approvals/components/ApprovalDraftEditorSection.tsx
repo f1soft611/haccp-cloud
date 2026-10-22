@@ -24,6 +24,7 @@ type ApprovalDraftEditorSectionProps = {
   drafterDisplayName: string;
   userId: string;
   metadataSection?: ReactNode;
+  subFieldsSection?: ReactNode;
   content: JSONContent;
   onChangeEditor?: (nextContent: JSONContent, nextHtml: string) => void;
   documentFieldValues: DocumentFieldValues;
@@ -44,6 +45,7 @@ export function ApprovalDraftEditorSection(
     drafterDisplayName,
     userId,
     metadataSection,
+    subFieldsSection,
     content,
     onChangeEditor,
     documentFieldValues,
@@ -189,6 +191,20 @@ export function ApprovalDraftEditorSection(
             InputProps={{ readOnly: true }}
             sx={{ minWidth: 0 }}
           />
+
+          {subFieldsSection ? (
+              <Box
+                  sx={{
+                    gridColumn: '1 / -1',
+                    display: 'grid',
+                    gap: 2,
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+                  }}
+              >
+                {subFieldsSection}
+              </Box>
+          ) : null}
+
         </Stack>
 
         <Box sx={{ py: 1 }}>

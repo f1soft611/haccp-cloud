@@ -8,6 +8,9 @@ import { ApprovalDraftEditorSection } from './ApprovalDraftEditorSection';
 import { ApprovalDraftSidebar } from './ApprovalDraftSidebar';
 import { ApprovalAttachmentPanel } from './ApprovalAttachmentPanel';
 import type { DraftComment } from '../types';
+import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
+import { getApprovalSubFieldConfig } from '../utils/approvalSubFields';
+import { ApprovalDraftExpirationFields } from './ApprovalDraftExpirationFields';
 
 type ApprovalDraftContentProps = {
   baseId?: string;
@@ -20,6 +23,9 @@ type ApprovalDraftContentProps = {
   onTitleChange?: (next: string) => void;
   reportDate: string;
   onReportDateChange?: (next: string) => void;
+  sub: ApprovalSubValues;
+  onSubChange?: (next: ApprovalSubValues) => void;
+  users: UserItem[];
   drafterDisplayName: string;
   userId: string;
   content: JSONContent;
@@ -62,6 +68,9 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     onTitleChange,
     reportDate,
     onReportDateChange,
+    sub,
+    onSubChange,
+    users,
     drafterDisplayName,
     userId,
     content,
@@ -92,6 +101,8 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     showApprovalLine = true,
   } = props;
 
+  const subFieldConfig = getApprovalSubFieldConfig(work?.categoryCode);
+
   return (
     <>
       {workDetailFetched && workDetailError ? (
@@ -106,6 +117,18 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         onTitleChange={onTitleChange}
         reportDate={reportDate}
         onReportDateChange={onReportDateChange}
+        subFieldsSection={
+          subFieldConfig ? (
+              <ApprovalDraftExpirationFields
+                  tenantCode={tenantCode}
+                  config={subFieldConfig}
+                  value={sub}
+                  onChange={onSubChange}
+                  users={users}
+                  isReadOnly={isReadOnly}
+              />
+          ) : undefined
+        }
         drafterDisplayName={drafterDisplayName}
         userId={userId}
         metadataSection={
