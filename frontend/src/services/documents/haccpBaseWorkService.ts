@@ -672,6 +672,7 @@ export async function saveHaccpWorkTempDraft(payload: {
   templateHtml: string;
   referenceIds?: string[];
   cycleDate?: string;
+  reportDate?: string;
 }): Promise<HaccpBaseWorkItem> {
   const { data } = await apiClient.post<
     RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
@@ -683,6 +684,7 @@ export async function saveHaccpWorkTempDraft(payload: {
       templateHtml: payload.templateHtml,
       referenceIds: payload.referenceIds ?? [],
       cycleDate: payload.cycleDate || undefined,
+      reportDate: payload.reportDate || undefined,
     },
     {
       headers: { 'x-tenant-code': payload.tenantCode },
@@ -708,6 +710,7 @@ export async function submitHaccpWorkDraft(payload: {
   submitComment?: string;
   referenceIds?: string[];
   cycleDate?: string;
+  reportDate?: string;
 }): Promise<{ message: string; approvalId?: string }> {
   const { data } = await apiClient.post<
     | { message?: string; item?: { approvalId?: string | number } }
@@ -724,6 +727,7 @@ export async function submitHaccpWorkDraft(payload: {
       submitComment: payload.submitComment,
       referenceIds: payload.referenceIds ?? [],
       cycleDate: payload.cycleDate || undefined,
+      reportDate: payload.reportDate || undefined,
     },
     {
       headers: { 'x-tenant-code': payload.tenantCode },

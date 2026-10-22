@@ -32,6 +32,8 @@ export function ApprovalDraftWritePage() {
     setTitle,
     referenceIds,
     setReferenceIds,
+    reportDate,
+    changeReportDate,
     workDetailQuery,
     work,
     documentFieldValues,
@@ -116,6 +118,7 @@ export function ApprovalDraftWritePage() {
     approvalId: approvalIdForComments,
     onDeleted: handleBack,
     cycleDate: work?.cycleDate,
+    reportDate,
     returnTo,
     isStatusResolved,
     approvalStatusType: work?.approvalStatusType,
@@ -235,6 +238,8 @@ export function ApprovalDraftWritePage() {
         work={work}
         title={title}
         onTitleChange={isReadOnly ? undefined : setTitle}
+        reportDate={reportDate}
+        onReportDateChange={isReadOnly ? undefined : changeReportDate}
         drafterDisplayName={drafterDisplayName}
         userId={userId}
         content={resolvedEditorContent}

@@ -11,7 +11,7 @@ import {
   resolveDocumentFieldValues,
   type DocumentFieldValues,
 } from '../../../../editor/utils/documentFieldValues';
-import { parseTemplateJson } from '../utils/approvalDraftUtils';
+import { parseTemplateJson, toCycleStartDate } from '../utils/approvalDraftUtils';
 import { isDocumentOwner } from '../../../../shared/utils/ownershipUtils';
 
 type UseApprovalDraftWriteDataResult = {
@@ -25,6 +25,8 @@ type UseApprovalDraftWriteDataResult = {
   setTitle: (next: string) => void;
   referenceIds: string[];
   setReferenceIds: (next: string[]) => void;
+  reportDate: string;
+  changeReportDate: (next: string) => void;
   workDetailQuery: {
     isError: boolean;
     isFetched: boolean;
@@ -71,6 +73,7 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   const [editorContent, setEditorContent] = useState<JSONContent | null>(null);
   const [editorHtml, setEditorHtml] = useState('');
   const [hasUserEdited, setHasUserEdited] = useState(false);
+  const [reportDate, setReportDate] = useState('');
 
   const workDetailQuery = useQuery({
     queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType, cycleDate],
@@ -97,6 +100,14 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   });
 
   const work = workDetailQuery.data;
+
+  useEffect(() => {
+    setReportDate(work?.cycleDate ?? '');
+  }, [work?.cycleDate]);
+
+  const changeReportDate = (next: string) => {
+    setReportDate(toCycleStartDate(work?.cycle ?? '', next));
+  };
 
   useEffect(() => {
     setTitle('');
@@ -362,6 +373,8 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     setTitle,
     referenceIds,
     setReferenceIds,
+    reportDate,
+    changeReportDate,
     workDetailQuery: {
       isError: workDetailQuery.isError,
       isFetched: workDetailQuery.isFetched,

@@ -18,6 +18,8 @@ type ApprovalDraftContentProps = {
   work?: HaccpBaseWorkItem;
   title: string;
   onTitleChange?: (next: string) => void;
+  reportDate: string;
+  onReportDateChange?: (next: string) => void;
   drafterDisplayName: string;
   userId: string;
   content: JSONContent;
@@ -57,6 +59,8 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     work,
     title,
     onTitleChange,
+    reportDate,
+    onReportDateChange,
     drafterDisplayName,
     userId,
     content,
@@ -98,6 +102,8 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         work={work}
         title={title}
         onTitleChange={onTitleChange}
+        reportDate={reportDate}
+        onReportDateChange={onReportDateChange}
         drafterDisplayName={drafterDisplayName}
         userId={userId}
         metadataSection={
