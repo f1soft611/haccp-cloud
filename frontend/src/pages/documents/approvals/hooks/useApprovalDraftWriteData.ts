@@ -13,6 +13,8 @@ import {
 } from '../../../../editor/utils/documentFieldValues';
 import { parseTemplateJson, toCycleStartDate } from '../utils/approvalDraftUtils';
 import { isDocumentOwner } from '../../../../shared/utils/ownershipUtils';
+import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
+import { EMPTY_APPROVAL_SUB } from '../utils/approvalSubFields';
 
 type UseApprovalDraftWriteDataResult = {
   baseId?: string;
@@ -27,6 +29,9 @@ type UseApprovalDraftWriteDataResult = {
   setReferenceIds: (next: string[]) => void;
   reportDate: string;
   changeReportDate: (next: string) => void;
+  sub: ApprovalSubValues;
+  setSub: (next: ApprovalSubValues) => void;
+  users: UserItem[];
   workDetailQuery: {
     isError: boolean;
     isFetched: boolean;
@@ -74,6 +79,7 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   const [editorHtml, setEditorHtml] = useState('');
   const [hasUserEdited, setHasUserEdited] = useState(false);
   const [reportDate, setReportDate] = useState('');
+  const [sub, setSub] = useState<ApprovalSubValues>(EMPTY_APPROVAL_SUB);
 
   const workDetailQuery = useQuery({
     queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType, cycleDate],
@@ -108,6 +114,10 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   const changeReportDate = (next: string) => {
     setReportDate(toCycleStartDate(work?.cycle ?? '', next));
   };
+
+  useEffect(() => {
+    setSub(work?.sub ?? EMPTY_APPROVAL_SUB);
+  }, [work?.sub]);
 
   useEffect(() => {
     setTitle('');
@@ -375,6 +385,9 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     setReferenceIds,
     reportDate,
     changeReportDate,
+    sub,
+    setSub,
+    users: usersQuery.data ?? [],
     workDetailQuery: {
       isError: workDetailQuery.isError,
       isFetched: workDetailQuery.isFetched,

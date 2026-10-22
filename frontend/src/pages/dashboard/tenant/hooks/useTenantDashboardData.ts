@@ -35,8 +35,9 @@ export function toTenantTodoCardItem(
     category: item.categoryName || '기타문서',
     status: item.todoStatus || 'DRAFT',
     updatedBy: item.owner || item.createdBy || '없음',
-    updatedAt:
-        item.pendingArrivalAt || item.latestStatusAt || item.createdAt || '',
+    // 기존 -> 결재 도착일시 || 최종 상태 일시 || 생성일시
+    // 변경 -> 본인 작성 문서의 가장 큰 보고일자(report_date)
+    updatedAt: item.lastReportDate || '',
     writtenInCycle: Boolean(item.writtenInCycle),
     routeIdType: item.approvalId ? ('approval' as const) : ('work' as const),
     routeId: item.approvalId || item.id,

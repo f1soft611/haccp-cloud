@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentCreateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentUpdateRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalSubVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftTempSaveRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
@@ -87,6 +88,10 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         ensureSubmissionEditableState(tenantId, workId, actorLoginId, cycleDate, "임시저장");
         String reportDate = resolveReportDate(tenantId, workId, actorLoginId, work.getCycle(), cycleDate, payload.getReportDate(), "임시저장");
         String responseCycleDate = LocalDate.parse(reportDate, DATE_FORMATTER).toString();
+        boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
+        if (subCategory) {
+            HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
+        }
 
         LocalDateTime now = LocalDateTime.now();
         String regDate = now.format(DATE_FORMATTER);
@@ -167,6 +172,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         if (targetApprovalId == null) {
             throw new IllegalStateException("임시저장 결재 문서 키를 확인할 수 없습니다.");
         }
+        if (subCategory) {
+            saveApprovalSub(tenantId, targetApprovalId, workId, work.getCategoryCode(), payload.getSub(), actorLoginId, now);
+        }
 
         if (!StringUtils.hasText(work.getReviewerId() == null ? "" : String.valueOf(work.getReviewerId()))
             || !StringUtils.hasText(work.getApproverId() == null ? "" : String.valueOf(work.getApproverId()))) {
@@ -227,8 +235,16 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         ensureSubmissionEditableState(tenantId, workId, actorLoginId, cycleDate, "결재신청");
         String reportDate = resolveReportDate(tenantId, workId, actorLoginId, work.getCycle(), cycleDate, payload.getReportDate(), "결재신청");
 
-        if (work.getReviewerId() == null || work.getApproverId() == null) {
+        // 결재 미적용 문서는 결재선 없이 바로 완료되므로 검토자/승인자 검사 생략 추가
+        boolean approvalApply = !Boolean.FALSE.equals(work.getApprovalApply());
+        if (approvalApply && (work.getReviewerId() == null || work.getApproverId() == null)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "검토자/승인자 지정 후 결재신청할 수 있습니다.");
+        }
+        String mainStatus = approvalApply ? "in_progress" : "approved";
+        String mainStatusName = approvalApply ? "진행중" : "완료";
+        boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
+        if (subCategory) {
+            HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
         }
 
         String templateJson = StringUtils.hasText(payload.getTemplateJson())
@@ -261,7 +277,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("eaExeId", eaExeId);
             mainParams.put("regDate", regDate);
             mainParams.put("loginId", actorLoginId);
-            mainParams.put("statusType", "in_progress");
+            mainParams.put("statusType", mainStatus);
             mainParams.put("departmentId", getLong(actorProfile, "departmentId"));
             mainParams.put("levelName", resolveLevelName(actorProfile));
             mainParams.put("title", normalizedTitle);
@@ -272,8 +288,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("afterTxtJson", templateJson);
             mainParams.put("afterTwfTime", twfTime);
             mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
-            mainParams.put("endStatus", "in_progress");
-            mainParams.put("statusTypeName", "진행중");
+            mainParams.put("endStatus", mainStatus);
+            mainParams.put("statusTypeName", mainStatusName);
             mainParams.put("reportDate", reportDate);
             mainParams.put("settlePlanDate", regDate);
             mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
@@ -299,9 +315,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 //            updateParams.put("regDate", regDate); // reg_date(작성일)는 첫 임시저장 값 유지. 매퍼 COALESCE(#{regDate}, reg_date)로 기존값 유지
             updateParams.put("twfDate", regDate);
             updateParams.put("afterTwfDate", regDate);
-            updateParams.put("statusType", "in_progress");
-            updateParams.put("statusTypeName", "진행중");
-            updateParams.put("endStatus", "in_progress");
+            updateParams.put("statusType", mainStatus);
+            updateParams.put("statusTypeName", mainStatusName);
+            updateParams.put("endStatus", mainStatus);
             updateParams.put("updatedBy", actorLoginId);
             updateParams.put("updatedAt", now);
             updateParams.put("reportDate", reportDate);
@@ -329,6 +345,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         if (electronicApprovalId == null) {
             throw new IllegalStateException("결재 메인 저장 후 키를 확인할 수 없습니다.");
         }
+        if (subCategory) {
+            saveApprovalSub(tenantId, electronicApprovalId, workId, work.getCategoryCode(), payload.getSub(), actorLoginId, now);
+        }
 
         Long submitHistoryLineId = insertApprovalLine(
                 tenantId,
@@ -346,6 +365,10 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             now,
                 eaExeId
         );
+        // 결재 미적용 문서는 기안자 결재선만 남기고 검토/승인/참조, 이력 댓글, 결재 체인 처리를 건너뛴다
+        if (!approvalApply) {
+            return electronicApprovalId;
+        }
         insertApprovalLine(
                 tenantId,
                 electronicApprovalId,
@@ -1097,6 +1120,21 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 
     private String normalizeTenantCode(String tenantCode) {
         return StringUtils.hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "";
+    }
+
+    private void saveApprovalSub(
+            Long tenantId,
+            Long approvalId,
+            Long workId,
+            String categoryCode,
+            HaccpWorkApprovalSubVO sub,
+            Long actorLoginId,
+            LocalDateTime now
+    ) throws Exception {
+        Map<String, Object> params = HaccpWorkApprovalSubs.toParams(tenantId, approvalId, workId, categoryCode, sub, actorLoginId, now);
+        if (haccpWorkDAO.updateElectronicApprovalSub(params) == 0) {
+            haccpWorkDAO.insertElectronicApprovalSub(params);
+        }
     }
 
     private String trimToEmpty(String value) {

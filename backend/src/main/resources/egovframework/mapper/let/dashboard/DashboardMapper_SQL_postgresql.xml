@@ -28,6 +28,7 @@
         <result property="writtenInCycle" column="written_in_cycle"/>
         <result property="pendingApprovalAlert" column="pending_approval_alert"/>
         <result property="pendingArrivalAt" column="pending_arrival_at"/>
+        <result property="lastReportDate" column="last_report_date"/>
     </resultMap>
 
     <resultMap id="dashboardSummaryResult"
@@ -99,7 +100,8 @@
               ELSE FALSE
             END AS written_in_cycle,
             COALESCE(pending.pending_alert, FALSE) AS pending_approval_alert,
-            TO_CHAR(pending.pending_arrival_at, 'YYYY-MM-DD HH24:MI') AS pending_arrival_at
+            TO_CHAR(pending.pending_arrival_at, 'YYYY-MM-DD HH24:MI') AS pending_arrival_at,
+            TO_CHAR(TO_DATE(rpt.max_report_date, 'YYYYMMDD'), 'YYYY-MM-DD') AS last_report_date
         FROM tb_drafting_work_category w
         JOIN tb_tenant t ON t.tenant_id = w.tenant_id
         LEFT JOIN tb_drafting_work_category_group g
@@ -184,6 +186,16 @@
             AND COALESCE(m.delete_status, 'N') != 'Y'
             AND m.report_date = TO_CHAR(cb.cycle_start, 'YYYYMMDD')
         ) appr ON TRUE
+        <!-- 리스트 최근일시: 본인 작성 문서(삭제 제외)의 가장 큰 보고일자 -->
+        LEFT JOIN LATERAL (
+          SELECT MAX(m.report_date) AS max_report_date
+          FROM tb_electronic_approval_main m
+          WHERE m.tenant_id = w.tenant_id
+            AND m.drafting_work_category_id = w.drafting_work_category_id
+            AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
+            AND COALESCE(m.delete_status, 'N') != 'Y'
+            AND m.report_date ~ '^[0-9]{8}$'
+        ) rpt ON TRUE
         WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
             AND EXISTS (

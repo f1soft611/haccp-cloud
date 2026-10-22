@@ -8,6 +8,9 @@ import { ApprovalDraftEditorSection } from './ApprovalDraftEditorSection';
 import { ApprovalDraftSidebar } from './ApprovalDraftSidebar';
 import { ApprovalAttachmentPanel } from './ApprovalAttachmentPanel';
 import type { DraftComment } from '../types';
+import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
+import { getApprovalSubFieldConfig } from '../utils/approvalSubFields';
+import { ApprovalDraftExpirationFields } from './ApprovalDraftExpirationFields';
 
 type ApprovalDraftContentProps = {
   baseId?: string;
@@ -20,6 +23,9 @@ type ApprovalDraftContentProps = {
   onTitleChange?: (next: string) => void;
   reportDate: string;
   onReportDateChange?: (next: string) => void;
+  sub: ApprovalSubValues;
+  onSubChange?: (next: ApprovalSubValues) => void;
+  users: UserItem[];
   drafterDisplayName: string;
   userId: string;
   content: JSONContent;
@@ -47,6 +53,7 @@ type ApprovalDraftContentProps = {
   canWriteComments?: boolean;
   commentLoadErrorMessage?: string;
   onAttachmentChanged?: () => void | Promise<void>;
+  showApprovalLine?: boolean;
 };
 
 export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
@@ -61,6 +68,9 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     onTitleChange,
     reportDate,
     onReportDateChange,
+    sub,
+    onSubChange,
+    users,
     drafterDisplayName,
     userId,
     content,
@@ -88,7 +98,10 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     canWriteComments = true,
     commentLoadErrorMessage = '',
     onAttachmentChanged,
+    showApprovalLine = true,
   } = props;
+
+  const subFieldConfig = getApprovalSubFieldConfig(work?.categoryCode);
 
   return (
     <>
@@ -104,22 +117,36 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         onTitleChange={onTitleChange}
         reportDate={reportDate}
         onReportDateChange={onReportDateChange}
+        subFieldsSection={
+          subFieldConfig ? (
+              <ApprovalDraftExpirationFields
+                  tenantCode={tenantCode}
+                  config={subFieldConfig}
+                  value={sub}
+                  onChange={onSubChange}
+                  users={users}
+                  isReadOnly={isReadOnly}
+              />
+          ) : undefined
+        }
         drafterDisplayName={drafterDisplayName}
         userId={userId}
         metadataSection={
-          <ApprovalDraftSidebar
-            embedded
-            isDarkMode={isDarkMode}
-            work={work}
-            drafterName={drafterDisplayName || userId}
-            drafterProfile={drafterProfile}
-            reviewerProfile={reviewerProfile}
-            approverProfile={approverProfile}
-            referenceOptions={referenceOptions}
-            selectedReferences={selectedReferences}
-            onChangeReferences={onChangeReferences}
-            isReadOnly={isReadOnly}
-          />
+          showApprovalLine ? (
+              <ApprovalDraftSidebar
+                  embedded
+                  isDarkMode={isDarkMode}
+                  work={work}
+                  drafterName={drafterDisplayName || userId}
+                  drafterProfile={drafterProfile}
+                  reviewerProfile={reviewerProfile}
+                  approverProfile={approverProfile}
+                  referenceOptions={referenceOptions}
+                  selectedReferences={selectedReferences}
+                  onChangeReferences={onChangeReferences}
+                  isReadOnly={isReadOnly}
+              />
+          ) : undefined
         }
         content={content}
         onChangeEditor={onChangeEditor}

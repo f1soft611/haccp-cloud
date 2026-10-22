@@ -1,5 +1,14 @@
 import { apiClient } from '../api/apiClient';
 
+// HCP 업무 기안 sub 값. 화면 상태는 문자열, 날짜는 yyyy-MM-dd
+export type ApprovalSubValues = {
+  equipmentId: string;
+  materialType: string;
+  certificationUserId: string;
+  inspectedDate: string;
+  expirationDate: string;
+};
+
 export type HaccpBaseWorkItem = {
   id: string;
   approvalId?: string;
@@ -51,6 +60,8 @@ export type HaccpBaseWorkItem = {
   writtenInCycle?: boolean;
   pendingApprovalAlert?: boolean;
   pendingArrivalAt?: string;
+  lastReportDate?: string;
+  sub?: ApprovalSubValues;
 };
 
 export type HaccpApprovalCommentItem = {
@@ -158,6 +169,15 @@ type RawHaccpBaseWorkItem = {
   pending_approval_alert?: boolean | string | null;
   pendingArrivalAt?: string | null;
   pending_arrival_at?: string | null;
+  lastReportDate?: string | null;
+  last_report_date?: string | null;
+  sub?: {
+    equipmentId?: number | string | null;
+    materialType?: string | null;
+    certificationUserId?: number | string | null;
+    inspectedDate?: string | null;
+    expirationDate?: string | null;
+  } | null;
 };
 
 type ResultEnvelope<T> = {
@@ -302,6 +322,34 @@ function normalizeApprovalCommentItem(
   };
 }
 
+function normalizeApprovalSub(
+    raw: NonNullable<RawHaccpBaseWorkItem['sub']>,
+): ApprovalSubValues {
+  return {
+    equipmentId: normalizeText(raw.equipmentId),
+    materialType: normalizeText(raw.materialType),
+    certificationUserId: normalizeText(raw.certificationUserId),
+    inspectedDate: normalizeText(raw.inspectedDate),
+    expirationDate: normalizeText(raw.expirationDate),
+  };
+}
+
+// 전송용: id 는 숫자, 빈 값은 undefined
+export function toApprovalSubRequest(sub?: ApprovalSubValues) {
+  if (!sub) {
+    return undefined;
+  }
+  return {
+    equipmentId: sub.equipmentId ? Number(sub.equipmentId) : undefined,
+    materialType: sub.materialType || undefined,
+    certificationUserId: sub.certificationUserId
+        ? Number(sub.certificationUserId)
+        : undefined,
+    inspectedDate: sub.inspectedDate || undefined,
+    expirationDate: sub.expirationDate || undefined,
+  };
+}
+
 function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
   return {
     id: normalizeText(raw.id ?? raw.draftingWorkCategoryId),
@@ -386,6 +434,8 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     pendingArrivalAt: normalizeText(
       raw.pendingArrivalAt ?? raw.pending_arrival_at,
     ),
+    lastReportDate: normalizeText(raw.lastReportDate ?? raw.last_report_date),
+    sub: raw.sub ? normalizeApprovalSub(raw.sub) : undefined,
   };
 }
 
@@ -673,6 +723,7 @@ export async function saveHaccpWorkTempDraft(payload: {
   referenceIds?: string[];
   cycleDate?: string;
   reportDate?: string;
+  sub?: ApprovalSubValues;
 }): Promise<HaccpBaseWorkItem> {
   const { data } = await apiClient.post<
     RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
@@ -685,6 +736,7 @@ export async function saveHaccpWorkTempDraft(payload: {
       referenceIds: payload.referenceIds ?? [],
       cycleDate: payload.cycleDate || undefined,
       reportDate: payload.reportDate || undefined,
+      sub: toApprovalSubRequest(payload.sub),
     },
     {
       headers: { 'x-tenant-code': payload.tenantCode },
@@ -711,6 +763,7 @@ export async function submitHaccpWorkDraft(payload: {
   referenceIds?: string[];
   cycleDate?: string;
   reportDate?: string;
+  sub?: ApprovalSubValues;
 }): Promise<{ message: string; approvalId?: string }> {
   const { data } = await apiClient.post<
     | { message?: string; item?: { approvalId?: string | number } }
@@ -728,6 +781,7 @@ export async function submitHaccpWorkDraft(payload: {
       referenceIds: payload.referenceIds ?? [],
       cycleDate: payload.cycleDate || undefined,
       reportDate: payload.reportDate || undefined,
+      sub: toApprovalSubRequest(payload.sub),
     },
     {
       headers: { 'x-tenant-code': payload.tenantCode },

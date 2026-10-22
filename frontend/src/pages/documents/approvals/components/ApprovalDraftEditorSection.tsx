@@ -24,6 +24,7 @@ type ApprovalDraftEditorSectionProps = {
   drafterDisplayName: string;
   userId: string;
   metadataSection?: ReactNode;
+  subFieldsSection?: ReactNode;
   content: JSONContent;
   onChangeEditor?: (nextContent: JSONContent, nextHtml: string) => void;
   documentFieldValues: DocumentFieldValues;
@@ -44,14 +45,13 @@ export function ApprovalDraftEditorSection(
     drafterDisplayName,
     userId,
     metadataSection,
+    subFieldsSection,
     content,
     onChangeEditor,
     documentFieldValues,
     isReadOnly = false,
   } = props;
 
-  const templateId =
-    (work?.id || (idType === 'work' ? baseId : '') || '-').trim() || '-';
   const documentId =
     (work?.approvalId || (idType === 'approval' ? baseId : '') || '-').trim() ||
     '-';
@@ -83,20 +83,9 @@ export function ApprovalDraftEditorSection(
         >
           <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap>
             <Chip
-              size="small"
-              color="info"
-              variant="outlined"
-              label={`템플릿명 ${work?.divisionName || '-'}`}
-            />
-            <Chip
-              size="small"
-              variant="outlined"
-              label={`템플릿 ID ${templateId}`}
-            />
-            <Chip
-              size="small"
-              variant="outlined"
-              label={`문서 ID ${documentId}`}
+                size="small"
+                variant="outlined"
+                label={`문서 ID ${documentId}`}
             />
           </Stack>
 
@@ -127,9 +116,12 @@ export function ApprovalDraftEditorSection(
 
         <Divider />
 
-        {metadataSection}
-
-        <Divider />
+        {metadataSection ? (
+            <>
+              {metadataSection}
+              <Divider />
+            </>
+        ) : null}
 
         <Stack
           sx={{
@@ -138,6 +130,33 @@ export function ApprovalDraftEditorSection(
             gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
           }}
         >
+          <TextField
+              label="구분"
+              value={work?.categoryName || '-'}
+              InputProps={{ readOnly: true }}
+              sx={{ minWidth: 0 }}
+          />
+          <TextField
+              label="업무명"
+              value={work?.divisionName || '-'}
+              InputProps={{ readOnly: true }}
+              fullWidth
+              sx={{
+                minWidth: 0,
+                // gridColumn: { xs: '1 / -1', md: '2 / span 2' },
+              }}
+          />
+          <TextField
+              label="업무 기준일"
+              type="date"
+              value={reportDate}
+              onChange={(event) => onReportDateChange?.(event.target.value)}
+              disabled={isReadOnly}
+              helperText={REPORT_DATE_HELPER_TEXT[work?.cycle ?? '']}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ max: dayjs().format('YYYY-MM-DD') }}
+              sx={{ minWidth: 0 }}
+          />
           <TextField
             label="기안 제목"
             placeholder="예: 2026-07-16 품질 점검 기안"
@@ -172,23 +191,20 @@ export function ApprovalDraftEditorSection(
             InputProps={{ readOnly: true }}
             sx={{ minWidth: 0 }}
           />
-          <TextField
-            label="구분"
-            value={work?.categoryName || '-'}
-            InputProps={{ readOnly: true }}
-            sx={{ minWidth: 0 }}
-          />
-          <TextField
-              label="보고일자"
-              type="date"
-              value={reportDate}
-              onChange={(event) => onReportDateChange?.(event.target.value)}
-              disabled={isReadOnly}
-              helperText={REPORT_DATE_HELPER_TEXT[work?.cycle ?? '']}
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ max: dayjs().format('YYYY-MM-DD') }}
-              sx={{ minWidth: 0 }}
-          />
+
+          {subFieldsSection ? (
+              <Box
+                  sx={{
+                    gridColumn: '1 / -1',
+                    display: 'grid',
+                    gap: 2,
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+                  }}
+              >
+                {subFieldsSection}
+              </Box>
+          ) : null}
+
         </Stack>
 
         <Box sx={{ py: 1 }}>

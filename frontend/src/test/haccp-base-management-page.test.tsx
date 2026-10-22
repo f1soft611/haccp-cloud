@@ -16,6 +16,16 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, crea
         createdBy: '관리자',
         createdAt: '2026-07-07 10:00',
       },
+      {
+        id: '11',
+        tenantCode: 'PLATFORM',
+        categoryCode: 'HCP-CALIB',
+        categoryName: '검교정 일정관리',
+        sortOrder: 2,
+        active: true,
+        createdBy: '관리자',
+        createdAt: '2026-07-07 10:00',
+      },
     ]),
     listHaccpBaseWorksMock: vi.fn(async () => [
       {
@@ -188,7 +198,8 @@ describe('HaccpBaseManagementPage', () => {
     expect(createHaccpBaseWorkMock.mock.calls[0][0]).toMatchObject({ cycle: 'QUARTER' });
   });
 
-  it('enables expiration select only when cycle is ANYTIME', async () => {
+  // 기존 -> 수시일 때만 enabled 확인 / 변경 -> HCP- 분류 + 수시일 때만 노출 확인
+  it('shows expiration select only for HCP- category with ANYTIME cycle', async () => {
     render(
         <AppProviders>
           <HaccpBaseManagementPage />
@@ -198,19 +209,34 @@ describe('HaccpBaseManagementPage', () => {
     await screen.findByText('기안서');
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
 
-    const expiration = screen.getByRole('combobox', { name: '만료일 관리 양식' });
-    expect(expiration).toHaveTextContent('미해당');
-    expect(expiration).toHaveAttribute('aria-disabled', 'true');
+    // 기본값: 분류 001 + 등록주기 일 -> 숨김
+    expect(
+        screen.queryByRole('combobox', { name: '만료일 관리 양식' }),
+    ).not.toBeInTheDocument();
     expect(
         screen.getByRole('combobox', { name: '결재 적용 여부' }),
     ).toHaveTextContent(/^적용$/);
 
+    // 수시여도 분류가 HCP- 가 아니면 숨김
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
     fireEvent.click(await screen.findByRole('option', { name: '수시' }));
+    expect(
+        screen.queryByRole('combobox', { name: '만료일 관리 양식' }),
+    ).not.toBeInTheDocument();
 
+    // HCP- 분류 + 수시 -> 노출, 기본값 미해당
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '분류' }));
+    fireEvent.click(await screen.findByRole('option', { name: '검교정 일정관리' }));
     expect(
         screen.getByRole('combobox', { name: '만료일 관리 양식' }),
-    ).not.toHaveAttribute('aria-disabled');
+    ).toHaveTextContent('미해당');
+
+    // 등록주기를 수시가 아닌 값으로 바꾸면 다시 숨김
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
+    fireEvent.click(await screen.findByRole('option', { name: '주' }));
+    expect(
+        screen.queryByRole('combobox', { name: '만료일 관리 양식' }),
+    ).not.toBeInTheDocument();
   });
 
   it('keeps the grid table wide enough to scroll horizontally', async () => {

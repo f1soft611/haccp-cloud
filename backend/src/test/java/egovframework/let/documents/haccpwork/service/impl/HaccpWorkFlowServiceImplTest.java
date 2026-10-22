@@ -446,6 +446,36 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("approved", lineCaptor.getAllValues().get(1).get("appStatus"));
     }
 
+    @DisplayName("결재 미적용 문서는 결재신청 시 기안자 결재선만 만들고 바로 완료 상태가 된다")
+    @Test
+    void submitDraft_noApprovalApply_completesWithDrafterLineOnly() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setApprovalApply(Boolean.FALSE);
+        serviceDraftWork.setReviewerId(null);
+        serviceDraftWork.setApproverId(null);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("결재 미적용 저장");
+
+        Long approvalId = service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        assertEquals(77L, approvalId);
+
+        ArgumentCaptor<Map> updateCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).updateElectronicApprovalMainDraftContent(updateCaptor.capture());
+        assertEquals("approved", updateCaptor.getValue().get("statusType"));
+        assertEquals("approved", updateCaptor.getValue().get("endStatus"));
+        assertEquals("완료", updateCaptor.getValue().get("statusTypeName"));
+
+        ArgumentCaptor<Map> lineCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(1)).upsertElectronicApprovalLine(lineCaptor.capture());
+        assertEquals(1, lineCaptor.getValue().get("exeSeq"));
+        assertEquals("approved", lineCaptor.getValue().get("appStatus"));
+
+        verify(serviceHaccpWorkDAO, never()).clearUnusedReferenceApprovalLines(anyMap());
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainStatus(anyMap());
+    }
+
     @DisplayName("결재신청 시 다음 결재자는 arrival만 세팅되고 exe/open은 대기 상태를 유지한다")
     @Test
     void submitDraft_keepsNextApproverPendingUntilAction() throws Exception {
@@ -742,6 +772,131 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
         verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
+    }
+
+
+    private HaccpWorkApprovalSubVO calibSub() {
+        HaccpWorkApprovalSubVO sub = new HaccpWorkApprovalSubVO();
+        sub.setEquipmentId(501L);
+        sub.setInspectedDate("2026-10-01");
+        sub.setExpirationDate("2027-10-01");
+        return sub;
+    }
+
+    @DisplayName("HCP 업무 결재신청에 sub 가 없으면 400 을 내고 main 도 저장하지 않는다")
+    @Test
+    void submitDraft_hcpWithoutSub_rejectsBeforeSave() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HCP-CALIB");
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("검교정 기안");
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.submitDraft(77L, "tenant_001", payload, "3001"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals("필수값을 입력하세요.", ex.getReason());
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalSub(anyMap());
+    }
+
+    @DisplayName("HCP 업무 결재신청은 기존 sub 를 UPDATE 하고 INSERT 하지 않는다")
+    @Test
+    void submitDraft_hcpUpdatesExistingSub() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HCP-CALIB");
+        when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(1);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("검교정 기안");
+        payload.setSub(calibSub());
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> subCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).updateElectronicApprovalSub(subCaptor.capture());
+        assertEquals(10L, subCaptor.getValue().get("tenantId"));
+        assertEquals(77L, subCaptor.getValue().get("approvalId"));
+        assertEquals(77L, subCaptor.getValue().get("workId"));
+        assertEquals(501L, subCaptor.getValue().get("equipmentId"));
+        assertEquals("20261001", subCaptor.getValue().get("inspectedDate"));
+        assertEquals("20271001", subCaptor.getValue().get("expirationDate"));
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalSub(anyMap());
+    }
+
+    @DisplayName("HCP 업무 임시저장은 sub 행이 없으면 INSERT 한다")
+    @Test
+    void saveTempDraft_hcpInsertsSubWhenMissing() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HCP-CALIB");
+        when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(0);
+
+        HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
+        payload.setTitle("검교정 임시저장");
+        payload.setSub(calibSub());
+
+        service.saveTempDraft(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> insertCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).insertElectronicApprovalSub(insertCaptor.capture());
+        assertEquals(77L, insertCaptor.getValue().get("approvalId"));
+        assertEquals(501L, insertCaptor.getValue().get("equipmentId"));
+    }
+
+    @DisplayName("HCP 업무 임시저장도 sub 필수값이 없으면 400")
+    @Test
+    void saveTempDraft_hcpWithoutSub_rejects() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HCP-HCERT");
+
+        HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
+        payload.setTitle("보건증 임시저장");
+        payload.setSub(new HaccpWorkApprovalSubVO());
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.saveTempDraft(77L, "tenant_001", payload, "3001"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
+    }
+
+    @DisplayName("결재 미적용 HCP 업무도 저장 시 sub 를 저장한다")
+    @Test
+    void submitDraft_noApprovalApply_hcpSavesSub() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setApprovalApply(Boolean.FALSE);
+        serviceDraftWork.setReviewerId(null);
+        serviceDraftWork.setApproverId(null);
+        serviceDraftWork.setCategoryCode("HCP-CALIB");
+        when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(1);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("검교정 저장");
+        payload.setSub(calibSub());
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        verify(serviceHaccpWorkDAO).updateElectronicApprovalSub(anyMap());
+    }
+
+    @DisplayName("HCP 업무가 아니면 sub 가 와도 검증하지 않고 저장하지 않는다")
+    @Test
+    void submitDraft_nonHcpIgnoresSub() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HA");
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("일반 기안");
+        payload.setSub(new HaccpWorkApprovalSubVO());
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalSub(anyMap());
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalSub(anyMap());
     }
 
     private HaccpWorkFlowServiceImpl createServiceForDeleteDraftTest(Map<String, Object> approvalMain) throws Exception {

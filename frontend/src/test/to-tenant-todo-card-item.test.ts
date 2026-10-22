@@ -43,4 +43,11 @@ describe('toTenantTodoCardItem', () => {
         expect(result.routeIdType).toBe('work');
         expect(result.routeId).toBe('1');
     });
+
+    it('uses the last report date as the recent date column', () => {
+        const result = toTenantTodoCardItem(
+            buildRawItem({ lastReportDate: '2026-10-20', pendingArrivalAt: '2026-10-21 09:00' }),
+        );
+        expect(result.updatedAt).toBe('2026-10-20');
+    });
 });
