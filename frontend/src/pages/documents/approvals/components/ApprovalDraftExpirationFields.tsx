@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { MenuItem, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { listEquipmentPaged } from '../../../../services/basicinfo/equipmentService';
 import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
 import type { UserItem } from '../../../../services/organization/usersService';
+import { UserSelectDialog } from '../../../../shared/components/forms/UserSelectDialog';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 import { useCommonCodeOptions } from '../../../../shared/hooks/useCommonCodeOptions';
 import {
@@ -25,6 +27,8 @@ export function ApprovalDraftExpirationFields(
     const { tenantCode, config, value, onChange, users, isReadOnly = false } =
         props;
 
+    const [userDialogOpen, setUserDialogOpen] = useState(false);
+
     const materialTypeOptions = useCommonCodeOptions(
         COMMON_CODE_GROUP.MATERIAL_TYPE,
     );
@@ -42,6 +46,8 @@ export function ApprovalDraftExpirationFields(
     });
 
     const targetKey = getApprovalSubTargetKey(config);
+    // 기존 -> 사원도 드롭다운 옵션으로 변환
+    // 변경 -> 사원은 UserSelectDialog 로 선택하므로 옵션 없음
     const targetOptions =
         config.target === 'equipment'
             ? (equipmentQuery.data?.items ?? []).map((item) => ({
@@ -53,28 +59,67 @@ export function ApprovalDraftExpirationFields(
                     value: option.code,
                     label: option.name,
                 }))
-                : users.map((user) => ({ value: user.id, label: user.name }));
+                : [];
+    const selectedUserName =
+        users.find((user) => user.id === value.certificationUserId)?.name ?? '';
 
     const change = (key: keyof ApprovalSubValues, next: string) =>
         onChange?.({ ...value, [key]: next });
 
+    const openUserDialog = () => {
+        if (!isReadOnly) {
+            setUserDialogOpen(true);
+        }
+    };
+
     return (
         <>
-            <TextField
-                select
-                required
-                label={config.targetLabel}
-                value={value[targetKey]}
-                onChange={(event) => change(targetKey, event.target.value)}
-                disabled={isReadOnly}
-                sx={{ minWidth: 0 }}
-            >
-                {targetOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                    </MenuItem>
-                ))}
-            </TextField>
+            {/* 기존 -> 사원도 드롭다운(select)으로 선택 */}
+            {/* 변경 -> 사원은 읽기 전용 칸 클릭 시 참석자 dialog 와 같은 형식의 UserSelectDialog */}
+            {config.target === 'user' ? (
+                <TextField
+                    required
+                    label={config.targetLabel}
+                    value={selectedUserName}
+                    onClick={openUserDialog}
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                            openUserDialog();
+                        }
+                    }}
+                    disabled={isReadOnly}
+                    slotProps={{ input: { readOnly: true } }}
+                    sx={{ minWidth: 0, '& input': { cursor: isReadOnly ? 'default' : 'pointer' } }}
+                />
+            ) : (
+                <TextField
+                    select
+                    required
+                    label={config.targetLabel}
+                    value={value[targetKey]}
+                    onChange={(event) => change(targetKey, event.target.value)}
+                    disabled={isReadOnly}
+                    sx={{ minWidth: 0 }}
+                >
+                    {targetOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                        </MenuItem>
+                    ))}
+                </TextField>
+            )}
+            {userDialogOpen ? (
+                <UserSelectDialog
+                    users={users}
+                    title="사원 선택"
+                    selectedUserId={value.certificationUserId}
+                    onClose={() => setUserDialogOpen(false)}
+                    onConfirm={(user) => {
+                        change('certificationUserId', user.id);
+                        setUserDialogOpen(false);
+                    }}
+                />
+            ) : null}
             <TextField
                 required
                 label={config.inspectedLabel}
