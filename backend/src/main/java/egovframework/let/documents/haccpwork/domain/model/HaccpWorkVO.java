@@ -72,6 +72,9 @@ public class HaccpWorkVO implements Serializable {
     @Schema(description = "결재 적용 여부 (null 이면 결재 적용)")
     private Boolean approvalApply;
 
+    @Schema(description = "HCP 업무 sub 값. 저장된 sub 가 없으면 null")
+    private HaccpWorkApprovalSubVO sub;
+
     @Schema(description = "등록자")
     private String createdBy;
 
