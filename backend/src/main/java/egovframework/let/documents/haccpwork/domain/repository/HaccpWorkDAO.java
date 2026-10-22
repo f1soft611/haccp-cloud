@@ -147,6 +147,14 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return update("HaccpWorkDAO.updateElectronicApprovalMainBusinessKey", params);
     }
 
+    public int updateElectronicApprovalSub(Map<String, Object> params) throws Exception {
+        return update("HaccpWorkDAO.updateElectronicApprovalSub", params);
+    }
+
+    public void insertElectronicApprovalSub(Map<String, Object> params) throws Exception {
+        insert("HaccpWorkDAO.insertElectronicApprovalSub", params);
+    }
+
     public int softDeleteElectronicApprovalMain(Map<String, Object> params) throws Exception {
         return update("HaccpWorkDAO.softDeleteElectronicApprovalMain", params);
     }

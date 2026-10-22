@@ -51,6 +51,19 @@
         <result property="lastOwnerStatus" column="last_owner_status"/>
     </resultMap>
 
+    <resultMap id="haccpWorkDraftTemplateResult"
+               type="egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO"
+               extends="haccpWorkResult">
+        <association property="sub"
+                     javaType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalSubVO">
+            <result property="equipmentId" column="sub_equipment_id"/>
+            <result property="materialType" column="sub_material_type"/>
+            <result property="certificationUserId" column="sub_certification_user_id"/>
+            <result property="inspectedDate" column="sub_inspected_date"/>
+            <result property="expirationDate" column="sub_expiration_date"/>
+        </association>
+    </resultMap>
+
     <select id="HaccpWorkDAO.selectMyWorkList"
             parameterType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkSearchConditionVO"
             resultMap="haccpWorkResult">
@@ -588,9 +601,10 @@
         END
     </sql>
 
+    <!-- 기존 -> resultMap="haccpWorkResult" / 변경 -> sub 포함 resultMap -->
     <select id="HaccpWorkDAO.selectDraftTemplateByWorkId"
             parameterType="map"
-            resultMap="haccpWorkResult">
+            resultMap="haccpWorkDraftTemplateResult">
         SELECT
             w.drafting_work_category_id,
             pre.electronic_approval_id,
@@ -609,7 +623,7 @@
             w.reg_term,
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
-        TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYY-MM-DD') AS cycle_date,
+            TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYY-MM-DD') AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             CASE WHEN w.approval_apply = 'N' THEN FALSE ELSE TRUE END AS approval_apply,
             COALESCE(
@@ -697,7 +711,12 @@
               ELSE FALSE
             END AS can_submit,
             FALSE AS can_submit_cancel,
-            FALSE AS can_approve
+            FALSE AS can_approve,
+            eas.equipment_id AS sub_equipment_id,
+            eas.material_type AS sub_material_type,
+            eas.certification_user_id AS sub_certification_user_id,
+            TO_CHAR(TO_DATE(eas.inspected_date, 'YYYYMMDD'), 'YYYY-MM-DD') AS sub_inspected_date,
+            TO_CHAR(TO_DATE(eas.expiration_date, 'YYYYMMDD'), 'YYYY-MM-DD') AS sub_expiration_date
         FROM tb_drafting_work_category w
         JOIN tb_tenant t ON t.tenant_id = w.tenant_id
         LEFT JOIN tb_drafting_work_category_group g
@@ -789,17 +808,21 @@
           ON ru_line.tenant_id = w.tenant_id
          AND ru_line.login_id = l2.login_id
         LEFT JOIN tb_user au_line
-          ON au_line.tenant_id = w.tenant_id
-         AND au_line.login_id = l3.login_id
+        ON au_line.tenant_id = w.tenant_id
+        AND au_line.login_id = l3.login_id
+        LEFT JOIN tb_electronic_approval_sub eas
+        ON eas.tenant_id = w.tenant_id
+        AND eas.electronic_approval_id = pre.electronic_approval_id
         WHERE w.drafting_work_category_id = #{id}
           AND t.tenant_code = #{tenantCode}
           AND COALESCE(w.delete_status, 'N') != 'Y'
           
     </select>
 
+    <!-- 기존 -> resultMap="haccpWorkResult" / 변경 -> sub 포함 resultMap -->
     <select id="HaccpWorkDAO.selectDraftTemplateByApprovalId"
             parameterType="map"
-            resultMap="haccpWorkResult">
+            resultMap="haccpWorkDraftTemplateResult">
         SELECT
             w.drafting_work_category_id,
           m.electronic_approval_id,
@@ -988,6 +1011,11 @@
                ) THEN TRUE
               ELSE FALSE
             END AS can_confirm
+            ,eas.equipment_id AS sub_equipment_id
+            ,eas.material_type AS sub_material_type
+            ,eas.certification_user_id AS sub_certification_user_id
+            ,TO_CHAR(TO_DATE(eas.inspected_date, 'YYYYMMDD'), 'YYYY-MM-DD') AS sub_inspected_date
+            ,TO_CHAR(TO_DATE(eas.expiration_date, 'YYYYMMDD'), 'YYYY-MM-DD') AS sub_expiration_date
         FROM tb_electronic_approval_main m
         JOIN tb_drafting_work_category w
           ON w.tenant_id = m.tenant_id
@@ -1092,8 +1120,11 @@
           ON ru_line.tenant_id = m.tenant_id
          AND ru_line.login_id = l2.login_id
         LEFT JOIN tb_user au_line
-          ON au_line.tenant_id = m.tenant_id
-         AND au_line.login_id = l3.login_id
+        ON au_line.tenant_id = m.tenant_id
+        AND au_line.login_id = l3.login_id
+        LEFT JOIN tb_electronic_approval_sub eas
+        ON eas.tenant_id = m.tenant_id
+        AND eas.electronic_approval_id = m.electronic_approval_id
         WHERE m.electronic_approval_id = #{id}
           AND t.tenant_code = #{tenantCode}
           AND COALESCE(m.delete_status, 'N') != 'Y'
@@ -1967,6 +1998,53 @@
         AND electronic_approval_id = #{approvalId}
         AND COALESCE(delete_status, 'N') != 'Y'
     </update>
+
+    <update id="HaccpWorkDAO.updateElectronicApprovalSub"
+            parameterType="map">
+        UPDATE tb_electronic_approval_sub
+        SET
+            drafting_work_category_id = #{workId},
+            equipment_id = #{equipmentId, jdbcType=BIGINT},
+            material_type = #{materialType, jdbcType=VARCHAR},
+            certification_user_id = #{certificationUserId, jdbcType=BIGINT},
+            inspected_date = #{inspectedDate},
+            expiration_date = #{expirationDate},
+            updated_by = #{actorLoginId, jdbcType=BIGINT},
+            updated_at = #{now, jdbcType=TIMESTAMP}
+        WHERE tenant_id = #{tenantId}
+          AND electronic_approval_id = #{approvalId}
+    </update>
+
+    <insert id="HaccpWorkDAO.insertElectronicApprovalSub"
+            parameterType="map">
+        INSERT INTO tb_electronic_approval_sub (
+            electronic_approval_id,
+            tenant_id,
+            drafting_work_category_id,
+            equipment_id,
+            material_type,
+            certification_user_id,
+            inspected_date,
+            expiration_date,
+            created_by,
+            created_at,
+            updated_by,
+            updated_at
+        ) VALUES (
+                     #{approvalId},
+                     #{tenantId},
+                     #{workId},
+                     #{equipmentId, jdbcType=BIGINT},
+                     #{materialType, jdbcType=VARCHAR},
+                     #{certificationUserId, jdbcType=BIGINT},
+                     #{inspectedDate},
+                     #{expirationDate},
+                     #{actorLoginId, jdbcType=BIGINT},
+                     #{now, jdbcType=TIMESTAMP},
+                     #{actorLoginId, jdbcType=BIGINT},
+                     #{now, jdbcType=TIMESTAMP}
+                 )
+    </insert>
 
     <!-- 임시저장 기안 소프트 삭제. 상태 조건은 동시 상신 방지용 -->
     <update id="HaccpWorkDAO.softDeleteElectronicApprovalMain"
