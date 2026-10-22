@@ -138,8 +138,19 @@ export function ApprovalDraftEditorSection(
               fullWidth
               sx={{
                 minWidth: 0,
-                gridColumn: { xs: '1 / -1', md: '2 / span 2' },
+                // gridColumn: { xs: '1 / -1', md: '2 / span 2' },
               }}
+          />
+          <TextField
+              label="업무 기준일"
+              type="date"
+              value={reportDate}
+              onChange={(event) => onReportDateChange?.(event.target.value)}
+              disabled={isReadOnly}
+              helperText={REPORT_DATE_HELPER_TEXT[work?.cycle ?? '']}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ max: dayjs().format('YYYY-MM-DD') }}
+              sx={{ minWidth: 0 }}
           />
           <TextField
             label="기안 제목"
@@ -174,17 +185,6 @@ export function ApprovalDraftEditorSection(
             value={draftDate}
             InputProps={{ readOnly: true }}
             sx={{ minWidth: 0 }}
-          />
-          <TextField
-              label="업무 기준일"
-              type="date"
-              value={reportDate}
-              onChange={(event) => onReportDateChange?.(event.target.value)}
-              disabled={isReadOnly}
-              helperText={REPORT_DATE_HELPER_TEXT[work?.cycle ?? '']}
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ max: dayjs().format('YYYY-MM-DD') }}
-              sx={{ minWidth: 0 }}
           />
         </Stack>
 
