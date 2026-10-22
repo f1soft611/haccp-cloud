@@ -43,6 +43,7 @@ type UseApprovalDraftWriteActionsParams = {
   approvalEventType?: 'review_approve' | 'final_approve';
   referenceEventType?: 'reference_confirm';
   rejectEventType?: 'review_return' | 'final_return';
+  approvalApply?: boolean;
 };
 
 type UseApprovalDraftWriteActionsResult = {
@@ -95,6 +96,7 @@ export function useApprovalDraftWriteActions(
     approvalEventType,
     referenceEventType,
     rejectEventType,
+    approvalApply = true,
   } = params;
 
   // Note: ownership check is based on work.owner (actual draft author),
@@ -222,7 +224,11 @@ export function useApprovalDraftWriteActions(
         }),
       ]);
 
-      showSuccess(result.message || '결재신청이 완료되었습니다.');
+      showSuccess(
+          approvalApply
+              ? result.message || '결재신청이 완료되었습니다.'
+              : '저장이 완료되었습니다.',
+      );
       if (result.approvalId) {
         navigate(withReturnTo(`/approvals/draft/${result.approvalId}?idType=approval`), {
           replace: true,
@@ -232,9 +238,12 @@ export function useApprovalDraftWriteActions(
       navigate(returnTo || '/dashboard');
     },
     onError: (error: unknown) => {
+      // 결재 미적용 문서는 저장 오류 문구
       const message = extractApiErrorMessage(
-        error,
-        '결재신청 처리 중 오류가 발생했습니다.',
+          error,
+          approvalApply
+              ? '결재신청 처리 중 오류가 발생했습니다.'
+              : '저장 처리 중 오류가 발생했습니다.',
       );
       setErrorMessage(message);
       showError(message);

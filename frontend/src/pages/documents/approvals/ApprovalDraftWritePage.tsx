@@ -61,6 +61,8 @@ export function ApprovalDraftWritePage() {
   } = useApprovalDraftWriteData();
 
   const isStatusResolved = !baseId || workDetailQuery.isFetched;
+  const approvalApply = work?.approvalApply !== false;
+  const resolvedSubmitLabel = approvalApply ? submitLabel : '저장';
   const returnTo = (searchParams.get('returnTo') || '').trim();
   const approvalIdForComments =
     idType === 'approval'
@@ -137,6 +139,7 @@ export function ApprovalDraftWritePage() {
     approvalEventType,
     referenceEventType,
     rejectEventType,
+    approvalApply,
   });
 
   const showApprove = canApprove && idType === 'approval';
@@ -144,7 +147,8 @@ export function ApprovalDraftWritePage() {
   const showReject = canReject && idType === 'approval';
   const showCancelSubmit =
     canSubmitCancel && idType === 'approval' && !canApprove;
-  const showTempSave = canTempSave;
+  // 변경 -> 결재 미적용 문서는 임시저장 없이 저장(완료) 버튼 하나만 노출
+  const showTempSave = canTempSave && approvalApply;
   const showSubmit = canSubmit;
 
   const showDelete = canDeleteDraft({
@@ -204,7 +208,7 @@ export function ApprovalDraftWritePage() {
                 setSubmitConfirmOpen(true);
               }
         }
-        submitLabel={submitLabel}
+          submitLabel={resolvedSubmitLabel}
         isSubmitting={isSubmitting}
         approveDisabled={showConfirm ? confirmDisabled : approveDisabled}
         rejectDisabled={rejectDisabled}
@@ -267,13 +271,18 @@ export function ApprovalDraftWritePage() {
         onAttachmentChanged={refreshComments}
         isReadOnly={isReadOnly}
         attachmentReadOnly={attachmentReadOnly}
+        showApprovalLine={approvalApply}
       />
 
       <ConfirmDialog
         open={submitConfirmOpen}
-        title={`${submitLabel} 확인`}
-        description={`작성한 내용을 ${submitLabel}하시겠습니까?`}
-        confirmText={submitLabel}
+        title={`${resolvedSubmitLabel} 확인`}
+        description={
+          approvalApply
+              ? `작성한 내용을 ${submitLabel}하시겠습니까?`
+              : '작성한 내용을 저장하시겠습니까? 저장 후에는 수정할 수 없습니다.'
+        }
+        confirmText={resolvedSubmitLabel}
         confirmColor="primary"
         loading={isSubmitting}
         onConfirm={() => {

@@ -114,9 +114,12 @@ export function ApprovalDraftEditorSection(
 
         <Divider />
 
-        {metadataSection}
-
-        <Divider />
+        {metadataSection ? (
+            <>
+              {metadataSection}
+              <Divider />
+            </>
+        ) : null}
 
         <Stack
           sx={{

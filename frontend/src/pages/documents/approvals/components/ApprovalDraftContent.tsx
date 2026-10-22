@@ -47,6 +47,7 @@ type ApprovalDraftContentProps = {
   canWriteComments?: boolean;
   commentLoadErrorMessage?: string;
   onAttachmentChanged?: () => void | Promise<void>;
+  showApprovalLine?: boolean;
 };
 
 export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
@@ -88,6 +89,7 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     canWriteComments = true,
     commentLoadErrorMessage = '',
     onAttachmentChanged,
+    showApprovalLine = true,
   } = props;
 
   return (
@@ -107,19 +109,21 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         drafterDisplayName={drafterDisplayName}
         userId={userId}
         metadataSection={
-          <ApprovalDraftSidebar
-            embedded
-            isDarkMode={isDarkMode}
-            work={work}
-            drafterName={drafterDisplayName || userId}
-            drafterProfile={drafterProfile}
-            reviewerProfile={reviewerProfile}
-            approverProfile={approverProfile}
-            referenceOptions={referenceOptions}
-            selectedReferences={selectedReferences}
-            onChangeReferences={onChangeReferences}
-            isReadOnly={isReadOnly}
-          />
+          showApprovalLine ? (
+              <ApprovalDraftSidebar
+                  embedded
+                  isDarkMode={isDarkMode}
+                  work={work}
+                  drafterName={drafterDisplayName || userId}
+                  drafterProfile={drafterProfile}
+                  reviewerProfile={reviewerProfile}
+                  approverProfile={approverProfile}
+                  referenceOptions={referenceOptions}
+                  selectedReferences={selectedReferences}
+                  onChangeReferences={onChangeReferences}
+                  isReadOnly={isReadOnly}
+              />
+          ) : undefined
         }
         content={content}
         onChangeEditor={onChangeEditor}
