@@ -51,6 +51,7 @@ export type HaccpBaseWorkItem = {
   writtenInCycle?: boolean;
   pendingApprovalAlert?: boolean;
   pendingArrivalAt?: string;
+  lastReportDate?: string;
 };
 
 export type HaccpApprovalCommentItem = {
@@ -158,6 +159,8 @@ type RawHaccpBaseWorkItem = {
   pending_approval_alert?: boolean | string | null;
   pendingArrivalAt?: string | null;
   pending_arrival_at?: string | null;
+  lastReportDate?: string | null;
+  last_report_date?: string | null;
 };
 
 type ResultEnvelope<T> = {
@@ -386,6 +389,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     pendingArrivalAt: normalizeText(
       raw.pendingArrivalAt ?? raw.pending_arrival_at,
     ),
+    lastReportDate: normalizeText(raw.lastReportDate ?? raw.last_report_date),
   };
 }
 

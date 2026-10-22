@@ -13,6 +13,11 @@ import {
   type HaccpBaseCreateForm,
 } from '../types';
 
+// 만료일 관리 양식은 분류코드 HCP-XXX + 등록주기 수시(ANYTIME)일 때만 대상
+function isExpirationTarget(categoryCode: string, cycle: string) {
+    return categoryCode.startsWith('HCP-') && cycle === 'ANYTIME';
+}
+
 export function HaccpBaseCreateDialog(props: {
   open: boolean;
   mode: 'create' | 'edit';
@@ -42,6 +47,13 @@ export function HaccpBaseCreateDialog(props: {
     !value.categoryId ||
     !value.reviewerId ||
     !value.approverId;
+
+    const findCategoryCode = (categoryId: string) =>
+        categoryOptions.find((category) => category.id === categoryId)?.code ?? '';
+    const showExpiration = isExpirationTarget(
+        findCategoryCode(value.categoryId),
+        value.cycle,
+    );
 
   return (
     <FormDialog
@@ -99,10 +111,16 @@ export function HaccpBaseCreateDialog(props: {
             label="분류"
             value={value.categoryId}
             onChange={(event) =>
-              onChange({
-                ...value,
-                categoryId: event.target.value,
-              })
+                onChange({
+                    ...value,
+                    categoryId: event.target.value,
+                    expirationApply: isExpirationTarget(
+                        findCategoryCode(event.target.value),
+                        value.cycle,
+                    )
+                        ? value.expirationApply
+                        : 'N',
+                })
             }
             required
           >
@@ -122,8 +140,12 @@ export function HaccpBaseCreateDialog(props: {
                   onChange({
                       ...value,
                       cycle: event.target.value,
-                      expirationApply:
-                          event.target.value === 'ANYTIME' ? value.expirationApply : 'N',
+                      expirationApply: isExpirationTarget(
+                          findCategoryCode(value.categoryId),
+                          event.target.value,
+                      )
+                          ? value.expirationApply
+                          : 'N',
                   })
               }
               required
@@ -226,27 +248,6 @@ export function HaccpBaseCreateDialog(props: {
         </Stack>
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <TextField
-                  fullWidth
-                  select
-                  label="만료일 관리 양식"
-                  value={value.expirationApply}
-                  disabled={value.cycle !== 'ANYTIME'}
-                  helperText={
-                      value.cycle !== 'ANYTIME'
-                          ? '등록주기가 수시일 때만 선택할 수 있습니다.'
-                          : undefined
-                  }
-                  onChange={(event) =>
-                      onChange({
-                          ...value,
-                          expirationApply: event.target.value as 'Y' | 'N',
-                      })
-                  }
-              >
-                  <MenuItem value="Y">해당</MenuItem>
-                  <MenuItem value="N">미해당</MenuItem>
-              </TextField>
 
               <TextField
                   fullWidth
@@ -263,6 +264,24 @@ export function HaccpBaseCreateDialog(props: {
                   <MenuItem value="Y">적용</MenuItem>
                   <MenuItem value="N">미적용</MenuItem>
               </TextField>
+
+              {showExpiration ? (
+                  <TextField
+                      fullWidth
+                      select
+                      label="만료일 관리 양식"
+                      value={value.expirationApply}
+                      onChange={(event) =>
+                          onChange({
+                              ...value,
+                              expirationApply: event.target.value as 'Y' | 'N',
+                          })
+                      }
+                  >
+                      <MenuItem value="Y">해당</MenuItem>
+                      <MenuItem value="N">미해당</MenuItem>
+                  </TextField>
+              ) : null}
           </Stack>
 
         <TextField
