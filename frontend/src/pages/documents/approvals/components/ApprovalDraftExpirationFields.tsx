@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MenuItem, TextField } from '@mui/material';
+import { Autocomplete, Box, TextField } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { listEquipmentPaged } from '../../../../services/basicinfo/equipmentService';
 import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
@@ -92,21 +92,54 @@ export function ApprovalDraftExpirationFields(
                     sx={{ minWidth: 0, '& input': { cursor: isReadOnly ? 'default' : 'pointer' } }}
                 />
             ) : (
-                <TextField
-                    select
-                    required
-                    label={config.targetLabel}
-                    value={value[targetKey]}
-                    onChange={(event) => change(targetKey, event.target.value)}
+                // 기존 -> TextField select + MenuItem 으로 목록에서만 선택
+                // 변경 -> Autocomplete 로 타이핑하면 이름 부분 일치로 실시간 필터링, 매칭 글자 하이라이트
+                <Autocomplete
+                    options={targetOptions}
+                    value={
+                        targetOptions.find((option) => option.value === value[targetKey]) ??
+                        null
+                    }
+                    getOptionLabel={(option) => option.label}
+                    isOptionEqualToValue={(option, selected) =>
+                        option.value === selected.value
+                    }
+                    onChange={(_, selected) => change(targetKey, selected?.value ?? '')}
+                    // ponytail: 첫 번째 매칭만 하이라이트. 같은 글자 반복 표시가 필요하면 indexOf 루프로 확장
+                    renderOption={(props, option, { inputValue }) => {
+                        const { key, ...optionProps } = props;
+                        const start = inputValue
+                            ? option.label.toLowerCase().indexOf(inputValue.toLowerCase())
+                            : -1;
+                        const end = start + inputValue.length;
+                        return (
+                            <li key={key} {...optionProps}>
+                                {start < 0 ? (
+                                    option.label
+                                ) : (
+                                    <>
+                                        {option.label.slice(0, start)}
+                                        <Box
+                                            component="span"
+                                            sx={{ fontWeight: 700, color: 'primary.main' }}
+                                        >
+                                            {option.label.slice(start, end)}
+                                        </Box>
+                                        {option.label.slice(end)}
+                                    </>
+                                )}
+                            </li>
+                        );
+                    }}
+                    noOptionsText="검색 결과 없음"
+                    loading={equipmentQuery.isLoading}
+                    loadingText="불러오는 중..."
                     disabled={isReadOnly}
                     sx={{ minWidth: 0 }}
-                >
-                    {targetOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                        </MenuItem>
-                    ))}
-                </TextField>
+                    renderInput={(params) => (
+                        <TextField {...params} required label={config.targetLabel} />
+                    )}
+                />
             )}
             {userDialogOpen ? (
                 <UserSelectDialog
