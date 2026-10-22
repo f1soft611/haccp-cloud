@@ -176,7 +176,7 @@ export function ApprovalDraftEditorSection(
             sx={{ minWidth: 0 }}
           />
           <TextField
-              label="보고일자"
+              label="업무 기준일"
               type="date"
               value={reportDate}
               onChange={(event) => onReportDateChange?.(event.target.value)}
