@@ -43,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/v1/basicinfo/equipment")
 public class EquipmentApiController {
 
-    private static final int[] ALLOWED_PAGE_SIZES = {10, 20, 50};
+    private static final int[] ALLOWED_PAGE_SIZES = {10, 20, 50, 1000};
 
     @Resource(name = "equipmentService")
     private EquipmentService equipmentService;
