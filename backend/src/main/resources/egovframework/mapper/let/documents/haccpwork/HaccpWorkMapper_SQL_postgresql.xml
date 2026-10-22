@@ -18,6 +18,7 @@
         <result property="cycleName" column="reg_term_nm"/>
         <result property="cycleDate" column="cycle_date"/>
         <result property="active" column="active"/>
+        <result property="approvalApply" column="approval_apply"/>
         <result property="createdBy" column="created_by"/>
         <result property="createdAt" column="created_at"/>
         <result property="owner" column="owner"/>
@@ -610,6 +611,7 @@
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
         TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYY-MM-DD') AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            CASE WHEN w.approval_apply = 'N' THEN FALSE ELSE TRUE END AS approval_apply,
             COALESCE(
               NULLIF(TRIM(CAST(cu_pre.user_id AS varchar)), ''),
               CAST(pre.login_id AS varchar)
@@ -821,6 +823,7 @@
                 ELSE NULL
                 END AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
+            CASE WHEN w.approval_apply = 'N' THEN FALSE ELSE TRUE END AS approval_apply,
             COALESCE(
               NULLIF(TRIM(CAST(cu_main.user_id AS varchar)), ''),
               CAST(m.login_id AS varchar)

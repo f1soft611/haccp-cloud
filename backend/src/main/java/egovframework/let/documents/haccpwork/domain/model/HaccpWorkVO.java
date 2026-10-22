@@ -69,6 +69,9 @@ public class HaccpWorkVO implements Serializable {
     @Schema(description = "사용 여부")
     private boolean active;
 
+    @Schema(description = "결재 적용 여부 (null 이면 결재 적용)")
+    private Boolean approvalApply;
+
     @Schema(description = "등록자")
     private String createdBy;
 
