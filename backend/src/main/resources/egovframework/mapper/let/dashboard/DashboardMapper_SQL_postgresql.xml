@@ -182,7 +182,7 @@
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
             AND COALESCE(m.delete_status, 'N') != 'Y'
-            AND m.cycle_date = TO_CHAR(cb.cycle_start, 'YYYYMMDD')
+            AND m.report_date = TO_CHAR(cb.cycle_start, 'YYYYMMDD')
         ) appr ON TRUE
         WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
@@ -212,21 +212,20 @@
     <select id="DashboardDAO.selectMyTodoCycleList"
             parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
             resultType="map">
-        SELECT DISTINCT ON (m.drafting_work_category_id, m.cycle_date)
+        SELECT DISTINCT ON (m.drafting_work_category_id, m.report_date)
             CAST(m.drafting_work_category_id AS varchar) AS "workId",
-            m.cycle_date AS "cycleDate",
+            m.report_date AS "cycleDate",
             CAST(m.electronic_approval_id AS varchar) AS "approvalId",
             COALESCE(m.status_type, '') AS "statusType",
             TO_CHAR(m.created_at, 'YYYYMMDD') AS "registeredDate",
-            <!-- 기존 -> 없음 / 변경 -> 날짜별 문서 제목 -->
             COALESCE(m.ea_title, '') AS "title"
         FROM tb_electronic_approval_main m
         WHERE m.tenant_id = #{tenantId}
-          AND m.drafting_work_category_id IS NOT NULL
-          AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
-          AND COALESCE(m.delete_status, 'N') != 'Y'
-          AND m.cycle_date BETWEEN #{fromDate} AND #{toDate}
-        ORDER BY m.drafting_work_category_id, m.cycle_date,
+        AND m.drafting_work_category_id IS NOT NULL
+        AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
+        AND COALESCE(m.delete_status, 'N') != 'Y'
+        AND m.report_date BETWEEN #{fromDate} AND #{toDate}
+        ORDER BY m.drafting_work_category_id, m.report_date,
             COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
     </select>
 
