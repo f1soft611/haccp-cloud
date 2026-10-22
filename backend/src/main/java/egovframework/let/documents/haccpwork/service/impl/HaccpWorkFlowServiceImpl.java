@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalStatusUpdateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentCreateRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalCommentUpdateRequestVO;
+import egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalSubVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftSubmitRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkDraftTempSaveRequestVO;
 import egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO;
@@ -87,6 +88,10 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         ensureSubmissionEditableState(tenantId, workId, actorLoginId, cycleDate, "임시저장");
         String reportDate = resolveReportDate(tenantId, workId, actorLoginId, work.getCycle(), cycleDate, payload.getReportDate(), "임시저장");
         String responseCycleDate = LocalDate.parse(reportDate, DATE_FORMATTER).toString();
+        boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
+        if (subCategory) {
+            HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
+        }
 
         LocalDateTime now = LocalDateTime.now();
         String regDate = now.format(DATE_FORMATTER);
@@ -167,6 +172,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         if (targetApprovalId == null) {
             throw new IllegalStateException("임시저장 결재 문서 키를 확인할 수 없습니다.");
         }
+        if (subCategory) {
+            saveApprovalSub(tenantId, targetApprovalId, workId, work.getCategoryCode(), payload.getSub(), actorLoginId, now);
+        }
 
         if (!StringUtils.hasText(work.getReviewerId() == null ? "" : String.valueOf(work.getReviewerId()))
             || !StringUtils.hasText(work.getApproverId() == null ? "" : String.valueOf(work.getApproverId()))) {
@@ -234,6 +242,10 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         }
         String mainStatus = approvalApply ? "in_progress" : "approved";
         String mainStatusName = approvalApply ? "진행중" : "완료";
+        boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
+        if (subCategory) {
+            HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
+        }
 
         String templateJson = StringUtils.hasText(payload.getTemplateJson())
                 ? payload.getTemplateJson().trim()
@@ -332,6 +344,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         }
         if (electronicApprovalId == null) {
             throw new IllegalStateException("결재 메인 저장 후 키를 확인할 수 없습니다.");
+        }
+        if (subCategory) {
+            saveApprovalSub(tenantId, electronicApprovalId, workId, work.getCategoryCode(), payload.getSub(), actorLoginId, now);
         }
 
         Long submitHistoryLineId = insertApprovalLine(
@@ -1105,6 +1120,21 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 
     private String normalizeTenantCode(String tenantCode) {
         return StringUtils.hasText(tenantCode) ? tenantCode.trim().toUpperCase() : "";
+    }
+
+    private void saveApprovalSub(
+            Long tenantId,
+            Long approvalId,
+            Long workId,
+            String categoryCode,
+            HaccpWorkApprovalSubVO sub,
+            Long actorLoginId,
+            LocalDateTime now
+    ) throws Exception {
+        Map<String, Object> params = HaccpWorkApprovalSubs.toParams(tenantId, approvalId, workId, categoryCode, sub, actorLoginId, now);
+        if (haccpWorkDAO.updateElectronicApprovalSub(params) == 0) {
+            haccpWorkDAO.insertElectronicApprovalSub(params);
+        }
     }
 
     private String trimToEmpty(String value) {
