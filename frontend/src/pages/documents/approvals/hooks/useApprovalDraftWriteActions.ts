@@ -8,6 +8,12 @@ import {
   submitHaccpWorkDraft,
   updateHaccpWorkApprovalStatus,
 } from '../../../../services/documents/haccpBaseWorkService';
+import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
+import {
+  EMPTY_APPROVAL_SUB,
+  getApprovalSubFieldConfig,
+  validateApprovalSub,
+} from '../utils/approvalSubFields';
 import { extractApiErrorMessage } from '../../../../services/api/errorMessage';
 import { useFeedback } from '../../../../shared/hooks/useFeedback';
 import type { DocumentFieldValues } from '../../../../editor/utils/documentFieldValues';
@@ -44,6 +50,8 @@ type UseApprovalDraftWriteActionsParams = {
   referenceEventType?: 'reference_confirm';
   rejectEventType?: 'review_return' | 'final_return';
   approvalApply?: boolean;
+  categoryCode?: string;
+  sub?: ApprovalSubValues;
 };
 
 type UseApprovalDraftWriteActionsResult = {
@@ -97,6 +105,8 @@ export function useApprovalDraftWriteActions(
     referenceEventType,
     rejectEventType,
     approvalApply = true,
+    categoryCode,
+    sub,
   } = params;
 
   // Note: ownership check is based on work.owner (actual draft author),
@@ -113,6 +123,19 @@ export function useApprovalDraftWriteActions(
     tenantCode,
     baseId ?? '',
   ];
+  const subFieldConfig = getApprovalSubFieldConfig(categoryCode);
+  // HCP 업무가 아니면 undefined, 필수값이 비면 오류를 던져 onError 로 보낸다
+  const resolveSubPayload = () => {
+    if (!subFieldConfig) {
+      return undefined;
+    }
+    const target = sub ?? EMPTY_APPROVAL_SUB;
+    const message = validateApprovalSub(subFieldConfig, target);
+    if (message) {
+      throw new Error(message);
+    }
+    return target;
+  };
 
   const tempSaveMutation = useMutation({
     mutationFn: async () => {
@@ -122,6 +145,7 @@ export function useApprovalDraftWriteActions(
       if (!targetId) {
         throw new Error('저장 대상 ID를 찾을 수 없습니다.');
       }
+      const subPayload = resolveSubPayload();
 
       const snapshotContent = resolveDocumentFieldSnapshotContent(
         editorContent,
@@ -141,6 +165,7 @@ export function useApprovalDraftWriteActions(
         referenceIds,
         cycleDate,
         reportDate,
+        sub: subPayload,
       });
     },
     onSuccess: async (result) => {
@@ -186,6 +211,7 @@ export function useApprovalDraftWriteActions(
       if (!normalizedTitle) {
         throw new Error('기안 제목은 필수입니다.');
       }
+      const subPayload = resolveSubPayload();
 
       const snapshotContent = resolveDocumentFieldSnapshotContent(
         editorContent,
@@ -205,6 +231,7 @@ export function useApprovalDraftWriteActions(
         referenceIds,
         cycleDate,
         reportDate,
+        sub: subPayload,
       });
     },
     onSuccess: async (result) => {

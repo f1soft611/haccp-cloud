@@ -143,6 +143,8 @@ export function ApprovalDraftWritePage() {
     referenceEventType,
     rejectEventType,
     approvalApply,
+    categoryCode: work?.categoryCode,
+    sub,
   });
 
   const showApprove = canApprove && idType === 'approval';
