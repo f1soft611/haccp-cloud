@@ -50,8 +50,6 @@ export function ApprovalDraftEditorSection(
     isReadOnly = false,
   } = props;
 
-  const templateId =
-    (work?.id || (idType === 'work' ? baseId : '') || '-').trim() || '-';
   const documentId =
     (work?.approvalId || (idType === 'approval' ? baseId : '') || '-').trim() ||
     '-';
@@ -83,20 +81,9 @@ export function ApprovalDraftEditorSection(
         >
           <Stack direction="row" spacing={0.8} flexWrap="wrap" useFlexGap>
             <Chip
-              size="small"
-              color="info"
-              variant="outlined"
-              label={`템플릿명 ${work?.divisionName || '-'}`}
-            />
-            <Chip
-              size="small"
-              variant="outlined"
-              label={`템플릿 ID ${templateId}`}
-            />
-            <Chip
-              size="small"
-              variant="outlined"
-              label={`문서 ID ${documentId}`}
+                size="small"
+                variant="outlined"
+                label={`문서 ID ${documentId}`}
             />
           </Stack>
 
@@ -139,6 +126,22 @@ export function ApprovalDraftEditorSection(
           }}
         >
           <TextField
+              label="구분"
+              value={work?.categoryName || '-'}
+              InputProps={{ readOnly: true }}
+              sx={{ minWidth: 0 }}
+          />
+          <TextField
+              label="업무명"
+              value={work?.divisionName || '-'}
+              InputProps={{ readOnly: true }}
+              fullWidth
+              sx={{
+                minWidth: 0,
+                gridColumn: { xs: '1 / -1', md: '2 / span 2' },
+              }}
+          />
+          <TextField
             label="기안 제목"
             placeholder="예: 2026-07-16 품질 점검 기안"
             required
@@ -169,12 +172,6 @@ export function ApprovalDraftEditorSection(
           <TextField
             label="기안일"
             value={draftDate}
-            InputProps={{ readOnly: true }}
-            sx={{ minWidth: 0 }}
-          />
-          <TextField
-            label="구분"
-            value={work?.categoryName || '-'}
             InputProps={{ readOnly: true }}
             sx={{ minWidth: 0 }}
           />
