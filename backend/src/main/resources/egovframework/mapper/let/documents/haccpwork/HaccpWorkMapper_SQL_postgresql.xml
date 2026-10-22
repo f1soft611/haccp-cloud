@@ -757,7 +757,7 @@
             AND COALESCE(m.status_type, '') = 'pre_apply'
             AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
             AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
-            AND m.cycle_date = TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYYMMDD')
+            AND m.report_date = TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYYMMDD')
           ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
         ) pre ON TRUE
@@ -817,7 +817,7 @@
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE
-                WHEN NULLIF(TRIM(m.cycle_date), '') ~ '^[0-9]{8}$' THEN TO_CHAR(TO_DATE(m.cycle_date, 'YYYYMMDD'), 'YYYY-MM-DD')
+                WHEN NULLIF(TRIM(m.report_date), '') ~ '^[0-9]{8}$' THEN TO_CHAR(TO_DATE(m.report_date, 'YYYYMMDD'), 'YYYY-MM-DD')
                 ELSE NULL
                 END AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
@@ -1231,7 +1231,6 @@
         eabus_no,
         ea_exe_id,
         reg_date,
-        cycle_date,
         login_id,
         status_type,
         department_id,
@@ -1263,7 +1262,6 @@
         #{eabusNo},
         #{eaExeId},
         #{regDate},
-        #{cycleDate, jdbcType=VARCHAR},
         #{loginId},
         #{statusType},
         #{departmentId, jdbcType=BIGINT},
@@ -1894,7 +1892,7 @@
         AND login_id = #{loginId}
         AND COALESCE(delete_status, 'N') != 'Y'
         AND COALESCE(status_type, '') = 'pre_apply'
-        AND cycle_date = #{cycleDate}
+        AND report_date = #{cycleDate}
       ORDER BY COALESCE(updated_at, created_at) DESC, electronic_approval_id DESC
       LIMIT 1
     </select>
@@ -1910,7 +1908,7 @@
         AND drafting_work_category_id = #{workId}
         AND login_id = #{loginId}
         AND COALESCE(delete_status, 'N') != 'Y'
-        AND cycle_date = #{cycleDate}
+        AND report_date = #{cycleDate}
       ORDER BY COALESCE(updated_at, created_at) DESC, electronic_approval_id DESC
       LIMIT 1
     </select>
@@ -1940,6 +1938,7 @@
               NULL
             </otherwise>
           </choose>,
+        report_date = COALESCE(#{reportDate, jdbcType=VARCHAR}, report_date),
         reg_date = COALESCE(#{regDate, jdbcType=VARCHAR}, reg_date),
         twf_date = COALESCE(#{twfDate, jdbcType=VARCHAR}, twf_date),
         after_twf_date = COALESCE(#{afterTwfDate, jdbcType=VARCHAR}, after_twf_date),

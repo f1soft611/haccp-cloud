@@ -66,7 +66,7 @@ public class DashboardApiController {
 
     @Operation(
             summary = "대시보드 캘린더 주기별 문서 상태 조회",
-            description = "기간 내 업무별·주기 기준일(cycle_date)별 최신 결재문서 상태를 조회한다",
+            description = "기간 내 업무별, 주기 기준일(report_date)별 최신 결재문서 상태를 조회한다",
             security = { @SecurityRequirement(name = "Authorization") },
             tags = { "DashboardApiController" }
     )

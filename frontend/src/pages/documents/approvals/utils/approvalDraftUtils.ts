@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { JSONContent } from '@tiptap/core';
 import type { ApprovalRole } from '../types';
 
@@ -78,6 +79,24 @@ export function formatNow(value: Date): string {
   const hour = String(value.getHours()).padStart(2, '0');
   const minute = String(value.getMinutes()).padStart(2, '0');
   return `${year}-${month}-${day} ${hour}:${minute}`;
+}
+
+// 업무 주기(work.cycle) 기준 보고일자. WEEK 는 그 주 월요일, MONTH 는 1일, YEAR 는 1월 1일, 그 외는 고른 날짜 그대로 (yyyy-MM-dd)
+export function toCycleStartDate(cycle: string, date: string): string {
+  const value = dayjs(date);
+  if (!date || !value.isValid()) {
+    return date;
+  }
+  if (cycle === 'WEEK') {
+    return value.subtract((value.day() + 6) % 7, 'day').format('YYYY-MM-DD');
+  }
+  if (cycle === 'MONTH') {
+    return value.startOf('month').format('YYYY-MM-DD');
+  }
+  if (cycle === 'YEAR') {
+    return value.startOf('year').format('YYYY-MM-DD');
+  }
+  return date;
 }
 
 export function renderApprovalStampLabel(role: ApprovalRole): string {

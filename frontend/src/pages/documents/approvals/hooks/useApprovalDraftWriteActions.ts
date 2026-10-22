@@ -24,6 +24,7 @@ type UseApprovalDraftWriteActionsParams = {
   approvalId?: string;
   onDeleted?: () => void;
   cycleDate?: string;
+  reportDate?: string;
   returnTo?: string;
   isStatusResolved?: boolean;
   approvalStatusType?: string;
@@ -79,6 +80,7 @@ export function useApprovalDraftWriteActions(
     title,
     referenceIds,
     cycleDate,
+    reportDate,
     returnTo,
     editorContent,
     editorHtml,
@@ -136,6 +138,7 @@ export function useApprovalDraftWriteActions(
         templateHtml: snapshotHtml,
         referenceIds,
         cycleDate,
+        reportDate,
       });
     },
     onSuccess: async (result) => {
@@ -199,6 +202,7 @@ export function useApprovalDraftWriteActions(
         templateHtml: snapshotHtml,
         referenceIds,
         cycleDate,
+        reportDate,
       });
     },
     onSuccess: async (result) => {

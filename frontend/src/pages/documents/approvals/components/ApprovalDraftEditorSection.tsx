@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { Box, Chip, Divider, Paper, Stack, TextField } from '@mui/material';
 import type { JSONContent } from '@tiptap/core';
 import type { ReactNode } from 'react';
@@ -7,12 +8,19 @@ import type { DocumentFieldValues } from '../../../../editor/utils/documentField
 import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import { formatNow } from '../utils/approvalDraftUtils';
 
+const REPORT_DATE_HELPER_TEXT: Record<string, string> = {
+  WEEK: '주간 업무는 해당 주 월요일로 저장됩니다',
+  MONTH: '월간 업무는 해당 월 1일로 저장됩니다',
+  YEAR: '연간 업무는 해당 연도 1월 1일로 저장됩니다',
+};
 type ApprovalDraftEditorSectionProps = {
   baseId?: string;
   idType: 'work' | 'approval';
   work?: HaccpBaseWorkItem;
   title: string;
   onTitleChange?: (next: string) => void;
+  reportDate: string;
+  onReportDateChange?: (next: string) => void;
   drafterDisplayName: string;
   userId: string;
   metadataSection?: ReactNode;
@@ -31,6 +39,8 @@ export function ApprovalDraftEditorSection(
     work,
     title,
     onTitleChange,
+    reportDate,
+    onReportDateChange,
     drafterDisplayName,
     userId,
     metadataSection,
@@ -167,6 +177,17 @@ export function ApprovalDraftEditorSection(
             value={work?.categoryName || '-'}
             InputProps={{ readOnly: true }}
             sx={{ minWidth: 0 }}
+          />
+          <TextField
+              label="보고일자"
+              type="date"
+              value={reportDate}
+              onChange={(event) => onReportDateChange?.(event.target.value)}
+              disabled={isReadOnly}
+              helperText={REPORT_DATE_HELPER_TEXT[work?.cycle ?? '']}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ max: dayjs().format('YYYY-MM-DD') }}
+              sx={{ minWidth: 0 }}
           />
         </Stack>
 

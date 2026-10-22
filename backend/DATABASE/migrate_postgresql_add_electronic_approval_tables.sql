@@ -17,7 +17,6 @@ CREATE TABLE IF NOT EXISTS tb_electronic_approval_main (
     eabus_no VARCHAR(3) NOT NULL,
     ea_exe_id VARCHAR(12) NOT NULL,
     reg_date VARCHAR(8) NOT NULL,
-    cycle_date VARCHAR(8),
     login_id BIGINT,
     status_type VARCHAR(10) NOT NULL,
     department_id BIGINT,
@@ -233,11 +232,9 @@ CREATE INDEX IF NOT EXISTS idx_electronic_approval_main_delete_status
 CREATE INDEX IF NOT EXISTS idx_electronic_approval_main_reg_date
     ON tb_electronic_approval_main(reg_date);
 
--- 기존 테이블에 다시 실행될 때를 위해 컬럼을 먼저 보장한다.
-ALTER TABLE tb_electronic_approval_main ADD COLUMN IF NOT EXISTS cycle_date VARCHAR(8);
-
-CREATE INDEX IF NOT EXISTS idx_electronic_approval_main_work_cycle_date
-    ON tb_electronic_approval_main(drafting_work_category_id, cycle_date);
+-- 주기 기준일은 report_date 하나로 통일
+CREATE INDEX IF NOT EXISTS idx_electronic_approval_main_work_report_date
+    ON tb_electronic_approval_main(drafting_work_category_id, report_date);
 
 CREATE INDEX IF NOT EXISTS idx_electronic_approval_main_created_at
     ON tb_electronic_approval_main(created_at);
