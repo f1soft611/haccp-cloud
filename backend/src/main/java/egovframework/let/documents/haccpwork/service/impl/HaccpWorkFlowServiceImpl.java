@@ -85,6 +85,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
         String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
         ensureSubmissionEditableState(tenantId, workId, actorLoginId, cycleDate, "임시저장");
+        String reportDate = resolveReportDate(tenantId, workId, actorLoginId, work.getCycle(), cycleDate, payload.getReportDate(), "임시저장");
+        String responseCycleDate = LocalDate.parse(reportDate, DATE_FORMATTER).toString();
 
         LocalDateTime now = LocalDateTime.now();
         String regDate = now.format(DATE_FORMATTER);
@@ -108,7 +110,6 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("eabusNo", DEFAULT_EABUS_NO);
             mainParams.put("eaExeId", eaExeId);
             mainParams.put("regDate", regDate);
-            mainParams.put("cycleDate", cycleDate);
             mainParams.put("loginId", actorLoginId);
             mainParams.put("statusType", "pre_apply");
             mainParams.put("departmentId", getLong(actorProfile, "departmentId"));
@@ -123,7 +124,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
             mainParams.put("endStatus", "pre_apply");
             mainParams.put("statusTypeName", "미완료");
-            mainParams.put("reportDate", cycleDate);
+            mainParams.put("reportDate", reportDate);
             mainParams.put("settlePlanDate", regDate);
             mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
             mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
@@ -150,6 +151,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             updateParams.put("endStatus", "pre_apply");
             updateParams.put("updatedBy", actorLoginId);
             updateParams.put("updatedAt", now);
+            updateParams.put("reportDate", reportDate);
             haccpWorkDAO.updateElectronicApprovalMainDraftContent(updateParams);
 
             Map<String, Object> approvalMain = new HashMap<String, Object>();
@@ -168,7 +170,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 
         if (!StringUtils.hasText(work.getReviewerId() == null ? "" : String.valueOf(work.getReviewerId()))
             || !StringUtils.hasText(work.getApproverId() == null ? "" : String.valueOf(work.getApproverId()))) {
-            return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);        }
+            return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, responseCycleDate);
+        }
 
         List<Long> referenceLoginIds = resolveReferenceLoginIds(
             tenantId,
@@ -193,7 +196,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             eaExeId
         );
 
-        return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
+        return haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, responseCycleDate);
     }
 
     @Override
@@ -222,6 +225,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
         String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
         ensureSubmissionEditableState(tenantId, workId, actorLoginId, cycleDate, "결재신청");
+        String reportDate = resolveReportDate(tenantId, workId, actorLoginId, work.getCycle(), cycleDate, payload.getReportDate(), "결재신청");
 
         if (work.getReviewerId() == null || work.getApproverId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "검토자/승인자 지정 후 결재신청할 수 있습니다.");
@@ -256,7 +260,6 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("eabusNo", DEFAULT_EABUS_NO);
             mainParams.put("eaExeId", eaExeId);
             mainParams.put("regDate", regDate);
-            mainParams.put("cycleDate", cycleDate);
             mainParams.put("loginId", actorLoginId);
             mainParams.put("statusType", "in_progress");
             mainParams.put("departmentId", getLong(actorProfile, "departmentId"));
@@ -271,7 +274,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             mainParams.put("cataTypeCode", normalizeCode(work.getDivisionCode(), DEFAULT_CATA_TYPE_CODE, 6));
             mainParams.put("endStatus", "in_progress");
             mainParams.put("statusTypeName", "진행중");
-            mainParams.put("reportDate", cycleDate);
+            mainParams.put("reportDate", reportDate);
             mainParams.put("settlePlanDate", regDate);
             mainParams.put("weightTypeCode", DEFAULT_WEIGHT_TYPE_CODE);
             mainParams.put("weightStatus", DEFAULT_WEIGHT_STATUS);
@@ -301,6 +304,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             updateParams.put("endStatus", "in_progress");
             updateParams.put("updatedBy", actorLoginId);
             updateParams.put("updatedAt", now);
+            updateParams.put("reportDate", reportDate);
             haccpWorkDAO.updateElectronicApprovalMainDraftContent(updateParams);
 
             Map<String, Object> approvalMainParams = new HashMap<String, Object>();
@@ -1939,6 +1943,30 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         }
 
         return "";
+    }
+
+    /** 보고일자(reportDate)의 주기 시작일(yyyyMMdd). 비었거나 원래 주기와 같으면 원래 주기, 다르면 대상 주기가 비어 있어야 한다. */
+    private String resolveReportDate(
+            Long tenantId,
+            Long workId,
+            Long loginId,
+            String regTerm,
+            String cycleDate,
+            String requestedReportDate,
+            String actionLabel
+    ) throws Exception {
+        if (!StringUtils.hasText(requestedReportDate)) {
+            return cycleDate;
+        }
+        String reportDate = HaccpWorkCycleDates.resolve(regTerm, requestedReportDate, LocalDate.now()).format(DATE_FORMATTER);
+        if (reportDate.equals(cycleDate)) {
+            return cycleDate;
+        }
+        ensureSubmissionEditableState(tenantId, workId, loginId, reportDate, actionLabel);
+        if (findLatestPreApplyApprovalId(tenantId, workId, loginId, reportDate) != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "해당 주기에 이미 작성 중인 문서가 있습니다.");
+        }
+        return reportDate;
     }
 
     private void ensureSubmissionEditableState(Long tenantId, Long workId, Long loginId, String cycleDate, String actionLabel) throws Exception {

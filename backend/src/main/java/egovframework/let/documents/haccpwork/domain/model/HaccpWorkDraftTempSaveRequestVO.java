@@ -31,4 +31,7 @@ public class HaccpWorkDraftTempSaveRequestVO implements Serializable {
 
     @Schema(description = "주기 기준일(yyyy-MM-dd). 비우면 현재 주기")
     private String cycleDate;
+
+    @Schema(description = "보고일자(yyyy-MM-dd). 주기 시작일로 맞춰 저장하며, 비우면 cycleDate 주기에 저장")
+    private String reportDate;
 }
