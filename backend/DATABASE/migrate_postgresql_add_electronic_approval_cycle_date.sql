@@ -1,3 +1,5 @@
+-- 주의: migrate_postgresql_drop_electronic_approval_cycle_date.sql 실행 이후에는 이 파일을 실행하지 않는다. (cycle_date 컬럼이 되살아난다)
+
 -- tb_electronic_approval_main 주기 기준일(cycle_date) 컬럼 추가 및 기존 데이터 채우기.
 -- 업무 마스터(tb_drafting_work_category.reg_term) 주기에 따라
 --   일/발생시 -> 해당 일자, 주 -> 그 주 월요일, 월 -> 그 달 1일 (yyyyMMdd)
