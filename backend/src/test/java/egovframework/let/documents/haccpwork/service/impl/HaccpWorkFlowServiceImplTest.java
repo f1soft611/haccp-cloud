@@ -446,6 +446,36 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("approved", lineCaptor.getAllValues().get(1).get("appStatus"));
     }
 
+    @DisplayName("결재 미적용 문서는 결재신청 시 기안자 결재선만 만들고 바로 완료 상태가 된다")
+    @Test
+    void submitDraft_noApprovalApply_completesWithDrafterLineOnly() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setApprovalApply(Boolean.FALSE);
+        serviceDraftWork.setReviewerId(null);
+        serviceDraftWork.setApproverId(null);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("결재 미적용 저장");
+
+        Long approvalId = service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        assertEquals(77L, approvalId);
+
+        ArgumentCaptor<Map> updateCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).updateElectronicApprovalMainDraftContent(updateCaptor.capture());
+        assertEquals("approved", updateCaptor.getValue().get("statusType"));
+        assertEquals("approved", updateCaptor.getValue().get("endStatus"));
+        assertEquals("완료", updateCaptor.getValue().get("statusTypeName"));
+
+        ArgumentCaptor<Map> lineCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(1)).upsertElectronicApprovalLine(lineCaptor.capture());
+        assertEquals(1, lineCaptor.getValue().get("exeSeq"));
+        assertEquals("approved", lineCaptor.getValue().get("appStatus"));
+
+        verify(serviceHaccpWorkDAO, never()).clearUnusedReferenceApprovalLines(anyMap());
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainStatus(anyMap());
+    }
+
     @DisplayName("결재신청 시 다음 결재자는 arrival만 세팅되고 exe/open은 대기 상태를 유지한다")
     @Test
     void submitDraft_keepsNextApproverPendingUntilAction() throws Exception {
