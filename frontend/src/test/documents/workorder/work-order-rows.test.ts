@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkOrderFormValue } from '../../../pages/documents/work-order/types';
 import {
-    calcDefaultExpiryDate,
+    calcExpiryDate,
     validateWorkOrderForm,
 } from '../../../pages/documents/work-order/workOrderRows';
 
@@ -16,6 +16,8 @@ const validValue = (): WorkOrderFormValue => ({
     unit: 'kg',
     spec: '10kg/박스',
     remark: '',
+    expiryedStatus: 'NONE',
+    expiryedCount: null,
 });
 
 describe('validateWorkOrderForm', () => {
@@ -59,16 +61,32 @@ describe('validateWorkOrderForm', () => {
     });
 });
 
-describe('calcDefaultExpiryDate', () => {
-    it('생산계획일 + 1년', () => {
-        expect(calcDefaultExpiryDate('2026-10-15')).toBe('2027-10-15');
+describe('calcExpiryDate', () => {
+    it('DAY 30 이면 30일 뒤', () => {
+        expect(calcExpiryDate('2026-10-23', 'DAY', 30)).toBe('2026-11-22');
     });
 
-    it('윤년 2/29 는 다음 해 2/28', () => {
-        expect(calcDefaultExpiryDate('2028-02-29')).toBe('2029-02-28');
+    it('MONTH 12 이면 12개월 뒤', () => {
+        expect(calcExpiryDate('2026-10-23', 'MONTH', 12)).toBe('2027-10-23');
     });
 
-    it('빈 값이면 빈 문자열', () => {
-        expect(calcDefaultExpiryDate('')).toBe('');
+    it('MONTH 1 인데 다음 달에 같은 날이 없으면 그 달 말일', () => {
+        expect(calcExpiryDate('2026-01-31', 'MONTH', 1)).toBe('2026-02-28');
+    });
+
+    it('YEAR 1 이면 윤년 2/29 는 다음 해 2/28', () => {
+        expect(calcExpiryDate('2028-02-29', 'YEAR', 1)).toBe('2029-02-28');
+    });
+
+    it('기준이 NONE 이면 생산계획일 + 1년', () => {
+        expect(calcExpiryDate('2026-10-15', 'NONE', null)).toBe('2027-10-15');
+    });
+
+    it('기준이 있어도 숫자가 없으면 생산계획일 + 1년', () => {
+        expect(calcExpiryDate('2026-10-15', 'MONTH', null)).toBe('2027-10-15');
+    });
+
+    it('생산계획일이 비면 빈 문자열', () => {
+        expect(calcExpiryDate('', 'MONTH', 6)).toBe('');
     });
 });

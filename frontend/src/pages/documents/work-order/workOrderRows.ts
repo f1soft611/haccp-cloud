@@ -30,12 +30,24 @@ export function validateWorkOrderForm(value: WorkOrderFormValue): WorkOrderFormE
     return errors;
 }
 
-// ponytail: 품목에 소비기한 기준이 없어 생산계획일 + 1년 고정. 품목 기준이 생기면 이 함수만 교체
-export function calcDefaultExpiryDate(prodPlanDate: string): string {
+// 기존 -> calcDefaultExpiryDate(prodPlanDate): 품목과 상관없이 생산계획일 + 1년
+// 변경 -> 품목 소비기한 기준(DAY/MONTH/YEAR + 숫자)으로 계산, 기준이나 숫자가 없으면 + 1년
+export function calcExpiryDate(
+    prodPlanDate: string,
+    expiryedStatus: string,
+    expiryedCount: number | null,
+): string {
     if (!prodPlanDate) return '';
     const [year, month, day] = prodPlanDate.split('-').map(Number);
-    const next = new Date(Date.UTC(year + 1, month - 1, day));
-    // 2/29 + 1년이 3/1 로 넘어가면 전달 말일(2/28)로 맞춘다
-    if (next.getUTCMonth() !== month - 1) next.setUTCDate(0);
+    const count = expiryedCount !== null && expiryedCount > 0 ? expiryedCount : null;
+    if (expiryedStatus === 'DAY' && count) {
+        return new Date(Date.UTC(year, month - 1, day + count)).toISOString().slice(0, 10);
+    }
+    const addMonths =
+        count && expiryedStatus === 'MONTH' ? count : count && expiryedStatus === 'YEAR' ? count * 12 : 12;
+    const targetMonth = month - 1 + addMonths;
+    const next = new Date(Date.UTC(year, targetMonth, day));
+    // 1/31 + 1개월, 2/29 + 1년 처럼 없는 날이라 다음 달로 넘어가면 전달 말일로 맞춘다
+    if (next.getUTCMonth() !== targetMonth % 12) next.setUTCDate(0);
     return next.toISOString().slice(0, 10);
 }

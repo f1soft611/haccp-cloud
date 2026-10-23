@@ -5,7 +5,7 @@ import type { MaterialItem } from '../../../../services/basicinfo/materialsServi
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import type { WorkOrderFormValue } from '../types';
 import {
-    calcDefaultExpiryDate,
+    calcExpiryDate,
     validateWorkOrderForm,
     type WorkOrderFormErrors,
 } from '../workOrderRows';
@@ -26,6 +26,8 @@ const EMPTY_VALUE: WorkOrderFormValue = {
     unit: '',
     spec: '',
     remark: '',
+    expiryedStatus: 'NONE',
+    expiryedCount: null,
 };
 
 // 기존 -> props 에 saving, workdtNo 없음
@@ -44,6 +46,7 @@ export function WorkOrderFormDialog(props: {
     const [errors, setErrors] = useState<WorkOrderFormErrors>({});
     const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
     const unitOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_UNIT);
+    const expiryStatusOptions = useCommonCodeOptions(COMMON_CODE_GROUP.EXPIRY_STATUS);
 
     useEffect(() => {
         if (!open) return;
@@ -62,17 +65,28 @@ export function WorkOrderFormDialog(props: {
             itemName: material.materialName,
             unit: material.unit,
             spec: material.materialSpec,
+            expiryedStatus: material.expiryedStatus,
+            expiryedCount: material.expiryedCount,
+            expiryDate: prev.productionDate
+                ? calcExpiryDate(prev.productionDate, material.expiryedStatus, material.expiryedCount)
+                : prev.expiryDate,
         }));
         setMaterialDialogOpen(false);
     };
 
-    // 생산계획일을 바꾸면 소비기한을 기본값(+1년)으로 다시 채운다. 이후 직접 수정 가능
+    // 선택한 품목의 소비기한 기준으로 다시 채움. 이후 직접 수정 가능
     const handleChangeProductionDate = (productionDate: string) =>
         setValue((prev) => ({
             ...prev,
             productionDate,
-            expiryDate: calcDefaultExpiryDate(productionDate),
+            expiryDate: calcExpiryDate(productionDate, prev.expiryedStatus, prev.expiryedCount),
         }));
+
+    const expiryHelperText = !value.materialId
+        ? '품목의 소비기한 기준으로 자동 설정됩니다.'
+        : value.expiryedStatus !== 'NONE' && value.expiryedCount
+            ? `품목 소비기한(${value.expiryedCount}${getCommonCodeName(expiryStatusOptions, value.expiryedStatus)}) 기준으로 자동 설정됩니다.`
+            : '품목에 소비기한 기준이 없어 생산계획일 기준 1년으로 설정됩니다.';
 
     const handleSubmit = () => {
         const nextErrors = validateWorkOrderForm(value);
@@ -154,7 +168,7 @@ export function WorkOrderFormDialog(props: {
                             value={value.expiryDate}
                             onChange={(event) => setField('expiryDate', event.target.value)}
                             error={Boolean(errors.expiryDate)}
-                            helperText={errors.expiryDate ?? '생산계획일 기준 1년으로 자동 설정됩니다.'}
+                            helperText={errors.expiryDate ?? expiryHelperText}
                             slotProps={{ inputLabel: { shrink: true } }}
                         />
                     </Grid>

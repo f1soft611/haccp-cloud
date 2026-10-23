@@ -25,6 +25,8 @@ export type WorkOrderItem = {
     unit: string;
     spec: string;
     remark: string;
+    expiryedStatus: string;
+    expiryedCount: number | null;
 };
 
 export type WorkOrderSaveValue = Omit<WorkOrderItem, 'id' | 'workdtNo'>;
@@ -54,6 +56,8 @@ type RawWorkOrderItem = Partial<{
     unit: string;
     materialSpec: string;
     prodMemo: string;
+    expiryedStatus: string;
+    expiryedCount: number | string | null;
 }>;
 
 function normalizeWorkOrderItem(raw: RawWorkOrderItem): WorkOrderItem {
@@ -71,6 +75,11 @@ function normalizeWorkOrderItem(raw: RawWorkOrderItem): WorkOrderItem {
         unit: String(raw.unit ?? ''),
         spec: String(raw.materialSpec ?? ''),
         remark: String(raw.prodMemo ?? ''),
+        expiryedStatus: String(raw.expiryedStatus || 'NONE'),
+        expiryedCount:
+            raw.expiryedCount === null || raw.expiryedCount === undefined || raw.expiryedCount === ''
+                ? null
+                : Number(raw.expiryedCount),
     };
 }
 
