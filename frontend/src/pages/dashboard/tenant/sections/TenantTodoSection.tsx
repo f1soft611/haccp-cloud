@@ -21,6 +21,7 @@ import { resolveApprovalStatusView } from "../../../../shared/utils/approvalStat
 import type { TenantTodoSectionModel } from "../hooks/useTenantDashboardData";
 import { getWorkCycleSx } from "../utils";
 import { resolveDraftRoute } from "../../../../shared/utils/workDraftRoute";
+import { useOpenWorkDraft } from "../../../../shared/hooks/useOpenWorkDraft";
 
 type TenantTodoSectionProps = {
   isLoading: boolean;
@@ -53,6 +54,7 @@ function getCurrentMonthDateRange(today: Date = new Date()): {
 export function TenantTodoSection(props: TenantTodoSectionProps) {
   const { isLoading, isError, sections, pendingApproval = false } = props;
   const navigate = useNavigate();
+  const { openWorkDraft, dialog } = useOpenWorkDraft();
 
   const rows = useMemo(
     () =>
@@ -66,142 +68,149 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
     [sections],
   );
 
-  // 기존 -> Paper 카드 + 제목/설명 헤더 안에 그리드 표시
-  // 변경 -> 껍데기 없이 그리드만 표시
   return (
-    <AdminGrid ariaLabel={APP_LABELS.dashboard.blocks.todos} maxHeight={560}>
-      <TableHead>
-        <TableRow>
-          <TableCell align="center" width={160}>
-            업무분류
-          </TableCell>
-          <TableCell align="center" sx={{ minWidth: 200 }}>
-            업무명
-          </TableCell>
-          <TableCell align="center" width={90}>
-            주기
-          </TableCell>
-          <TableCell align="center" width={110}>
-            상태
-          </TableCell>
-          <TableCell align="center" width={110}>
-            담당자
-          </TableCell>
-          <TableCell align="center" width={150}>
-            최근일시
-          </TableCell>
-          <TableCell align="center" width={140}>
-            작업
-          </TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {isLoading ? (
-          [1, 2, 3].map((skeletonId) => (
-            <TableRow key={`todo-skeleton-${skeletonId}`}>
-              {Array.from({ length: COLUMN_COUNT }, (_, cellIndex) => (
-                <TableCell key={cellIndex}>
-                  <Skeleton variant="text" />
-                </TableCell>
-              ))}
+      <>
+        <AdminGrid ariaLabel={APP_LABELS.dashboard.blocks.todos} maxHeight={560}>
+          <TableHead>
+            <TableRow>
+              <TableCell align="center" width={160}>
+                업무분류
+              </TableCell>
+              <TableCell align="center" sx={{ minWidth: 200 }}>
+                업무명
+              </TableCell>
+              <TableCell align="center" width={90}>
+                주기
+              </TableCell>
+              <TableCell align="center" width={110}>
+                상태
+              </TableCell>
+              <TableCell align="center" width={110}>
+                담당자
+              </TableCell>
+              <TableCell align="center" width={150}>
+                최근일시
+              </TableCell>
+              <TableCell align="center" width={140}>
+                작업
+              </TableCell>
             </TableRow>
-          ))
-        ) : rows.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={COLUMN_COUNT} align="center">
-              <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                {isError
-                  ? "할일 목록을 불러오지 못했습니다."
-                  : "등록된 업무가 없습니다."}
-              </Typography>
-            </TableCell>
-          </TableRow>
-        ) : (
-          rows.map(({ sectionLabel, sectionKey, item }) => {
-            const { label: statusLabel, color: statusColor } = pendingApproval
-                ? { label: '결재대기중', color: 'secondary' as const }
-                : resolveApprovalStatusView({
-                  approvalStatusType: item.approvalStatusType,
-                  approvalStatusTypeName: item.approvalStatusTypeName,
-                  todoStatus: item.status,
-                  writtenInCycle: item.writtenInCycle,
-                });
+          </TableHead>
+          <TableBody>
+            {isLoading ? (
+                [1, 2, 3].map((skeletonId) => (
+                    <TableRow key={`todo-skeleton-${skeletonId}`}>
+                      {Array.from({ length: COLUMN_COUNT }, (_, cellIndex) => (
+                          <TableCell key={cellIndex}>
+                            <Skeleton variant="text" />
+                          </TableCell>
+                      ))}
+                    </TableRow>
+                ))
+            ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={COLUMN_COUNT} align="center">
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                      {isError
+                          ? "할일 목록을 불러오지 못했습니다."
+                          : "등록된 업무가 없습니다."}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+            ) : (
+                rows.map(({ sectionLabel, sectionKey, item }) => {
+                  const { label: statusLabel, color: statusColor } = pendingApproval
+                      ? { label: '결재대기중', color: 'secondary' as const }
+                      : resolveApprovalStatusView({
+                        approvalStatusType: item.approvalStatusType,
+                        approvalStatusTypeName: item.approvalStatusTypeName,
+                        todoStatus: item.status,
+                        writtenInCycle: item.writtenInCycle,
+                      });
 
-            return (
-              <TableRow key={`${sectionKey}-${item.routeId}`} hover>
-                <TableCell align="center">{sectionLabel}</TableCell>
-                <TableCell>
-                  <Typography variant="body2" fontWeight={600}>
-                    {item.divisionName || item.title || "-"}
-                  </Typography>
-                </TableCell>
-                <TableCell align="center">
-                  <Chip
-                      size="small"
-                      label={item.cycleName || item.cycle || "-"}
-                      sx={{
-                        height: 22,
-                        fontWeight: 700,
-                        ...getWorkCycleSx(item.cycle),
-                      }}
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  <Chip
-                    size="small"
-                    label={statusLabel}
-                    color={statusColor}
-                    sx={{ height: 20, fontWeight: 700 }}
-                  />
-                </TableCell>
-                <TableCell align="center">{item.updatedBy}</TableCell>
-                <TableCell align="center">{item.updatedAt || "-"}</TableCell>
-                <TableCell align="center">
-                  <Stack
-                    direction="row"
-                    spacing={0.6}
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Tooltip title="작성하러 가기">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        aria-label="작성하러 가기"
-                        onClick={() => {
-                          const path = resolveDraftRoute(item);
-                          if (!path) {
-                            return;
-                          }
-                          navigate(path);
-                        }}
-                      >
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      endIcon={<ArrowForwardRoundedIcon />}
-                      onClick={() => {
-                        const range = getCurrentMonthDateRange();
-                        const query = new URLSearchParams({
-                          workType: sectionLabel,
-                          startDate: range.startDate,
-                          endDate: range.endDate,
-                        });
-                        navigate(`/docs/haccp-doc?${query.toString()}`);
-                      }}
-                    >
-                      이동
-                    </Button>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            );
-          })
-        )}
-      </TableBody>
-    </AdminGrid>
+                  return (
+                      <TableRow key={`${sectionKey}-${item.routeId}`} hover>
+                        <TableCell align="center">{sectionLabel}</TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {item.divisionName || item.title || "-"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                              size="small"
+                              label={item.cycleName || item.cycle || "-"}
+                              sx={{
+                                height: 22,
+                                fontWeight: 700,
+                                ...getWorkCycleSx(item.cycle),
+                              }}
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                              size="small"
+                              label={statusLabel}
+                              color={statusColor}
+                              sx={{ height: 20, fontWeight: 700 }}
+                          />
+                        </TableCell>
+                        <TableCell align="center">{item.updatedBy}</TableCell>
+                        <TableCell align="center">{item.updatedAt || "-"}</TableCell>
+                        <TableCell align="center">
+                          <Stack
+                              direction="row"
+                              spacing={0.6}
+                              alignItems="center"
+                              justifyContent="center"
+                          >
+                            <Tooltip title="작성하러 가기">
+                              <IconButton
+                                  size="small"
+                                  color="primary"
+                                  aria-label="작성하러 가기"
+                                  onClick={() => {
+                                    // 기존 -> 항상 resolveDraftRoute (이번 주기 작성 문서가 있으면 그 결재 문서) 로 이동
+                                    // 변경 -> 결재대기중(결재할 문서)만 기존 경로, 나머지는 임시저장 확인 후 작성 화면 (같은 주기 여러 건 허용)
+                                    if (!pendingApproval) {
+                                      void openWorkDraft(item.id);
+                                      return;
+                                    }
+                                    const path = resolveDraftRoute(item);
+                                    if (!path) {
+                                      return;
+                                    }
+                                    navigate(path);
+                                  }}
+                              >
+                                <EditOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                endIcon={<ArrowForwardRoundedIcon />}
+                                onClick={() => {
+                                  const range = getCurrentMonthDateRange();
+                                  const query = new URLSearchParams({
+                                    workType: sectionLabel,
+                                    startDate: range.startDate,
+                                    endDate: range.endDate,
+                                  });
+                                  navigate(`/docs/haccp-doc?${query.toString()}`);
+                                }}
+                            >
+                              이동
+                            </Button>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                  );
+                })
+            )}
+          </TableBody>
+        </AdminGrid>
+        {dialog}
+      </>
   );
 }
