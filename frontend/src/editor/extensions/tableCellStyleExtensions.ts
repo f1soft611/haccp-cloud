@@ -4,6 +4,8 @@ import TableHeader from '@tiptap/extension-table-header';
 
 type CellBorderStyle = 'solid' | 'dashed' | 'double' | 'none';
 
+// 기존 -> 툴바 서식 속성만 있음
+// 변경 -> 붙여넣은 원본 서식(pastedStyle) 추가
 type CellStyleAttributes = {
   backgroundColor?: string | null;
   verticalAlign?: 'top' | 'middle' | 'bottom' | null;
@@ -11,6 +13,7 @@ type CellStyleAttributes = {
   borderColor?: string | null;
   borderWidth?: string | null;
   borderStyle?: CellBorderStyle | null;
+  pastedStyle?: string | null;
 };
 
 function composeCellStyle(attrs: CellStyleAttributes): string | undefined {
@@ -53,6 +56,44 @@ function composeCellStyle(attrs: CellStyleAttributes): string | undefined {
   }
 
   return styles.join(';');
+}
+
+// backgroundColor, textColor, verticalAlign, textAlign 이 같은 style 에서 읽어 가는 속성은 중복 보관하지 않는다
+const PASTED_STYLE_EXCLUDED_PROPERTIES = new Set([
+  'background',
+  'background-color',
+  'color',
+  'vertical-align',
+  'text-align',
+]);
+
+function filterPastedStyle(style: string | null): string | null {
+  const declarations = (style ?? '')
+  .split(';')
+  .map((declaration) => declaration.trim())
+  .filter((declaration) => {
+    const property = declaration.split(':')[0].trim().toLowerCase();
+    return (
+        declaration.includes(':') &&
+        !PASTED_STYLE_EXCLUDED_PROPERTIES.has(property)
+    );
+  });
+
+  return declarations.length > 0 ? declarations.join(';') : null;
+}
+
+function isEditorRenderedCell(element: HTMLElement): boolean {
+  return Array.from(element.attributes).some(
+      (attribute) =>
+          attribute.name.startsWith('data-cell-') ||
+          attribute.name === 'data-text-color',
+  );
+}
+
+// 원본 서식을 앞에, 툴바 서식을 뒤에 둬서 툴바 서식이 이기게 한다
+function joinCellStyle(attrs: CellStyleAttributes): string | undefined {
+  const styles = [attrs.pastedStyle, composeCellStyle(attrs)].filter(Boolean);
+  return styles.length > 0 ? styles.join(';') : undefined;
 }
 
 const styleAttributes = {
@@ -158,6 +199,30 @@ const styleAttributes = {
       };
     },
   },
+  pastedStyle: {
+    default: null,
+    parseHTML: (element: HTMLElement) => {
+      if (element.hasAttribute('data-pasted-style')) {
+        return filterPastedStyle(element.getAttribute('data-pasted-style'));
+      }
+
+      // 에디터가 그린 셀의 style 은 툴바 값이므로 원본으로 보관하지 않는다
+      return isEditorRenderedCell(element)
+          ? null
+          : filterPastedStyle(element.getAttribute('style'));
+    },
+    renderHTML: (attributes: Record<string, unknown>) => {
+      const value = attributes.pastedStyle;
+      if (!value || typeof value !== 'string') {
+        return {};
+      }
+
+      return {
+        'data-pasted-style': value,
+      };
+    },
+  },
+
 };
 
 export const StyledTableCell = TableCell.extend({
@@ -169,7 +234,9 @@ export const StyledTableCell = TableCell.extend({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const style = composeCellStyle(node.attrs as CellStyleAttributes);
+    // 기존 -> const style = composeCellStyle(node.attrs as CellStyleAttributes);
+    // 변경 -> 붙여넣은 원본 서식 뒤에 툴바 서식을 붙인다
+    const style = joinCellStyle(node.attrs as CellStyleAttributes);
 
     return [
       'td',
@@ -190,7 +257,9 @@ export const StyledTableHeader = TableHeader.extend({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const style = composeCellStyle(node.attrs as CellStyleAttributes);
+    // 기존 -> const style = composeCellStyle(node.attrs as CellStyleAttributes);
+    // 변경 -> 붙여넣은 원본 서식 뒤에 툴바 서식을 붙인다
+    const style = joinCellStyle(node.attrs as CellStyleAttributes);
 
     return [
       'th',
