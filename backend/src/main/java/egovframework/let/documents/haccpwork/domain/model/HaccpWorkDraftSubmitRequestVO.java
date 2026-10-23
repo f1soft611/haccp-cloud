@@ -38,6 +38,9 @@ public class HaccpWorkDraftSubmitRequestVO implements Serializable {
     @Schema(description = "보고일자(yyyy-MM-dd). 주기 시작일로 맞춰 저장하며, 비우면 cycleDate 주기에 저장")
     private String reportDate;
 
+    @Schema(description = "수정할 임시저장 결재 ID. 비우면 새 문서로 저장")
+    private Long approvalId;
+
     @Schema(description = "HCP 업무 sub 값(대상, 검사일, 만료일). HCP 업무가 아니면 무시")
     private HaccpWorkApprovalSubVO sub;
 }

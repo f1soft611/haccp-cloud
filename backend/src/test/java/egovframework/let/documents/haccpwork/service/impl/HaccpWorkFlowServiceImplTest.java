@@ -456,6 +456,7 @@ class HaccpWorkFlowServiceImplTest {
 
         HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
         payload.setTitle("결재 미적용 저장");
+        payload.setApprovalId(77L);
 
         Long approvalId = service.submitDraft(77L, "tenant_001", payload, "3001");
 
@@ -549,6 +550,7 @@ class HaccpWorkFlowServiceImplTest {
 
         HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
         payload.setTitle("재결재 신청 테스트");
+        payload.setApprovalId(77L);
 
         service.submitDraft(77L, "tenant_001", payload, "3001");
 
@@ -565,30 +567,24 @@ class HaccpWorkFlowServiceImplTest {
         verify(serviceIdGnrService, never()).getNextStringId(anyString(), anyString(), anyString(), anyString(), anyInt(), anyChar());
     }
 
-    @DisplayName("결재신청 시 요청 주기(cycle_date) 기준으로 임시저장 건과 결재 상태를 찾는다")
+    // 기존 -> submitDraft_looksUpSameCycle (주기 최신 임시저장, 결재 상태 조회 파라미터 검증)
+    // 변경 -> 주기 조회가 없어졌으므로 요청 주기가 report_date 로 저장되는지만 검증
+    @DisplayName("결재신청 시 요청 주기(cycle_date) 시작일이 report_date 로 저장된다")
     @Test
-    void submitDraft_looksUpSameCycle() throws Exception {
+    void submitDraft_savesRequestedCycleAsReportDate() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         LocalDate pastDay = LocalDate.now().minusDays(3);
 
         HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
         payload.setTitle("지연 작성 테스트");
         payload.setCycleDate(pastDay.toString());
+        payload.setApprovalId(77L);
 
         service.submitDraft(77L, "tenant_001", payload, "3001");
 
-        String expected = pastDay.format(DateTimeFormatter.BASIC_ISO_DATE);
-        ArgumentCaptor<Map> preApplyCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(serviceHaccpWorkDAO).selectLatestPreApplyApprovalIdByWorkAndLogin(preApplyCaptor.capture());
-        assertEquals(expected, preApplyCaptor.getValue().get("cycleDate"));
-
-        ArgumentCaptor<Map> statusCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(serviceHaccpWorkDAO).selectLatestApprovalStatusByWorkAndLogin(statusCaptor.capture());
-        assertEquals(expected, statusCaptor.getValue().get("cycleDate"));
-
         ArgumentCaptor<Map> updateCaptor = ArgumentCaptor.forClass(Map.class);
         verify(serviceHaccpWorkDAO).updateElectronicApprovalMainDraftContent(updateCaptor.capture());
-        assertEquals(expected, updateCaptor.getValue().get("reportDate"));
+        assertEquals(pastDay.format(DateTimeFormatter.BASIC_ISO_DATE), updateCaptor.getValue().get("reportDate"));
     }
 
     @DisplayName("미래 주기로 결재신청하면 400 오류를 내고 저장하지 않는다")
@@ -660,20 +656,18 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("202608250001", insertCaptor.getValue().get("eaExeId"));
     }
 
-    @DisplayName("임시저장 시 보고일자를 다른 주기로 바꾸면 기존 임시저장 건의 report_date 를 새 주기로 UPDATE 한다")
+    @DisplayName("임시저장 시 보고일자를 다른 주기로 바꾸면 지정한 임시저장 건의 report_date 를 새 주기로 UPDATE 한다")
     @Test
     void saveTempDraft_movesExistingDraftToReportDateCycle() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         LocalDate target = LocalDate.now().minusDays(3);
-        String original = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
-        when(serviceHaccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(anyMap())).thenAnswer(invocation -> {
-            Map<String, Object> params = invocation.getArgument(0);
-            return original.equals(params.get("cycleDate")) ? 77L : null;
-        });
 
         HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
         payload.setTitle("보고일자 이동 테스트");
         payload.setReportDate(target.toString());
+        // 기존 -> selectLatestPreApplyApprovalIdByWorkAndLogin 스텁으로 원래 주기 임시저장(77) 지정
+        // 변경 -> 요청 approvalId 로 지정
+        payload.setApprovalId(77L);
 
         service.saveTempDraft(77L, "tenant_001", payload, "3001");
 
@@ -711,48 +705,73 @@ class HaccpWorkFlowServiceImplTest {
         assertTrue(!insertCaptor.getValue().containsKey("cycleDate"));
     }
 
-    @DisplayName("결재신청 시 보고일자 주기에 다른 임시저장 문서가 있으면 409 오류를 낸다")
+    // 기존 -> submitDraft_rejectsReportDateCycleWithOtherDraft (대상 주기에 임시저장 있으면 409)
+    // 변경 -> 같은 주기 여러 건 허용이라 approvalId 없으면 새 문서로 INSERT
+    @DisplayName("approvalId 없이 결재신청하면 같은 주기에 다른 문서가 있어도 새 문서로 INSERT 한다")
     @Test
-    void submitDraft_rejectsReportDateCycleWithOtherDraft() throws Exception {
+    void submitDraft_withoutApprovalIdInsertsNewDocument() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        LocalDate target = LocalDate.now().minusDays(3);
 
         HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
-        payload.setTitle("보고일자 충돌 테스트");
-        payload.setReportDate(LocalDate.now().minusDays(3).toString());
+        payload.setTitle("같은 주기 두번째 문서");
+        payload.setReportDate(target.toString());
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> insertCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).insertElectronicApprovalMain(insertCaptor.capture());
+        assertEquals(target.format(DateTimeFormatter.BASIC_ISO_DATE), insertCaptor.getValue().get("reportDate"));
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
+    }
+
+    // 기존 -> submitDraft_rejectsReportDateCycleInProgress (대상 주기에 진행중 문서 있으면 409)
+    // 변경 -> 수정 대상으로 지정한 문서가 임시저장이 아니면 409
+    @DisplayName("결재신청 시 approvalId 문서가 임시저장 상태가 아니면 409 오류를 내고 저장하지 않는다")
+    @Test
+    void submitDraft_rejectsNonPreApplyApprovalId() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        Map<String, Object> inProgress = new HashMap<String, Object>();
+        inProgress.put("electronicApprovalId", 77L);
+        inProgress.put("draftingWorkCategoryId", 77L);
+        inProgress.put("loginId", 3001L);
+        inProgress.put("statusType", "in_progress");
+        when(serviceHaccpWorkDAO.selectApprovalMainById(anyMap())).thenReturn(inProgress);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("진행중 문서 수정 시도");
+        payload.setApprovalId(77L);
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
                 () -> service.submitDraft(77L, "tenant_001", payload, "3001"));
 
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
-        assertTrue(ex.getReason() != null && ex.getReason().contains("이미 작성 중인 문서"));
         verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
         verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
     }
 
-    @DisplayName("결재신청 시 보고일자 주기에 진행중 문서가 있으면 409 오류를 낸다")
+    @DisplayName("임시저장 시 approvalId 문서가 다른 사람 기안이면 404 오류를 내고 저장하지 않는다")
     @Test
-    void submitDraft_rejectsReportDateCycleInProgress() throws Exception {
+    void saveTempDraft_rejectsOtherOwnersApprovalId() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
-        String target = LocalDate.now().minusDays(3).format(DateTimeFormatter.BASIC_ISO_DATE);
-        when(serviceHaccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin(anyMap())).thenAnswer(invocation -> {
-            Map<String, Object> params = invocation.getArgument(0);
-            Map<String, Object> row = new HashMap<String, Object>();
-            if (target.equals(params.get("cycleDate"))) {
-                row.put("statusType", "in_progress");
-            }
-            return row;
-        });
+        Map<String, Object> othersDraft = new HashMap<String, Object>();
+        othersDraft.put("electronicApprovalId", 77L);
+        othersDraft.put("draftingWorkCategoryId", 77L);
+        othersDraft.put("loginId", 4001L);
+        othersDraft.put("statusType", "pre_apply");
+        when(serviceHaccpWorkDAO.selectApprovalMainById(anyMap())).thenReturn(othersDraft);
 
-        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
-        payload.setTitle("보고일자 진행중 충돌 테스트");
-        payload.setReportDate(LocalDate.now().minusDays(3).toString());
+        HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
+        payload.setTitle("남의 임시저장 수정 시도");
+        payload.setApprovalId(77L);
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
-                () -> service.submitDraft(77L, "tenant_001", payload, "3001"));
+                () -> service.saveTempDraft(77L, "tenant_001", payload, "3001"));
 
-        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
         verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
     }
 
@@ -1106,14 +1125,22 @@ class HaccpWorkFlowServiceImplTest {
         Map<String, Object> approvalMain = new HashMap<String, Object>();
         approvalMain.put("electronicApprovalId", 77L);
         approvalMain.put("eaExeId", "EA-001");
+        approvalMain.put("draftingWorkCategoryId", 77L);
+        approvalMain.put("loginId", reviewerLoginId);
+        approvalMain.put("statusType", "pre_apply");
         when(serviceHaccpWorkDAO.selectApprovalMainById(anyMap())).thenReturn(approvalMain);
 
         Map<String, Object> actorProfile = new HashMap<String, Object>();
         actorProfile.put("userName", "검토자");
         when(serviceHaccpWorkDAO.selectApprovalActorProfile(anyMap())).thenReturn(actorProfile);
 
-        when(serviceHaccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin(anyMap())).thenReturn(new HashMap<String, Object>());
-        when(serviceHaccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(anyMap())).thenReturn(77L);
+        // 기존 -> selectLatestApprovalStatusByWorkAndLogin, selectLatestPreApplyApprovalIdByWorkAndLogin(77) 스텁 (주기 최신 문서 기준 저장)
+        // 변경 -> approvalId 없으면 항상 INSERT 하므로 신규 키 77 을 돌려주는 기본 스텁
+        doAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            params.put("electronicApprovalId", 77L);
+            return null;
+        }).when(serviceHaccpWorkDAO).insertElectronicApprovalMain(anyMap());
 
         HaccpWorkVO draftWork = new HaccpWorkVO();
         draftWork.setReviewerId(reviewerLoginId);
