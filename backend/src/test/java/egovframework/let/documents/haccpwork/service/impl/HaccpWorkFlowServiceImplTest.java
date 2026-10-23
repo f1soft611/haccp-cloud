@@ -1,8 +1,6 @@
 package egovframework.let.documents.haccpwork.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyChar;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -22,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.DayOfWeek;
 import java.util.HashMap;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -446,9 +445,10 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("approved", lineCaptor.getAllValues().get(1).get("appStatus"));
     }
 
-    @DisplayName("결재 미적용 문서는 결재신청 시 기안자 결재선만 만들고 바로 완료 상태가 된다")
+    // 기존 -> 결재 미적용 문서는 기안자 결재선만 만든다 / 변경 -> 검토/승인 결재선도 기안자로 만들고 승인 처리한다
+    @DisplayName("결재 미적용 문서는 결재신청 시 검토/승인 결재선도 기안자로 승인 처리하고 바로 완료 상태가 된다")
     @Test
-    void submitDraft_noApprovalApply_completesWithDrafterLineOnly() throws Exception {
+    void submitDraft_noApprovalApply_completesWithDrafterAsAllSigners() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         serviceDraftWork.setApprovalApply(Boolean.FALSE);
         serviceDraftWork.setReviewerId(null);
@@ -469,9 +469,18 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("완료", updateCaptor.getValue().get("statusTypeName"));
 
         ArgumentCaptor<Map> lineCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(serviceHaccpWorkDAO, times(1)).upsertElectronicApprovalLine(lineCaptor.capture());
-        assertEquals(1, lineCaptor.getValue().get("exeSeq"));
-        assertEquals("approved", lineCaptor.getValue().get("appStatus"));
+        verify(serviceHaccpWorkDAO, times(3)).upsertElectronicApprovalLine(lineCaptor.capture());
+        List<Map> lines = lineCaptor.getAllValues();
+        for (int i = 0; i < 3; i++) {
+            assertEquals(i + 1, lines.get(i).get("exeSeq"));
+            assertEquals(3001L, lines.get(i).get("loginId"));
+            assertEquals("approved", lines.get(i).get("appStatus"));
+            assertNotNull(lines.get(i).get("exeAt"));
+        }
+        assertEquals("검토", lines.get(1).get("stageName"));
+        assertEquals("N", lines.get(1).get("lastCnfrmerStatus"));
+        assertEquals("승인", lines.get(2).get("stageName"));
+        assertEquals("Y", lines.get(2).get("lastCnfrmerStatus"));
 
         verify(serviceHaccpWorkDAO, never()).clearUnusedReferenceApprovalLines(anyMap());
         verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainStatus(anyMap());

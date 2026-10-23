@@ -371,8 +371,13 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             now,
                 eaExeId
         );
-        // 결재 미적용 문서는 기안자 결재선만 남기고 검토/승인/참조, 이력 댓글, 결재 체인 처리를 건너뛴다
+        // 기존 -> 결재 미적용 문서는 기안자 결재선만 남기고 검토/승인/참조, 이력 댓글, 결재 체인 처리를 건너뛴다
+        // 변경 -> 결재 미적용 문서는 검토/승인 결재선도 기안자로 넣어 바로 승인 처리하고, 참조/이력 댓글/결재 체인 처리를 건너뛴다
         if (!approvalApply) {
+            insertApprovalLine(tenantId, electronicApprovalId, 2, actorLoginId, actorProfile,
+                    "검토", "drafted", "approved", "N", "N", now, now, now, eaExeId);
+            insertApprovalLine(tenantId, electronicApprovalId, 3, actorLoginId, actorProfile,
+                    "승인", "drafted", "approved", "N", "Y", now, now, now, eaExeId);
             return electronicApprovalId;
         }
         insertApprovalLine(
