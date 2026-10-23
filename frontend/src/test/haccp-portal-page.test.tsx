@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { HaccpPortalPage } from '../pages/documents/portal/HaccpPortalPage';
@@ -54,9 +54,25 @@ vi.mock('../services/documents/haccpPortalService', () => ({
   listHaccpPortalDocuments: listHaccpPortalDocumentsMock,
 }));
 
+const { getHaccpWorkDraftTemplateMock } = vi.hoisted(() => ({
+  getHaccpWorkDraftTemplateMock: vi.fn(),
+}));
+
+vi.mock('../services/documents/haccpBaseWorkService', async () => {
+  const actual = await vi.importActual<
+      typeof import('../services/documents/haccpBaseWorkService')
+  >('../services/documents/haccpBaseWorkService');
+  return {
+    ...actual,
+    getHaccpWorkDraftTemplate: getHaccpWorkDraftTemplateMock,
+  };
+});
+
 describe('HaccpPortalPage', () => {
   beforeEach(() => {
     navigateMock.mockReset();
+    getHaccpWorkDraftTemplateMock.mockReset();
+    getHaccpWorkDraftTemplateMock.mockResolvedValue({});
     vi.mocked(listHaccpPortalDocumentsMock).mockReset();
     vi.mocked(listHaccpPortalDocumentsMock).mockResolvedValue([
       {
@@ -196,8 +212,66 @@ describe('HaccpPortalPage', () => {
 
     // 포탈 경로를 returnTo로 함께 넘김
     const returnTo = `${window.location.pathname}${window.location.search}`;
+    // 기존 -> 클릭 즉시 이동 / 변경 -> 임시저장 조회 후 이동
+    await waitFor(() =>
+        expect(navigateMock).toHaveBeenCalledWith(
+            `/approvals/draft/1?idType=work&returnTo=${encodeURIComponent(returnTo)}`,
+        ),
+    );
+  });
+
+  it('asks to load the temp-saved document and opens it on confirm', async () => {
+    getHaccpWorkDraftTemplateMock.mockResolvedValue({
+      approvalId: '9001',
+      approvalStatusType: 'pre_apply',
+    });
+    render(
+        <AppProviders>
+          <HaccpPortalPage />
+        </AppProviders>,
+    );
+
+    expect(await screen.findByText('위생교육일지-품질')).toBeInTheDocument();
+    fireEvent.click(
+        screen.getAllByRole('button', { name: '작성하러 가기' })[0],
+    );
+
+    expect(
+        await screen.findByText('임시저장된 문서를 불러오시겠습니까?'),
+    ).toBeInTheDocument();
+    expect(navigateMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: '확인' }));
+
+    const returnTo = encodeURIComponent(
+        `${window.location.pathname}${window.location.search}`,
+    );
     expect(navigateMock).toHaveBeenCalledWith(
-        `/approvals/draft/1?idType=work&returnTo=${encodeURIComponent(returnTo)}`,
+        `/approvals/draft/9001?idType=approval&returnTo=${returnTo}`,
+    );
+  });
+
+  it('opens a fresh document when declining to load the temp-saved one', async () => {
+    getHaccpWorkDraftTemplateMock.mockResolvedValue({
+      approvalId: '9001',
+      approvalStatusType: 'pre_apply',
+    });
+    render(
+        <AppProviders>
+          <HaccpPortalPage />
+        </AppProviders>,
+    );
+
+    expect(await screen.findByText('위생교육일지-품질')).toBeInTheDocument();
+    fireEvent.click(
+        screen.getAllByRole('button', { name: '작성하러 가기' })[0],
+    );
+    fireEvent.click(await screen.findByRole('button', { name: '아니오' }));
+
+    const returnTo = encodeURIComponent(
+        `${window.location.pathname}${window.location.search}`,
+    );
+    expect(navigateMock).toHaveBeenCalledWith(
+        `/approvals/draft/1?idType=work&fresh=true&returnTo=${returnTo}`,
     );
   });
 });
