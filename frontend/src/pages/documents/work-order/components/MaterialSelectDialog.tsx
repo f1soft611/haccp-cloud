@@ -32,8 +32,8 @@ const PAGE_SIZE = 10;
 // ponytail: small 테이블 행 높이 약 33px x 10행 대략치, 행 높이가 바뀌면 같이 조정
 const TABLE_ROWS_HEIGHT = PAGE_SIZE * 33;
 
-// 검색줄 + 헤더 + 10행 + 페이지네이션 + 여백, 조회 중/결과 건수와 상관없이 Dialog 크기 고정
-const DIALOG_CONTENT_HEIGHT = 560;
+// 검색줄 + 헤더 + 10행 + 페이지네이션 + 여백 (10건 실측 약 523px), 조회 중/결과 건수와 상관없이 Dialog 크기 고정
+const DIALOG_CONTENT_HEIGHT = 530;
 
 // itemType '' = 전체(제품+반제품)
 type MaterialFilter = { itemType: string; keyword: string };
@@ -87,7 +87,7 @@ export function MaterialSelectDialog(props: {
             open={open}
             title="품목 선택"
             maxWidth="md"
-            contentSx={{ height: DIALOG_CONTENT_HEIGHT }}
+            contentSx={{ flex: `0 1 ${DIALOG_CONTENT_HEIGHT}px` }}
             onClose={onClose}
             actions={
                 <Button variant="outlined" onClick={onClose}>
