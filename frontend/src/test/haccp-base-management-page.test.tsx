@@ -239,6 +239,45 @@ describe('HaccpBaseManagementPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('clears and disables reviewer/approver when approval is not applied', async () => {
+    createHaccpBaseWorkMock.mockClear();
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+
+    await screen.findByText('기안서');
+    fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
+
+    fireEvent.change(screen.getByRole('textbox', { name: /구분명/ }), {
+      target: { value: '미적용 점검' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: /검토자/ }), {
+      target: { value: '금도연' },
+    });
+    fireEvent.click(await screen.findByRole('option', { name: '금도연' }));
+
+    // 결재 적용 상태에서는 승인자가 없으면 등록 불가
+    expect(screen.getByRole('button', { name: '등록' })).toBeDisabled();
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '결재 적용 여부' }));
+    fireEvent.click(await screen.findByRole('option', { name: '미적용' }));
+
+    expect(screen.getByRole('combobox', { name: /검토자/ })).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: /검토자/ })).toBeDisabled();
+    expect(screen.getByRole('combobox', { name: /승인자/ })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: '등록' }));
+
+    await vi.waitFor(() => expect(createHaccpBaseWorkMock).toHaveBeenCalled());
+    expect(createHaccpBaseWorkMock.mock.calls[0][0]).toMatchObject({
+      approvalApply: false,
+      reviewerId: '',
+      approverId: '',
+    });
+  });
+
   it('keeps the grid table wide enough to scroll horizontally', async () => {
     render(
         <AppProviders>

@@ -41,12 +41,13 @@ export function HaccpBaseCreateDialog(props: {
     cycleOptions,
   } = props;
 
-  const isSubmitDisabled =
-      !value.cycle ||
-    !value.divisionName.trim() ||
-    !value.categoryId ||
-    !value.reviewerId ||
-    !value.approverId;
+    // 기존 -> 검토자/승인자 항상 필수 / 변경 -> 결재 적용일 때만 필수
+    const needsSigners = value.approvalApply === 'Y';
+    const isSubmitDisabled =
+        !value.cycle ||
+        !value.divisionName.trim() ||
+        !value.categoryId ||
+        (needsSigners && (!value.reviewerId || !value.approverId));
 
     const findCategoryCode = (categoryId: string) =>
         categoryOptions.find((category) => category.id === categoryId)?.code ?? '';
@@ -192,6 +193,7 @@ export function HaccpBaseCreateDialog(props: {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <Autocomplete
             fullWidth
+            disabled={!needsSigners}    // 결재 미적용이면 검토자 선택 불가
             options={userOptions}
             value={
               userOptions.find((user) => user.id === value.reviewerId) ?? null
@@ -213,13 +215,14 @@ export function HaccpBaseCreateDialog(props: {
                 {...params}
                 label="검토자"
                 placeholder="이름으로 검색"
-                required
+                required={needsSigners} // 기존 -> required / 변경 -> 결재 적용일 때만 필수
               />
             )}
           />
 
           <Autocomplete
             fullWidth
+            disabled={!needsSigners}    // 결재 미적용이면 검토자 선택 불가
             options={userOptions}
             value={
               userOptions.find((user) => user.id === value.approverId) ?? null
@@ -241,7 +244,7 @@ export function HaccpBaseCreateDialog(props: {
                 {...params}
                 label="승인자"
                 placeholder="이름으로 검색"
-                required
+                required={needsSigners} // 기존 -> required / 변경 -> 결재 적용일 때만 필수
               />
             )}
           />
@@ -254,12 +257,15 @@ export function HaccpBaseCreateDialog(props: {
                   select
                   label="결재 적용 여부"
                   value={value.approvalApply}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                      const approvalApply = event.target.value as 'Y' | 'N';
                       onChange({
                           ...value,
-                          approvalApply: event.target.value as 'Y' | 'N',
-                      })
-                  }
+                          approvalApply,
+                          reviewerId: approvalApply === 'N' ? '' : value.reviewerId,
+                          approverId: approvalApply === 'N' ? '' : value.approverId,
+                      });
+                  }}
               >
                   <MenuItem value="Y">적용</MenuItem>
                   <MenuItem value="N">미적용</MenuItem>
