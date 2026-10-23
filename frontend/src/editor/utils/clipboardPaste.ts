@@ -373,6 +373,15 @@ function sanitizeCellStyle(cell: Element, omitWidth = false): string | null {
     }
   }
 
+  // 한글은 셀 세로 정렬을 style 이 아니라 valign 속성으로 보낸다
+  const valign = cell.getAttribute('valign')?.trim().toLowerCase() ?? '';
+  if (
+      ['top', 'middle', 'bottom'].includes(valign) &&
+      !declarations.some((declaration) => declaration.startsWith('vertical-align:'))
+  ) {
+    declarations.push(`vertical-align:${valign}`);
+  }
+
   return declarations.length > 0 ? declarations.join(';') : null;
 }
 
@@ -658,7 +667,14 @@ function serializeClipboardCellNode(node: Node): string {
     return `<s>${styledContent}</s>`;
   }
   if (tagName === 'p' || tagName === 'div') {
-    return `<p>${styledContent}</p>`;
+    // 기존 -> return `<p>${styledContent}</p>`;
+    // 변경 -> 셀 안 문단 정렬(text-align)을 남긴다 (TextAlign 이 읽음)
+    const textAlign = (node as HTMLElement).style.textAlign;
+    const alignAttribute =
+        textAlign && isSafeCellStyleValue(textAlign)
+            ? ` style="text-align:${escapeHtml(textAlign)}"`
+            : '';
+    return `<p${alignAttribute}>${styledContent}</p>`;
   }
   if (tagName === 'span' || tagName === 'font') {
     return style ? `<span${styleAttribute}>${content}</span>` : content;
