@@ -195,8 +195,15 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         return getDraftTemplate(tenantCode, id, idType, actorLoginCode, null);
     }
 
+    // 기존 -> 5개 인자 메서드가 본문을 직접 구현
+    // 변경 -> fresh=false 로 위임 (저장, 결재 흐름은 기존처럼 임시저장 포함 조회)
     @Override
     public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode, String cycleDate) throws Exception {
+        return getDraftTemplate(tenantCode, id, idType, actorLoginCode, cycleDate, false);
+    }
+
+    @Override
+    public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode, String cycleDate, boolean fresh) throws Exception {
         String normalizedTenantCode = normalizeTenantCode(tenantCode);
         if (id == null || id.longValue() <= 0L) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "조회 ID가 올바르지 않습니다.");
@@ -213,6 +220,7 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         // 변경 -> 요청 주기 기준일 전달 (형식 오류면 400, 없으면 null → 오늘)
         LocalDate requestedCycleDate = HaccpWorkCycleDates.parseOrNull(cycleDate);
         params.put("cycleDate", requestedCycleDate == null ? null : requestedCycleDate.toString());
+        params.put("fresh", fresh);
 
         HaccpWorkVO item;
         if ("approval".equalsIgnoreCase(idType)) {

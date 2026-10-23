@@ -779,6 +779,7 @@
             AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
             AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
             AND m.report_date = TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYYMMDD')
+            AND #{fresh, jdbcType=BOOLEAN} IS NOT TRUE
           ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
         ) pre ON TRUE

@@ -204,6 +204,7 @@ public class HaccpWorkApiController {
             @PathVariable Long id,
             @RequestParam(name = "idType", required = false, defaultValue = "work") String idType,
             @RequestParam(name = "cycleDate", required = false) String cycleDate,
+            @RequestParam(name = "fresh", required = false, defaultValue = "false") boolean fresh,
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
             HttpServletRequest request) throws Exception {
@@ -213,7 +214,8 @@ public class HaccpWorkApiController {
                 id,
                 idType,
                 resolveLoginCode(user),
-                cycleDate
+                cycleDate,
+                fresh
         );
 
         Map<String, Object> resultMap = new HashMap<String, Object>();

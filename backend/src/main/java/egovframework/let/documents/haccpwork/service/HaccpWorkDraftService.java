@@ -31,27 +31,29 @@ public interface HaccpWorkDraftService {
             String endDate
     ) throws Exception;
 
-            public Map<String, Object> listDocumentsPaged(
-                String tenantCode,
-                String actorLoginCode,
-                String actorRoleCode,
-                String workType,
-                String workDivisionId,
-                String workDivision,
-                String draftNumber,
-                String title,
-                String writer,
-                String participantType,
-                String status,
-                String startDate,
-                String endDate,
-                int pageIndex,
-                int pageSize
-            ) throws Exception;
+    public Map<String, Object> listDocumentsPaged(
+        String tenantCode,
+        String actorLoginCode,
+        String actorRoleCode,
+        String workType,
+        String workDivisionId,
+        String workDivision,
+        String draftNumber,
+        String title,
+        String writer,
+        String participantType,
+        String status,
+        String startDate,
+        String endDate,
+        int pageIndex,
+        int pageSize
+    ) throws Exception;
 
     public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode) throws Exception;
 
     /** cycleDate(yyyy-MM-dd, null이면 현재 주기): idType=work일 때 그 주기의 임시저장 건을 불러온다. */
     public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode, String cycleDate) throws Exception;
 
+    /** fresh=true 면 idType=work 여도 임시저장 건을 불러오지 않고 업무 기본 템플릿을 돌려준다. */
+    public HaccpWorkVO getDraftTemplate(String tenantCode, Long id, String idType, String actorLoginCode, String cycleDate, boolean fresh) throws Exception;
 }
