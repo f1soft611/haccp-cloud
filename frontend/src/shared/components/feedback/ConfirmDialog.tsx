@@ -21,6 +21,7 @@ export type ConfirmDialogProps = {
   loading?: boolean;
   onConfirm: () => void;
   onClose: () => void;
+    onCancel?: () => void;
   maxWidth?: DialogProps['maxWidth'];
 };
 
@@ -34,6 +35,7 @@ export function ConfirmDialog({
   loading = false,
   onConfirm,
   onClose,
+                                  onCancel,
   maxWidth = 'xs',
 }: ConfirmDialogProps) {
   const theme = useTheme();
@@ -125,9 +127,9 @@ export function ConfirmDialog({
         >
           {confirmText}
         </Button>
-        <Button onClick={onClose} disabled={loading} color="inherit">
-          {cancelText}
-        </Button>
+          <Button onClick={onCancel ?? onClose} disabled={loading} color="inherit">
+              {cancelText}
+          </Button>
       </DialogActions>
     </Dialog>
   );

@@ -26,6 +26,8 @@ const {
                 unit: 'kg',
                 spec: '10kg/박스',
                 remark: '',
+                expiryedStatus: 'YEAR',
+                expiryedCount: 2,
             },
         ],
         totalCount: 1,
@@ -44,6 +46,11 @@ const {
                 materialSpec: '5kg/박스',
                 materialWeight: null,
                 unit: 'kg',
+                materialKind: '',
+                storeMethod: '',
+                expiryedStatus: 'MONTH',
+                expiryedCount: 6,
+                kfdaReportNo: '',
                 etc: '',
             },
         ],
@@ -70,6 +77,7 @@ vi.mock('../../../services/basicinfo/commonCodeService', () => ({
             { groupCode: 'ITEM_TYPE', code: 'PRODUCT', codeName: '제품', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
             { groupCode: 'ITEM_TYPE', code: 'SEMI', codeName: '반제품', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
             { groupCode: 'ITEM_TYPE', code: 'RAW', codeName: '원재료', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
+            { groupCode: 'EXPIRY_STATUS', code: 'MONTH', codeName: '개월', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
         ],
     }),
 }));
@@ -114,7 +122,7 @@ describe('WorkOrderPage', () => {
         expect(createWorkOrderMock).not.toHaveBeenCalled();
     });
 
-    it('품목 선택 시 단위·규격을 채우고, 생산계획일 + 1년을 소비기한으로 설정해 등록한다', async () => {
+    it('품목 선택 시 단위/규격을 채우고, 품목 소비기한 기준으로 소비기한을 설정해 등록한다', async () => {
         renderPage();
         fireEvent.click(await screen.findByRole('button', { name: '신규' }));
         const dialog = screen.getByRole('dialog');
@@ -135,7 +143,8 @@ describe('WorkOrderPage', () => {
         expect(within(dialog).getByLabelText('규격')).toHaveValue('5kg/박스');
 
         fireEvent.change(within(dialog).getByLabelText(/^생산계획일/), { target: { value: '2026-10-15' } });
-        expect(within(dialog).getByLabelText(/^소비기한/)).toHaveValue('2027-10-15');
+        expect(within(dialog).getByLabelText(/^소비기한/)).toHaveValue('2027-04-15');
+        expect(within(dialog).getByText('품목 소비기한(6개월) 기준으로 자동 설정됩니다.')).toBeInTheDocument();
 
         fireEvent.change(within(dialog).getByLabelText(/^생산량/), { target: { value: '100' } });
         fireEvent.click(within(dialog).getByRole('button', { name: '저장' }));
@@ -145,10 +154,28 @@ describe('WorkOrderPage', () => {
             tenantCode: 'TENANT-A',
             materialId: 'm-2',
             productionDate: '2026-10-15',
-            expiryDate: '2027-10-15',
+            expiryDate: '2027-04-15',
             quantity: 100,
         });
         expect(await screen.findByText('등록되었습니다.')).toBeInTheDocument();
+    });
+
+    it('생산계획일을 먼저 넣고 품목을 고르면 품목 기준으로 소비기한을 다시 계산한다', async () => {
+        renderPage();
+        fireEvent.click(await screen.findByRole('button', { name: '신규' }));
+        const dialog = screen.getByRole('dialog');
+
+        fireEvent.change(within(dialog).getByLabelText(/^생산계획일/), { target: { value: '2026-10-15' } });
+        expect(within(dialog).getByLabelText(/^소비기한/)).toHaveValue('2027-10-15');
+
+        fireEvent.click(within(dialog).getByRole('textbox', { name: /^품목/ }));
+        const selectDialog = await screen.findByRole('dialog', { name: /품목 선택/ });
+        fireEvent.click(await within(selectDialog).findByRole('row', { name: /깍두기/ }));
+        await vi.waitFor(() =>
+            expect(screen.queryByRole('dialog', { name: /품목 선택/ })).not.toBeInTheDocument(),
+        );
+
+        expect(within(dialog).getByLabelText(/^소비기한/)).toHaveValue('2027-04-15');
     });
 
     it('품목 선택 Dialog 에서 품목계정과 검색어로 조회한다', async () => {
@@ -180,6 +207,37 @@ describe('WorkOrderPage', () => {
         );
     });
 
+    it('품목 선택 Dialog 에서 검색하면 조회 중에는 기존 목록 대신 스피너를 보여준다', async () => {
+        renderPage();
+        fireEvent.click(await screen.findByRole('button', { name: '신규' }));
+        const dialog = screen.getByRole('dialog');
+        fireEvent.click(within(dialog).getByRole('textbox', { name: /^품목/ }));
+        const selectDialog = await screen.findByRole('dialog', { name: /품목 선택/ });
+        expect(await within(selectDialog).findByRole('row', { name: /깍두기/ })).toBeInTheDocument();
+
+        // 다음 조회 응답을 붙잡아 두고 조회 중 화면을 확인
+        let resolveSearch: (value: Awaited<ReturnType<typeof listMaterialsPagedMock>>) => void = () => {};
+        listMaterialsPagedMock.mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    resolveSearch = resolve;
+                }),
+        );
+
+        fireEvent.change(within(selectDialog).getByRole('textbox', { name: '검색어' }), {
+            target: { value: '없는품목' },
+        });
+        fireEvent.click(within(selectDialog).getByRole('button', { name: '검색' }));
+
+        expect(await within(selectDialog).findByRole('progressbar', { name: '조회 중' })).toBeInTheDocument();
+        expect(within(selectDialog).queryByRole('row', { name: /깍두기/ })).not.toBeInTheDocument();
+
+        resolveSearch({ items: [], totalCount: 0 });
+
+        expect(await within(selectDialog).findByText('검색된 품목이 없습니다.')).toBeInTheDocument();
+        expect(within(selectDialog).queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
     it('수정 다이얼로그는 작업지시번호와 기존 값을 보여주고 수정 API를 호출한다', async () => {
         renderPage();
         fireEvent.click((await screen.findAllByRole('button', { name: '작업지시 수정' }))[0]);
@@ -187,11 +245,15 @@ describe('WorkOrderPage', () => {
         expect(within(dialog).getByLabelText('작업지시번호')).toHaveValue('202610150001');
         expect(within(dialog).getByRole('textbox', { name: /^품목/ })).toHaveValue('배추김치');
 
+        expect(within(dialog).getByLabelText(/^소비기한/)).toHaveValue('2027-10-15');
+        fireEvent.change(within(dialog).getByLabelText(/^생산계획일/), { target: { value: '2026-11-01' } });
+        expect(within(dialog).getByLabelText(/^소비기한/)).toHaveValue('2028-11-01');
+
         fireEvent.change(within(dialog).getByLabelText(/^생산량/), { target: { value: '300' } });
         fireEvent.click(within(dialog).getByRole('button', { name: '저장' }));
 
         await vi.waitFor(() => expect(updateWorkOrderMock).toHaveBeenCalled());
-        expect(updateWorkOrderMock.mock.calls[0][0]).toMatchObject({ id: 'wo-1', materialId: 'm-1', quantity: 300 });
+        expect(updateWorkOrderMock.mock.calls[0][0]).toMatchObject({ id: 'wo-1', materialId: 'm-1', quantity: 300, expiryDate: '2028-11-01' });
         expect(await screen.findByText('수정되었습니다.')).toBeInTheDocument();
     });
 

@@ -17,6 +17,8 @@
         <result property="expirationDate" column="expirationDate"/>
         <result property="prodplanQty" column="prodplanQty"/>
         <result property="prodMemo" column="prodMemo"/>
+        <result property="expiryedStatus" column="expiryedStatus"/>
+        <result property="expiryedCount" column="expiryedCount"/>
     </resultMap>
 
     <sql id="workOrderColumns">
@@ -31,7 +33,9 @@
         TO_CHAR(w.prod_plan_date, 'YYYY-MM-DD')      AS prodPlanDate,
         TO_CHAR(w.expiration_date, 'YYYY-MM-DD')     AS expirationDate,
         w.prodplan_qty                               AS prodplanQty,
-        w.prod_memo                                  AS prodMemo
+        w.prod_memo                                  AS prodMemo,
+        m.expiryed_status                            AS expiryedStatus,
+        m.expiryed_count                             AS expiryedCount
     </sql>
 
     <sql id="workOrderSearchWhere">

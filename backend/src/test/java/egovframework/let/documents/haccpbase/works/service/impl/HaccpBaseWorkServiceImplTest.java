@@ -1,7 +1,6 @@
 package egovframework.let.documents.haccpbase.works.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -108,9 +107,10 @@ class HaccpBaseWorkServiceImplTest {
         assertEquals("등록주기가 올바르지 않습니다.", ex.getMessage());
     }
 
-    @DisplayName("등록주기가 수시가 아니면 만료일 관리 양식은 N, 결재 적용 여부가 없으면 Y로 저장된다")
+    // 기존 -> 수시가 아니면 만료일 관리 양식 강제 N / 변경 -> 등록주기와 상관없이 요청 값 저장
+    @DisplayName("등록주기가 수시가 아니어도 만료일 관리 양식 Y가 저장되고, 결재 적용 여부가 없으면 Y로 저장된다")
     @Test
-    void createWork_forcesExpirationNWhenCycleIsNotAnytime() throws Exception {
+    void createWork_keepsExpirationYWhenCycleIsNotAnytime() throws Exception {
         HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
         HaccpBaseWorkSaveRequestVO payload = stubCreate(dao, "DAY");
         payload.setExpirationApply(true);
@@ -118,7 +118,7 @@ class HaccpBaseWorkServiceImplTest {
         new HaccpBaseWorkServiceImpl(dao, mock(EgovIdGnrService.class)).createWork(payload, "3001");
 
         Map<String, Object> params = captureInsertParams(dao);
-        assertEquals("N", params.get("expirationApply"));
+        assertEquals("Y", params.get("expirationApply"));
         assertEquals("Y", params.get("approvalApply"));
     }
 
@@ -135,6 +135,35 @@ class HaccpBaseWorkServiceImplTest {
         Map<String, Object> params = captureInsertParams(dao);
         assertEquals("Y", params.get("expirationApply"));
         assertEquals("N", params.get("approvalApply"));
+    }
+
+    @DisplayName("결재 미적용이면 검토자/승인자를 보내도 null로 저장된다")
+    @Test
+    void createWork_clearsSignersWhenApprovalNotApplied() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        HaccpBaseWorkSaveRequestVO payload = stubCreate(dao, "DAY");
+        payload.setApprovalApply(false);
+
+        new HaccpBaseWorkServiceImpl(dao, mock(EgovIdGnrService.class)).createWork(payload, "3001");
+
+        Map<String, Object> params = captureInsertParams(dao);
+        assertEquals("N", params.get("approvalApply"));
+        assertNull(params.get("reviewerId"));
+        assertNull(params.get("approverId"));
+    }
+
+    @DisplayName("결재 적용이면 검토자/승인자가 그대로 저장된다")
+    @Test
+    void createWork_keepsSignersWhenApprovalApplied() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        HaccpBaseWorkSaveRequestVO payload = stubCreate(dao, "DAY");
+        payload.setApprovalApply(true);
+
+        new HaccpBaseWorkServiceImpl(dao, mock(EgovIdGnrService.class)).createWork(payload, "3001");
+
+        Map<String, Object> params = captureInsertParams(dao);
+        assertEquals(1001L, params.get("reviewerId"));
+        assertEquals(1002L, params.get("approverId"));
     }
 
     private HaccpBaseWorkSaveRequestVO stubCreate(HaccpBaseWorkDAO dao, String cycle) throws Exception {

@@ -74,5 +74,7 @@ export function convertExcelCheckboxImages(html: string): string {
         }
     });
 
-    return doc.body.innerHTML;
+    // 기존 -> return doc.body.innerHTML;
+    // 변경 -> <head> 의 엑셀 <style> 클래스 서식을 다음 정규화 단계에서 쓰도록 문서 전체를 반환
+    return doc.documentElement.outerHTML;
 }

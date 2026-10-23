@@ -76,8 +76,6 @@ describe('feedback ui', () => {
     );
 
     const dialogPaper = screen.getByRole('dialog');
-    expect(window.getComputedStyle(dialogPaper).backgroundImage).toContain(
-      'rgba(17, 24, 39, 0.98)',
-    );
+    expect(dialogPaper).toHaveStyle({ backgroundColor: '#111827' });
   });
 });

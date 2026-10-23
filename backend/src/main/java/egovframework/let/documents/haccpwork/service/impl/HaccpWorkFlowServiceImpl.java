@@ -85,8 +85,10 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         String requestedCycleDate = payload.getCycleDate();
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
         String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
-        ensureSubmissionEditableState(tenantId, workId, actorLoginId, cycleDate, "임시저장");
-        String reportDate = resolveReportDate(tenantId, workId, actorLoginId, work.getCycle(), cycleDate, payload.getReportDate(), "임시저장");
+        // 기존 -> ensureSubmissionEditableState(주기 최신 문서 결재중/승인이면 409) + resolveReportDate(대상 주기 충돌 409)
+        // 변경 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
+        Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "임시저장");
+        String reportDate = resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
         String responseCycleDate = LocalDate.parse(reportDate, DATE_FORMATTER).toString();
         boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
         if (subCategory) {
@@ -105,7 +107,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         Long targetApprovalId;
         Map<String, Object> actorProfile = selectApprovalActorProfile(tenantId, actorLoginId);
 
-        Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId, cycleDate);
+        // 기존 -> Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId, cycleDate);
+        // 변경 -> 위에서 요청 approvalId 로 결정 (null 이면 INSERT)
         if (preApplyApprovalId == null) {
             eaExeId = buildEaExeId(now.toLocalDate());
             Map<String, Object> mainParams = new HashMap<String, Object>();
@@ -232,8 +235,10 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         String requestedCycleDate = payload.getCycleDate();
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
         String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
-        ensureSubmissionEditableState(tenantId, workId, actorLoginId, cycleDate, "결재신청");
-        String reportDate = resolveReportDate(tenantId, workId, actorLoginId, work.getCycle(), cycleDate, payload.getReportDate(), "결재신청");
+        // 기존 -> ensureSubmissionEditableState(주기 최신 문서 결재중/승인이면 409) + resolveReportDate(대상 주기 충돌 409)
+        // 변경 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
+        Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "결재신청");
+        String reportDate = resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
 
         // 결재 미적용 문서는 결재선 없이 바로 완료되므로 검토자/승인자 검사 생략 추가
         boolean approvalApply = !Boolean.FALSE.equals(work.getApprovalApply());
@@ -265,7 +270,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         Map<String, Object> reviewerProfile = selectApprovalActorProfile(tenantId, work.getReviewerId());
         Map<String, Object> approverProfile = selectApprovalActorProfile(tenantId, work.getApproverId());
 
-        Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId, cycleDate);
+        // 기존 -> Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId, cycleDate);
+        // 변경 -> 위에서 요청 approvalId 로 결정 (null 이면 INSERT)
         Long electronicApprovalId;
         if (preApplyApprovalId == null) {
             eaExeId = buildEaExeId(now.toLocalDate());
@@ -365,8 +371,13 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             now,
                 eaExeId
         );
-        // 결재 미적용 문서는 기안자 결재선만 남기고 검토/승인/참조, 이력 댓글, 결재 체인 처리를 건너뛴다
+        // 기존 -> 결재 미적용 문서는 기안자 결재선만 남기고 검토/승인/참조, 이력 댓글, 결재 체인 처리를 건너뛴다
+        // 변경 -> 결재 미적용 문서는 검토/승인 결재선도 기안자로 넣어 바로 승인 처리하고, 참조/이력 댓글/결재 체인 처리를 건너뛴다
         if (!approvalApply) {
+            insertApprovalLine(tenantId, electronicApprovalId, 2, actorLoginId, actorProfile,
+                    "검토", "drafted", "approved", "N", "N", now, now, now, eaExeId);
+            insertApprovalLine(tenantId, electronicApprovalId, 3, actorLoginId, actorProfile,
+                    "승인", "drafted", "approved", "N", "Y", now, now, now, eaExeId);
             return electronicApprovalId;
         }
         insertApprovalLine(
@@ -1425,13 +1436,39 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         return haccpWorkDAO.selectLoginIdByTenantAndUserOrLoginId(params);
     }
 
-    private Long findLatestPreApplyApprovalId(Long tenantId, Long workId, Long loginId, String cycleDate) throws Exception {
+//    private Long findLatestPreApplyApprovalId(Long tenantId, Long workId, Long loginId, String cycleDate) throws Exception {
+//        Map<String, Object> params = new HashMap<String, Object>();
+//        params.put("tenantId", tenantId);
+//        params.put("workId", workId);
+//        params.put("loginId", loginId);
+//        params.put("cycleDate", cycleDate);
+//        return haccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(params);
+//    }
+
+    // 기존 -> findLatestPreApplyApprovalId(주기 최신 임시저장 찾기), ensureSubmissionEditableState(주기 최신 문서가 결재중/승인이면 409)
+    // 변경 -> 같은 주기 여러 건 허용. 요청 approvalId 가 같은 업무의 본인 임시저장 문서인지만 검증, 없으면 null(새 문서)
+    private Long resolveEditableApprovalId(Long tenantId, Long workId, Long actorLoginId, Long approvalId, String actionLabel) throws Exception {
+        if (approvalId == null) {
+            return null;
+        }
+
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("tenantId", tenantId);
-        params.put("workId", workId);
-        params.put("loginId", loginId);
-        params.put("cycleDate", cycleDate);
-        return haccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(params);
+        params.put("approvalId", approvalId);
+        Map<String, Object> approvalMain = haccpWorkDAO.selectApprovalMainById(params);
+        if (approvalMain == null
+                || !workId.equals(getLong(approvalMain, "draftingWorkCategoryId"))
+                || !actorLoginId.equals(getLong(approvalMain, "loginId"))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "수정할 기안을 찾을 수 없습니다.");
+        }
+        String statusType = trimToEmpty(String.valueOf(getValueIgnoreCase(approvalMain, "statusType"))).toLowerCase();
+        if (!"pre_apply".equals(statusType)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    actionLabel + "은(는) 결재 취소 후에만 가능합니다."
+            );
+        }
+        return approvalId;
     }
 
     private int resolveCancelableTargetSeq(Long tenantId, Long approvalId, Long actorLoginId) throws Exception {
@@ -1983,44 +2020,30 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         return "";
     }
 
-    /** 보고일자(reportDate)의 주기 시작일(yyyyMMdd). 비었거나 원래 주기와 같으면 원래 주기, 다르면 대상 주기가 비어 있어야 한다. */
-    private String resolveReportDate(
-            Long tenantId,
-            Long workId,
-            Long loginId,
-            String regTerm,
-            String cycleDate,
-            String requestedReportDate,
-            String actionLabel
-    ) throws Exception {
+    /** 보고일자(reportDate)의 주기 시작일(yyyyMMdd). 비었으면 원래 주기. */
+    // 기존 -> 대상 주기가 원래 주기와 다르면 그 주기의 결재중/승인, 임시저장 문서를 검사해 409
+    // 변경 -> 같은 주기 여러 건 허용이라 충돌 검사 없이 주기 시작일만 계산
+    private String resolveReportDate(String regTerm, String cycleDate, String requestedReportDate) {
         if (!StringUtils.hasText(requestedReportDate)) {
             return cycleDate;
         }
-        String reportDate = HaccpWorkCycleDates.resolve(regTerm, requestedReportDate, LocalDate.now()).format(DATE_FORMATTER);
-        if (reportDate.equals(cycleDate)) {
-            return cycleDate;
-        }
-        ensureSubmissionEditableState(tenantId, workId, loginId, reportDate, actionLabel);
-        if (findLatestPreApplyApprovalId(tenantId, workId, loginId, reportDate) != null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "해당 주기에 이미 작성 중인 문서가 있습니다.");
-        }
-        return reportDate;
+        return HaccpWorkCycleDates.resolve(regTerm, requestedReportDate, LocalDate.now()).format(DATE_FORMATTER);
     }
 
-    private void ensureSubmissionEditableState(Long tenantId, Long workId, Long loginId, String cycleDate, String actionLabel) throws Exception {
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("tenantId", tenantId);
-        params.put("workId", workId);
-        params.put("loginId", loginId);
-        params.put("cycleDate", cycleDate);
-
-        Map<String, Object> latest = haccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin(params);
-        String latestStatus = trimToEmpty(String.valueOf(latest == null ? "" : latest.get("statusType"))).toLowerCase();
-        if ("in_progress".equals(latestStatus) || "approved".equals(latestStatus)) {
-            throw new ResponseStatusException(
-                HttpStatus.CONFLICT,
-                actionLabel + "은(는) 결재 취소 후에만 가능합니다."
-            );
-        }
-    }
+//    private void ensureSubmissionEditableState(Long tenantId, Long workId, Long loginId, String cycleDate, String actionLabel) throws Exception {
+//        Map<String, Object> params = new HashMap<String, Object>();
+//        params.put("tenantId", tenantId);
+//        params.put("workId", workId);
+//        params.put("loginId", loginId);
+//        params.put("cycleDate", cycleDate);
+//
+//        Map<String, Object> latest = haccpWorkDAO.selectLatestApprovalStatusByWorkAndLogin(params);
+//        String latestStatus = trimToEmpty(String.valueOf(latest == null ? "" : latest.get("statusType"))).toLowerCase();
+//        if ("in_progress".equals(latestStatus) || "approved".equals(latestStatus)) {
+//            throw new ResponseStatusException(
+//                HttpStatus.CONFLICT,
+//                actionLabel + "은(는) 결재 취소 후에만 가능합니다."
+//            );
+//        }
+//    }
 }

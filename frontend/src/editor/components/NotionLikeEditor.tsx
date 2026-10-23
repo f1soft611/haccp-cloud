@@ -1,10 +1,10 @@
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
 import { useEffect, useRef, useState } from 'react';
 import { Box, Menu, MenuItem, Paper } from '@mui/material';
 import { useTheme, type SxProps, type Theme } from '@mui/material/styles';
 import StarterKit from '@tiptap/starter-kit';
-import { TextStyle } from '@tiptap/extension-text-style';
+import { FontFamily, TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
@@ -27,7 +27,12 @@ import {
 } from '../extensions/tableCellStyleExtensions';
 import { Selection } from '@tiptap/pm/state';
 import type { DocumentFieldValues } from '../utils/documentFieldValues';
-import { convertExcelCheckboxImages } from '../utils/excelPasteHtml';
+import {
+  hasSpreadsheetClipboardContent,
+  normalizeClipboardHtmlForEditor,
+  normalizeClipboardTextForEditor,
+  normalizeClipboardTextGridForEditor,
+} from '../utils/clipboardPaste';
 import { ResetEditorToolbar } from './reset/ResetEditorToolbar';
 import './slashCommand.css';
 
@@ -160,6 +165,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
     documentFieldValues,
   } = props;
   const lastSerializedContentRef = useRef<string>('');
+  const editorRef = useRef<Editor | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{
     left: number;
     top: number;
@@ -189,6 +195,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
     extensions: [
       StarterKit,
       TextStyle,
+      FontFamily,
       Color,
       Highlight.configure({
         multicolor: true,
@@ -221,9 +228,39 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       StyledTableCell,
     ],
     content,
-    // 엑셀 체크박스 이미지를 에디터 체크박스(taskList)로 바꾼 뒤 파싱
+    // 기존 -> transformPastedHTML 에서 엑셀 체크박스 이미지만 taskList 로 변환
+    // 변경 -> 외부(엑셀/한글) 붙여넣기는 서식 정규화(체크박스 변환 포함), 에디터 내부 복사본(data-pm-slice)은 그대로
     editorProps: {
-      transformPastedHTML: convertExcelCheckboxImages,
+      transformPastedHTML: (html) =>
+          html.includes('data-pm-slice')
+              ? html
+              : normalizeClipboardHtmlForEditor(html),
+      transformPastedText: normalizeClipboardTextForEditor,
+      // 표는 엑셀 표시값을 맞추려면 plain text 가 필요해서 여기서 직접 넣는다
+      handlePaste: (view, event) => {
+        const data = event.clipboardData;
+        const html = data?.getData('text/html') ?? '';
+        if (
+            !data ||
+            html.includes('data-pm-slice') ||
+            !hasSpreadsheetClipboardContent(data)
+        ) {
+          return false;
+        }
+
+        if (!view.editable) {
+          return true;
+        }
+
+        const text = data.getData('text/plain') ?? '';
+        const normalized = html
+            ? normalizeClipboardHtmlForEditor(html, text)
+            : normalizeClipboardTextGridForEditor(text);
+        if (normalized) {
+          editorRef.current?.commands.insertContent(normalized);
+        }
+        return true;
+      },
     },
     onUpdate: ({ editor: currentEditor }) => {
       const nextContent = currentEditor.getJSON();
@@ -231,6 +268,10 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       onChange(nextContent, currentEditor.getHTML());
     },
   });
+
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) {
@@ -654,6 +695,9 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
           '& .tiptap th': {
             bgcolor: isDarkMode ? '#eef2f7' : 'common.white',
             fontWeight: 700,
+          },
+          '& .tiptap td[data-pasted-style] p, & .tiptap th[data-pasted-style] p': {
+            my: 0,
           },
           '& .tiptap .selectedCell::after': {
             content: '""',

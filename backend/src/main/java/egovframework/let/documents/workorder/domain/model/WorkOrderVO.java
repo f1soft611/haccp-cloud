@@ -55,4 +55,10 @@ public class WorkOrderVO implements Serializable {
 
     @Schema(description = "비고")
     private String prodMemo;
+
+    @Schema(description = "품목 소비기한 기준 (NONE/DAY/MONTH/YEAR)")
+    private String expiryedStatus;
+
+    @Schema(description = "품목 소비기한 계산숫자")
+    private Integer expiryedCount;
 }

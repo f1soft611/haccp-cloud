@@ -137,6 +137,12 @@ export function useApprovalDraftWriteActions(
     return target;
   };
 
+  // 임시저장 문서를 연 경우만 그 문서를 수정, 새 문서(fresh)나 반려 재기안은 새 문서로 저장
+  const editableApprovalId =
+      String(approvalStatusType ?? '').trim().toLowerCase() === 'pre_apply'
+          ? (approvalId ?? '').trim()
+          : '';
+
   const tempSaveMutation = useMutation({
     mutationFn: async () => {
       const targetId = (
@@ -165,6 +171,7 @@ export function useApprovalDraftWriteActions(
         referenceIds,
         cycleDate,
         reportDate,
+        approvalId: editableApprovalId || undefined,
         sub: subPayload,
       });
     },
@@ -231,6 +238,7 @@ export function useApprovalDraftWriteActions(
         referenceIds,
         cycleDate,
         reportDate,
+        approvalId: editableApprovalId || undefined,
         sub: subPayload,
       });
     },

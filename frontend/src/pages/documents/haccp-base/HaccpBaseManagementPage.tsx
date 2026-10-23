@@ -190,12 +190,13 @@ export function HaccpBaseManagementPage() {
   );
 
   const handleCreate = () => {
+    // 기존 -> 검토자/승인자 항상 필수 / 변경 -> 결재 적용일 때만 필수
     if (
         !createForm.cycle ||
-      !createForm.categoryId ||
-      !createForm.divisionName.trim() ||
-      !createForm.reviewerId ||
-      !createForm.approverId
+        !createForm.categoryId ||
+        !createForm.divisionName.trim() ||
+        (createForm.approvalApply === 'Y' &&
+            (!createForm.reviewerId || !createForm.approverId))
     ) {
       return;
     }
@@ -222,8 +223,8 @@ export function HaccpBaseManagementPage() {
       divisionCode: row.divisionCode,
       divisionName: row.divisionName,
       cycle: row.cycle,
-      reviewerId: row.reviewerId,
-      approverId: row.approverId,
+      reviewerId: row.approvalApply === 'Y' ? row.reviewerId : '',
+      approverId: row.approvalApply === 'Y' ? row.approverId : '',
       assigneeIds: row.assigneeIds,
       expirationApply: row.expirationApply,
       approvalApply: row.approvalApply,
@@ -233,13 +234,14 @@ export function HaccpBaseManagementPage() {
   };
 
   const handleEdit = () => {
+    // 기존 -> 검토자/승인자 항상 필수 / 변경 -> 결재 적용일 때만 필수
     if (
-      !editTargetId ||
+        !editTargetId ||
         !editForm.cycle ||
-      !editForm.categoryId ||
-      !editForm.divisionName.trim() ||
-      !editForm.reviewerId ||
-      !editForm.approverId
+        !editForm.categoryId ||
+        !editForm.divisionName.trim() ||
+        (editForm.approvalApply === 'Y' &&
+            (!editForm.reviewerId || !editForm.approverId))
     ) {
       return;
     }
