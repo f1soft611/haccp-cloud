@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
@@ -40,6 +41,9 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
 
     private static final String USER_LIMIT_FEATURE_CODE = "LIMIT_USER_COUNT";
     private static final String DEFAULT_INITIAL_PASSWORD = "Welcome123!";
+    // PlatformTenantServiceImpl.EMAIL_PATTERN 과 같은 식
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     @Resource(name = "platformUserDAO")
     private PlatformUserDAO platformUserDAO;
@@ -386,6 +390,9 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
         }
         if (!StringUtils.hasText(payload.getEmail())) {
             throw new IllegalArgumentException("이메일은 필수입니다.");
+        }
+        if (!EMAIL_PATTERN.matcher(payload.getEmail().trim()).matches()) {
+            throw new IllegalArgumentException("이메일 형식이 올바르지 않습니다.");
         }
         if (!StringUtils.hasText(payload.getDepartment())) {
             throw new IllegalArgumentException("부서는 필수입니다.");
