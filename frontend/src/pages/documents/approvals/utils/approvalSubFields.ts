@@ -20,10 +20,11 @@ export const EMPTY_APPROVAL_SUB: ApprovalSubValues = {
 const APPROVAL_SUB_FIELD_CONFIG: Record<string, ApprovalSubFieldConfig> = {
     'HCP-CALIB': {
         target: 'equipment',
-        targetLabel: '설비',
+        targetLabel: '검교정설비명',
         inspectedLabel: '검교정일자',
-        expirationLabel: '검교정예정일',
+        expirationLabel: '차기예정일',
     },
+
     'HCP-VALID': {
         target: 'materialType',
         targetLabel: '품목유형',
