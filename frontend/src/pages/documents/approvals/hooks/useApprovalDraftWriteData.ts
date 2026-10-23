@@ -67,6 +67,7 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   const idType =
     searchParams.get('idType') === 'approval' ? 'approval' : 'work';
   const cycleDate = (searchParams.get('cycleDate') || '').trim();
+  const fresh = searchParams.get('fresh') === 'true';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const tenantCode = useAuthStore((state) => state.tenantCode || '');
   const userId = useAuthStore((state) => state.userId || 'tenant_admin');
@@ -82,13 +83,15 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   const [sub, setSub] = useState<ApprovalSubValues>(EMPTY_APPROVAL_SUB);
 
   const workDetailQuery = useQuery({
-    queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType, cycleDate],
+    // 변경 -> fresh(새 문서 모드)도 키에 포함
+    queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType, cycleDate, fresh],
     queryFn: () =>
         getHaccpWorkDraftTemplate({
           tenantCode,
           id: baseId ?? '',
           idType,
           cycleDate: cycleDate || undefined,
+          fresh,
         }),
     enabled: Boolean(isAuthenticated && tenantCode && baseId),
     retry: 1,

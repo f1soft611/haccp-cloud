@@ -554,14 +554,16 @@ export async function getHaccpWorkDraftTemplate(params: {
   id: string;
   idType?: 'work' | 'approval';
   cycleDate?: string;
+  fresh?: boolean;
 }): Promise<HaccpBaseWorkItem> {
   const { data } = await apiClient.get<
-    RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
+      RawHaccpBaseWorkItem | ResultEnvelope<RawHaccpBaseWorkItem>
   >(`/v1/haccp-work/drafts/${params.id}/template`, {
     headers: { 'x-tenant-code': params.tenantCode },
     params: {
       idType: params.idType || 'work',
       ...(params.cycleDate ? { cycleDate: params.cycleDate } : {}),
+      ...(params.fresh ? { fresh: true } : {}),
     },
   });
 
@@ -723,6 +725,7 @@ export async function saveHaccpWorkTempDraft(payload: {
   referenceIds?: string[];
   cycleDate?: string;
   reportDate?: string;
+  approvalId?: string;
   sub?: ApprovalSubValues;
 }): Promise<HaccpBaseWorkItem> {
   const { data } = await apiClient.post<
@@ -736,6 +739,7 @@ export async function saveHaccpWorkTempDraft(payload: {
       referenceIds: payload.referenceIds ?? [],
       cycleDate: payload.cycleDate || undefined,
       reportDate: payload.reportDate || undefined,
+      approvalId: payload.approvalId || undefined,
       sub: toApprovalSubRequest(payload.sub),
     },
     {
@@ -763,6 +767,7 @@ export async function submitHaccpWorkDraft(payload: {
   referenceIds?: string[];
   cycleDate?: string;
   reportDate?: string;
+  approvalId?: string;
   sub?: ApprovalSubValues;
 }): Promise<{ message: string; approvalId?: string }> {
   const { data } = await apiClient.post<
@@ -781,6 +786,7 @@ export async function submitHaccpWorkDraft(payload: {
       referenceIds: payload.referenceIds ?? [],
       cycleDate: payload.cycleDate || undefined,
       reportDate: payload.reportDate || undefined,
+      approvalId: payload.approvalId || undefined,
       sub: toApprovalSubRequest(payload.sub),
     },
     {
