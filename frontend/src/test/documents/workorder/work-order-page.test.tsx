@@ -207,6 +207,37 @@ describe('WorkOrderPage', () => {
         );
     });
 
+    it('품목 선택 Dialog 에서 검색하면 조회 중에는 기존 목록 대신 스피너를 보여준다', async () => {
+        renderPage();
+        fireEvent.click(await screen.findByRole('button', { name: '신규' }));
+        const dialog = screen.getByRole('dialog');
+        fireEvent.click(within(dialog).getByRole('textbox', { name: /^품목/ }));
+        const selectDialog = await screen.findByRole('dialog', { name: /품목 선택/ });
+        expect(await within(selectDialog).findByRole('row', { name: /깍두기/ })).toBeInTheDocument();
+
+        // 다음 조회 응답을 붙잡아 두고 조회 중 화면을 확인
+        let resolveSearch: (value: Awaited<ReturnType<typeof listMaterialsPagedMock>>) => void = () => {};
+        listMaterialsPagedMock.mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    resolveSearch = resolve;
+                }),
+        );
+
+        fireEvent.change(within(selectDialog).getByRole('textbox', { name: '검색어' }), {
+            target: { value: '없는품목' },
+        });
+        fireEvent.click(within(selectDialog).getByRole('button', { name: '검색' }));
+
+        expect(await within(selectDialog).findByRole('progressbar', { name: '조회 중' })).toBeInTheDocument();
+        expect(within(selectDialog).queryByRole('row', { name: /깍두기/ })).not.toBeInTheDocument();
+
+        resolveSearch({ items: [], totalCount: 0 });
+
+        expect(await within(selectDialog).findByText('검색된 품목이 없습니다.')).toBeInTheDocument();
+        expect(within(selectDialog).queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
     it('수정 다이얼로그는 작업지시번호와 기존 값을 보여주고 수정 API를 호출한다', async () => {
         renderPage();
         fireEvent.click((await screen.findAllByRole('button', { name: '작업지시 수정' }))[0]);
