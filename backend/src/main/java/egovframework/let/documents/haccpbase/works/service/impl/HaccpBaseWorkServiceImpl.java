@@ -99,12 +99,13 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         params.put("cycle", normalizeCycle(payload.getCycle()));
         params.put("useAt", Boolean.FALSE.equals(payload.getActive()) ? "N" : "Y");
         // 만료일 관리 양식은 등록주기가 수시(ANYTIME)일 때만 Y 허용, 값이 없으면 N
-        params.put("expirationApply",
-                "ANYTIME".equals(normalizeCycle(payload.getCycle())) && Boolean.TRUE.equals(payload.getExpirationApply()) ? "Y" : "N");
-        // 결재 적용 여부는 값이 없으면 Y
-        params.put("approvalApply", Boolean.FALSE.equals(payload.getApprovalApply()) ? "N" : "Y");
-        params.put("reviewerId", payload.getReviewerId());
-        params.put("approverId", payload.getApproverId());
+        params.put("expirationApply", "ANYTIME".equals(normalizeCycle(payload.getCycle())) && Boolean.TRUE.equals(payload.getExpirationApply()) ? "Y" : "N");
+        // 기존 -> 결재 적용 여부는 값이 없으면 Y, 검토자/승인자는 요청 값 그대로 저장
+        // 변경 -> 결재 적용 여부는 값이 없으면 Y, 미적용이면 검토자/승인자는 null (기안 시 기안자가 대신 결재)
+        boolean approvalApply = !Boolean.FALSE.equals(payload.getApprovalApply());
+        params.put("approvalApply", approvalApply ? "Y" : "N");
+        params.put("reviewerId", approvalApply ? payload.getReviewerId() : null);
+        params.put("approverId", approvalApply ? payload.getApproverId() : null);
         params.put("createdBy", actorLoginId);
         params.put("updatedBy", actorLoginId);
 
@@ -149,12 +150,13 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         params.put("cycle", normalizeCycle(payload.getCycle()));
         params.put("useAt", Boolean.FALSE.equals(payload.getActive()) ? "N" : "Y");
         // 만료일 관리 양식은 등록주기가 수시(ANYTIME)일 때만 Y 허용, 값이 없으면 N
-        params.put("expirationApply",
-                "ANYTIME".equals(normalizeCycle(payload.getCycle())) && Boolean.TRUE.equals(payload.getExpirationApply()) ? "Y" : "N");
-        // 결재 적용 여부는 값이 없으면 Y
-        params.put("approvalApply", Boolean.FALSE.equals(payload.getApprovalApply()) ? "N" : "Y");
-        params.put("reviewerId", payload.getReviewerId());
-        params.put("approverId", payload.getApproverId());
+        params.put("expirationApply", "ANYTIME".equals(normalizeCycle(payload.getCycle())) && Boolean.TRUE.equals(payload.getExpirationApply()) ? "Y" : "N");
+        // 기존 -> 결재 적용 여부는 값이 없으면 Y, 검토자/승인자는 요청 값 그대로 저장
+        // 변경 -> 결재 적용 여부는 값이 없으면 Y, 미적용이면 검토자/승인자는 null (기안 시 기안자가 대신 결재)
+        boolean approvalApply = !Boolean.FALSE.equals(payload.getApprovalApply());
+        params.put("approvalApply", approvalApply ? "Y" : "N");
+        params.put("reviewerId", approvalApply ? payload.getReviewerId() : null);
+        params.put("approverId", approvalApply ? payload.getApproverId() : null);
         params.put("updatedBy", actorLoginId);
         haccpBaseWorkDAO.updateWork(params);
 
