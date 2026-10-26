@@ -17,6 +17,9 @@ public interface DashboardService {
 
     public List<Map<String, Object>> listMyTodoCycles(String tenantCode, String actorLoginCode, String fromDate, String toDate) throws Exception;
 
+    // 만료일 관리 업무(HCP sub) 결재 완료 문서의 만료일 목록 (fromDate, toDate: yyyyMMdd)
+    public List<Map<String, Object>> listMyExpirations(String tenantCode, String actorLoginCode, String fromDate, String toDate) throws Exception;
+
     // 캘린더 표시 시작일 (yyyyMMdd, 입사일·테넌트 생성일 중 늦은 날)
     public String getCalendarDisplayStartDate(String tenantCode, String actorLoginCode) throws Exception;
 
