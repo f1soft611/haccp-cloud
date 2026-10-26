@@ -490,6 +490,32 @@ type RawHaccpWorkCycleInstance = {
   title?: string | null;
 };
 
+export type HaccpWorkExpiration = {
+  workId: string;
+  approvalId: string;
+  // yyyy-MM-dd
+  expirationDate: string;
+  equipmentId: string;
+  materialType: string;
+  certificationUserId: string;
+  // 설비명 또는 사원명 (품목유형 업무는 '')
+  targetName: string;
+};
+
+type RawHaccpWorkExpiration = {
+  workId?: string | number | null;
+  approvalId?: string | number | null;
+  expirationDate?: string | null;
+  equipmentId?: string | number | null;
+  materialType?: string | null;
+  certificationUserId?: string | number | null;
+  targetName?: string | null;
+};
+
+function toIdText(value: string | number | null | undefined): string {
+  return value == null ? '' : String(value);
+}
+
 function toDashedDate(compact: string | null | undefined): string {
   return /^\d{8}$/.test(compact ?? '')
       ? `${compact!.slice(0, 4)}-${compact!.slice(4, 6)}-${compact!.slice(6, 8)}`
@@ -499,6 +525,7 @@ function toDashedDate(compact: string | null | undefined): string {
 export type HaccpWorkCycleResult = {
   instances: HaccpWorkCycleInstance[];
   displayStartDate: string;
+  expirations: HaccpWorkExpiration[];
 };
 
 export async function listHaccpWorkTodoCycles(params: {
@@ -510,7 +537,7 @@ export async function listHaccpWorkTodoCycles(params: {
   const { data } = await apiClient.get<
       | RawHaccpWorkCycleInstance[]
       | (ResultEnvelope<RawHaccpWorkCycleInstance> & {
-    result?: { displayStartDate?: string | null };
+    result?: { displayStartDate?: string | null; expirations?: RawHaccpWorkExpiration[] | null };
   })
   >('/v1/dashboard/todo-cycles', {
     headers: { 'x-tenant-code': params.tenantCode },
@@ -533,6 +560,17 @@ export async function listHaccpWorkTodoCycles(params: {
       title: (item.title ?? '').trim(),
     })),
     displayStartDate: Array.isArray(data) ? '' : toDashedDate(data?.result?.displayStartDate),
+    expirations: (Array.isArray(data) ? [] : (data?.result?.expirations ?? []))
+    .filter((item) => /^\d{8}$/.test(item.expirationDate ?? ''))
+    .map((item) => ({
+      workId: toIdText(item.workId),
+      approvalId: toIdText(item.approvalId),
+      expirationDate: toDashedDate(item.expirationDate),
+      equipmentId: toIdText(item.equipmentId),
+      materialType: (item.materialType ?? '').trim(),
+      certificationUserId: toIdText(item.certificationUserId),
+      targetName: (item.targetName ?? '').trim(),
+    })),
   };
 }
 

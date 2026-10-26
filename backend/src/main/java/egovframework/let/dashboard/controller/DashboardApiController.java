@@ -88,6 +88,7 @@ public class DashboardApiController {
         Map<String, Object> resultMap = new HashMap<String, Object>();
         resultMap.put("resultList", resultList);
         resultMap.put("displayStartDate", dashboardService.getCalendarDisplayStartDate(tenantCode, resolveLoginCode(user)));
+        resultMap.put("expirations", dashboardService.listMyExpirations(tenantCode, resolveLoginCode(user), fromDate, toDate));
 
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }

@@ -47,7 +47,7 @@
             <table>
                 <thead><tr><th>업무에 정하는 값</th><th>이어지는 곳</th></tr></thead>
                 <tbody>
-                <tr><td>등록주기</td><td>종합현황 할 일, 업무 캘린더에 문서가 올라오는 주기 (⑦편)</td></tr>
+                <tr><td>등록주기</td><td>종합현황 할 일, 업무 캘린더에 문서가 올라오는 주기 (⑦편). 기준은 <a href="#cycle-basis">등록주기 기준</a></td></tr>
                 <tr><td>검토자, 승인자</td><td>기안 작성 화면 결재선에 자동으로 들어감 (<a href="05-approval.html">⑤편</a>)</td></tr>
                 <tr><td>결재 적용 여부</td><td>"미적용" 이면 기안 작성 화면에 <strong>저장</strong> 버튼만 보임 (<a href="05-approval.html">⑤편</a>)</td></tr>
                 <tr><td>양식</td><td>기안 작성 화면 본문의 틀</td></tr>
@@ -111,6 +111,24 @@
         </figure>
         <div class="note"><strong>팁</strong> 등록주기 목록은 공통코드 등록주기(WF_FORM_CYCLE) 그룹에서 가져옵니다. 목록이 비어 있으면 칸 아래에 "공통코드 WF_FORM_CYCLE(등록주기)을 먼저 등록하세요." 가 보입니다. <a href="03-basicinfo.html#common-code">③편 공통코드</a>에서 값을 확인하세요.</div>
         <p>담당자, 검토자, 승인자 목록에는 사용 중인 사용자만 나옵니다. 사용자 등록은 <a href="02-organization.html#users">②편 사용자 관리</a>를 보세요.</p>
+
+        <h3 id="cycle-basis">등록주기 기준</h3>
+        <p>등록주기는 업무를 등록한 날이 아니라 달력 기준으로 나뉩니다.</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>주기</th><th>한 주기의 범위</th><th>예시</th></tr></thead>
+                <tbody>
+                <tr><td>일</td><td>하루</td><td>10월 26일 하루</td></tr>
+                <tr><td>주</td><td>월요일~일요일</td><td>10/26(월)~11/1(일)</td></tr>
+                <tr><td>월</td><td>매달 1일~말일</td><td>10/1~10/31</td></tr>
+                <tr><td>분기</td><td>1~3월 / 4~6월 / 7~9월 / 10~12월</td><td>10월은 4분기(10~12월)</td></tr>
+                <tr><td>반기</td><td>1~6월 / 7~12월</td><td>10월은 하반기(7~12월)</td></tr>
+                <tr><td>연간</td><td>1월 1일~12월 31일</td><td>2026년</td></tr>
+                <tr><td>수시</td><td>정해진 범위 없음</td><td>필요할 때 작성</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="note"><strong>주의</strong> 2월에 등록한 반기 업무도 2~7월로 세지 않습니다. 첫 주기는 1~6월이고, 다음은 7~12월입니다. 분기, 연간도 같은 방식으로 1월 1일부터 나뉩니다.</div>
 
         <h3>업무 수정</h3>
         <p><strong>수정</strong> 칸 연필 아이콘(<strong>업무 수정</strong>) → "업무 수정" 창("양식 기본 정보를 수정합니다.") 에서 고침 → <strong>저장</strong>.</p>

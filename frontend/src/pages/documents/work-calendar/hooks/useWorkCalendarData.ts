@@ -11,22 +11,25 @@ import {
     toTenantTodoCardItem,
     type TenantTodoCardItem,
 } from '../../../dashboard/tenant/hooks/useTenantDashboardData';
-import { mapTodosToCalendarEvents } from '../cycleDateMapping';
+import { mapExpirationsToCalendarEvents, mapTodosToCalendarEvents } from '../cycleDateMapping';
+import type { HaccpWorkExpiration } from '../../../../services/documents/haccpBaseWorkService';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import { getCommonCodeName, useCommonCodeOptions } from '../../../../shared/hooks/useCommonCodeOptions';
 
 export type WorkCalendarEvent = {
     title: string;
     start: Date;
     end: Date;
     allDay: true;
-    // 기존 -> 상태는 resource(업무 1건)만 보유
-    // 변경 -> 주기 기준일·미래 여부를 이벤트별로 보유
     cycleDate: string;
     isFuture: boolean;
     resource: TenantTodoCardItem;
+    expiration?: HaccpWorkExpiration;   // 만료일 이벤트면 만료 문서 정보 (클릭 시 대상 미리 선택 경로)
 };
 
 export function useCalendarMonthEvents(monthDate: Date) {
     const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
+    const materialTypeOptions = useCommonCodeOptions(COMMON_CODE_GROUP.MATERIAL_TYPE);
 
     const {
         data: todoDocuments = [],
@@ -62,14 +65,23 @@ export function useCalendarMonthEvents(monthDate: Date) {
     });
 
     const events = useMemo<WorkCalendarEvent[]>(() => {
-        const mapped = mapTodosToCalendarEvents(
-            todoDocuments,
-            rangeStart,
-            rangeEnd,
-            cycles?.instances ?? [],
-            new Date(),
-            cycles?.displayStartDate ?? '',
-        );
+        const mapped = [
+            ...mapTodosToCalendarEvents(
+                todoDocuments,
+                rangeStart,
+                rangeEnd,
+                cycles?.instances ?? [],
+                new Date(),
+                cycles?.displayStartDate ?? '',
+            ),
+            ...mapExpirationsToCalendarEvents(
+                todoDocuments,
+                cycles?.expirations ?? [],
+                rangeStart,
+                rangeEnd,
+                (code) => getCommonCodeName(materialTypeOptions, code),
+            ),
+        ];
 
         return mapped
         .slice()
@@ -95,9 +107,10 @@ export function useCalendarMonthEvents(monthDate: Date) {
                 cycleDate: mappedEvent.cycleDate,
                 isFuture: mappedEvent.isFuture,
                 resource: mappedEvent.item,
+                expiration: mappedEvent.expiration,
             };
         });
-    }, [todoDocuments, rangeStart, rangeEnd, cycles]);
+    }, [todoDocuments, rangeStart, rangeEnd, cycles, materialTypeOptions]);
 
     return { events, isLoading, isError, error };
 }

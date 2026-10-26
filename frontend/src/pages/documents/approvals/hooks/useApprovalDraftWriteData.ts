@@ -14,7 +14,7 @@ import {
 import { parseTemplateJson, toCycleStartDate } from '../utils/approvalDraftUtils';
 import { isDocumentOwner } from '../../../../shared/utils/ownershipUtils';
 import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
-import { EMPTY_APPROVAL_SUB } from '../utils/approvalSubFields';
+import { EMPTY_APPROVAL_SUB, toInitialApprovalSub } from '../utils/approvalSubFields';
 
 type UseApprovalDraftWriteDataResult = {
   baseId?: string;
@@ -119,8 +119,8 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   };
 
   useEffect(() => {
-    setSub(work?.sub ?? EMPTY_APPROVAL_SUB);
-  }, [work?.sub]);
+    setSub(toInitialApprovalSub(work?.sub, searchParams));
+  }, [work?.sub, searchParams]);
 
   useEffect(() => {
     setTitle('');

@@ -81,3 +81,32 @@ export function validateApprovalSub(
     }
     return '';
 }
+
+// 검교정일자 + 주기(개월) - 1일. 더한 달에 같은 날짜가 없으면 그 달 말일 기준
+// 문자열을 숫자로 나눠 UTC 로만 계산해 타임존 때문에 하루 밀리지 않게 함
+export function calcNextCalibDate(inspectedDate: string, cycleMonths: number): string {
+    const [year, month, day] = inspectedDate.split('-').map(Number);
+    const targetMonth = month - 1 + cycleMonths;
+    const lastDay = new Date(Date.UTC(year, targetMonth + 1, 0)).getUTCDate();
+    return new Date(Date.UTC(year, targetMonth, Math.min(day, lastDay) - 1))
+    .toISOString()
+    .slice(0, 10);
+}
+
+// 새 문서(저장된 sub 가 없거나 모두 비어 있음)면 쿼리 파라미터의 대상 값으로 시작 (캘린더 만료일 클릭 시 미리 선택)
+// 저장된 문서는 쿼리 파라미터를 무시해 기존 값을 덮어쓰지 않는다
+export function toInitialApprovalSub(
+    saved: ApprovalSubValues | undefined,
+    searchParams: URLSearchParams,
+): ApprovalSubValues {
+    if (saved && Object.values(saved).some(Boolean)) {
+        return saved;
+    }
+    const read = (key: string) => (searchParams.get(key) || '').trim();
+    return {
+        ...EMPTY_APPROVAL_SUB,
+        equipmentId: read('equipmentId'),
+        materialType: read('materialType'),
+        certificationUserId: read('certificationUserId'),
+    };
+}

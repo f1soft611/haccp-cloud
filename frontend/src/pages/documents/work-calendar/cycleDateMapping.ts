@@ -1,5 +1,5 @@
 import type { TenantTodoCardItem } from '../../dashboard/tenant/hooks/useTenantDashboardData';
-import type { HaccpWorkCycleInstance } from '../../../services/documents/haccpBaseWorkService';
+import type { HaccpWorkCycleInstance, HaccpWorkExpiration } from '../../../services/documents/haccpBaseWorkService';
 import { resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
 
 export type CalendarWorkEvent = {
@@ -7,6 +7,7 @@ export type CalendarWorkEvent = {
     cycleDate: string;
     isFuture: boolean;
     item: TenantTodoCardItem;
+    expiration?: HaccpWorkExpiration;
 }
 
 function pad2(value: number): string {
@@ -68,11 +69,14 @@ export function mapTodosToCalendarEvents(
     );
     const currentMonthFirst = toDateString(today.getFullYear(), today.getMonth(), 1);
     const currentYearFirst = toDateString(today.getFullYear(), 0, 1);
+    const currentQuarterFirst = toDateString(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
+    const currentHalfFirst = toDateString(today.getFullYear(), today.getMonth() < 6 ? 0 : 6, 1);
     // 표시 시작일이 속한 주기의 기준일 (이보다 이른 주기는 표시하지 않음, '' 이면 하한 없음)
     const displayStart = displayStartDate ? parseLocalDate(displayStartDate) : null;
     const minCycleDates: Record<string, string> = displayStart
         ? {
             DAY: displayStartDate,
+            ANYTIME: displayStartDate,
             WEEK: toLocalDateString(
                 new Date(
                     displayStart.getFullYear(),
@@ -81,6 +85,8 @@ export function mapTodosToCalendarEvents(
                 ),
             ),
             MONTH: toDateString(displayStart.getFullYear(), displayStart.getMonth(), 1),
+            QUARTER: toDateString(displayStart.getFullYear(), Math.floor(displayStart.getMonth() / 3) * 3, 1),
+            HALF: toDateString(displayStart.getFullYear(), displayStart.getMonth() < 6 ? 0 : 6, 1),
             YEAR: toDateString(displayStart.getFullYear(), 0, 1),
         }
         : {};
@@ -105,6 +111,8 @@ export function mapTodosToCalendarEvents(
     }
     const monthFirsts = days.filter((date) => date.endsWith('-01'));
     const yearFirsts = days.filter((date) => date.endsWith('-01-01'));
+    const quarterFirsts = monthFirsts.filter((date) => ['01', '04', '07', '10'].includes(date.slice(5, 7)));
+    const halfFirsts = monthFirsts.filter((date) => ['01', '07'].includes(date.slice(5, 7)));
 
     const events: CalendarWorkEvent[] = [];
     const push = (
@@ -183,8 +191,52 @@ export function mapTodosToCalendarEvents(
             return;
         }
 
-        // ANYTIME(수시)·QUARTER·HALF는 고정 기준일 규칙이 없어 캘린더에 표시하지 않는다. (분기/반기 계산은 범위 밖)
+        if (cycle === 'QUARTER') {
+            pushCycles(item, quarterFirsts, currentQuarterFirst);
+            return;
+        }
+
+        if (cycle === 'HALF') {
+            pushCycles(item, halfFirsts, currentHalfFirst);
+            return;
+        }
+
+        // 수시: 해야 할 날이 없으므로 작성한 문서만 작성일 칸에 표시 (문서 날짜를 현재 주기로 넘겨 미래 표시 안 함)
+        if (cycle === 'ANYTIME') {
+            cycleInstances
+            .filter((instance) => instance.workId === item.id)
+            .forEach((instance) => push(instance.cycleDate, item, instance.cycleDate, instance.cycleDate));
+            return;
+        }
+
+        // QUARTER(1, 4, 7, 10월 1일), HALF(1, 7월 1일)도 위에서 표시한다.
     });
 
     return events;
+}
+
+// 만료일 관리 업무: 결재 완료 문서의 만료일 칸에 표시
+// 앞으로 올 만료일이 보여야 하므로 표시 시작일 하한은 적용하지 않고, 같은 대상 여러 문서도 모두 표시
+export function mapExpirationsToCalendarEvents(
+    todos: TenantTodoCardItem[],
+    expirations: HaccpWorkExpiration[],
+    rangeStart: string,
+    rangeEnd: string,
+    materialTypeName: (code: string) => string = (code) => code,
+): CalendarWorkEvent[] {
+    return expirations.flatMap((expiration) => {
+        const item = todos.find((todo) => todo.id === expiration.workId);
+        if (!item || expiration.expirationDate < rangeStart || expiration.expirationDate > rangeEnd) {
+            return [];
+        }
+        const workName = item.divisionName || item.categoryName || '업무';
+        const targetName = expiration.targetName || materialTypeName(expiration.materialType);
+        return [{
+            date: expiration.expirationDate,
+            cycleDate: expiration.expirationDate,
+            isFuture: false,
+            item: { ...item, title: targetName ? `만료 | ${workName} - ${targetName}` : `만료 | ${workName}` },
+            expiration,
+        }];
+    });
 }

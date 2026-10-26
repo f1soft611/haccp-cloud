@@ -8,14 +8,14 @@ const TODAY = new Date(2026, 9, 8);
 // 2026-10-12 월요일 (이번 주 월요일 10-12, 이번 달 1일 10-01)
 const TODAY_1012 = new Date(2026, 9, 12);
 
-// 기존 -> (year, monthIndex0)로 보는 달 지정
-// 변경 -> 달력에 보이는 범위(일요일 ~ 토요일)로 지정
 const JAN_2026 = ['2025-12-28', '2026-01-31'] as const;
 const FEB_2026 = ['2026-02-01', '2026-02-28'] as const;
 const SEP_2026 = ['2026-08-30', '2026-10-03'] as const;
 const OCT_2026 = ['2026-09-27', '2026-10-31'] as const;
 const NOV_2026 = ['2026-11-01', '2026-12-05'] as const;
 const DEC_2026 = ['2026-11-29', '2027-01-02'] as const;
+const APR_2026 = ['2026-03-29', '2026-05-02'] as const;
+const JUL_2026 = ['2026-06-28', '2026-08-01'] as const;
 
 function buildItem(
     overrides: Partial<TenantTodoCardItem> = {},
@@ -175,11 +175,119 @@ describe('mapTodosToCalendarEvents', () => {
         expect(mapTodosToCalendarEvents([item], ...FEB_2026, [], TODAY)).toEqual([]);
     });
 
-    // 기존 -> '발생시' 미표시 / 변경 -> 고정 기준일 규칙이 없는 ANYTIME/QUARTER/HALF 미표시
-    it.each(['ANYTIME', 'QUARTER', 'HALF'])('does not place %s items on the calendar', (cycle) => {
-        expect(
-            mapTodosToCalendarEvents([buildItem({ cycle })], ...FEB_2026, [], TODAY),
-        ).toEqual([]);
+    // 기존 -> QUARTER/HALF 미표시 / 변경 -> 달력 기준 분기(1, 4, 7, 10월 1일), 반기(1, 7월 1일)로 표시
+    describe('quarter and half items', () => {
+        it('places the current quarter on today and past quarters on their 1st', () => {
+            const item = buildItem({ cycle: 'QUARTER' });
+
+            expect(mapTodosToCalendarEvents([item], ...OCT_2026, [], TODAY)).toMatchObject([
+                { date: '2026-10-08', cycleDate: '2026-10-01', isFuture: false },
+            ]);
+            expect(mapTodosToCalendarEvents([item], ...APR_2026, [], TODAY)).toMatchObject([
+                { date: '2026-04-01', cycleDate: '2026-04-01', isFuture: false },
+            ]);
+            expect(mapTodosToCalendarEvents([item], ...JUL_2026, [], TODAY)).toMatchObject([
+                { date: '2026-07-01', cycleDate: '2026-07-01', isFuture: false },
+            ]);
+            expect(mapTodosToCalendarEvents([item], ...FEB_2026, [], TODAY)).toEqual([]);
+            expect(mapTodosToCalendarEvents([item], ...DEC_2026, [], TODAY)).toMatchObject([
+                { date: '2027-01-01', cycleDate: '2027-01-01', isFuture: true },
+            ]);
+        });
+
+        it('places the current half on today and past halves on their 1st', () => {
+            const item = buildItem({ cycle: 'HALF' });
+
+            expect(mapTodosToCalendarEvents([item], ...OCT_2026, [], TODAY)).toMatchObject([
+                { date: '2026-10-08', cycleDate: '2026-07-01', isFuture: false },
+            ]);
+            expect(mapTodosToCalendarEvents([item], ...JAN_2026, [], TODAY)).toMatchObject([
+                { date: '2026-01-01', cycleDate: '2026-01-01', isFuture: false },
+            ]);
+            // 진행 중 반기(07-01) 미작성은 오늘 칸이라 7월 화면에는 없다
+            expect(mapTodosToCalendarEvents([item], ...JUL_2026, [], TODAY)).toEqual([]);
+            expect(mapTodosToCalendarEvents([item], ...APR_2026, [], TODAY)).toEqual([]);
+        });
+
+        it('pins a submitted current half on its cycle start date', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'HALF' })], ...JUL_2026,
+                [instance('2026-07-01', 'approved', '900', '2026-10-02')], TODAY,
+            );
+
+            expect(events).toMatchObject([
+                { date: '2026-07-01', cycleDate: '2026-07-01', item: { approvalId: '900', writtenInCycle: true } },
+            ]);
+        });
+
+        it('shows quarters and halves from the cycle containing the display start date', () => {
+            const quarter = buildItem({ cycle: 'QUARTER' });
+            const half = buildItem({ cycle: 'HALF' });
+
+            expect(mapTodosToCalendarEvents([quarter], ...APR_2026, [], TODAY, '2026-05-10'))
+            .toMatchObject([{ cycleDate: '2026-04-01' }]);
+            expect(mapTodosToCalendarEvents([quarter], ...APR_2026, [], TODAY, '2026-07-02')).toEqual([]);
+            expect(mapTodosToCalendarEvents([half], ...JAN_2026, [], TODAY, '2026-03-01'))
+            .toMatchObject([{ cycleDate: '2026-01-01' }]);
+            expect(mapTodosToCalendarEvents([half], ...JAN_2026, [], TODAY, '2026-07-02')).toEqual([]);
+        });
+    });
+
+    // 수시: 고정 기준일이 없으므로 작성한 문서만 작성일(report_date) 칸에 표시
+    describe('anytime items', () => {
+        const anytime = () => buildItem({ cycle: 'ANYTIME' });
+
+        it('places each written document on its report date', () => {
+            const events = mapTodosToCalendarEvents(
+                [anytime()], ...OCT_2026,
+                [instance('2026-10-02', 'approved', '901'), instance('2026-10-06', 'in_progress', '902')],
+                TODAY,
+            );
+
+            expect(events.map((event) => [event.date, event.cycleDate, event.item.approvalId])).toEqual([
+                ['2026-10-02', '2026-10-02', '901'],
+                ['2026-10-06', '2026-10-06', '902'],
+            ]);
+            expect(events.every((event) => event.item.writtenInCycle && !event.isFuture)).toBe(true);
+        });
+
+        it('places nothing when there is no document', () => {
+            expect(mapTodosToCalendarEvents([anytime()], ...OCT_2026, [], TODAY)).toEqual([]);
+        });
+
+        it('keeps rejected and temp-saved documents on their report date, not today', () => {
+            const events = mapTodosToCalendarEvents(
+                [anytime()], ...OCT_2026,
+                [instance('2026-10-02', 'rejected', '901'), instance('2026-10-05', 'pre_apply', '902')],
+                TODAY,
+            );
+
+            expect(events.map((event) => event.date)).toEqual(['2026-10-02', '2026-10-05']);
+        });
+
+        it('skips documents outside the visible range or before the display start date', () => {
+            const events = mapTodosToCalendarEvents(
+                [anytime()], ...OCT_2026,
+                [
+                    instance('2026-09-20', 'approved', '901'),
+                    instance('2026-10-02', 'approved', '902'),
+                    instance('2026-10-07', 'approved', '903'),
+                ],
+                TODAY, '2026-10-05',
+            );
+
+            expect(events.map((event) => event.item.approvalId)).toEqual(['903']);
+        });
+
+        it('ignores documents of other works', () => {
+            const events = mapTodosToCalendarEvents(
+                [anytime()], ...OCT_2026,
+                [{ ...instance('2026-10-02', 'approved', '901'), workId: '2' }],
+                TODAY,
+            );
+
+            expect(events).toEqual([]);
+        });
     });
 
     describe('off-range days', () => {

@@ -1,3 +1,5 @@
+import type { HaccpWorkExpiration } from '../../services/documents/haccpBaseWorkService';
+
 export type DraftRouteItem = {
     id: string;
     approvalId?: string;
@@ -22,4 +24,16 @@ export function resolveDraftRoute(
     const query = openApproval ? '?idType=approval' : '?idType=work';
     const cycleQuery = !openApproval && cycleDate ? `&cycleDate=${cycleDate}` : '';
     return `/approvals/draft/${targetId}${query}${cycleQuery}`;
+}
+
+// 캘린더 만료일 클릭: 같은 업무로 새 문서를 열고 대상(설비, 품목유형, 사원)을 미리 선택
+// sub 는 분류코드에 맞는 대상 하나만 저장하므로 파라미터도 하나만 붙는다
+export function resolveExpirationDraftRoute(
+    expiration: Pick<HaccpWorkExpiration, 'workId' | 'equipmentId' | 'materialType' | 'certificationUserId'>,
+): string {
+    const params = new URLSearchParams({ idType: 'work', fresh: 'true' });
+    if (expiration.equipmentId) params.set('equipmentId', expiration.equipmentId);
+    if (expiration.materialType) params.set('materialType', expiration.materialType);
+    if (expiration.certificationUserId) params.set('certificationUserId', expiration.certificationUserId);
+    return `/approvals/draft/${expiration.workId}?${params.toString()}`;
 }

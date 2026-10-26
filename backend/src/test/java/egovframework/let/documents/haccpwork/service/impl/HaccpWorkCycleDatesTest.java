@@ -53,6 +53,46 @@ public class HaccpWorkCycleDatesTest {
         assertFuture("월", "2026-11-01");
     }
 
+    @DisplayName("분기는 1, 4, 7, 10월 1일이 기준일이다")
+    @Test
+    void cycleStart_quarterFirstDay() {
+        assertEquals(LocalDate.of(2026, 1, 1), HaccpWorkCycleDates.cycleStart("QUARTER", LocalDate.of(2026, 3, 31)));
+        assertEquals(LocalDate.of(2026, 4, 1), HaccpWorkCycleDates.cycleStart("QUARTER", LocalDate.of(2026, 4, 1)));
+        assertEquals(LocalDate.of(2026, 4, 1), HaccpWorkCycleDates.cycleStart("QUARTER", LocalDate.of(2026, 6, 30)));
+        assertEquals(LocalDate.of(2026, 7, 1), HaccpWorkCycleDates.cycleStart("QUARTER", LocalDate.of(2026, 7, 1)));
+        assertEquals(LocalDate.of(2026, 10, 1), HaccpWorkCycleDates.cycleStart("QUARTER", LocalDate.of(2026, 12, 31)));
+    }
+
+    @DisplayName("반기는 1월 1일, 7월 1일이 기준일이다")
+    @Test
+    void cycleStart_halfFirstDay() {
+        assertEquals(LocalDate.of(2026, 1, 1), HaccpWorkCycleDates.cycleStart("HALF", LocalDate.of(2026, 6, 30)));
+        assertEquals(LocalDate.of(2026, 7, 1), HaccpWorkCycleDates.cycleStart("HALF", LocalDate.of(2026, 7, 1)));
+        assertEquals(LocalDate.of(2026, 7, 1), HaccpWorkCycleDates.cycleStart("HALF", LocalDate.of(2026, 12, 31)));
+    }
+
+    @DisplayName("연은 1월 1일이 기준일이다")
+    @Test
+    void cycleStart_yearFirstDay() {
+        assertEquals(LocalDate.of(2026, 1, 1), HaccpWorkCycleDates.cycleStart("YEAR", LocalDate.of(2026, 12, 31)));
+    }
+
+    @DisplayName("요청 일자가 없으면 연, 반기, 분기도 오늘이 속한 주기 시작일로 저장된다")
+    @Test
+    void resolve_emptyUsesCurrentYearHalfQuarter() {
+        assertEquals(LocalDate.of(2026, 1, 1), HaccpWorkCycleDates.resolve("YEAR", null, TODAY));
+        assertEquals(LocalDate.of(2026, 7, 1), HaccpWorkCycleDates.resolve("HALF", "", TODAY));
+        assertEquals(LocalDate.of(2026, 10, 1), HaccpWorkCycleDates.resolve("QUARTER", null, TODAY));
+    }
+
+    @DisplayName("다음 분기, 다음 반기, 다음 연도는 미래 주기다")
+    @Test
+    void resolve_rejectsFutureYearHalfQuarter() {
+        assertFuture("QUARTER", "2027-01-01");
+        assertFuture("HALF", "2027-01-01");
+        assertFuture("YEAR", "2027-01-01");
+    }
+
     @DisplayName("yyyy-MM-dd 형식이 아니면 400 오류다")
     @Test
     void resolve_rejectsInvalidFormat() {

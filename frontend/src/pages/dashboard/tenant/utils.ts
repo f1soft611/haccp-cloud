@@ -24,12 +24,43 @@ export function getWorkCycleSx(cycle: string) {
     };
   }
 
+  if (cycle === 'QUARTER') {
+    return {
+      bgcolor: 'rgba(14, 165, 233, 0.14)',
+      color: '#0369a1',
+      border: '1px solid rgba(14, 165, 233, 0.3)',
+    };
+  }
+
+  if (cycle === 'HALF') {
+    return {
+      bgcolor: 'rgba(236, 72, 153, 0.12)',
+      color: '#be185d',
+      border: '1px solid rgba(236, 72, 153, 0.28)',
+    };
+  }
+
+  if (cycle === 'ANYTIME') {
+    return {
+      bgcolor: 'rgba(139, 92, 246, 0.14)',
+      color: '#6d28d9',
+      border: '1px solid rgba(139, 92, 246, 0.32)',
+    };
+  }
+
   return {
     bgcolor: 'rgba(16, 185, 129, 0.12)',
     color: '#047857',
     border: '1px solid rgba(16, 185, 129, 0.28)',
   };
 }
+
+// 선택된 범례 강조 (주기 칩, 상태 배지 공용)
+export const SELECTED_LEGEND_SX = {
+  outline: '2px solid',
+  outlineColor: 'text.primary',
+  outlineOffset: 1,
+};
 
 export function formatDate(value: string): string {
   if (!value) {

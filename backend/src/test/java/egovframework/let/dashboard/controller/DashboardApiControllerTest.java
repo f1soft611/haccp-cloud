@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,6 +98,36 @@ class DashboardApiControllerTest {
                         .param("toDate", "20261031"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.displayStartDate").value("20260610"));
+
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void listMyTodoCycles_includesExpirations() throws Exception {
+        LoginVO loginVO = new LoginVO();
+        loginVO.setId("socra710");
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(loginVO, null, java.util.Collections.emptyList())
+        );
+
+        Map<String, Object> expiration = new HashMap<String, Object>();
+        expiration.put("workId", "7");
+        expiration.put("expirationDate", "20261115");
+        expiration.put("equipmentId", "12");
+
+        when(dashboardService.listMyTodoCycles(eq("TENANT-A"), eq("socra710"), eq("20261001"), eq("20261031")))
+                .thenReturn(Collections.emptyList());
+        when(dashboardService.listMyExpirations(eq("TENANT-A"), eq("socra710"), eq("20261001"), eq("20261031")))
+                .thenReturn(Collections.singletonList(expiration));
+
+        mockMvc.perform(get("/api/v1/dashboard/todo-cycles")
+                        .header("x-tenant-code", "TENANT-A")
+                        .param("fromDate", "20261001")
+                        .param("toDate", "20261031"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.expirations[0].workId").value("7"))
+                .andExpect(jsonPath("$.result.expirations[0].expirationDate").value("20261115"))
+                .andExpect(jsonPath("$.result.expirations[0].equipmentId").value("12"));
 
         SecurityContextHolder.clearContext();
     }

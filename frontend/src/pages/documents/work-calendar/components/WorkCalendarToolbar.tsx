@@ -3,18 +3,25 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Button, Chip, IconButton, Stack, Typography } from '@mui/material';
 import type { ToolbarProps } from 'react-big-calendar';
 import { useWorkCycleOptions } from '../../../../shared/hooks/useWorkCycleOptions';
-import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
-import { STATUS_BADGE_LEGEND, WorkCalendarStatusBadge } from './WorkCalendarEvent';
+import { getWorkCycleSx, SELECTED_LEGEND_SX } from '../../../dashboard/tenant/utils';
+import { WorkCalendarStatusLegend } from './WorkCalendarEvent';
 
-// 기존 -> 고정 코드 DAY/WEEK/MONTH + 고정 이름 일/주/월
-// 변경 -> 캘린더에 그려지는 주기 4개(YEAR 포함), 이름은 공통코드(WF_FORM_CYCLE)명, 없으면 코드값
-const LEGEND_CYCLE_CODES = ['DAY', 'WEEK', 'MONTH', 'YEAR'];
+const LEGEND_CYCLE_CODES = ['DAY', 'WEEK', 'MONTH', 'QUARTER', 'HALF', 'YEAR', 'ANYTIME'];
+
+// 범례 클릭으로 검색필터를 세팅하는 화면(대시보드)에서만 넘김
+export type WorkCalendarLegendFilter = {
+    cycle: string;
+    status: string;
+    onSelect: (key: 'cycle' | 'status', value: string) => void;
+};
 
 export function WorkCalendarToolbar({
                                         date,
                                         onNavigate,
-                                    }: ToolbarProps<WorkCalendarEvent>) {
+                                        legendFilter,
+                                    }: ToolbarProps<WorkCalendarEvent> & { legendFilter?: WorkCalendarLegendFilter }) {
+
 
     const cycleOptions = useWorkCycleOptions();
 
@@ -56,17 +63,28 @@ export function WorkCalendarToolbar({
                 </Button>
             </Stack>
             <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} data-legend>
-                {LEGEND_CYCLE_CODES.map((code) => (
-                    <Chip
-                        key={code}
-                        size="small"
-                        label={cycleOptions.find((option) => option.code === code)?.name ?? code}
-                        sx={{ height: 20, fontWeight: 700, ...getWorkCycleSx(code) }}
-                    />
-                ))}
-                {STATUS_BADGE_LEGEND.map((badge) => (
-                    <WorkCalendarStatusBadge key={badge.label} {...badge} />
-                ))}
+                {LEGEND_CYCLE_CODES.map((code) => {
+                    const cycleSx = getWorkCycleSx(code);
+                    return (
+                        <Chip
+                            key={code}
+                            size="small"
+                            label={cycleOptions.find((option) => option.code === code)?.name ?? code}
+                            onClick={legendFilter ? () => legendFilter.onSelect('cycle', code) : undefined}
+                            sx={{
+                                height: 20,
+                                fontWeight: 700,
+                                ...cycleSx,
+                                '&:hover': { bgcolor: cycleSx.bgcolor },
+                                ...(legendFilter?.cycle === code ? SELECTED_LEGEND_SX : {}),
+                            }}
+                        />
+                    );
+                })}
+                <WorkCalendarStatusLegend
+                    selected={legendFilter?.status}
+                    onSelect={legendFilter ? (status) => legendFilter.onSelect('status', status) : undefined}
+                />
             </Stack>
         </Stack>
     );

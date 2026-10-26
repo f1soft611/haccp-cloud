@@ -45,6 +45,17 @@ public class DashboardServiceImpl extends EgovAbstractServiceImpl implements Das
     }
 
     @Override
+    public List<Map<String, Object>> listMyExpirations(String tenantCode, String actorLoginCode, String fromDate, String toDate) throws Exception {
+        if (!isYyyyMmDd(fromDate) || !isYyyyMmDd(toDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "조회 기간은 yyyyMMdd 형식이어야 합니다.");
+        }
+        DashboardSearchConditionVO condition = buildCondition(tenantCode, actorLoginCode);
+        condition.setFromDate(fromDate);
+        condition.setToDate(toDate);
+        return dashboardDAO.selectMyExpirationList(condition);
+    }
+
+    @Override
     public String getCalendarDisplayStartDate(String tenantCode, String actorLoginCode) throws Exception {
         return dashboardDAO.selectCalendarDisplayStartDate(buildCondition(tenantCode, actorLoginCode));
     }

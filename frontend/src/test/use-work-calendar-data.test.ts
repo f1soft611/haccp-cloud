@@ -44,7 +44,7 @@ describe('useWorkCalendarData', () => {
         ]);
 
         vi.mocked(listHaccpWorkTodoCycles).mockReset();
-        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({ instances: [], displayStartDate: '' });
+        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({ instances: [], displayStartDate: '', expirations: [] });
     });
 
     afterEach(() => {
@@ -104,6 +104,7 @@ describe('useWorkCalendarData', () => {
         vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({
             instances: [],
             displayStartDate: '2026-11-01',
+            expirations: [],
         });
         const { result } = renderHook(() => useWorkCalendarData(), {
             wrapper: AppProviders,
