@@ -5,7 +5,7 @@ import type { ToolbarProps } from 'react-big-calendar';
 import { useWorkCycleOptions } from '../../../../shared/hooks/useWorkCycleOptions';
 import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
-import { STATUS_BADGE_LEGEND, WorkCalendarStatusBadge } from './WorkCalendarEvent';
+import { WorkCalendarStatusLegend } from './WorkCalendarEvent';
 
 // 기존 -> 고정 코드 DAY/WEEK/MONTH + 고정 이름 일/주/월
 // 변경 -> 캘린더에 그려지는 주기 4개(YEAR 포함), 이름은 공통코드(WF_FORM_CYCLE)명, 없으면 코드값
@@ -64,9 +64,7 @@ export function WorkCalendarToolbar({
                         sx={{ height: 20, fontWeight: 700, ...getWorkCycleSx(code) }}
                     />
                 ))}
-                {STATUS_BADGE_LEGEND.map((badge) => (
-                    <WorkCalendarStatusBadge key={badge.label} {...badge} />
-                ))}
+                <WorkCalendarStatusLegend />
             </Stack>
         </Stack>
     );

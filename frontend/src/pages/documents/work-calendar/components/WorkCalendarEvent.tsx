@@ -14,14 +14,19 @@ const STATUS_BADGES: Record<string, StatusBadge> = {
     임시저장: { label: '임시저장', short: '임', color: 'info' },
     결재진행중: { label: '결재중', short: '중', color: 'warning' },
     반려: { label: '반려', short: '반', color: 'error' },
-    // 기존 -> 승인은 배지 없음
-    // 변경 -> 승인 배지·범례 추가
     승인: { label: '승인', short: '승', color: 'success' },
 };
+const EXPIRATION_BADGE: StatusBadge = { label: '만료', short: '만', color: 'error' };
 
-export const STATUS_BADGE_LEGEND = Object.values(STATUS_BADGES);
+const STATUS_BADGE_LEGEND = [...Object.values(STATUS_BADGES), EXPIRATION_BADGE];
 
-export function getStatusBadge(approvalStatusType: string | undefined): StatusBadge | null {
+export function WorkCalendarStatusLegend() {
+    return STATUS_BADGE_LEGEND.map((badge) => (
+        <WorkCalendarStatusBadge key={badge.label} {...badge} />
+    ));
+}
+
+function getStatusBadge(approvalStatusType: string | undefined): StatusBadge | null {
     const { label } = resolveApprovalStatusView({ approvalStatusType });
     return STATUS_BADGES[label] ?? null;
 }
@@ -53,7 +58,9 @@ export function WorkCalendarStatusBadge({ label, color }: Pick<StatusBadge, 'lab
 export function WorkCalendarEventContent({
                                              event,
                                          }: EventProps<WorkCalendarEvent>) {
-    const badge = getStatusBadge(event.resource.approvalStatusType);
+    const badge = event.expiration
+        ? EXPIRATION_BADGE
+        : getStatusBadge(event.resource.approvalStatusType);
     return (
         <Typography variant="caption" noWrap sx={{ display: 'block' }}>
             {/* 기존 -> {badge && <WorkCalendarStatusBadge {...badge} />} */}

@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, dayjsLocalizer } from 'react-big-calendar';
-import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
+import { resolveDraftRoute, resolveExpirationDraftRoute } from '../../../../shared/utils/workDraftRoute';
 import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
 import { WorkCalendarEventContent } from './WorkCalendarEvent';
@@ -58,6 +58,10 @@ export function WorkCalendarView(props: WorkCalendarViewProps) {
                 showMore: (count) => `+${count}건 더보기`,
             }}
             onSelectEvent={(event) => {
+                if (event.expiration) {
+                    navigate(resolveExpirationDraftRoute(event.expiration));
+                    return;
+                }
                 if (event.isFuture) {
                     return;
                 }
