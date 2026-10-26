@@ -62,6 +62,7 @@ describe('haccpBaseWorkService', () => {
       { workId: '1', cycleDate: '2026-10-05', approvalId: '9', statusType: 'in_progress', registeredDate: '2026-10-06', title: '' },
       { workId: '2', cycleDate: '2026-10-05', approvalId: '10', statusType: 'approved', registeredDate: '', title: '' },
     ]);
+    expect(result.expirations).toEqual([]);
     expect(result.displayStartDate).toBe('');
   });
 
@@ -76,7 +77,32 @@ describe('haccpBaseWorkService', () => {
       toDate: '2026-10-31',
     });
 
-    expect(result).toEqual({ instances: [], displayStartDate: '2026-06-10' });
+    expect(result).toEqual({ instances: [], displayStartDate: '2026-06-10', expirations: [] });
+  });
+
+  it('normalizes expirations from the result envelope', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: {
+        result: {
+          resultList: [],
+          displayStartDate: '',
+          expirations: [
+            { workId: 7, approvalId: 900, expirationDate: '20261115', equipmentId: 12, materialType: null, certificationUserId: null, targetName: '설비A' },
+            { workId: 8, approvalId: 901, expirationDate: '2026-11', equipmentId: null, materialType: 'MT01', certificationUserId: null, targetName: '' },
+          ],
+        },
+      },
+    });
+
+    const result = await listHaccpWorkTodoCycles({
+      tenantCode: 'TENANT-A',
+      fromDate: '2026-10-01',
+      toDate: '2026-10-31',
+    });
+
+    expect(result.expirations).toEqual([
+      { workId: '7', approvalId: '900', expirationDate: '2026-11-15', equipmentId: '12', materialType: '', certificationUserId: '', targetName: '설비A' },
+    ]);
   });
 
   it('defaults expirationApply to false and approvalApply to true when missing', async () => {
