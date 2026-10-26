@@ -92,3 +92,21 @@ export function calcNextCalibDate(inspectedDate: string, cycleMonths: number): s
     .toISOString()
     .slice(0, 10);
 }
+
+// 새 문서(저장된 sub 가 없거나 모두 비어 있음)면 쿼리 파라미터의 대상 값으로 시작 (캘린더 만료일 클릭 시 미리 선택)
+// 저장된 문서는 쿼리 파라미터를 무시해 기존 값을 덮어쓰지 않는다
+export function toInitialApprovalSub(
+    saved: ApprovalSubValues | undefined,
+    searchParams: URLSearchParams,
+): ApprovalSubValues {
+    if (saved && Object.values(saved).some(Boolean)) {
+        return saved;
+    }
+    const read = (key: string) => (searchParams.get(key) || '').trim();
+    return {
+        ...EMPTY_APPROVAL_SUB,
+        equipmentId: read('equipmentId'),
+        materialType: read('materialType'),
+        certificationUserId: read('certificationUserId'),
+    };
+}

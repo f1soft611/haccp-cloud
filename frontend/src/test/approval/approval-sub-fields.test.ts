@@ -4,6 +4,7 @@ import {
     EMPTY_APPROVAL_SUB,
     getApprovalSubFieldConfig,
     getApprovalSubTargetKey,
+    toInitialApprovalSub,
     validateApprovalSub,
 } from '../../pages/documents/approvals/utils/approvalSubFields';
 import { toApprovalSubRequest } from '../../services/documents/haccpBaseWorkService';
@@ -94,5 +95,35 @@ describe('calcNextCalibDate', () => {
         ['2026-11-15', 3, '2027-02-14'],
     ])('%s + %i개월 - 1일 = %s', (inspectedDate, cycleMonths, expected) => {
         expect(calcNextCalibDate(inspectedDate, cycleMonths)).toBe(expected);
+    });
+});
+
+describe('toInitialApprovalSub', () => {
+    it('저장된 sub 가 없으면 쿼리 파라미터 대상으로 시작한다', () => {
+        expect(toInitialApprovalSub(undefined, new URLSearchParams('idType=work&fresh=true&equipmentId=12'))).toEqual({
+            ...EMPTY_APPROVAL_SUB,
+            equipmentId: '12',
+        });
+    });
+
+    it('저장된 sub 가 모두 비어 있어도 쿼리 파라미터 대상으로 시작한다', () => {
+        expect(toInitialApprovalSub(EMPTY_APPROVAL_SUB, new URLSearchParams('materialType=MT01'))).toEqual({
+            ...EMPTY_APPROVAL_SUB,
+            materialType: 'MT01',
+        });
+    });
+
+    it('저장된 sub 가 있으면 쿼리 파라미터를 무시한다', () => {
+        const saved = {
+            ...EMPTY_APPROVAL_SUB,
+            equipmentId: '5',
+            inspectedDate: '2026-10-01',
+            expirationDate: '2027-09-30',
+        };
+        expect(toInitialApprovalSub(saved, new URLSearchParams('equipmentId=12'))).toBe(saved);
+    });
+
+    it('파라미터가 없으면 빈 sub 다', () => {
+        expect(toInitialApprovalSub(undefined, new URLSearchParams(''))).toEqual(EMPTY_APPROVAL_SUB);
     });
 });
