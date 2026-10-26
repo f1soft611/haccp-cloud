@@ -160,6 +160,8 @@ CREATE INDEX IF NOT EXISTS idx_drafting_work_category_authority_use_at
     ON tb_drafting_work_category_authority(use_at);
 
 -- 공통코드 WF_TYPE 을 업무 분류로 등록한다. 테넌트 생성 시 copyCommonCodes 다음에 실행된다.
+-- 기존 -> 플랜과 관계없이 등록
+-- 변경 -> Basic(A) 플랜은 등록하지 않는다. plan_code 는 프로비저닝 시 바인딩된다.
 INSERT INTO tb_drafting_work_category_group (tenant_id, cata_code, cata_name, view_seq, use_at)
 SELECT i.tenant_id, i.item_code, LEFT(i.item_nm, 20), i.sort_order, 'Y'
 FROM tb_common_code_item i
@@ -167,6 +169,7 @@ FROM tb_common_code_item i
     JOIN tb_tenant t ON t.tenant_id = i.tenant_id
 WHERE g.group_code = 'WF_TYPE'
   AND i.use_at = 'Y'
+  AND :'plan_code' <> 'A'
 ON CONFLICT (tenant_id, cata_code) DO NOTHING;
 
 COMMIT;

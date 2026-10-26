@@ -102,7 +102,8 @@ th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; v
 th { background: var(--code-bg); }
 
 /* 스크린샷 자리. 이미지가 없으면 onerror 가 figure 에 missing 을 붙인다 */
-figure.shot { margin: 16px 0; }
+/*figure.shot { margin: 16px 0; }*/
+figure.shot { display: none; margin: 16px 0; }
 figure.shot img { display: block; border: 1px solid var(--border); border-radius: 8px; }
 figure.shot figcaption { margin-top: 6px; color: var(--muted); font-size: 13px; }
 figure.shot.missing img { display: none; }
@@ -126,12 +127,17 @@ figure.shot.missing::before {
 
 /* index.html 편 목록 */
 .chapters { display: grid; gap: 10px; margin: 24px 0; padding: 0; list-style: none; }
+/* 기존 -> position 없음 / 변경 -> position: relative (제목 링크 덮개 기준) */
 .chapters li {
+    position: relative;
     display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
     padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px;
     background: var(--surface);
 }
 .chapters li.ready { border-color: var(--accent); }
+/* 완성된 편은 항목 박스 전체가 제목 링크로 눌림 */
+.chapters li.ready .title::after { content: ""; position: absolute; inset: 0; border-radius: 10px; }
+.chapters li.ready:hover, .chapters li.ready:has(a:focus-visible) { box-shadow: 0 0 0 1px var(--accent); }
 .chapters .no { color: var(--accent); font-weight: 700; }
 .chapters .title { font-weight: 600; }
 .chapters .desc { flex-basis: 100%; color: var(--muted); font-size: 14px; }

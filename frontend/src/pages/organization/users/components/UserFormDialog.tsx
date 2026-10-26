@@ -30,6 +30,9 @@ type UserFormDialogProps = {
   onSubmit: (value: UserFormValue) => void;
 };
 
+// 백엔드 PlatformUserServiceImpl.EMAIL_PATTERN 과 같은 식
+const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
 const EMPTY_VALUE: UserFormValue = {
   name: '',
   email: '',
@@ -112,12 +115,15 @@ export function UserFormDialog({
       value.retireDate.length > 0 &&
       value.retireDate < value.joinDate;
 
-  // 기존 -> 필수값만 검사
-  // 변경 -> 퇴사일 < 입사일이면 저장 비활성
+  // 빈 값은 필수값 검사가 막으므로 입력이 있을 때만 형식 오류로 본다
+  const emailInvalid =
+      value.email.trim().length > 0 && !EMAIL_REGEX.test(value.email.trim());
+
   const disabled =
       saving ||
       value.name.trim().length === 0 ||
       value.email.trim().length === 0 ||
+      emailInvalid ||
       value.department.trim().length === 0 ||
       value.roleCode.trim().length === 0 ||
       retireBeforeJoin;
@@ -158,12 +164,15 @@ export function UserFormDialog({
           fullWidth
         />
         <TextField
-          label="이메일"
-          value={value.email}
-          onChange={(event) =>
-            setValue((prev) => ({ ...prev, email: event.target.value }))
-          }
-          fullWidth
+            label="이메일"
+            type="email"
+            value={value.email}
+            onChange={(event) =>
+                setValue((prev) => ({ ...prev, email: event.target.value }))
+            }
+            error={emailInvalid}
+            helperText={emailInvalid ? '이메일 형식이 올바르지 않습니다.' : undefined}
+            fullWidth
         />
         <TextField
           select

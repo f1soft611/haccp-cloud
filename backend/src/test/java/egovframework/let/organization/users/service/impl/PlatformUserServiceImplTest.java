@@ -94,4 +94,25 @@ class PlatformUserServiceImplTest {
         assertEquals("퇴사일은 입사일 이후여야 합니다.", ex.getMessage());
         verifyNoInteractions(platformUserDAO);
     }
+
+    @DisplayName("이메일 형식이 틀리면 DB 접근 전에 거부한다")
+    @Test
+    void updateUser_rejectsInvalidEmailBeforeDaoAccess() {
+        PlatformUserDAO platformUserDAO = mock(PlatformUserDAO.class);
+        PlatformUserServiceImpl service = new PlatformUserServiceImpl();
+        ReflectionTestUtils.setField(service, "platformUserDAO", platformUserDAO);
+
+        for (String email : new String[] {"hong", "hong@alpha", "hong@@alpha.com", "홍@alpha.com", "hong@alpha.c"}) {
+            PlatformUserSaveRequestVO payload = new PlatformUserSaveRequestVO();
+            payload.setName("홍길동");
+            payload.setEmail(email);
+            payload.setDepartment("품질관리팀");
+            payload.setRoleCode("TENANT_USER");
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> service.updateUser(1L, payload));
+            assertEquals("이메일 형식이 올바르지 않습니다.", ex.getMessage(), email);
+        }
+        verifyNoInteractions(platformUserDAO);
+    }
 }

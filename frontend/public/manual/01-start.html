@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>시작하기</title>
+    <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+<div class="layout">
+    <nav class="toc" aria-label="이 편의 목차">
+        <a class="home" href="index.html">← 매뉴얼 목차</a>
+        <ol>
+            <li><a href="#login">1. 로그인하기</a></li>
+            <li><a href="#first-setup">2. 처음 로그인하면: 최초 설정</a></li>
+            <li><a href="#my-page">3. 내 정보 관리</a></li>
+            <li><a href="#password">4. 비밀번호 변경</a></li>
+            <li><a href="#logout">5. 로그아웃</a></li>
+            <li><a href="#faq">6. 안내 메시지 풀이</a></li>
+        </ol>
+    </nav>
+
+    <main>
+        <p class="series">HACCP Cloud 사용 매뉴얼 ①편</p>
+        <h1>시작하기</h1>
+        <div class="summary">
+            <strong>이 편에서 배우는 것</strong>
+            <ul>
+                <li>업체번호와 로그인 ID 로 HACCP Cloud 에 로그인하는 방법</li>
+                <li>처음 로그인한 업체관리자가 꼭 해야 하는 최초 설정</li>
+                <li>내 프로필, 결재 도장 이미지, 비밀번호를 관리하는 방법</li>
+            </ul>
+        </div>
+        <p>로그인, 내 정보, 비밀번호 절은 업체의 모든 사용자가 쓰는 기능입니다. 관리자만 하는 일에는 <span class="badge">관리자 전용</span> 표시를 붙였습니다. 이 편은 사원에게 그대로 전달해도 됩니다.</p>
+
+        <h2 id="login">1. 로그인하기</h2>
+        <p>HACCP Cloud 는 업체마다 받은 <strong>업체번호 6자리</strong>와 개인 <strong>로그인 ID</strong>, <strong>비밀번호</strong>로 로그인합니다. 업체번호는 업체관리자에게 확인하세요.</p>
+
+        <h3>로그인 화면에서 세 칸 입력하기</h3>
+        <p>업체번호 없이 로그인 화면을 열면 "업체번호와 로그인 ID, 비밀번호를 입력하세요." 라는 안내와 함께 입력 칸 세 개가 보입니다.</p>
+        <ol class="steps">
+            <li>첫 칸에 <strong>업체번호 6자리</strong>를 입력합니다. 숫자만 6자리까지 들어갑니다.</li>
+            <li>둘째 칸에 <strong>로그인 ID</strong>를 입력합니다.</li>
+            <li>셋째 칸에 <strong>비밀번호</strong>를 입력하고 <strong>로그인</strong> 버튼을 누르거나 Enter 키를 누릅니다.</li>
+        </ol>
+        <figure class="shot" data-need="로그인 화면 세 칸 (업체번호, 로그인 ID, 비밀번호)">
+            <img src="images/01/01-login-three-fields.png" alt="로그인 화면 세 칸" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>로그인 화면 세 칸</figcaption>
+        </figure>
+
+        <h3>업체번호 주소로 로그인하기</h3>
+        <p>주소창에 업체번호가 붙은 로그인 주소(예: <code>/login/123456</code>)로 들어오면 우리 업체의 이름과 로고가 보이고, 제목이 "(업체명)에 로그인" 으로 바뀝니다. 이때는 두 단계로 로그인합니다.</p>
+        <ol class="steps">
+            <li><strong>로그인 ID</strong>를 입력하고 <strong>다음</strong>을 누릅니다.</li>
+            <li>"본인 확인을 위해 비밀번호를 입력하세요." 안내가 보이면 <strong>비밀번호</strong>를 입력하고 <strong>로그인</strong>을 누릅니다.</li>
+        </ol>
+        <figure class="shot" data-need="업체번호 주소 로그인 화면 (업체명, 로고 보이게)">
+            <img src="images/01/02-login-tenant-no.png" alt="업체번호 주소 로그인 화면" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>업체번호 주소 로그인 화면</figcaption>
+        </figure>
+        <p>한 번 로그인하면 마지막으로 쓴 업체번호와 로그인 ID 를 기억해서 다음 로그인 때 미리 채워 줍니다. 다른 계정으로 들어가려면 아래 버튼을 씁니다.</p>
+        <ul>
+            <li>비밀번호 단계에서 <strong>다른 ID로 로그인</strong>: 같은 업체의 다른 ID 로 로그인</li>
+            <li>ID 단계에서 <strong>다른 업체번호로 로그인</strong>: 세 칸 로그인 화면으로 돌아가 다른 업체번호 입력</li>
+        </ul>
+        <div class="note"><strong>팁</strong> 업체번호가 붙은 로그인 주소를 브라우저 즐겨찾기에 등록해 두세요. 다음부터는 ID 가 미리 채워져 비밀번호만 입력하면 됩니다.</div>
+        <p>로그인하면 종합현황으로 이동합니다. 종합현황 사용법은 ⑦편에서 다룹니다.</p>
+
+        <h2 id="first-setup">2. 처음 로그인하면: 업체 관리자 최초 설정 <span class="badge">관리자 전용</span></h2>
+        <p>업체관리자가 처음 로그인하면 종합현황 대신 <strong>업체 관리자 최초 설정</strong> 화면이 열립니다. 화면에는 "사용자 1명 이상과 부서 1개 이상을 생성한 뒤 초기 설정 완료를 진행하세요." 라는 안내가 보입니다.</p>
+        <div class="note"><strong>주의</strong> 최초 설정을 끝내기 전에는 다른 메뉴로 이동할 수 없습니다. 다른 주소를 입력해도 이 화면으로 돌아옵니다.</div>
+        <p>화면의 "사용자 0 / 1", "부서 0 / 1" 은 지금까지 만든 수와 필요한 최소 수입니다. 두 숫자가 모두 1 이상이 되어야 설정을 끝낼 수 있습니다.</p>
+        <ol class="steps">
+            <li><strong>이름</strong>, <strong>이메일</strong>, <strong>부서</strong>를 입력하고 <strong>사용자 추가</strong>를 누릅니다. 부서 칸에는 처음에 "품질관리팀" 이 채워져 있으니 필요하면 고칩니다.</li>
+            <li><strong>부서명</strong>을 입력하고 <strong>부서 추가</strong>를 누릅니다.</li>
+            <li>사용자와 부서가 모두 1 이상이 되면 <strong>초기 설정 완료</strong> 버튼을 누릅니다.</li>
+            <li>"초기 설정이 완료되었습니다. 대시보드로 이동할 수 있습니다." 가 보이면 끝입니다.</li>
+        </ol>
+        <figure class="shot" data-need="업체 관리자 최초 설정 화면">
+            <img src="images/01/03-first-setup.png" alt="업체 관리자 최초 설정 화면" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>업체 관리자 최초 설정 화면</figcaption>
+        </figure>
+        <p>여기서는 최소한만 만들면 됩니다. 부서, 사용자, 권한을 자세히 짜는 방법은 <a href="02-organization.html">②편</a>에서 다룹니다.</p>
+
+        <h2 id="my-page">3. 내 정보 관리</h2>
+        <p>화면 오른쪽 위의 내 이름 버튼을 누르면 사용자 메뉴가 열립니다. 메뉴에는 <strong>내 정보 관리</strong>, <strong>보안 설정</strong>, <strong>로그아웃</strong>이 있습니다.</p>
+        <figure class="shot" data-need="오른쪽 위 사용자 메뉴 펼친 상태">
+            <img src="images/01/04-account-menu.png" alt="사용자 메뉴" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>사용자 메뉴</figcaption>
+        </figure>
+        <p><strong>내 정보 관리</strong>를 누르면 프로필 이미지와 결재 서명/도장 이미지를 관리하는 화면이 열립니다.</p>
+        <figure class="shot" data-need="내 정보 관리 화면 전체">
+            <img src="images/01/05-my-page.png" alt="내 정보 관리 화면" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>내 정보 관리 화면</figcaption>
+        </figure>
+
+        <h3>프로필 이미지</h3>
+        <ol class="steps">
+            <li>"프로필 이미지를 변경하려면 아바타를 클릭하세요." 안내 위의 아바타를 누릅니다.</li>
+            <li>이미지 파일을 고릅니다. 고르는 즉시 저장되고 "프로필 이미지가 저장되었습니다." 가 보입니다.</li>
+        </ol>
+
+        <h3>결재 서명/도장 이미지</h3>
+        <p>등록한 이미지는 결재 문서의 결재선에 내 서명이나 도장으로 표시됩니다. 결재선은 ⑤편 <a href="05-approval.html#write">기안 작성 화면</a>에서 설명합니다. 서명과 도장은 이미지 하나로 관리합니다.</p>
+        <ol class="steps">
+            <li>아직 등록하지 않았다면 "아직 등록된 이미지가 없습니다." 가 보입니다.</li>
+            <li><strong>이미지 업로드</strong>를 누르고 서명이나 도장 이미지 파일을 고릅니다.</li>
+            <li>"결재 도장 이미지가 저장되었습니다." 가 보이면 끝입니다.</li>
+        </ol>
+        <figure class="shot" data-need="결재 서명/도장 이미지 등록 후">
+            <img src="images/01/06-my-page-stamp.png" alt="결재 도장 이미지 등록 후" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>결재 도장 이미지 등록 후</figcaption>
+        </figure>
+        <div class="note"><strong>주의</strong> 이미지 파일만 올릴 수 있고, 파일 크기는 2MB 이하여야 합니다.</div>
+        <p>이 화면의 이름, 이메일, 부서, 권한, 로그인 아이디는 볼 수만 있습니다. 바꿔야 하면 업체관리자가 사용자 관리 화면에서 바꿉니다(<a href="02-organization.html#users">②편</a>).</p>
+
+        <h2 id="password">4. 비밀번호 변경</h2>
+        <ol class="steps">
+            <li>사용자 메뉴에서 <strong>보안 설정</strong>을 누릅니다. "비밀번호 변경" 화면이 열립니다.</li>
+            <li><strong>현재 비밀번호</strong>를 입력합니다.</li>
+            <li><strong>새 비밀번호</strong>와 <strong>새 비밀번호 확인</strong>에 같은 값을 입력합니다.</li>
+            <li><strong>저장</strong>을 누릅니다. 그만두려면 <strong>취소</strong>를 누릅니다.</li>
+            <li>"비밀번호가 성공적으로 변경되었습니다." 가 보이면 끝입니다. 입력 칸은 비워지고 로그인 상태는 그대로 유지됩니다.</li>
+        </ol>
+        <figure class="shot" data-need="비밀번호 변경 화면">
+            <img src="images/01/07-password.png" alt="비밀번호 변경 화면" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>비밀번호 변경 화면</figcaption>
+        </figure>
+        <div class="note"><strong>비밀번호 규칙</strong> 새 비밀번호는 8자 이상이어야 하고, 현재 비밀번호와 달라야 하며, 확인 칸과 같아야 합니다.</div>
+
+        <h2 id="logout">5. 로그아웃</h2>
+        <p>사용자 메뉴에서 <strong>로그아웃</strong>을 누릅니다. 마지막으로 쓴 업체번호의 로그인 화면으로 돌아갑니다.</p>
+        <div class="note"><strong>주의</strong> 여러 사람이 함께 쓰는 PC 에서는 일을 마친 뒤 반드시 로그아웃하세요.</div>
+
+        <h2 id="faq">6. 안내 메시지 풀이</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>화면에 나오는 메시지</th><th>뜻과 해결 방법</th></tr></thead>
+                <tbody>
+                <tr><td>로그인 실패: 사용자 ID 또는 비밀번호를 확인하세요.</td><td>업체번호, 로그인 ID, 비밀번호 중 틀린 것이 있습니다. 대소문자와 업체번호 6자리를 다시 확인하세요.</td></tr>
+                <tr><td>로그인 ID를 입력하세요.</td><td>로그인 ID 칸이 비어 있습니다. ID 를 입력한 뒤 <strong>다음</strong>을 누르세요.</td></tr>
+                <tr><td>사용자 1명 이상, 부서 1개 이상이 필요합니다.</td><td>최초 설정의 완료 조건이 아직 채워지지 않았습니다. <strong>사용자 추가</strong>와 <strong>부서 추가</strong>를 한 번 이상씩 하세요.</td></tr>
+                <tr><td>초기 설정 진행 상태를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</td><td>일시적인 연결 문제입니다. 메시지 옆 <strong>다시 시도</strong>를 누르세요.</td></tr>
+                <tr><td>업체 코드 정보를 확인할 수 없습니다. 다시 로그인 후 시도해주세요.</td><td>로그인 정보가 끊겼습니다. 로그아웃한 뒤 다시 로그인하세요.</td></tr>
+                <tr><td>이미지 파일만 업로드할 수 있습니다.</td><td>이미지가 아닌 파일을 골랐습니다. PNG, JPG 같은 이미지 파일을 고르세요.</td></tr>
+                <tr><td>이미지 파일 크기는 2MB 이하만 가능합니다.</td><td>파일이 너무 큽니다. 크기를 줄인 이미지를 고르세요.</td></tr>
+                <tr><td>현재 비밀번호를 입력해주세요.</td><td>현재 비밀번호 칸이 비어 있습니다.</td></tr>
+                <tr><td>새 비밀번호는 8자 이상이어야 합니다.</td><td>새 비밀번호를 8자 이상으로 정하세요.</td></tr>
+                <tr><td>새 비밀번호와 확인 값이 일치하지 않습니다.</td><td>새 비밀번호와 새 비밀번호 확인 칸에 같은 값을 입력하세요.</td></tr>
+                <tr><td>현재 비밀번호와 다른 새 비밀번호를 입력해주세요.</td><td>지금 쓰는 비밀번호와 다른 값으로 정하세요.</td></tr>
+                <tr><td>비밀번호 변경에 실패했습니다.</td><td>현재 비밀번호가 틀렸거나 일시적인 오류입니다. 현재 비밀번호를 확인하고 다시 시도하세요.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <figure class="shot" data-need="로그인 실패 메시지">
+            <img src="images/01/08-login-error.png" alt="로그인 실패 메시지" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>로그인 실패 메시지</figcaption>
+        </figure>
+
+        <h3>비밀번호를 잊었어요</h3>
+            <p>일반 사용자는 업체관리자에게 알리고, 업체관리자가 HACCP Cloud 플랫폼 담당자에게 초기화를 요청합니다. 업체관리자 본인이 잊었을 때도 플랫폼 담당자에게 문의하세요.</p>
+
+    </main>
+</div>
+</body>
+</html>

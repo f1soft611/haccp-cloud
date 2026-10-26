@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>기준정보</title>
+    <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+<div class="layout">
+    <nav class="toc" aria-label="이 편의 목차">
+        <a class="home" href="index.html">← 매뉴얼 목차</a>
+        <ol>
+            <li><a href="#overview">1. 기준정보 한눈에 보기</a></li>
+            <li><a href="#common-code">2. 공통코드</a></li>
+            <li><a href="#materials">3. 품목 관리</a></li>
+            <li><a href="#customers">4. 거래처관리</a></li>
+            <li><a href="#equipment">5. 설비관리</a></li>
+            <li><a href="#faq">6. 안내 메시지 풀이</a></li>
+        </ol>
+    </nav>
+
+    <main>
+        <p class="series">HACCP Cloud 사용 매뉴얼 ③편</p>
+        <h1>기준정보 <span class="badge">관리자 전용</span></h1>
+        <div class="summary">
+            <strong>이 편에서 배우는 것</strong>
+            <ul>
+                <li>품목, 설비 등록 창의 목록 값을 공통코드에서 추가하고 정리하는 방법</li>
+                <li>품목과 거래처를 등록하고 고치는 방법</li>
+                <li>설비를 등록하고, 쓰지 않는 설비를 미사용으로 돌리는 방법</li>
+            </ul>
+        </div>
+        <p>이 편은 업체관리자만 쓰는 기능입니다. 메뉴의 <strong>기준정보 관리</strong>에서 시작합니다.</p>
+
+        <h2 id="overview">1. 기준정보 한눈에 보기</h2>
+        <p><strong>기준정보 관리</strong> 메뉴 아래에는 <strong>거래처관리</strong>, <strong>품목 관리</strong>, <strong>설비관리</strong>, <strong>공통코드 관리</strong> 네 화면이 있습니다.` 품목과 설비 등록 창의 일부 칸은 공통코드 목록에서 고르므로, 공통코드를 먼저 확인한 뒤 등록을 시작합니다.</p>
+        <p class="flow-label">준비 순서</p>
+        <div class="flow">
+            <span class="node start">공통코드 확인</span><span class="arrow">→</span>
+            <span class="node">품목 등록</span><span class="arrow">→</span>
+            <span class="node">거래처 등록</span><span class="arrow">→</span>
+            <span class="node end">설비 등록</span>
+        </div>
+        <p>아래 칸은 공통코드 그룹에서 목록을 가져옵니다. 목록에 원하는 값이 없으면 <a href="#common-code">2. 공통코드</a>에서 그 그룹에 값을 추가합니다.</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>등록 창</th><th>칸</th><th>공통코드 그룹</th></tr></thead>
+                <tbody>
+                <tr><td>품목 등록</td><td>품목계정</td><td>품목계정</td></tr>
+                <tr><td>품목 등록</td><td>품목유형구분</td><td>품목 유형</td></tr>
+                <tr><td>품목 등록</td><td>단위</td><td>단위</td></tr>
+                <tr><td>품목 등록</td><td>보관방법</td><td>보관 방법</td></tr>
+                <tr><td>품목 등록</td><td>소비기한 기준</td><td>소비기한 기준</td></tr>
+                <tr><td>설비 등록</td><td>검교정구분</td><td>검교정 구분</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>품목, 거래처, 설비 화면은 목록 오른쪽 <strong>작업</strong> 칸에 아이콘 버튼이 있습니다. 아이콘에 마우스를 올리면 이름이 보입니다.</p>
+        <ul>
+            <li>연필 모양: 수정</li>
+            <li>휴지통 모양: 삭제 (설비는 미사용 처리)</li>
+        </ul>
+
+        <h2 id="common-code">2. 공통코드</h2>
+        <p><strong>기준정보 관리 &gt; 공통코드 관리</strong>를 엽니다. 화면 위에 "공통코드를 그룹과 상세코드로 관리합니다." 라는 설명이 보입니다.</p>
+        <p>왼쪽은 "공통코드 그룹 관리", 오른쪽은 "공통코드 상세 관리" 입니다. 가운데 세로 막대를 끌거나, 막대를 누른 뒤 키보드 좌우 화살표로 두 영역의 폭을 조절합니다.</p>
+        <ul>
+            <li>그룹 목록: 그룹명, 그룹코드, 그룹 설명</li>
+            <li>상세 목록: 순번, 상세코드, 상세코드명, 상위코드명, 사용여부, 정렬순서, 설명. 오른쪽 위에 "선택 그룹: (그룹명)" 이 보입니다.</li>
+        </ul>
+        <figure class="shot" data-need="공통코드 화면 전체 (그룹 선택, 상세 목록 보이게)">
+            <img src="images/03/01-common-code.png" alt="공통코드 화면" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>공통코드 화면</figcaption>
+        </figure>
+        <div class="note"><strong>참고</strong> 그룹은 조회만 할 수 있습니다. 그룹을 추가하거나 바꾸는 일은 HACCP Cloud 플랫폼 담당자가 합니다. 그래서 업체관리자 화면에는 그룹 쪽 버튼이 없습니다.</div>
+
+        <h3>그룹 찾기</h3>
+        <p><strong>그룹 검색</strong> 칸에 그룹 코드, 그룹명, 설명 중 일부를 입력하면 왼쪽 목록이 바로 걸러집니다. <strong>조회</strong>는 서버에서 공통코드를 다시 불러옵니다.</p>
+
+        <h3>상세코드 추가</h3>
+        <ol class="steps">
+            <li>왼쪽 그룹 목록에서 값을 추가할 그룹을 누릅니다.</li>
+            <li>오른쪽 <strong>추가</strong>를 누릅니다. 목록 맨 아래에 새 줄이 생기고, 정렬순서는 마지막 값보다 10 큰 숫자로 미리 채워집니다.</li>
+            <li>칸을 두 번 눌러 <strong>상세코드</strong>와 <strong>상세코드명</strong>을 입력합니다. 두 칸은 꼭 입력해야 합니다. 필요하면 <strong>정렬순서</strong>와 <strong>설명</strong>도 입력합니다.</li>
+            <li>오른쪽 <strong>저장</strong>을 누릅니다.</li>
+            <li>"저장되었습니다." 가 보이면 끝입니다.</li>
+        </ol>
+        <figure class="shot" data-need="상세 추가 후 새 줄 입력 중">
+            <img src="images/03/02-common-code-add-detail.png" alt="상세코드 새 줄 입력" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>상세코드 새 줄 입력</figcaption>
+        </figure>
+
+        <h3>상세코드 수정, 사용/미사용</h3>
+        <ul>
+            <li>수정: 상세코드명, 사용여부, 정렬순서, 설명 칸을 두 번 눌러 고치고 <strong>저장</strong>합니다. 고친 줄은 색으로 표시됩니다.</li>
+            <li>사용/미사용: <strong>사용여부</strong> 칸의 체크를 풀면 미사용이 됩니다. <strong>사용여부</strong> 머리글의 체크를 누르면 그 그룹의 상세를 한 번에 사용 또는 미사용으로 바꿉니다. 바꾼 뒤 <strong>저장</strong>해야 반영됩니다.</li>
+        </ul>
+        <div class="note"><strong>주의</strong> 상세코드(코드 값)는 저장한 뒤 바꿀 수 없고, 삭제하는 기능도 없습니다. 잘못 만든 값은 미사용으로 바꾸고 새로 추가하세요. 미사용 값은 품목, 설비 등록 창의 목록에 나오지 않습니다. 저장하지 않고 <strong>조회</strong>를 누르면 "저장하지 않은 변경사항이 있습니다. 계속 조회하시겠습니까?" 창이 나오고, 여기서 <strong>조회</strong>를 누르면 고친 내용이 사라집니다.</div>
+        <p>여기서 바꾼 공통코드는 우리 업체에만 적용됩니다.</p>
+
+        <h2 id="materials">3. 품목 관리</h2>
+        <p><strong>기준정보 관리 &gt; 품목 관리</strong>를 엽니다. 화면 위에 "제품/상품/원재료 등 품목 기준정보를 관리합니다." 라는 설명이 보입니다.</p>
+        <p>목록에는 품목코드, 품목명, 규격, 품목계정, 중량, 단위, 품목유형, 보관방법, 소비기한, 품목보고번호가 보입니다. 소비기한은 "12개월" 처럼 숫자와 기준이 함께 보이고, 기준이 "없음" 이면 "-" 로 보입니다.</p>
+        <figure class="shot" data-need="품목 관리 목록">
+            <img src="images/03/03-material-list.png" alt="품목 관리 목록" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>품목 관리 목록</figcaption>
+        </figure>
+
+        <h3>품목 찾기</h3>
+        <p><strong>품목계정</strong>(기본 "전체")을 고르고 <strong>검색어</strong>(품목코드, 품목명, 규격, 품목계정)를 입력한 뒤 <strong>검색</strong>을 누릅니다.</p>
+
+        <h3>품목 등록</h3>
+        <ol class="steps">
+            <li><strong>품목 등록</strong>을 누릅니다. "품목 등록" 창이 열리고 "품목 정보를 입력해 등록합니다. 품목코드는 저장 시 자동으로 채번됩니다." 안내가 보입니다.</li>
+            <li><strong>품목명</strong>을 입력합니다. 꼭 입력해야 하는 칸입니다.</li>
+            <li><strong>품목계정</strong>, <strong>품목유형구분</strong>, <strong>규격</strong>, <strong>중량</strong>, <strong>단위</strong>, <strong>보관방법</strong>을 입력합니다.</li>
+            <li><strong>소비기한 기준</strong>을 고릅니다. 기본값은 "없음" 입니다. 다른 기준을 고르면 <strong>소비기한 계산숫자</strong>를 꼭 입력해야 합니다.</li>
+            <li>필요하면 <strong>품목보고번호</strong>(최대 20자)와 <strong>비고</strong>를 입력합니다.</li>
+            <li><strong>저장</strong>을 누릅니다. 품목명이 비어 있으면 <strong>저장</strong>이 눌리지 않습니다.</li>
+        </ol>
+        <figure class="shot" data-need="품목 등록 창 (소비기한 기준 고른 상태)">
+            <img src="images/03/04-material-add.png" alt="품목 등록 창" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>품목 등록 창</figcaption>
+        </figure>
+        <div class="note"><strong>주의</strong> 소비기한 기준이 "없음" 이면 계산숫자 칸이 잠깁니다. 다른 기준을 고르면 계산숫자에 1 이상 정수를 넣어야 하고, 아니면 "1 이상의 정수를 입력하세요." 가 보이며 <strong>저장</strong>이 눌리지 않습니다.</div>
+        <div class="note"><strong>팁</strong> 품목계정, 단위 같은 목록에 원하는 값이 없으면 <a href="#common-code">2. 공통코드</a>에서 추가하세요.</div>
+
+        <h3>품목 수정, 삭제</h3>
+        <ul>
+            <li>수정: <strong>작업</strong> 칸 연필 아이콘(<strong>품목 수정</strong>) → "품목 수정" 창에서 고침 → <strong>저장</strong>. 품목코드는 보이기만 하고 바꿀 수 없습니다.</li>
+            <li>삭제: <strong>작업</strong> 칸 휴지통 아이콘(<strong>품목 삭제</strong>) → "품목 삭제" 창에 "(품목명) 품목을 삭제하시겠습니까? 삭제 후에는 목록에서 보이지 않습니다." 가 보이면 <strong>삭제</strong>.</li>
+        </ul>
+
+        <h2 id="customers">4. 거래처관리</h2>
+        <p><strong>기준정보 관리 &gt; 거래처관리</strong>를 엽니다. 화면 위에 "원부자재 매입처 등 거래처 기준정보를 관리합니다." 라는 설명이 보입니다.</p>
+        <p>목록에는 거래처코드, 거래처명, 대표자명, 사업자번호, 전화번호, 상태(사용/미사용)가 보입니다.</p>
+        <figure class="shot" data-need="거래처관리 목록">
+            <img src="images/03/05-customer-list.png" alt="거래처관리 목록" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>거래처관리 목록</figcaption>
+        </figure>
+
+        <h3>거래처 찾기</h3>
+        <p><strong>검색어</strong>(거래처코드, 거래처명, 대표자명, 사업자번호)를 입력하고 <strong>상태</strong>(전체, 사용, 미사용)를 고른 뒤 <strong>검색</strong>을 누릅니다.</p>
+
+        <h3>거래처 등록</h3>
+        <ol class="steps">
+            <li><strong>거래처 등록</strong>을 누릅니다. "거래처 등록" 창이 열리고 "거래처 정보를 입력해 등록합니다. 거래처코드는 저장 시 자동으로 채번됩니다." 안내가 보입니다.</li>
+            <li><strong>거래처명</strong>을 입력합니다. 꼭 입력해야 하는 칸입니다.</li>
+            <li><strong>거래처약어명</strong>, <strong>대표자명</strong>, <strong>사업자번호</strong>, <strong>법인번호</strong>, <strong>업태</strong>, <strong>종목</strong>, <strong>우편번호</strong>, <strong>주소</strong>, <strong>전화번호</strong>, <strong>팩스번호</strong>, <strong>비고</strong>를 필요한 만큼 입력합니다.</li>
+            <li>창 아래 스위치가 "사용" 인지 확인합니다. 기본은 사용입니다.</li>
+            <li><strong>저장</strong>을 누릅니다. 거래처명이 비어 있으면 <strong>저장</strong>이 눌리지 않습니다.</li>
+        </ol>
+        <figure class="shot" data-need="거래처 등록 창">
+            <img src="images/03/06-customer-add.png" alt="거래처 등록 창" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>거래처 등록 창</figcaption>
+        </figure>
+        <p>사업자번호와 법인번호는 숫자만 입력하면 하이픈이 자동으로 들어갑니다(000-00-00000, 000000-0000000). 비워 둬도 되지만, 입력했다면 사업자번호는 10자리, 법인번호는 13자리여야 합니다. 자리 수가 모자라면 저장할 때 "사업자번호는 숫자 10자리입니다." 또는 "법인번호는 숫자 13자리입니다." 가 보입니다.</p>
+
+        <h3>거래처 수정, 삭제</h3>
+        <ul>
+            <li>수정: <strong>작업</strong> 칸 연필 아이콘(<strong>거래처 수정</strong>) → "거래처 수정" 창에서 고침 → <strong>저장</strong>. 거래처코드는 보이기만 합니다.</li>
+            <li>삭제: <strong>작업</strong> 칸 휴지통 아이콘(<strong>거래처 삭제</strong>) → "거래처 삭제" 창에 "(거래처명) 거래처를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다." 가 보이면 <strong>삭제</strong>.</li>
+        </ul>
+        <div class="note"><strong>주의</strong> 거래처 삭제는 되돌릴 수 없습니다. 거래를 잠시 쉬는 거래처는 삭제하지 말고, 수정 창에서 스위치를 "미사용" 으로 바꾸세요.</div>
+
+        <h2 id="equipment">5. 설비관리</h2>
+        <p><strong>기준정보 관리 &gt; 설비관리</strong>를 엽니다. 화면 위에 "생산/보관 설비 기준정보를 관리합니다." 라는 설명이 보입니다.</p>
+        <p>목록에는 관리코드, 설비코드, 설비명, 설비종류, 구입일, 설치장소, 검교정구분, 검교정주기, 상태(사용/미사용)가 보입니다.</p>
+        <figure class="shot" data-need="설비관리 목록 (사용, 미사용 설비 함께 보이게)">
+            <img src="images/03/07-equipment-list.png" alt="설비관리 목록" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>설비관리 목록</figcaption>
+        </figure>
+
+        <h3>설비 찾기</h3>
+        <p><strong>검색어</strong>(관리코드, 설비코드, 설비명, 구입처, 제조사)를 입력하고 <strong>상태</strong>(전체, 사용, 미사용)를 고른 뒤 <strong>검색</strong>을 누릅니다.</p>
+
+        <h3>설비 등록</h3>
+        <ol class="steps">
+            <li><strong>설비 등록</strong>을 누릅니다. "설비 등록" 창이 열리고 "설비 정보를 입력해 등록합니다. 관리코드는 저장 시 자동으로 채번됩니다." 안내가 보입니다.</li>
+            <li><strong>설비코드</strong>와 <strong>설비명</strong>을 입력합니다. 두 칸은 꼭 입력해야 합니다.</li>
+            <li><strong>설비종류</strong>(최대 6자), <strong>구입일</strong>, <strong>구입처</strong>, <strong>제조사</strong>, <strong>설비규격</strong>, <strong>설치장소</strong>를 입력합니다.</li>
+            <li><strong>검교정구분</strong>을 고르고 <strong>검교정주기(개월)</strong>를 입력합니다. 검교정주기는 비워 둘 수 있습니다.</li>
+            <li>필요하면 <strong>비고</strong>를 입력하고, 창 아래 스위치가 "사용" 인지 확인합니다.</li>
+            <li><strong>저장</strong>을 누릅니다. 설비코드나 설비명이 비어 있으면 <strong>저장</strong>이 눌리지 않습니다.</li>
+        </ol>
+        <figure class="shot" data-need="설비 등록 창">
+            <img src="images/03/08-equipment-add.png" alt="설비 등록 창" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>설비 등록 창</figcaption>
+        </figure>
+        <p>관리코드는 시스템이 자동으로 매기는 번호이고, 설비코드는 업체에서 쓰는 설비 번호를 직접 넣는 칸입니다. 검교정주기에 값을 넣으면 1 이상 정수여야 하고, 아니면 "1 이상의 정수를 입력하세요." 가 보이며 <strong>저장</strong>이 눌리지 않습니다.</p>
+
+        <h3>설비 수정</h3>
+        <p><strong>작업</strong> 칸 연필 아이콘(<strong>설비 수정</strong>) → "설비 수정" 창에서 고침 → <strong>저장</strong>. 관리코드는 보이기만 합니다.</p>
+
+        <h3>설비 미사용 처리, 다시 사용</h3>
+        <ol class="steps">
+            <li>사용 중인 설비의 <strong>작업</strong> 칸 휴지통 아이콘(<strong>설비 삭제</strong>)을 누릅니다.</li>
+            <li>"설비 삭제" 창에 "(설비명) 미사용으로 처리하시겠습니까?" 가 보이면 <strong>미사용</strong>을 누릅니다. 설비는 지워지지 않고 상태만 미사용으로 바뀝니다.</li>
+            <li>다시 쓰려면 미사용 설비의 <strong>작업</strong> 칸 아이콘(마우스를 올리면 "사용으로 변경")을 누릅니다.</li>
+            <li>"설비 다시 사용" 창에 "(설비명) 설비를 다시 사용하시겠습니까?" 가 보이면 <strong>사용</strong>을 누릅니다.</li>
+        </ol>
+
+        <h2 id="faq">6. 안내 메시지 풀이</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>화면에 나오는 메시지</th><th>뜻과 해결 방법</th></tr></thead>
+                <tbody>
+                <tr><td>공통코드를 불러오지 못했습니다.</td><td>일시적인 연결 문제입니다. 화면을 새로 고치세요.</td></tr>
+                <tr><td>저장되었습니다.</td><td>공통코드 저장이 끝났습니다. 화면이 다시 조회됩니다.</td></tr>
+                <tr><td>저장에 실패했습니다.</td><td>공통코드를 저장하지 못했습니다. 입력 내용을 확인하고 다시 시도하세요.</td></tr>
+                <tr><td>그룹을 먼저 선택하세요.</td><td>그룹을 고르지 않고 상세 <strong>추가</strong>를 눌렀습니다. 왼쪽에서 그룹을 먼저 누르세요.</td></tr>
+                <tr><td>(그룹코드): 상세코드를 입력하세요. / (그룹코드): 상세코드명을 입력하세요.</td><td>새 줄에 빈 칸이 있습니다. 그 그룹의 상세코드와 상세코드명을 채우세요.</td></tr>
+                <tr><td>(그룹코드): 상세코드가 중복됩니다.</td><td>같은 그룹에 같은 상세코드가 이미 있습니다. 다른 코드를 쓰세요.</td></tr>
+                <tr><td>저장하지 않은 변경사항이 있습니다. 계속 조회하시겠습니까?</td><td>고친 내용을 저장하지 않고 <strong>조회</strong>를 눌렀습니다. 고친 내용을 지키려면 창을 닫고 먼저 <strong>저장</strong>하세요.</td></tr>
+                <tr><td>저장 후 다시 조회하면 다른 영역의 저장하지 않은 변경사항은 사라집니다. 계속하시겠습니까?</td><td>공통코드 화면에서 저장하지 않은 다른 영역의 변경이 있습니다. 계속하면 그 변경은 사라집니다.</td></tr>
+                <tr><td>품목 목록을 불러오지 못했습니다. / 거래처 목록을 불러오지 못했습니다. / 설비 목록을 불러오지 못했습니다.</td><td>일시적인 연결 문제입니다. 화면을 새로 고치세요.</td></tr>
+                <tr><td>조회된 품목이 없습니다. / 조회된 거래처가 없습니다. / 조회된 설비가 없습니다.</td><td>검색 조건에 맞는 항목이 없습니다. 검색어를 지우거나 상태(품목은 품목계정)를 "전체" 로 바꿔 보세요.</td></tr>
+                <tr><td>1 이상의 정수를 입력하세요.</td><td>품목의 소비기한 계산숫자나 설비의 검교정주기에 0, 음수, 소수가 들어 있습니다. 1 이상 정수로 고치세요.</td></tr>
+                <tr><td>사업자번호는 숫자 10자리입니다. / 법인번호는 숫자 13자리입니다.</td><td>번호 자리 수가 맞지 않습니다. 전부 입력하거나 칸을 비우세요.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>실패 메시지 자리에는 서버가 알려 준 이유가 대신 보일 수 있습니다.</p>
+
+        <h3>품목 등록 창 목록에 원하는 값이 없어요</h3>
+        <p>단위, 품목계정, 보관방법 같은 목록은 공통코드에서 옵니다. <a href="#common-code">2. 공통코드</a>에서 해당 그룹에 상세코드를 추가하거나, 미사용으로 바뀐 값을 다시 사용으로 체크하고 저장하세요.</p>
+
+        <h3>새 공통코드 그룹이 필요해요</h3>
+        <p>그룹은 업체에서 만들 수 없습니다. HACCP Cloud 플랫폼 담당자에게 문의하세요.</p>
+
+        <h3>삭제한 거래처를 되살리고 싶어요</h3>
+        <p>삭제한 거래처는 되살릴 수 없습니다. 다시 등록하세요. 거래처코드는 새로 매겨집니다.</p>
+
+        <h3>미사용으로 바꾼 설비가 목록에 안 보여요</h3>
+        <p><strong>상태</strong>를 "전체" 또는 "미사용" 으로 바꾸고 <strong>검색</strong>하세요.</p>
+
+    </main>
+</div>
+</body>
+</html>

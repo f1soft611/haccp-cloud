@@ -1,5 +1,6 @@
 import { type MouseEvent, useEffect, useMemo, useState } from 'react';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
@@ -352,6 +353,34 @@ export function TopGovBar() {
             >
               {APP_LABELS.header.fontSizeAction}
             </Button>
+
+              <Button
+                  component="a"
+                  href="/manual/index.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outlined"
+                  color="inherit"
+                  aria-label={APP_LABELS.header.manualAction}
+                  startIcon={<HelpOutlineRoundedIcon fontSize="small" />}
+                  sx={{
+                      borderRadius: 999,
+                      px: 1.4,
+                      py: 0.45,
+                      minHeight: 34,
+                      borderColor: 'rgba(15,23,42,0.2)',
+                      color: isDarkMode ? '#f8fafc' : '#0f172a',
+                      fontWeight: 700,
+                      '&:hover': {
+                          borderColor: isDarkMode ? '#fbbf24' : '#0f766e',
+                          bgcolor: isDarkMode
+                              ? 'rgba(251,191,36,0.12)'
+                              : 'rgba(20,184,166,0.08)',
+                      },
+                  }}
+              >
+                  {APP_LABELS.header.manualAction}
+              </Button>
 
             <UserAccountMenu />
           </Stack>

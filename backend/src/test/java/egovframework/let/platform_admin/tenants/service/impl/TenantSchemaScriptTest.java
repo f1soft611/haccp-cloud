@@ -375,6 +375,23 @@ class TenantSchemaScriptTest {
                 > sql.indexOf("CREATE TABLE IF NOT EXISTS tb_drafting_work_category_group"));
     }
 
+    @DisplayName("신규 테넌트 업무 분류 스크립트는 Basic(A) 플랜이면 WF_TYPE 분류를 등록하지 않는다")
+    @Test
+    void draftingCategoryResourceScript_skipsWfTypeForBasicPlan() throws Exception {
+        String sql = new String(
+                Files.readAllBytes(Paths.get("src", "main", "resources", "sql", "postgresql",
+                        "migrate_postgresql_add_drafting_work_category_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        assertTrue(sql.contains("AND :'plan_code' <> 'A'"));
+
+        Map<String, String> variables = new HashMap<String, String>();
+        variables.put("plan_code", "A");
+        String bound = TenantSchemaScript.bindVariables(sql, variables);
+
+        assertTrue(bound.contains("AND 'A' <> 'A'"));
+    }
+
     @DisplayName("전자결재 스크립트는 만료일 양식 sub 테이블을 main 다음에 만든다")
     @Test
     void electronicApprovalScript_createsSubTable() throws Exception {

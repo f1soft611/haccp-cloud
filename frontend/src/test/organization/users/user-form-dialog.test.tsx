@@ -102,4 +102,55 @@ describe('UserFormDialog', () => {
         ).toBeInTheDocument();
         expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
     });
+
+    it('blocks saving when email format is invalid', () => {
+        render(
+            <AppProviders>
+                <UserFormDialog
+                    open
+                    mode="edit"
+                    departmentOptions={['품질관리팀']}
+                    roleOptions={roleOptions}
+                    initialValue={baseValue}
+                    onClose={vi.fn()}
+                    onSubmit={vi.fn()}
+                />
+            </AppProviders>,
+        );
+
+        expect(screen.getByRole('button', { name: '저장' })).toBeEnabled();
+        expect(
+            screen.queryByText('이메일 형식이 올바르지 않습니다.'),
+        ).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('이메일'), {
+            target: { value: 'hong@alpha' },
+        });
+
+        expect(
+            screen.getByText('이메일 형식이 올바르지 않습니다.'),
+        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+    });
+
+    it('does not show email format error while email is empty', () => {
+        render(
+            <AppProviders>
+                <UserFormDialog
+                    open
+                    mode="edit"
+                    departmentOptions={['품질관리팀']}
+                    roleOptions={roleOptions}
+                    initialValue={{ ...baseValue, email: '' }}
+                    onClose={vi.fn()}
+                    onSubmit={vi.fn()}
+                />
+            </AppProviders>,
+        );
+
+        expect(
+            screen.queryByText('이메일 형식이 올바르지 않습니다.'),
+        ).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+    });
 });
