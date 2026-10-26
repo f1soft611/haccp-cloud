@@ -8,6 +8,7 @@ import { UserSelectDialog } from '../../../../shared/components/forms/UserSelect
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 import { useCommonCodeOptions } from '../../../../shared/hooks/useCommonCodeOptions';
 import {
+    calcNextCalibDate,
     getApprovalSubTargetKey,
     type ApprovalSubFieldConfig,
 } from '../utils/approvalSubFields';
@@ -69,8 +70,25 @@ export function ApprovalDraftExpirationFields(
     const selectedUserName =
         users.find((user) => user.id === value.certificationUserId)?.name ?? '';
 
-    const change = (key: keyof ApprovalSubValues, next: string) =>
-        onChange?.({ ...value, [key]: next });
+    // 검교정 업무에서 설비, 검교정일자, 설비 주기가 모두 있으면 차기예정일도 같이 세팅
+    const withNextCalibDate = (next: ApprovalSubValues): ApprovalSubValues => {
+        if (config.target !== 'equipment') {
+            return next;
+        }
+        const cycle = equipmentQuery.data?.items.find(
+            (item) => item.id === next.equipmentId,
+        )?.vcCycle;
+        return cycle && next.inspectedDate
+            ? { ...next, expirationDate: calcNextCalibDate(next.inspectedDate, cycle) }
+            : next;
+    };
+
+    // 기존 -> 바뀐 값 하나만 넣어 onChange
+    // 변경 -> 차기예정일을 직접 고친 경우가 아니면 검교정 차기예정일 재계산
+    const change = (key: keyof ApprovalSubValues, next: string) => {
+        const updated = { ...value, [key]: next };
+        onChange?.(key === 'expirationDate' ? updated : withNextCalibDate(updated));
+    };
 
     const openUserDialog = () => {
         if (!isReadOnly) {

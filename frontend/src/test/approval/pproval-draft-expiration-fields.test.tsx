@@ -24,7 +24,11 @@ vi.mock('../../services/basicinfo/commonCodeService', () => ({
 function equipment(
     id: string,
     equipNm: string,
-    { vcKind = 'INTERNAL', equipSpec = '' }: { vcKind?: string; equipSpec?: string } = {},
+    {
+        vcKind = 'INTERNAL',
+        equipSpec = '',
+        vcCycle = null,
+    }: { vcKind?: string; equipSpec?: string; vcCycle?: number | null } = {},
 ): EquipmentItem {
     return {
         id,
@@ -35,26 +39,27 @@ function equipment(
         purDate: '',
         purCust: '',
         makCust: '',
-        // 기존 -> equipSpec: '',
-        // 변경 -> 인자로 받은 규격
         equipSpec,
         location: '',
-        // 기존 -> vcKind: '',
-        // 변경 -> 인자로 받은 검교정 구분
         vcKind,
-        vcCycle: null,
+        vcCycle,
         bigo: '',
         active: true,
     };
 }
 
-function renderCalibFields(onChange: (next: ApprovalSubValues) => void) {
+function renderCalibFields(
+    onChange: (next: ApprovalSubValues) => void,
+    value: ApprovalSubValues = EMPTY_APPROVAL_SUB,
+) {
     render(
         <AppProviders>
             <ApprovalDraftExpirationFields
                 tenantCode="TENANT-A"
                 config={getApprovalSubFieldConfig('HCP-CALIB')!}
-                value={EMPTY_APPROVAL_SUB}
+                // 기존 -> value={EMPTY_APPROVAL_SUB}
+                // 변경 -> 인자로 받은 입력값
+                value={value}
                 onChange={onChange}
                 users={[]}
             />
