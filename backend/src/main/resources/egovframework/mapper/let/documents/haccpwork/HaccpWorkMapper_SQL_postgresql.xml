@@ -597,6 +597,14 @@
           THEN date_trunc('month', COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP))
         WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
         THEN date_trunc('week', COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP))
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'QUARTER'
+        THEN date_trunc('quarter', COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP))
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'HALF'
+        THEN date_trunc('year', COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP))
+        + CASE WHEN EXTRACT(MONTH FROM COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP)) >= 7
+        THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'YEAR'
+          THEN date_trunc('year', COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP))
         ELSE date_trunc('day', COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS timestamp), CURRENT_TIMESTAMP))
         END
     </sql>
