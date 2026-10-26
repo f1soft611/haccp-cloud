@@ -81,3 +81,14 @@ export function validateApprovalSub(
     }
     return '';
 }
+
+// 검교정일자 + 주기(개월) - 1일. 더한 달에 같은 날짜가 없으면 그 달 말일 기준
+// 문자열을 숫자로 나눠 UTC 로만 계산해 타임존 때문에 하루 밀리지 않게 함
+export function calcNextCalibDate(inspectedDate: string, cycleMonths: number): string {
+    const [year, month, day] = inspectedDate.split('-').map(Number);
+    const targetMonth = month - 1 + cycleMonths;
+    const lastDay = new Date(Date.UTC(year, targetMonth + 1, 0)).getUTCDate();
+    return new Date(Date.UTC(year, targetMonth, Math.min(day, lastDay) - 1))
+    .toISOString()
+    .slice(0, 10);
+}

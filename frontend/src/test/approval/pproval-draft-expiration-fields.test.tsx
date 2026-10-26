@@ -21,7 +21,11 @@ vi.mock('../../services/basicinfo/commonCodeService', () => ({
     getCommonCodes: async () => ({ groups: [], details: [] }),
 }));
 
-function equipment(id: string, equipNm: string): EquipmentItem {
+function equipment(
+    id: string,
+    equipNm: string,
+    { vcKind = 'INTERNAL', equipSpec = '' }: { vcKind?: string; equipSpec?: string } = {},
+): EquipmentItem {
     return {
         id,
         equipSysCd: id,
@@ -31,9 +35,13 @@ function equipment(id: string, equipNm: string): EquipmentItem {
         purDate: '',
         purCust: '',
         makCust: '',
-        equipSpec: '',
+        // 기존 -> equipSpec: '',
+        // 변경 -> 인자로 받은 규격
+        equipSpec,
         location: '',
-        vcKind: '',
+        // 기존 -> vcKind: '',
+        // 변경 -> 인자로 받은 검교정 구분
+        vcKind,
         vcCycle: null,
         bigo: '',
         active: true,
@@ -98,5 +106,31 @@ describe('ApprovalDraftExpirationFields 설비 선택', () => {
         await waitFor(() =>
             expect(onChange).toHaveBeenCalledWith({ ...EMPTY_APPROVAL_SUB, equipmentId: '2' }),
         );
+    });
+
+    it('검교정 구분이 비어 있는 설비는 목록에 보이지 않는다', async () => {
+        listEquipmentPagedMock.mockResolvedValue({
+            items: [equipment('1', '온도계'), equipment('2', '저울', { vcKind: '' })],
+            totalCount: 2,
+        });
+        renderCalibFields(() => undefined);
+
+        fireEvent.mouseDown(screen.getByRole('combobox', { name: /설비/ }));
+
+        expect(await screen.findByRole('option', { name: '온도계' })).toBeInTheDocument();
+        expect(screen.queryByRole('option', { name: '저울' })).toBeNull();
+    });
+
+    it('규격이 있으면 설비명(규격), 없으면 설비명으로 보인다', async () => {
+        listEquipmentPagedMock.mockResolvedValue({
+            items: [equipment('1', '온도계', { equipSpec: '0~100℃' }), equipment('2', '저울')],
+            totalCount: 2,
+        });
+        renderCalibFields(() => undefined);
+
+        fireEvent.mouseDown(screen.getByRole('combobox', { name: /설비/ }));
+
+        expect(await screen.findByRole('option', { name: '온도계(0~100℃)' })).toBeInTheDocument();
+        expect(screen.getByRole('option', { name: '저울' })).toBeInTheDocument();
     });
 });

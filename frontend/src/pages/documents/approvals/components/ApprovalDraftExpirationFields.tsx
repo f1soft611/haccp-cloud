@@ -50,9 +50,15 @@ export function ApprovalDraftExpirationFields(
     // 변경 -> 사원은 UserSelectDialog 로 선택하므로 옵션 없음
     const targetOptions =
         config.target === 'equipment'
-            ? (equipmentQuery.data?.items ?? []).map((item) => ({
+            // 기존 -> 사용 중 설비 전체를 설비명(equipNm)만으로 표시
+            // 변경 -> 검교정 구분(vcKind)이 없는 설비 제외, 설비명(규격) 형식으로 표시 (규격 없으면 설비명만)
+            ? (equipmentQuery.data?.items ?? [])
+            .filter((item) => item.vcKind)
+            .map((item) => ({
                 value: item.id,
-                label: item.equipNm,
+                label: item.equipSpec
+                    ? `${item.equipNm}(${item.equipSpec})`
+                    : item.equipNm,
             }))
             : config.target === 'materialType'
                 ? materialTypeOptions.map((option) => ({
