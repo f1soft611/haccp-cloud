@@ -1,5 +1,5 @@
 import type { TenantTodoCardItem } from '../../dashboard/tenant/hooks/useTenantDashboardData';
-import type { HaccpWorkCycleInstance } from '../../../services/documents/haccpBaseWorkService';
+import type { HaccpWorkCycleInstance, HaccpWorkExpiration } from '../../../services/documents/haccpBaseWorkService';
 import { resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
 
 export type CalendarWorkEvent = {
@@ -7,6 +7,7 @@ export type CalendarWorkEvent = {
     cycleDate: string;
     isFuture: boolean;
     item: TenantTodoCardItem;
+    expiration?: HaccpWorkExpiration;
 }
 
 function pad2(value: number): string {
@@ -187,4 +188,30 @@ export function mapTodosToCalendarEvents(
     });
 
     return events;
+}
+
+// 만료일 관리 업무: 결재 완료 문서의 만료일 칸에 표시
+// 앞으로 올 만료일이 보여야 하므로 표시 시작일 하한은 적용하지 않고, 같은 대상 여러 문서도 모두 표시
+export function mapExpirationsToCalendarEvents(
+    todos: TenantTodoCardItem[],
+    expirations: HaccpWorkExpiration[],
+    rangeStart: string,
+    rangeEnd: string,
+    materialTypeName: (code: string) => string = (code) => code,
+): CalendarWorkEvent[] {
+    return expirations.flatMap((expiration) => {
+        const item = todos.find((todo) => todo.id === expiration.workId);
+        if (!item || expiration.expirationDate < rangeStart || expiration.expirationDate > rangeEnd) {
+            return [];
+        }
+        const workName = item.divisionName || item.categoryName || '업무';
+        const targetName = expiration.targetName || materialTypeName(expiration.materialType);
+        return [{
+            date: expiration.expirationDate,
+            cycleDate: expiration.expirationDate,
+            isFuture: false,
+            item: { ...item, title: targetName ? `만료 | ${workName} - ${targetName}` : `만료 | ${workName}` },
+            expiration,
+        }];
+    });
 }
