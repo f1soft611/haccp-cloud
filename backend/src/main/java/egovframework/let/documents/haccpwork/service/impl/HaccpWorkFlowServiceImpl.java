@@ -627,6 +627,10 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         Long expectedActorLoginId;
         if ("submit_cancel".equals(eventType)) {
             targetSeq = resolveCancelableTargetSeq(tenantId, approvalId, actorLoginId);
+            HaccpWorkVO cancelTarget = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, approvalId, "approval", actorLoginCode);
+            if (cancelTarget != null && Boolean.FALSE.equals(cancelTarget.getApprovalApply())) {
+                targetSeq = DRAFTER_SEQ;
+            }
             expectedActorLoginId = actorLoginId;
             if (targetSeq == 1) {
                 mainStatus = "pre_apply";

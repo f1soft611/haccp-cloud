@@ -341,6 +341,39 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals("[시스템] 최종승인자님이 승인 취소 처리했습니다.", answerCnt);
     }
 
+    @DisplayName("결재 미적용 문서는 결재취소 한 번에 기안 단계까지 되돌려 미완료가 된다")
+    @Test
+    void updateApprovalStatus_submitCancelNoApprovalApply_revertsToPreApply() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitCancelMessageTest(3);
+        serviceCancelWork.setApprovalApply(Boolean.FALSE);
+
+        HaccpWorkApprovalStatusUpdateRequestVO payload = new HaccpWorkApprovalStatusUpdateRequestVO();
+        payload.setEventType("submit_cancel");
+
+        service.updateApprovalStatus(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> lineCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).updateElectronicApprovalLineStatus(lineCaptor.capture());
+        assertEquals(1, lineCaptor.getValue().get("exeSeq"));
+        assertEquals("cancelled", lineCaptor.getValue().get("appStatus"));
+
+        ArgumentCaptor<Map> mainCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).updateElectronicApprovalMainStatus(mainCaptor.capture());
+        assertEquals("pre_apply", mainCaptor.getValue().get("statusType"));
+        assertEquals("pre_apply", mainCaptor.getValue().get("endStatus"));
+        assertEquals("미완료", mainCaptor.getValue().get("statusTypeName"));
+
+        ArgumentCaptor<Map> pendingCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO, times(2)).updateElectronicApprovalLineToPending(pendingCaptor.capture());
+        assertEquals(2, pendingCaptor.getAllValues().get(0).get("exeSeq"));
+        assertEquals(3, pendingCaptor.getAllValues().get(1).get("exeSeq"));
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalLineArrival(anyMap());
+
+        ArgumentCaptor<Map> historyCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).insertElectronicApprovalHistoryMain(historyCaptor.capture());
+        assertEquals("[시스템] 최종승인자님이 상신취소 처리했습니다.", historyCaptor.getValue().get("answerCnt"));
+    }
+
     @DisplayName("검토자와 승인자가 같으면 검토승인 요청 한 번으로 최종승인까지 이어진다")
     @Test
     void updateApprovalStatus_reviewApproveAutoAdvancesWhenNextAssigneeIsSameActor() throws Exception {
@@ -1008,6 +1041,7 @@ class HaccpWorkFlowServiceImplTest {
     private EgovConditionalIdService serviceIdGnrService;
 
     private HaccpWorkVO serviceDraftWork;
+    private HaccpWorkVO serviceCancelWork;
 
     private HaccpWorkFlowServiceImpl createServiceForSubmitCancelMessageTest(int latestCompletedSeq) throws Exception {
         HaccpWorkDraftService draftService = mock(HaccpWorkDraftService.class);
@@ -1041,8 +1075,9 @@ class HaccpWorkFlowServiceImplTest {
         when(serviceHaccpWorkDAO.selectNextApprovalHistoryAnswerSeq(anyMap())).thenReturn(1);
 
         when(serviceHaccpWorkDAO.selectFinalOwnerExeSeqByApprovalId(anyMap())).thenReturn(4);
+        serviceCancelWork = new HaccpWorkVO();
         when(draftService.getDraftTemplate(eq("TENANT_001"), eq(77L), eq("approval"), eq("3001")))
-            .thenReturn(new HaccpWorkVO());
+                .thenReturn(serviceCancelWork);
 
         return service;
     }
