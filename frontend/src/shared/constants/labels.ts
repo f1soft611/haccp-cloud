@@ -12,6 +12,7 @@ export const APP_LABELS = {
     searchAction: '통합검색',
     fontSizeAction: '화면크기',
     fontSizeResetAction: '초기화',
+    manualAction: '매뉴얼',
   },
   menu: {
     dashboardGroup: '대시보드 관리',

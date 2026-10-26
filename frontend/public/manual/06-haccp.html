@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HACCP 관리</title>
+    <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+<div class="layout">
+    <nav class="toc" aria-label="이 편의 목차">
+        <a class="home" href="index.html">← 매뉴얼 목차</a>
+        <ol>
+            <li><a href="#overview">1. HACCP 관리 한눈에 보기</a></li>
+            <li><a href="#portal">2. HACCP 문서포탈</a></li>
+            <li><a href="#doc-status">3. HACCP 문서현황</a></li>
+            <li><a href="#work-order">4. 작업지시</a></li>
+            <li><a href="#faq">5. 안내 메시지 풀이</a></li>
+        </ol>
+    </nav>
+
+    <main>
+        <p class="series">HACCP Cloud 사용 매뉴얼 ⑥편</p>
+        <h1>HACCP 관리</h1>
+        <div class="summary">
+            <strong>이 편에서 배우는 것</strong>
+            <ul>
+                <li>HACCP 문서포탈에서 업무별 목록을 보고 기안 작성으로 들어가는 방법</li>
+                <li>HACCP 문서현황에서 작성, 결재된 문서를 조건으로 찾는 방법</li>
+                <li>작업지시를 등록, 수정, 삭제하는 방법</li>
+            </ul>
+        </div>
+        <p>이 편은 메뉴의 <strong>HACCP 관리</strong> 아래 세 화면을 다룹니다. 관리자만 쓸 수 있는 기능에는 <span class="badge">관리자 전용</span> 표시를 붙였습니다.</p>
+
+        <h2 id="overview">1. HACCP 관리 한눈에 보기</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>메뉴</th><th>하는 일</th></tr></thead>
+                <tbody>
+                <tr><td>HACCP 문서포탈 <span class="badge">관리자 전용</span></td><td>업무(양식)별 목록을 보고 기안 작성으로 들어갑니다.</td></tr>
+                <tr><td>HACCP 문서현황</td><td>작성하거나 결재한 문서를 조건으로 찾아 엽니다.</td></tr>
+                <tr><td>작업지시</td><td>생산 품목별 작업지시를 등록, 수정, 삭제합니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="portal">2. HACCP 문서포탈 <span class="badge">관리자 전용</span></h2>
+        <p>메뉴의 <strong>HACCP 관리 &gt; HACCP 문서포탈</strong>을 엽니다. <a href="04-forms.html">④편 HACCP 양식관리</a>에 등록한 업무가 한 줄씩 보입니다.</p>
+        <p>목록에는 No, 구분명, 분류, 자동기록, 등록주기, 담당자, 작성이 보입니다. 자동기록 칸은 지금은 항상 "-" 로 보입니다.</p>
+        <figure class="shot" data-need="HACCP 문서포탈 목록">
+            <img src="images/06/01-portal.png" alt="HACCP 문서포탈 목록" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>HACCP 문서포탈 목록</figcaption>
+        </figure>
+
+        <h3>업무 찾기</h3>
+        <p><strong>업무분류</strong>(기본 "전체"), <strong>등록주기</strong>(기본 "전체")를 고르고 "구분명, 담당자 검색" 칸에 입력한 뒤 <strong>조회</strong>를 누르거나 Enter 를 누릅니다.</p>
+
+        <h3>목록에서 할 수 있는 일</h3>
+        <ul>
+            <li><strong>구분명</strong>을 누르면 <a href="#doc-status">HACCP 문서현황</a>이 그 업무로 걸러진 채 열립니다. 그 업무로 지금까지 작성된 문서를 볼 수 있습니다.</li>
+            <li><strong>작성</strong> 칸의 연필 아이콘(<strong>작성하러 가기</strong>)을 누르면 기안 작성 화면이 열립니다. 이후 작성과 결재 방법은 <a href="05-approval.html#write">⑤편 3. 기안 작성 화면</a>을 보세요.</li>
+        </ul>
+
+        <h2 id="doc-status">3. HACCP 문서현황</h2>
+        <p>메뉴의 <strong>HACCP 관리 &gt; HACCP 문서현황</strong>을 엽니다. 이미 작성했거나 결재한 문서를 찾는 화면입니다.</p>
+        <figure class="shot" data-need="HACCP 문서현황 (상세조건 펼친 상태)">
+            <img src="images/06/02-doc-status.png" alt="HACCP 문서현황 화면" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>HACCP 문서현황 화면</figcaption>
+        </figure>
+
+        <h3>기본 검색</h3>
+        <ol class="steps">
+            <li><strong>업무분류</strong>, <strong>업무구분</strong>을 고릅니다. 고르지 않으면 전체에서 찾습니다.</li>
+            <li><strong>상태</strong>를 고릅니다. 전체, 임시저장, 결재중, 승인, 반송 중에서 고를 수 있습니다.</li>
+            <li>필요하면 <strong>제목</strong>을 입력합니다.</li>
+            <li><strong>조회</strong>를 누릅니다. <strong>초기화</strong>를 누르면 조건이 처음 값으로 돌아갑니다.</li>
+        </ol>
+
+        <h3>상세조건</h3>
+        <p><strong>상세조건</strong>을 누르면 조건 칸이 더 펼쳐지고 버튼이 <strong>상세조건 닫기</strong>로 바뀝니다.</p>
+        <ul>
+            <li><strong>시작일</strong>, <strong>종료일</strong>: 찾을 기간입니다.</li>
+            <li><strong>기안번호</strong>: 기안번호를 알면 바로 찾습니다.</li>
+            <li><strong>참여유형</strong>: 기안자, 결재자, 참조자 중 여러 개를 고를 수 있습니다. 내가 기안했거나 결재했거나 참조한 문서만 골라 볼 때 씁니다.</li>
+            <li><strong>작성자</strong> <span class="badge">관리자 전용</span>: 관리자만 입력할 수 있습니다. 일반 사용자에게는 칸이 잠겨 보입니다.</li>
+        </ul>
+        <div class="note"><strong>주의</strong> 기간은 처음에 "이번 달 1일 ~ 오늘" 로 들어가 있습니다. 지난달 문서를 찾으려면 <strong>상세조건</strong>에서 시작일을 바꾸세요. 지금 적용된 조건은 검색 칸 오른쪽 아래에 "기간: 2026-10-01 ~ 2026-10-26" 같은 칩으로 보입니다.</div>
+
+        <h3>목록 보기</h3>
+        <p>목록에는 No, 업무분류, 기안번호, 제목, 작성자, 상태, 기안일, 최종수정, 상세가 보입니다. 목록 아래에서 "총 N건" 을 확인하고, 한 페이지에 보일 건수를 바꾸거나 페이지를 넘길 수 있습니다.</p>
+        <p><strong>상세</strong> 칸의 연필 아이콘(<strong>상세 보기</strong>)을 누르면 문서가 열립니다. 아직 기안이 없는 줄은 아이콘이 흐리게 보이고 눌리지 않습니다.</p>
+
+        <h2 id="work-order">4. 작업지시</h2>
+        <p>메뉴의 <strong>HACCP 관리 &gt; 작업지시</strong>를 엽니다. 생산 품목별 작업지시를 등록하고 관리하는 화면입니다.</p>
+        <p>목록에는 작업지시번호, 품명, 생산계획일, 소비기한, 생산량, 단위, 규격, 비고, 작업이 보입니다.</p>
+        <figure class="shot" data-need="작업지시 목록">
+            <img src="images/06/03-work-order-list.png" alt="작업지시 목록" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>작업지시 목록</figcaption>
+        </figure>
+
+        <h3>작업지시 찾기</h3>
+        <p><strong>생산계획일 시작</strong>, <strong>생산계획일 종료</strong>, <strong>품명</strong>을 입력하고 <strong>조회</strong>를 누르거나 품명 칸에서 Enter 를 누릅니다. <strong>초기화</strong>를 누르면 조건이 비워집니다.</p>
+
+        <h3>작업지시 등록</h3>
+        <ol class="steps">
+            <li><strong>신규</strong>를 누릅니다. "작업지시 등록" 창이 열립니다.</li>
+            <li><strong>품목</strong> 칸("클릭하여 품목을 선택하세요")을 누릅니다. "품목 선택" 창이 열립니다.</li>
+            <li><strong>품목계정</strong>(전체, 제품, 반제품)을 고르고 <strong>검색어</strong>(품목코드, 품목명, 규격)를 입력한 뒤 <strong>검색</strong>을 누릅니다. 원하는 품목 줄을 누르면 선택되고 창이 닫힙니다.</li>
+            <li><strong>단위</strong>와 <strong>규격</strong>은 고른 품목의 값으로 자동으로 채워지고 고칠 수 없습니다.</li>
+            <li><strong>생산계획일</strong>을 고릅니다. <strong>소비기한</strong>이 자동으로 계산되어 들어갑니다. 필요하면 직접 고칠 수 있습니다.</li>
+            <li><strong>생산량</strong>을 입력하고, 필요하면 <strong>비고</strong>를 입력합니다.</li>
+            <li><strong>저장</strong>을 누릅니다. 작업지시번호는 저장할 때 자동으로 붙습니다.</li>
+        </ol>
+        <figure class="shot" data-need="작업지시 등록 창 (품목, 생산계획일 넣은 상태)">
+            <img src="images/06/04-work-order-add.png" alt="작업지시 등록 창" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>작업지시 등록 창</figcaption>
+        </figure>
+        <figure class="shot" data-need="품목 선택 창">
+            <img src="images/06/05-material-select.png" alt="품목 선택 창" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>품목 선택 창</figcaption>
+        </figure>
+        <div class="note"><strong>팁</strong> 소비기한은 품목에 정해 둔 소비기한 기준(예: 12개월)으로 계산됩니다. 품목의 소비기한 기준이 "없음" 이면 생산계획일에서 1년 뒤로 들어갑니다. 소비기한 기준은 <a href="03-basicinfo.html#materials">③편 품목 관리</a>에서 정합니다.</div>
+        <div class="note"><strong>팁</strong> 품목 선택 창에는 품목계정이 제품, 반제품인 품목만 나옵니다. 품목 등록은 <a href="03-basicinfo.html#materials">③편 품목 관리</a>를 보세요.</div>
+
+        <h3>작업지시 수정, 삭제</h3>
+        <ul>
+            <li>수정: <strong>작업</strong> 칸 연필 아이콘(<strong>작업지시 수정</strong>) → "작업지시 수정" 창에서 고침 → <strong>저장</strong>. 작업지시번호는 보이기만 하고 바꿀 수 없습니다.</li>
+            <li>삭제: <strong>작업</strong> 칸 휴지통 아이콘(<strong>작업지시 삭제</strong>) → "작업지시 삭제" 창에 "'(작업지시번호) (품명)' 작업지시를 삭제하시겠습니까?" 가 보이면 <strong>삭제</strong>.</li>
+        </ul>
+
+        <h2 id="faq">5. 안내 메시지 풀이</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>화면에 나오는 메시지</th><th>뜻과 해결 방법</th></tr></thead>
+                <tbody>
+                <tr><td>HACCP 문서포탈 목록을 불러오지 못했습니다.</td><td>일시적인 연결 문제입니다. 화면을 새로 고치세요.</td></tr>
+                <tr><td>조회된 문서가 없습니다.</td><td>HACCP 문서포탈에서 검색 조건에 맞는 업무가 없습니다. 검색 칸을 비우거나 조건을 "전체" 로 바꿔 보세요.</td></tr>
+                <tr><td>HACCP 문서 목록을 불러오지 못했습니다.</td><td>일시적인 연결 문제입니다. 화면을 새로 고치세요.</td></tr>
+                <tr><td>조건에 맞는 문서가 없습니다.</td><td>HACCP 문서현황에서 조건에 맞는 문서가 없습니다. 기간과 상태를 확인하세요.</td></tr>
+                <tr><td>작업지시 목록을 불러오지 못했습니다.</td><td>일시적인 연결 문제입니다. 화면을 새로 고치세요.</td></tr>
+                <tr><td>조회된 작업지시가 없습니다.</td><td>검색 조건에 맞는 작업지시가 없습니다. <strong>초기화</strong>를 누르고 다시 조회하세요.</td></tr>
+                <tr><td>등록되었습니다. / 수정되었습니다. / 삭제되었습니다.</td><td>작업지시 저장, 삭제가 끝났습니다. 목록이 다시 조회됩니다.</td></tr>
+                <tr><td>작업지시를 처리하지 못했습니다.</td><td>작업지시를 저장하거나 삭제하지 못했습니다. 입력 내용을 확인하고 다시 시도하세요.</td></tr>
+                <tr><td>품목을 선택하세요.</td><td><strong>품목</strong> 칸을 눌러 품목을 고르세요.</td></tr>
+                <tr><td>생산계획일을 입력하세요. / 소비기한을 입력하세요.</td><td>꼭 입력해야 하는 칸이 비어 있습니다.</td></tr>
+                <tr><td>소비기한은 생산계획일 이후여야 합니다.</td><td>소비기한을 생산계획일과 같거나 뒤의 날짜로 고치세요.</td></tr>
+                <tr><td>생산량은 0보다 커야 합니다.</td><td>생산량에 0보다 큰 수를 입력하세요.</td></tr>
+                <tr><td>비고는 255자 이하로 입력하세요.</td><td>비고를 255자 이하로 줄이세요.</td></tr>
+                <tr><td>검색된 품목이 없습니다.</td><td>품목 선택 창에서 조건에 맞는 제품, 반제품이 없습니다. 검색어를 바꾸거나 <a href="03-basicinfo.html#materials">③편 품목 관리</a>에서 품목을 먼저 등록하세요.</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>실패 메시지 자리에는 서버가 알려 준 이유가 대신 보일 수 있습니다.</p>
+
+        <h3>지난달 문서가 안 보여요</h3>
+        <p>HACCP 문서현황의 기간이 처음에 이번 달로 잡혀 있습니다. <strong>상세조건</strong>에서 시작일을 바꾸고 <strong>조회</strong>를 누르세요.</p>
+
+        <h3>작성자 칸이 눌리지 않아요</h3>
+        <p>작성자 칸은 관리자만 쓸 수 있습니다. 일반 사용자는 <strong>참여유형</strong>으로 내가 참여한 문서를 골라 보세요.</p>
+
+        <h3>품목 선택 창에 원재료가 안 나와요</h3>
+        <p>작업지시는 제품, 반제품만 대상입니다. 원재료, 부재료는 나오지 않습니다.</p>
+
+        <h3>소비기한이 생산계획일 1년 뒤로 들어가요</h3>
+        <p>고른 품목의 소비기한 기준이 "없음" 입니다. <a href="03-basicinfo.html#materials">③편 품목 관리</a>에서 품목의 소비기한 기준을 정하거나, 등록 창에서 소비기한을 직접 고치세요.</p>
+
+    </main>
+</div>
+</body>
+</html>

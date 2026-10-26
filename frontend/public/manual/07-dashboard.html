@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>종합현황</title>
+    <link rel="stylesheet" href="manual.css">
+</head>
+<body>
+<div class="layout">
+    <nav class="toc" aria-label="이 편의 목차">
+        <a class="home" href="index.html">← 매뉴얼 목차</a>
+        <ol>
+            <li><a href="#overview">1. 종합현황 한눈에 보기</a></li>
+            <li><a href="#status-cards">2. 상태 카드</a></li>
+            <li><a href="#search">3. 검색</a></li>
+            <li><a href="#todo">4. 할 일 목록</a></li>
+            <li><a href="#calendar">5. 업무 캘린더</a></li>
+            <li><a href="#faq">6. 안내 메시지 풀이</a></li>
+        </ol>
+    </nav>
+
+    <main>
+        <p class="series">HACCP Cloud 사용 매뉴얼 ⑦편</p>
+        <h1>종합현황</h1>
+        <div class="summary">
+            <strong>이 편에서 배우는 것</strong>
+            <ul>
+                <li>상태 카드로 내가 할 일과 결재할 문서를 한눈에 보는 방법</li>
+                <li>할 일 목록을 검색하고 바로 작성하러 들어가는 방법</li>
+                <li>업무 캘린더에서 주기별 일정과 작성 상태를 보는 방법</li>
+            </ul>
+        </div>
+        <p>이 편은 로그인하면 처음 열리는 <strong>종합현황</strong> 화면을 다룹니다. 이 화면에는 관리자만 쓰는 기능이 없어서 일반 사용자도 그대로 읽을 수 있습니다.</p>
+
+        <h2 id="overview">1. 종합현황 한눈에 보기</h2>
+        <p>로그인하면 종합현황이 열립니다. 다른 화면에 있을 때는 메뉴의 <strong>종합현황</strong>을 누릅니다.</p>
+        <p>화면은 위에서부터 상태 카드, 검색, 할 일 목록 순서로 되어 있습니다. 검색 영역 오른쪽 위의 <strong>리스트</strong> / <strong>캘린더</strong>를 누르면 할 일 목록과 업무 캘린더를 바꿔 볼 수 있습니다. 상태 카드는 리스트 보기에서만 보입니다.</p>
+        <figure class="shot" data-need="종합현황 리스트 보기 전체 (상태 카드, 검색, 할 일 목록)">
+            <img src="images/07/01-overview.png" alt="종합현황 리스트 보기" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>종합현황 리스트 보기</figcaption>
+        </figure>
+        <div class="note"><strong>팁</strong> 문서 화면에 갔다가 돌아와도 보기 방식, 검색 조건, 캘린더에서 보던 달이 그대로 남아 있습니다. 브라우저 창(탭)을 닫으면 처음 값으로 돌아갑니다.</div>
+
+        <h2 id="status-cards">2. 상태 카드</h2>
+        <p>화면 맨 위에 카드 5개가 있습니다. 카드에 마우스를 올리면 아래 설명이 나옵니다.</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>카드</th><th>뜻</th></tr></thead>
+                <tbody>
+                <tr><td>미작성</td><td>내가 작성해야 할 문서</td></tr>
+                <tr><td>결재대기중</td><td>내 결재를 기다리는 문서</td></tr>
+                <tr><td>결재진행중</td><td>내가 결재 요청했으나 아직 결재가 끝나지 않은 문서</td></tr>
+                <tr><td>승인</td><td>내가 결재 요청해 최종 승인된 문서</td></tr>
+                <tr><td>반려</td><td>내가 결재 요청했으나 반려된 문서</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <ul>
+            <li>카드를 누르면 아래 검색의 <strong>상태</strong>가 그 값으로 바뀌고 목록에 바로 적용됩니다. 선택된 카드는 테두리가 강조됩니다.</li>
+            <li><strong>결재대기중</strong>을 누르면 목록이 내가 결재할 문서로 바뀝니다.</li>
+        </ul>
+        <div class="note"><strong>주의</strong> 카드 건수는 검색 조건과 상관없이 이번 달 1일부터 오늘까지의 업무로 셉니다. 임시저장한 문서는 미작성에 함께 셉니다. 결재대기중은 지금 내 결재를 기다리는 문서 전체 건수입니다.</div>
+
+        <h2 id="search">3. 검색</h2>
+        <ol class="steps">
+            <li><strong>업무분류</strong>를 고릅니다. 기본은 "전체" 입니다.</li>
+            <li><strong>주기</strong>를 고릅니다. 기본은 "전체(수시제외)" 입니다.</li>
+            <li><strong>상태</strong>를 고릅니다. 전체, 미작성, 임시저장, 결재대기중, 결재진행중, 승인, 반려 중에서 고를 수 있습니다.</li>
+            <li>필요하면 <strong>업무명</strong>을 입력합니다. 이름의 일부만 넣어도 찾습니다.</li>
+            <li><strong>조회</strong>를 누르거나 업무명 칸에서 Enter 를 누릅니다.</li>
+        </ol>
+        <p>칸만 바꾸고 <strong>조회</strong>를 누르지 않으면 목록은 그대로입니다. <strong>초기화</strong>를 누르면 모든 칸이 처음 값으로 돌아가고 바로 적용됩니다. 검색 조건은 리스트와 캘린더에 똑같이 적용됩니다.</p>
+        <div class="note"><strong>주의</strong> 주기가 "전체(수시제외)" 이면 수시 업무는 보이지 않습니다. 수시 업무를 보려면 <strong>주기</strong>에서 수시를 직접 고르세요.</div>
+        <div class="note"><strong>주의</strong> <strong>상태</strong>에서 미작성을 고르면 아직 결재를 올리지 않은 임시저장 문서도 함께 나옵니다.</div>
+
+        <h2 id="todo">4. 할 일 목록</h2>
+        <p>리스트 보기에서 보이는 목록입니다. 업무분류, 업무명, 주기, 상태, 담당자, 최근일시, 작업이 보입니다. 담당자와 최근일시는 그 업무를 가장 최근에 수정한 사람과 시각입니다. 목록이 길면 목록 안에서 스크롤됩니다.</p>
+
+        <h3>작성하러 가기</h3>
+        <p><strong>작업</strong> 칸의 연필 아이콘(<strong>작성하러 가기</strong>)을 누르면 기안 작성 화면이 열립니다.</p>
+        <ul>
+            <li>이번 주기에 내가 임시저장한 문서가 있으면 "임시저장 문서" 창에 "임시저장된 문서를 불러오시겠습니까?" 가 나옵니다. <strong>확인</strong>은 임시저장 문서를 열고, <strong>아니오</strong>는 새 문서로 작성합니다.</li>
+            <li>상태를 결재대기중으로 거른 목록에서는 결재할 문서가 바로 열립니다.</li>
+        </ul>
+        <p>이후 작성과 결재 방법은 <a href="05-approval.html#write">⑤편 3. 기안 작성 화면</a>을 보세요.</p>
+        <figure class="shot" data-need="&quot;임시저장 문서&quot; 확인 창">
+            <img src="images/07/02-draft-confirm.png" alt="임시저장 문서 확인 창" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>임시저장 문서 확인 창</figcaption>
+        </figure>
+
+        <h3>이동</h3>
+        <p><strong>작업</strong> 칸의 <strong>이동</strong> 버튼을 누르면 HACCP 문서현황이 그 업무분류와 이번 달 기간(1일 ~ 오늘)으로 걸러진 채 열립니다. 그 업무분류로 이번 달에 작성된 문서를 볼 수 있습니다. 문서현황 사용법은 <a href="06-haccp.html#doc-status">⑥편 3. HACCP 문서현황</a>을 보세요.</p>
+
+        <h2 id="calendar">5. 업무 캘린더</h2>
+        <p>검색 영역 오른쪽 위의 <strong>캘린더</strong>를 누르면 할 일 목록 자리에 달력이 나옵니다.</p>
+        <ul>
+            <li>달 표시("2026년 10월" 같은 글자) 양옆 화살표로 이전 달, 다음 달로 갑니다. 오른쪽 <strong>오늘</strong> 버튼은 이번 달로 돌아옵니다.</li>
+            <li>달 표시 아래 범례에 주기 색 칩 4개(일, 주, 월, 년. 이름은 공통코드의 주기 이름)와 상태 배지(임시저장, 결재중, 반려, 승인)가 있습니다.</li>
+            <li>일정 칸은 주기 색으로 칠해지고, 제목 앞에 한 글자 배지가 붙습니다.</li>
+        </ul>
+        <figure class="shot" data-need="캘린더 보기 (범례, 배지 보이게)">
+            <img src="images/07/03-calendar.png" alt="업무 캘린더" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>업무 캘린더</figcaption>
+        </figure>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>배지</th><th>뜻</th></tr></thead>
+                <tbody>
+                <tr><td>임</td><td>임시저장</td></tr>
+                <tr><td>중</td><td>결재중</td></tr>
+                <tr><td>반</td><td>반려</td></tr>
+                <tr><td>승</td><td>승인</td></tr>
+                <tr><td>(없음)</td><td>미작성</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>일정 열기</h3>
+        <ul>
+            <li>하루에 일정이 많으면 "+N건 더보기" 가 나옵니다. 누르면 그날 일정이 모두 펼쳐집니다.</li>
+            <li>일정을 누르면 그 주기에 이미 쓴 문서가 있으면 그 문서가, 없으면 그 날짜 주기로 새 기안 작성 화면이 열립니다. 이후는 <a href="05-approval.html#write">⑤편 3. 기안 작성 화면</a>을 보세요.</li>
+            <li>아직 오지 않은 주기의 일정은 흐리게 보이고 눌리지 않습니다.</li>
+        </ul>
+        <figure class="shot" data-need="&quot;+N건 더보기&quot; 를 눌러 펼친 상태">
+            <img src="images/07/04-calendar-more.png" alt="더보기를 펼친 업무 캘린더" onerror="this.parentElement.classList.add('missing')">
+            <figcaption>더보기를 펼친 업무 캘린더</figcaption>
+        </figure>
+        <div class="note"><strong>주의</strong> 캘린더에는 일, 주, 월, 년 주기 업무만 그려집니다. 수시, 분기, 반기 업무는 리스트 보기에서 확인하세요.</div>
+
+        <h2 id="faq">6. 안내 메시지 풀이</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>화면에 나오는 메시지</th><th>뜻과 해결 방법</th></tr></thead>
+                <tbody>
+                <tr><td>할일 목록을 불러오지 못했습니다.</td><td>서버에서 목록을 받지 못했습니다. 화면을 새로 고치세요. 계속 같으면 관리자에게 문의하세요.</td></tr>
+                <tr><td>등록된 업무가 없습니다.</td><td>할 일 목록이나 업무 캘린더에서 검색 조건에 맞는 업무가 없습니다. <strong>초기화</strong>를 누르고 다시 보세요.</td></tr>
+                <tr><td>임시저장된 문서를 불러오시겠습니까?</td><td>이번 주기에 임시저장한 문서가 있습니다. <a href="#todo">4. 할 일 목록</a>을 보세요.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>수시 업무가 안 보여요</h3>
+        <p>주기 기본값 "전체(수시제외)" 는 수시 업무를 뺍니다. <strong>주기</strong>에서 수시를 고르고 <strong>조회</strong>를 누르세요.</p>
+
+        <h3>카드 건수와 목록 건수가 달라요</h3>
+        <p>상태 카드는 검색 조건과 상관없이 이번 달 기준으로 셉니다. 목록은 검색 조건이 적용된 결과라서 건수가 다를 수 있습니다.</p>
+
+        <h3>다음 주 일정이 눌리지 않아요</h3>
+        <p>아직 오지 않은 주기의 업무는 미리 작성할 수 없습니다. 그 주기가 되면 눌립니다.</p>
+
+        <h3>목록에 아무것도 없어요</h3>
+        <p>전에 넣은 검색 조건이 남아 있을 수 있습니다. <strong>초기화</strong>를 누르세요.</p>
+
+    </main>
+</div>
+</body>
+</html>

@@ -120,4 +120,28 @@ describe('TopGovBar', () => {
 
     expect(await screen.findByText('my-page')).toBeInTheDocument();
   });
+
+  it('opens the user manual in a new tab', () => {
+    act(() => {
+      useAuthStore.setState({
+        isAuthenticated: true,
+        tenantCode: 'TENANT-A',
+        userId: 'tenant_user',
+        role: 'USER',
+        onboardingRequired: false,
+        onboardingStatus: 'COMPLETED',
+      });
+    });
+
+    render(
+        <MemoryRouter>
+          <TopGovBar />
+        </MemoryRouter>,
+    );
+
+    const manualLink = screen.getByRole('link', { name: '매뉴얼' });
+    expect(manualLink).toHaveAttribute('href', '/manual/index.html');
+    expect(manualLink).toHaveAttribute('target', '_blank');
+    expect(manualLink).toHaveAttribute('rel', 'noopener noreferrer');
+  });
 });
