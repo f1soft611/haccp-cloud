@@ -1,7 +1,9 @@
+import type { KeyboardEvent } from 'react';
 import { Box, Typography } from '@mui/material';
 import type { EventProps } from 'react-big-calendar';
 import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
+import { SELECTED_LEGEND_SX } from '../../../dashboard/tenant/utils';
 
 type StatusBadge = {
     label: string;
@@ -21,12 +23,27 @@ const STATUS_BADGES: Record<string, StatusBadge> = {
 };
 const EXPIRATION_BADGE: StatusBadge = { label: '만료', short: '만', color: 'error', outlined: true };
 
-const STATUS_BADGE_LEGEND = [...Object.values(STATUS_BADGES), EXPIRATION_BADGE];
+type WorkCalendarStatusLegendProps = {
+    selected?: string;
+    onSelect?: (status: string) => void;
+};
 
-export function WorkCalendarStatusLegend() {
-    return STATUS_BADGE_LEGEND.map((badge) => (
-        <WorkCalendarStatusBadge key={badge.label} {...badge} />
-    ));
+// 기존 -> 상태 배지 + 만료 배지를 표시만 함 (STATUS_BADGE_LEGEND)
+// 변경 -> onSelect 가 있으면 상태 배지 클릭 시 STATUS_BADGES 키(공통 상태 라벨, 예: 결재진행중)를 넘김, 만료는 표시만
+export function WorkCalendarStatusLegend({ selected, onSelect }: WorkCalendarStatusLegendProps) {
+    return (
+        <>
+            {Object.entries(STATUS_BADGES).map(([status, badge]) => (
+                <WorkCalendarStatusBadge
+                    key={status}
+                    {...badge}
+                    selected={selected === status}
+                    onClick={onSelect ? () => onSelect(status) : undefined}
+                />
+            ))}
+            <WorkCalendarStatusBadge {...EXPIRATION_BADGE} />
+        </>
+    );
 }
 
 function getStatusBadge(approvalStatusType: string | undefined): StatusBadge | null {
@@ -34,16 +51,38 @@ function getStatusBadge(approvalStatusType: string | undefined): StatusBadge | n
     return STATUS_BADGES[label] ?? null;
 }
 
+// 기존 -> label, color, outlined 만 받는 표시용 배지
+// 변경 -> 범례에서 쓸 때 selected(강조), onClick(클릭 + Enter/Space) 추가, 이벤트 칸에서는 넘기지 않음
 export function WorkCalendarStatusBadge({
                                             label,
                                             color,
                                             outlined,
-                                        }: Pick<StatusBadge, 'label' | 'color' | 'outlined'>) {
+                                            selected,
+                                            onClick,
+                                        }: Pick<StatusBadge, 'label' | 'color' | 'outlined'> & {
+    selected?: boolean;
+    onClick?: () => void;
+}) {
     return (
         <Box
             component="span"
             data-status-badge
+            {...(onClick
+                ? {
+                    role: 'button',
+                    tabIndex: 0,
+                    onClick,
+                    onKeyDown: (event: KeyboardEvent) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            onClick();
+                        }
+                    },
+                }
+                : {})}
             sx={{
+                ...(onClick ? { cursor: 'pointer' } : {}),
+                ...(selected ? SELECTED_LEGEND_SX : {}),
                 display: 'inline-block',
                 mr: 0.5,
                 px: 0.5,

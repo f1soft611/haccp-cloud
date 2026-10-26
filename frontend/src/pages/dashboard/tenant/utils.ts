@@ -55,6 +55,13 @@ export function getWorkCycleSx(cycle: string) {
   };
 }
 
+// 선택된 범례 강조 (주기 칩, 상태 배지 공용)
+export const SELECTED_LEGEND_SX = {
+  outline: '2px solid',
+  outlineColor: 'text.primary',
+  outlineOffset: 1,
+};
+
 export function formatDate(value: string): string {
   if (!value) {
     return '-';

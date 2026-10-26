@@ -135,11 +135,22 @@ export function TenantDashboard() {
                 borderColor: 'divider',
               }}
             >
-              <WorkCalendarView
-                events={filteredEvents}
-                viewDate={calendar.viewDate}
-                onNavigate={calendar.setViewDate}
-              />
+                {/* 기존 -> 범례는 표시만 */}
+                {/* 변경 -> 범례 클릭 시 상태 카드처럼 draft, filter 동시 세팅해 즉시 조회, 적용된 값을 다시 클릭하면 해제('') */}
+                <WorkCalendarView
+                    events={filteredEvents}
+                    viewDate={calendar.viewDate}
+                    onNavigate={calendar.setViewDate}
+                    legendFilter={{
+                        cycle: filter.cycle,
+                        status: filter.status,
+                        onSelect: (key, value) => {
+                            const next = filter[key] === value ? '' : value;
+                            setDraft({ ...draft, [key]: next });
+                            setFilter({ ...filter, [key]: next });
+                        },
+                    }}
+                />
             </Paper>
           )}
         </Stack>

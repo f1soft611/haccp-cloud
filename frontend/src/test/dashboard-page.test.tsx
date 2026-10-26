@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { DashboardPage } from '../pages/DashboardPage';
@@ -70,6 +70,34 @@ describe('Dashboard page', () => {
     expect(
       await screen.findByTestId('tenant-dashboard-calendar'),
     ).toBeInTheDocument();
+  });
+
+  it('sets the search filter from a clicked calendar legend and clears it on a second click', async () => {
+    render(
+        <AppProviders>
+          <DashboardPage />
+        </AppProviders>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: '캘린더형' }));
+
+    // 범례를 클릭할 때마다 툴바가 다시 그려지므로 매번 새로 찾는다
+    const legend = () =>
+        within(document.querySelector<HTMLElement>('[data-legend]') as HTMLElement);
+
+    // 주기 칩 라벨은 공통코드(MSW: MONTH -> 월)가 로드된 뒤 '월'
+    fireEvent.click(await legend().findByRole('button', { name: '월' }));
+    expect(screen.getByRole('combobox', { name: /주기/ })).toHaveTextContent('월');
+
+    fireEvent.click(legend().getByRole('button', { name: '월' }));
+    expect(screen.getByRole('combobox', { name: /주기/ })).toHaveTextContent('전체(수시제외)');
+
+    // 결재중 배지 -> 상태 필터 '결재진행중'
+    fireEvent.click(legend().getByRole('button', { name: '결재중' }));
+    expect(screen.getByRole('combobox', { name: /상태/ })).toHaveTextContent('결재진행중');
+
+    // 만료는 표시용, 클릭 불가
+    expect(legend().getByText('만료')).toBeInTheDocument();
+    expect(legend().queryByRole('button', { name: '만료' })).not.toBeInTheDocument();
   });
 
   it('renders the platform admin dashboard top section without the legacy login panel', async () => {
