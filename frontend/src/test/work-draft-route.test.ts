@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveDraftRoute } from '../shared/utils/workDraftRoute';
+import { resolveDraftRoute, resolveExpirationDraftRoute } from '../shared/utils/workDraftRoute';
 
 describe('resolveDraftRoute', () => {
     it('returns null when there is no usable id', () => {
@@ -45,5 +45,25 @@ describe('resolveDraftRoute', () => {
                 '2026-10-02',
             ),
         ).toBe('/approvals/draft/9001?idType=approval');
+    });
+});
+
+describe('resolveExpirationDraftRoute', () => {
+    it('opens a fresh draft with the equipment preselected', () => {
+        expect(
+            resolveExpirationDraftRoute({ workId: '7', equipmentId: '12', materialType: '', certificationUserId: '' }),
+        ).toBe('/approvals/draft/7?idType=work&fresh=true&equipmentId=12');
+    });
+
+    it('opens a fresh draft with the material type preselected', () => {
+        expect(
+            resolveExpirationDraftRoute({ workId: '8', equipmentId: '', materialType: 'MT01', certificationUserId: '' }),
+        ).toBe('/approvals/draft/8?idType=work&fresh=true&materialType=MT01');
+    });
+
+    it('opens a fresh draft with the employee preselected', () => {
+        expect(
+            resolveExpirationDraftRoute({ workId: '9', equipmentId: '', materialType: '', certificationUserId: '33' }),
+        ).toBe('/approvals/draft/9?idType=work&fresh=true&certificationUserId=33');
     });
 });
