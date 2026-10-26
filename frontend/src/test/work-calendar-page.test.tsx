@@ -66,6 +66,7 @@ describe('WorkCalendarPage', () => {
                 { groupCode: 'WF_FORM_CYCLE', code: 'WEEK', codeName: '주간', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
                 { groupCode: 'WF_FORM_CYCLE', code: 'MONTH', codeName: '월간', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
                 { groupCode: 'WF_FORM_CYCLE', code: 'YEAR', codeName: '연간', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '' },
+                { groupCode: 'WF_FORM_CYCLE', code: 'ANYTIME', codeName: '수시', parentCodeName: '', useAt: true, sortOrder: 70, codeDesc: '' },
             ],
         });
     });
@@ -140,6 +141,57 @@ describe('WorkCalendarPage', () => {
         );
     });
 
+    it('shows a written anytime document on its date and opens it when clicked', async () => {
+        const now = new Date();
+        const day10 = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-10`;
+        vi.mocked(listHaccpWorkTodos).mockResolvedValue([
+            {
+                id: 'wc-2',
+                tenantCode: 'TENANT-A',
+                categoryGroupId: '10',
+                categoryCode: 'HA',
+                categoryName: 'HACCP (HA)',
+                categorySortOrder: 1,
+                divisionCode: '002',
+                divisionName: '수시 점검 업무',
+                cycle: 'ANYTIME', cycleName: '수시',
+                title: '수시 점검 업무',
+                active: true,
+                expirationApply: false,
+                approvalApply: true,
+                assigneeIds: [],
+                referenceIds: [],
+                assigneeMapped: true,
+                hasDocument: true,
+                writtenInCycle: false,
+            },
+        ]);
+        vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({
+            instances: [
+                { workId: 'wc-2', cycleDate: day10, approvalId: '950', statusType: 'approved', registeredDate: day10, title: '' },
+            ],
+            displayStartDate: '',
+            expirations: [],
+        });
+
+        render(
+            <AppProviders>
+                <WorkCalendarPage />
+            </AppProviders>,
+        );
+
+        const eventText = await screen.findByText('수시 점검 업무');
+        expect((eventText.closest('.rbc-event') as HTMLElement).style.backgroundColor).toBe(
+            getWorkCycleSx('ANYTIME').bgcolor,
+        );
+
+        fireEvent.click(eventText);
+
+        await waitFor(() =>
+            expect(navigateMock).toHaveBeenCalledWith('/approvals/draft/950?idType=approval'),
+        );
+    });
+
     it('advances to next month label when clicking the next-month button', async () => {
         render(
             <AppProviders>
@@ -187,7 +239,7 @@ describe('WorkCalendarPage', () => {
             const chipLabels = Array.from(
                 document.querySelectorAll('.MuiChip-label'),
             ).map((el) => el.textContent);
-            expect(chipLabels).toEqual(['일간', '주간', '월간', '연간']);
+            expect(chipLabels).toEqual(['일간', '주간', '월간', '연간', '수시']);
         });
         const legendBadges = Array.from(
             document.querySelectorAll('[data-legend] [data-status-badge]'),
@@ -207,7 +259,7 @@ describe('WorkCalendarPage', () => {
         const chipLabels = Array.from(
             document.querySelectorAll('.MuiChip-label'),
         ).map((el) => el.textContent);
-        expect(chipLabels).toEqual(['DAY', 'WEEK', 'MONTH', 'YEAR']);
+        expect(chipLabels).toEqual(['DAY', 'WEEK', 'MONTH', 'YEAR', 'ANYTIME']);
     });
 
     it('shows status badges for temp-saved, in-progress and rejected and approved', async () => {

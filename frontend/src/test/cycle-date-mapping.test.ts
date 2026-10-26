@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { mapExpirationsToCalendarEvents, mapTodosToCalendarEvents } from '../pages/documents/work-calendar/cycleDateMapping';
+import { mapTodosToCalendarEvents } from '../pages/documents/work-calendar/cycleDateMapping';
 import type { TenantTodoCardItem } from '../pages/dashboard/tenant/hooks/useTenantDashboardData';
-import type { HaccpWorkCycleInstance, HaccpWorkExpiration } from '../services/documents/haccpBaseWorkService';
+import type { HaccpWorkCycleInstance } from '../services/documents/haccpBaseWorkService';
 
 // 2026-10-08 목요일 (이번 주 월요일 10-05, 이번 달 1일 10-01)
 const TODAY = new Date(2026, 9, 8);
@@ -176,10 +176,68 @@ describe('mapTodosToCalendarEvents', () => {
     });
 
     // 기존 -> '발생시' 미표시 / 변경 -> 고정 기준일 규칙이 없는 ANYTIME/QUARTER/HALF 미표시
-    it.each(['ANYTIME', 'QUARTER', 'HALF'])('does not place %s items on the calendar', (cycle) => {
+    // 기존 -> ANYTIME/QUARTER/HALF 미표시 / 변경 -> 수시는 작성 문서만 표시하므로 QUARTER/HALF 만 미표시
+    it.each(['QUARTER', 'HALF'])('does not place %s items on the calendar', (cycle) => {
         expect(
             mapTodosToCalendarEvents([buildItem({ cycle })], ...FEB_2026, [], TODAY),
         ).toEqual([]);
+    });
+
+    // 수시: 고정 기준일이 없으므로 작성한 문서만 작성일(report_date) 칸에 표시
+    describe('anytime items', () => {
+        const anytime = () => buildItem({ cycle: 'ANYTIME' });
+
+        it('places each written document on its report date', () => {
+            const events = mapTodosToCalendarEvents(
+                [anytime()], ...OCT_2026,
+                [instance('2026-10-02', 'approved', '901'), instance('2026-10-06', 'in_progress', '902')],
+                TODAY,
+            );
+
+            expect(events.map((event) => [event.date, event.cycleDate, event.item.approvalId])).toEqual([
+                ['2026-10-02', '2026-10-02', '901'],
+                ['2026-10-06', '2026-10-06', '902'],
+            ]);
+            expect(events.every((event) => event.item.writtenInCycle && !event.isFuture)).toBe(true);
+        });
+
+        it('places nothing when there is no document', () => {
+            expect(mapTodosToCalendarEvents([anytime()], ...OCT_2026, [], TODAY)).toEqual([]);
+        });
+
+        it('keeps rejected and temp-saved documents on their report date, not today', () => {
+            const events = mapTodosToCalendarEvents(
+                [anytime()], ...OCT_2026,
+                [instance('2026-10-02', 'rejected', '901'), instance('2026-10-05', 'pre_apply', '902')],
+                TODAY,
+            );
+
+            expect(events.map((event) => event.date)).toEqual(['2026-10-02', '2026-10-05']);
+        });
+
+        it('skips documents outside the visible range or before the display start date', () => {
+            const events = mapTodosToCalendarEvents(
+                [anytime()], ...OCT_2026,
+                [
+                    instance('2026-09-20', 'approved', '901'),
+                    instance('2026-10-02', 'approved', '902'),
+                    instance('2026-10-07', 'approved', '903'),
+                ],
+                TODAY, '2026-10-05',
+            );
+
+            expect(events.map((event) => event.item.approvalId)).toEqual(['903']);
+        });
+
+        it('ignores documents of other works', () => {
+            const events = mapTodosToCalendarEvents(
+                [anytime()], ...OCT_2026,
+                [{ ...instance('2026-10-02', 'approved', '901'), workId: '2' }],
+                TODAY,
+            );
+
+            expect(events).toEqual([]);
+        });
     });
 
     describe('off-range days', () => {
@@ -416,77 +474,5 @@ describe('mapTodosToCalendarEvents', () => {
                 mapTodosToCalendarEvents(items, ...OCT_2026, [], TODAY),
             );
         });
-    });
-});
-
-function expiration(
-    expirationDate: string,
-    overrides: Partial<HaccpWorkExpiration> = {},
-): HaccpWorkExpiration {
-    return {
-        workId: '1',
-        approvalId: '900',
-        expirationDate,
-        equipmentId: '12',
-        materialType: '',
-        certificationUserId: '',
-        targetName: '설비A',
-        ...overrides,
-    };
-}
-
-describe('mapExpirationsToCalendarEvents', () => {
-    it('places an expiration on its date with the target in the title', () => {
-        const events = mapExpirationsToCalendarEvents([buildItem()], [expiration('2026-10-15')], ...OCT_2026);
-
-        expect(events).toHaveLength(1);
-        expect(events[0]).toMatchObject({
-            date: '2026-10-15',
-            cycleDate: '2026-10-15',
-            isFuture: false,
-            expiration: { approvalId: '900', equipmentId: '12' },
-        });
-        expect(events[0].item.title).toBe('만료 | 점검 문서 - 설비A');
-    });
-
-    it('skips expirations outside the visible range', () => {
-        expect(mapExpirationsToCalendarEvents([buildItem()], [expiration('2026-11-15')], ...OCT_2026)).toEqual([]);
-    });
-
-    it('keeps every document of the same target', () => {
-        const events = mapExpirationsToCalendarEvents(
-            [buildItem()],
-            [expiration('2026-10-15'), expiration('2026-10-20', { approvalId: '901' })],
-            ...OCT_2026,
-        );
-
-        expect(events.map((event) => event.expiration?.approvalId)).toEqual(['900', '901']);
-    });
-
-    it('skips expirations whose work is not in the todo list', () => {
-        expect(
-            mapExpirationsToCalendarEvents([buildItem()], [expiration('2026-10-15', { workId: '99' })], ...OCT_2026),
-        ).toEqual([]);
-    });
-
-    it('resolves the material type name when there is no target name', () => {
-        const events = mapExpirationsToCalendarEvents(
-            [buildItem()],
-            [expiration('2026-10-15', { equipmentId: '', materialType: 'MT01', targetName: '' })],
-            ...OCT_2026,
-            (code) => (code === 'MT01' ? '축산물' : code),
-        );
-
-        expect(events[0].item.title).toBe('만료 | 점검 문서 - 축산물');
-    });
-
-    it('shows only the work name when there is no target', () => {
-        const events = mapExpirationsToCalendarEvents(
-            [buildItem()],
-            [expiration('2026-10-15', { equipmentId: '', targetName: '' })],
-            ...OCT_2026,
-        );
-
-        expect(events[0].item.title).toBe('만료 | 점검 문서');
     });
 });

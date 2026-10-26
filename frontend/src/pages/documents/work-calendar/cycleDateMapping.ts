@@ -74,6 +74,7 @@ export function mapTodosToCalendarEvents(
     const minCycleDates: Record<string, string> = displayStart
         ? {
             DAY: displayStartDate,
+            ANYTIME: displayStartDate,
             WEEK: toLocalDateString(
                 new Date(
                     displayStart.getFullYear(),
@@ -184,7 +185,16 @@ export function mapTodosToCalendarEvents(
             return;
         }
 
-        // ANYTIME(수시)·QUARTER·HALF는 고정 기준일 규칙이 없어 캘린더에 표시하지 않는다. (분기/반기 계산은 범위 밖)
+        // 수시: 해야 할 날이 없으므로 작성한 문서만 작성일 칸에 표시 (문서 날짜를 현재 주기로 넘겨 미래 표시 안 함)
+        if (cycle === 'ANYTIME') {
+            cycleInstances
+            .filter((instance) => instance.workId === item.id)
+            .forEach((instance) => push(instance.cycleDate, item, instance.cycleDate, instance.cycleDate));
+            return;
+        }
+
+        // 기존 -> ANYTIME(수시)·QUARTER·HALF는 고정 기준일 규칙이 없어 캘린더에 표시하지 않는다. (분기/반기 계산은 범위 밖)
+        // 변경 -> QUARTER, HALF는 고정 기준일 규칙이 없어 캘린더에 표시하지 않는다. (분기/반기 계산은 범위 밖)
     });
 
     return events;

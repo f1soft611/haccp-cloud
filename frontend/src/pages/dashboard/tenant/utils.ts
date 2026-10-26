@@ -24,6 +24,14 @@ export function getWorkCycleSx(cycle: string) {
     };
   }
 
+  if (cycle === 'ANYTIME') {
+    return {
+      bgcolor: 'rgba(139, 92, 246, 0.14)',
+      color: '#6d28d9',
+      border: '1px solid rgba(139, 92, 246, 0.32)',
+    };
+  }
+
   return {
     bgcolor: 'rgba(16, 185, 129, 0.12)',
     color: '#047857',

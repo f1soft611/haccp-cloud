@@ -3,9 +3,12 @@ import type { EventProps } from 'react-big-calendar';
 import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
 
-// 기존 -> color: 'info' | 'warning' | 'error'
-// 변경 -> 승인 배지용 'success' 추가
-type StatusBadge = { label: string; short: string; color: 'info' | 'warning' | 'error' | 'success' };
+type StatusBadge = {
+    label: string;
+    short: string;
+    color: 'info' | 'warning' | 'error' | 'success';
+    outlined?: boolean;
+};
 
 // 공통 상태 라벨 → 캘린더 배지 (미작성은 배지 없음, 결재진행중은 칸이 좁아 '결재중')
 // 기존 -> label만 (범례·이벤트 공용)
@@ -16,7 +19,7 @@ const STATUS_BADGES: Record<string, StatusBadge> = {
     반려: { label: '반려', short: '반', color: 'error' },
     승인: { label: '승인', short: '승', color: 'success' },
 };
-const EXPIRATION_BADGE: StatusBadge = { label: '만료', short: '만', color: 'error' };
+const EXPIRATION_BADGE: StatusBadge = { label: '만료', short: '만', color: 'error', outlined: true };
 
 const STATUS_BADGE_LEGEND = [...Object.values(STATUS_BADGES), EXPIRATION_BADGE];
 
@@ -31,7 +34,11 @@ function getStatusBadge(approvalStatusType: string | undefined): StatusBadge | n
     return STATUS_BADGES[label] ?? null;
 }
 
-export function WorkCalendarStatusBadge({ label, color }: Pick<StatusBadge, 'label' | 'color'>) {
+export function WorkCalendarStatusBadge({
+                                            label,
+                                            color,
+                                            outlined,
+                                        }: Pick<StatusBadge, 'label' | 'color' | 'outlined'>) {
     return (
         <Box
             component="span"
@@ -43,9 +50,19 @@ export function WorkCalendarStatusBadge({ label, color }: Pick<StatusBadge, 'lab
                 borderRadius: 0.5,
                 fontSize: 10,
                 fontWeight: 700,
-                lineHeight: 1.6,
-                bgcolor: `${color}.main`,
-                color: `${color}.contrastText`,
+                ...(outlined
+                    ? {
+                        lineHeight: '14px',
+                        border: '1px solid',
+                        borderColor: `${color}.main`,
+                        bgcolor: 'background.paper',
+                        color: `${color}.main`,
+                    }
+                    : {
+                        lineHeight: 1.6,
+                        bgcolor: `${color}.main`,
+                        color: `${color}.contrastText`,
+                    }),
             }}
         >
             {label}
@@ -63,9 +80,9 @@ export function WorkCalendarEventContent({
         : getStatusBadge(event.resource.approvalStatusType);
     return (
         <Typography variant="caption" noWrap sx={{ display: 'block' }}>
-            {/* 기존 -> {badge && <WorkCalendarStatusBadge {...badge} />} */}
-            {/* 변경 -> 이벤트 칸에서는 한 글자(임·중·반·승)로 표시 */}
-            {badge && <WorkCalendarStatusBadge label={badge.short} color={badge.color} />}
+            {badge && (
+                <WorkCalendarStatusBadge label={badge.short} color={badge.color} outlined={badge.outlined} />
+            )}
             <span>{event.title}</span>
         </Typography>
     );
