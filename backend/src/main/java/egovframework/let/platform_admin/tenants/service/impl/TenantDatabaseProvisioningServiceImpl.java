@@ -126,8 +126,11 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
             upsertTenantMenuCatalog(tenantJdbcUrl, expandedMenuCodes);
             copyCommonCodes(tenantJdbcUrl, tenantId);
 
+            // 기존 -> 분류 스크립트도 optionalScripts 에 포함해 emptyMap 으로 실행
+            // 변경 -> 분류 스크립트는 plan_code 조건이 있어 bootstrapVariables 로 실행
+            runScriptSafely(tenantJdbcUrl, tenantDraftingCategoryFile, bootstrapVariables);
+
             List<String> optionalScripts = Arrays.asList(
-                    tenantDraftingCategoryFile,
                     tenantElectronicApprovalFile,
                     tenantElectronicApprovalLikeFile,
                     tenantAttachmentFile
