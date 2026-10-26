@@ -39,6 +39,15 @@ public class HaccpWorkCycleDates {
         if (WEEKLY.contains(term)) {
             return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         }
+        if ("QUARTER".equals(term)) {
+            return LocalDate.of(date.getYear(), (date.getMonthValue() - 1) / 3 * 3 + 1, 1);
+        }
+        if ("HALF".equals(term)) {
+            return LocalDate.of(date.getYear(), date.getMonthValue() <= 6 ? 1 : 7, 1);
+        }
+        if ("YEAR".equals(term)) {
+            return date.withDayOfYear(1);
+        }
         return date;
     }
 
