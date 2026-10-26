@@ -8,14 +8,14 @@ const TODAY = new Date(2026, 9, 8);
 // 2026-10-12 월요일 (이번 주 월요일 10-12, 이번 달 1일 10-01)
 const TODAY_1012 = new Date(2026, 9, 12);
 
-// 기존 -> (year, monthIndex0)로 보는 달 지정
-// 변경 -> 달력에 보이는 범위(일요일 ~ 토요일)로 지정
 const JAN_2026 = ['2025-12-28', '2026-01-31'] as const;
 const FEB_2026 = ['2026-02-01', '2026-02-28'] as const;
 const SEP_2026 = ['2026-08-30', '2026-10-03'] as const;
 const OCT_2026 = ['2026-09-27', '2026-10-31'] as const;
 const NOV_2026 = ['2026-11-01', '2026-12-05'] as const;
 const DEC_2026 = ['2026-11-29', '2027-01-02'] as const;
+const APR_2026 = ['2026-03-29', '2026-05-02'] as const;
+const JUL_2026 = ['2026-06-28', '2026-08-01'] as const;
 
 function buildItem(
     overrides: Partial<TenantTodoCardItem> = {},
@@ -175,12 +175,62 @@ describe('mapTodosToCalendarEvents', () => {
         expect(mapTodosToCalendarEvents([item], ...FEB_2026, [], TODAY)).toEqual([]);
     });
 
-    // 기존 -> '발생시' 미표시 / 변경 -> 고정 기준일 규칙이 없는 ANYTIME/QUARTER/HALF 미표시
-    // 기존 -> ANYTIME/QUARTER/HALF 미표시 / 변경 -> 수시는 작성 문서만 표시하므로 QUARTER/HALF 만 미표시
-    it.each(['QUARTER', 'HALF'])('does not place %s items on the calendar', (cycle) => {
-        expect(
-            mapTodosToCalendarEvents([buildItem({ cycle })], ...FEB_2026, [], TODAY),
-        ).toEqual([]);
+    // 기존 -> QUARTER/HALF 미표시 / 변경 -> 달력 기준 분기(1, 4, 7, 10월 1일), 반기(1, 7월 1일)로 표시
+    describe('quarter and half items', () => {
+        it('places the current quarter on today and past quarters on their 1st', () => {
+            const item = buildItem({ cycle: 'QUARTER' });
+
+            expect(mapTodosToCalendarEvents([item], ...OCT_2026, [], TODAY)).toMatchObject([
+                { date: '2026-10-08', cycleDate: '2026-10-01', isFuture: false },
+            ]);
+            expect(mapTodosToCalendarEvents([item], ...APR_2026, [], TODAY)).toMatchObject([
+                { date: '2026-04-01', cycleDate: '2026-04-01', isFuture: false },
+            ]);
+            expect(mapTodosToCalendarEvents([item], ...JUL_2026, [], TODAY)).toMatchObject([
+                { date: '2026-07-01', cycleDate: '2026-07-01', isFuture: false },
+            ]);
+            expect(mapTodosToCalendarEvents([item], ...FEB_2026, [], TODAY)).toEqual([]);
+            expect(mapTodosToCalendarEvents([item], ...DEC_2026, [], TODAY)).toMatchObject([
+                { date: '2027-01-01', cycleDate: '2027-01-01', isFuture: true },
+            ]);
+        });
+
+        it('places the current half on today and past halves on their 1st', () => {
+            const item = buildItem({ cycle: 'HALF' });
+
+            expect(mapTodosToCalendarEvents([item], ...OCT_2026, [], TODAY)).toMatchObject([
+                { date: '2026-10-08', cycleDate: '2026-07-01', isFuture: false },
+            ]);
+            expect(mapTodosToCalendarEvents([item], ...JAN_2026, [], TODAY)).toMatchObject([
+                { date: '2026-01-01', cycleDate: '2026-01-01', isFuture: false },
+            ]);
+            // 진행 중 반기(07-01) 미작성은 오늘 칸이라 7월 화면에는 없다
+            expect(mapTodosToCalendarEvents([item], ...JUL_2026, [], TODAY)).toEqual([]);
+            expect(mapTodosToCalendarEvents([item], ...APR_2026, [], TODAY)).toEqual([]);
+        });
+
+        it('pins a submitted current half on its cycle start date', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'HALF' })], ...JUL_2026,
+                [instance('2026-07-01', 'approved', '900', '2026-10-02')], TODAY,
+            );
+
+            expect(events).toMatchObject([
+                { date: '2026-07-01', cycleDate: '2026-07-01', item: { approvalId: '900', writtenInCycle: true } },
+            ]);
+        });
+
+        it('shows quarters and halves from the cycle containing the display start date', () => {
+            const quarter = buildItem({ cycle: 'QUARTER' });
+            const half = buildItem({ cycle: 'HALF' });
+
+            expect(mapTodosToCalendarEvents([quarter], ...APR_2026, [], TODAY, '2026-05-10'))
+            .toMatchObject([{ cycleDate: '2026-04-01' }]);
+            expect(mapTodosToCalendarEvents([quarter], ...APR_2026, [], TODAY, '2026-07-02')).toEqual([]);
+            expect(mapTodosToCalendarEvents([half], ...JAN_2026, [], TODAY, '2026-03-01'))
+            .toMatchObject([{ cycleDate: '2026-01-01' }]);
+            expect(mapTodosToCalendarEvents([half], ...JAN_2026, [], TODAY, '2026-07-02')).toEqual([]);
+        });
     });
 
     // 수시: 고정 기준일이 없으므로 작성한 문서만 작성일(report_date) 칸에 표시
