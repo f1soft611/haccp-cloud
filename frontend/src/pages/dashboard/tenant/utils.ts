@@ -24,6 +24,22 @@ export function getWorkCycleSx(cycle: string) {
     };
   }
 
+  if (cycle === 'QUARTER') {
+    return {
+      bgcolor: 'rgba(14, 165, 233, 0.14)',
+      color: '#0369a1',
+      border: '1px solid rgba(14, 165, 233, 0.3)',
+    };
+  }
+
+  if (cycle === 'HALF') {
+    return {
+      bgcolor: 'rgba(236, 72, 153, 0.12)',
+      color: '#be185d',
+      border: '1px solid rgba(236, 72, 153, 0.28)',
+    };
+  }
+
   if (cycle === 'ANYTIME') {
     return {
       bgcolor: 'rgba(139, 92, 246, 0.14)',
