@@ -110,6 +110,7 @@ export function HaccpDocumentSearchPanel(props: {
               })
             }
             sx={{ minWidth: 220 }}
+            slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
           >
             <MenuItem value="">전체</MenuItem>
             {workDivisionOptions.map((division) => (
