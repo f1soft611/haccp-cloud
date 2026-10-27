@@ -102,8 +102,7 @@ th, td { padding: 8px 10px; border: 1px solid var(--border); text-align: left; v
 th { background: var(--code-bg); }
 
 /* 스크린샷 자리. 이미지가 없으면 onerror 가 figure 에 missing 을 붙인다 */
-/*figure.shot { margin: 16px 0; }*/
-figure.shot { display: none; margin: 16px 0; }
+figure.shot { margin: 16px 0; }
 figure.shot img { display: block; border: 1px solid var(--border); border-radius: 8px; }
 figure.shot figcaption { margin-top: 6px; color: var(--muted); font-size: 13px; }
 figure.shot.missing img { display: none; }

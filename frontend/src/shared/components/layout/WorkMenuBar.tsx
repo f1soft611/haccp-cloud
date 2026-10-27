@@ -134,7 +134,7 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
         zIndex: 20,
       }}
     >
-      <Container>
+      <Container maxWidth="xl">
         {visibleGroups.length > 0 ? (
           <Stack
             direction="row"
@@ -257,13 +257,13 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                   : '0 10px 24px rgba(15,23,42,0.10)',
               }}
             >
-              <Container>
+              <Container maxWidth="xl">
                 <Box
                   sx={{
                     display: 'grid',
                     gridTemplateColumns: {
                       xs: '1fr',
-                      md: 'repeat(3, minmax(0, 1fr))',
+                      md: 'repeat(4, minmax(0, 1fr))',
                     },
                     py: 1,
                   }}

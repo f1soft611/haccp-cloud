@@ -13,7 +13,9 @@ import {
 } from '@mui/material';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 
-const STATUS_OPTIONS = ['전체', '임시저장', '결재중', '승인', '반송'];
+// 기존 -> ['전체', '임시저장', '결재중', '승인', '반려']
+// 변경 -> 상태 라벨을 '결재진행중'으로 통일
+const STATUS_OPTIONS = ['전체', '임시저장', '결재진행중', '승인', '반려'];
 const PARTICIPANT_OPTIONS = ['기안자', '결재자', '참조자'];
 
 export function HaccpDocumentSearchPanel(props: {
@@ -108,6 +110,7 @@ export function HaccpDocumentSearchPanel(props: {
               })
             }
             sx={{ minWidth: 220 }}
+            slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
           >
             <MenuItem value="">전체</MenuItem>
             {workDivisionOptions.map((division) => (
@@ -210,7 +213,9 @@ export function HaccpDocumentSearchPanel(props: {
                 <TextField
                   size="small"
                   type="date"
-                  label="시작일"
+                  // 기존 -> 시작일
+                  // 변경 -> 기안일 시작
+                  label="기안일 시작"
                   value={value.startDate}
                   onChange={(event) =>
                     onChange({
@@ -223,7 +228,9 @@ export function HaccpDocumentSearchPanel(props: {
                 <TextField
                   size="small"
                   type="date"
-                  label="종료일"
+                  // 기존 -> 종료일
+                  // 변경 -> 기안일 종료
+                  label="기안일 종료"
                   value={value.endDate}
                   onChange={(event) =>
                     onChange({

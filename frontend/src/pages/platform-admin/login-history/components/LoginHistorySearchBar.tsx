@@ -76,6 +76,7 @@ export function LoginHistorySearchBar(props: {
           }
           size="small"
           sx={{ minWidth: 160 }}
+          slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
         >
           <MenuItem value="">전체</MenuItem>
           <MenuItem value="Y">성공</MenuItem>

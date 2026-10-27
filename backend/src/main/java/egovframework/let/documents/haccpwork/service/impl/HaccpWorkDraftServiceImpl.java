@@ -330,15 +330,18 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         }
 
         String normalized = status.trim().toLowerCase();
-        if ("결재중".equals(normalized) || "in_progress".equals(normalized)) {
+        // 기존 -> "결재중".equals(normalized) || "in_progress".equals(normalized)
+        // 변경 -> 상태 라벨을 '결재진행중'으로 통일
+        if ("결재진행중".equals(normalized) || "in_progress".equals(normalized)) {
             return "in_progress";
         }
         if ("승인".equals(normalized) || "approved".equals(normalized)) {
             return "approved";
         }
+        // 기존 -> "반송".equals(normalized) || "반려".equals(normalized)
+        // 변경 -> "반려".equals(normalized) 만 남김
         if (
-                "반송".equals(normalized)
-                        || "반려".equals(normalized)
+                "반려".equals(normalized)
                         || "rejected".equals(normalized)
                         || "returned".equals(normalized)
         ) {

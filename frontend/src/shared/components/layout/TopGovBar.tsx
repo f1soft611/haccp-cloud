@@ -214,17 +214,17 @@ export function TopGovBar() {
           borderColor: isDarkMode ? 'rgba(251,191,36,0.2)' : 'divider',
         }}
       >
-        <Container sx={{ py: 0.75 }}>
-          <Typography
-            variant="caption"
-            sx={{ display: 'block', textAlign: 'left' }}
-          >
-            {APP_LABELS.header.govNotice}
-          </Typography>
-        </Container>
+          <Container maxWidth="xl" sx={{ py: 0.75 }}>
+              <Typography
+                variant="caption"
+                sx={{ display: 'block', textAlign: 'left' }}
+              >
+                {APP_LABELS.header.govNotice}
+              </Typography>
+          </Container>
       </Box>
 
-      <Container>
+      <Container maxWidth="xl">
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           alignItems={{ xs: 'stretch', md: 'center' }}
@@ -284,6 +284,7 @@ export function TopGovBar() {
               startIcon={<SearchRoundedIcon fontSize="small" />}
               aria-label={APP_LABELS.header.searchAction}
               sx={{
+                  display: 'none',
                 borderRadius: 999,
                 px: 1.5,
                 py: 0.45,

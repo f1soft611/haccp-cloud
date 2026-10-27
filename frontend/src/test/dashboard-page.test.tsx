@@ -91,8 +91,8 @@ describe('Dashboard page', () => {
     fireEvent.click(legend().getByRole('button', { name: '월' }));
     expect(screen.getByRole('combobox', { name: /주기/ })).toHaveTextContent('전체(수시제외)');
 
-    // 결재중 배지 -> 상태 필터 '결재진행중'
-    fireEvent.click(legend().getByRole('button', { name: '결재중' }));
+    // 결재진행중 배지 -> 상태 필터 '결재진행중'
+    fireEvent.click(legend().getByRole('button', { name: '결재진행중' }));
     expect(screen.getByRole('combobox', { name: /상태/ })).toHaveTextContent('결재진행중');
 
     // 만료는 표시용, 클릭 불가

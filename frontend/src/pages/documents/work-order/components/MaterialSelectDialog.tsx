@@ -103,6 +103,7 @@ export function MaterialSelectDialog(props: {
                     value={draft.itemType}
                     onChange={(event) => setDraft((prev) => ({ ...prev, itemType: event.target.value }))}
                     sx={{ minWidth: 140 }}
+                    slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
                 >
                     <MenuItem value="">전체</MenuItem>
                     {WORK_ORDER_ITEM_TYPES.map((code) => (

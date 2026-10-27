@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { normalizePlatformTenantCode } from '../tenant/platformTenant';
 
-export type UserRole = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'USER';
+export type UserRole = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'TENANT_USER' | 'USER';
 export type OnboardingStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
-const USER_ROLES = ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'USER'] as const;
+const USER_ROLES = ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'TENANT_USER', 'USER'] as const;
 
 function isUserRole(value: unknown): value is UserRole {
   return (

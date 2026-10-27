@@ -365,7 +365,7 @@ export function AppRoutes() {
           <Route
             path="/docs/portal"
             element={
-              <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN']}>
+              <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'TENANT_ADMIN', 'TENANT_USER']}>
                 <HaccpPortalPage />
               </ProtectedRoute>
             }

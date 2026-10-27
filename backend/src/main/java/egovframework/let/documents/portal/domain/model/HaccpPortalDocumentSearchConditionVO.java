@@ -21,4 +21,16 @@ public class HaccpPortalDocumentSearchConditionVO implements Serializable {
 
     @Schema(description = "테넌트 코드")
     private String tenantCode;
+
+    @Schema(description = "본인 담당 업무만 조회 여부")
+    private boolean onlyAssigned;
+
+    @Schema(description = "로그인 계정 ID")
+    private Long actorLoginId;
+
+    @Schema(description = "사용자 ID")
+    private Long actorUserId;
+
+    @Schema(description = "로그인 코드")
+    private String actorLoginCode;
 }

@@ -498,7 +498,7 @@ public class HaccpWorkApiController {
 
     @Operation(
             summary = "결재 상태 업데이트",
-            description = "검토 승인/반송/최종 승인 이벤트에 따라 결재선 app_status와 결재 메인 상태를 갱신한다",
+            description = "검토 승인/반려/최종 승인 이벤트에 따라 결재선 app_status와 결재 메인 상태를 갱신한다",
             security = {@SecurityRequirement(name = "Authorization")},
             tags = {"HaccpWorkApiController"}
     )

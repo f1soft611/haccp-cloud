@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { HaccpDocumentManagementPage } from '../pages/documents/haccp-doc/HaccpDocumentManagementPage';
 import { listHaccpBaseCategories } from '../services/documents/haccpBaseCategoryService';
-import { listHaccpBaseWorks } from '../services/documents/haccpBaseWorkService';
+// 기존 -> import { listHaccpBaseWorks } from '../services/documents/haccpBaseWorkService';
+// 변경 -> getHaccpWorkDraftTemplate 추가
+import {
+  getHaccpWorkDraftTemplate,
+  listHaccpBaseWorks,
+} from '../services/documents/haccpBaseWorkService';
 import { listHaccpDocuments } from '../services/documents/haccpDocumentService';
 import { useAuthStore } from '../shared/store/authStore';
 
@@ -15,8 +20,11 @@ vi.mock('../services/documents/haccpBaseCategoryService', () => ({
   listHaccpBaseCategories: vi.fn(),
 }));
 
+// 기존 -> listHaccpBaseWorks 만 mock
+// 변경 -> 작성 버튼(useOpenWorkDraft)이 쓰는 getHaccpWorkDraftTemplate 도 mock
 vi.mock('../services/documents/haccpBaseWorkService', () => ({
   listHaccpBaseWorks: vi.fn(),
+  getHaccpWorkDraftTemplate: vi.fn(),
 }));
 
 function formatDate(date: Date): string {
@@ -34,18 +42,20 @@ describe('HaccpDocumentManagementPage', () => {
         {
           id: '1',
           approvalId: 'APPR-202607-001',
+          workId: '101',
           workType: 'HACCP (HA)',
           workDivision: 'CCP-1B 검증기록',
           draftNumber: 'HA-202607-001',
           title: '원재료 입고 점검일지',
           writer: '고대성',
-          status: '결재중',
+          status: '결재진행중',
           draftedAt: '2026-07-19',
           updatedAt: '2026-07-20 09:12',
         },
         {
           id: '2',
           approvalId: 'APPR-202607-002',
+          workId: '102',
           workType: 'HACCP (선별)',
           workDivision: '선별공정 CCP 점검표',
           draftNumber: 'SE-202607-014',
@@ -117,6 +127,11 @@ describe('HaccpDocumentManagementPage', () => {
       },
     ]);
 
+    vi.mocked(getHaccpWorkDraftTemplate).mockResolvedValue({
+      approvalId: '',
+      approvalStatusType: '',
+    } as Awaited<ReturnType<typeof getHaccpWorkDraftTemplate>>);
+
     useAuthStore.setState({
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
@@ -132,7 +147,7 @@ describe('HaccpDocumentManagementPage', () => {
     window.history.pushState(
       {},
       '',
-      '/docs/haccp-doc?workType=HACCP%20(HA)&workDivisionId=w-1&workDivision=CCP-1B%20%EA%B2%80%EC%A6%9D%EA%B8%B0%EB%A1%9D&draftNumber=HA-202607-001&title=%EC%A0%90%EA%B2%80&writer=%EA%B3%A0%EB%8C%80%EC%84%B1&status=%EA%B2%B0%EC%9E%AC%EC%A4%91&startDate=2026-07-01&endDate=2026-07-20',
+      '/docs/haccp-doc?workType=HACCP%20(HA)&workDivisionId=w-1&workDivision=CCP-1B%20%EA%B2%80%EC%A6%9D%EA%B8%B0%EB%A1%9D&draftNumber=HA-202607-001&title=%EC%A0%90%EA%B2%80&writer=%EA%B3%A0%EB%8C%80%EC%84%B1&status=%EA%B2%B0%EC%9E%AC%EC%A7%84%ED%96%89%EC%A4%91&startDate=2026-07-01&endDate=2026-07-20',
     );
 
     render(
@@ -153,8 +168,8 @@ describe('HaccpDocumentManagementPage', () => {
     expect(screen.getByLabelText('기안번호')).toHaveValue('HA-202607-001');
     expect(screen.getByLabelText('제목')).toHaveValue('점검');
     expect(screen.getByLabelText('작성자')).toHaveValue('고대성');
-    expect(screen.getByLabelText('시작일')).toHaveValue('2026-07-01');
-    expect(screen.getByLabelText('종료일')).toHaveValue('2026-07-20');
+    expect(screen.getByLabelText('기안일 시작')).toHaveValue('2026-07-01');
+    expect(screen.getByLabelText('기안일 종료')).toHaveValue('2026-07-20');
 
     await waitFor(() => {
       expect(
@@ -174,7 +189,7 @@ describe('HaccpDocumentManagementPage', () => {
         title: '점검',
         writer: '고대성',
         participantType: undefined,
-        status: '결재중',
+        status: '결재진행중',
         startDate: '2026-07-01',
         endDate: '2026-07-20',
       });
@@ -198,8 +213,8 @@ describe('HaccpDocumentManagementPage', () => {
     expect(
       screen.getByRole('heading', { name: 'HACCP 문서관리' }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText('시작일')).toHaveValue(expectedStartDate);
-    expect(screen.getByLabelText('종료일')).toHaveValue(expectedEndDate);
+    expect(screen.getByLabelText('기안일 시작')).toHaveValue(expectedStartDate);
+    expect(screen.getByLabelText('기안일 종료')).toHaveValue(expectedEndDate);
 
     await waitFor(() => {
       expect(listHaccpDocuments).toHaveBeenCalled();
@@ -316,5 +331,32 @@ describe('HaccpDocumentManagementPage', () => {
     const detailParams = new URLSearchParams(window.location.search);
     expect(detailParams.get('idType')).toBe('approval');
     expect(detailParams.get('returnTo')).toBe(expectedReturnTo);
+  });
+
+  it('opens new work draft with returnTo when clicking write button', async () => {
+    window.history.pushState({}, '', '/docs/haccp-doc?title=%EC%A0%90%EA%B2%80');
+
+    render(
+      <AppProviders>
+        <HaccpDocumentManagementPage />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByText('원재료 입고 점검일지')).toBeInTheDocument();
+
+    const expectedReturnTo = `/docs/haccp-doc${window.location.search}`;
+    const writeButtons = document.querySelectorAll(
+      'button[aria-label="작성하러 가기"]',
+    );
+    expect(writeButtons.length).toBe(2);
+    fireEvent.click(writeButtons[0]);
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/approvals/draft/101');
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get('idType')).toBe('work');
+    expect(params.get('returnTo')).toBe(expectedReturnTo);
   });
 });

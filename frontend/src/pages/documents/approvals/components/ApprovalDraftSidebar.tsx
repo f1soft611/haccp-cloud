@@ -58,7 +58,7 @@ function getStatusLabel(value: string): string {
     return '확인';
   }
   if (value === 'returned') {
-    return '반송';
+    return '반려';
   }
   return '대기';
 }

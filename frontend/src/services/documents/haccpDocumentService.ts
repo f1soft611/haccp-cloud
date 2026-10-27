@@ -3,12 +3,15 @@ import { apiClient } from '../api/apiClient';
 export type HaccpDocumentItem = {
   id: string;
   approvalId: string;
+  workId: string;
   workType: string;
   workDivision: string;
   draftNumber: string;
   title: string;
   writer: string;
-  status: '임시저장' | '결재중' | '승인' | '반송';
+  // 기존 -> status: '임시저장' | '결재중' | '승인' | '반려'
+  // 변경 -> 상태 라벨을 '결재진행중'으로 통일
+  status: '임시저장' | '결재진행중' | '승인' | '반려';
   draftedAt: string;
   updatedAt: string;
 };
@@ -73,14 +76,18 @@ function normalizeText(value: unknown): string {
 
 function normalizeStatus(value: unknown): HaccpDocumentItem['status'] {
   const normalized = normalizeText(value);
-  if (normalized === '결재중') {
-    return '결재중';
+  // 기존 -> normalized === '결재중' 이면 '결재중'
+  // 변경 -> normalized === '결재진행중' 이면 '결재진행중'
+  if (normalized === '결재진행중') {
+    return '결재진행중';
   }
   if (normalized === '승인') {
     return '승인';
   }
-  if (normalized === '반송' || normalized === '반려') {
-    return '반송';
+  // 기존 -> normalized === '반송' || normalized === '반려' 이면 '반송'
+  // 변경 -> normalized === '반려' 이면 '반려'
+  if (normalized === '반려') {
+    return '반려';
   }
   return '임시저장';
 }
@@ -107,6 +114,7 @@ function normalizeItem(raw: RawHaccpDocumentItem): HaccpDocumentItem {
   return {
     id: rowId,
     approvalId,
+    workId: draftingWorkCategoryId,
     workType: normalizeText(raw.categoryName ?? raw.categoryNm ?? raw.cataName),
     workDivision: normalizeText(
       raw.divisionName ?? raw.codeName ?? raw.code_name,

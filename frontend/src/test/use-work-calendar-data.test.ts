@@ -116,4 +116,41 @@ describe('useWorkCalendarData', () => {
         // 10월 월주기(기준일 10-01)는 표시 시작일(11-01)이 속한 주기보다 이르므로 제외
         await waitFor(() => expect(result.current.events).toEqual([]));
     });
+
+    it('never renders events before the cycle query resolves', async () => {
+        useAuthStore.setState({ tenantCode: 'TENANT-FLICKER' });
+        let resolveCycles: (value: Awaited<ReturnType<typeof listHaccpWorkTodoCycles>>) => void = () => {};
+        vi.mocked(listHaccpWorkTodoCycles).mockReturnValue(
+            new Promise((resolve) => {
+                resolveCycles = resolve;
+            }),
+        );
+        const renderedEventCounts: number[] = [];
+        const { result } = renderHook(
+            () => {
+                const data = useWorkCalendarData();
+                renderedEventCounts.push(data.events.length);
+                return data;
+            },
+            { wrapper: AppProviders },
+        );
+
+        await waitFor(() => expect(listHaccpWorkTodos).toHaveBeenCalled());
+        // 업무 목록 응답이 반영될 시간을 준다 (Date 만 fake 이므로 setTimeout 은 실제 동작)
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+
+        // 주기 조회 전: 로딩 중이고 이벤트 없음
+        expect(result.current.isLoading).toBe(true);
+        expect(result.current.events).toEqual([]);
+
+        // 표시 시작일(11-01) 이전인 10월 월주기는 끝까지 그려지지 않아야 한다
+        await act(async () => {
+            resolveCycles({ instances: [], displayStartDate: '2026-11-01', expirations: [] });
+        });
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        expect(renderedEventCounts.every((count) => count === 0)).toBe(true);
+    });
 });

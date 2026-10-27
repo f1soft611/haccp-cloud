@@ -53,6 +53,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
       value={value[key]}
       onChange={(event) => onChange({ ...value, [key]: event.target.value })}
       sx={{ minWidth }}
+      slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
     >
       <MenuItem value="">전체</MenuItem>
       {options.map((option) => (
@@ -103,6 +104,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
               value={value.cycle}
               onChange={(event) => onChange({ ...value, cycle: event.target.value })}
               sx={{ minWidth: 120 }}
+              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
           >
             <MenuItem value="">전체(수시제외)</MenuItem>
             {cycleOptions.map((option) => (

@@ -587,9 +587,11 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             case "review_return":
                 targetSeq = REVIEWER_SEQ;
                 lineStatus = "returned";
-                lineOption = "반송";
+                // 기존 -> lineOption/mainStatusName = "반송"
+                // 변경 -> "반려"
+                lineOption = "반려";
                 mainStatus = "rejected";
-                mainStatusName = "반송";
+                mainStatusName = "반려";
                 endStatus = "rejected";
                 clearDownstreamLines = true;
                 break;
@@ -604,9 +606,11 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             case "final_return":
                 targetSeq = APPROVER_SEQ;
                 lineStatus = "returned";
-                lineOption = "반송";
+                // 기존 -> lineOption/mainStatusName = "반송"
+                // 변경 -> "반려"
+                lineOption = "반려";
                 mainStatus = "rejected";
-                mainStatusName = "반송";
+                mainStatusName = "반려";
                 endStatus = "rejected";
                 clearFinalOwnerLine = true;
                 break;

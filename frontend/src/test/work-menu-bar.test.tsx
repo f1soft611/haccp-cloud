@@ -116,6 +116,7 @@ const renderLayoutWithRole = (
       '/document-history',
     ],
     TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
+    TENANT_USER: ['/dashboard', '/documents'],
     USER: ['/dashboard', '/documents'],
   };
 

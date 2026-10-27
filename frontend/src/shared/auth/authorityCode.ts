@@ -5,6 +5,7 @@ export type AuthorityCode = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'TENANT_USER';
 const AUTHORITY_CODE_BY_ROLE: Record<UserRole, AuthorityCode> = {
   PLATFORM_ADMIN: 'PLATFORM_ADMIN',
   TENANT_ADMIN: 'TENANT_ADMIN',
+  TENANT_USER: 'TENANT_USER',
   USER: 'TENANT_USER',
 };
 

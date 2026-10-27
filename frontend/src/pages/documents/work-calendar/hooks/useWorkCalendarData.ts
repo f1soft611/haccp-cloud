@@ -57,27 +57,30 @@ export function useCalendarMonthEvents(monthDate: Date) {
     const fromDate = monthFrom < yearFrom ? monthFrom : yearFrom;
     const toDate = rangeEnd;
 
-    // 기존 -> data: cycleInstances = [] / 변경 -> instances + 표시 시작일
-    const { data: cycles } = useQuery({
+    // 주기 조회 로딩 상태도 받아 전체 로딩에 합침
+    const { data: cycles, isLoading: isCyclesLoading } = useQuery({
         queryKey: ['haccp-work-todo-cycles', tenantCode, fromDate, toDate],
         queryFn: () => listHaccpWorkTodoCycles({ tenantCode, fromDate, toDate }),
         retry: 0,
     });
 
     const events = useMemo<WorkCalendarEvent[]>(() => {
+        if (!cycles) {
+            return [];
+        }
         const mapped = [
             ...mapTodosToCalendarEvents(
                 todoDocuments,
                 rangeStart,
                 rangeEnd,
-                cycles?.instances ?? [],
+                cycles.instances,
                 new Date(),
-                cycles?.displayStartDate ?? '',
+                cycles.displayStartDate,
                 (code) => getCommonCodeName(materialTypeOptions, code),
             ),
             ...mapExpirationsToCalendarEvents(
                 todoDocuments,
-                cycles?.expirations ?? [],
+                cycles.expirations,
                 rangeStart,
                 rangeEnd,
                 (code) => getCommonCodeName(materialTypeOptions, code),
@@ -113,7 +116,7 @@ export function useCalendarMonthEvents(monthDate: Date) {
         });
     }, [todoDocuments, rangeStart, rangeEnd, cycles, materialTypeOptions]);
 
-    return { events, isLoading, isError, error };
+    return { events, isLoading: isLoading || isCyclesLoading, isError, error };
 }
 
 export function useWorkCalendarData() {
