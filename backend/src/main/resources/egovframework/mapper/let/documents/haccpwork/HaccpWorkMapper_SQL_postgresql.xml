@@ -609,6 +609,18 @@
         END
     </sql>
 
+    <!-- 업무 주기 한 칸의 길이. requestedCycleStart 와 더해 다음 주기 시작일을 만든다 -->
+    <sql id="cycleInterval">
+        CASE
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY') THEN INTERVAL '1 month'
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY') THEN INTERVAL '1 week'
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'QUARTER' THEN INTERVAL '3 months'
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'HALF' THEN INTERVAL '6 months'
+        WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'YEAR' THEN INTERVAL '1 year'
+        ELSE INTERVAL '1 day'
+        END
+    </sql>
+
     <!-- 기존 -> resultMap="haccpWorkResult" / 변경 -> sub 포함 resultMap -->
     <select id="HaccpWorkDAO.selectDraftTemplateByWorkId"
             parameterType="map"
@@ -786,7 +798,9 @@
             AND COALESCE(m.status_type, '') = 'pre_apply'
             AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
             AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
-            AND m.report_date = TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYYMMDD')
+            <!-- 기존 -> m.report_date = 주기 시작일 / 변경 -> report_date 는 표시일이라 주기 범위 안이면 같은 주기 -->
+            AND m.report_date &gt;= TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYYMMDD')
+            AND m.report_date &lt; TO_CHAR(<include refid="requestedCycleStart"/> + <include refid="cycleInterval"/>, 'YYYYMMDD')
             AND #{fresh, jdbcType=BOOLEAN} IS NOT TRUE
           ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
