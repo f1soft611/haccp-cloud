@@ -210,7 +210,9 @@ export function HaccpDocumentSearchPanel(props: {
                 <TextField
                   size="small"
                   type="date"
-                  label="시작일"
+                  // 기존 -> 시작일
+                  // 변경 -> 기안일 시작
+                  label="기안일 시작"
                   value={value.startDate}
                   onChange={(event) =>
                     onChange({
@@ -223,7 +225,9 @@ export function HaccpDocumentSearchPanel(props: {
                 <TextField
                   size="small"
                   type="date"
-                  label="종료일"
+                  // 기존 -> 종료일
+                  // 변경 -> 기안일 종료
+                  label="기안일 종료"
                   value={value.endDate}
                   onChange={(event) =>
                     onChange({

@@ -153,8 +153,8 @@ describe('HaccpDocumentManagementPage', () => {
     expect(screen.getByLabelText('기안번호')).toHaveValue('HA-202607-001');
     expect(screen.getByLabelText('제목')).toHaveValue('점검');
     expect(screen.getByLabelText('작성자')).toHaveValue('고대성');
-    expect(screen.getByLabelText('시작일')).toHaveValue('2026-07-01');
-    expect(screen.getByLabelText('종료일')).toHaveValue('2026-07-20');
+    expect(screen.getByLabelText('기안일 시작')).toHaveValue('2026-07-01');
+    expect(screen.getByLabelText('기안일 종료')).toHaveValue('2026-07-20');
 
     await waitFor(() => {
       expect(
@@ -198,8 +198,8 @@ describe('HaccpDocumentManagementPage', () => {
     expect(
       screen.getByRole('heading', { name: 'HACCP 문서관리' }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText('시작일')).toHaveValue(expectedStartDate);
-    expect(screen.getByLabelText('종료일')).toHaveValue(expectedEndDate);
+    expect(screen.getByLabelText('기안일 시작')).toHaveValue(expectedStartDate);
+    expect(screen.getByLabelText('기안일 종료')).toHaveValue(expectedEndDate);
 
     await waitFor(() => {
       expect(listHaccpDocuments).toHaveBeenCalled();
