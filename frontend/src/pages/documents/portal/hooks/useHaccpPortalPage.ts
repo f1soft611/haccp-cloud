@@ -14,12 +14,15 @@ const INITIAL_SEARCH: PortalSearchValue = {
 
 export function useHaccpPortalPage() {
   const tenantCode = useAuthStore((state) => state.tenantCode || 'PLATFORM');
+  const userId = useAuthStore((state) => state.userId);
   const [search, setSearch] = useState<PortalSearchValue>(INITIAL_SEARCH);
   const [appliedSearch, setAppliedSearch] =
     useState<PortalSearchValue>(INITIAL_SEARCH);
 
   const documentsQuery = useQuery({
-    queryKey: ['haccp-portal-documents', tenantCode],
+    // 기존 -> ['haccp-portal-documents', tenantCode]
+    // 변경 -> 역할별로 조회 범위가 달라 계정 전환 시 캐시가 섞이지 않도록 userId 포함
+    queryKey: ['haccp-portal-documents', tenantCode, userId],
     queryFn: () => listHaccpPortalDocuments({ tenantCode }),
     retry: false,
   });
