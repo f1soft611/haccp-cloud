@@ -20,7 +20,7 @@ describe('AppProviders theme preference', () => {
         isAuthenticated: false,
         tenantCode: '',
         userId: '',
-        role: 'USER',
+        role: 'TENANT_USER',
         accessToken: '',
         refreshToken: '',
         loginHistoryId: undefined,

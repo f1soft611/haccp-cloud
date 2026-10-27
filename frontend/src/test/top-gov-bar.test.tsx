@@ -38,7 +38,7 @@ describe('TopGovBar', () => {
         isAuthenticated: false,
         tenantCode: '',
         userId: '',
-        role: 'USER',
+        role: 'TENANT_USER',
         onboardingRequired: false,
         onboardingStatus: 'COMPLETED',
       });
@@ -127,7 +127,7 @@ describe('TopGovBar', () => {
         isAuthenticated: true,
         tenantCode: 'TENANT-A',
         userId: 'tenant_user',
-        role: 'USER',
+        role: 'TENANT_USER',
         onboardingRequired: false,
         onboardingStatus: 'COMPLETED',
       });

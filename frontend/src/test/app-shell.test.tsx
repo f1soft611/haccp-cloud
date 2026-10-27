@@ -48,7 +48,7 @@ const defaultAuthState = {
   profileImage: undefined,
   signatureImage: undefined,
   stampImage: undefined,
-  role: 'USER' as const,
+  role: 'TENANT_USER' as const,
   accessToken: '',
   refreshToken: '',
   loginHistoryId: undefined,
@@ -292,7 +292,7 @@ describe('App shell', () => {
             ? 'PLATFORM_ADMIN'
             : normalizedUserId.includes('admin')
               ? 'TENANT_ADMIN'
-              : 'USER';
+              : 'TENANT_USER';
         const tenantCode =
           payload.tenantCode || payload.factoryCode || 'TENANT-A';
         const onboardingStatus =
@@ -339,7 +339,7 @@ describe('App shell', () => {
             ? 'PLATFORM_ADMIN'
             : normalizedUserId.includes('admin')
               ? 'TENANT_ADMIN'
-              : 'USER';
+              : 'TENANT_USER';
         const tenantCode =
           payload.tenantCode || payload.factoryCode || 'TENANT-A';
         const onboardingStatus =
@@ -632,7 +632,7 @@ describe('App shell', () => {
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
       userId: 'user01',
-      role: 'USER',
+      role: 'TENANT_USER',
     });
 
     renderAppRoutesAt('/departments');
@@ -647,7 +647,7 @@ describe('App shell', () => {
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
       userId: 'user01',
-      role: 'USER',
+      role: 'TENANT_USER',
     });
 
     renderAppRoutesAt('/onboarding');
@@ -757,7 +757,7 @@ describe('App shell', () => {
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
       userId: 'user01',
-      role: 'USER',
+      role: 'TENANT_USER',
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
     });
@@ -787,7 +787,7 @@ describe('App shell', () => {
       isAuthenticated: true,
       tenantCode: 'TENANT-A',
       userId: 'user01',
-      role: 'USER',
+      role: 'TENANT_USER',
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
     });

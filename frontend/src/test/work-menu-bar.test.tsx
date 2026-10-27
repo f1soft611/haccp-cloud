@@ -117,7 +117,6 @@ const renderLayoutWithRole = (
     ],
     TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
     TENANT_USER: ['/dashboard', '/documents'],
-    USER: ['/dashboard', '/documents'],
   };
 
   const menuPaths = accessiblePaths ?? defaultPathsByRole[role];
@@ -215,7 +214,7 @@ const resetAuthStore = () => {
       isAuthenticated: false,
       tenantCode: '',
       userId: '',
-      role: 'USER',
+      role: 'TENANT_USER',
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
     });
@@ -328,8 +327,8 @@ describe('WorkMenuBar role-based visibility', () => {
     ).toBeInTheDocument();
   });
 
-  it('USER does not see systemGroup button and does not see platformMenuManagement link', () => {
-    renderLayoutWithRole('USER', '/dashboard');
+  it('TENANT_USER does not see systemGroup button and does not see platformMenuManagement link', () => {
+    renderLayoutWithRole('TENANT_USER', '/dashboard');
 
     expect(
       screen.queryByRole('button', { name: APP_LABELS.menu.systemGroup }),

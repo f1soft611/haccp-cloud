@@ -240,7 +240,7 @@ describe('HaccpDocumentManagementPage', () => {
       tenantCode: 'TENANT-A',
       userId: 'worker01',
       displayName: '고대성',
-      role: 'USER',
+      role: 'TENANT_USER',
       onboardingRequired: false,
       onboardingStatus: 'COMPLETED',
     });
