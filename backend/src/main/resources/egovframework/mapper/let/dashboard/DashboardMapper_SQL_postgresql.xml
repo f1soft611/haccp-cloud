@@ -263,34 +263,41 @@
             COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
     </select>
 
-    <!-- 만료일 관리 업무(HCP sub): 결재 완료된 내 문서의 만료일. 같은 대상 이전 문서도 모두 반환 -->
+    <!-- 만료일 관리 업무(HCP sub): 결재 완료된 내 문서 중 업무 + 대상별 가장 최근 문서의 만료일 -->
+    <!-- 기존 -> 같은 대상 이전 문서도 모두 반환 -->
+    <!-- 변경 -> 검사일이 가장 늦은 문서 하나만. 기간 조건은 최신 문서를 고른 뒤에 건다 -->
     <select id="DashboardDAO.selectMyExpirationList"
             parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
             resultType="map">
-        SELECT
-            CAST(m.drafting_work_category_id AS varchar) AS "workId",
-            CAST(m.electronic_approval_id AS varchar) AS "approvalId",
-            s.expiration_date AS "expirationDate",
-            CAST(s.equipment_id AS varchar) AS "equipmentId",
-            COALESCE(s.material_type, '') AS "materialType",
-            CAST(s.certification_user_id AS varchar) AS "certificationUserId",
-            COALESCE(e.equip_nm, u.user_nm, '') AS "targetName"
-        FROM tb_electronic_approval_sub s
-                 JOIN tb_electronic_approval_main m
-                      ON m.tenant_id = s.tenant_id
-                          AND m.electronic_approval_id = s.electronic_approval_id
-                 LEFT JOIN tb_equipment_info e
-                           ON e.tenant_id = s.tenant_id
-                               AND e.equipment_id = s.equipment_id
-                 LEFT JOIN tb_user u
-                           ON u.tenant_id = s.tenant_id
-                               AND u.user_id = s.certification_user_id
-        WHERE s.tenant_id = #{tenantId}
-          AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
-          AND COALESCE(m.delete_status, 'N') != 'Y'
-        AND m.status_type = 'approved'
-        AND s.expiration_date BETWEEN #{fromDate} AND #{toDate}
-        ORDER BY s.expiration_date, m.electronic_approval_id
+        SELECT latest.*
+        FROM (
+            SELECT DISTINCT ON (m.drafting_work_category_id, s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)
+                CAST(m.drafting_work_category_id AS varchar) AS "workId",
+                CAST(m.electronic_approval_id AS varchar) AS "approvalId",
+                s.expiration_date AS "expirationDate",
+                CAST(s.equipment_id AS varchar) AS "equipmentId",
+                COALESCE(s.material_type, '') AS "materialType",
+                CAST(s.certification_user_id AS varchar) AS "certificationUserId",
+                COALESCE(e.equip_nm, u.user_nm, '') AS "targetName"
+            FROM tb_electronic_approval_sub s
+                     JOIN tb_electronic_approval_main m
+                          ON m.tenant_id = s.tenant_id
+                              AND m.electronic_approval_id = s.electronic_approval_id
+                     LEFT JOIN tb_equipment_info e
+                               ON e.tenant_id = s.tenant_id
+                                   AND e.equipment_id = s.equipment_id
+                     LEFT JOIN tb_user u
+                               ON u.tenant_id = s.tenant_id
+                                   AND u.user_id = s.certification_user_id
+            WHERE s.tenant_id = #{tenantId}
+              AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
+              AND COALESCE(m.delete_status, 'N') != 'Y'
+              AND m.status_type = 'approved'
+            ORDER BY m.drafting_work_category_id, s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id,
+                     s.inspected_date DESC, m.electronic_approval_id DESC
+        ) latest
+        WHERE latest."expirationDate" BETWEEN #{fromDate} AND #{toDate}
+        ORDER BY latest."expirationDate", latest."approvalId"
     </select>
 
     <!-- 캘린더 표시 시작일: 입사일과 테넌트 생성일 중 늦은 날 (GREATEST는 NULL 무시 → 입사일 없으면 테넌트 생성일) -->
