@@ -73,6 +73,7 @@ export function useCalendarMonthEvents(monthDate: Date) {
                 cycles?.instances ?? [],
                 new Date(),
                 cycles?.displayStartDate ?? '',
+                (code) => getCommonCodeName(materialTypeOptions, code),
             ),
             ...mapExpirationsToCalendarEvents(
                 todoDocuments,
