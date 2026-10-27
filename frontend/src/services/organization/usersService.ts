@@ -168,7 +168,9 @@ function normalizeUserItem(raw: {
   signatureImage?: string;
   stampImage?: string;
 }): UserItem {
-  const roleCode = normalizeRoleCode(raw) || 'USER';
+  // 기존 -> const roleCode = normalizeRoleCode(raw) || 'USER';
+  // 변경 -> 기본 권한 코드 TENANT_USER
+  const roleCode = normalizeRoleCode(raw) || 'TENANT_USER';
   const roleCodes = roleCode ? [roleCode] : [];
 
   return {
@@ -186,7 +188,9 @@ function normalizeUserItem(raw: {
       roleCode === 'TENANT_ADMIN' ||
       roleCode === 'TENANT_USER'
         ? (roleCode as UserRole)
-        : 'USER',
+        // 기존 -> : 'USER',
+        // 변경 -> 기본 role TENANT_USER
+        : 'TENANT_USER',
     active: raw.active !== false,
     profileImage: String(raw.profileImage ?? '').trim() || undefined,
     signatureImage: String(raw.signatureImage ?? '').trim() || undefined,

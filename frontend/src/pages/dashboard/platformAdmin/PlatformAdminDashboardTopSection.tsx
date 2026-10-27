@@ -49,11 +49,8 @@ const QUICK_MENUS: Record<UserRole, QuickMenuItem[]> = {
     { label: APP_LABELS.menu.documents, to: '/documents', enabled: true },
     { label: APP_LABELS.menu.history, to: '/document-history', enabled: true },
   ],
-  USER: [
-    { label: APP_LABELS.menu.dashboard, to: '/dashboard', enabled: true },
-    { label: APP_LABELS.menu.documents, to: '/documents', enabled: true },
-    { label: APP_LABELS.menu.history, to: '/document-history', enabled: true },
-  ],
+  // 기존 -> USER: [ dashboard, documents, history ] (TENANT_USER 와 동일)
+  // 변경 -> UserRole 에서 'USER' 제거로 키 삭제
 };
 
 type PlatformAdminDashboardTopSectionProps = {
