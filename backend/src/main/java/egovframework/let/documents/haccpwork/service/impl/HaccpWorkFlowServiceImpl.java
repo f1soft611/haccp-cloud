@@ -88,12 +88,16 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         // 기존 -> ensureSubmissionEditableState(주기 최신 문서 결재중/승인이면 409) + resolveReportDate(대상 주기 충돌 409)
         // 변경 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
         Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "임시저장");
-        String reportDate = resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
-        String responseCycleDate = LocalDate.parse(reportDate, DATE_FORMATTER).toString();
         boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
         if (subCategory) {
             HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
         }
+        // 기존 -> resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate())
+        // 변경 -> 만료일 관리 업무는 검사일 그대로(달력 표시일), 일반 업무는 기존처럼 주기 시작일
+        String reportDate = subCategory
+                ? resolveInspectedReportDate(work.getCycle(), payload.getSub().getInspectedDate())
+                : resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
+        String responseCycleDate = LocalDate.parse(reportDate, DATE_FORMATTER).toString();
 
         LocalDateTime now = LocalDateTime.now();
         String regDate = now.format(DATE_FORMATTER);
@@ -238,7 +242,15 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         // 기존 -> ensureSubmissionEditableState(주기 최신 문서 결재중/승인이면 409) + resolveReportDate(대상 주기 충돌 409)
         // 변경 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
         Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "결재신청");
-        String reportDate = resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
+        boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
+        if (subCategory) {
+            HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
+        }
+        // 기존 -> resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate())
+        // 변경 -> 만료일 관리 업무는 검사일 그대로(달력 표시일), 일반 업무는 기존처럼 주기 시작일
+        String reportDate = subCategory
+                ? resolveInspectedReportDate(work.getCycle(), payload.getSub().getInspectedDate())
+                : resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
 
         // 결재 미적용 문서는 결재선 없이 바로 완료되므로 검토자/승인자 검사 생략 추가
         boolean approvalApply = !Boolean.FALSE.equals(work.getApprovalApply());
@@ -247,10 +259,6 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         }
         String mainStatus = approvalApply ? "in_progress" : "approved";
         String mainStatusName = approvalApply ? "진행중" : "완료";
-        boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
-        if (subCategory) {
-            HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
-        }
 
         String templateJson = StringUtils.hasText(payload.getTemplateJson())
                 ? payload.getTemplateJson().trim()
@@ -2032,6 +2040,12 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             return cycleDate;
         }
         return HaccpWorkCycleDates.resolve(regTerm, requestedReportDate, LocalDate.now()).format(DATE_FORMATTER);
+    }
+
+    /** 만료일 관리 업무의 보고일자 = 검사일(yyyyMMdd). 주기 시작일로 바로잡지 않고, 미래 주기면 400. */
+    private String resolveInspectedReportDate(String regTerm, String inspectedDate) {
+        HaccpWorkCycleDates.resolve(regTerm, inspectedDate, LocalDate.now());
+        return HaccpWorkCycleDates.parseOrNull(inspectedDate).format(DATE_FORMATTER);
     }
 
 //    private void ensureSubmissionEditableState(Long tenantId, Long workId, Long loginId, String cycleDate, String actionLabel) throws Exception {

@@ -888,6 +888,72 @@ class HaccpWorkFlowServiceImplTest {
         verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalSub(anyMap());
     }
 
+    @DisplayName("만료일 관리 업무는 화면 보고일자 대신 검사일을 report_date 로 저장한다")
+    @Test
+    void submitDraft_hcpSavesInspectedDateAsReportDate() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setCycle("HALF");
+        when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(1);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("검교정 기안");
+        payload.setReportDate("2026-07-01");
+        payload.setSub(calibSub());
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> insertCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).insertElectronicApprovalMain(insertCaptor.capture());
+        assertEquals("20261001", insertCaptor.getValue().get("reportDate"));
+    }
+
+    @DisplayName("만료일 관리 업무 임시저장도 검사일을 report_date 로 저장한다")
+    @Test
+    void saveTempDraft_hcpSavesInspectedDateAsReportDate() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setCycle("HALF");
+        when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(1);
+        doAnswer(invocation -> {
+            Map<String, Object> params = invocation.getArgument(0);
+            params.put("electronicApprovalId", 88L);
+            return null;
+        }).when(serviceHaccpWorkDAO).insertElectronicApprovalMain(anyMap());
+
+        HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
+        payload.setTitle("검교정 임시저장");
+        payload.setSub(calibSub());
+
+        service.saveTempDraft(77L, "tenant_001", payload, "3001");
+
+        ArgumentCaptor<Map> insertCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(serviceHaccpWorkDAO).insertElectronicApprovalMain(insertCaptor.capture());
+        assertEquals("20261001", insertCaptor.getValue().get("reportDate"));
+    }
+
+    @DisplayName("만료일 관리 업무 검사일이 미래 주기면 400")
+    @Test
+    void saveTempDraft_hcpRejectsFutureInspectedDate() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setCycle("HALF");
+        HaccpWorkApprovalSubVO sub = calibSub();
+        sub.setInspectedDate(LocalDate.now().plusYears(1).toString());
+        sub.setExpirationDate(LocalDate.now().plusYears(2).toString());
+
+        HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
+        payload.setTitle("검교정 임시저장");
+        payload.setSub(sub);
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.saveTempDraft(77L, "tenant_001", payload, "3001"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
+    }
+
     @DisplayName("HCP 업무 임시저장은 sub 행이 없으면 INSERT 한다")
     @Test
     void saveTempDraft_hcpInsertsSubWhenMissing() throws Exception {
