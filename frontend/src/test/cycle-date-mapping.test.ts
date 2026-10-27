@@ -16,6 +16,7 @@ const NOV_2026 = ['2026-11-01', '2026-12-05'] as const;
 const DEC_2026 = ['2026-11-29', '2027-01-02'] as const;
 const APR_2026 = ['2026-03-29', '2026-05-02'] as const;
 const JUL_2026 = ['2026-06-28', '2026-08-01'] as const;
+const MAY_2026 = ['2026-04-26', '2026-06-06'] as const;
 
 function buildItem(
     overrides: Partial<TenantTodoCardItem> = {},
@@ -230,6 +231,42 @@ describe('mapTodosToCalendarEvents', () => {
             expect(mapTodosToCalendarEvents([half], ...JAN_2026, [], TODAY, '2026-03-01'))
             .toMatchObject([{ cycleDate: '2026-01-01' }]);
             expect(mapTodosToCalendarEvents([half], ...JAN_2026, [], TODAY, '2026-07-02')).toEqual([]);
+        });
+
+        it('draws a half document on its report date and links it to the cycle', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'HALF' })], ...OCT_2026,
+                [instance('2026-10-05', 'approved')], TODAY,
+            );
+
+            expect(events).toHaveLength(1);
+            expect(events[0]).toMatchObject({
+                date: '2026-10-05',
+                cycleDate: '2026-07-01',
+                item: { approvalId: '900', writtenInCycle: true },
+            });
+        });
+
+        it('draws a past half document on its report date even when the cycle start is before the range', () => {
+            const item = buildItem({ cycle: 'HALF' });
+            const docs = [instance('2026-05-10', 'approved')];
+
+            expect(mapTodosToCalendarEvents([item], ...MAY_2026, docs, TODAY)).toMatchObject([
+                { date: '2026-05-10', cycleDate: '2026-01-01', item: { writtenInCycle: true } },
+            ]);
+            // 문서가 표시일로 옮겨 가므로 1월 화면의 01-01 칸에는 남지 않는다
+            expect(mapTodosToCalendarEvents([item], ...JAN_2026, docs, TODAY)).toEqual([]);
+        });
+
+        it('keeps a draft of the current half on today', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'HALF' })], ...OCT_2026,
+                [instance('2026-10-05', 'pre_apply')], TODAY,
+            );
+
+            expect(events).toMatchObject([
+                { date: '2026-10-08', cycleDate: '2026-07-01', item: { approvalId: '900' } },
+            ]);
         });
     });
 
