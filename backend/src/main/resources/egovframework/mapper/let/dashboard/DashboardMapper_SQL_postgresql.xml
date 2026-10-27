@@ -26,6 +26,7 @@
         <result property="templateHtml" column="template_html"/>
         <result property="hasDocument" column="has_document"/>
         <result property="expirationApply" column="expiration_apply"/>
+        <result property="active" column="active"/>
         <result property="writtenInCycle" column="written_in_cycle"/>
         <result property="pendingApprovalAlert" column="pending_approval_alert"/>
         <result property="pendingArrivalAt" column="pending_arrival_at"/>
@@ -68,6 +69,7 @@
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
+            CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(pending.pending_drafter_name, pending.pending_login_code, CAST(pending.pending_login_id AS varchar), '-') AS created_by,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE

@@ -573,6 +573,42 @@ describe('mapTodosToCalendarEvents', () => {
             );
         });
     });
+
+    // 사용안함 업무: 앞으로 작성할 주기 칸 없이 작성 문서만 문서 표시일 칸에
+    describe('inactive items', () => {
+        it.each(['DAY', 'WEEK', 'MONTH', 'QUARTER', 'HALF', 'YEAR', 'ANYTIME'])(
+            'places only written documents for inactive %s items',
+            (cycle) => {
+                const events = mapTodosToCalendarEvents(
+                    [buildItem({ cycle, active: false })], ...OCT_2026,
+                    [instance('2026-10-02', 'approved', '901'), instance('2026-10-06', 'rejected', '902')],
+                    TODAY,
+                );
+
+                expect(events.map((event) => [event.date, event.item.approvalId])).toEqual([
+                    ['2026-10-02', '901'],
+                    ['2026-10-06', '902'],
+                ]);
+                expect(events.every((event) => event.item.writtenInCycle && !event.isFuture)).toBe(true);
+            },
+        );
+
+        it('places nothing for an inactive item without documents', () => {
+            expect(
+                mapTodosToCalendarEvents([buildItem({ cycle: 'DAY', active: false })], ...OCT_2026, [], TODAY),
+            ).toEqual([]);
+        });
+
+        it('skips documents outside the visible range', () => {
+            expect(
+                mapTodosToCalendarEvents(
+                    [buildItem({ cycle: 'MONTH', active: false })], ...OCT_2026,
+                    [instance('2026-09-20', 'approved', '901')],
+                    TODAY,
+                ),
+            ).toEqual([]);
+        });
+    });
 });
 
 describe('expiration work (expirationApply)', () => {
