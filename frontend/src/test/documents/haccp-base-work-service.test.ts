@@ -47,7 +47,7 @@ describe('haccpBaseWorkService', () => {
   it('converts cycle instance registeredDate to YYYY-MM-DD', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({
       data: [
-        { workId: 1, cycleDate: '20261005', approvalId: 9, statusType: 'in_progress', registeredDate: '20261006' },
+        { workId: 1, cycleDate: '20261005', approvalId: 9, statusType: 'in_progress', registeredDate: '20261006', targetName: ' 저울 A ', materialType: 'RAW' },
         { workId: 2, cycleDate: '20261005', approvalId: 10, statusType: 'approved', registeredDate: null },
       ],
     });
@@ -59,8 +59,8 @@ describe('haccpBaseWorkService', () => {
     });
 
     expect(result.instances).toEqual([
-      { workId: '1', cycleDate: '2026-10-05', approvalId: '9', statusType: 'in_progress', registeredDate: '2026-10-06', title: '' },
-      { workId: '2', cycleDate: '2026-10-05', approvalId: '10', statusType: 'approved', registeredDate: '', title: '' },
+      { workId: '1', cycleDate: '2026-10-05', approvalId: '9', statusType: 'in_progress', registeredDate: '2026-10-06', title: '', targetName: '저울 A', materialType: 'RAW' },
+      { workId: '2', cycleDate: '2026-10-05', approvalId: '10', statusType: 'approved', registeredDate: '', title: '', targetName: '', materialType: '' },
     ]);
     expect(result.expirations).toEqual([]);
     expect(result.displayStartDate).toBe('');

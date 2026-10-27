@@ -1,6 +1,7 @@
 import type { TenantTodoCardItem } from '../../dashboard/tenant/hooks/useTenantDashboardData';
 import type { HaccpWorkCycleInstance, HaccpWorkExpiration } from '../../../services/documents/haccpBaseWorkService';
 import { resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
+import { toCycleStartDate } from '../approvals/utils/approvalDraftUtils';
 
 export type CalendarWorkEvent = {
     date: string;
@@ -58,6 +59,7 @@ export function mapTodosToCalendarEvents(
     cycleInstances: HaccpWorkCycleInstance[] = [],
     today: Date = new Date(),
     displayStartDate: string = '',
+    materialTypeName: (code: string) => string = (code) => code,
 ): CalendarWorkEvent[] {
     const todayString = toLocalDateString(today);
     const currentWeekMonday = toLocalDateString(
@@ -90,9 +92,17 @@ export function mapTodosToCalendarEvents(
             YEAR: toDateString(displayStart.getFullYear(), 0, 1),
         }
         : {};
+    // 기존 -> 키: workId|instance.cycleDate (report_date 가 곧 주기 시작일)
+    // 변경 -> report_date 는 표시일이라 업무 주기 시작일로 바꿔 키를 만든다. 같은 주기 여러 건이면 표시일이 늦은 문서가 남는다
+    const cycleByWorkId = new Map(items.map((item) => [item.id, item.cycle]));
+    // 기존 -> 모든 문서로 키를 만듦
+    // 변경 -> 만료일관리 업무 문서는 문서마다 따로 그리므로 주기 키에서 뺀다
+    const expirationWorkIds = new Set(items.filter((item) => item.expirationApply).map((item) => item.id));
     const instances = new Map(
-        cycleInstances.map((instance) => [
-            `${instance.workId}|${instance.cycleDate}`,
+        cycleInstances
+        .filter((instance) => !expirationWorkIds.has(instance.workId))
+        .map((instance) => [
+            `${instance.workId}|${toCycleStartDate(cycleByWorkId.get(instance.workId) ?? '', instance.cycleDate)}`,
             instance,
         ]),
     );
@@ -141,33 +151,63 @@ export function mapTodosToCalendarEvents(
         ['반려', '임시저장'].includes(
             resolveApprovalStatusView({ approvalStatusType: statusType }).label,
         );
+    // 기존 -> 지난 주기와 상신 이후 문서는 cycleDate(주기 시작일) 칸
+    // 변경 -> 문서가 있으면 문서 표시일(report_date) 칸, 없으면 주기 시작일 칸
     const displayDate = (
         item: TenantTodoCardItem,
         cycleDate: string,
         currentCycleDate: string,
     ) => {
-        if (cycleDate !== currentCycleDate) {
-            return cycleDate;
-        }
         const instance = instances.get(`${item.id}|${cycleDate}`);
-        // 상신 이후 문서는 주기 시작일 칸
+        if (cycleDate !== currentCycleDate) {
+            return instance?.cycleDate ?? cycleDate;
+        }
+        // 상신 이후 문서는 문서 표시일 칸
         if (instance && !followsToday(instance.statusType)) {
-            return cycleDate;
+            return instance.cycleDate;
         }
         return todayString;
     };
 
+    // 기존 -> 보이는 범위의 주기 시작일 + 현재 주기만 돌림
+    // 변경 -> 주기 시작일이 범위 앞이어도 표시일이 범위 안일 수 있어 문서들의 주기 시작일도 돌림
     const pushCycles = (
         item: TenantTodoCardItem,
         cycleDates: string[],
         currentCycleDate: string,
     ) => {
-        new Set([...cycleDates, currentCycleDate]).forEach((cycleDate) => {
+        const instanceCycleDates = cycleInstances
+        .filter((instance) => instance.workId === item.id)
+        .map((instance) => toCycleStartDate(item.cycle, instance.cycleDate));
+        new Set([...cycleDates, ...instanceCycleDates, currentCycleDate]).forEach((cycleDate) => {
             push(displayDate(item, cycleDate, currentCycleDate), item, cycleDate, currentCycleDate);
         });
     };
 
     items.forEach((item) => {
+        // 만료일관리 업무: 주기 칸 없이 작성 문서만 문서마다 report_date 칸에 (표시 시작일 하한 없음)
+        if (item.expirationApply) {
+            const workName = item.divisionName || item.categoryName || '업무';
+            cycleInstances
+            .filter((instance) => instance.workId === item.id)
+            .forEach((instance) => {
+                if (instance.cycleDate < rangeStart || instance.cycleDate > rangeEnd) {
+                    return;
+                }
+                const targetName = instance.targetName || materialTypeName(instance.materialType);
+                events.push({
+                    date: instance.cycleDate,
+                    cycleDate: instance.cycleDate,
+                    isFuture: false,
+                    item: {
+                        ...withCycleInstance(item, instance),
+                        title: targetName ? `${workName} - ${targetName}` : workName,
+                    },
+                });
+            });
+            return;
+        }
+
         // 기존 -> getWorkCycleLabel(item) 한글 라벨 비교 / 변경 -> reg_term 공통코드 비교
         const cycle = item.cycle;
 
@@ -216,7 +256,8 @@ export function mapTodosToCalendarEvents(
 }
 
 // 만료일 관리 업무: 결재 완료 문서의 만료일 칸에 표시
-// 앞으로 올 만료일이 보여야 하므로 표시 시작일 하한은 적용하지 않고, 같은 대상 여러 문서도 모두 표시
+// 기존 -> 같은 대상 여러 문서도 모두 표시
+// 변경 -> 서버가 업무 + 대상별 최신 문서만 내려 주므로 받은 행을 그대로 표시. 표시 시작일 하한은 적용하지 않음
 export function mapExpirationsToCalendarEvents(
     todos: TenantTodoCardItem[],
     expirations: HaccpWorkExpiration[],

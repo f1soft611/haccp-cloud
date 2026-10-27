@@ -25,6 +25,7 @@
         <result property="templateJson" column="template_json"/>
         <result property="templateHtml" column="template_html"/>
         <result property="hasDocument" column="has_document"/>
+        <result property="expirationApply" column="expiration_apply"/>
         <result property="writtenInCycle" column="written_in_cycle"/>
         <result property="pendingApprovalAlert" column="pending_approval_alert"/>
         <result property="pendingArrivalAt" column="pending_arrival_at"/>
@@ -66,6 +67,7 @@
             w.reg_term,
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
+            CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
             COALESCE(pending.pending_drafter_name, pending.pending_login_code, CAST(pending.pending_login_id AS varchar), '-') AS created_by,
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             CASE
@@ -153,8 +155,19 @@
           LIMIT 1
         ) pending ON TRUE
         LEFT JOIN LATERAL (
+          <!-- 기존 -> cycle_base 는 cycle_start 만 계산 / 변경 -> report_date 범위 비교용 cycle_end(다음 주기 시작일) 추가 -->
           WITH cycle_base AS (
-            SELECT CASE
+            SELECT s.cycle_start,
+                   s.cycle_start + CASE
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY') THEN INTERVAL '1 month'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY') THEN INTERVAL '1 week'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'QUARTER' THEN INTERVAL '3 months'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'HALF' THEN INTERVAL '6 months'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'YEAR' THEN INTERVAL '1 year'
+                       ELSE INTERVAL '1 day'
+                   END AS cycle_end
+            FROM (
+              SELECT CASE
                 WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
                   THEN date_trunc('month', CURRENT_TIMESTAMP)
                 WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
@@ -169,6 +182,7 @@
                     THEN date_trunc('year', CURRENT_TIMESTAMP)
                 ELSE date_trunc('day', CURRENT_TIMESTAMP)
               END AS cycle_start
+            ) s
           )
           SELECT
               COUNT(*) AS total_count,
@@ -192,7 +206,9 @@
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
             AND COALESCE(m.delete_status, 'N') != 'Y'
-            AND m.report_date = TO_CHAR(cb.cycle_start, 'YYYYMMDD')
+            <!-- 기존 -> AND m.report_date = TO_CHAR(cb.cycle_start, 'YYYYMMDD') / 변경 -> report_date 는 표시일이라 이번 주기 범위 안이면 집계 -->
+            AND m.report_date &gt;= TO_CHAR(cb.cycle_start, 'YYYYMMDD')
+            AND m.report_date &lt; TO_CHAR(cb.cycle_end, 'YYYYMMDD')
         ) appr ON TRUE
         <!-- 리스트 최근일시: 본인 작성 문서(삭제 제외)의 가장 큰 보고일자 -->
         LEFT JOIN LATERAL (
@@ -229,54 +245,78 @@
     </select>
 
     <!-- 캘린더용: 기간 내 업무별·주기 기준일별 최신 결재문서 상태 -->
+    <!-- 기존 -> 업무 + report_date 당 최신 문서 한 건 -->
+    <!-- 변경 -> 만료일관리 업무(expiration_apply = 'Y')는 문서(대상)마다 한 건, 대상명과 품목유형을 같이 반환 -->
     <select id="DashboardDAO.selectMyTodoCycleList"
             parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
             resultType="map">
-        SELECT DISTINCT ON (m.drafting_work_category_id, m.report_date)
+        SELECT DISTINCT ON (m.drafting_work_category_id, m.report_date,
+            CASE WHEN w.expiration_apply = 'Y' THEN m.electronic_approval_id END)
             CAST(m.drafting_work_category_id AS varchar) AS "workId",
             m.report_date AS "cycleDate",
             CAST(m.electronic_approval_id AS varchar) AS "approvalId",
             COALESCE(m.status_type, '') AS "statusType",
             TO_CHAR(m.created_at, 'YYYYMMDD') AS "registeredDate",
-            COALESCE(m.ea_title, '') AS "title"
+            COALESCE(m.ea_title, '') AS "title",
+            COALESCE(e.equip_nm, u.user_nm, '') AS "targetName",
+            COALESCE(s.material_type, '') AS "materialType"
         FROM tb_electronic_approval_main m
+            LEFT JOIN tb_drafting_work_category w
+        ON w.drafting_work_category_id = m.drafting_work_category_id
+            LEFT JOIN tb_electronic_approval_sub s
+            ON s.tenant_id = m.tenant_id
+            AND s.electronic_approval_id = m.electronic_approval_id
+            LEFT JOIN tb_equipment_info e
+            ON e.tenant_id = s.tenant_id
+            AND e.equipment_id = s.equipment_id
+            LEFT JOIN tb_user u
+            ON u.tenant_id = s.tenant_id
+            AND u.user_id = s.certification_user_id
         WHERE m.tenant_id = #{tenantId}
-        AND m.drafting_work_category_id IS NOT NULL
-        AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
-        AND COALESCE(m.delete_status, 'N') != 'Y'
-        AND m.report_date BETWEEN #{fromDate} AND #{toDate}
+          AND m.drafting_work_category_id IS NOT NULL
+          AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
+          AND COALESCE(m.delete_status, 'N') != 'Y'
+          AND m.report_date BETWEEN #{fromDate} AND #{toDate}
         ORDER BY m.drafting_work_category_id, m.report_date,
+            CASE WHEN w.expiration_apply = 'Y' THEN m.electronic_approval_id END,
             COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
     </select>
 
-    <!-- 만료일 관리 업무(HCP sub): 결재 완료된 내 문서의 만료일. 같은 대상 이전 문서도 모두 반환 -->
+    <!-- 만료일 관리 업무(HCP sub): 결재 완료된 내 문서 중 업무 + 대상별 가장 최근 문서의 만료일 -->
+    <!-- 기존 -> 같은 대상 이전 문서도 모두 반환 -->
+    <!-- 변경 -> 검사일이 가장 늦은 문서 하나만. 기간 조건은 최신 문서를 고른 뒤에 건다 -->
     <select id="DashboardDAO.selectMyExpirationList"
             parameterType="egovframework.let.dashboard.domain.model.DashboardSearchConditionVO"
             resultType="map">
-        SELECT
-            CAST(m.drafting_work_category_id AS varchar) AS "workId",
-            CAST(m.electronic_approval_id AS varchar) AS "approvalId",
-            s.expiration_date AS "expirationDate",
-            CAST(s.equipment_id AS varchar) AS "equipmentId",
-            COALESCE(s.material_type, '') AS "materialType",
-            CAST(s.certification_user_id AS varchar) AS "certificationUserId",
-            COALESCE(e.equip_nm, u.user_nm, '') AS "targetName"
-        FROM tb_electronic_approval_sub s
-                 JOIN tb_electronic_approval_main m
-                      ON m.tenant_id = s.tenant_id
-                          AND m.electronic_approval_id = s.electronic_approval_id
-                 LEFT JOIN tb_equipment_info e
-                           ON e.tenant_id = s.tenant_id
-                               AND e.equipment_id = s.equipment_id
-                 LEFT JOIN tb_user u
-                           ON u.tenant_id = s.tenant_id
-                               AND u.user_id = s.certification_user_id
-        WHERE s.tenant_id = #{tenantId}
-          AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
-          AND COALESCE(m.delete_status, 'N') != 'Y'
-        AND m.status_type = 'approved'
-        AND s.expiration_date BETWEEN #{fromDate} AND #{toDate}
-        ORDER BY s.expiration_date, m.electronic_approval_id
+        SELECT latest.*
+        FROM (
+            SELECT DISTINCT ON (m.drafting_work_category_id, s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)
+                CAST(m.drafting_work_category_id AS varchar) AS "workId",
+                CAST(m.electronic_approval_id AS varchar) AS "approvalId",
+                s.expiration_date AS "expirationDate",
+                CAST(s.equipment_id AS varchar) AS "equipmentId",
+                COALESCE(s.material_type, '') AS "materialType",
+                CAST(s.certification_user_id AS varchar) AS "certificationUserId",
+                COALESCE(e.equip_nm, u.user_nm, '') AS "targetName"
+            FROM tb_electronic_approval_sub s
+                     JOIN tb_electronic_approval_main m
+                          ON m.tenant_id = s.tenant_id
+                              AND m.electronic_approval_id = s.electronic_approval_id
+                     LEFT JOIN tb_equipment_info e
+                               ON e.tenant_id = s.tenant_id
+                                   AND e.equipment_id = s.equipment_id
+                     LEFT JOIN tb_user u
+                               ON u.tenant_id = s.tenant_id
+                                   AND u.user_id = s.certification_user_id
+            WHERE s.tenant_id = #{tenantId}
+              AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
+              AND COALESCE(m.delete_status, 'N') != 'Y'
+              AND m.status_type = 'approved'
+            ORDER BY m.drafting_work_category_id, s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id,
+                     s.inspected_date DESC, m.electronic_approval_id DESC
+        ) latest
+        WHERE latest."expirationDate" BETWEEN #{fromDate} AND #{toDate}
+        ORDER BY latest."expirationDate", latest."approvalId"
     </select>
 
     <!-- 캘린더 표시 시작일: 입사일과 테넌트 생성일 중 늦은 날 (GREATEST는 NULL 무시 → 입사일 없으면 테넌트 생성일) -->

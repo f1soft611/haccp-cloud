@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { mapTodosToCalendarEvents } from '../pages/documents/work-calendar/cycleDateMapping';
+import {
+    mapExpirationsToCalendarEvents,
+    mapTodosToCalendarEvents,
+} from '../pages/documents/work-calendar/cycleDateMapping';
 import type { TenantTodoCardItem } from '../pages/dashboard/tenant/hooks/useTenantDashboardData';
-import type { HaccpWorkCycleInstance } from '../services/documents/haccpBaseWorkService';
+import type {
+    HaccpWorkCycleInstance,
+    HaccpWorkExpiration,
+} from '../services/documents/haccpBaseWorkService';
 
 // 2026-10-08 목요일 (이번 주 월요일 10-05, 이번 달 1일 10-01)
 const TODAY = new Date(2026, 9, 8);
@@ -16,6 +22,7 @@ const NOV_2026 = ['2026-11-01', '2026-12-05'] as const;
 const DEC_2026 = ['2026-11-29', '2027-01-02'] as const;
 const APR_2026 = ['2026-03-29', '2026-05-02'] as const;
 const JUL_2026 = ['2026-06-28', '2026-08-01'] as const;
+const MAY_2026 = ['2026-04-26', '2026-06-06'] as const;
 
 function buildItem(
     overrides: Partial<TenantTodoCardItem> = {},
@@ -55,8 +62,13 @@ function instance(
     statusType: string,
     approvalId = '900',
     registeredDate = '',
+    overrides: Partial<HaccpWorkCycleInstance> = {},
 ): HaccpWorkCycleInstance {
-    return { workId: '1', cycleDate, approvalId, statusType, registeredDate, title: '' };
+    return {
+        workId: '1', cycleDate, approvalId, statusType, registeredDate, title: '',
+        targetName: '', materialType: '',
+        ...overrides,
+    };
 }
 
 describe('mapTodosToCalendarEvents', () => {
@@ -230,6 +242,42 @@ describe('mapTodosToCalendarEvents', () => {
             expect(mapTodosToCalendarEvents([half], ...JAN_2026, [], TODAY, '2026-03-01'))
             .toMatchObject([{ cycleDate: '2026-01-01' }]);
             expect(mapTodosToCalendarEvents([half], ...JAN_2026, [], TODAY, '2026-07-02')).toEqual([]);
+        });
+
+        it('draws a half document on its report date and links it to the cycle', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'HALF' })], ...OCT_2026,
+                [instance('2026-10-05', 'approved')], TODAY,
+            );
+
+            expect(events).toHaveLength(1);
+            expect(events[0]).toMatchObject({
+                date: '2026-10-05',
+                cycleDate: '2026-07-01',
+                item: { approvalId: '900', writtenInCycle: true },
+            });
+        });
+
+        it('draws a past half document on its report date even when the cycle start is before the range', () => {
+            const item = buildItem({ cycle: 'HALF' });
+            const docs = [instance('2026-05-10', 'approved')];
+
+            expect(mapTodosToCalendarEvents([item], ...MAY_2026, docs, TODAY)).toMatchObject([
+                { date: '2026-05-10', cycleDate: '2026-01-01', item: { writtenInCycle: true } },
+            ]);
+            // 문서가 표시일로 옮겨 가므로 1월 화면의 01-01 칸에는 남지 않는다
+            expect(mapTodosToCalendarEvents([item], ...JAN_2026, docs, TODAY)).toEqual([]);
+        });
+
+        it('keeps a draft of the current half on today', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'HALF' })], ...OCT_2026,
+                [instance('2026-10-05', 'pre_apply')], TODAY,
+            );
+
+            expect(events).toMatchObject([
+                { date: '2026-10-08', cycleDate: '2026-07-01', item: { approvalId: '900' } },
+            ]);
         });
     });
 
@@ -524,5 +572,131 @@ describe('mapTodosToCalendarEvents', () => {
                 mapTodosToCalendarEvents(items, ...OCT_2026, [], TODAY),
             );
         });
+    });
+});
+
+describe('expiration work (expirationApply)', () => {
+    const CYCLES = ['DAY', 'WEEK', 'MONTH', 'QUARTER', 'HALF', 'YEAR', 'ANYTIME'];
+
+    it.each(CYCLES)('creates no events for a %s item without documents', (cycle) => {
+        const events = mapTodosToCalendarEvents(
+            [buildItem({ cycle, expirationApply: true })],
+            ...OCT_2026,
+            [],
+            TODAY,
+        );
+
+        expect(events).toEqual([]);
+    });
+
+    it.each(CYCLES)('shows each written document of a %s item on its report_date', (cycle) => {
+        const events = mapTodosToCalendarEvents(
+            [buildItem({ cycle, expirationApply: true, divisionName: '검교정' })],
+            ...OCT_2026,
+            [
+                instance('2026-10-05', 'approved', '901', '', { targetName: '저울 A' }),
+                instance('2026-10-05', 'in_progress', '902', '', { targetName: '온도계 B' }),
+            ],
+            TODAY,
+        );
+
+        expect(events.map((event) => [event.date, event.item.title, event.item.approvalId])).toEqual([
+            ['2026-10-05', '검교정 - 저울 A', '901'],
+            ['2026-10-05', '검교정 - 온도계 B', '902'],
+        ]);
+        expect(events.every((event) => event.cycleDate === '2026-10-05' && !event.isFuture)).toBe(true);
+        expect(events[1].item).toMatchObject({
+            approvalStatusType: 'in_progress',
+            routeIdType: 'approval',
+            routeId: '902',
+        });
+    });
+
+    it('uses the material type name when a document has no target name', () => {
+        const events = mapTodosToCalendarEvents(
+            [buildItem({ expirationApply: true, divisionName: '유통기한' })],
+            ...OCT_2026,
+            [
+                instance('2026-10-07', 'approved', '903', '', { materialType: 'RAW' }),
+                instance('2026-10-08', 'approved', '904'),
+            ],
+            TODAY,
+            '',
+            (code) => (code === 'RAW' ? '원재료' : code),
+        );
+
+        expect(events.map((event) => event.item.title)).toEqual(['유통기한 - 원재료', '유통기한']);
+    });
+
+    it('skips expiration work documents outside the visible range', () => {
+        const events = mapTodosToCalendarEvents(
+            [buildItem({ expirationApply: true })],
+            ...OCT_2026,
+            [instance('2026-09-20', 'approved', '905', '', { targetName: '저울 A' })],
+            TODAY,
+        );
+
+        expect(events).toEqual([]);
+    });
+
+    it('does not let an expiration work document replace a normal item document', () => {
+        const events = mapTodosToCalendarEvents(
+            [
+                buildItem({ id: '1', cycle: 'MONTH', expirationApply: false }),
+                buildItem({ id: '2', cycle: 'MONTH', expirationApply: true, divisionName: '검교정' }),
+            ],
+            ...OCT_2026,
+            [
+                instance('2026-10-01', 'approved', '910'),
+                instance('2026-10-01', 'approved', '911', '', { workId: '2', targetName: '저울 A' }),
+            ],
+            TODAY,
+        );
+        const normal = events.find((event) => event.item.id === '1' && event.cycleDate === '2026-10-01');
+        const expiration = events.filter((event) => event.item.id === '2');
+
+        expect(normal?.item.approvalId).toBe('910');
+        expect(expiration.map((event) => event.item.approvalId)).toEqual(['911']);
+    });
+
+    it('keeps cycle events for a normal item next to an expiration item', () => {
+        const events = mapTodosToCalendarEvents(
+            [
+                buildItem({ id: '1', cycle: 'MONTH', expirationApply: false }),
+                buildItem({ id: '2', cycle: 'MONTH', expirationApply: true }),
+            ],
+            ...OCT_2026,
+            [],
+            TODAY,
+        );
+
+        expect(events.map((event) => event.item.id)).toEqual(['1']);
+    });
+
+    it('shows one expiration event per equipment for the same work', () => {
+        const expiration = (
+            equipmentId: string,
+            targetName: string,
+            approvalId: string,
+        ): HaccpWorkExpiration => ({
+            workId: '1',
+            approvalId,
+            expirationDate: '2026-10-20',
+            equipmentId,
+            materialType: '',
+            certificationUserId: '',
+            targetName,
+        });
+
+        const events = mapExpirationsToCalendarEvents(
+            [buildItem({ expirationApply: true, divisionName: '검교정' })],
+            [expiration('11', '저울 A', '901'), expiration('12', '온도계 B', '902')],
+            ...OCT_2026,
+        );
+
+        expect(events.map((event) => event.item.title)).toEqual([
+            '만료 | 검교정 - 저울 A',
+            '만료 | 검교정 - 온도계 B',
+        ]);
     });
 });

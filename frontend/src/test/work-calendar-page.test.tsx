@@ -168,7 +168,7 @@ describe('WorkCalendarPage', () => {
         ]);
         vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({
             instances: [
-                { workId: 'wc-2', cycleDate: day10, approvalId: '950', statusType: 'approved', registeredDate: day10, title: '' },
+                { workId: 'wc-2', cycleDate: day10, approvalId: '950', statusType: 'approved', registeredDate: day10, title: '' , targetName: '', materialType: ''},
             ],
             displayStartDate: '',
             expirations: [],
@@ -282,10 +282,10 @@ describe('WorkCalendarPage', () => {
         vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({
             displayStartDate: '',
             instances: [
-                { workId: 'a', cycleDate: `${ym}-01`, approvalId: '1', statusType: 'pre_apply', registeredDate: `${ym}-01`, title: '임시저장 업무' },
-                { workId: 'b', cycleDate: `${ym}-01`, approvalId: '2', statusType: 'in_progress', registeredDate: `${ym}-01`, title: '결재중 업무' },
-                { workId: 'c', cycleDate: `${ym}-01`, approvalId: '3', statusType: 'rejected', registeredDate: `${ym}-01`, title: '반려 업무' },
-                { workId: 'd', cycleDate: `${ym}-01`, approvalId: '4', statusType: 'approved', registeredDate: `${ym}-01`, title: '승인 업무' },
+                { workId: 'a', cycleDate: `${ym}-01`, approvalId: '1', statusType: 'pre_apply', registeredDate: `${ym}-01`, title: '임시저장 업무' , targetName: '', materialType: ''},
+                { workId: 'b', cycleDate: `${ym}-01`, approvalId: '2', statusType: 'in_progress', registeredDate: `${ym}-01`, title: '결재중 업무' , targetName: '', materialType: ''},
+                { workId: 'c', cycleDate: `${ym}-01`, approvalId: '3', statusType: 'rejected', registeredDate: `${ym}-01`, title: '반려 업무' , targetName: '', materialType: ''},
+                { workId: 'd', cycleDate: `${ym}-01`, approvalId: '4', statusType: 'approved', registeredDate: `${ym}-01`, title: '승인 업무' , targetName: '', materialType: ''},
             ],
             expirations: [],
         });

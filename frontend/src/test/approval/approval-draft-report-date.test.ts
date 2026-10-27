@@ -27,6 +27,16 @@ describe('toCycleStartDate', () => {
         expect(toCycleStartDate('YEAR', '2026-10-22')).toBe('2026-01-01');
     });
 
+    it('분기 업무는 그 분기 첫날', () => {
+        expect(toCycleStartDate('QUARTER', '2026-08-20')).toBe('2026-07-01');
+        expect(toCycleStartDate('QUARTER', '2026-03-31')).toBe('2026-01-01');
+    });
+
+    it('반기 업무는 1월 1일 또는 7월 1일', () => {
+        expect(toCycleStartDate('HALF', '2026-06-30')).toBe('2026-01-01');
+        expect(toCycleStartDate('HALF', '2026-10-22')).toBe('2026-07-01');
+    });
+
     it('빈 값은 그대로', () => {
         expect(toCycleStartDate('WEEK', '')).toBe('');
     });
