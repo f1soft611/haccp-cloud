@@ -21,7 +21,12 @@
             COALESCE(NULLIF(TRIM(w.code_name), ''), '-') AS division_name,
             COALESCE(NULLIF(TRIM(w.reg_term), ''), 'ANYTIME') AS reg_term,
             COALESCE(cci.item_nm, NULLIF(TRIM(w.reg_term), ''), 'ANYTIME') AS reg_term_nm,
-            '관리자 외 2명' AS assignee_summary
+            <!-- 기존 -> '관리자 외 2명' 고정값 / 변경 -> 실제 담당자 기준 요약 -->
+            CASE
+              WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
+              WHEN wa.assignee_count = 1 THEN wa.first_assignee_name
+              ELSE wa.first_assignee_name || ' 외 ' || CAST(wa.assignee_count - 1 AS varchar) || '명'
+            END AS assignee_summary
         FROM tb_drafting_work_category w
         JOIN tb_tenant t
           ON t.tenant_id = w.tenant_id
@@ -34,6 +39,25 @@
         LEFT JOIN tb_common_code_item cci
           ON cci.group_id = ccg.common_code_group_id
           AND cci.item_code = COALESCE(NULLIF(TRIM(w.reg_term), ''), 'ANYTIME')
+        LEFT JOIN LATERAL (
+          SELECT
+              COUNT(*) AS assignee_count,
+              (ARRAY_AGG(
+                  COALESCE(NULLIF(TRIM(um.user_nm), ''), a.employee_no)
+                  ORDER BY a.drafting_work_category_authority_id
+              ))[1] AS first_assignee_name
+          FROM tb_drafting_work_category_authority a
+          LEFT JOIN tb_user um
+            ON um.tenant_id = a.tenant_id
+           AND (
+             CAST(um.user_id AS varchar) = a.employee_no
+             OR CAST(um.login_id AS varchar) = a.employee_no
+           )
+          WHERE a.tenant_id = w.tenant_id
+            AND a.drafting_work_category_id = w.drafting_work_category_id
+            AND a.use_at = 'Y'
+            AND COALESCE(a.delete_status, 'N') != 'Y'
+        ) wa ON TRUE
         WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
           AND COALESCE(w.use_at, 'N') = 'Y'
