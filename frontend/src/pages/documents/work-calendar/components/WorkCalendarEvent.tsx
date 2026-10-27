@@ -12,12 +12,13 @@ type StatusBadge = {
     outlined?: boolean;
 };
 
-// 공통 상태 라벨 → 캘린더 배지 (미작성은 배지 없음, 결재진행중은 칸이 좁아 '결재중')
+// 공통 상태 라벨 → 캘린더 배지 (미작성은 배지 없음)
 // 기존 -> label만 (범례·이벤트 공용)
 // 변경 -> 이벤트 칸용 한 글자 short 추가 (범례는 label 그대로)
 const STATUS_BADGES: Record<string, StatusBadge> = {
     임시저장: { label: '임시저장', short: '임', color: 'info' },
-    결재진행중: { label: '결재중', short: '중', color: 'warning' },
+    // 기존 -> label: '결재중' / 변경 -> label: '결재진행중' (이벤트 칸은 short '중' 그대로)
+    결재진행중: { label: '결재진행중', short: '중', color: 'warning' },
     반려: { label: '반려', short: '반', color: 'error' },
     승인: { label: '승인', short: '승', color: 'success' },
 };
