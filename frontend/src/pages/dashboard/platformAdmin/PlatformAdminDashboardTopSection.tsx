@@ -44,6 +44,11 @@ const QUICK_MENUS: Record<UserRole, QuickMenuItem[]> = {
     },
     { label: APP_LABELS.menu.documents, to: '/documents', enabled: true },
   ],
+  TENANT_USER: [
+    { label: APP_LABELS.menu.dashboard, to: '/dashboard', enabled: true },
+    { label: APP_LABELS.menu.documents, to: '/documents', enabled: true },
+    { label: APP_LABELS.menu.history, to: '/document-history', enabled: true },
+  ],
   USER: [
     { label: APP_LABELS.menu.dashboard, to: '/dashboard', enabled: true },
     { label: APP_LABELS.menu.documents, to: '/documents', enabled: true },
