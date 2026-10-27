@@ -153,8 +153,19 @@
           LIMIT 1
         ) pending ON TRUE
         LEFT JOIN LATERAL (
+          <!-- 기존 -> cycle_base 는 cycle_start 만 계산 / 변경 -> report_date 범위 비교용 cycle_end(다음 주기 시작일) 추가 -->
           WITH cycle_base AS (
-            SELECT CASE
+            SELECT s.cycle_start,
+                   s.cycle_start + CASE
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY') THEN INTERVAL '1 month'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY') THEN INTERVAL '1 week'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'QUARTER' THEN INTERVAL '3 months'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'HALF' THEN INTERVAL '6 months'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'YEAR' THEN INTERVAL '1 year'
+                       ELSE INTERVAL '1 day'
+                   END AS cycle_end
+            FROM (
+              SELECT CASE
                 WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
                   THEN date_trunc('month', CURRENT_TIMESTAMP)
                 WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
@@ -169,6 +180,7 @@
                     THEN date_trunc('year', CURRENT_TIMESTAMP)
                 ELSE date_trunc('day', CURRENT_TIMESTAMP)
               END AS cycle_start
+            ) s
           )
           SELECT
               COUNT(*) AS total_count,
@@ -192,7 +204,9 @@
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
             AND COALESCE(m.delete_status, 'N') != 'Y'
-            AND m.report_date = TO_CHAR(cb.cycle_start, 'YYYYMMDD')
+            <!-- 기존 -> AND m.report_date = TO_CHAR(cb.cycle_start, 'YYYYMMDD') / 변경 -> report_date 는 표시일이라 이번 주기 범위 안이면 집계 -->
+            AND m.report_date &gt;= TO_CHAR(cb.cycle_start, 'YYYYMMDD')
+            AND m.report_date &lt; TO_CHAR(cb.cycle_end, 'YYYYMMDD')
         ) appr ON TRUE
         <!-- 리스트 최근일시: 본인 작성 문서(삭제 제외)의 가장 큰 보고일자 -->
         LEFT JOIN LATERAL (
