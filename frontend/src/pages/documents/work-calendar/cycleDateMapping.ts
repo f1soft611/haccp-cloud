@@ -208,6 +208,24 @@ export function mapTodosToCalendarEvents(
             return;
         }
 
+        // 사용안함 업무: 앞으로 작성할 주기 칸 없이 작성 문서만 문서마다 report_date 칸에
+        if (!item.active) {
+            cycleInstances
+            .filter((instance) => instance.workId === item.id)
+            .forEach((instance) => {
+                if (instance.cycleDate < rangeStart || instance.cycleDate > rangeEnd) {
+                    return;
+                }
+                events.push({
+                    date: instance.cycleDate,
+                    cycleDate: instance.cycleDate,
+                    isFuture: false,
+                    item: withCycleInstance(item, instance),
+                });
+            });
+            return;
+        }
+
         // 기존 -> getWorkCycleLabel(item) 한글 라벨 비교 / 변경 -> reg_term 공통코드 비교
         const cycle = item.cycle;
 
