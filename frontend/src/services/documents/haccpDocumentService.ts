@@ -3,6 +3,7 @@ import { apiClient } from '../api/apiClient';
 export type HaccpDocumentItem = {
   id: string;
   approvalId: string;
+  workId: string;
   workType: string;
   workDivision: string;
   draftNumber: string;
@@ -107,6 +108,7 @@ function normalizeItem(raw: RawHaccpDocumentItem): HaccpDocumentItem {
   return {
     id: rowId,
     approvalId,
+    workId: draftingWorkCategoryId,
     workType: normalizeText(raw.categoryName ?? raw.categoryNm ?? raw.cataName),
     workDivision: normalizeText(
       raw.divisionName ?? raw.codeName ?? raw.code_name,

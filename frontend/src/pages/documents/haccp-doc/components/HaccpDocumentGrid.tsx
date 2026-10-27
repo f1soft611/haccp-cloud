@@ -1,4 +1,5 @@
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import {
   Chip,
   IconButton,
@@ -13,6 +14,7 @@ import { useTheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { GridPaginationBar } from '../../../../shared/components/data/GridPaginationBar';
+import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
 import type { HaccpDocumentItem } from '../../../../services/documents/haccpDocumentService';
 
 export function HaccpDocumentGrid(props: {
@@ -37,6 +39,7 @@ export function HaccpDocumentGrid(props: {
   const location = useLocation();
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
+  const { openWorkDraft, dialog } = useOpenWorkDraft();
 
   const actionIconSx = {
     color: isDarkMode ? '#fbbf24' : '#1f4f8f',
@@ -77,6 +80,9 @@ export function HaccpDocumentGrid(props: {
             </TableCell>
             <TableCell width={64} align="center">
               상세
+            </TableCell>
+            <TableCell width={64} align="center">
+              작성
             </TableCell>
           </TableRow>
         </TableHead>
@@ -124,11 +130,20 @@ export function HaccpDocumentGrid(props: {
                     sx={{ mx: 'auto' }}
                   />
                 </TableCell>
+                <TableCell align="center">
+                  <Skeleton
+                    variant="rounded"
+                    width={32}
+                    height={32}
+                    sx={{ mx: 'auto' }}
+                  />
+                </TableCell>
               </TableRow>
             ))
           ) : rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} align="center" sx={{ py: 5 }}>
+              {/* 기존 -> colSpan 9 / 변경 -> 작성 열 추가로 10 */}
+              <TableCell colSpan={10} align="center" sx={{ py: 5 }}>
                 조건에 맞는 문서가 없습니다.
               </TableCell>
             </TableRow>
@@ -181,6 +196,27 @@ export function HaccpDocumentGrid(props: {
                           );
                         }}
                       >
+                        {/* 기존 -> EditOutlinedIcon / 변경 -> 보기 의미에 맞게 눈 아이콘 */}
+                        <VisibilityOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </TableCell>
+                <TableCell align="center">
+                  <Tooltip title="작성하러 가기">
+                    <span>
+                      <IconButton
+                        size="small"
+                        aria-label="작성하러 가기"
+                        disabled={!row.workId}
+                        sx={row.workId ? actionIconSx : undefined}
+                        onClick={() => {
+                          void openWorkDraft(
+                            row.workId,
+                            `${location.pathname}${location.search || ''}`,
+                          );
+                        }}
+                      >
                         <EditOutlinedIcon fontSize="small" />
                       </IconButton>
                     </span>
@@ -199,6 +235,7 @@ export function HaccpDocumentGrid(props: {
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
+      {dialog}
     </>
   );
 }
