@@ -48,7 +48,7 @@ describe('HaccpDocumentManagementPage', () => {
           draftNumber: 'HA-202607-001',
           title: '원재료 입고 점검일지',
           writer: '고대성',
-          status: '결재중',
+          status: '결재진행중',
           draftedAt: '2026-07-19',
           updatedAt: '2026-07-20 09:12',
         },
@@ -147,7 +147,7 @@ describe('HaccpDocumentManagementPage', () => {
     window.history.pushState(
       {},
       '',
-      '/docs/haccp-doc?workType=HACCP%20(HA)&workDivisionId=w-1&workDivision=CCP-1B%20%EA%B2%80%EC%A6%9D%EA%B8%B0%EB%A1%9D&draftNumber=HA-202607-001&title=%EC%A0%90%EA%B2%80&writer=%EA%B3%A0%EB%8C%80%EC%84%B1&status=%EA%B2%B0%EC%9E%AC%EC%A4%91&startDate=2026-07-01&endDate=2026-07-20',
+      '/docs/haccp-doc?workType=HACCP%20(HA)&workDivisionId=w-1&workDivision=CCP-1B%20%EA%B2%80%EC%A6%9D%EA%B8%B0%EB%A1%9D&draftNumber=HA-202607-001&title=%EC%A0%90%EA%B2%80&writer=%EA%B3%A0%EB%8C%80%EC%84%B1&status=%EA%B2%B0%EC%9E%AC%EC%A7%84%ED%96%89%EC%A4%91&startDate=2026-07-01&endDate=2026-07-20',
     );
 
     render(
@@ -189,7 +189,7 @@ describe('HaccpDocumentManagementPage', () => {
         title: '점검',
         writer: '고대성',
         participantType: undefined,
-        status: '결재중',
+        status: '결재진행중',
         startDate: '2026-07-01',
         endDate: '2026-07-20',
       });

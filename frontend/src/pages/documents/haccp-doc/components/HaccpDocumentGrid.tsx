@@ -155,7 +155,8 @@ export function HaccpDocumentGrid(props: {
                     color={
                       row.status === '승인'
                         ? 'success'
-                        : row.status === '결재중'
+                        // 기존 -> row.status === '결재중' / 변경 -> '결재진행중'
+                        : row.status === '결재진행중'
                           ? 'warning'
                           : row.status === '임시저장'
                             ? 'info'

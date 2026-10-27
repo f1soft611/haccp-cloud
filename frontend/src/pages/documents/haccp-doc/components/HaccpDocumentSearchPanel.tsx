@@ -13,7 +13,9 @@ import {
 } from '@mui/material';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 
-const STATUS_OPTIONS = ['전체', '임시저장', '결재중', '승인', '반려'];
+// 기존 -> ['전체', '임시저장', '결재중', '승인', '반려']
+// 변경 -> 상태 라벨을 '결재진행중'으로 통일
+const STATUS_OPTIONS = ['전체', '임시저장', '결재진행중', '승인', '반려'];
 const PARTICIPANT_OPTIONS = ['기안자', '결재자', '참조자'];
 
 export function HaccpDocumentSearchPanel(props: {
