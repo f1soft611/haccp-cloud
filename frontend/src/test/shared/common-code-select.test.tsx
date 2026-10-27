@@ -51,4 +51,14 @@ describe('CommonCodeSelect', () => {
         expect(within(listbox).getByRole('option', { name: '전체' })).toBeInTheDocument();
         expect(within(listbox).queryByRole('option', { name: '선택 안 함' })).not.toBeInTheDocument();
     });
+
+    it('emptyLabel을 넘기면 빈 값일 때 콤보박스에 해당 문구를 표시한다', async () => {
+        renderSelect('', '전체');
+        expect(await screen.findByRole('combobox', { name: '단위' })).toHaveTextContent('전체');
+    });
+
+    it('emptyLabel이 없으면 빈 값일 때 콤보박스는 공백으로 둔다', async () => {
+        renderSelect('');
+        expect(await screen.findByRole('combobox', { name: '단위' })).not.toHaveTextContent('선택 안 함');
+    });
 });
