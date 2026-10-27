@@ -227,7 +227,8 @@ export function mapTodosToCalendarEvents(
 }
 
 // 만료일 관리 업무: 결재 완료 문서의 만료일 칸에 표시
-// 앞으로 올 만료일이 보여야 하므로 표시 시작일 하한은 적용하지 않고, 같은 대상 여러 문서도 모두 표시
+// 기존 -> 같은 대상 여러 문서도 모두 표시
+// 변경 -> 서버가 업무 + 대상별 최신 문서만 내려 주므로 받은 행을 그대로 표시. 표시 시작일 하한은 적용하지 않음
 export function mapExpirationsToCalendarEvents(
     todos: TenantTodoCardItem[],
     expirations: HaccpWorkExpiration[],
