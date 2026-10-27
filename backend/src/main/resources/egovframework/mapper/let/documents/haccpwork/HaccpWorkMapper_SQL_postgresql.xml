@@ -126,7 +126,7 @@
             CASE
               WHEN COALESCE(appr.in_progress_count, 0) > 0 THEN '진행중'
               WHEN COALESCE(appr.approved_count, 0) > 0 THEN '완료'
-              WHEN COALESCE(appr.rejected_count, 0) > 0 THEN '반송'
+              WHEN COALESCE(appr.rejected_count, 0) > 0 THEN '반려'
               ELSE '미완료'
             END AS approval_status_type_name,
             TO_CHAR(COALESCE(appr.latest_updated_at, w.updated_at, w.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at
@@ -281,7 +281,7 @@
             CASE
               WHEN COALESCE(m.status_type, '') = 'in_progress' THEN '결재중'
               WHEN COALESCE(m.status_type, '') = 'approved' THEN '승인'
-              WHEN COALESCE(m.status_type, '') = 'rejected' THEN '반송'
+              WHEN COALESCE(m.status_type, '') = 'rejected' THEN '반려'
               ELSE '임시저장'
             END AS approval_status_type_name,
             TO_CHAR(COALESCE(m.updated_at, m.created_at), 'YYYY-MM-DD HH24:MI') AS latest_status_at,
@@ -694,7 +694,7 @@
             CASE
               WHEN COALESCE(pre.status_type, '') = 'in_progress' THEN '진행중'
               WHEN COALESCE(pre.status_type, '') = 'approved' THEN '완료'
-              WHEN COALESCE(pre.status_type, '') = 'rejected' THEN '반송'
+              WHEN COALESCE(pre.status_type, '') = 'rejected' THEN '반려'
               WHEN COALESCE(pre.status_type, '') = 'pre_apply' THEN '미완료'
               ELSE ''
             END AS approval_status_type_name,
@@ -936,7 +936,7 @@
             CASE
               WHEN COALESCE(m.status_type, '') = 'in_progress' THEN '진행중'
               WHEN COALESCE(m.status_type, '') = 'approved' THEN '완료'
-              WHEN COALESCE(m.status_type, '') = 'rejected' THEN '반송'
+              WHEN COALESCE(m.status_type, '') = 'rejected' THEN '반려'
               WHEN COALESCE(m.status_type, '') = 'pre_apply' THEN '미완료'
               ELSE ''
             END AS approval_status_type_name,

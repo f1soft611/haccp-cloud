@@ -47,8 +47,9 @@ export function resolveApprovalStatusView(params: {
   if (
     status === 'rejected' ||
     status === 'returned' ||
-    statusName === '반려' ||
-    statusName === '반송'
+    // 기존 -> statusName === '반려' || statusName === '반송'
+    // 변경 -> statusName === '반려'
+    statusName === '반려'
   ) {
     return { label: '반려', color: 'error' };
   }

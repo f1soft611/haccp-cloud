@@ -86,7 +86,7 @@ describe('countTodoStatuses', () => {
           withStatus('결재중', 'in_progress'),
           withStatus('승인', 'approved'),
           withStatus('승인', 'approved'),
-          withStatus('반송', 'rejected'),
+          withStatus('반려', 'rejected'),
         ],
         3,
     );
@@ -107,7 +107,7 @@ describe('countCurrentMonthStatuses', () => {
                 { isFuture: false, resource: item },
                 { isFuture: false, resource: withStatus('승인', 'approved') },
                 { isFuture: true, resource: item },
-                { isFuture: true, resource: withStatus('반송', 'rejected') },
+                { isFuture: true, resource: withStatus('반려', 'rejected') },
             ],
             2,
         );

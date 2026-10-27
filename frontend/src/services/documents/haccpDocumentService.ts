@@ -9,7 +9,7 @@ export type HaccpDocumentItem = {
   draftNumber: string;
   title: string;
   writer: string;
-  status: '임시저장' | '결재중' | '승인' | '반송';
+  status: '임시저장' | '결재중' | '승인' | '반려';
   draftedAt: string;
   updatedAt: string;
 };
@@ -80,8 +80,10 @@ function normalizeStatus(value: unknown): HaccpDocumentItem['status'] {
   if (normalized === '승인') {
     return '승인';
   }
-  if (normalized === '반송' || normalized === '반려') {
-    return '반송';
+  // 기존 -> normalized === '반송' || normalized === '반려' 이면 '반송'
+  // 변경 -> normalized === '반려' 이면 '반려'
+  if (normalized === '반려') {
+    return '반려';
   }
   return '임시저장';
 }

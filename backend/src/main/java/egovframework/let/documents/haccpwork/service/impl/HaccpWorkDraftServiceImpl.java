@@ -336,9 +336,10 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         if ("승인".equals(normalized) || "approved".equals(normalized)) {
             return "approved";
         }
+        // 기존 -> "반송".equals(normalized) || "반려".equals(normalized)
+        // 변경 -> "반려".equals(normalized) 만 남김
         if (
-                "반송".equals(normalized)
-                        || "반려".equals(normalized)
+                "반려".equals(normalized)
                         || "rejected".equals(normalized)
                         || "returned".equals(normalized)
         ) {
