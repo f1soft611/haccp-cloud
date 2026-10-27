@@ -53,16 +53,14 @@ function withCycleInstance(
 }
 
 export function mapTodosToCalendarEvents(
-    allItems: TenantTodoCardItem[],
+    items: TenantTodoCardItem[],
     rangeStart: string,
     rangeEnd: string,
     cycleInstances: HaccpWorkCycleInstance[] = [],
     today: Date = new Date(),
     displayStartDate: string = '',
+    materialTypeName: (code: string) => string = (code) => code,
 ): CalendarWorkEvent[] {
-    // 기존 -> 모든 업무를 reg_term 주기 칸에 표시
-    // 변경 -> 만료일관리 업무는 작성 시점이 대상별 expiration_date 라 주기 칸에서 제외 (만료 이벤트가 대신 표시)
-    const items = allItems.filter((item) => !item.expirationApply);
     const todayString = toLocalDateString(today);
     const currentWeekMonday = toLocalDateString(
         new Date(
@@ -97,8 +95,13 @@ export function mapTodosToCalendarEvents(
     // 기존 -> 키: workId|instance.cycleDate (report_date 가 곧 주기 시작일)
     // 변경 -> report_date 는 표시일이라 업무 주기 시작일로 바꿔 키를 만든다. 같은 주기 여러 건이면 표시일이 늦은 문서가 남는다
     const cycleByWorkId = new Map(items.map((item) => [item.id, item.cycle]));
+    // 기존 -> 모든 문서로 키를 만듦
+    // 변경 -> 만료일관리 업무 문서는 문서마다 따로 그리므로 주기 키에서 뺀다
+    const expirationWorkIds = new Set(items.filter((item) => item.expirationApply).map((item) => item.id));
     const instances = new Map(
-        cycleInstances.map((instance) => [
+        cycleInstances
+        .filter((instance) => !expirationWorkIds.has(instance.workId))
+        .map((instance) => [
             `${instance.workId}|${toCycleStartDate(cycleByWorkId.get(instance.workId) ?? '', instance.cycleDate)}`,
             instance,
         ]),
@@ -182,6 +185,29 @@ export function mapTodosToCalendarEvents(
     };
 
     items.forEach((item) => {
+        // 만료일관리 업무: 주기 칸 없이 작성 문서만 문서마다 report_date 칸에 (표시 시작일 하한 없음)
+        if (item.expirationApply) {
+            const workName = item.divisionName || item.categoryName || '업무';
+            cycleInstances
+            .filter((instance) => instance.workId === item.id)
+            .forEach((instance) => {
+                if (instance.cycleDate < rangeStart || instance.cycleDate > rangeEnd) {
+                    return;
+                }
+                const targetName = instance.targetName || materialTypeName(instance.materialType);
+                events.push({
+                    date: instance.cycleDate,
+                    cycleDate: instance.cycleDate,
+                    isFuture: false,
+                    item: {
+                        ...withCycleInstance(item, instance),
+                        title: targetName ? `${workName} - ${targetName}` : workName,
+                    },
+                });
+            });
+            return;
+        }
+
         // 기존 -> getWorkCycleLabel(item) 한글 라벨 비교 / 변경 -> reg_term 공통코드 비교
         const cycle = item.cycle;
 
