@@ -115,8 +115,10 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         work={work}
         title={title}
         onTitleChange={onTitleChange}
-        reportDate={reportDate}
-        onReportDateChange={onReportDateChange}
+        // 기존 -> reportDate={reportDate} onReportDateChange={onReportDateChange}
+        // 변경 -> 만료일 관리 업무는 검사일이 업무 기준일로 저장되므로 검사일을 보여 주고 직접 수정은 막는다
+        reportDate={subFieldConfig ? sub.inspectedDate : reportDate}
+        onReportDateChange={subFieldConfig ? undefined : onReportDateChange}
         subFieldsSection={
           subFieldConfig ? (
               <ApprovalDraftExpirationFields

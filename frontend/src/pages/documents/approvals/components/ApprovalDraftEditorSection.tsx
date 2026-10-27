@@ -151,7 +151,9 @@ export function ApprovalDraftEditorSection(
               type="date"
               value={reportDate}
               onChange={(event) => onReportDateChange?.(event.target.value)}
-              disabled={isReadOnly}
+              // 기존 -> disabled={isReadOnly}
+              // 변경 -> 변경 핸들러가 없으면(만료일 관리 업무) 수정 불가
+              disabled={isReadOnly || !onReportDateChange}
               helperText={REPORT_DATE_HELPER_TEXT[work?.cycle ?? '']}
               InputLabelProps={{ shrink: true }}
               inputProps={{ max: dayjs().format('YYYY-MM-DD') }}
