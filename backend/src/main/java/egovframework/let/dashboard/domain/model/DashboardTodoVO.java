@@ -83,6 +83,9 @@ public class DashboardTodoVO implements Serializable {
     @Schema(description = "만료일 관리 양식 해당 여부")
     private boolean expirationApply;
 
+    @Schema(description = "업무 사용 여부 (use_at = 'Y')")
+    private boolean active;
+
     @Schema(description = "주기 내 작성 여부")
     private boolean writtenInCycle;
 
