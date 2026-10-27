@@ -82,6 +82,8 @@ export function formatNow(value: Date): string {
 }
 
 // 업무 주기(work.cycle) 기준 보고일자. WEEK 는 그 주 월요일, MONTH 는 1일, YEAR 는 1월 1일, 그 외는 고른 날짜 그대로 (yyyy-MM-dd)
+// 기존 -> WEEK 는 그 주 월요일, MONTH 는 1일, YEAR 는 1월 1일, 그 외는 고른 날짜 그대로
+// 변경 -> QUARTER 는 분기 첫날, HALF 는 1월 1일 또는 7월 1일 추가
 export function toCycleStartDate(cycle: string, date: string): string {
   const value = dayjs(date);
   if (!date || !value.isValid()) {
@@ -95,6 +97,12 @@ export function toCycleStartDate(cycle: string, date: string): string {
   }
   if (cycle === 'YEAR') {
     return value.startOf('year').format('YYYY-MM-DD');
+  }
+  if (cycle === 'QUARTER') {
+    return value.month(Math.floor(value.month() / 3) * 3).startOf('month').format('YYYY-MM-DD');
+  }
+  if (cycle === 'HALF') {
+    return value.month(value.month() < 6 ? 0 : 6).startOf('month').format('YYYY-MM-DD');
   }
   return date;
 }
