@@ -83,7 +83,7 @@ describe('countTodoStatuses', () => {
         [
           item,
           withStatus('임시저장'),
-          withStatus('결재중', 'in_progress'),
+          withStatus('결재진행중', 'in_progress'),
           withStatus('승인', 'approved'),
           withStatus('승인', 'approved'),
           withStatus('반려', 'rejected'),

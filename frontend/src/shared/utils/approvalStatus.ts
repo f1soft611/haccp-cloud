@@ -37,8 +37,9 @@ export function resolveApprovalStatusView(params: {
 
   if (
     status === 'in_progress' ||
+    // 기존 -> statusName === '결재진행중' || statusName === '결재중'
+    // 변경 -> statusName === '결재진행중' (SQL 이 더 이상 '결재중'을 내보내지 않음)
     statusName === '결재진행중' ||
-    statusName === '결재중' ||
     todoStatus === 'in_progress'
   ) {
     return { label: '결재진행중', color: 'warning' };
