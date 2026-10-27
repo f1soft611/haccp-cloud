@@ -292,7 +292,9 @@ export function useHaccpDocumentManagement() {
 
     chips.push({
       key: 'dateRange',
-      label: `기간: ${appliedFilters.startDate || '-'} ~ ${appliedFilters.endDate || '-'}`,
+      // 기존 -> 기간:
+      // 변경 -> 기안일:
+      label: `기안일: ${appliedFilters.startDate || '-'} ~ ${appliedFilters.endDate || '-'}`,
     });
 
     if (appliedFilters.workType && appliedFilters.workType !== '전체') {
