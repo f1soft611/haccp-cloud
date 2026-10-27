@@ -84,7 +84,8 @@
               ELSE NULL
             END AS approval_status_type,
             CASE
-              WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN '결재중'
+              <!-- 기존 -> THEN '결재중' / 변경 -> 상태 라벨을 '결재진행중'으로 통일 -->
+              WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN '결재진행중'
               WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN '승인'
               WHEN COALESCE(appr.latest_status_type, '') = 'pre_apply' THEN '임시저장'
               WHEN COALESCE(appr.latest_status_type, '') = 'rejected' THEN '반려'
@@ -398,7 +399,8 @@
             CONCAT('검토:', COALESCE(NULLIF(TRIM(ru.user_nm), ''), '-'), ' / 승인:', COALESCE(NULLIF(TRIM(au.user_nm), ''), '-')) AS owner,
             'IN_PROGRESS' AS todo_status,
             'in_progress' AS approval_status_type,
-            '결재중' AS approval_status_type_name,
+            <!-- 기존 -> '결재중' AS approval_status_type_name / 변경 -> 상태 라벨을 '결재진행중'으로 통일 -->
+            '결재진행중' AS approval_status_type_name,
             TO_CHAR(li.arrival_at, 'YYYY-MM-DD HH24:MI') AS latest_status_at,
             CAST(w.drafting_work_template_json AS text) AS template_json,
             w.drafting_work_template_html AS template_html,

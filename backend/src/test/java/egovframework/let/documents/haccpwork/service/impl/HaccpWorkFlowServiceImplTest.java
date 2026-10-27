@@ -1088,7 +1088,7 @@ class HaccpWorkFlowServiceImplTest {
         verify(serviceHaccpWorkDAO, never()).softDeleteElectronicApprovalMain(anyMap());
     }
 
-    @DisplayName("임시저장이 아닌 기안(결재중) 삭제는 409")
+    @DisplayName("임시저장이 아닌 기안(결재진행중) 삭제는 409")
     @Test
     void deleteDraft_rejectsNonPreApply() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForDeleteDraftTest(approvalMainRow(3001L, "in_progress"));

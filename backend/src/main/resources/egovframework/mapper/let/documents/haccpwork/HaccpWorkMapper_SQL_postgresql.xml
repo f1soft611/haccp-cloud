@@ -279,7 +279,8 @@
             END AS todo_status,
             COALESCE(m.status_type, '') AS approval_status_type,
             CASE
-              WHEN COALESCE(m.status_type, '') = 'in_progress' THEN '결재중'
+              <!-- 기존 -> THEN '결재중' / 변경 -> 상태 라벨을 '결재진행중'으로 통일 -->
+              WHEN COALESCE(m.status_type, '') = 'in_progress' THEN '결재진행중'
               WHEN COALESCE(m.status_type, '') = 'approved' THEN '승인'
               WHEN COALESCE(m.status_type, '') = 'rejected' THEN '반려'
               ELSE '임시저장'
