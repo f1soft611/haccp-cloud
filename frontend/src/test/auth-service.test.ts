@@ -220,9 +220,33 @@ describe('authService', () => {
     ).rejects.toThrow('로그인 처리 중 오류가 발생했습니다.');
   });
 
+  it('stores TENANT_USER role when backend roleCode is TENANT_USER', async () => {
+    const mockedPost = vi.mocked(apiClient.post);
+    mockedPost.mockResolvedValue({
+      data: {
+        resultCode: '200',
+        jToken: 'jwt-token',
+        resultVO: {
+          factoryCode: '000001',
+          id: 'user_01',
+          roleCode: 'TENANT_USER',
+        },
+      },
+    });
+
+    const result = await login({
+      userId: 'user_01',
+      password: 'Passw0rd!',
+    });
+
+    expect(result.role).toBe('TENANT_USER');
+  });
+
   it('maps app roles to authority codes for runtime menu lookup', () => {
     expect(toAuthorityCode('PLATFORM_ADMIN')).toBe('PLATFORM_ADMIN');
     expect(toAuthorityCode('TENANT_ADMIN')).toBe('TENANT_ADMIN');
-    expect(toAuthorityCode('USER')).toBe('TENANT_USER');
+    // 기존 -> expect(toAuthorityCode('USER')).toBe('TENANT_USER');
+    // 변경 -> UserRole 에서 'USER' 제거, TENANT_USER 로 검증
+    expect(toAuthorityCode('TENANT_USER')).toBe('TENANT_USER');
   });
 });

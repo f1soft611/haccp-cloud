@@ -1,10 +1,14 @@
 import { create } from 'zustand';
 import { normalizePlatformTenantCode } from '../tenant/platformTenant';
 
-export type UserRole = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'TENANT_USER' | 'USER';
+// 기존 -> export type UserRole = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'TENANT_USER' | 'USER';
+// 변경 -> 업체 사용자 role 은 TENANT_USER 하나만 사용
+export type UserRole = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'TENANT_USER';
 export type OnboardingStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
-const USER_ROLES = ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'TENANT_USER', 'USER'] as const;
+// 기존 -> const USER_ROLES = ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'TENANT_USER', 'USER'] as const;
+// 변경 -> 'USER' 제거
+const USER_ROLES = ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'TENANT_USER'] as const;
 
 function isUserRole(value: unknown): value is UserRole {
   return (
@@ -17,7 +21,9 @@ function normalizeUserRole(value: unknown): UserRole {
   if (isUserRole(value)) {
     return value;
   }
-  return 'USER';
+  // 기존 -> return 'USER';
+  // 변경 -> 예전 저장값 'USER' 와 알 수 없는 값은 TENANT_USER 로 처리
+  return 'TENANT_USER';
 }
 
 type AuthState = {
@@ -127,7 +133,9 @@ const initialState = {
   profileImage: undefined,
   signatureImage: undefined,
   stampImage: undefined,
-  role: 'USER' as UserRole,
+  // 기존 -> role: 'USER' as UserRole,
+  // 변경 -> 기본 role TENANT_USER
+  role: 'TENANT_USER' as UserRole,
   accessToken: '',
   refreshToken: '',
   loginHistoryId: undefined,
