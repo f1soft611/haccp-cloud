@@ -40,7 +40,9 @@ public class HaccpPortalDocumentApiController {
 
     @Operation(
             summary = "HACCP 문서포탈 목록 조회",
-            description = "관리자용 HACCP 문서포탈 목록을 분류별 표시용 데이터로 조회한다",
+            // 기존 -> "관리자용 HACCP 문서포탈 목록을 분류별 표시용 데이터로 조회한다"
+            // 변경 -> 역할별 조회 범위 설명
+            description = "HACCP 문서포탈 목록을 조회한다. PLATFORM_ADMIN, TENANT_ADMIN은 전체 업무, 그 밖의 역할은 본인 담당 업무만 조회한다",
             security = {@SecurityRequirement(name = "Authorization")},
             tags = {"HaccpPortalDocumentApiController"}
     )
@@ -56,7 +58,10 @@ public class HaccpPortalDocumentApiController {
         String tenantCode = resolveTenantCode(tenantHeader, request);
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
-        resultMap.put("resultList", haccpPortalDocumentService.listPortalDocuments(tenantCode));
+        // 기존 -> haccpPortalDocumentService.listPortalDocuments(tenantCode)
+        // 변경 -> 로그인 코드와 역할 코드를 넘겨 역할별 조회 범위 적용
+        resultMap.put("resultList", haccpPortalDocumentService.listPortalDocuments(
+                tenantCode, resolveLoginCode(user), resolveRoleCode(user)));
         resultMap.put("user", user);
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
@@ -80,5 +85,43 @@ public class HaccpPortalDocumentApiController {
         }
 
         return "PLATFORM";
+    }
+
+    private String resolveLoginCode(LoginVO user) {
+        if (user != null && StringUtils.hasText(user.getId())) {
+            return user.getId().trim();
+        }
+
+        try {
+            Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+            if (userDetails instanceof LoginVO) {
+                LoginVO loginVO = (LoginVO) userDetails;
+                if (StringUtils.hasText(loginVO.getId())) {
+                    return loginVO.getId().trim();
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // noop
+        }
+        return null;
+    }
+
+    private String resolveRoleCode(LoginVO user) {
+        if (user != null && StringUtils.hasText(user.getRoleCode())) {
+            return user.getRoleCode().trim().toUpperCase();
+        }
+
+        try {
+            Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+            if (userDetails instanceof LoginVO) {
+                LoginVO loginVO = (LoginVO) userDetails;
+                if (StringUtils.hasText(loginVO.getRoleCode())) {
+                    return loginVO.getRoleCode().trim().toUpperCase();
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // noop
+        }
+        return "";
     }
 }
