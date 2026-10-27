@@ -53,13 +53,16 @@ function withCycleInstance(
 }
 
 export function mapTodosToCalendarEvents(
-    items: TenantTodoCardItem[],
+    allItems: TenantTodoCardItem[],
     rangeStart: string,
     rangeEnd: string,
     cycleInstances: HaccpWorkCycleInstance[] = [],
     today: Date = new Date(),
     displayStartDate: string = '',
 ): CalendarWorkEvent[] {
+    // 기존 -> 모든 업무를 reg_term 주기 칸에 표시
+    // 변경 -> 만료일관리 업무는 작성 시점이 대상별 expiration_date 라 주기 칸에서 제외 (만료 이벤트가 대신 표시)
+    const items = allItems.filter((item) => !item.expirationApply);
     const todayString = toLocalDateString(today);
     const currentWeekMonday = toLocalDateString(
         new Date(

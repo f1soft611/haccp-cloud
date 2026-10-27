@@ -468,17 +468,15 @@ export async function listHaccpWorkTodos(params: {
 }
 
 // 캘린더용: 업무별·주기 기준일별 결재문서 상태 (날짜는 YYYY-MM-DD로 주고받는다)
-// 기존 -> workId, cycleDate, approvalId, statusType
-// 변경 -> 등록일 칸 표시용 registeredDate 추가 (없으면 '')
 export type HaccpWorkCycleInstance = {
   workId: string;
   cycleDate: string;
   approvalId: string;
   statusType: string;
   registeredDate: string;
-  // 기존 -> 없음 (업무 단위 title을 모든 날짜가 공유)
-  // 변경 -> 날짜별 문서 제목 (없으면 '')
   title: string;
+  targetName: string; // 만료일관리 문서의 대상: 설비명 또는 사원명, 품목유형 코드 (일반 업무와 대상 없는 문서는 '')
+  materialType: string;
 };
 
 type RawHaccpWorkCycleInstance = {
@@ -488,6 +486,8 @@ type RawHaccpWorkCycleInstance = {
   statusType?: string | null;
   registeredDate?: string | null;
   title?: string | null;
+  targetName?: string | null;
+  materialType?: string | null;
 };
 
 export type HaccpWorkExpiration = {
@@ -558,6 +558,8 @@ export async function listHaccpWorkTodoCycles(params: {
       statusType: item.statusType ?? '',
       registeredDate: toDashedDate(item.registeredDate),
       title: (item.title ?? '').trim(),
+      targetName: (item.targetName ?? '').trim(),
+      materialType: (item.materialType ?? '').trim(),
     })),
     displayStartDate: Array.isArray(data) ? '' : toDashedDate(data?.result?.displayStartDate),
     expirations: (Array.isArray(data) ? [] : (data?.result?.expirations ?? []))

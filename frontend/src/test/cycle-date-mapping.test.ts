@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { mapTodosToCalendarEvents } from '../pages/documents/work-calendar/cycleDateMapping';
+import {
+    mapExpirationsToCalendarEvents,
+    mapTodosToCalendarEvents,
+} from '../pages/documents/work-calendar/cycleDateMapping';
 import type { TenantTodoCardItem } from '../pages/dashboard/tenant/hooks/useTenantDashboardData';
-import type { HaccpWorkCycleInstance } from '../services/documents/haccpBaseWorkService';
+import type {
+    HaccpWorkCycleInstance,
+    HaccpWorkExpiration,
+} from '../services/documents/haccpBaseWorkService';
 
 // 2026-10-08 목요일 (이번 주 월요일 10-05, 이번 달 1일 10-01)
 const TODAY = new Date(2026, 9, 8);
@@ -56,8 +62,13 @@ function instance(
     statusType: string,
     approvalId = '900',
     registeredDate = '',
+    overrides: Partial<HaccpWorkCycleInstance> = {},
 ): HaccpWorkCycleInstance {
-    return { workId: '1', cycleDate, approvalId, statusType, registeredDate, title: '' };
+    return {
+        workId: '1', cycleDate, approvalId, statusType, registeredDate, title: '',
+        targetName: '', materialType: '',
+        ...overrides,
+    };
 }
 
 describe('mapTodosToCalendarEvents', () => {
@@ -561,5 +572,61 @@ describe('mapTodosToCalendarEvents', () => {
                 mapTodosToCalendarEvents(items, ...OCT_2026, [], TODAY),
             );
         });
+    });
+});
+
+describe('expiration work (expirationApply)', () => {
+    const CYCLES = ['DAY', 'WEEK', 'MONTH', 'QUARTER', 'HALF', 'YEAR', 'ANYTIME'];
+
+    it.each(CYCLES)('creates no cycle events for a %s item', (cycle) => {
+        const events = mapTodosToCalendarEvents(
+            [buildItem({ cycle, expirationApply: true })],
+            ...OCT_2026,
+            [instance('2026-10-05', 'approved')],
+            TODAY,
+        );
+
+        expect(events).toEqual([]);
+    });
+
+    it('keeps cycle events for a normal item next to an expiration item', () => {
+        const events = mapTodosToCalendarEvents(
+            [
+                buildItem({ id: '1', cycle: 'MONTH', expirationApply: false }),
+                buildItem({ id: '2', cycle: 'MONTH', expirationApply: true }),
+            ],
+            ...OCT_2026,
+            [],
+            TODAY,
+        );
+
+        expect(events.map((event) => event.item.id)).toEqual(['1']);
+    });
+
+    it('shows one expiration event per equipment for the same work', () => {
+        const expiration = (
+            equipmentId: string,
+            targetName: string,
+            approvalId: string,
+        ): HaccpWorkExpiration => ({
+            workId: '1',
+            approvalId,
+            expirationDate: '2026-10-20',
+            equipmentId,
+            materialType: '',
+            certificationUserId: '',
+            targetName,
+        });
+
+        const events = mapExpirationsToCalendarEvents(
+            [buildItem({ expirationApply: true, divisionName: '검교정' })],
+            [expiration('11', '저울 A', '901'), expiration('12', '온도계 B', '902')],
+            ...OCT_2026,
+        );
+
+        expect(events.map((event) => event.item.title)).toEqual([
+            '만료 | 검교정 - 저울 A',
+            '만료 | 검교정 - 온도계 B',
+        ]);
     });
 });
