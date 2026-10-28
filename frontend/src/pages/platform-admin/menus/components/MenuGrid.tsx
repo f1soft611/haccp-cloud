@@ -22,10 +22,12 @@ import {
   Chip,
   IconButton,
   Skeleton,
+  Stack,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { Fragment } from 'react';
@@ -109,6 +111,30 @@ export function MenuGrid(props: {
 
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
+
+  const actionIconSx = {
+    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+    bgcolor: isDarkMode
+      ? 'rgba(251, 191, 36, 0.12)'
+      : 'rgba(31, 79, 143, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(251, 191, 36, 0.2)'
+        : 'rgba(31, 79, 143, 0.16)',
+    },
+  };
+
+  const dangerIconSx = {
+    color: isDarkMode ? '#f87171' : '#c53b3b',
+    bgcolor: isDarkMode
+      ? 'rgba(248, 113, 113, 0.12)'
+      : 'rgba(197, 59, 59, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(248, 113, 113, 0.2)'
+        : 'rgba(197, 59, 59, 0.16)',
+    },
+  };
 
   const renderIconCell = (iconNm: string) => {
     const IconComponent = ICON_COMPONENTS[iconNm];
@@ -217,7 +243,11 @@ export function MenuGrid(props: {
                   />
                 </TableCell>
                 <TableCell align="center">
-                  <Skeleton variant="circular" width={26} height={26} />
+                  {/* 기존 -> circular 26 하나 / 변경 -> HACCP 문서현황 기준 32x32 두 개 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Skeleton variant="rounded" width={32} height={32} />
+                    <Skeleton variant="rounded" width={32} height={32} />
+                  </Stack>
                 </TableCell>
               </TableRow>
             ))
@@ -282,47 +312,39 @@ export function MenuGrid(props: {
                     />
                   </TableCell>
                   <TableCell align="center">
-                    <IconButton
-                      size="small"
-                      onClick={() => onEdit(rootMenu)}
-                      disabled={!canManage}
-                      sx={{
-                        mr: 0.25,
-                        color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-                        bgcolor: isDarkMode
-                          ? 'rgba(251, 191, 36, 0.12)'
-                          : 'rgba(31, 79, 143, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(251, 191, 36, 0.2)'
-                            : 'rgba(31, 79, 143, 0.16)',
-                        },
-                      }}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => onDelete(rootMenu)}
-                      disabled={
-                        !canManage ||
-                        Boolean(rootMenu.hasChildren) ||
-                        deletePending
-                      }
-                      sx={{
-                        color: isDarkMode ? '#f87171' : '#c53b3b',
-                        bgcolor: isDarkMode
-                          ? 'rgba(248, 113, 113, 0.12)'
-                          : 'rgba(197, 59, 59, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(248, 113, 113, 0.2)'
-                            : 'rgba(197, 59, 59, 0.16)',
-                        },
-                      }}
-                    >
-                      <DeleteOutlineOutlinedIcon fontSize="small" />
-                    </IconButton>
+                    {/* 기존 -> mr 0.25 간격, 툴팁 없음, sx 인라인 / 변경 -> Stack spacing 0.5, Tooltip, sx 상수 */}
+                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                      <Tooltip title="메뉴 수정">
+                        <span>
+                          <IconButton
+                            size="small"
+                            aria-label="메뉴 수정"
+                            onClick={() => onEdit(rootMenu)}
+                            disabled={!canManage}
+                            sx={actionIconSx}
+                          >
+                            <EditOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Tooltip title="메뉴 삭제">
+                        <span>
+                          <IconButton
+                            size="small"
+                            aria-label="메뉴 삭제"
+                            onClick={() => onDelete(rootMenu)}
+                            disabled={
+                              !canManage ||
+                              Boolean(rootMenu.hasChildren) ||
+                              deletePending
+                            }
+                            sx={dangerIconSx}
+                          >
+                            <DeleteOutlineOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </Stack>
                   </TableCell>
                 </TableRow>
 
@@ -387,37 +409,39 @@ export function MenuGrid(props: {
                           />
                         </TableCell>
                         <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            onClick={() => onEdit(childMenu)}
-                            disabled={!canManage}
-                            sx={{
-                              mr: 0.25,
-                              color: '#1f4f8f',
-                              bgcolor: 'rgba(31, 79, 143, 0.08)',
-                              '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
-                            }}
-                          >
-                            <EditOutlinedIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => onDelete(childMenu)}
-                            disabled={
-                              !canManage ||
-                              Boolean(childMenu.hasChildren) ||
-                              deletePending
-                            }
-                            sx={{
-                              color: '#c53b3b',
-                              bgcolor: 'rgba(197, 59, 59, 0.08)',
-                              '&:hover': {
-                                bgcolor: 'rgba(197, 59, 59, 0.16)',
-                              },
-                            }}
-                          >
-                            <DeleteOutlineOutlinedIcon fontSize="small" />
-                          </IconButton>
+                          {/* 기존 -> 라이트 색만 인라인, mr 0.25 간격 / 변경 -> 다크모드 대응 sx 상수, Stack spacing 0.5, Tooltip */}
+                          <Stack direction="row" spacing={0.5} justifyContent="center">
+                            <Tooltip title="메뉴 수정">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  aria-label="메뉴 수정"
+                                  onClick={() => onEdit(childMenu)}
+                                  disabled={!canManage}
+                                  sx={actionIconSx}
+                                >
+                                  <EditOutlinedIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            <Tooltip title="메뉴 삭제">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  aria-label="메뉴 삭제"
+                                  onClick={() => onDelete(childMenu)}
+                                  disabled={
+                                    !canManage ||
+                                    Boolean(childMenu.hasChildren) ||
+                                    deletePending
+                                  }
+                                  sx={dangerIconSx}
+                                >
+                                  <DeleteOutlineOutlinedIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </Stack>
                         </TableCell>
                       </TableRow>
                     ))

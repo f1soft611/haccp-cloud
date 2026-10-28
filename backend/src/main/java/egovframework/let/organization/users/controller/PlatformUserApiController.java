@@ -231,6 +231,44 @@ public class PlatformUserApiController {
         }
     }
 
+    @PostMapping("/{id}/password/reset")
+    public ResultVO resetUserPassword(
+            @PathVariable Long id,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            HttpServletRequest request) throws Exception {
+        Object userDetails = EgovUserDetailsHelper.getAuthenticatedUser();
+        if (!(userDetails instanceof LoginVO)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증 정보가 없습니다.");
+        }
+        if (!canResetPassword(((LoginVO) userDetails).getRoleCode())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "비밀번호 초기화 권한이 없습니다.");
+        }
+
+        try {
+            String tempPassword = platformUserService.resetPassword(resolveTenantCode(tenantHeader, request), id);
+            Map<String, Object> resultMap = new HashMap<String, Object>();
+            resultMap.put("tempPassword", tempPassword);
+            resultMap.put("message", "비밀번호가 초기화되었습니다.");
+            return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+        } catch (IllegalArgumentException ex) {
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("message", ex.getMessage());
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.INPUT_CHECK_ERROR);
+        } catch (IllegalStateException ex) {
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("message", ex.getMessage());
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
+        }
+    }
+
+    static boolean canResetPassword(String roleCode) {
+        if (!StringUtils.hasText(roleCode)) {
+            return false;
+        }
+        String normalized = roleCode.trim().toUpperCase();
+        return "TENANT_ADMIN".equals(normalized) || "PLATFORM_ADMIN".equals(normalized);
+    }
+
     private String resolveTenantCode(String tenantHeader, HttpServletRequest request) {
         if (StringUtils.hasText(tenantHeader)) {
             return tenantHeader.trim().toUpperCase();

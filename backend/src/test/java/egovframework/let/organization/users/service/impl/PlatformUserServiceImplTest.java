@@ -2,6 +2,7 @@ package egovframework.let.organization.users.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,7 +13,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import egovframework.let.organization.users.domain.model.PlatformUserSaveRequestVO;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
+import egovframework.let.utl.sim.service.EgovFileScrty;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -114,5 +118,43 @@ class PlatformUserServiceImplTest {
             assertEquals("이메일 형식이 올바르지 않습니다.", ex.getMessage(), email);
         }
         verifyNoInteractions(platformUserDAO);
+    }
+
+    @DisplayName("비밀번호 초기화 시 loginCode 두 번 반복 값을 loginCode salt 로 해시해 저장하고 평문을 반환한다")
+    @Test
+    @SuppressWarnings("unchecked")
+    void resetPassword_storesHashOfLoginCodeTwice() throws Exception {
+        PlatformUserDAO platformUserDAO = mock(PlatformUserDAO.class);
+        when(platformUserDAO.selectTenantIdByCode(anyString())).thenReturn(10L);
+        Map<String, Object> account = new HashMap<String, Object>();
+        account.put("loginId", 77L);
+        account.put("loginCode", "hong");
+        when(platformUserDAO.selectLoginAccountByUserId(any())).thenReturn(account);
+
+        PlatformUserServiceImpl service = new PlatformUserServiceImpl();
+        ReflectionTestUtils.setField(service, "platformUserDAO", platformUserDAO);
+
+        String tempPassword = service.resetPassword("TENANT1", 5L);
+
+        assertEquals("honghong", tempPassword);
+        ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(platformUserDAO).updateLoginPasswordHash(captor.capture());
+        assertEquals(77L, captor.getValue().get("loginId"));
+        assertEquals(EgovFileScrty.encryptPassword("honghong", "hong"), captor.getValue().get("passwordHash"));
+    }
+
+    @DisplayName("비밀번호 초기화 대상 계정이 없으면 IllegalStateException")
+    @Test
+    void resetPassword_throwsWhenAccountMissing() throws Exception {
+        PlatformUserDAO platformUserDAO = mock(PlatformUserDAO.class);
+        when(platformUserDAO.selectTenantIdByCode(anyString())).thenReturn(10L);
+        when(platformUserDAO.selectLoginAccountByUserId(any())).thenReturn(null);
+
+        PlatformUserServiceImpl service = new PlatformUserServiceImpl();
+        ReflectionTestUtils.setField(service, "platformUserDAO", platformUserDAO);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> service.resetPassword("TENANT1", 5L));
+        assertEquals("연결된 로그인 계정을 찾을 수 없습니다.", ex.getMessage());
     }
 }

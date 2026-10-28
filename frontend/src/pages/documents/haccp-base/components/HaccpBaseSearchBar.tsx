@@ -13,6 +13,7 @@ import type { HaccpCategoryOption } from '../types';
 export type HaccpBaseSearchValue = {
   categoryId: 'ALL' | string;
   keyword: string;
+  useAt: 'all' | 'Y' | 'N';
 };
 
 export function HaccpBaseSearchBar(props: {
@@ -78,6 +79,24 @@ export function HaccpBaseSearchBar(props: {
           }}
           sx={{ flex: 1, minWidth: 260 }}
         />
+
+        <TextField
+          select
+          size="small"
+          label="사용유무"
+          value={value.useAt}
+          onChange={(event) =>
+            onChange({
+              ...value,
+              useAt: event.target.value as HaccpBaseSearchValue['useAt'],
+            })
+          }
+          sx={{ minWidth: 140 }}
+        >
+          <MenuItem value="all">전체</MenuItem>
+          <MenuItem value="Y">사용</MenuItem>
+          <MenuItem value="N">미사용</MenuItem>
+        </TextField>
 
         <Button variant="contained" onClick={onSearch}>
           조회

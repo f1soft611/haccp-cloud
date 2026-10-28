@@ -47,6 +47,25 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, crea
         approverName: '고대성',
         assigneeMapped: true,
       },
+      {
+        id: '2',
+        tenantCode: 'PLATFORM',
+        categoryGroupId: '10',
+        categoryCode: '001',
+        categoryName: 'HACCP문서(HA)',
+        divisionCode: '002',
+        divisionName: '폐기 양식',
+        cycle: 'DAY', cycleName: '일',
+        active: false,
+        createdBy: '고대성',
+        createdAt: '2026-07-07 10:00',
+        owner: '검토:금도연 / 승인:고대성',
+        reviewerId: '101',
+        reviewerName: '금도연',
+        approverId: '102',
+        approverName: '고대성',
+        assigneeMapped: true,
+      },
     ]),
     listUsersMock: vi.fn(async () => [
       {
@@ -111,13 +130,13 @@ describe('HaccpBaseManagementPage', () => {
     );
 
     expect(await screen.findByText('No')).toBeInTheDocument();
-    expect(await screen.findByText('구분명')).toBeInTheDocument();
-    expect(await screen.findByText('분류')).toBeInTheDocument();
+    expect(await screen.findByText('업무구분명')).toBeInTheDocument();
+    expect(await screen.findByText('업무분류')).toBeInTheDocument();
     expect(await screen.findByText('등록주기')).toBeInTheDocument();
-    expect(await screen.findByText('등록자')).toBeInTheDocument();
-    expect(await screen.findByText('등록일')).toBeInTheDocument();
+    expect(screen.queryByText('등록자')).not.toBeInTheDocument();
+    expect(screen.queryByText('등록일')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '분류 설정' }));
+    fireEvent.click(screen.getByRole('button', { name: '업무분류 설정' }));
     expect(navigateMock).toHaveBeenCalledWith('/docs/haccp-base/categories');
 
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
@@ -128,8 +147,8 @@ describe('HaccpBaseManagementPage', () => {
     expect(
       screen.getByRole('textbox', { name: /구분코드/ }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /구분명/ })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: '분류' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /업무구분명/ })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '업무분류' })).toBeInTheDocument();
     expect(
       screen.getByRole('combobox', { name: '등록주기' }),
     ).toBeInTheDocument();
@@ -179,7 +198,7 @@ describe('HaccpBaseManagementPage', () => {
     ]);
     fireEvent.click(screen.getByRole('option', { name: '분기' }));
 
-    fireEvent.change(screen.getByRole('textbox', { name: /구분명/ }), {
+    fireEvent.change(screen.getByRole('textbox', { name: /업무구분명/ }), {
       target: { value: '분기 점검' },
     });
     fireEvent.change(screen.getByRole('combobox', { name: /검토자/ }), {
@@ -198,7 +217,7 @@ describe('HaccpBaseManagementPage', () => {
     expect(createHaccpBaseWorkMock.mock.calls[0][0]).toMatchObject({ cycle: 'QUARTER' });
   });
 
-  // 기존 -> HCP- 분류 + 수시일 때만 노출 확인 / 변경 -> HCP- 분류이면 등록주기와 상관없이 노출 확인
+  // 기존 -> HCP- 업무분류 + 수시일 때만 노출 확인 / 변경 -> HCP- 업무분류이면 등록주기와 상관없이 노출 확인
   it('shows expiration select only for HCP- category', async () => {
     render(
         <AppProviders>
@@ -209,7 +228,7 @@ describe('HaccpBaseManagementPage', () => {
     await screen.findByText('기안서');
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
 
-    // 기본값: 분류 001 -> 숨김
+    // 기본값: 업무분류 001 -> 숨김
     expect(
         screen.queryByRole('combobox', { name: '만료일 관리 양식' }),
     ).not.toBeInTheDocument();
@@ -217,15 +236,15 @@ describe('HaccpBaseManagementPage', () => {
         screen.getByRole('combobox', { name: '결재 적용 여부' }),
     ).toHaveTextContent(/^적용$/);
 
-    // 수시여도 분류가 HCP- 가 아니면 숨김
+    // 수시여도 업무분류가 HCP- 가 아니면 숨김
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
     fireEvent.click(await screen.findByRole('option', { name: '수시' }));
     expect(
         screen.queryByRole('combobox', { name: '만료일 관리 양식' }),
     ).not.toBeInTheDocument();
 
-    // HCP- 분류 -> 노출, 기본값 미해당
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: '분류' }));
+    // HCP- 업무분류 -> 노출, 기본값 미해당
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '업무분류' }));
     fireEvent.click(await screen.findByRole('option', { name: '검교정 일정관리' }));
     expect(
         screen.getByRole('combobox', { name: '만료일 관리 양식' }),
@@ -250,7 +269,7 @@ describe('HaccpBaseManagementPage', () => {
     await screen.findByText('기안서');
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
 
-    fireEvent.change(screen.getByRole('textbox', { name: /구분명/ }), {
+    fireEvent.change(screen.getByRole('textbox', { name: /업무구분명/ }), {
       target: { value: '미적용 점검' },
     });
     fireEvent.change(screen.getByRole('combobox', { name: /검토자/ }), {
@@ -288,6 +307,34 @@ describe('HaccpBaseManagementPage', () => {
     await screen.findByText('기안서');
     expect(
         screen.getByRole('table', { name: 'HACCP 양식 목록' }),
-    ).toHaveStyle({ minWidth: '1512px' });
+    ).toHaveStyle({ minWidth: '1142px' });
+  });
+
+  it('filters works by use status with 사용 as the default', async () => {
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+
+    // 기본값: 사용 -> 미사용 업무 숨김
+    await screen.findByText('기안서');
+    expect(screen.getByRole('combobox', { name: '사용유무' })).toHaveTextContent(/^사용$/);
+    expect(screen.queryByText('폐기 양식')).not.toBeInTheDocument();
+
+    // 전체 -> 선택만 바꾸면 반영 안 됨, 조회 후 모두 노출
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '사용유무' }));
+    fireEvent.click(await screen.findByRole('option', { name: '전체' }));
+    expect(screen.queryByText('폐기 양식')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    expect(await screen.findByText('폐기 양식')).toBeInTheDocument();
+    expect(screen.getByText('기안서')).toBeInTheDocument();
+
+    // 미사용 -> 미사용 업무만 노출
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '사용유무' }));
+    fireEvent.click(await screen.findByRole('option', { name: '미사용' }));
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    expect(await screen.findByText('폐기 양식')).toBeInTheDocument();
+    expect(screen.queryByText('기안서')).not.toBeInTheDocument();
   });
 });

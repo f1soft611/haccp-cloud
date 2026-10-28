@@ -83,6 +83,10 @@ public class PlatformUserDAO extends EgovAbstractMapper {
         return selectOne("PlatformUserDAO.selectLoginIdByUserId", condition);
     }
 
+    public Map<String, Object> selectLoginAccountByUserId(Map<String, Object> condition) throws Exception {
+        return selectOne("PlatformUserDAO.selectLoginAccountByUserId", condition);
+    }
+
     public Long selectLoginIdByLoginCode(Map<String, Object> condition) throws Exception {
         return selectOne("PlatformUserDAO.selectLoginIdByLoginCode", condition);
     }

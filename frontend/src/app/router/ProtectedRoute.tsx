@@ -21,6 +21,7 @@ export function ProtectedRoute({
   const role = useAuthStore((state) => state.role);
   const onboardingRequired = useAuthStore((state) => state.onboardingRequired);
   const onboardingStatus = useAuthStore((state) => state.onboardingStatus);
+  const mustChangePassword = useAuthStore((state) => state.mustChangePassword);
   const isTenantFirstSetupRoute = location.pathname === '/tenant-first-setup';
   const effectiveOnboardingRequired =
     onboardingRequired || onboardingStatus !== 'COMPLETED';
@@ -44,6 +45,10 @@ export function ProtectedRoute({
   if (tenantOnboardingRequired && !isTenantFirstSetupRoute) {
     void prefetchRouteByPath('/tenant-first-setup');
     return <Navigate to="/tenant-first-setup" replace />;
+  }
+
+  if (mustChangePassword && location.pathname !== '/account/password') {
+    return <Navigate to="/account/password" replace />;
   }
 
   if (

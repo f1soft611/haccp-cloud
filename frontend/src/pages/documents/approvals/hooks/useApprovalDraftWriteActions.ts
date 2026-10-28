@@ -216,7 +216,9 @@ export function useApprovalDraftWriteActions(
 
       const normalizedTitle = title.trim();
       if (!normalizedTitle) {
-        throw new Error('기안 제목은 필수입니다.');
+        // 기존 -> throw new Error('기안 제목은 필수입니다.');
+        // 변경 -> 제목 라벨에 맞춤
+        throw new Error('제목은 필수입니다.');
       }
       const subPayload = resolveSubPayload();
 
@@ -590,7 +592,9 @@ export function useApprovalDraftWriteActions(
     }
 
     if (!title.trim()) {
-      const message = '기안 제목은 필수입니다.';
+      // 기존 -> const message = '기안 제목은 필수입니다.';
+      // 변경 -> 제목 라벨에 맞춤
+      const message = '제목은 필수입니다.';
       setErrorMessage(message);
       showError(message);
       return;

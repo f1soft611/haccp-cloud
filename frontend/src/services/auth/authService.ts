@@ -30,6 +30,7 @@ export type LoginResponse = {
   loginHistoryId?: number;
   onboardingRequired?: boolean;
   onboardingStatus?: OnboardingStatus;
+  mustChangePassword?: boolean;
 };
 
 type BackendLoginVO = {
@@ -55,6 +56,7 @@ type BackendLoginEnvelope = {
   loginHistoryId?: number;
   onboardingRequired?: boolean;
   onboardingStatus?: OnboardingStatus;
+  mustChangePassword?: boolean;
 };
 
 function resolveBackendLoginErrorMessage(
@@ -219,6 +221,7 @@ function normalizeLoginResponse(
     loginHistoryId: data.loginHistoryId,
     onboardingRequired: data.onboardingRequired ?? false,
     onboardingStatus: data.onboardingStatus ?? 'COMPLETED',
+    mustChangePassword: data.mustChangePassword ?? false,
   };
 }
 

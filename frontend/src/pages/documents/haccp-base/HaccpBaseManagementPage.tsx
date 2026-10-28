@@ -34,6 +34,7 @@ import type {
 const DEFAULT_SEARCH_VALUE: HaccpBaseSearchValue = {
   categoryId: 'ALL',
   keyword: '',
+  useAt: 'Y',
 };
 
 const DEFAULT_CREATE_FORM: HaccpBaseCreateForm = {
@@ -170,6 +171,13 @@ export function HaccpBaseManagementPage() {
         row.categoryId === appliedFilters.categoryId;
 
       if (!byCategory) {
+        return false;
+      }
+
+      const byUseAt =
+        appliedFilters.useAt === 'all' || row.useAt === appliedFilters.useAt;
+
+      if (!byUseAt) {
         return false;
       }
 

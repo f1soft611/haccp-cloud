@@ -1,4 +1,4 @@
-import { Grid, Stack } from '@mui/material';
+import {Alert, Grid, Stack} from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -30,6 +30,8 @@ export function AccountPasswordPage() {
   const userId = useAuthStore((state) => state.userId);
   const role = useAuthStore((state) => state.role);
   const profileImage = useAuthStore((state) => state.profileImage);
+  const mustChangePassword = useAuthStore((state) => state.mustChangePassword);
+  const markPasswordChanged = useAuthStore((state) => state.markPasswordChanged);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [nextPassword, setNextPassword] = useState('');
@@ -58,6 +60,7 @@ export function AccountPasswordPage() {
       setCurrentPassword('');
       setNextPassword('');
       setConfirmPassword('');
+      markPasswordChanged();
     },
     onError: (error) => {
       setNoticeMessage('');
@@ -113,6 +116,11 @@ export function AccountPasswordPage() {
         useMenuMetadata={false}
         showGroupLabel={false}
       />
+      {mustChangePassword ? (
+          <Alert severity="warning">
+            임시 비밀번호로 로그인했습니다. 새 비밀번호로 변경해주세요.
+          </Alert>
+      ) : null}
 
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, lg: 4 }}>

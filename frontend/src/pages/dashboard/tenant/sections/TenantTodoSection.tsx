@@ -73,14 +73,14 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
         <AdminGrid ariaLabel={APP_LABELS.dashboard.blocks.todos} maxHeight={560}>
           <TableHead>
             <TableRow>
-              <TableCell align="center" width={160}>
+              <TableCell align="center" width={200}>
                 업무분류
               </TableCell>
               <TableCell align="center" sx={{ minWidth: 200 }}>
                 업무명
               </TableCell>
-              <TableCell align="center" width={90}>
-                주기
+              <TableCell align="center" width={120}>
+                작성주기
               </TableCell>
               <TableCell align="center" width={110}>
                 상태
@@ -89,10 +89,10 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                 담당자
               </TableCell>
               <TableCell align="center" width={150}>
-                최근일시
+                최근작성일
               </TableCell>
               <TableCell align="center" width={140}>
-                작업
+                현황
               </TableCell>
             </TableRow>
           </TableHead>
@@ -200,7 +200,7 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                                   navigate(`/docs/haccp-doc?${query.toString()}`);
                                 }}
                             >
-                              이동
+                              조회
                             </Button>
                           </Stack>
                         </TableCell>

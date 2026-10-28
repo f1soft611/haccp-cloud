@@ -174,6 +174,9 @@ public class EgovLoginApiController {
 		String clientIp = getClientIp(request);
 		String userAgent = request.getHeader("User-Agent");
 
+		// actionLogin 이 loginVO 의 password 를 해시로 덮어쓰므로 임시 비밀번호 판정용 평문을 먼저 보관
+		String rawPassword = loginVO.getPassword();
+
 		// 1. JWT 로그인 처리
 		LoginVO loginResultVO = loginService.actionLogin(loginVO);
 
@@ -208,7 +211,8 @@ public class EgovLoginApiController {
 	    	
 			resultMap.put("resultVO", loginResultVO);
 			resultMap.put("jToken", jwtToken);
-			resultMap.put("refreshToken", refreshToken);
+			// 임시 비밀번호(로그인ID 두 번 반복)로 로그인하면 비밀번호 변경 화면으로 보냄
+			resultMap.put("mustChangePassword", (loginResultVO.getId() + loginResultVO.getId()).equals(rawPassword));
 			resultMap.put("resultCode", "200");
 			resultMap.put("resultMessage", "성공 !!!");
 			

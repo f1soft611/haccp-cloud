@@ -8,7 +8,9 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
@@ -24,6 +26,20 @@ export function HaccpPortalGrid({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+
+  const actionIconSx = {
+    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+    bgcolor: isDarkMode
+      ? 'rgba(251, 191, 36, 0.12)'
+      : 'rgba(31, 79, 143, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(251, 191, 36, 0.2)'
+        : 'rgba(31, 79, 143, 0.16)',
+    },
+  };
 
   const openDocument = (row: PortalRow) => {
     const query = new URLSearchParams();
@@ -50,11 +66,10 @@ export function HaccpPortalGrid({
               <TableCell width={72} align="center">
                 No
               </TableCell>
-              <TableCell align="center" sx={{ minWidth: 200 }}>구분명</TableCell>
-              <TableCell align="center" width={200}>분류</TableCell>
-              {/* 기존 -> 없음 / 변경 -> 분류 뒤 자동기록 칼럼 추가 */}
+              <TableCell align="center" sx={{ minWidth: 200 }}>업무명</TableCell>
+              <TableCell align="center" width={200}>업무분류</TableCell>
               <TableCell align="center" width={100}>자동기록</TableCell>
-              <TableCell width={120} align="center">등록주기</TableCell>
+              <TableCell width={120} align="center">작성주기</TableCell>
               <TableCell align="center" width={200}>담당자</TableCell>
               <TableCell align="center" width={80}>작성</TableCell>
             </TableRow>
@@ -114,14 +129,19 @@ export function HaccpPortalGrid({
                       </TableCell>
                       <TableCell>{row.assigneeSummary || '-'}</TableCell>
                       <TableCell align="center">
-                        <IconButton
-                            size="small"
-                            color="primary"
-                            aria-label="작성하러 가기"
-                            onClick={() => openDraft(row)}
-                        >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
+                        {/* 기존 -> color="primary" 만, 배경 없음, 툴팁 없음 / 변경 -> HACCP 문서현황 기준 actionIconSx, Tooltip */}
+                        <Tooltip title="작성하러 가기">
+                          <span>
+                            <IconButton
+                                size="small"
+                                aria-label="작성하러 가기"
+                                onClick={() => openDraft(row)}
+                                sx={actionIconSx}
+                            >
+                              <EditOutlinedIcon fontSize="small" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                 ))

@@ -131,7 +131,9 @@ export function ApprovalDraftEditorSection(
           }}
         >
           <TextField
-              label="구분"
+              // 기존 -> label="구분"
+              // 변경 -> 업무분류
+              label="업무분류"
               value={work?.categoryName || '-'}
               InputProps={{ readOnly: true }}
               sx={{ minWidth: 0 }}
@@ -160,8 +162,10 @@ export function ApprovalDraftEditorSection(
               sx={{ minWidth: 0 }}
           />
           <TextField
-            label="기안 제목"
-            placeholder="예: 2026-07-16 품질 점검 기안"
+            // 기존 -> label="기안 제목", placeholder="예: 2026-07-16 품질 점검 기안"
+            // 변경 -> 제목, 자동 세팅 형식과 같은 예시
+            label="제목"
+            placeholder="예: 2026-07-16_품질 점검"
             required
             value={title}
             onChange={(event) => onTitleChange?.(event.target.value)}
