@@ -47,6 +47,25 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, crea
         approverName: '고대성',
         assigneeMapped: true,
       },
+      {
+        id: '2',
+        tenantCode: 'PLATFORM',
+        categoryGroupId: '10',
+        categoryCode: '001',
+        categoryName: 'HACCP문서(HA)',
+        divisionCode: '002',
+        divisionName: '폐기 양식',
+        cycle: 'DAY', cycleName: '일',
+        active: false,
+        createdBy: '고대성',
+        createdAt: '2026-07-07 10:00',
+        owner: '검토:금도연 / 승인:고대성',
+        reviewerId: '101',
+        reviewerName: '금도연',
+        approverId: '102',
+        approverName: '고대성',
+        assigneeMapped: true,
+      },
     ]),
     listUsersMock: vi.fn(async () => [
       {
@@ -289,5 +308,33 @@ describe('HaccpBaseManagementPage', () => {
     expect(
         screen.getByRole('table', { name: 'HACCP 양식 목록' }),
     ).toHaveStyle({ minWidth: '1512px' });
+  });
+
+  it('filters works by use status with 사용 as the default', async () => {
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+
+    // 기본값: 사용 -> 미사용 업무 숨김
+    await screen.findByText('기안서');
+    expect(screen.getByRole('combobox', { name: '사용유무' })).toHaveTextContent(/^사용$/);
+    expect(screen.queryByText('폐기 양식')).not.toBeInTheDocument();
+
+    // 전체 -> 선택만 바꾸면 반영 안 됨, 조회 후 모두 노출
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '사용유무' }));
+    fireEvent.click(await screen.findByRole('option', { name: '전체' }));
+    expect(screen.queryByText('폐기 양식')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    expect(await screen.findByText('폐기 양식')).toBeInTheDocument();
+    expect(screen.getByText('기안서')).toBeInTheDocument();
+
+    // 미사용 -> 미사용 업무만 노출
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '사용유무' }));
+    fireEvent.click(await screen.findByRole('option', { name: '미사용' }));
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    expect(await screen.findByText('폐기 양식')).toBeInTheDocument();
+    expect(screen.queryByText('기안서')).not.toBeInTheDocument();
   });
 });
