@@ -153,4 +153,51 @@ describe('UserFormDialog', () => {
         ).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
     });
+
+    it('shows duplicate email error and blocks saving', () => {
+        render(
+            <AppProviders>
+                <UserFormDialog
+                    open
+                    mode="create"
+                    departmentOptions={['품질관리팀']}
+                    roleOptions={roleOptions}
+                    initialValue={baseValue}
+                    emailError="이미 등록된 이메일입니다."
+                    onClose={vi.fn()}
+                    onSubmit={vi.fn()}
+                />
+            </AppProviders>,
+        );
+
+        expect(
+            screen.getByText('이미 등록된 이메일입니다.'),
+        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '저장' })).toBeDisabled();
+    });
+
+    it('calls onEmailChange when email is edited', () => {
+        const onEmailChange = vi.fn();
+        render(
+            <AppProviders>
+                <UserFormDialog
+                    open
+                    mode="create"
+                    departmentOptions={['품질관리팀']}
+                    roleOptions={roleOptions}
+                    initialValue={baseValue}
+                    emailError="이미 등록된 이메일입니다."
+                    onEmailChange={onEmailChange}
+                    onClose={vi.fn()}
+                    onSubmit={vi.fn()}
+                />
+            </AppProviders>,
+        );
+
+        fireEvent.change(screen.getByLabelText('이메일'), {
+            target: { value: 'hong2@alpha.com' },
+        });
+
+        expect(onEmailChange).toHaveBeenCalled();
+    });
 });
