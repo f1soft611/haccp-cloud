@@ -57,11 +57,11 @@ export function HaccpPortalPage() {
           </FormControl>
 
           <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel id="haccp-portal-cycle-label">등록주기</InputLabel>
+            <InputLabel id="haccp-portal-cycle-label">작성주기</InputLabel>
             <Select
               labelId="haccp-portal-cycle-label"
               value={search.cycle}
-              label="등록주기"
+              label="작성주기"
               onChange={(event) =>
                 setSearch({ ...search, cycle: event.target.value })
               }

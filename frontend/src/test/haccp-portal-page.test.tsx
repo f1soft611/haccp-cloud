@@ -190,7 +190,7 @@ describe('HaccpPortalPage', () => {
     );
 
     expect(await screen.findByText('기안서')).toBeInTheDocument();
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
     fireEvent.click(await screen.findByRole('option', { name: '주' }));
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
 
