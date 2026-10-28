@@ -7,10 +7,12 @@ import {
   Chip,
   IconButton,
   Skeleton,
+  Stack,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
 } from '@mui/material';
 import { Fragment } from 'react';
 import { useTheme } from '@mui/material/styles';
@@ -68,66 +70,82 @@ export function DepartmentTreeGrid(props: {
     />
   );
 
+  const actionIconSx = {
+    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+    bgcolor: isDarkMode
+      ? 'rgba(251, 191, 36, 0.12)'
+      : 'rgba(31, 79, 143, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(251, 191, 36, 0.2)'
+        : 'rgba(31, 79, 143, 0.16)',
+    },
+  };
+
+  const dangerIconSx = {
+    color: isDarkMode ? '#f87171' : '#c53b3b',
+    bgcolor: isDarkMode
+      ? 'rgba(248, 113, 113, 0.12)'
+      : 'rgba(197, 59, 59, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(248, 113, 113, 0.2)'
+        : 'rgba(197, 59, 59, 0.16)',
+    },
+  };
+
+  const successIconSx = {
+    color: isDarkMode ? '#86efac' : '#2e7d32',
+    bgcolor: isDarkMode
+      ? 'rgba(134, 239, 172, 0.12)'
+      : 'rgba(46, 125, 50, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(134, 239, 172, 0.2)'
+        : 'rgba(46, 125, 50, 0.16)',
+    },
+  };
+
+  // 기존 -> 라이트 색만 인라인, mr 0.25 로 간격 / 변경 -> 다크모드 대응 actionIconSx, Tooltip, 간격은 Stack 에서
   const editBtn = (dept: DepartmentItem) => (
-    <IconButton
-      size="small"
-      onClick={() => onEdit(dept)}
-      sx={{
-        mr: 0.25,
-        color: '#1f4f8f',
-        bgcolor: 'rgba(31, 79, 143, 0.08)',
-        '&:hover': { bgcolor: 'rgba(31, 79, 143, 0.16)' },
-      }}
-    >
-      <EditOutlinedIcon fontSize="small" />
-    </IconButton>
+    <Tooltip title="부서 수정">
+      <span>
+        <IconButton
+          size="small"
+          aria-label="부서 수정"
+          onClick={() => onEdit(dept)}
+          sx={actionIconSx}
+        >
+          <EditOutlinedIcon fontSize="small" />
+        </IconButton>
+      </span>
+    </Tooltip>
   );
 
   // 기존 -> deleteBtn: 휴지통 아이콘, 하위 부서 있으면 항상 disabled, 클릭 시 onDelete
   // 변경 -> toggleBtn: 전원 아이콘, 사용↔미사용 토글, 하위 부서 있을 때는 "미사용 전환"만 disabled
+  // 기존 -> title 속성, 삼항 sx 인라인, disabled opacity 0.38 / 변경 -> Tooltip, sx 상수 (disabled 는 MUI 기본 처리)
   const toggleBtn = (dept: DepartmentItem) => {
     const blockDeactivate = dept.active && dept.hasChildren;
+    const label = blockDeactivate
+      ? '하위 부서가 있어 미사용으로 변경할 수 없습니다.'
+      : dept.active
+        ? '미사용으로 변경'
+        : '사용으로 변경';
     return (
-        <IconButton
+      <Tooltip title={label}>
+        <span>
+          <IconButton
             size="small"
+            aria-label={label}
             onClick={() => onToggleActive(dept)}
             disabled={statusPending || blockDeactivate}
-            title={
-              blockDeactivate
-                  ? '하위 부서가 있어 미사용으로 변경할 수 없습니다.'
-                  : dept.active
-                      ? '미사용으로 변경'
-                      : '사용으로 변경'
-            }
-            sx={{
-              color: dept.active
-                  ? isDarkMode
-                      ? '#f87171'
-                      : '#c53b3b'
-                  : isDarkMode
-                      ? '#86efac'
-                      : '#2e7d32',
-              bgcolor: dept.active
-                  ? isDarkMode
-                      ? 'rgba(248, 113, 113, 0.12)'
-                      : 'rgba(197, 59, 59, 0.08)'
-                  : isDarkMode
-                      ? 'rgba(134, 239, 172, 0.12)'
-                      : 'rgba(46, 125, 50, 0.08)',
-              '&:hover': {
-                bgcolor: dept.active
-                    ? isDarkMode
-                        ? 'rgba(248, 113, 113, 0.2)'
-                        : 'rgba(197, 59, 59, 0.16)'
-                    : isDarkMode
-                        ? 'rgba(134, 239, 172, 0.2)'
-                        : 'rgba(46, 125, 50, 0.16)',
-              },
-              '&.Mui-disabled': { opacity: 0.38 },
-            }}
-        >
-          <PowerSettingsNewOutlinedIcon fontSize="small" />
-        </IconButton>
+            sx={dept.active ? dangerIconSx : successIconSx}
+          >
+            <PowerSettingsNewOutlinedIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
     );
   };
 
@@ -170,7 +188,11 @@ export function DepartmentTreeGrid(props: {
                   <Skeleton variant="rounded" width={52} height={22} />
                 </TableCell>
                 <TableCell align="center">
-                  <Skeleton variant="rounded" width={72} height={28} />
+                  {/* 기존 -> 72x28 하나 / 변경 -> HACCP 문서현황 기준 32x32 두 개 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Skeleton variant="rounded" width={32} height={32} />
+                    <Skeleton variant="rounded" width={32} height={32} />
+                  </Stack>
                 </TableCell>
               </TableRow>
             ))
@@ -224,8 +246,11 @@ export function DepartmentTreeGrid(props: {
                     {activeChip(dept.active)}
                   </TableCell>
                   <TableCell align="center">
-                    {editBtn(dept)}
-                    {toggleBtn(dept)}
+                    {/* 기존 -> 버튼 두 개 바로 나열 / 변경 -> Stack spacing 0.5 */}
+                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                      {editBtn(dept)}
+                      {toggleBtn(dept)}
+                    </Stack>
                   </TableCell>
                 </TableRow>
 
@@ -280,8 +305,11 @@ export function DepartmentTreeGrid(props: {
                         {activeChip(child.active)}
                       </TableCell>
                       <TableCell align="center">
-                        {editBtn(child)}
-                        {toggleBtn(child)}
+                        {/* 기존 -> 버튼 두 개 바로 나열 / 변경 -> Stack spacing 0.5 */}
+                        <Stack direction="row" spacing={0.5} justifyContent="center">
+                          {editBtn(child)}
+                          {toggleBtn(child)}
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))}
