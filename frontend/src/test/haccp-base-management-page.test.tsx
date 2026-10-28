@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { HaccpBaseManagementPage } from '../pages/documents/haccp-base/HaccpBaseManagementPage';
@@ -132,7 +132,7 @@ describe('HaccpBaseManagementPage', () => {
     expect(await screen.findByText('No')).toBeInTheDocument();
     expect(await screen.findByText('업무구분명')).toBeInTheDocument();
     expect(await screen.findByText('업무분류')).toBeInTheDocument();
-    expect(await screen.findByText('등록주기')).toBeInTheDocument();
+    expect(await screen.findByText('작성주기')).toBeInTheDocument();
     expect(screen.queryByText('등록자')).not.toBeInTheDocument();
     expect(screen.queryByText('등록일')).not.toBeInTheDocument();
 
@@ -145,12 +145,12 @@ describe('HaccpBaseManagementPage', () => {
       screen.getByRole('dialog', { name: /업무 추가/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('textbox', { name: /구분코드/ }),
+      screen.getByRole('textbox', { name: /업무코드/ }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /업무구분명/ })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /업무명/ })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: '업무분류' })).toBeInTheDocument();
     expect(
-      screen.getByRole('combobox', { name: '등록주기' }),
+      screen.getByRole('combobox', { name: '작성주기' }),
     ).toBeInTheDocument();
   });
 
@@ -191,14 +191,14 @@ describe('HaccpBaseManagementPage', () => {
     await screen.findByText('기안서');
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
     const options = await screen.findAllByRole('option');
     expect(options.map((option) => option.textContent)).toEqual([
       '일', '주', '월', '분기', '반기', '연간', '수시',
     ]);
     fireEvent.click(screen.getByRole('option', { name: '분기' }));
 
-    fireEvent.change(screen.getByRole('textbox', { name: /업무구분명/ }), {
+    fireEvent.change(screen.getByRole('textbox', { name: /업무명/ }), {
       target: { value: '분기 점검' },
     });
     fireEvent.change(screen.getByRole('combobox', { name: /검토자/ }), {
@@ -237,7 +237,7 @@ describe('HaccpBaseManagementPage', () => {
     ).toHaveTextContent(/^적용$/);
 
     // 수시여도 업무분류가 HCP- 가 아니면 숨김
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
     fireEvent.click(await screen.findByRole('option', { name: '수시' }));
     expect(
         screen.queryByRole('combobox', { name: '만료일 관리 양식' }),
@@ -251,7 +251,7 @@ describe('HaccpBaseManagementPage', () => {
     ).toHaveTextContent('미해당');
 
     // 등록주기를 수시가 아닌 값으로 바꿔도 계속 노출
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: '등록주기' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
     fireEvent.click(await screen.findByRole('option', { name: '주' }));
     expect(
         screen.getByRole('combobox', { name: '만료일 관리 양식' }),
@@ -269,7 +269,7 @@ describe('HaccpBaseManagementPage', () => {
     await screen.findByText('기안서');
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
 
-    fireEvent.change(screen.getByRole('textbox', { name: /업무구분명/ }), {
+    fireEvent.change(screen.getByRole('textbox', { name: /업무명/ }), {
       target: { value: '미적용 점검' },
     });
     fireEvent.change(screen.getByRole('combobox', { name: /검토자/ }), {
@@ -336,5 +336,24 @@ describe('HaccpBaseManagementPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
     expect(await screen.findByText('폐기 양식')).toBeInTheDocument();
     expect(screen.queryByText('기안서')).not.toBeInTheDocument();
+  });
+
+  it('selects multiple assignees with the user select dialog', async () => {
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+
+    await screen.findByText('기안서');
+    fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
+
+    fireEvent.click(screen.getByRole('textbox', { name: '담당자' }));
+    const picker = await screen.findByRole('dialog', { name: '담당자 선택' });
+    fireEvent.click(within(picker).getByText('금도연'));
+    fireEvent.click(within(picker).getByText('고대성'));
+    fireEvent.click(within(picker).getByRole('button', { name: '확인 (2명)' }));
+
+    expect(screen.getByRole('textbox', { name: '담당자' })).toHaveValue('금도연, 고대성');
   });
 });
