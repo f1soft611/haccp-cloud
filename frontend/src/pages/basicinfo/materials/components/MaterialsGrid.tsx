@@ -8,6 +8,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { MaterialItem } from '../../../../services/basicinfo/materialsService';
@@ -38,6 +39,30 @@ export function MaterialsGrid({
   const storeMethodOptions = useCommonCodeOptions(COMMON_CODE_GROUP.STORE_METHOD);
   const expiryStatusOptions = useCommonCodeOptions(COMMON_CODE_GROUP.EXPIRY_STATUS);
   const isDarkMode = theme.palette.mode === 'dark';
+
+  const actionIconSx = {
+    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+    bgcolor: isDarkMode
+      ? 'rgba(251, 191, 36, 0.12)'
+      : 'rgba(31, 79, 143, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(251, 191, 36, 0.2)'
+        : 'rgba(31, 79, 143, 0.16)',
+    },
+  };
+
+  const dangerIconSx = {
+    color: isDarkMode ? '#f87171' : '#c53b3b',
+    bgcolor: isDarkMode
+      ? 'rgba(248, 113, 113, 0.12)'
+      : 'rgba(197, 59, 59, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(248, 113, 113, 0.2)'
+        : 'rgba(197, 59, 59, 0.16)',
+    },
+  };
 
   // 소비기한: 숫자 + 기준 이름 (예: 12개월), 기준이 없음이면 '-'
   const formatExpiry = (row: MaterialItem) =>
@@ -100,7 +125,8 @@ export function MaterialsGrid({
                   <Skeleton variant="text" width="70%" />
                 </TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
+                  {/* 기존 -> spacing 1 / 변경 -> HACCP 문서현황 기준 spacing 0.5 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Skeleton variant="rounded" width={32} height={32} />
                     <Skeleton variant="rounded" width={32} height={32} />
                   </Stack>
@@ -134,43 +160,32 @@ export function MaterialsGrid({
                 <TableCell align="center">{formatExpiry(row)}</TableCell>
                 <TableCell align="center">{row.kfdaReportNo || '-'}</TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
-                    <IconButton
-                      size="small"
-                      aria-label="품목 수정"
-                      onClick={() => onEdit(row)}
-                      sx={{
-                        color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-                        bgcolor: isDarkMode
-                          ? 'rgba(251, 191, 36, 0.12)'
-                          : 'rgba(31, 79, 143, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(251, 191, 36, 0.2)'
-                            : 'rgba(31, 79, 143, 0.16)',
-                        },
-                      }}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      aria-label="품목 삭제"
-                      onClick={() => onDelete(row)}
-                      sx={{
-                        color: isDarkMode ? '#f87171' : '#c53b3b',
-                        bgcolor: isDarkMode
-                          ? 'rgba(248, 113, 113, 0.12)'
-                          : 'rgba(197, 59, 59, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(248, 113, 113, 0.2)'
-                            : 'rgba(197, 59, 59, 0.16)',
-                        },
-                      }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
+                  {/* 기존 -> spacing 1, 툴팁 없음, sx 인라인 / 변경 -> HACCP 문서현황 기준 spacing 0.5, Tooltip, sx 상수 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Tooltip title="품목 수정">
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label="품목 수정"
+                          onClick={() => onEdit(row)}
+                          sx={actionIconSx}
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title="품목 삭제">
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label="품목 삭제"
+                          onClick={() => onDelete(row)}
+                          sx={dangerIconSx}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Stack>
                 </TableCell>
               </TableRow>
