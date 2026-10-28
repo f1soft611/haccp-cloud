@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -28,6 +29,7 @@ import egovframework.let.documents.haccpwork.domain.model.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -750,7 +752,9 @@ class HaccpWorkFlowServiceImplTest {
 
     // 기존 -> submitDraft_rejectsReportDateCycleWithOtherDraft (대상 주기에 임시저장 있으면 409)
     // 변경 -> 같은 주기 여러 건 허용이라 approvalId 없으면 새 문서로 INSERT
-    @DisplayName("approvalId 없이 결재신청하면 같은 주기에 다른 문서가 있어도 새 문서로 INSERT 한다")
+    // 기존 -> "approvalId 없이 결재신청하면 같은 주기에 다른 문서가 있어도 새 문서로 INSERT 한다"
+    // 변경 -> 잠금 문서(결재진행중/승인)가 없을 때만 해당
+    @DisplayName("approvalId 없이 결재신청하면 같은 주기에 임시저장 문서만 있을 때 새 문서로 INSERT 한다")
     @Test
     void submitDraft_withoutApprovalIdInsertsNewDocument() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
@@ -792,6 +796,86 @@ class HaccpWorkFlowServiceImplTest {
         assertEquals(HttpStatus.CONFLICT, ex.getStatus());
         verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
         verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
+    }
+
+    @DisplayName("같은 주기에 결재진행중 문서가 있으면 결재신청은 409 를 내고 저장하지 않는다")
+    @Test
+    void submitDraft_rejectsLockedCycle() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        when(serviceHaccpWorkDAO.selectCycleLockedApprovalCount(anyMap())).thenReturn(1);
+        LocalDate target = LocalDate.now().minusDays(3);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("다른 담당자 결재신청");
+        payload.setReportDate(target.toString());
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.submitDraft(77L, "tenant_001", payload, "3001"));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("이미 결재신청된 업무입니다.", ex.getReason());
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
+
+        InOrder order = inOrder(serviceHaccpWorkDAO);
+        order.verify(serviceHaccpWorkDAO).lockWorkCategoryRow(anyMap());
+        ArgumentCaptor<Map> lockCaptor = ArgumentCaptor.forClass(Map.class);
+        order.verify(serviceHaccpWorkDAO).selectCycleLockedApprovalCount(lockCaptor.capture());
+        assertEquals(10L, lockCaptor.getValue().get("tenantId"));
+        assertEquals(77L, lockCaptor.getValue().get("workId"));
+        assertEquals(target.toString(), lockCaptor.getValue().get("cycleDate"));
+    }
+
+    @DisplayName("같은 주기에 승인 문서가 있으면 임시저장도 409 를 내고 저장하지 않는다")
+    @Test
+    void saveTempDraft_rejectsLockedCycle() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        when(serviceHaccpWorkDAO.selectCycleLockedApprovalCount(anyMap())).thenReturn(1);
+
+        HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
+        payload.setTitle("잠긴 주기 임시저장");
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> service.saveTempDraft(77L, "tenant_001", payload, "3001"));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("이미 결재신청된 업무입니다.", ex.getReason());
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalMain(anyMap());
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainDraftContent(anyMap());
+    }
+
+    @DisplayName("같은 주기에 잠금 문서가 없으면(반려만 있는 경우 포함) 결재신청은 저장된다")
+    @Test
+    void submitDraft_allowsUnlockedCycle() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        when(serviceHaccpWorkDAO.selectCycleLockedApprovalCount(anyMap())).thenReturn(0);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("반려 후 재신청");
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        verify(serviceHaccpWorkDAO).insertElectronicApprovalMain(anyMap());
+    }
+
+    @DisplayName("만료일 관리 업무는 주기 잠금 검사를 하지 않는다")
+    @Test
+    void submitDraft_hcpSkipsCycleLock() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HCP-CALIB");
+        when(serviceHaccpWorkDAO.selectCycleLockedApprovalCount(anyMap())).thenReturn(1);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("검교정 기안");
+        payload.setSub(calibSub());
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        verify(serviceHaccpWorkDAO, never()).lockWorkCategoryRow(anyMap());
+        verify(serviceHaccpWorkDAO, never()).selectCycleLockedApprovalCount(anyMap());
+        verify(serviceHaccpWorkDAO).insertElectronicApprovalMain(anyMap());
     }
 
     @DisplayName("임시저장 시 approvalId 문서가 다른 사람 기안이면 404 오류를 내고 저장하지 않는다")
