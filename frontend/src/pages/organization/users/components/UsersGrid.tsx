@@ -9,6 +9,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { UserItem } from '../../../../services/organization/usersService';
@@ -45,6 +46,42 @@ export function UsersGrid({
 }: UsersGridProps) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
+
+  const actionIconSx = {
+    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+    bgcolor: isDarkMode
+      ? 'rgba(251, 191, 36, 0.12)'
+      : 'rgba(31, 79, 143, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(251, 191, 36, 0.2)'
+        : 'rgba(31, 79, 143, 0.16)',
+    },
+  };
+
+  const dangerIconSx = {
+    color: isDarkMode ? '#f87171' : '#c53b3b',
+    bgcolor: isDarkMode
+      ? 'rgba(248, 113, 113, 0.12)'
+      : 'rgba(197, 59, 59, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(248, 113, 113, 0.2)'
+        : 'rgba(197, 59, 59, 0.16)',
+    },
+  };
+
+  const successIconSx = {
+    color: isDarkMode ? '#86efac' : '#2e7d32',
+    bgcolor: isDarkMode
+      ? 'rgba(134, 239, 172, 0.12)'
+      : 'rgba(46, 125, 50, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(134, 239, 172, 0.2)'
+        : 'rgba(46, 125, 50, 0.16)',
+    },
+  };
 
   return (
     <AdminGrid ariaLabel="사용자 목록">
@@ -95,7 +132,8 @@ export function UsersGrid({
                   />
                 </TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
+                  {/* 기존 -> spacing 1 / 변경 -> HACCP 문서현황 기준 spacing 0.5 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Skeleton variant="rounded" width={32} height={32} />
                     <Skeleton variant="rounded" width={32} height={32} />
                   </Stack>
@@ -129,57 +167,32 @@ export function UsersGrid({
                   />
                 </TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
-                    <IconButton
-                      size="small"
-                      aria-label="사용자 수정"
-                      onClick={() => onEdit(row)}
-                      sx={{
-                        color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-                        bgcolor: isDarkMode
-                          ? 'rgba(251, 191, 36, 0.12)'
-                          : 'rgba(31, 79, 143, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(251, 191, 36, 0.2)'
-                            : 'rgba(31, 79, 143, 0.16)',
-                        },
-                      }}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      aria-label={row.active ? '로그인 차단' : '차단 해제'}
-                      onClick={() => onToggle(row)}
-                      sx={{
-                        color: row.active
-                          ? isDarkMode
-                            ? '#f87171'
-                            : '#c53b3b'
-                          : isDarkMode
-                            ? '#86efac'
-                            : '#2e7d32',
-                        bgcolor: row.active
-                          ? isDarkMode
-                            ? 'rgba(248, 113, 113, 0.12)'
-                            : 'rgba(197, 59, 59, 0.08)'
-                          : isDarkMode
-                            ? 'rgba(134, 239, 172, 0.12)'
-                            : 'rgba(46, 125, 50, 0.08)',
-                        '&:hover': {
-                          bgcolor: row.active
-                            ? isDarkMode
-                              ? 'rgba(248, 113, 113, 0.2)'
-                              : 'rgba(197, 59, 59, 0.16)'
-                            : isDarkMode
-                              ? 'rgba(134, 239, 172, 0.2)'
-                              : 'rgba(46, 125, 50, 0.16)',
-                        },
-                      }}
-                    >
-                      <PowerSettingsNewOutlinedIcon fontSize="small" />
-                    </IconButton>
+                  {/* 기존 -> spacing 1, 툴팁 없음, sx 인라인 / 변경 -> HACCP 문서현황 기준 spacing 0.5, Tooltip, sx 상수 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Tooltip title="사용자 수정">
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label="사용자 수정"
+                          onClick={() => onEdit(row)}
+                          sx={actionIconSx}
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title={row.active ? '로그인 차단' : '차단 해제'}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label={row.active ? '로그인 차단' : '차단 해제'}
+                          onClick={() => onToggle(row)}
+                          sx={row.active ? dangerIconSx : successIconSx}
+                        >
+                          <PowerSettingsNewOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Stack>
                 </TableCell>
               </TableRow>
