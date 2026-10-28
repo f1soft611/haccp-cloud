@@ -223,7 +223,14 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
                   size="small"
                   color={getStatusChipColor(normalizeStatus(item.appStatus))}
                   variant="outlined"
-                  label={getStatusLabel(normalizeStatus(item.appStatus))}
+                  // 기존 -> label={getStatusLabel(normalizeStatus(item.appStatus))}
+                  // 변경 -> 기안자가 approved 면 "작성" 으로 표시
+                  label={
+                    item.role === 'drafter' &&
+                    normalizeStatus(item.appStatus) === 'approved'
+                      ? '작성'
+                      : getStatusLabel(normalizeStatus(item.appStatus))
+                  }
                 />
                 {canShowSignerImage(item) ? (
                   <Box
