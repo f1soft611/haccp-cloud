@@ -123,7 +123,6 @@
         LEFT JOIN tb_common_code_item cci
                   ON cci.group_id = ccg.common_code_group_id
                       AND cci.item_code = w.reg_term
-        <!-- 기존 -> 검토자(ru), 승인자(au) 조인 / 변경 -> 실제 배정 담당자 요약 조인 -->
         LEFT JOIN LATERAL (
           SELECT
               COUNT(*) AS assignee_count,
@@ -177,7 +176,6 @@
           LIMIT 1
         ) pending ON TRUE
         LEFT JOIN LATERAL (
-          <!-- 기존 -> cycle_base 는 cycle_start 만 계산 / 변경 -> report_date 범위 비교용 cycle_end(다음 주기 시작일) 추가 -->
           WITH cycle_base AS (
             SELECT s.cycle_start,
                    s.cycle_start + CASE
@@ -228,7 +226,6 @@
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND (#{actorLoginId, jdbcType=BIGINT} IS NULL OR m.login_id = #{actorLoginId, jdbcType=BIGINT})
             AND COALESCE(m.delete_status, 'N') != 'Y'
-            <!-- 기존 -> AND m.report_date = TO_CHAR(cb.cycle_start, 'YYYYMMDD') / 변경 -> report_date 는 표시일이라 이번 주기 범위 안이면 집계 -->
             AND m.report_date &gt;= TO_CHAR(cb.cycle_start, 'YYYYMMDD')
             AND m.report_date &lt; TO_CHAR(cb.cycle_end, 'YYYYMMDD')
         ) appr ON TRUE
@@ -244,6 +241,7 @@
         ) rpt ON TRUE
         WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
+          AND w.use_at = 'Y'
             AND EXISTS (
               SELECT 1
               FROM tb_drafting_work_category_authority a2
