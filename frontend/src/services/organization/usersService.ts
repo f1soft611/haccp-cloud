@@ -296,6 +296,28 @@ export async function updateUserStatus(payload: {
   return normalizeUserItem(data?.result?.item ?? {});
 }
 
+type PasswordResetResult = {
+  tempPassword?: string;
+};
+
+export async function resetUserPassword(payload: {
+  tenantCode?: string;
+  id: string;
+}): Promise<string> {
+  const headers = payload.tenantCode
+      ? { 'x-tenant-code': payload.tenantCode }
+      : undefined;
+
+  const { data } = await apiClient.post<ResultEnvelope<PasswordResetResult>>(
+      `/v1/users/${payload.id}/password/reset`,
+      undefined,
+      { headers },
+  );
+
+  const result = unwrapResult<PasswordResetResult>(data ?? {});
+  return String(result?.tempPassword ?? '').trim();
+}
+
 export async function getMyPageProfile(): Promise<MyPageProfile> {
   const { data } =
     await apiClient.get<ResultEnvelope<ItemResult>>('/v1/users/me');

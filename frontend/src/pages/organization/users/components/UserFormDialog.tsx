@@ -26,8 +26,10 @@ type UserFormDialogProps = {
   roleOptions: Array<{ code: string; name: string }>;
   initialValue?: UserFormValue;
   saving?: boolean;
+  resettingPassword?: boolean;
   onClose: () => void;
   onSubmit: (value: UserFormValue) => void;
+  onResetPassword?: () => void;
 };
 
 // 백엔드 PlatformUserServiceImpl.EMAIL_PATTERN 과 같은 식
@@ -44,14 +46,16 @@ const EMPTY_VALUE: UserFormValue = {
 };
 
 export function UserFormDialog({
-  open,
-  mode,
-  departmentOptions,
-  roleOptions,
-  initialValue,
-  saving,
-  onClose,
-  onSubmit,
+    open,
+    mode,
+    departmentOptions,
+    roleOptions,
+    initialValue,
+    saving,
+    onClose,
+    onSubmit,
+    resettingPassword,
+    onResetPassword,
 }: UserFormDialogProps) {
   const [value, setValue] = useState<UserFormValue>(EMPTY_VALUE);
 
@@ -232,20 +236,38 @@ export function UserFormDialog({
           />
         </Stack>
 
-        <FormControlLabel
-          control={
-            <Switch
-              checked={value.active}
-              onChange={(event) =>
-                setValue((prev) => ({
-                  ...prev,
-                  active: event.target.checked,
-                }))
+        <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+        >
+
+          <FormControlLabel
+              control={
+                <Switch
+                    checked={value.active}
+                    onChange={(event) =>
+                        setValue((prev) => ({
+                          ...prev,
+                          active: event.target.checked,
+                        }))
+                    }
+                />
               }
-            />
-          }
-          label={value.active ? '활성(로그인 허용)' : '비활성(로그인 차단)'}
-        />
+              label={value.active ? '활성(로그인 허용)' : '비활성(로그인 차단)'}
+          />
+
+          {mode === 'edit' && onResetPassword ? (
+              <Button
+                  variant="outlined"
+                  size="small"
+                  disabled={resettingPassword}
+                  onClick={onResetPassword}
+              >
+                비밀번호 초기화
+              </Button>
+          ) : null}
+        </Stack>
       </Stack>
     </FormDialog>
   );
