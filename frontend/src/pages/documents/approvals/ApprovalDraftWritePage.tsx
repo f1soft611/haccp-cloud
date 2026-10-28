@@ -228,6 +228,10 @@ export function ApprovalDraftWritePage() {
         </Alert>
       ) : null}
 
+      {idType === 'work' && work?.cycleLocked ? (
+        <Alert severity="warning">이미 결재신청된 업무입니다.</Alert>
+      ) : null}
+
       {isReadOnly ? (
         <Alert severity="info">
           {isOwner
