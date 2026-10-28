@@ -352,6 +352,7 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
         loginHistoryId: result.loginHistoryId,
         onboardingRequired: result.onboardingRequired,
         onboardingStatus: result.onboardingStatus,
+        mustChangePassword: result.mustChangePassword,
       });
       if (!isAdminRoute) {
         persistLastLoginTenantNo(effectiveTenantNo);

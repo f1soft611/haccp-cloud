@@ -1,13 +1,9 @@
 import { create } from 'zustand';
 import { normalizePlatformTenantCode } from '../tenant/platformTenant';
 
-// 기존 -> export type UserRole = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'TENANT_USER' | 'USER';
-// 변경 -> 업체 사용자 role 은 TENANT_USER 하나만 사용
 export type UserRole = 'PLATFORM_ADMIN' | 'TENANT_ADMIN' | 'TENANT_USER';
 export type OnboardingStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
-// 기존 -> const USER_ROLES = ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'TENANT_USER', 'USER'] as const;
-// 변경 -> 'USER' 제거
 const USER_ROLES = ['PLATFORM_ADMIN', 'TENANT_ADMIN', 'TENANT_USER'] as const;
 
 function isUserRole(value: unknown): value is UserRole {
@@ -43,6 +39,7 @@ type AuthState = {
   loginHistoryId?: number;
   onboardingRequired: boolean;
   onboardingStatus: OnboardingStatus;
+  mustChangePassword: boolean;
   login: (payload: {
     tenantCode: string;
     planCode?: string;
@@ -59,6 +56,7 @@ type AuthState = {
     loginHistoryId?: number;
     onboardingRequired?: boolean;
     onboardingStatus?: OnboardingStatus;
+    mustChangePassword?: boolean;
   }) => void;
   updateUserImages: (payload: {
     profileImage?: string;
@@ -67,6 +65,7 @@ type AuthState = {
   }) => void;
   updateAccessToken: (accessToken: string) => void;
   markOnboardingCompleted: () => void;
+  markPasswordChanged: () => void;
   reset: () => void;
   logout: () => void;
 };
@@ -141,6 +140,7 @@ const initialState = {
   loginHistoryId: undefined,
   onboardingRequired: false,
   onboardingStatus: 'COMPLETED' as OnboardingStatus,
+  mustChangePassword: false,
 };
 
 function resolveOnboardingStatus(
@@ -173,6 +173,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     loginHistoryId,
     onboardingRequired,
     onboardingStatus,
+            mustChangePassword,
   }) => {
     if (onboardingRequired === undefined) {
       console.warn(
@@ -200,6 +201,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         onboardingRequired,
         onboardingStatus,
       ),
+      mustChangePassword: mustChangePassword ?? false,
     };
 
     set(nextState);
@@ -240,6 +242,16 @@ export const useAuthStore = create<AuthState>((set) => ({
       persistState(nextState);
       return nextState;
     }),
+  markPasswordChanged: () =>
+      set((state) => {
+        const nextState = {
+          ...state,
+          mustChangePassword: false,
+        };
+
+        persistState(nextState);
+        return nextState;
+      }),
   reset: () => {
     clearPersistedState();
     set({ ...initialState });
