@@ -85,8 +85,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         String requestedCycleDate = payload.getCycleDate();
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
         String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
-        // 기존 -> ensureSubmissionEditableState(주기 최신 문서 결재중/승인이면 409) + resolveReportDate(대상 주기 충돌 409)
-        // 변경 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
+        // 기존 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
+        // 변경 -> 수정 대상 검증은 그대로, reportDate 확정 후 ensureCycleNotLocked 로 주기당 결재신청 1건 잠금 (만료일 관리 업무 제외)
         Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "임시저장");
         boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
         if (subCategory) {
@@ -97,6 +97,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         String reportDate = subCategory
                 ? resolveInspectedReportDate(work.getCycle(), payload.getSub().getInspectedDate())
                 : resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
+        ensureCycleNotLocked(tenantId, workId, work.getCategoryCode(), reportDate);
         String responseCycleDate = LocalDate.parse(reportDate, DATE_FORMATTER).toString();
 
         LocalDateTime now = LocalDateTime.now();
@@ -239,8 +240,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         String requestedCycleDate = payload.getCycleDate();
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
         String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
-        // 기존 -> ensureSubmissionEditableState(주기 최신 문서 결재중/승인이면 409) + resolveReportDate(대상 주기 충돌 409)
-        // 변경 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
+        // 기존 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
+        // 변경 -> 수정 대상 검증은 그대로, reportDate 확정 후 ensureCycleNotLocked 로 주기당 결재신청 1건 잠금 (만료일 관리 업무 제외)
         Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "결재신청");
         boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
         if (subCategory) {
@@ -251,6 +252,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         String reportDate = subCategory
                 ? resolveInspectedReportDate(work.getCycle(), payload.getSub().getInspectedDate())
                 : resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
+        ensureCycleNotLocked(tenantId, workId, work.getCategoryCode(), reportDate);
 
         // 결재 미적용 문서는 결재선 없이 바로 완료되므로 검토자/승인자 검사 생략 추가
         boolean approvalApply = !Boolean.FALSE.equals(work.getApprovalApply());
@@ -1462,6 +1464,22 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 //        params.put("cycleDate", cycleDate);
 //        return haccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(params);
 //    }
+
+    private void ensureCycleNotLocked(Long tenantId, Long workId, String categoryCode, String reportDate) throws Exception {
+        if (HaccpWorkApprovalSubs.isSubCategory(categoryCode)) {
+            return;
+        }
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("workId", workId);
+        params.put("cycleDate", LocalDate.parse(reportDate, DATE_FORMATTER).toString());
+        haccpWorkDAO.lockWorkCategoryRow(params);
+        Integer lockedCount = haccpWorkDAO.selectCycleLockedApprovalCount(params);
+        if (lockedCount != null && lockedCount.intValue() > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 결재신청된 업무입니다.");
+        }
+    }
 
     // 기존 -> findLatestPreApplyApprovalId(주기 최신 임시저장 찾기), ensureSubmissionEditableState(주기 최신 문서가 결재중/승인이면 409)
     // 변경 -> 같은 주기 여러 건 허용. 요청 approvalId 가 같은 업무의 본인 임시저장 문서인지만 검증, 없으면 null(새 문서)

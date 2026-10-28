@@ -79,6 +79,14 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpWorkDAO.selectApprovalMainById", params);
     }
 
+    public Long lockWorkCategoryRow(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.lockWorkCategoryRow", params);
+    }
+
+    public Integer selectCycleLockedApprovalCount(Map<String, Object> params) throws Exception {
+        return selectOne("HaccpWorkDAO.selectCycleLockedApprovalCount", params);
+    }
+
     public Long selectApprovalLineLoginId(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectApprovalLineLoginId", params);
     }
