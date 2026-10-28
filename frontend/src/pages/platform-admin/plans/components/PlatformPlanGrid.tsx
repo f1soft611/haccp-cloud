@@ -7,6 +7,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
@@ -22,6 +23,18 @@ export function PlatformPlanGrid(props: {
 }) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
+
+  const actionIconSx = {
+    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+    bgcolor: isDarkMode
+      ? 'rgba(251, 191, 36, 0.12)'
+      : 'rgba(31, 79, 143, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(251, 191, 36, 0.2)'
+        : 'rgba(31, 79, 143, 0.16)',
+    },
+  };
   const { rows, loading = false, onMenuMapping, onFeatureMapping } = props;
 
   return (
@@ -73,9 +86,10 @@ export function PlatformPlanGrid(props: {
                   <Skeleton variant="text" width="30%" sx={{ ml: 'auto' }} />
                 </TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
-                    <Skeleton variant="rounded" width={72} height={28} />
-                    <Skeleton variant="rounded" width={72} height={28} />
+                  {/* 기존 -> spacing 1, 72x28 / 변경 -> HACCP 문서현황 기준 spacing 0.5, 32x32 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Skeleton variant="rounded" width={32} height={32} />
+                    <Skeleton variant="rounded" width={32} height={32} />
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -106,43 +120,32 @@ export function PlatformPlanGrid(props: {
                 <TableCell align="right">{plan.menuCount}</TableCell>
                 <TableCell align="right">{plan.featureCount}</TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
-                    <IconButton
-                      size="small"
-                      aria-label="메뉴 매핑"
-                      onClick={() => onMenuMapping(plan)}
-                      sx={{
-                        color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-                        bgcolor: isDarkMode
-                          ? 'rgba(251, 191, 36, 0.12)'
-                          : 'rgba(31, 79, 143, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(251, 191, 36, 0.2)'
-                            : 'rgba(31, 79, 143, 0.16)',
-                        },
-                      }}
-                    >
-                      <LinkOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      aria-label="기능 매핑"
-                      onClick={() => onFeatureMapping(plan)}
-                      sx={{
-                        color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-                        bgcolor: isDarkMode
-                          ? 'rgba(251, 191, 36, 0.12)'
-                          : 'rgba(31, 79, 143, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(251, 191, 36, 0.2)'
-                            : 'rgba(31, 79, 143, 0.16)',
-                        },
-                      }}
-                    >
-                      <TuneOutlinedIcon fontSize="small" />
-                    </IconButton>
+                  {/* 기존 -> spacing 1, 툴팁 없음, sx 인라인 / 변경 -> HACCP 문서현황 기준 spacing 0.5, Tooltip, sx 상수 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Tooltip title="메뉴 매핑">
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label="메뉴 매핑"
+                          onClick={() => onMenuMapping(plan)}
+                          sx={actionIconSx}
+                        >
+                          <LinkOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title="기능 매핑">
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label="기능 매핑"
+                          onClick={() => onFeatureMapping(plan)}
+                          sx={actionIconSx}
+                        >
+                          <TuneOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Stack>
                 </TableCell>
               </TableRow>
