@@ -154,6 +154,34 @@ public class PlatformUserServiceImpl extends EgovAbstractServiceImpl implements 
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public String resetPassword(String tenantCode, Long userId) throws Exception {
+        if (userId == null) {
+            throw new IllegalArgumentException("user id is required");
+        }
+
+        Map<String, Object> condition = new HashMap<String, Object>();
+        condition.put("tenantId", resolveTenantIdOrContext(tenantCode));
+        condition.put("userId", userId);
+
+        Map<String, Object> account = platformUserDAO.selectLoginAccountByUserId(condition);
+        if (account == null || account.get("loginId") == null || account.get("loginCode") == null) {
+            throw new IllegalStateException("연결된 로그인 계정을 찾을 수 없습니다.");
+        }
+
+        String loginCode = String.valueOf(account.get("loginCode"));
+        // 임시 비밀번호 = 로그인ID 두 번 반복 (로그인 시 mustChangePassword 판정과 같은 규칙)
+        String tempPassword = loginCode + loginCode;
+
+        Map<String, Object> updatePayload = new HashMap<String, Object>();
+        updatePayload.put("loginId", account.get("loginId"));
+        updatePayload.put("passwordHash", EgovFileScrty.encryptPassword(tempPassword, loginCode));
+        platformUserDAO.updateLoginPasswordHash(updatePayload);
+
+        return tempPassword;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public PlatformUserVO changeMyImages(String tenantCode, String loginCode, PlatformUserImageUpdateRequestVO payload) throws Exception {
         validateImageChangePayload(payload);
 

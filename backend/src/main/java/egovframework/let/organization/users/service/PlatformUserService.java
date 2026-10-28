@@ -29,7 +29,9 @@ public interface PlatformUserService {
 
     void changeMyPassword(String tenantCode, String loginCode, PlatformUserPasswordChangeRequestVO payload) throws Exception;
 
-        PlatformUserVO changeMyImages(String tenantCode, String loginCode, PlatformUserImageUpdateRequestVO payload) throws Exception;
+    String resetPassword(String tenantCode, Long userId) throws Exception;
+
+    PlatformUserVO changeMyImages(String tenantCode, String loginCode, PlatformUserImageUpdateRequestVO payload) throws Exception;
 
     PlatformUserVO createUser(PlatformUserSaveRequestVO payload) throws Exception;
 
