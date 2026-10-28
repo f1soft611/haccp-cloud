@@ -10,6 +10,7 @@ import {
   listUsersPaged,
   updateUser,
   updateUserStatus,
+  resetUserPassword,
   type UserItem,
 } from '../../../services/organization/usersService';
 import { listDepartments } from '../../../services/organization/departmentsService';
@@ -25,6 +26,9 @@ import {
   type UserFormValue,
 } from './components/UserFormDialog';
 import { UserStatusDialog } from './components/UserStatusDialog';
+import { useFeedback } from '../../../shared/hooks/useFeedback';
+import { extractApiErrorMessage } from '../../../services/api/errorMessage';
+import { UserPasswordResetDialog } from './components/UserPasswordResetDialog';
 
 export function UsersPage() {
   const queryClient = useQueryClient();
@@ -44,6 +48,8 @@ export function UsersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [statusTarget, setStatusTarget] = useState<UserItem | null>(null);
+  const [resetTarget, setResetTarget] = useState<UserItem | null>(null);
+  const { showSuccess, showError } = useFeedback();
 
   const usersQuery = useQuery({
     queryKey: [
@@ -136,6 +142,19 @@ export function UsersPage() {
       void queryClient.invalidateQueries({
         queryKey: ['users', tenantCode || 'self'],
       });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: resetUserPassword,
+    onSuccess: (tempPassword) => {
+      setResetTarget(null);
+      showSuccess(
+          `비밀번호가 초기화되었습니다. 임시 비밀번호: ${tempPassword}`,
+      );
+    },
+    onError: (error) => {
+      showError(extractApiErrorMessage(error, '비밀번호 초기화에 실패했습니다.'));
     },
   });
 
@@ -255,6 +274,8 @@ export function UsersPage() {
           setEditingUser(null);
         }}
         onSubmit={handleSubmitForm}
+        resettingPassword={resetPasswordMutation.isPending}
+        onResetPassword={() => setResetTarget(editingUser)}
       />
 
       <UserStatusDialog
@@ -268,6 +289,27 @@ export function UsersPage() {
           setStatusTarget(null);
         }}
         onConfirm={handleConfirmToggle}
+      />
+
+      <UserPasswordResetDialog
+          open={Boolean(resetTarget)}
+          target={resetTarget}
+          saving={resetPasswordMutation.isPending}
+          onClose={() => {
+            if (resetPasswordMutation.isPending) {
+              return;
+            }
+            setResetTarget(null);
+          }}
+          onConfirm={() => {
+            if (!resetTarget) {
+              return;
+            }
+            resetPasswordMutation.mutate({
+              tenantCode: tenantCode || undefined,
+              id: resetTarget.id,
+            });
+          }}
       />
     </Stack>
   );
