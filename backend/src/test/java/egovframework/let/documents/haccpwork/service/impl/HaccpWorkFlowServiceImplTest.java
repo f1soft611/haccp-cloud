@@ -371,7 +371,8 @@ class HaccpWorkFlowServiceImplTest {
 
         ArgumentCaptor<Map> historyCaptor = ArgumentCaptor.forClass(Map.class);
         verify(serviceHaccpWorkDAO).insertElectronicApprovalHistoryMain(historyCaptor.capture());
-        assertEquals("[시스템] 최종승인자님이 상신취소 처리했습니다.", historyCaptor.getValue().get("answerCnt"));
+        // 기존 -> "[시스템] 최종승인자님이 상신취소 처리했습니다." / 변경 -> 결재취소 문구
+        assertEquals("[시스템] 최종승인자님이 결재취소 처리했습니다.", historyCaptor.getValue().get("answerCnt"));
     }
 
     @DisplayName("검토자와 승인자가 같으면 검토승인 요청 한 번으로 최종승인까지 이어진다")

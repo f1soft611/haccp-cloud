@@ -617,7 +617,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             case "submit_cancel":
                 targetSeq = -1;
                 lineStatus = "cancelled";
-                lineOption = "상신취소";
+                // 기존 -> lineOption = "상신취소"
+                // 변경 -> "결재취소"
+                lineOption = "결재취소";
                 mainStatus = "";
                 mainStatusName = "";
                 endStatus = "";
@@ -1775,7 +1777,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 
     private String resolveSubmitCancelAction(Integer cancelTargetSeq) {
         if (cancelTargetSeq == null) {
-            return "상신취소";
+            // 기존 -> return "상신취소";
+            // 변경 -> "결재취소"
+            return "결재취소";
         }
         if (cancelTargetSeq.intValue() == REVIEWER_SEQ) {
             return "검토승인 취소";
@@ -1783,7 +1787,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         if (cancelTargetSeq.intValue() == APPROVER_SEQ) {
             return "승인 취소";
         }
-        return "상신취소";
+        // 기존 -> return "상신취소";
+        // 변경 -> "결재취소"
+        return "결재취소";
     }
 
     private void appendSystemHistoryCommentBySeq(
