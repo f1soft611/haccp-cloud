@@ -153,7 +153,9 @@ function resolveRole(
   }
 
   if (normalizedRoleCode === 'TENANT_USER') {
-    return 'USER';
+    // 기존 -> return 'USER';
+    // 변경 -> 서버 roleCode 그대로 저장
+    return 'TENANT_USER';
   }
 
   if (
@@ -175,14 +177,18 @@ function resolveRole(
     normalizedGroup === 'ROLE_USER' ||
     normalizedGroup === 'USER'
   ) {
-    return 'USER';
+    // 기존 -> return 'USER';
+    // 변경 -> 업체 사용자 role TENANT_USER 로 통일
+    return 'TENANT_USER';
   }
 
   if (userId.trim().toLowerCase().includes('admin')) {
     return 'TENANT_ADMIN';
   }
 
-  return 'USER';
+  // 기존 -> return 'USER';
+  // 변경 -> 기본 role TENANT_USER
+  return 'TENANT_USER';
 }
 
 function normalizeLoginResponse(

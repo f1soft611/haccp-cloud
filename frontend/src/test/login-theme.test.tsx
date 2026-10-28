@@ -13,7 +13,7 @@ describe('login pages theme mode', () => {
       isAuthenticated: false,
       tenantCode: '',
       userId: '',
-      role: 'USER',
+      role: 'TENANT_USER',
       accessToken: '',
       refreshToken: '',
       loginHistoryId: undefined,

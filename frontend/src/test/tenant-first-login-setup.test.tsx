@@ -28,7 +28,7 @@ describe('Tenant first login setup page', () => {
         isAuthenticated: false,
         tenantCode: '',
         userId: '',
-        role: 'USER',
+        role: 'TENANT_USER',
         onboardingRequired: false,
         onboardingStatus: 'COMPLETED',
       });

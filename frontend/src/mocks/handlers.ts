@@ -59,7 +59,9 @@ type PlatformRoleItem = {
 const roleByUserId: Record<string, UserRole> = {
   platform_admin: 'PLATFORM_ADMIN',
   tenant_admin: 'TENANT_ADMIN',
-  user_01: 'USER',
+  // 기존 -> user_01: 'USER',
+  // 변경 -> 업체 사용자 role TENANT_USER 로 통일
+  user_01: 'TENANT_USER',
 };
 
 let tenants: TenantItem[] = [
@@ -319,7 +321,9 @@ let users: UserItem[] = [
     retireDate: '2026-09-30',
     roleCode: 'TENANT_USER',
     roleCodes: ['TENANT_USER'],
-    role: 'USER',
+    // 기존 -> role: 'USER',
+    // 변경 -> 업체 사용자 role TENANT_USER 로 통일
+    role: 'TENANT_USER',
     active: true,
   },
   {
@@ -900,7 +904,9 @@ export const handlers = [
     }
 
     const normalizedUserId = payload.userId.trim().toLowerCase();
-    const role = roleByUserId[normalizedUserId] ?? 'USER';
+    // 기존 -> const role = roleByUserId[normalizedUserId] ?? 'USER';
+    // 변경 -> 업체 사용자 role TENANT_USER 로 통일
+    const role = roleByUserId[normalizedUserId] ?? 'TENANT_USER';
     const userCount = tenantScoped(users, payload.tenantCode).length;
     const departmentCount = tenantScoped(
       departments,
@@ -971,7 +977,9 @@ export const handlers = [
     }
 
     const normalizedUserId = payload.id.trim().toLowerCase();
-    const role = roleByUserId[normalizedUserId] ?? 'USER';
+    // 기존 -> const role = roleByUserId[normalizedUserId] ?? 'USER';
+    // 변경 -> 업체 사용자 role TENANT_USER 로 통일
+    const role = roleByUserId[normalizedUserId] ?? 'TENANT_USER';
     // 변경 -> 업체번호가 있으면 목 테넌트 목록에서 업체번호로 먼저 찾음
     const tenantCode =
         tenants.find((tenant) => tenant.tenantNo === payload.tenantNo)
@@ -1023,7 +1031,9 @@ export const handlers = [
     }
 
     const normalizedUserId = payload.id.trim().toLowerCase();
-    const role = roleByUserId[normalizedUserId] ?? 'USER';
+    // 기존 -> const role = roleByUserId[normalizedUserId] ?? 'USER';
+    // 변경 -> 업체 사용자 role TENANT_USER 로 통일
+    const role = roleByUserId[normalizedUserId] ?? 'TENANT_USER';
 
     if (role !== 'PLATFORM_ADMIN') {
       return HttpResponse.json(
@@ -1503,7 +1513,9 @@ export const handlers = [
         normalizedRoleCode === 'TENANT_ADMIN' ||
         normalizedRoleCode === 'TENANT_USER'
           ? (normalizedRoleCode as UserRole)
-          : 'USER',
+          // 기존 -> : 'USER',
+          // 변경 -> 업체 사용자 role TENANT_USER 로 통일
+          : 'TENANT_USER',
       active: true,
     };
 
@@ -1566,7 +1578,9 @@ export const handlers = [
       normalizedRoleCode === 'TENANT_ADMIN' ||
       normalizedRoleCode === 'TENANT_USER'
         ? (normalizedRoleCode as UserRole)
-        : 'USER';
+        // 기존 -> : 'USER';
+        // 변경 -> 업체 사용자 role TENANT_USER 로 통일
+        : 'TENANT_USER';
     target.active = payload.active ?? target.active;
 
     return HttpResponse.json({ resultCode: 200, result: { item: target } });
