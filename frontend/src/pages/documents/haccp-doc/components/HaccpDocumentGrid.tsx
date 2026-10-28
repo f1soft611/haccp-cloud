@@ -1,5 +1,5 @@
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   Chip,
   IconButton,
@@ -63,25 +63,24 @@ export function HaccpDocumentGrid(props: {
             <TableCell width={72} align="center">
               No
             </TableCell>
-            <TableCell width={160}>업무분류</TableCell>
+            <TableCell width={160} align="center">업무분류</TableCell>
             <TableCell width={180} align="center">
               기안번호
             </TableCell>
-            <TableCell sx={{ minWidth: 280 }}>제목</TableCell>
+            <TableCell sx={{ minWidth: 280 }} align="center">제목</TableCell>
             <TableCell width={120} align="center">
-              작성자
+              기안자
             </TableCell>
-            <TableCell width={120} align="center">
+            <TableCell width={110} align="center">
               상태
             </TableCell>
             <TableCell width={140} align="center">
               기안일
             </TableCell>
             <TableCell width={160} align="center">
-              최종수정
+              최종수정일시
             </TableCell>
-            {/* 기존 -> 상세 / 작성 헤더 두 칸 / 변경 -> 작업 한 칸으로 합침 */}
-            <TableCell width={96} align="center">
+            <TableCell width={100} align="center">
               작업
             </TableCell>
           </TableRow>
@@ -122,7 +121,6 @@ export function HaccpDocumentGrid(props: {
                 <TableCell align="center">
                   <Skeleton variant="text" width="72%" sx={{ mx: 'auto' }} />
                 </TableCell>
-                {/* 기존 -> 상세 / 작성 스켈레톤 셀 두 개 / 변경 -> 작업 셀 하나에 나란히 */}
                 <TableCell align="center">
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Skeleton variant="rounded" width={32} height={32} />
@@ -133,7 +131,6 @@ export function HaccpDocumentGrid(props: {
             ))
           ) : rows.length === 0 ? (
             <TableRow>
-              {/* 기존 -> colSpan 10 / 변경 -> 상세, 작성 열을 작업 열로 합쳐 9 */}
               <TableCell colSpan={9} align="center" sx={{ py: 5 }}>
                 조건에 맞는 문서가 없습니다.
               </TableCell>
@@ -155,7 +152,6 @@ export function HaccpDocumentGrid(props: {
                     color={
                       row.status === '승인'
                         ? 'success'
-                        // 기존 -> row.status === '결재중' / 변경 -> '결재진행중'
                         : row.status === '결재진행중'
                           ? 'warning'
                           : row.status === '임시저장'
@@ -166,7 +162,6 @@ export function HaccpDocumentGrid(props: {
                 </TableCell>
                 <TableCell align="center">{row.draftedAt}</TableCell>
                 <TableCell align="center">{row.updatedAt}</TableCell>
-                {/* 기존 -> 상세 / 작성 셀 두 개 / 변경 -> 작업 셀 하나에 두 버튼 나란히 */}
                 <TableCell align="center">
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Tooltip title="상세 보기">
@@ -190,8 +185,7 @@ export function HaccpDocumentGrid(props: {
                             );
                           }}
                         >
-                          {/* 기존 -> EditOutlinedIcon / 변경 -> 보기 의미에 맞게 눈 아이콘 */}
-                          <VisibilityOutlinedIcon fontSize="small" />
+                          <SearchIcon fontSize="small" />
                         </IconButton>
                       </span>
                     </Tooltip>

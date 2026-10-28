@@ -62,23 +62,23 @@ export function HaccpBaseGrid(props: {
   });
 
   return (
-      <AdminGrid ariaLabel="HACCP 양식 목록" minWidth={1512}>
+      <AdminGrid ariaLabel="HACCP 양식 목록" minWidth={1142}>
       <TableHead>
         <TableRow>
           <TableCell width={72} align="center">
             No
           </TableCell>
-          <TableCell sx={{ minWidth: 200 }}>구분명</TableCell>
-          <TableCell width={200}>분류</TableCell>
+          <TableCell sx={{ minWidth: 200 }} align="center">업무명</TableCell>
+          <TableCell width={200} align="center">업무분류</TableCell>
           <TableCell width={120} align="center">
-            등록주기
+            작성주기
           </TableCell>
-          <TableCell width={120} align="center">
-            등록자
-          </TableCell>
-          <TableCell width={250} align="center">
-            등록일
-          </TableCell>
+          {/*<TableCell width={120} align="center">*/}
+          {/*  등록자*/}
+          {/*</TableCell>*/}
+          {/*<TableCell width={250} align="center">*/}
+          {/*  등록일*/}
+          {/*</TableCell>*/}
           <TableCell width={70} align="center">
             만료일
           </TableCell>
@@ -126,12 +126,12 @@ export function HaccpBaseGrid(props: {
                     sx={{ mx: 'auto' }}
                   />
                 </TableCell>
-                <TableCell align="center">
-                  <Skeleton variant="text" width="70%" sx={{ mx: 'auto' }} />
-                </TableCell>
-                <TableCell align="center">
-                  <Skeleton variant="text" width="72%" sx={{ mx: 'auto' }} />
-                </TableCell>
+                {/*<TableCell align="center">*/}
+                {/*  <Skeleton variant="text" width="70%" sx={{ mx: 'auto' }} />*/}
+                {/*</TableCell>*/}
+                {/*<TableCell align="center">*/}
+                {/*  <Skeleton variant="text" width="72%" sx={{ mx: 'auto' }} />*/}
+                {/*</TableCell>*/}
                 <TableCell align="center">
                   <Skeleton
                       variant="rounded"
@@ -189,7 +189,7 @@ export function HaccpBaseGrid(props: {
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={13} align="center">
+            <TableCell colSpan={11} align="center">
               조회된 양식이 없습니다.
             </TableCell>
           </TableRow>
@@ -214,8 +214,8 @@ export function HaccpBaseGrid(props: {
                       }}
                   />
                 </TableCell>
-                <TableCell align="center">{row.createdBy}</TableCell>
-                <TableCell align="center">{row.createdAt}</TableCell>
+                {/*<TableCell align="center">{row.createdBy}</TableCell>*/}
+                {/*<TableCell align="center">{row.createdAt}</TableCell>*/}
                 <TableCell align="center">
                   <Chip
                       size="small"
