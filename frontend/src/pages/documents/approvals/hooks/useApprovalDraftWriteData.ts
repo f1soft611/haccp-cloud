@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/core';
@@ -135,13 +136,20 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
       return;
     }
 
+    // 기존 -> 서버 제목(work.title)이 있을 때만 세팅
+    // 변경 -> 서버 제목이 없으면 오늘날짜_업무명 으로 자동 세팅
     const fetchedTitle = (work?.title || '').trim();
-    if (!fetchedTitle) {
+    const divisionName = (work?.divisionName || '').trim();
+    const autoTitle = divisionName
+      ? `${dayjs().format('YYYY-MM-DD')}_${divisionName}`
+      : '';
+    const initialTitle = fetchedTitle || autoTitle;
+    if (!initialTitle) {
       return;
     }
 
-    setTitle((prev) => (prev.trim() ? prev : fetchedTitle));
-  }, [work?.title, workDetailQuery.isFetched]);
+    setTitle((prev) => (prev.trim() ? prev : initialTitle));
+  }, [work?.title, work?.divisionName, workDetailQuery.isFetched]);
 
   useEffect(() => {
     if (!workDetailQuery.isFetched) {
