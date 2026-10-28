@@ -10,6 +10,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
@@ -28,6 +29,42 @@ export function PlatformAuthorityGrid(props: {
 }) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
+
+  const actionIconSx = {
+    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+    bgcolor: isDarkMode
+      ? 'rgba(251, 191, 36, 0.12)'
+      : 'rgba(31, 79, 143, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(251, 191, 36, 0.2)'
+        : 'rgba(31, 79, 143, 0.16)',
+    },
+  };
+
+  const dangerIconSx = {
+    color: isDarkMode ? '#f87171' : '#c53b3b',
+    bgcolor: isDarkMode
+      ? 'rgba(248, 113, 113, 0.12)'
+      : 'rgba(197, 59, 59, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(248, 113, 113, 0.2)'
+        : 'rgba(197, 59, 59, 0.16)',
+    },
+  };
+
+  const successIconSx = {
+    color: isDarkMode ? '#86efac' : '#2e7d32',
+    bgcolor: isDarkMode
+      ? 'rgba(134, 239, 172, 0.12)'
+      : 'rgba(46, 125, 50, 0.08)',
+    '&:hover': {
+      bgcolor: isDarkMode
+        ? 'rgba(134, 239, 172, 0.2)'
+        : 'rgba(46, 125, 50, 0.16)',
+    },
+  };
   const {
     rows,
     loading = false,
@@ -73,7 +110,8 @@ export function PlatformAuthorityGrid(props: {
                   />
                 </TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
+                  {/* 기존 -> spacing 1 / 변경 -> HACCP 문서현황 기준 spacing 0.5 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Skeleton variant="rounded" width={32} height={32} />
                     <Skeleton variant="rounded" width={32} height={32} />
                     <Skeleton variant="rounded" width={32} height={32} />
@@ -112,81 +150,56 @@ export function PlatformAuthorityGrid(props: {
                   />
                 </TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
-                    <IconButton
-                      size="small"
-                      aria-label="메뉴 매핑"
-                      onClick={() => onMenuMapping(role)}
-                      sx={{
-                        color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-                        bgcolor: isDarkMode
-                          ? 'rgba(251, 191, 36, 0.12)'
-                          : 'rgba(31, 79, 143, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(251, 191, 36, 0.2)'
-                            : 'rgba(31, 79, 143, 0.16)',
-                        },
-                      }}
-                    >
-                      <LinkOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      aria-label="권한 수정"
-                      disabled={role.systemRole}
-                      onClick={() => onEdit(role)}
-                      sx={{
-                        color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-                        bgcolor: isDarkMode
-                          ? 'rgba(251, 191, 36, 0.12)'
-                          : 'rgba(31, 79, 143, 0.08)',
-                        '&:hover': {
-                          bgcolor: isDarkMode
-                            ? 'rgba(251, 191, 36, 0.2)'
-                            : 'rgba(31, 79, 143, 0.16)',
-                        },
-                      }}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      disabled={role.systemRole}
-                      aria-label={
+                  {/* 기존 -> spacing 1, 툴팁 없음, sx 인라인 / 변경 -> HACCP 문서현황 기준 spacing 0.5, Tooltip, sx 상수 */}
+                  <Stack direction="row" spacing={0.5} justifyContent="center">
+                    <Tooltip title="메뉴 매핑">
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label="메뉴 매핑"
+                          onClick={() => onMenuMapping(role)}
+                          sx={actionIconSx}
+                        >
+                          <LinkOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title="권한 수정">
+                      <span>
+                        <IconButton
+                          size="small"
+                          aria-label="권한 수정"
+                          disabled={role.systemRole}
+                          onClick={() => onEdit(role)}
+                          sx={actionIconSx}
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip
+                      title={
                         role.active
                           ? APP_LABELS.action.deactivate
                           : APP_LABELS.action.activate
                       }
-                      onClick={() => onToggleActive(role)}
-                      sx={{
-                        color: role.active
-                          ? isDarkMode
-                            ? '#f87171'
-                            : '#c53b3b'
-                          : isDarkMode
-                            ? '#86efac'
-                            : '#2e7d32',
-                        bgcolor: role.active
-                          ? isDarkMode
-                            ? 'rgba(248, 113, 113, 0.12)'
-                            : 'rgba(197, 59, 59, 0.08)'
-                          : isDarkMode
-                            ? 'rgba(134, 239, 172, 0.12)'
-                            : 'rgba(46, 125, 50, 0.08)',
-                        '&:hover': {
-                          bgcolor: role.active
-                            ? isDarkMode
-                              ? 'rgba(248, 113, 113, 0.2)'
-                              : 'rgba(197, 59, 59, 0.16)'
-                            : isDarkMode
-                              ? 'rgba(134, 239, 172, 0.2)'
-                              : 'rgba(46, 125, 50, 0.16)',
-                        },
-                      }}
                     >
-                      <PowerSettingsNewOutlinedIcon fontSize="small" />
-                    </IconButton>
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={role.systemRole}
+                          aria-label={
+                            role.active
+                              ? APP_LABELS.action.deactivate
+                              : APP_LABELS.action.activate
+                          }
+                          onClick={() => onToggleActive(role)}
+                          sx={role.active ? dangerIconSx : successIconSx}
+                        >
+                          <PowerSettingsNewOutlinedIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Stack>
                 </TableCell>
               </TableRow>
