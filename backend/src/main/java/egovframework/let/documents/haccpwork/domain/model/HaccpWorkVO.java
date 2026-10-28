@@ -156,6 +156,9 @@ public class HaccpWorkVO implements Serializable {
     @Schema(description = "결재신청 가능 여부")
     private boolean canSubmit;
 
+    @Schema(description = "주기 잠금 여부 (같은 주기에 결재진행중/승인 문서 존재)")
+    private boolean cycleLocked;
+
     @Schema(description = "결재취소 가능 여부")
     private boolean canSubmitCancel;
 

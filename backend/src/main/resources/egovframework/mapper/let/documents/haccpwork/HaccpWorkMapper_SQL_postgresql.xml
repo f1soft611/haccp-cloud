@@ -54,6 +54,7 @@
     <resultMap id="haccpWorkDraftTemplateResult"
                type="egovframework.let.documents.haccpwork.domain.model.HaccpWorkVO"
                extends="haccpWorkResult">
+        <result property="cycleLocked" column="cycle_locked"/>
         <association property="sub"
                      javaType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkApprovalSubVO">
             <result property="equipmentId" column="sub_equipment_id"/>
@@ -745,14 +746,18 @@
                AND COALESCE(pre.status_type, 'pre_apply') = 'pre_apply' THEN FALSE
               ELSE TRUE
             END AS read_only,
+            <!-- 기존 -> 임시저장 문서 없으면 TRUE / 변경 -> 주기 잠금이면 먼저 FALSE -->
             CASE
+              WHEN lk.cycle_locked IS TRUE THEN FALSE
               WHEN pre.electronic_approval_id IS NULL THEN TRUE
               WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                AND pre.login_id = #{actorLoginId, jdbcType=BIGINT}
                AND COALESCE(pre.status_type, 'pre_apply') = 'pre_apply' THEN TRUE
               ELSE FALSE
             END AS can_temp_save,
+            <!-- 기존 -> 임시저장 문서 없으면 TRUE / 변경 -> 주기 잠금이면 먼저 FALSE -->
             CASE
+              WHEN lk.cycle_locked IS TRUE THEN FALSE
               WHEN pre.electronic_approval_id IS NULL THEN TRUE
               WHEN #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                AND pre.login_id = #{actorLoginId, jdbcType=BIGINT}
@@ -761,6 +766,7 @@
             END AS can_submit,
             FALSE AS can_submit_cancel,
             FALSE AS can_approve,
+            COALESCE(lk.cycle_locked, FALSE) AS cycle_locked,
             eas.equipment_id AS sub_equipment_id,
             eas.material_type AS sub_material_type,
             eas.certification_user_id AS sub_certification_user_id,
@@ -834,6 +840,18 @@
           ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
         ) pre ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT TRUE AS cycle_locked
+          FROM tb_electronic_approval_main lm
+          WHERE lm.tenant_id = w.tenant_id
+            AND lm.drafting_work_category_id = w.drafting_work_category_id
+            AND COALESCE(lm.delete_status, 'N') != 'Y'
+            AND lm.status_type IN ('in_progress', 'approved')
+            AND lm.report_date &gt;= TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYYMMDD')
+            AND lm.report_date &lt; TO_CHAR(<include refid="requestedCycleStart"/> + <include refid="cycleInterval"/>, 'YYYYMMDD')
+            AND COALESCE(g.cata_code, '') NOT IN ('HCP-CALIB', 'HCP-VALID', 'HCP-SQI', 'HCP-HCERT')
+          LIMIT 1
+        ) lk ON TRUE
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(CAST(li.login_id AS varchar), ',' ORDER BY li.exe_seq) AS reference_ids_csv
           FROM tb_electronic_approval_line_info li
