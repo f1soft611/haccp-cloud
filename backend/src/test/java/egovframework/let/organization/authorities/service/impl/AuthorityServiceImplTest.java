@@ -2,7 +2,9 @@ package egovframework.let.organization.authorities.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -259,6 +261,60 @@ class AuthorityServiceImplTest {
                         && "TENANT_001".equals(condition.getTenantCode())
         ));
         assertEquals("001", result.get("roleCode"));
+    }
+
+    @DisplayName("권한 코드 없이 등록하면 테넌트 숫자 코드 다음 번호로 채번한다")
+    @Test
+    void createRole_blankRoleCodeIsAutoNumbered() throws Exception {
+        AuthorityDAO authorityDAO = mock(AuthorityDAO.class);
+        PlanAccessService planAccessService = mock(PlanAccessService.class);
+
+        AuthorityServiceImpl service = new AuthorityServiceImpl();
+        ReflectionTestUtils.setField(service, "authorityDAO", authorityDAO);
+        ReflectionTestUtils.setField(service, "planAccessService", planAccessService);
+
+        when(planAccessService.resolveTenantIdByTenantCode("TENANT_001")).thenReturn(48L);
+        when(authorityDAO.selectNextNumericRoleCode("TENANT_001")).thenReturn("003");
+        when(authorityDAO.selectRoleIdByCode("TENANT_001", "003")).thenReturn(null);
+
+        RoleInfoVO payload = new RoleInfoVO();
+        payload.setTenantCode("tenant_001");
+        payload.setRoleCode("  ");
+        payload.setRoleNm("품질 관리자");
+
+        RoleInfoVO created = service.createRole(payload);
+
+        assertEquals("003", created.getRoleCode());
+        verify(authorityDAO).insertRole(org.mockito.ArgumentMatchers.argThat(item ->
+                "003".equals(item.getRoleCode()) && Long.valueOf(48L).equals(item.getTenantId())
+        ));
+    }
+
+    @DisplayName("권한 코드가 있으면 채번하지 않고 그 코드로 등록한다")
+    @Test
+    void createRole_givenRoleCodeIsKept() throws Exception {
+        AuthorityDAO authorityDAO = mock(AuthorityDAO.class);
+        PlanAccessService planAccessService = mock(PlanAccessService.class);
+
+        AuthorityServiceImpl service = new AuthorityServiceImpl();
+        ReflectionTestUtils.setField(service, "authorityDAO", authorityDAO);
+        ReflectionTestUtils.setField(service, "planAccessService", planAccessService);
+
+        when(planAccessService.resolveTenantIdByTenantCode("TENANT_001")).thenReturn(48L);
+        when(authorityDAO.selectRoleIdByCode("TENANT_001", "TENANT_ADMIN")).thenReturn(null);
+
+        RoleInfoVO payload = new RoleInfoVO();
+        payload.setTenantCode("TENANT_001");
+        payload.setRoleCode("tenant_admin");
+        payload.setRoleNm("업체 관리자");
+
+        RoleInfoVO created = service.createRole(payload);
+
+        assertEquals("TENANT_ADMIN", created.getRoleCode());
+        verify(authorityDAO, never()).selectNextNumericRoleCode(anyString());
+        verify(authorityDAO).insertRole(org.mockito.ArgumentMatchers.argThat(item ->
+                "TENANT_ADMIN".equals(item.getRoleCode())
+        ));
     }
 
 }
