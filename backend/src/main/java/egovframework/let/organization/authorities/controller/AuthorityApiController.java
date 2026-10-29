@@ -102,8 +102,10 @@ public class AuthorityApiController {
     )
     @PostMapping("/roles")
     public ResultVO createRole(@RequestBody RoleInfoVO payload) throws Exception {
-        if (payload == null || !StringUtils.hasText(payload.getRoleCode())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "역할 코드는 필수입니다.");
+        // 기존 -> 역할 코드가 비어 있으면 400
+        // 변경 -> 역할 코드는 비어 있으면 서비스에서 자동 채번
+        if (payload == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
 
         payload.setTenantCode(resolveTenantCode(payload.getTenantCode()));
