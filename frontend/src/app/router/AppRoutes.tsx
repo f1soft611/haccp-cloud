@@ -47,6 +47,11 @@ const DashboardPage = lazy(() =>
     default: module.DashboardPage,
   })),
 );
+const TodayDashboardPage = lazy(() =>
+    import('../../pages/dashboard/today/TodayDashboardPage').then((module) => ({
+        default: module.TodayDashboardPage,
+    })),
+);
 const OnboardingPage = lazy(() =>
   loadOnboardingPage().then((module) => ({ default: module.OnboardingPage })),
 );
@@ -214,6 +219,7 @@ export function AppRoutes() {
           <Route index element={<DefaultHomeRoute />} />
           <Route path="/platform" element={<DashboardPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard/v2" element={<TodayDashboardPage />} />
           <Route
             path="/platform/onboarding"
             element={
