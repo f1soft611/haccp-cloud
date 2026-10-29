@@ -467,6 +467,15 @@ CREATE INDEX IF NOT EXISTS idx_login_history_dt ON tb_login_history(login_dt DES
 CREATE INDEX IF NOT EXISTS idx_login_history_result ON tb_login_history(login_result);
 CREATE INDEX IF NOT EXISTS idx_login_history_account ON tb_login_history(login_account_id);
 
+-- 스키마 마이그레이션 이력 (플랫폼 관리 > DB 마이그레이션)
+CREATE TABLE IF NOT EXISTS tb_schema_migration (
+                                                   migration_id  VARCHAR(200) PRIMARY KEY,
+    success_at    CHAR(1)      NOT NULL,
+    error_message TEXT,
+    applied_by    VARCHAR(100),
+    applied_at    TIMESTAMP    NOT NULL DEFAULT NOW()
+    );
+
 COMMIT;
 
 -- =============================================================================
