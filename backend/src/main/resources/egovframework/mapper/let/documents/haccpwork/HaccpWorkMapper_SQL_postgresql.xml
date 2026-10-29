@@ -329,15 +329,19 @@
         WHERE t.tenant_code = #{tenantCode}
           AND COALESCE(m.delete_status, 'N') != 'Y'
           AND COALESCE(w.delete_status, 'N') != 'Y'
+          <!-- 기존 -> 임시저장은 기안자 본인만 / 변경 -> 업무 담당자도 노출 -->
           AND (
                 COALESCE(m.status_type, '') != 'pre_apply'
                 OR (
                   #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                   AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
                 )
+                OR <include refid="actorIsWorkAssignee"/>
           )
+          <!-- 기존 -> 관리자 / 기안자 / 결재선 / 참조인 / 변경 -> 업무 담당자 추가 -->
           AND (
                 COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
+                OR <include refid="actorIsWorkAssignee"/>
                 OR (
                   #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                   AND (
@@ -474,15 +478,19 @@
         WHERE t.tenant_code = #{tenantCode}
           AND COALESCE(m.delete_status, 'N') != 'Y'
           AND COALESCE(w.delete_status, 'N') != 'Y'
+          <!-- 기존 -> 임시저장은 기안자 본인만 / 변경 -> 업무 담당자도 노출 -->
           AND (
                 COALESCE(m.status_type, '') != 'pre_apply'
                 OR (
                   #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                   AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
                 )
+                OR <include refid="actorIsWorkAssignee"/>
           )
+          <!-- 기존 -> 관리자 / 기안자 / 결재선 / 참조인 / 변경 -> 업무 담당자 추가 -->
           AND (
                 COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
+                OR <include refid="actorIsWorkAssignee"/>
                 OR (
                   #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                   AND (
@@ -593,6 +601,22 @@
     </select>
 
     <!-- 요청 일자(#{cycleDate}, yyyy-MM-dd, 없으면 오늘)가 속한 주기의 시작일. 판정 값은 HaccpWorkCycleDates와 같다. -->
+    <sql id="actorIsWorkAssignee">
+        EXISTS (
+          SELECT 1
+          FROM tb_drafting_work_category_authority a2
+          WHERE a2.tenant_id = w.tenant_id
+            AND a2.drafting_work_category_id = w.drafting_work_category_id
+            AND a2.use_at = 'Y'
+            AND COALESCE(a2.delete_status, 'N') != 'Y'
+            AND (
+                  (#{actorLoginId, jdbcType=BIGINT} IS NOT NULL AND a2.employee_no = CAST(#{actorLoginId, jdbcType=BIGINT} AS varchar))
+               OR (#{actorUserId, jdbcType=BIGINT} IS NOT NULL AND a2.employee_no = CAST(#{actorUserId, jdbcType=BIGINT} AS varchar))
+               OR (#{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL AND a2.employee_no = #{actorLoginCode, jdbcType=VARCHAR})
+            )
+        )
+    </sql>
+
     <sql id="requestedCycleStart">
         CASE
         WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
