@@ -122,4 +122,26 @@ describe('ApprovalDraftCommentThread', () => {
       screen.getByText(/사용자에 의해 삭제\s*되었습니다\./),
     ).toBeInTheDocument();
   });
+
+  it('disables opinion button with a save hint when comments are not writable', () => {
+    render(
+      <ApprovalDraftCommentThread
+        comments={[]}
+        onAddComment={() => undefined}
+        replyDraftByCommentId={{}}
+        onChangeReplyDraft={() => undefined}
+        onAddReply={() => undefined}
+        onEditComment={() => undefined}
+        onDeleteComment={() => undefined}
+        onToggleLikeComment={() => undefined}
+        currentUserLoginCode="3001"
+        canWriteComments={false}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: '의견 등록' })).toBeDisabled();
+    expect(
+      screen.getByLabelText('문서를 저장한 후 댓글을 작성할 수 있습니다.'),
+    ).toBeInTheDocument();
+  });
 });

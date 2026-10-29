@@ -305,23 +305,42 @@ export function ApprovalDraftCommentThread(
               </Typography>
             </Box>
           </Stack>
-          <Button
-            variant="contained"
-            startIcon={<ChatBubbleOutlineRounded />}
-            disabled={!canWriteComments}
-            onClick={() => setIsOpinionModalOpen(true)}
-            sx={{
-              borderRadius: 2,
-              px: 1.75,
-              boxShadow: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? `0 8px 18px ${alpha(theme.palette.primary.dark, 0.45)}`
-                  : `0 10px 20px ${alpha(theme.palette.primary.main, 0.26)}`,
-              alignSelf: { xs: 'stretch', sm: 'auto' },
-            }}
+          {/* 기존 -> 의견 등록 버튼 단독 / 변경 -> 저장 전 비활성 사유를 툴팁으로 안내 (disabled 버튼은 이벤트를 받지 못해 span 으로 감쌈) */}
+          <Tooltip
+            title={
+              canWriteComments
+                ? ''
+                : '문서를 저장한 후 댓글을 작성할 수 있습니다.'
+            }
+            arrow
+            placement="top"
           >
-            의견 등록
-          </Button>
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-flex',
+                alignSelf: { xs: 'stretch', sm: 'auto' },
+              }}
+            >
+              <Button
+                variant="contained"
+                startIcon={<ChatBubbleOutlineRounded />}
+                disabled={!canWriteComments}
+                onClick={() => setIsOpinionModalOpen(true)}
+                sx={{
+                  borderRadius: 2,
+                  px: 1.75,
+                  boxShadow: (theme) =>
+                    theme.palette.mode === 'dark'
+                      ? `0 8px 18px ${alpha(theme.palette.primary.dark, 0.45)}`
+                      : `0 10px 20px ${alpha(theme.palette.primary.main, 0.26)}`,
+                  width: '100%',
+                }}
+              >
+                의견 등록
+              </Button>
+            </Box>
+          </Tooltip>
         </Stack>
 
         {commentLoadErrorMessage ? (
