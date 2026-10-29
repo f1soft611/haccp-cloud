@@ -329,7 +329,6 @@
         WHERE t.tenant_code = #{tenantCode}
           AND COALESCE(m.delete_status, 'N') != 'Y'
           AND COALESCE(w.delete_status, 'N') != 'Y'
-          <!-- 기존 -> 임시저장은 기안자 본인만 / 변경 -> 업무 담당자도 노출 -->
           AND (
                 COALESCE(m.status_type, '') != 'pre_apply'
                 OR (
@@ -338,7 +337,6 @@
                 )
                 OR <include refid="actorIsWorkAssignee"/>
           )
-          <!-- 기존 -> 관리자 / 기안자 / 결재선 / 참조인 / 변경 -> 업무 담당자 추가 -->
           AND (
                 COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
                 OR <include refid="actorIsWorkAssignee"/>
@@ -369,6 +367,9 @@
             AND (
               <foreach collection="participantTypes" item="participantType" separator=" OR ">
                 <choose>
+                  <when test="participantType == 'ASSIGNEE'">
+                    <include refid="actorIsWorkAssignee"/>
+                  </when>
                   <when test="participantType == 'DRAFTER'">
                     #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                     AND m.login_id = #{actorLoginId, jdbcType=BIGINT}
@@ -518,6 +519,9 @@
             AND (
               <foreach collection="participantTypes" item="participantType" separator=" OR ">
                 <choose>
+                  <when test="participantType == 'ASSIGNEE'">
+                    <include refid="actorIsWorkAssignee"/>
+                  </when>
                   <when test="participantType == 'DRAFTER'">
                     #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
                     AND m.login_id = #{actorLoginId, jdbcType=BIGINT}

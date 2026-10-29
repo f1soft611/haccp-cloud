@@ -381,14 +381,19 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         }
 
         String normalized = participantType.trim().toLowerCase();
+        if ("담당자".equals(normalized) || "assignee".equals(normalized)) {
+            return "ASSIGNEE";
+        }
         if ("기안자".equals(normalized) || "drafter".equals(normalized) || "owner".equals(normalized)) {
             return "DRAFTER";
         }
         if ("결재자".equals(normalized) || "approver".equals(normalized) || "reviewer".equals(normalized)) {
             return "APPROVER";
         }
+        // 화면 명칭 "검토자" 추가 ("참조자" 는 예전 URL 호환용으로 유지)
         if (
-                "참조자".equals(normalized)
+                "검토자".equals(normalized)
+                        || "참조자".equals(normalized)
                         || "reference".equals(normalized)
                         || "referrer".equals(normalized)
                         || "cooperator".equals(normalized)
