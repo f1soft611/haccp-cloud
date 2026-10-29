@@ -23,6 +23,8 @@ export const loadTenantFirstLoginSetupPage = () =>
   import('../../pages/platform-admin/tenants/TenantFirstLoginSetupPage');
 export const loadLoginHistoryPage = () =>
   import('../../pages/platform-admin/login-history/LoginHistoryPage');
+export const loadMigrationPage = () =>
+    import('../../pages/platform-admin/migrations/MigrationPage');
 export const loadPlatformMenuManagementPage = () =>
   import('../../pages/platform-admin/menus/PlatformMenuManagementPage');
 export const loadPlatformAuthorityManagementPage = () =>
@@ -130,6 +132,11 @@ const routeLoaders: RouteLoader[] = [
     key: 'login-history',
     matches: (path) => path === '/platform/login-history',
     load: loadLoginHistoryPage,
+  },
+  {
+    key: 'platform-migrations',
+    matches: (path) => path === '/platform/migrations',
+    load: loadMigrationPage,
   },
   {
     key: 'platform-menus',

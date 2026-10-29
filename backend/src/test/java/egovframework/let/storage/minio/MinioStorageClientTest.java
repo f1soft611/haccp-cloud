@@ -83,6 +83,17 @@ class MinioStorageClientTest {
     }
 
     @Test
+    void copyObject_shouldDelegateToOperations() throws Exception {
+        StorageProperties properties = createProperties();
+        MinioStorageClient.MinioOperations operations = Mockito.mock(MinioStorageClient.MinioOperations.class);
+
+        StorageClient storageClient = new MinioStorageClient(properties, operations);
+        storageClient.copyObject("bucket", "src.pdf", "bucket", "dst.pdf");
+
+        verify(operations).copyObject("bucket", "src.pdf", "bucket", "dst.pdf");
+    }
+
+    @Test
     void presignUpload_shouldRejectWhenExpiryIsZero() {
         StorageProperties properties = createProperties();
         MinioStorageClient.MinioOperations operations = Mockito.mock(MinioStorageClient.MinioOperations.class);

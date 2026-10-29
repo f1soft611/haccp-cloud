@@ -22,10 +22,8 @@ INSERT INTO ids (table_name, next_id)
 VALUES ('EA_EXE_ID', 1)
 ON CONFLICT (table_name) DO NOTHING;
 
-ALTER TABLE IF EXISTS public.tb_electronic_approval_line_info
-    ALTER COLUMN arrival_at DROP NOT NULL,
-    ALTER COLUMN exe_at DROP NOT NULL,
-    ALTER COLUMN open_at DROP NOT NULL;
+-- 기존 -> ALTER TABLE IF EXISTS public.tb_electronic_approval_line_info ... DROP NOT NULL
+-- 변경 -> 이 시점엔 테이블이 없어 효과가 없었음. migrate_postgresql_add_electronic_approval_tables.sql 정의에서 NULL 허용
 
 INSERT INTO tb_tenant (
     tenant_id,

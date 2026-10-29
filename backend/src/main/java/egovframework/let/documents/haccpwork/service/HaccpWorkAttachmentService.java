@@ -54,4 +54,11 @@ public interface HaccpWorkAttachmentService {
             String tenantCode,
             String actorLoginCode
     ) throws Exception;
+
+    int copyAttachmentsFromApproval(
+            Long targetApprovalId,
+            Long sourceApprovalId,
+            String tenantCode,
+            String actorLoginCode
+    ) throws Exception;
 }

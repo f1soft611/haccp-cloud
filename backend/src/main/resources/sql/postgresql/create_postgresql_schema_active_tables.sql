@@ -444,6 +444,7 @@ CREATE INDEX IF NOT EXISTS ix_tb_workdirect_customer_id ON tb_workdirect(custome
 -- Create Indexes for Performance
 CREATE INDEX IF NOT EXISTS idx_tenant_department ON tb_department(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_parent_department ON tb_department(parent_department_id);
+CREATE INDEX IF NOT EXISTS idx_department_sort_order ON tb_department(tenant_id, sort_order);
 
 CREATE INDEX IF NOT EXISTS idx_tenant_login_account ON tb_login_account(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_login_code ON tb_login_account(login_code);
@@ -466,6 +467,15 @@ CREATE INDEX IF NOT EXISTS idx_tenant_login_history ON tb_login_history(tenant_i
 CREATE INDEX IF NOT EXISTS idx_login_history_dt ON tb_login_history(login_dt DESC);
 CREATE INDEX IF NOT EXISTS idx_login_history_result ON tb_login_history(login_result);
 CREATE INDEX IF NOT EXISTS idx_login_history_account ON tb_login_history(login_account_id);
+
+-- 스키마 마이그레이션 이력 (플랫폼 관리 > DB 마이그레이션)
+CREATE TABLE IF NOT EXISTS tb_schema_migration (
+                                                   migration_id  VARCHAR(200) PRIMARY KEY,
+    success_at    CHAR(1)      NOT NULL,
+    error_message TEXT,
+    applied_by    VARCHAR(100),
+    applied_at    TIMESTAMP    NOT NULL DEFAULT NOW()
+    );
 
 COMMIT;
 

@@ -90,6 +90,41 @@ class HaccpWorkDraftServiceImplTest {
         assertNull(condition.getParticipantType());
     }
 
+    @DisplayName("문서 목록 조회 시 참여유형 '담당자,검토자'는 ASSIGNEE, REFERENCE로 정규화된다")
+    @Test
+    void listDocuments_normalizesAssigneeAndReviewerParticipantTypes() throws Exception {
+        HaccpWorkDAO haccpWorkDAO = org.mockito.Mockito.mock(HaccpWorkDAO.class);
+        HaccpWorkDraftServiceImpl service = new HaccpWorkDraftServiceImpl(haccpWorkDAO);
+
+        when(haccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(haccpWorkDAO.selectUserIdByTenantAndLoginId(anyMap())).thenReturn(5001L);
+        when(haccpWorkDAO.selectDocumentList(org.mockito.ArgumentMatchers.any(HaccpWorkSearchConditionVO.class)))
+                .thenReturn(Collections.emptyList());
+
+        service.listDocuments(
+                "tenant_001",
+                "3001",
+                "tenant_user",
+                "전체",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "담당자,검토자",
+                "전체",
+                "2026-07-01",
+                "2026-07-21"
+        );
+
+        ArgumentCaptor<HaccpWorkSearchConditionVO> captor = ArgumentCaptor.forClass(HaccpWorkSearchConditionVO.class);
+        verify(haccpWorkDAO).selectDocumentList(captor.capture());
+
+        HaccpWorkSearchConditionVO condition = captor.getValue();
+        assertEquals(java.util.Arrays.asList("ASSIGNEE", "REFERENCE"), condition.getParticipantTypes());
+    }
+
     @DisplayName("문서 목록 조회 시 상태 '결재진행중'은 in_progress로 정규화된다")
     @Test
     void listDocuments_normalizesInProgressStatus() throws Exception {

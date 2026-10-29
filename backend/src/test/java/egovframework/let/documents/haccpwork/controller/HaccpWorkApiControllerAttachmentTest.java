@@ -156,4 +156,16 @@ class HaccpWorkApiControllerAttachmentTest {
                 .andExpect(jsonPath("$.resultCode").value(200))
                 .andExpect(jsonPath("$.result.message").value("첨부파일이 삭제되었습니다."));
     }
+
+    @Test
+    void copyAttachmentsFrom_returnsCopiedCount() throws Exception {
+        when(attachmentService.copyAttachmentsFromApproval(eq(200L), eq(100L), eq("PLATFORM"), eq(null)))
+                .thenReturn(2);
+
+        mockMvc.perform(post("/api/v1/haccp-work/approvals/200/attachments/copy-from/100")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("x-tenant-code", "PLATFORM"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.copiedCount").value(2));
+    }
 }

@@ -90,7 +90,9 @@ function toSearchParams(
     params.set('title', trimmedTitle);
   }
 
-  if (options.canViewAllDocuments && trimmedWriter) {
+  // 기존 -> if (options.canViewAllDocuments && trimmedWriter) {
+  // 변경 -> 권한과 무관하게 작성자 조건 유지
+  if (trimmedWriter) {
     params.set('writer', trimmedWriter);
   }
 
@@ -126,18 +128,12 @@ export function useHaccpDocumentManagement() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedDivisionId = (searchParams.get('workDivisionId') || '').trim();
-  const initialValue = useMemo(() => {
-    const value = toSearchValue(searchParams);
-
-    if (canViewAllDocuments) {
-      return value;
-    }
-
-    return {
-      ...value,
-      writer: '',
-    };
-  }, [canViewAllDocuments, searchParams]);
+  // 기존 -> 관리자가 아니면 writer 를 '' 로 비움
+  // 변경 -> URL 의 writer 를 그대로 사용
+  const initialValue = useMemo(
+    () => toSearchValue(searchParams),
+    [searchParams],
+  );
 
   const [searchValue, setSearchValue] =
     useState<HaccpDocSearchValue>(initialValue);
@@ -265,9 +261,9 @@ export function useHaccpDocumentManagement() {
             : divisionValue || undefined,
         draftNumber: appliedFilters.draftNumber.trim() || undefined,
         title: appliedFilters.title.trim() || undefined,
-        writer: canViewAllDocuments
-          ? appliedFilters.writer.trim() || undefined
-          : undefined,
+        // 기존 -> writer: canViewAllDocuments ? appliedFilters.writer.trim() || undefined : undefined,
+        // 변경 -> 권한과 무관하게 작성자 조건 전달
+        writer: appliedFilters.writer.trim() || undefined,
         participantType:
           appliedFilters.participantType.length > 0
             ? appliedFilters.participantType.join(',')
@@ -334,14 +330,18 @@ export function useHaccpDocumentManagement() {
         label: `기안번호: ${appliedFilters.draftNumber.trim()}`,
       });
     }
-    if (canViewAllDocuments && appliedFilters.writer.trim()) {
+    // 기존 -> if (canViewAllDocuments && appliedFilters.writer.trim()) {
+    // 변경 -> 권한과 무관하게 작성자 칩 표시
+    if (appliedFilters.writer.trim()) {
       chips.push({
         key: 'writer',
         label: `작성자: ${appliedFilters.writer.trim()}`,
       });
     }
     return chips;
-  }, [appliedFilters, canViewAllDocuments, divisionOptions]);
+    // 기존 -> [appliedFilters, canViewAllDocuments, divisionOptions]
+    // 변경 -> canViewAllDocuments 의존성 제거
+  }, [appliedFilters, divisionOptions]);
 
   const handleReset = () => {
     const monthRange = getCurrentMonthRange();

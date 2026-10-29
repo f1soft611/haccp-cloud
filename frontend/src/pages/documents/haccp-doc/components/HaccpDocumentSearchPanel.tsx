@@ -13,10 +13,8 @@ import {
 } from '@mui/material';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 
-// 기존 -> ['전체', '임시저장', '결재중', '승인', '반려']
-// 변경 -> 상태 라벨을 '결재진행중'으로 통일
 const STATUS_OPTIONS = ['전체', '임시저장', '결재진행중', '승인', '반려'];
-const PARTICIPANT_OPTIONS = ['기안자', '결재자', '참조자'];
+const PARTICIPANT_OPTIONS = ['담당자', '기안자', '검토자', '결재자'];
 
 export function HaccpDocumentSearchPanel(props: {
   value: HaccpDocSearchValue;
@@ -33,7 +31,8 @@ export function HaccpDocumentSearchPanel(props: {
 }) {
   const {
     value,
-    canViewAllDocuments,
+    // 기존 -> canViewAllDocuments,
+    // 변경 -> 작성자 필드 제한 해제로 미사용, 구조분해에서 제외
     detailOpen,
     activeFilterChips,
     categoryOptions,
@@ -294,7 +293,8 @@ export function HaccpDocumentSearchPanel(props: {
                 size="small"
                 label="작성자"
                 value={value.writer}
-                disabled={!canViewAllDocuments}
+                // 기존 -> disabled={!canViewAllDocuments}
+                // 변경 -> 업무 담당자도 작성자 검색 가능하도록 항상 활성화
                 onChange={(event) =>
                   onChange({
                     ...value,

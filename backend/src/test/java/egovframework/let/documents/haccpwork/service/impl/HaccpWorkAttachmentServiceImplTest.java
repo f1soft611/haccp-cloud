@@ -3,9 +3,13 @@ package egovframework.let.documents.haccpwork.service.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -508,5 +512,95 @@ class HaccpWorkAttachmentServiceImplTest {
 
         assertThat(list).hasSize(1);
         assertThat(list.get(0).get("attachmentId")).isEqualTo(77L);
+    }
+
+    private HaccpWorkDAO mockCopyDao(String sourceStatus, Long sourceLoginId) throws Exception {
+        HaccpWorkDAO haccpWorkDAO = mock(HaccpWorkDAO.class);
+        when(haccpWorkDAO.selectTenantIdByCode("PLATFORM")).thenReturn(1L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(1001L);
+        when(haccpWorkDAO.selectApprovalTemplateAccessCount(anyMap())).thenReturn(1);
+        when(haccpWorkDAO.selectApprovalMainById(anyMap())).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> params = (Map<String, Object>) invocation.getArgument(0);
+            Map<String, Object> main = new HashMap<String, Object>();
+            boolean isSource = Long.valueOf(100L).equals(params.get("approvalId"));
+            // PostgreSQL 은 따옴표 없는 별칭을 소문자로 돌려준다
+            main.put("draftingworkcategoryid", 5L);
+            main.put("loginid", isSource ? sourceLoginId : 1001L);
+            main.put("statustype", isSource ? sourceStatus : "pre_apply");
+            return main;
+        });
+
+        Map<String, Object> completed = new HashMap<String, Object>();
+        completed.put("attachmentId", 11L);
+        completed.put("approvalId", 100L);
+        completed.put("objectKey", "tenants/PLATFORM/approvals/100/2026/10/uuid_a.pdf");
+        completed.put("originalFileName", "a.pdf");
+        completed.put("fileExt", "pdf");
+        completed.put("contentType", "application/pdf");
+        completed.put("fileSize", 123L);
+        completed.put("uploadStatus", "COMPLETED");
+        completed.put("previewableYn", "Y");
+        completed.put("bucketName", "haccp-attachments");
+
+        Map<String, Object> pending = new HashMap<String, Object>(completed);
+        pending.put("attachmentId", 12L);
+        pending.put("objectKey", "tenants/PLATFORM/approvals/100/2026/10/uuid_b.pdf");
+        pending.put("uploadStatus", "PENDING");
+
+        when(haccpWorkDAO.selectDocumentAttachmentsByApprovalId(anyMap()))
+                .thenReturn(Arrays.asList(completed, pending));
+        return haccpWorkDAO;
+    }
+
+    private HaccpWorkAttachmentServiceImpl createCopyService(HaccpWorkDAO dao, StorageClient storageClient) {
+        StorageProperties storageProperties = new StorageProperties();
+        storageProperties.setBucket("haccp-attachments");
+        return new HaccpWorkAttachmentServiceImpl(dao, storageClient, storageProperties, mock(HaccpWorkFlowService.class));
+    }
+
+    @Test
+    void copyAttachmentsFromApproval_shouldCopyCompletedAttachmentsOnly() throws Exception {
+        HaccpWorkDAO haccpWorkDAO = mockCopyDao("rejected", 1001L);
+        StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkAttachmentServiceImpl service = createCopyService(haccpWorkDAO, storageClient);
+
+        int copied = service.copyAttachmentsFromApproval(200L, 100L, "platform", "platform_admin");
+
+        assertThat(copied).isEqualTo(1);
+        verify(storageClient).copyObject(
+                eq("haccp-attachments"),
+                eq("tenants/PLATFORM/approvals/100/2026/10/uuid_a.pdf"),
+                eq("haccp-attachments"),
+                startsWith("tenants/PLATFORM/approvals/200/"));
+        verify(haccpWorkDAO).insertDocumentAttachment(argThat(params ->
+                Long.valueOf(200L).equals(params.get("approvalId"))
+                        && "COMPLETED".equals(params.get("uploadStatus"))
+                        && "a.pdf".equals(params.get("originalFileName"))));
+    }
+
+    @Test
+    void copyAttachmentsFromApproval_shouldRejectWhenSourceIsNotRejected() throws Exception {
+        HaccpWorkDAO haccpWorkDAO = mockCopyDao("in_progress", 1001L);
+        StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkAttachmentServiceImpl service = createCopyService(haccpWorkDAO, storageClient);
+
+        assertThatThrownBy(() -> service.copyAttachmentsFromApproval(200L, 100L, "platform", "platform_admin"))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("status")
+                .isEqualTo(HttpStatus.CONFLICT);
+        verify(storageClient, never()).copyObject(anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void copyAttachmentsFromApproval_shouldRejectOtherDrafterSource() throws Exception {
+        HaccpWorkDAO haccpWorkDAO = mockCopyDao("rejected", 2002L);
+        StorageClient storageClient = mock(StorageClient.class);
+        HaccpWorkAttachmentServiceImpl service = createCopyService(haccpWorkDAO, storageClient);
+
+        assertThatThrownBy(() -> service.copyAttachmentsFromApproval(200L, 100L, "platform", "platform_admin"))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("status")
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
 }

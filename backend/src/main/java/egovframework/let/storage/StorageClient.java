@@ -13,6 +13,8 @@ public interface StorageClient {
 
     void deleteObject(String bucket, String objectKey) throws Exception;
 
+    void copyObject(String sourceBucket, String sourceObjectKey, String targetBucket, String targetObjectKey) throws Exception;
+
     final class PresignedUploadRequest {
         private final String bucket;
         private final String objectKey;

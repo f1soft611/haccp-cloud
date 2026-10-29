@@ -53,6 +53,8 @@ type ApprovalDraftContentProps = {
   canWriteComments?: boolean;
   commentLoadErrorMessage?: string;
   onAttachmentChanged?: () => void | Promise<void>;
+  pendingAttachmentFiles?: File[];
+  onChangePendingAttachmentFiles?: (files: File[]) => void;
   showApprovalLine?: boolean;
 };
 
@@ -98,6 +100,8 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     canWriteComments = true,
     commentLoadErrorMessage = '',
     onAttachmentChanged,
+    pendingAttachmentFiles,
+    onChangePendingAttachmentFiles,
     showApprovalLine = true,
   } = props;
 
@@ -161,6 +165,8 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
         approvalId={approvalId}
         isReadOnly={attachmentReadOnly}
         onChanged={onAttachmentChanged}
+        pendingFiles={pendingAttachmentFiles}
+        onChangePendingFiles={onChangePendingAttachmentFiles}
       />
 
       <ApprovalDraftCommentThread

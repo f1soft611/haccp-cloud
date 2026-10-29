@@ -15,6 +15,7 @@ import {
   validateApprovalSub,
 } from '../utils/approvalSubFields';
 import { extractApiErrorMessage } from '../../../../services/api/errorMessage';
+import { syncApprovalAttachmentsAfterSave } from '../utils/approvalAttachmentUpload';
 import { useFeedback } from '../../../../shared/hooks/useFeedback';
 import type { DocumentFieldValues } from '../../../../editor/utils/documentFieldValues';
 import {
@@ -52,6 +53,8 @@ type UseApprovalDraftWriteActionsParams = {
   approvalApply?: boolean;
   categoryCode?: string;
   sub?: ApprovalSubValues;
+  pendingAttachmentFiles?: File[];
+  onPendingAttachmentsSynced?: () => void;
 };
 
 type UseApprovalDraftWriteActionsResult = {
@@ -107,6 +110,8 @@ export function useApprovalDraftWriteActions(
     approvalApply = true,
     categoryCode,
     sub,
+    pendingAttachmentFiles = [],
+    onPendingAttachmentsSynced,
   } = params;
 
   // Note: ownership check is based on work.owner (actual draft author),
@@ -116,7 +121,9 @@ export function useApprovalDraftWriteActions(
   const withReturnTo = (path: string) =>
       returnTo ? `${path}&returnTo=${encodeURIComponent(returnTo)}` : path;
   const queryClient = useQueryClient();
-  const { showError, showSuccess } = useFeedback();
+  // 기존 -> const { showError, showSuccess } = useFeedback();
+  // 변경 -> 첨부 일부 실패 경고용 showWarning 추가
+  const { showError, showSuccess, showWarning } = useFeedback();
   const [errorMessage, setErrorMessage] = useState('');
   const approvalCommentsQueryKey = [
     'approval-comments',
@@ -142,6 +149,25 @@ export function useApprovalDraftWriteActions(
       String(approvalStatusType ?? '').trim().toLowerCase() === 'pre_apply'
           ? (approvalId ?? '').trim()
           : '';
+
+  // 반려 문서에서 저장하면 새 문서가 생기므로 반려 문서 첨부를 새 문서로 복사
+  const rejectedSourceApprovalId =
+      String(approvalStatusType ?? '').trim().toLowerCase() === 'rejected'
+          ? (approvalId ?? '').trim()
+          : '';
+
+  const syncAttachmentsAfterSave = async (
+    savedApprovalId?: string | number | null,
+  ) => {
+    const { warningMessage } = await syncApprovalAttachmentsAfterSave({
+      tenantCode,
+      savedApprovalId,
+      sourceApprovalId: rejectedSourceApprovalId,
+      files: pendingAttachmentFiles,
+    });
+    onPendingAttachmentsSynced?.();
+    return warningMessage;
+  };
 
   const tempSaveMutation = useMutation({
     mutationFn: async () => {
@@ -175,8 +201,11 @@ export function useApprovalDraftWriteActions(
         sub: subPayload,
       });
     },
+    // 기존 -> 저장 후 바로 쿼리 무효화, navigate, 성공 토스트
+    // 변경 -> 첨부 복사/대기 파일 업로드를 먼저 끝낸 뒤 무효화(시스템 댓글 반영), 첨부 실패 시 경고 토스트
     onSuccess: async (result) => {
       setErrorMessage('');
+      const attachmentWarning = await syncAttachmentsAfterSave(result.approvalId);
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['haccp-work-draft-template', tenantCode, baseId, idType],
@@ -192,6 +221,10 @@ export function useApprovalDraftWriteActions(
         navigate(withReturnTo(`/approvals/draft/${result.approvalId}?idType=approval`), {
           replace: true,
         });
+      }
+      if (attachmentWarning) {
+        showWarning(attachmentWarning);
+        return;
       }
       showSuccess('임시저장이 완료되었습니다.');
     },
@@ -244,8 +277,11 @@ export function useApprovalDraftWriteActions(
         sub: subPayload,
       });
     },
+    // 기존 -> 저장 후 바로 쿼리 무효화, 성공 토스트, navigate
+    // 변경 -> 첨부 복사/대기 파일 업로드를 먼저 끝낸 뒤 진행, 첨부 실패 시 경고 토스트
     onSuccess: async (result) => {
       setErrorMessage('');
+      const attachmentWarning = await syncAttachmentsAfterSave(result.approvalId);
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['haccp-documents', tenantCode],
@@ -261,11 +297,15 @@ export function useApprovalDraftWriteActions(
         }),
       ]);
 
-      showSuccess(
-          approvalApply
-              ? result.message || '결재신청이 완료되었습니다.'
-              : '저장이 완료되었습니다.',
-      );
+      if (attachmentWarning) {
+        showWarning(attachmentWarning);
+      } else {
+        showSuccess(
+            approvalApply
+                ? result.message || '결재신청이 완료되었습니다.'
+                : '저장이 완료되었습니다.',
+        );
+      }
       if (result.approvalId) {
         navigate(withReturnTo(`/approvals/draft/${result.approvalId}?idType=approval`), {
           replace: true,

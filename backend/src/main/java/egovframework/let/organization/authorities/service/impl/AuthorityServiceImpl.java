@@ -186,18 +186,13 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
     @Override
     public Map<String, Object> getRoleMenus(String roleCode, String tenantCode) throws Exception {
         String normalizedRoleCode = toUpper(roleCode);
-        Long roleId = parseLong(roleCode);
         String normalizedTenantCode = hasText(tenantCode) ? toUpper(tenantCode) : "PLATFORM";
         if (!hasText(normalizedRoleCode)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleCode는 필수입니다.");
         }
 
         RoleMenuPermissionVO condition = new RoleMenuPermissionVO();
-        if (roleId != null) {
-            condition.setRoleId(roleId);
-        } else {
-            condition.setRoleCode(normalizedRoleCode);
-        }
+        condition.setRoleCode(normalizedRoleCode);
         condition.setTenantCode(normalizedTenantCode);
         List<RoleMenuPermissionVO> permissions = authorityDAO.selectRoleMenuPermissionList(condition);
 
@@ -209,7 +204,7 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
         }
 
         Map<String, Object> response = new HashMap<String, Object>();
-        response.put("roleCode", roleId != null ? String.valueOf(roleId) : normalizedRoleCode);
+        response.put("roleCode", normalizedRoleCode);
         response.put("tenantCode", normalizedTenantCode);
         response.put("menuIds", new ArrayList<String>(menuCodeSet));
         return response;
@@ -230,12 +225,9 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "roleCode는 필수입니다.");
         }
 
-        Long roleId = parseLong(payload.getRoleCode());
         String normalizedRoleCode = toUpper(payload.getRoleCode());
         String normalizedTenantCode = hasText(tenantCode) ? toUpper(tenantCode) : "PLATFORM";
-        if (roleId == null) {
-            roleId = authorityDAO.selectRoleIdByCode(normalizedTenantCode, normalizedRoleCode);
-        }
+        Long roleId = authorityDAO.selectRoleIdByCode(normalizedTenantCode, normalizedRoleCode);
         if (roleId == null && ("TENANT_ADMIN".equals(normalizedRoleCode) || "TENANT_USER".equals(normalizedRoleCode))) {
             RoleInfoVO defaultRole = new RoleInfoVO();
             defaultRole.setTenantCode(normalizedTenantCode);
@@ -315,7 +307,7 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
         }
 
         Map<String, Object> response = new HashMap<String, Object>();
-        response.put("roleCode", roleId != null ? String.valueOf(roleId) : normalizedRoleCode);
+        response.put("roleCode", normalizedRoleCode);
         response.put("tenantCode", normalizedTenantCode);
         response.put("menuIds", filteredMenuIds);
         return response;
@@ -372,25 +364,6 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
-    }
-
-    private Long parseLong(String value) {
-        if (!hasText(value)) {
-            return null;
-        }
-
-        String trimmed = value.trim();
-        for (int index = 0; index < trimmed.length(); index++) {
-            if (!Character.isDigit(trimmed.charAt(index))) {
-                return null;
-            }
-        }
-
-        try {
-            return Long.valueOf(trimmed);
-        } catch (NumberFormatException ex) {
-            return null;
-        }
     }
 
     private void validateImmutableSystemRole(RoleInfoVO roleInfo) {

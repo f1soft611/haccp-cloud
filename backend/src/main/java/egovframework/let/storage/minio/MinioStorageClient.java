@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 
 import egovframework.let.storage.StorageClient;
 import egovframework.let.storage.StorageProperties;
+import io.minio.CopyObjectArgs;
+import io.minio.CopySource;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.RemoveObjectArgs;
@@ -63,6 +65,12 @@ public class MinioStorageClient implements StorageClient {
         operations.deleteObject(resolveBucket(bucket), objectKey);
     }
 
+    @Override
+    public void copyObject(String sourceBucket, String sourceObjectKey, String targetBucket, String targetObjectKey)
+            throws Exception {
+        operations.copyObject(resolveBucket(sourceBucket), sourceObjectKey, resolveBucket(targetBucket), targetObjectKey);
+    }
+
     private static MinioOperations createDefaultOperations(StorageProperties properties) {
         MinioClient.Builder builder = MinioClient.builder()
                 .endpoint(properties.getEndpoint())
@@ -103,6 +111,9 @@ public class MinioStorageClient implements StorageClient {
         ObjectStat statObject(String bucket, String objectKey) throws Exception;
 
         void deleteObject(String bucket, String objectKey) throws Exception;
+
+        void copyObject(String sourceBucket, String sourceObjectKey, String targetBucket, String targetObjectKey)
+                throws Exception;
     }
 
     static class DefaultMinioOperations implements MinioOperations {
@@ -142,6 +153,16 @@ public class MinioStorageClient implements StorageClient {
         @Override
         public void deleteObject(String bucket, String objectKey) throws Exception {
             minioClient.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(objectKey).build());
+        }
+
+        @Override
+        public void copyObject(String sourceBucket, String sourceObjectKey, String targetBucket, String targetObjectKey)
+                throws Exception {
+            minioClient.copyObject(CopyObjectArgs.builder()
+                    .bucket(targetBucket)
+                    .object(targetObjectKey)
+                    .source(CopySource.builder().bucket(sourceBucket).object(sourceObjectKey).build())
+                    .build());
         }
     }
 }

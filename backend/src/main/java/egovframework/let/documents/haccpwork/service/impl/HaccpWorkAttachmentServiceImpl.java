@@ -349,6 +349,118 @@ public class HaccpWorkAttachmentServiceImpl extends EgovAbstractServiceImpl impl
         }
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int copyAttachmentsFromApproval(
+            Long targetApprovalId,
+            Long sourceApprovalId,
+            String tenantCode,
+            String actorLoginCode
+    ) throws Exception {
+        validateApprovalId(targetApprovalId);
+        validateApprovalId(sourceApprovalId);
+        if (targetApprovalId.equals(sourceApprovalId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "같은 문서의 첨부파일은 복사할 수 없습니다.");
+        }
+
+        String normalizedTenant = normalizeTenantCode(tenantCode);
+        Long tenantId = resolveTenantId(normalizedTenant);
+        Long actorLoginId = resolveActorLoginId(tenantId, actorLoginCode);
+        ensureApprovalAccess(tenantId, sourceApprovalId, actorLoginId);
+        ensureApprovalAccess(tenantId, targetApprovalId, actorLoginId);
+
+        Map<String, Object> sourceMain = selectApprovalMain(tenantId, sourceApprovalId);
+        Map<String, Object> targetMain = selectApprovalMain(tenantId, targetApprovalId);
+        Long sourceWorkId = getLongIgnoreCase(sourceMain, "draftingWorkCategoryId");
+        if (!actorLoginId.equals(getLongIgnoreCase(sourceMain, "loginId"))
+                || !actorLoginId.equals(getLongIgnoreCase(targetMain, "loginId"))
+                || sourceWorkId == null
+                || !sourceWorkId.equals(getLongIgnoreCase(targetMain, "draftingWorkCategoryId"))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인이 기안한 같은 업무 문서끼리만 첨부파일을 복사할 수 있습니다.");
+        }
+        String sourceStatus = trimToEmpty(asString(getValueIgnoreCase(sourceMain, "statusType"))).toLowerCase(Locale.ROOT);
+        if (!"rejected".equals(sourceStatus)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "반려된 문서의 첨부파일만 복사할 수 있습니다.");
+        }
+
+        Map<String, Object> listParams = new HashMap<String, Object>();
+        listParams.put("tenantId", tenantId);
+        listParams.put("approvalId", sourceApprovalId);
+        List<Map<String, Object>> sourceAttachments = haccpWorkDAO.selectDocumentAttachmentsByApprovalId(listParams);
+
+        LocalDateTime now = LocalDateTime.now();
+        int copiedCount = 0;
+        for (Map<String, Object> source : sourceAttachments) {
+            if (!"COMPLETED".equalsIgnoreCase(trimToEmpty(asString(source.get("uploadStatus"))))) {
+                continue;
+            }
+
+            String fileName = resolveAttachmentFileName(source);
+            String bucketName = resolveBucketName(asString(source.get("bucketName")));
+            String objectKey = buildObjectKey(normalizedTenant, targetApprovalId, fileName, now);
+            // ponytail: 오브젝트 복사 후 DB 롤백되면 복사본이 고아로 남음, 문제되면 정리 스케줄러에서 키 대조
+            storageClient.copyObject(bucketName, asString(source.get("objectKey")), bucketName, objectKey);
+
+            Map<String, Object> attachmentParams = new HashMap<String, Object>();
+            attachmentParams.put("tenantId", tenantId);
+            attachmentParams.put("approvalId", targetApprovalId);
+            attachmentParams.put("objectKey", objectKey);
+            attachmentParams.put("originalFileName", fileName);
+            attachmentParams.put("fileExt", extractExtension(fileName));
+            attachmentParams.put("contentType", trimToEmpty(asString(source.get("contentType"))));
+            attachmentParams.put("fileSize", source.get("fileSize"));
+            attachmentParams.put("checksumSha256", trimToNull(asString(source.get("checksumSha256"))));
+            attachmentParams.put("uploadStatus", "COMPLETED");
+            attachmentParams.put("previewableYn", isPreviewableContentType(asString(source.get("contentType"))) ? "Y" : "N");
+            attachmentParams.put("storageProvider", "MINIO");
+            attachmentParams.put("bucketName", bucketName);
+            attachmentParams.put("createdBy", actorLoginId);
+            haccpWorkDAO.insertDocumentAttachment(attachmentParams);
+
+            haccpWorkFlowService.createSystemApprovalComment(
+                    targetApprovalId,
+                    normalizedTenant,
+                    "첨부파일 승계",
+                    fileName,
+                    actorLoginCode
+            );
+            copiedCount++;
+        }
+        return copiedCount;
+    }
+
+    private Map<String, Object> selectApprovalMain(Long tenantId, Long approvalId) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("approvalId", approvalId);
+        Map<String, Object> main = haccpWorkDAO.selectApprovalMainById(params);
+        if (main == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "결재 문서를 찾을 수 없습니다.");
+        }
+        return main;
+    }
+
+    private static Object getValueIgnoreCase(Map<String, Object> row, String key) {
+        if (row == null) {
+            return null;
+        }
+        if (row.containsKey(key)) {
+            return row.get(key);
+        }
+        for (Map.Entry<String, Object> entry : row.entrySet()) {
+            if (key.equalsIgnoreCase(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static Long getLongIgnoreCase(Map<String, Object> row, String key) {
+        Map<String, Object> single = new HashMap<String, Object>();
+        single.put(key, getValueIgnoreCase(row, key));
+        return getLong(single, key);
+    }
+
     private Map<String, Object> presignReadUrl(
             Long approvalId,
             Long attachmentId,

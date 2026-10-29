@@ -188,6 +188,27 @@ public class HaccpWorkApiController {
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 
+    @PostMapping("/approvals/{approvalId}/attachments/copy-from/{sourceApprovalId}")
+    public ResultVO copyAttachmentsFrom(
+            @PathVariable Long approvalId,
+            @PathVariable Long sourceApprovalId,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        int copiedCount = haccpWorkAttachmentService.copyAttachmentsFromApproval(
+                approvalId,
+                sourceApprovalId,
+                tenantCode,
+                resolveLoginCode(user)
+        );
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("copiedCount", copiedCount);
+        resultMap.put("user", user);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
     @Operation(
             summary = "기안 템플릿 조회",
             description = "작성 페이지 진입 시 템플릿 ID 또는 결재문서 ID로 기안 템플릿을 조회한다",
