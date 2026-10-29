@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import type { TenantTodoCardItem } from '../tenant/hooks/useTenantDashboardData';
 import { getTodoStatusLabel } from '../tenant/todoFilter';
+import type { CalendarWorkEvent } from '../../documents/work-calendar/cycleDateMapping';
 
 const DATE_FORMAT = 'YYYY-MM-DD';
 
@@ -103,4 +104,31 @@ export function buildBoard(todos: TenantTodoCardItem[], today: Date): TodayBoard
     write.sort((left, right) => left.dueDate.localeCompare(right.dueDate) || compareByCategory(left, right));
     rejected.sort(compareByCategory);
     return { write, rejected, doneCount };
+}
+
+export type HistoryCell = {
+    cycleDate: string;
+    label: string;
+};
+
+// 캘린더 이벤트(주기마다 1건)에서 업무별 최근 limit 개 주기 상태를 뽑는다. 마지막 칸이 이번 주기
+export function buildHistoryByWork(
+    events: CalendarWorkEvent[],
+    limit = 7,
+): Map<string, HistoryCell[]> {
+    const byWork = new Map<string, HistoryCell[]>();
+    events
+    .filter((event) => !event.isFuture && !event.expiration)
+    .forEach((event) => {
+        const cells = byWork.get(event.item.id) ?? [];
+        cells.push({ cycleDate: event.cycleDate, label: getTodoStatusLabel(event.item) });
+        byWork.set(event.item.id, cells);
+    });
+    byWork.forEach((cells, workId) => {
+        byWork.set(
+            workId,
+            cells.sort((left, right) => left.cycleDate.localeCompare(right.cycleDate)).slice(-limit),
+        );
+    });
+    return byWork;
 }

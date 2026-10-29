@@ -5,8 +5,10 @@ import {
     formatElapsed,
     getCycleDueDate,
     getDueBadge,
+    buildHistoryByWork,
 } from "../../../pages/dashboard/today/todayRules.ts";
 import type {TenantTodoCardItem} from "../../../pages/dashboard/tenant/hooks/useTenantDashboardData.ts";
+import type {CalendarWorkEvent} from "../../../pages/documents/work-calendar/cycleDateMapping.ts";
 
 function todo(partial: Partial<TenantTodoCardItem>): TenantTodoCardItem {
     return {
@@ -115,5 +117,47 @@ describe('buildBoard', () => {
         expect(board.write[2].dueDate).toBe('2026-10-31');
         expect(board.rejected.map((item) => item.id)).toEqual(['rej']);
         expect(board.doneCount).toBe(1);
+    });
+});
+
+describe('buildHistoryByWork', () => {
+    const event = (
+        workId: string,
+        cycleDate: string,
+        approvalStatusType: string,
+        isFuture = false,
+    ): CalendarWorkEvent => ({
+        date: cycleDate,
+        cycleDate,
+        isFuture,
+        item: todo({ id: workId, approvalStatusType }),
+    });
+
+    it('업무별로 cycleDate 오름차순, 최근 7개만 남긴다', () => {
+        const events = Array.from({ length: 9 }, (_, index) =>
+            event('w1', `2026-10-${String(20 + index).padStart(2, '0')}`, 'approved'),
+        ).reverse();
+
+        const cells = buildHistoryByWork(events).get('w1') ?? [];
+
+        expect(cells).toHaveLength(7);
+        expect(cells[0].cycleDate).toBe('2026-10-22');
+        expect(cells[6].cycleDate).toBe('2026-10-28');
+    });
+
+    it('상태 라벨은 캘린더와 같은 규칙, 미래 주기와 만료일 이벤트는 뺀다', () => {
+        const events = [
+            event('w1', '2026-10-26', 'rejected'),
+            event('w1', '2026-10-27', ''),
+            event('w1', '2026-10-28', 'in_progress'),
+            event('w1', '2026-10-29', '', true),
+            { ...event('w1', '2026-10-30', 'approved'), expiration: {} as CalendarWorkEvent['expiration'] },
+        ];
+
+        expect(buildHistoryByWork(events).get('w1')).toEqual([
+            { cycleDate: '2026-10-26', label: '반려' },
+            { cycleDate: '2026-10-27', label: '미작성' },
+            { cycleDate: '2026-10-28', label: '결재진행중' },
+        ]);
     });
 });
