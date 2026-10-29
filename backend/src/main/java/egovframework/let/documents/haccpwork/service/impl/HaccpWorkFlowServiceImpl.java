@@ -406,6 +406,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 null,
                 eaExeId
         );
+        // arrival 비움. 검토승인 시 markNextApprovalArrival(APPROVER_SEQ) 가 채운다
         insertApprovalLine(
                 tenantId,
                 electronicApprovalId,
@@ -417,7 +418,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 "",
                 "N",
                 "Y",
-                now,
+                null,
                 null,
                 null,
                 eaExeId
