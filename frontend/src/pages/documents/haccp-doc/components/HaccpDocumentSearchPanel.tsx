@@ -31,7 +31,8 @@ export function HaccpDocumentSearchPanel(props: {
 }) {
   const {
     value,
-    canViewAllDocuments,
+    // 기존 -> canViewAllDocuments,
+    // 변경 -> 작성자 필드 제한 해제로 미사용, 구조분해에서 제외
     detailOpen,
     activeFilterChips,
     categoryOptions,
@@ -292,7 +293,8 @@ export function HaccpDocumentSearchPanel(props: {
                 size="small"
                 label="작성자"
                 value={value.writer}
-                disabled={!canViewAllDocuments}
+                // 기존 -> disabled={!canViewAllDocuments}
+                // 변경 -> 업무 담당자도 작성자 검색 가능하도록 항상 활성화
                 onChange={(event) =>
                   onChange({
                     ...value,
