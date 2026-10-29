@@ -19,6 +19,7 @@ export function ApprovalDraftWritePage() {
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [pendingAttachmentFiles, setPendingAttachmentFiles] = useState<File[]>([]);
   const isDarkMode = theme.palette.mode === 'dark';
 
   const {
@@ -145,6 +146,8 @@ export function ApprovalDraftWritePage() {
     approvalApply,
     categoryCode: work?.categoryCode,
     sub,
+    pendingAttachmentFiles,
+    onPendingAttachmentsSynced: () => setPendingAttachmentFiles([]),
   });
 
   const showApprove = canApprove && idType === 'approval';
@@ -284,6 +287,10 @@ export function ApprovalDraftWritePage() {
         onAttachmentChanged={refreshComments}
         isReadOnly={isReadOnly}
         attachmentReadOnly={attachmentReadOnly}
+        pendingAttachmentFiles={pendingAttachmentFiles}
+        onChangePendingAttachmentFiles={
+          attachmentReadOnly ? undefined : setPendingAttachmentFiles
+        }
         showApprovalLine={approvalApply}
       />
 
