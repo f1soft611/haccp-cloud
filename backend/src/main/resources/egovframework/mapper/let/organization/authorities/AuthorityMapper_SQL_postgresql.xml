@@ -409,6 +409,21 @@
         LIMIT 1
     </select>
 
+    <!-- 테넌트 숫자 권한 코드 다음 번호 (001 부터, 3자리 미만만 0 채움) -->
+    <select id="AuthorityDAO.selectNextNumericRoleCode" parameterType="string" resultType="string">
+        SELECT CASE
+                   WHEN length(x.n::text) &lt; 3 THEN LPAD(x.n::text, 3, '0')
+                   ELSE x.n::text
+               END
+        FROM (
+            SELECT COALESCE(MAX(r.role_code::bigint), 0) + 1 AS n
+            FROM tb_role r
+            INNER JOIN tb_tenant t ON t.tenant_id = r.tenant_id
+            WHERE t.tenant_code = #{value}
+              AND r.role_code ~ '^[0-9]+$'
+        ) x
+    </select>
+
     <!-- 테넌트에 등록된 전체 메뉴 코드 조회 -->
     <select id="AuthorityDAO.selectAllMenuCodesByTenantCode" parameterType="map" resultType="string">
         SELECT m.menu_code

@@ -97,14 +97,18 @@ public class AuthorityServiceImpl extends EgovAbstractServiceImpl implements Aut
 
     @Override
     public RoleInfoVO createRole(RoleInfoVO payload) throws Exception {
-        if (payload == null || !hasText(payload.getRoleCode())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "역할 코드는 필수입니다.");
+        // 기존 -> 역할 코드가 비어 있으면 400
+        // 변경 -> 역할 코드가 비어 있으면 테넌트 숫자 코드 다음 번호로 자동 채번
+        if (payload == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "요청 본문이 필요합니다.");
         }
 
-        payload.setRoleCode(toUpper(payload.getRoleCode()));
         payload.setUseAt("Y");
         String normalizedTenantCode = hasText(payload.getTenantCode()) ? toUpper(payload.getTenantCode()) : "PLATFORM";
         payload.setTenantCode(normalizedTenantCode);
+        payload.setRoleCode(hasText(payload.getRoleCode())
+                ? toUpper(payload.getRoleCode())
+                : authorityDAO.selectNextNumericRoleCode(normalizedTenantCode));
 
         Long resolvedTenantId = planAccessService.resolveTenantIdByTenantCode(normalizedTenantCode);
         if (resolvedTenantId == null || resolvedTenantId <= 0L) {

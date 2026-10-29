@@ -277,9 +277,10 @@ describe('PlatformAuthorityManagementPage', () => {
     const createDialog = screen.getByRole('dialog', { name: /권한 추가/ });
     const createTextboxes = within(createDialog).getAllByRole('textbox');
 
-    fireEvent.change(createTextboxes[0], {
-      target: { value: 'ROLE_QA_MANAGER' },
-    });
+    // 기존 -> 권한 코드를 직접 입력
+    // 변경 -> 권한 코드 칸은 비활성, 권한명만 입력
+    expect(createTextboxes[0]).toBeDisabled();
+    expect(createTextboxes[0]).toHaveValue('');
     fireEvent.change(createTextboxes[1], {
       target: { value: '품질 관리자' },
     });
@@ -289,7 +290,9 @@ describe('PlatformAuthorityManagementPage', () => {
     await waitFor(() => {
       expect(createPlatformRoleMock.mock.calls[0]?.[0]).toEqual(
         expect.objectContaining({
-          code: 'ROLE_QA_MANAGER',
+          // 기존 -> code: 'ROLE_QA_MANAGER'
+          // 변경 -> 코드는 서버 채번이라 빈 값으로 전송
+          code: '',
           name: '품질 관리자',
         }),
       );

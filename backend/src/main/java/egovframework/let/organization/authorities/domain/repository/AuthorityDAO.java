@@ -72,6 +72,10 @@ public class AuthorityDAO extends EgovAbstractMapper {
         return selectOne("AuthorityDAO.selectRoleIdByCode", condition);
     }
 
+    public String selectNextNumericRoleCode(String tenantCode) throws Exception {
+        return selectOne("AuthorityDAO.selectNextNumericRoleCode", tenantCode);
+    }
+
     public List<String> selectAllMenuCodesByTenantCode(String tenantCode) throws Exception {
         Map<String, Object> condition = new HashMap<String, Object>();
         condition.put("tenantCode", tenantCode);

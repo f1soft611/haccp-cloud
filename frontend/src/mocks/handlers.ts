@@ -2284,8 +2284,21 @@ export const handlers = [
       tenantCode?: string;
     };
 
-    if (!payload.code || !payload.name) {
+    // 기존 -> 코드와 이름 둘 다 필수
+    // 변경 -> 이름만 필수, 코드가 비면 같은 테넌트 숫자 코드 최대값 + 1 로 채번
+    if (!payload.name) {
       return HttpResponse.json({ message: 'Invalid input' }, { status: 400 });
+    }
+
+    const roleTenantCode = (payload.tenantCode ?? 'PLATFORM')
+      .trim()
+      .toUpperCase();
+    if (!payload.code?.trim()) {
+      const maxNumericCode = platformRoles
+        .filter((item) => (item.tenantCode ?? 'PLATFORM') === roleTenantCode)
+        .filter((item) => /^[0-9]+$/.test(item.code))
+        .reduce((max, item) => Math.max(max, Number(item.code)), 0);
+      payload.code = String(maxNumericCode + 1).padStart(3, '0');
     }
 
     const isDuplicate = platformRoles.some(
@@ -2303,7 +2316,7 @@ export const handlers = [
       code: payload.code.toUpperCase(),
       name: payload.name,
       description: payload.description ?? '',
-      tenantCode: (payload.tenantCode ?? 'PLATFORM').trim().toUpperCase(),
+      tenantCode: roleTenantCode,
       active: payload.active ?? true,
       updatedBy: 'platform_admin',
       updatedAt: new Date().toISOString(),
