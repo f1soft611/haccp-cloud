@@ -1,4 +1,6 @@
 import dayjs from 'dayjs';
+import type { TenantTodoCardItem } from '../tenant/hooks/useTenantDashboardData';
+import { getTodoStatusLabel } from '../tenant/todoFilter';
 
 const DATE_FORMAT = 'YYYY-MM-DD';
 
@@ -47,4 +49,58 @@ export function formatElapsed(value: string | undefined, today: Date): string {
         return '오늘';
     }
     return days === 1 ? '어제' : `${days}일 전`;
+}
+
+export type TodoBoardKind = 'write' | 'rejected' | 'done' | 'skip';
+
+export type WriteTodo = TenantTodoCardItem & { dueDate: string };
+
+export type TodayBoardData = {
+    write: WriteTodo[];
+    rejected: TenantTodoCardItem[];
+    doneCount: number;
+};
+
+export function workName(item: TenantTodoCardItem): string {
+    return item.divisionName || item.title || '-';
+}
+
+export function compareByCategory(left: TenantTodoCardItem, right: TenantTodoCardItem): number {
+    return (
+        (left.categorySortOrder ?? 0) - (right.categorySortOrder ?? 0) ||
+        workName(left).localeCompare(workName(right), 'ko')
+    );
+}
+
+// 상태 라벨은 이번 주기 문서 기준. 수시는 해야 할 날이 없고, 사용안함은 더 쓰지 않으므로 보드에서 뺀다
+export function classifyTodo(item: TenantTodoCardItem): TodoBoardKind {
+    if (item.cycle === 'ANYTIME' || !item.active) {
+        return 'skip';
+    }
+    const label = getTodoStatusLabel(item);
+    if (label === '반려') {
+        return 'rejected';
+    }
+    return label === '미작성' || label === '임시저장' ? 'write' : 'done';
+}
+
+export function buildBoard(todos: TenantTodoCardItem[], today: Date): TodayBoardData {
+    const write: WriteTodo[] = [];
+    const rejected: TenantTodoCardItem[] = [];
+    let doneCount = 0;
+
+    todos.forEach((item) => {
+        const kind = classifyTodo(item);
+        if (kind === 'write') {
+            write.push({ ...item, dueDate: getCycleDueDate(item.cycle, today) });
+        } else if (kind === 'rejected') {
+            rejected.push(item);
+        } else if (kind === 'done') {
+            doneCount += 1;
+        }
+    });
+
+    write.sort((left, right) => left.dueDate.localeCompare(right.dueDate) || compareByCategory(left, right));
+    rejected.sort(compareByCategory);
+    return { write, rejected, doneCount };
 }

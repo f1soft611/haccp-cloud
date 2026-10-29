@@ -1,5 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import {formatElapsed, getCycleDueDate, getDueBadge} from "../../../pages/dashboard/today/todayRules.ts";
+import {
+    buildBoard,
+    classifyTodo,
+    formatElapsed,
+    getCycleDueDate,
+    getDueBadge,
+} from "../../../pages/dashboard/today/todayRules.ts";
+import type {TenantTodoCardItem} from "../../../pages/dashboard/tenant/hooks/useTenantDashboardData.ts";
+
+function todo(partial: Partial<TenantTodoCardItem>): TenantTodoCardItem {
+    return {
+        id: 'w1',
+        title: '업무',
+        divisionName: '업무',
+        cycle: 'DAY',
+        active: true,
+        status: 'DRAFT',
+        todoStatus: 'DRAFT',
+        writtenInCycle: false,
+        categorySortOrder: 0,
+        ...partial,
+    } as TenantTodoCardItem;
+}
 
 // 2026-10-28 은 수요일
 const WED = new Date(2026, 9, 28, 10, 30);
@@ -51,5 +73,47 @@ describe('formatElapsed', () => {
         expect(formatElapsed('2026-10-28 09:00', WED)).toBe('오늘');
         expect(formatElapsed('2026-10-27', WED)).toBe('어제');
         expect(formatElapsed('2026-09-29', WED)).toBe('29일 전');
+    });
+});
+
+describe('classifyTodo', () => {
+    it('미작성과 임시저장은 작성할 업무', () => {
+        expect(classifyTodo(todo({}))).toBe('write');
+        expect(classifyTodo(todo({ approvalStatusTypeName: '임시저장', writtenInCycle: true }))).toBe('write');
+    });
+
+    it('반려는 반려 칸', () => {
+        expect(classifyTodo(todo({ approvalStatusType: 'rejected', writtenInCycle: true }))).toBe('rejected');
+    });
+
+    it('결재진행중, 승인은 완료', () => {
+        expect(classifyTodo(todo({ approvalStatusType: 'in_progress', status: 'IN_PROGRESS', writtenInCycle: true }))).toBe('done');
+        expect(classifyTodo(todo({ approvalStatusType: 'approved', status: 'ACTIVE', writtenInCycle: true }))).toBe('done');
+    });
+
+    it('수시와 사용안함 업무는 보드에서 제외', () => {
+        expect(classifyTodo(todo({ cycle: 'ANYTIME' }))).toBe('skip');
+        expect(classifyTodo(todo({ active: false }))).toBe('skip');
+    });
+});
+
+describe('buildBoard', () => {
+    it('마감일 → 분류 정렬순서 → 업무명 순으로 정렬하고 완료 수를 센다', () => {
+        const board = buildBoard(
+            [
+                todo({ id: 'month', cycle: 'MONTH', divisionName: '방충방서' }),
+                todo({ id: 'day-b', divisionName: '위생점검', categorySortOrder: 2 }),
+                todo({ id: 'day-a', divisionName: 'CCP 온도', categorySortOrder: 1 }),
+                todo({ id: 'rej', approvalStatusType: 'rejected', writtenInCycle: true }),
+                todo({ id: 'ok', approvalStatusType: 'approved', status: 'ACTIVE', writtenInCycle: true }),
+                todo({ id: 'any', cycle: 'ANYTIME' }),
+            ],
+            WED,
+        );
+
+        expect(board.write.map((item) => item.id)).toEqual(['day-a', 'day-b', 'month']);
+        expect(board.write[2].dueDate).toBe('2026-10-31');
+        expect(board.rejected.map((item) => item.id)).toEqual(['rej']);
+        expect(board.doneCount).toBe(1);
     });
 });
