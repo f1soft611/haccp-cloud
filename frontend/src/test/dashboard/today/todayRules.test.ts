@@ -54,14 +54,19 @@ describe('getCycleDueDate', () => {
 });
 
 describe('getDueBadge', () => {
-    it('오늘이 마감이면 오늘 마감', () => {
-        expect(getDueBadge('2026-10-28', WED)).toEqual({ label: '오늘 마감', color: 'error' });
+    it('지난 마감은 D+N 빨간 채움', () => {
+        expect(getDueBadge('2026-10-27', WED)).toEqual({ label: 'D+1', color: 'error', variant: 'filled' });
+        expect(getDueBadge('2026-10-20', WED)).toEqual({ label: 'D+8', color: 'error', variant: 'filled' });
+    });
+
+    it('오늘 마감은 빨간 테두리', () => {
+        expect(getDueBadge('2026-10-28', WED)).toEqual({ label: '오늘마감', color: 'error', variant: 'outlined' });
     });
 
     it('3일 이내는 주황, 그 이후는 회색', () => {
-        expect(getDueBadge('2026-10-29', WED)).toEqual({ label: 'D-1', color: 'warning' });
-        expect(getDueBadge('2026-10-31', WED)).toEqual({ label: 'D-3', color: 'warning' });
-        expect(getDueBadge('2026-11-01', WED)).toEqual({ label: 'D-4', color: 'default' });
+        expect(getDueBadge('2026-10-29', WED)).toEqual({ label: 'D-1', color: 'warning', variant: 'filled' });
+        expect(getDueBadge('2026-10-31', WED)).toEqual({ label: 'D-3', color: 'warning', variant: 'filled' });
+        expect(getDueBadge('2026-11-01', WED)).toEqual({ label: 'D-4', color: 'default', variant: 'filled' });
     });
 });
 

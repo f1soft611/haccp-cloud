@@ -8,6 +8,7 @@ const DATE_FORMAT = 'YYYY-MM-DD';
 export type DueBadge = {
     label: string;
     color: 'error' | 'warning' | 'default';
+    variant: 'filled' | 'outlined';
 };
 
 // 이번 주기의 마지막 날. 주간은 월요일 시작이라 일요일이 마감
@@ -35,10 +36,13 @@ export function getCycleDueDate(cycle: string, today: Date): string {
 
 export function getDueBadge(dueDate: string, today: Date): DueBadge {
     const days = dayjs(dueDate).diff(dayjs(today).startOf('day'), 'day');
-    if (days <= 0) {
-        return { label: '오늘 마감', color: 'error' };
+    if (days < 0) {
+        return { label: `D+${-days}`, color: 'error', variant: 'filled' };
     }
-    return { label: `D-${days}`, color: days <= 3 ? 'warning' : 'default' };
+    if (days === 0) {
+        return { label: '오늘마감', color: 'error', variant: 'outlined' };
+    }
+    return { label: `D-${days}`, color: days <= 3 ? 'warning' : 'default', variant: 'filled' };
 }
 
 export function formatElapsed(value: string | undefined, today: Date): string {
