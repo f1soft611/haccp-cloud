@@ -323,7 +323,9 @@ export function PlatformAuthorityManagementPage() {
   };
 
   const handleCreate = () => {
-    if (!formData.code.trim() || !formData.name.trim()) {
+    // 기존 -> 코드와 권한명 둘 다 확인
+    // 변경 -> 코드는 서버 채번이라 권한명만 확인
+    if (!formData.name.trim()) {
       return;
     }
 
@@ -333,7 +335,9 @@ export function PlatformAuthorityManagementPage() {
       confirmText: '등록',
       action: () => {
         createMutation.mutate({
-          code: formData.code.trim().toUpperCase(),
+          // 기존 -> code: formData.code.trim().toUpperCase()
+          // 변경 -> 빈 코드로 보내 서버에서 채번
+          code: '',
           name: formData.name.trim(),
           description: formData.description.trim(),
           active: formData.useAt === 'Y',

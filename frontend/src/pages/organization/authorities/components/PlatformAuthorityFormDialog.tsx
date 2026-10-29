@@ -32,9 +32,9 @@ export function PlatformAuthorityFormDialog(props: {
     ? '새 권한을 등록하면 메뉴 매핑 모달에서 메뉴 접근 권한을 연결할 수 있습니다.'
     : '권한 정보를 수정하고 저장하세요.';
   const submitLabel = isCreateMode ? '등록' : '저장';
-  const canSubmit = isCreateMode
-    ? value.code.trim().length > 0 && value.name.trim().length > 0
-    : value.name.trim().length > 0;
+  // 기존 -> 등록 시 코드와 권한명 둘 다 필수
+  // 변경 -> 코드는 서버 자동 채번이라 권한명만 필수
+  const canSubmit = value.name.trim().length > 0;
 
   return (
     <FormDialog
@@ -76,19 +76,14 @@ export function PlatformAuthorityFormDialog(props: {
       }
     >
       <Stack spacing={2}>
+        {/* 기존 -> 등록 시 권한 코드 직접 입력 */}
+        {/* 변경 -> 항상 비활성, 등록 시 자동 채번 안내 */}
         <TextField
           value={value.code}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              code: event.target.value.toUpperCase(),
-            })
-          }
-          label="권한 코드 *"
-          placeholder="ROLE_QA_MANAGER"
+          label="권한 코드"
+          helperText={isCreateMode ? '저장 시 자동 채번됩니다 (001부터)' : undefined}
           size="small"
-          required
-          disabled={!isCreateMode}
+          disabled
           fullWidth
         />
         <TextField
