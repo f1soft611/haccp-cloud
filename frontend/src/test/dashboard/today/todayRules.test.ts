@@ -102,6 +102,10 @@ describe('classifyTodo', () => {
         expect(classifyTodo(todo({ cycle: 'ANYTIME' }))).toBe('skip');
         expect(classifyTodo(todo({ active: false }))).toBe('skip');
     });
+
+    it('만료일 관리 업무는 주기 카드로 만들지 않는다', () => {
+        expect(classifyTodo(todo({ cycle: 'MONTH', expirationApply: true }))).toBe('skip');
+    });
 });
 
 describe('buildBoard', () => {

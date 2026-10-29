@@ -78,8 +78,9 @@ export function compareByCategory(left: TenantTodoCardItem, right: TenantTodoCar
 }
 
 // 상태 라벨은 이번 주기 문서 기준. 수시는 해야 할 날이 없고, 사용안함은 더 쓰지 않으므로 보드에서 뺀다
+// 기존 -> 수시, 사용안함만 skip / 변경 -> 만료일 관리 업무도 skip (캘린더처럼 주기 칸 없이 만료 건으로 따로 넣음)
 export function classifyTodo(item: TenantTodoCardItem): TodoBoardKind {
-    if (item.cycle === 'ANYTIME' || !item.active) {
+    if (item.cycle === 'ANYTIME' || !item.active || item.expirationApply) {
         return 'skip';
     }
     const label = getTodoStatusLabel(item);
