@@ -444,6 +444,7 @@ CREATE INDEX IF NOT EXISTS ix_tb_workdirect_customer_id ON tb_workdirect(custome
 -- Create Indexes for Performance
 CREATE INDEX IF NOT EXISTS idx_tenant_department ON tb_department(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_parent_department ON tb_department(parent_department_id);
+CREATE INDEX IF NOT EXISTS idx_department_sort_order ON tb_department(tenant_id, sort_order);
 
 CREATE INDEX IF NOT EXISTS idx_tenant_login_account ON tb_login_account(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_login_code ON tb_login_account(login_code);
