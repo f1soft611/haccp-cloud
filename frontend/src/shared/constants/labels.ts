@@ -43,6 +43,7 @@ export const APP_LABELS = {
     documents: '문서 템플릿',
     history: '문서 변경 이력',
     loginHistory: '로그인 이력',
+    schemaMigration: 'DB 마이그레이션',
     dashboard: 'HACCP 문서 포털',
     platformMenuManagement: '메뉴 관리',
     platformPlanManagement: '플랜 관리',

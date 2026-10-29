@@ -19,6 +19,7 @@ import {
   loadHaccpDocumentManagementPage,
   loadHaccpPortalPage,
   loadLoginHistoryPage,
+    loadMigrationPage,
   loadLoginPage,
   loadMaterialsPage,
   loadMyPage,
@@ -82,6 +83,11 @@ const LoginHistoryPage = lazy(() =>
   loadLoginHistoryPage().then((module) => ({
     default: module.LoginHistoryPage,
   })),
+);
+const MigrationPage = lazy(() =>
+    loadMigrationPage().then((module) => ({
+        default: module.MigrationPage,
+    })),
 );
 const PlatformMenuManagementPage = lazy(() =>
   loadPlatformMenuManagementPage().then((module) => ({
@@ -279,6 +285,14 @@ export function AppRoutes() {
               </ProtectedRoute>
             }
           />
+            <Route
+                path="/platform/migrations"
+                element={
+                    <ProtectedRoute enforceMenuAccess>
+                        <MigrationPage />
+                    </ProtectedRoute>
+                }
+            />
           <Route
             path="/platform/menus"
             element={
