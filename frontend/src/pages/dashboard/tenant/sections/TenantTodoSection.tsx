@@ -194,6 +194,7 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
                                   const range = getCurrentMonthDateRange();
                                   const query = new URLSearchParams({
                                     workType: sectionLabel,
+                                    workDivisionId: item.id,
                                     startDate: range.startDate,
                                     endDate: range.endDate,
                                   });
