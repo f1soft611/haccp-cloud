@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
     approver_id BIGINT,
     user_type VARCHAR(10) DEFAULT '0',
     haccp_cp_status VARCHAR(10),
-    reg_term VARCHAR(6),
+    reg_term VARCHAR(50),
     drafting_work_template_json JSONB,
     drafting_work_template_html TEXT,
     duty_charge_code VARCHAR(10),
@@ -87,7 +87,9 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
     CONSTRAINT fk_drafting_work_category_updated_by
         FOREIGN KEY (updated_by)
         REFERENCES tb_login_account(login_id)
-        ON DELETE SET NULL
+        ON DELETE SET NULL,
+    CONSTRAINT ck_drafting_work_category_expiration_apply CHECK (expiration_apply IN ('Y', 'N')),
+    CONSTRAINT ck_drafting_work_category_approval_apply CHECK (approval_apply IN ('Y', 'N'))
 );
 
 CREATE TABLE IF NOT EXISTS tb_drafting_work_category_authority (
