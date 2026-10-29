@@ -36,8 +36,18 @@ function BoardColumn({ title, count, isLoading, emptyText, children }: BoardColu
                     {isLoading ? '' : count}
                 </Typography>
             </Typography>
-            <Stack spacing={1} sx={{ mt: 1, maxHeight: 360, overflowY: 'auto' }}>
-                {isLoading ? (
+            <Stack
+                spacing={1}
+                sx={{
+                    mt: 1,
+                    maxHeight: 360,
+                    overflowY: 'auto',
+                    scrollbarWidth: 'none',                      // Firefox
+                    '&::-webkit-scrollbar': { display: 'none' }, // Chrome, Edge, Safari
+                }}
+            >
+
+            {isLoading ? (
                     [1, 2].map((key) => <Skeleton key={key} variant="rounded" height={64} />)
                 ) : count === 0 ? (
                     <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
