@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
+import egovframework.let.platform_admin.migration.service.SchemaMigrationFiles;
+import egovframework.let.platform_admin.migration.service.SchemaMigrationHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -137,6 +139,12 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
             );
             for (String optionalScript : optionalScripts) {
                 runScriptSafely(tenantJdbcUrl, optionalScript, Collections.<String, String>emptyMap());
+            }
+
+            // 기존 -> optional 스크립트 실행 후 바로 ACTIVE 처리
+            // 변경 -> 스키마 파일이 최신이므로 현재 마이그레이션 파일 전부를 적용됨(BASELINE)으로 기록
+            try (Connection connection = openConnection(tenantJdbcUrl)) {
+                SchemaMigrationHistory.baseline(connection, SchemaMigrationFiles.listIds());
             }
 
             tenantInfoDAO.updateTenantDatabaseProvisioningStatus(tenantId, "ACTIVE");
@@ -460,6 +468,22 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
             this.menuOrder = menuOrder;
             this.parentMenuCode = parentMenuCode;
         }
+    }
+
+    @Override
+    public Connection openDatabaseConnection(String dbName) throws Exception {
+        return openConnection(resolveJdbcUrl(normalizeIdentifier(dbName)));
+    }
+
+    @Override
+    public String centralDatabaseName() {
+        String configuredUrl = postgresUrl == null ? "" : postgresUrl.trim();
+        int schemeIndex = configuredUrl.indexOf("postgresql://");
+        if (schemeIndex < 0) {
+            throw new IllegalStateException("Globals.postgresql.Url 에서 DB 이름을 찾을 수 없습니다.");
+        }
+        String path = URI.create(configuredUrl.substring(schemeIndex)).getPath();
+        return normalizeIdentifier(path.startsWith("/") ? path.substring(1) : path);
     }
 
     private void executeStatement(String jdbcUrl, String sql) throws Exception {
