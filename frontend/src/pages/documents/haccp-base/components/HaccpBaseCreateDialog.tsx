@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Autocomplete,
   Button,
@@ -6,6 +7,7 @@ import {
   TextField,
 } from '@mui/material';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
+import { UserMultiSelectDialog } from '../../../../shared/components/forms/UserMultiSelectDialog';
 import type { WorkCycleOption } from '../../../../shared/hooks/useWorkCycleOptions';
 import type { UserItem } from '../../../../services/organization/usersService';
 import {
@@ -41,6 +43,11 @@ export function HaccpBaseCreateDialog(props: {
     cycleOptions,
   } = props;
 
+    const [assigneeDialogOpen, setAssigneeDialogOpen] = useState(false);
+    // 고른 순서대로 이름 표시
+    const assigneeNames = value.assigneeIds
+        .flatMap((id) => userOptions.find((user) => user.id === id)?.name ?? [])
+        .join(', ');
     // 기존 -> 검토자/승인자 항상 필수 / 변경 -> 결재 적용일 때만 필수
     const needsSigners = value.approvalApply === 'Y';
     const isSubmitDisabled =
@@ -61,8 +68,8 @@ export function HaccpBaseCreateDialog(props: {
       title={mode === 'create' ? '업무 추가' : '업무 수정'}
       description={
         mode === 'create'
-          ? '양식 기본 정보를 등록합니다.'
-          : '양식 기본 정보를 수정합니다.'
+          ? '업무 기본 정보를 등록합니다.'
+          : '업무 기본 정보를 수정합니다.'
       }
       actions={
         <>
@@ -81,16 +88,16 @@ export function HaccpBaseCreateDialog(props: {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <TextField
             fullWidth
-            label="구분코드"
+            label="업무코드"
             value={value.divisionCode}
             placeholder="자동 채번됩니다"
             disabled
-            helperText="구분코드는 자동으로 채번됩니다."
+            helperText="업무코드는 자동으로 채번됩니다."
           />
 
           <TextField
             fullWidth
-            label="구분명"
+            label="업무명"
             value={value.divisionName}
             onChange={(event) =>
               onChange({
@@ -131,7 +138,7 @@ export function HaccpBaseCreateDialog(props: {
           <TextField
               fullWidth
               select
-              label="등록주기"
+              label="작성주기"
               value={value.cycle}
               // 기존 -> 수시가 아니면 만료일 관리 양식 N 초기화 / 변경 -> 등록주기만 변경 (만료일은 분류로만 판단)
               onChange={(event) =>
@@ -155,30 +162,20 @@ export function HaccpBaseCreateDialog(props: {
           </TextField>
         </Stack>
 
-        <Autocomplete
-          multiple
-          options={userOptions}
-          value={userOptions.filter((user) =>
-            value.assigneeIds.includes(user.id),
-          )}
-          onChange={(_, selected) =>
-            onChange({
-              ...value,
-              assigneeIds: selected.map((user) => user.id),
-            })
-          }
-          openOnFocus={false}
-          forcePopupIcon={false}
-          getOptionLabel={(option) => option.name}
-          isOptionEqualToValue={(option, selected) => option.id === selected.id}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="담당자"
-              placeholder="이름으로 검색 후 다중 선택"
-              // helperText="UI 시안 단계입니다. 저장 연동은 담당자 매핑 규격 확정 후 적용됩니다."
-            />
-          )}
+        {/* 기존 -> Autocomplete multiple 로 이름 검색 후 다중 선택 */}
+        {/* 변경 -> 읽기 전용 칸 클릭 시 공용 UserMultiSelectDialog 로 다중 선택 */}
+        <TextField
+          label="담당자"
+          value={assigneeNames}
+          placeholder="클릭해서 담당자 선택"
+          onClick={() => setAssigneeDialogOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              setAssigneeDialogOpen(true);
+            }
+          }}
+          slotProps={{ input: { readOnly: true } }}
+          sx={{ '& input': { cursor: 'pointer' } }}
         />
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -296,6 +293,19 @@ export function HaccpBaseCreateDialog(props: {
           <MenuItem value="N">미사용</MenuItem>
         </TextField>
       </Stack>
+
+      {assigneeDialogOpen ? (
+        <UserMultiSelectDialog
+          users={userOptions}
+          title="담당자 선택"
+          selectedUserIds={value.assigneeIds}
+          onClose={() => setAssigneeDialogOpen(false)}
+          onConfirm={(userIds) => {
+            onChange({ ...value, assigneeIds: userIds });
+            setAssigneeDialogOpen(false);
+          }}
+        />
+      ) : null}
     </FormDialog>
   );
 }

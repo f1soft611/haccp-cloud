@@ -522,7 +522,7 @@ class HaccpWorkFlowServiceImplTest {
         verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalMainStatus(anyMap());
     }
 
-    @DisplayName("결재신청 시 다음 결재자는 arrival만 세팅되고 exe/open은 대기 상태를 유지한다")
+    @DisplayName("결재신청 시 검토자/참조는 arrival만 세팅되고, 승인자는 검토 전까지 arrival도 비어 있다")
     @Test
     void submitDraft_keepsNextApproverPendingUntilAction() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
@@ -542,7 +542,11 @@ class HaccpWorkFlowServiceImplTest {
 
         for (int i = 1; i < upsertCaptor.getAllValues().size(); i++) {
             Map<String, Object> params = upsertCaptor.getAllValues().get(i);
-            assertTrue(params.get("arrivalAt") != null);
+            if (Integer.valueOf(3).equals(params.get("exeSeq"))) {
+                assertNull(params.get("arrivalAt"));
+            } else {
+                assertTrue(params.get("arrivalAt") != null);
+            }
             assertTrue(params.get("exeAt") == null);
             assertTrue(params.get("openAt") == null);
         }

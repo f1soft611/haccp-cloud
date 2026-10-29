@@ -30,6 +30,8 @@ type UserFormDialogProps = {
   onClose: () => void;
   onSubmit: (value: UserFormValue) => void;
   onResetPassword?: () => void;
+  emailError?: string | null;
+  onEmailChange?: () => void;
 };
 
 // 백엔드 PlatformUserServiceImpl.EMAIL_PATTERN 과 같은 식
@@ -56,6 +58,8 @@ export function UserFormDialog({
     onSubmit,
     resettingPassword,
     onResetPassword,
+                                 emailError,
+                                 onEmailChange,
 }: UserFormDialogProps) {
   const [value, setValue] = useState<UserFormValue>(EMPTY_VALUE);
 
@@ -128,6 +132,7 @@ export function UserFormDialog({
       value.name.trim().length === 0 ||
       value.email.trim().length === 0 ||
       emailInvalid ||
+      Boolean(emailError) ||
       value.department.trim().length === 0 ||
       value.roleCode.trim().length === 0 ||
       retireBeforeJoin;
@@ -171,11 +176,16 @@ export function UserFormDialog({
             label="이메일"
             type="email"
             value={value.email}
-            onChange={(event) =>
-                setValue((prev) => ({ ...prev, email: event.target.value }))
+            onChange={(event) => {
+              setValue((prev) => ({ ...prev, email: event.target.value }));
+              onEmailChange?.();
+            }}
+            error={emailInvalid || Boolean(emailError)}
+            helperText={
+              emailInvalid
+                  ? '이메일 형식이 올바르지 않습니다.'
+                  : emailError || undefined
             }
-            error={emailInvalid}
-            helperText={emailInvalid ? '이메일 형식이 올바르지 않습니다.' : undefined}
             fullWidth
         />
         <TextField

@@ -49,6 +49,7 @@ export function UsersPage() {
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [statusTarget, setStatusTarget] = useState<UserItem | null>(null);
   const [resetTarget, setResetTarget] = useState<UserItem | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const { showSuccess, showError } = useFeedback();
 
   const usersQuery = useQuery({
@@ -110,6 +111,16 @@ export function UsersPage() {
       .filter((item) => item.length > 0);
   }, [departmentsQuery.data]);
 
+  const handleSaveError = (error: unknown) => {
+    const status = (error as { response?: { status?: number } }).response
+        ?.status;
+    if (status === 409) {
+      setEmailError('이미 등록된 이메일입니다.');
+      return;
+    }
+    showError(extractApiErrorMessage(error, '사용자 저장에 실패했습니다.'));
+  };
+
   const createMutation = useMutation({
     mutationFn: createUser,
     onSuccess: () => {
@@ -120,6 +131,7 @@ export function UsersPage() {
         queryKey: ['users', tenantCode || 'self'],
       });
     },
+    onError: handleSaveError,
   });
 
   const updateMutation = useMutation({
@@ -132,6 +144,7 @@ export function UsersPage() {
         queryKey: ['users', tenantCode || 'self'],
       });
     },
+    onError: handleSaveError,
   });
 
   const statusMutation = useMutation({
@@ -167,11 +180,13 @@ export function UsersPage() {
   };
 
   const handleOpenCreate = () => {
+    setEmailError(null);
     setEditingUser(null);
     setFormOpen(true);
   };
 
   const handleOpenEdit = (user: UserItem) => {
+    setEmailError(null);
     setEditingUser(user);
     setFormOpen(true);
   };
@@ -270,12 +285,15 @@ export function UsersPage() {
           if (createMutation.isPending || updateMutation.isPending) {
             return;
           }
+          setEmailError(null);
           setFormOpen(false);
           setEditingUser(null);
         }}
         onSubmit={handleSubmitForm}
         resettingPassword={resetPasswordMutation.isPending}
         onResetPassword={() => setResetTarget(editingUser)}
+        emailError={emailError}
+        onEmailChange={() => setEmailError(null)}
       />
 
       <UserStatusDialog

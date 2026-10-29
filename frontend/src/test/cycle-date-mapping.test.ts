@@ -313,7 +313,8 @@ describe('mapTodosToCalendarEvents', () => {
             expect(events.map((event) => event.date)).toEqual(['2026-10-02', '2026-10-05']);
         });
 
-        it('skips documents outside the visible range or before the display start date', () => {
+        // 기존 -> 표시 시작일 이전 문서도 숨김 / 변경 -> 보이는 범위 밖 문서만 숨김 (작성 문서는 입사일 이전이어도 표시)
+        it('skips documents outside the visible range', () => {
             const events = mapTodosToCalendarEvents(
                 [anytime()], ...OCT_2026,
                 [
@@ -324,7 +325,7 @@ describe('mapTodosToCalendarEvents', () => {
                 TODAY, '2026-10-05',
             );
 
-            expect(events.map((event) => event.item.approvalId)).toEqual(['903']);
+            expect(events.map((event) => event.item.approvalId)).toEqual(['902', '903']);
         });
 
         it('ignores documents of other works', () => {
@@ -563,6 +564,17 @@ describe('mapTodosToCalendarEvents', () => {
             );
 
             expect(events.map((event) => event.cycleDate)).toEqual(['2026-01-01']);
+        });
+
+        it('shows written documents of cycles before the display start date', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'MONTH' })], ...SEP_2026,
+                [instance('2026-09-03', 'approved', '901')], TODAY, '2026-10-02',
+            );
+
+            expect(events.map((event) => [event.date, event.item.approvalId])).toEqual([
+                ['2026-09-03', '901'],
+            ]);
         });
 
         it('does not filter when the display start date is empty', () => {
