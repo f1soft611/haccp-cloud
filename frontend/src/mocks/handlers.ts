@@ -1819,6 +1819,15 @@ export const handlers = [
     },
   ),
 
+  http.post(
+    '/api/v1/haccp-work/approvals/:approvalId/attachments/copy-from/:sourceApprovalId',
+    () => {
+      return HttpResponse.json({
+        result: { copiedCount: attachmentStore.items.length },
+      });
+    },
+  ),
+
   http.post('/api/documents', async ({ request }) => {
     const tenantCode = getTenantCodeFromHeader(request);
     const payload = (await request.json()) as {

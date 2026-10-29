@@ -190,3 +190,19 @@ export async function deleteHaccpAttachment(payload: {
     },
   );
 }
+
+export async function copyHaccpAttachmentsFromApproval(payload: {
+  tenantCode: string;
+  approvalId: string | number;
+  sourceApprovalId: string | number;
+}): Promise<void> {
+  await apiClient.post(
+    `/v1/haccp-work/approvals/${payload.approvalId}/attachments/copy-from/${payload.sourceApprovalId}`,
+    {},
+    {
+      headers: {
+        'x-tenant-code': payload.tenantCode,
+      },
+    },
+  );
+}
