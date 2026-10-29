@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Button, Chip, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useOpenWorkDraft } from '../../../shared/hooks/useOpenWorkDraft';
-import { resolveDraftRoute } from '../../../shared/utils/workDraftRoute';
+import { resolveDraftRoute, resolveExpirationDraftRoute } from '../../../shared/utils/workDraftRoute';
 import type { TenantTodoCardItem } from '../tenant/hooks/useTenantDashboardData';
 import { getWorkCycleSx } from '../tenant/utils';
 import { formatElapsed, getDueBadge, workName, type TodayBoardData } from './todayRules';
@@ -14,6 +14,7 @@ type TodayBoardProps = {
     isTodoLoading: boolean;
     isTodoError: boolean;
     isApprovalLoading: boolean;
+    isHistoryLoading: boolean;
 };
 
 type BoardColumnProps = {
@@ -90,8 +91,12 @@ function CycleChip({ item }: { item: TenantTodoCardItem }) {
     );
 }
 
+function ExpirationChip() {
+    return <Chip size="small" label="만료" color="error" variant="outlined" sx={{ height: 20, fontWeight: 700 }} />;
+}
+
 export function TodayBoard(props: TodayBoardProps) {
-    const { board, approvals, today, isTodoLoading, isTodoError, isApprovalLoading } = props;
+    const { board, approvals, today, isTodoLoading, isTodoError, isApprovalLoading, isHistoryLoading } = props;
     const navigate = useNavigate();
     const { openWorkDraft, dialog } = useOpenWorkDraft();
     const todoEmpty = (text: string) => (isTodoError ? '불러오지 못했습니다.' : text);
@@ -108,19 +113,33 @@ export function TodayBoard(props: TodayBoardProps) {
                 <BoardColumn
                     title="작성할 업무"
                     count={board.write.length}
-                    isLoading={isTodoLoading}
+                    // 기존 -> isTodoLoading / 변경 -> 만료 건이 주기 조회에서 오므로 함께 기다림
+                    isLoading={isTodoLoading || isHistoryLoading}
                     emptyText={todoEmpty('이번 주기 작성을 모두 마쳤어요')}
                 >
                     {board.write.map((item) => {
                         const due = getDueBadge(item.dueDate, today);
+                        const { expiration } = item;
                         return (
                             <BoardCard
-                                key={item.id}
-                                name={workName(item)}
-                                badge={<Chip size="small" label={due.label} color={due.color} sx={{ height: 20, fontWeight: 700 }} />}
-                                meta={<CycleChip item={item} />}
+                                key={expiration ? `expiration-${expiration.approvalId}` : item.id}
+                                name={expiration ? item.title : workName(item)}
+                                badge={
+                                    <Chip
+                                        size="small"
+                                        label={due.label}
+                                        color={due.color}
+                                        variant={due.variant}
+                                        sx={{ height: 20, fontWeight: 700 }}
+                                    />
+                                }
+                                meta={expiration ? <ExpirationChip /> : <CycleChip item={item} />}
                                 actionLabel="작성"
-                                onAction={() => void openWorkDraft(item.id)}
+                                onAction={() =>
+                                    expiration
+                                        ? navigate(resolveExpirationDraftRoute(expiration))
+                                        : void openWorkDraft(item.id)
+                                }
                             />
                         );
                     })}

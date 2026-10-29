@@ -37,6 +37,7 @@ export function TodayDashboardPage() {
                         isTodoLoading={data.isTodoLoading}
                         isTodoError={data.isTodoError}
                         isApprovalLoading={data.isApprovalLoading}
+                        isHistoryLoading={data.isHistoryLoading}
                     />
                     <WorkStatusTable
                         rows={data.statusRows}
