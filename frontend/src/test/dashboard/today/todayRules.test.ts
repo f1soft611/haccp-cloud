@@ -9,6 +9,7 @@ import {
 } from "../../../pages/dashboard/today/todayRules.ts";
 import type {TenantTodoCardItem} from "../../../pages/dashboard/tenant/hooks/useTenantDashboardData.ts";
 import type {CalendarWorkEvent} from "../../../pages/documents/work-calendar/cycleDateMapping.ts";
+import type {HaccpWorkExpiration} from "../../../services/documents/haccpBaseWorkService.ts";
 
 function todo(partial: Partial<TenantTodoCardItem>): TenantTodoCardItem {
     return {
@@ -126,6 +127,50 @@ describe('buildBoard', () => {
         expect(board.write[2].dueDate).toBe('2026-10-31');
         expect(board.rejected.map((item) => item.id)).toEqual(['rej']);
         expect(board.doneCount).toBe(1);
+    });
+});
+
+describe('buildBoard 만료일 관리 건', () => {
+    const expiration = (partial: Partial<HaccpWorkExpiration>): HaccpWorkExpiration => ({
+        workId: 'exp',
+        approvalId: 'a1',
+        expirationDate: '2026-11-27',
+        equipmentId: '',
+        materialType: '',
+        certificationUserId: '',
+        targetName: '',
+        ...partial,
+    });
+    const works = [
+        todo({ id: 'exp', divisionName: '검교정', expirationApply: true }),
+        todo({ id: 'month', cycle: 'MONTH', divisionName: '방충방서' }),
+    ];
+
+    it('오늘 + 30일 이내와 지난 건만 넣고 주기 업무와 마감일 순으로 정렬한다', () => {
+        const board = buildBoard(works, WED, [
+            expiration({ approvalId: 'in', expirationDate: '2026-11-27', targetName: '온도계' }),
+            expiration({ approvalId: 'out', expirationDate: '2026-11-28', targetName: '저울' }),
+            expiration({ approvalId: 'past', expirationDate: '2026-10-20', targetName: '보건증' }),
+            expiration({ approvalId: 'orphan', workId: 'none', expirationDate: '2026-10-29' }),
+        ]);
+
+        expect(board.write.map((item) => item.expiration?.approvalId ?? item.id)).toEqual(['past', 'month', 'in']);
+        expect(board.write[0].title).toBe('검교정 - 보건증');
+        expect(board.write[0].dueDate).toBe('2026-10-20');
+    });
+
+    it('대상명이 없으면 품목유형 이름, 그것도 없으면 업무명만', () => {
+        const board = buildBoard(
+            works,
+            WED,
+            [expiration({ materialType: 'RAW' }), expiration({ approvalId: 'a2' })],
+            (code) => (code === 'RAW' ? '원료' : ''),
+        );
+
+        expect(board.write.filter((item) => item.expiration).map((item) => item.title)).toEqual([
+            '검교정 - 원료',
+            '검교정',
+        ]);
     });
 });
 

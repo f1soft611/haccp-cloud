@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import type { TenantTodoCardItem } from '../tenant/hooks/useTenantDashboardData';
 import { getTodoStatusLabel } from '../tenant/todoFilter';
 import type { CalendarWorkEvent } from '../../documents/work-calendar/cycleDateMapping';
+import type { HaccpWorkExpiration } from '../../../services/documents/haccpBaseWorkService';
 
 const DATE_FORMAT = 'YYYY-MM-DD';
 
@@ -58,7 +59,11 @@ export function formatElapsed(value: string | undefined, today: Date): string {
 
 export type TodoBoardKind = 'write' | 'rejected' | 'done' | 'skip';
 
-export type WriteTodo = TenantTodoCardItem & { dueDate: string };
+// 기존 -> TenantTodoCardItem & { dueDate } / 변경 -> 만료 건이면 만료 문서 정보도 들고 있음
+export type WriteTodo = TenantTodoCardItem & { dueDate: string; expiration?: HaccpWorkExpiration };
+
+// 만료일 관리 건은 만료일 30일 전부터 작성할 업무에 넣는다
+export const EXPIRATION_LEAD_DAYS = 30;
 
 export type TodayBoardData = {
     write: WriteTodo[];
@@ -90,7 +95,13 @@ export function classifyTodo(item: TenantTodoCardItem): TodoBoardKind {
     return label === '미작성' || label === '임시저장' ? 'write' : 'done';
 }
 
-export function buildBoard(todos: TenantTodoCardItem[], today: Date): TodayBoardData {
+// 기존 -> buildBoard(todos, today) / 변경 -> 만료일 관리 건(expirations)도 받아 작성할 업무에 합침
+export function buildBoard(
+    todos: TenantTodoCardItem[],
+    today: Date,
+    expirations: HaccpWorkExpiration[] = [],
+    materialTypeName: (code: string) => string = (code) => code,
+): TodayBoardData {
     const write: WriteTodo[] = [];
     const rejected: TenantTodoCardItem[] = [];
     let doneCount = 0;
@@ -104,6 +115,23 @@ export function buildBoard(todos: TenantTodoCardItem[], today: Date): TodayBoard
         } else if (kind === 'done') {
             doneCount += 1;
         }
+    });
+
+    // 서버가 업무 + 대상별 최신 결재 완료 문서만 내려 주므로 갱신 전인 건만 남아 있다
+    const expirationEnd = dayjs(today).add(EXPIRATION_LEAD_DAYS, 'day').format(DATE_FORMAT);
+    expirations.forEach((expiration) => {
+        const item = todos.find((todo) => todo.id === expiration.workId);
+        if (!item || expiration.expirationDate > expirationEnd) {
+            return;
+        }
+        const name = item.divisionName || item.categoryName || '업무';
+        const targetName = expiration.targetName || materialTypeName(expiration.materialType);
+        write.push({
+            ...item,
+            title: targetName ? `${name} - ${targetName}` : name,
+            dueDate: expiration.expirationDate,
+            expiration,
+        });
     });
 
     write.sort((left, right) => left.dueDate.localeCompare(right.dueDate) || compareByCategory(left, right));
