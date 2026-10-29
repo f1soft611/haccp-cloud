@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -207,6 +208,57 @@ class AuthorityServiceImplTest {
         verify(authorityDAO).insertRoleMenuPermission(org.mockito.ArgumentMatchers.argThat(item ->
                 99L == item.getRoleId() && "MENU_TENANT_USERS".equals(item.getMenuCode())
         ));
+    }
+
+    @DisplayName("숫자로만 된 역할 코드는 role_id 로 해석하지 않고 역할 코드로 role_id 를 조회해 저장한다")
+    @Test
+    void replaceRoleMenus_numericRoleCodeIsResolvedByCode() throws Exception {
+        AuthorityDAO authorityDAO = mock(AuthorityDAO.class);
+        PlanAccessService planAccessService = mock(PlanAccessService.class);
+
+        AuthorityServiceImpl service = new AuthorityServiceImpl();
+        ReflectionTestUtils.setField(service, "authorityDAO", authorityDAO);
+        ReflectionTestUtils.setField(service, "planAccessService", planAccessService);
+
+        when(planAccessService.resolveTenantIdByTenantCode("TENANT_001")).thenReturn(48L);
+        when(planAccessService.resolveTenantPlanMenuCodes("TENANT_001")).thenReturn(Arrays.asList("MENU_TENANT_USERS"));
+        when(authorityDAO.selectMenuIdByCode("MENU_TENANT_USERS")).thenReturn(102L);
+        // TENANT_ADMIN=1, TENANT_USER=2, 001=3
+        when(authorityDAO.selectRoleIdByCode("TENANT_001", "001")).thenReturn(3L);
+
+        AuthorityMenuSaveRequestVO payload = new AuthorityMenuSaveRequestVO();
+        payload.setMenuIds(Arrays.asList("MENU_TENANT_USERS"));
+
+        Map<String, Object> result = service.replaceRoleMenus("001", "TENANT_001", payload);
+
+        // deleteRoleMenuPermissionsByRoleCode 파라미터 타입이 Object 라 Map 으로 캐스팅해서 확인
+        verify(authorityDAO).deleteRoleMenuPermissionsByRoleCode(org.mockito.ArgumentMatchers.argThat(condition ->
+                condition instanceof Map && Long.valueOf(3L).equals(((Map<?, ?>) condition).get("roleId"))
+        ));
+        verify(authorityDAO).insertRoleMenuPermission(org.mockito.ArgumentMatchers.argThat(item ->
+                Long.valueOf(3L).equals(item.getRoleId()) && "MENU_TENANT_USERS".equals(item.getMenuCode())
+        ));
+        assertEquals("001", result.get("roleCode"));
+    }
+
+    @DisplayName("숫자로만 된 역할 코드의 메뉴 조회는 role_id 가 아니라 역할 코드 조건으로 조회한다")
+    @Test
+    void getRoleMenus_numericRoleCodeQueriesByCode() throws Exception {
+        AuthorityDAO authorityDAO = mock(AuthorityDAO.class);
+        PlanAccessService planAccessService = mock(PlanAccessService.class);
+
+        AuthorityServiceImpl service = new AuthorityServiceImpl();
+        ReflectionTestUtils.setField(service, "authorityDAO", authorityDAO);
+        ReflectionTestUtils.setField(service, "planAccessService", planAccessService);
+
+        Map<String, Object> result = service.getRoleMenus("001", "TENANT_001");
+
+        verify(authorityDAO).selectRoleMenuPermissionList(org.mockito.ArgumentMatchers.argThat(condition ->
+                "001".equals(condition.getRoleCode())
+                        && condition.getRoleId() == null
+                        && "TENANT_001".equals(condition.getTenantCode())
+        ));
+        assertEquals("001", result.get("roleCode"));
     }
 
 }

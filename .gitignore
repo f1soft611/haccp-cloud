@@ -68,3 +68,4 @@ redact-secrets.sh
 fix_git_secret.sh
 replacements.txt
 /backend-dev
+/docs/specs/
