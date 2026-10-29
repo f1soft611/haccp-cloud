@@ -348,6 +348,7 @@ const accessibleMenuPathsByAuthorityCode: Record<AuthorityCode, string[]> = {
     '/platform/roles',
     '/platform/role-menus',
     '/platform/login-history',
+    '/platform/migrations',
   ],
   TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
   TENANT_USER: ['/dashboard', '/documents'],
@@ -1107,6 +1108,55 @@ export const handlers = [
       resultMessage: '성공',
     });
   }),
+
+  http.get('/api/v1/platform-admin/migrations', () =>
+      HttpResponse.json({
+        resultCode: 200,
+        result: {
+          migrations: [
+            {
+              migrationId: '20261101_01_sample.sql',
+              appliedCount: 1,
+              failedCount: 0,
+              pendingCount: 1,
+              blockedCount: 0,
+              runnable: true,
+            },
+          ],
+        },
+      }),
+  ),
+
+  http.get('/api/v1/platform-admin/migrations/:migrationId', ({ params }) =>
+      HttpResponse.json({
+        resultCode: 200,
+        result: {
+          migrationId: String(params.migrationId),
+          sql: 'ALTER TABLE public.tb_sample ADD COLUMN IF NOT EXISTS sample_dc TEXT;',
+          databases: [
+            {
+              dbName: 'haccp_cloud_central',
+              status: 'APPLIED',
+              appliedAt: '2026-11-01 10:00:00',
+              appliedBy: 'platform_admin',
+            },
+            { dbName: 'tenant_acme', status: 'PENDING' },
+          ],
+        },
+      }),
+  ),
+
+  http.post('/api/v1/platform-admin/migrations/:migrationId/apply', () =>
+      HttpResponse.json({
+        resultCode: 200,
+        result: {
+          results: [
+            { dbName: 'haccp_cloud_central', result: 'SKIPPED' },
+            { dbName: 'tenant_acme', result: 'SUCCESS' },
+          ],
+        },
+      }),
+  ),
 
   http.get('/api/v1/platform-admin/login-history', ({ request }) => {
     const url = new URL(request.url);
