@@ -17,16 +17,16 @@ import FileUploadIcon from '@mui/icons-material/UploadFile';
 import PreviewIcon from '@mui/icons-material/Visibility';
 import DownloadIcon from '@mui/icons-material/Download';
 import { useEffect, useMemo, useRef, useState } from 'react';
+// 기존 -> 패널 안에서 presign/complete 직접 호출, extractApiErrorMessage 사용
+// 변경 -> 업로드는 공통 유틸 호출, 불필요한 import 제거
 import {
-  completeHaccpAttachmentsUpload,
   deleteHaccpAttachment,
   listHaccpAttachments,
-  presignHaccpAttachmentsUpload,
   presignHaccpAttachmentDownload,
   presignHaccpAttachmentPreview,
   type HaccpAttachmentItem,
 } from '../../../../services/documents/haccpAttachmentService';
-import { extractApiErrorMessage } from '../../../../services/api/errorMessage';
+import { uploadApprovalAttachments } from '../utils/approvalAttachmentUpload';
 import { ConfirmDialog } from '../../../../shared/components/feedback/ConfirmDialog';
 
 type ApprovalAttachmentPanelProps = {
@@ -34,12 +34,24 @@ type ApprovalAttachmentPanelProps = {
   approvalId: string;
   isReadOnly?: boolean;
   onChanged?: () => void | Promise<void>;
+  pendingFiles?: File[];
+  onChangePendingFiles?: (files: File[]) => void;
 };
 
 export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
-  const { tenantCode, approvalId, isReadOnly = false, onChanged } = props;
+  // 기존 -> const { tenantCode, approvalId, isReadOnly = false, onChanged } = props;
+  // 변경 -> 저장 전 대기 첨부 props 추가
+  const {
+    tenantCode,
+    approvalId,
+    isReadOnly = false,
+    onChanged,
+    pendingFiles = [],
+    onChangePendingFiles,
+  } = props;
   const normalizedApprovalId = String(approvalId || '').trim();
   const canUseAttachmentApi = normalizedApprovalId.length > 0;
+  const isPendingMode = !canUseAttachmentApi && Boolean(onChangePendingFiles);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [attachments, setAttachments] = useState<HaccpAttachmentItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,39 +60,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
   const [deleteTarget, setDeleteTarget] = useState<HaccpAttachmentItem | null>(
     null,
   );
-
-  const extractStorageErrorMessage = (rawText: string) => {
-    const messageMatch = rawText.match(/<Message>([^<]+)<\/Message>/i);
-    if (messageMatch?.[1]) {
-      return messageMatch[1].trim();
-    }
-
-    const codeMatch = rawText.match(/<Code>([^<]+)<\/Code>/i);
-    if (codeMatch?.[1]) {
-      return codeMatch[1].trim();
-    }
-
-    return rawText.trim();
-  };
-
-  const resolveStorageUploadErrorMessage = async (response: Response) => {
-    let responseText = '';
-    try {
-      responseText = await response.text();
-    } catch {
-      responseText = '';
-    }
-
-    const parsedMessage = responseText
-      ? extractStorageErrorMessage(responseText)
-      : '';
-
-    if (parsedMessage) {
-      return `파일 업로드 저장소 전송에 실패했습니다. (${response.status}) ${parsedMessage}`;
-    }
-
-    return `파일 업로드 저장소 전송에 실패했습니다. (${response.status})`;
-  };
 
   const loadAttachments = async (silent = false) => {
     if (!canUseAttachmentApi) {
@@ -135,109 +114,58 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     };
   }, [tenantCode, normalizedApprovalId, canUseAttachmentApi]);
 
+  // 기존 -> approvalId 없으면 오류 표시, presign/PUT/complete 를 패널 안에서 직접 처리
+  // 변경 -> approvalId 없으면 대기 목록에 추가, 업로드는 공통 유틸 호출
   const handleSelectFiles = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(event.target.files ?? []);
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
     if (!files.length) {
       return;
     }
 
-    setLoading(true);
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (!canUseAttachmentApi) {
-      setLoading(false);
-      setErrorMessage('결재 문서가 생성된 후 첨부파일을 업로드할 수 있습니다.');
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
+    if (isPendingMode) {
+      onChangePendingFiles?.([...pendingFiles, ...files]);
       return;
     }
 
+    if (!canUseAttachmentApi) {
+      setErrorMessage('결재 문서가 생성된 후 첨부파일을 업로드할 수 있습니다.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const presigned = await presignHaccpAttachmentsUpload({
+      const result = await uploadApprovalAttachments({
         tenantCode,
         approvalId: normalizedApprovalId,
-        items: files.map((file) => ({
-          fileName: file.name,
-          contentType: file.type || 'application/octet-stream',
-          fileSize: file.size,
-        })),
+        files,
       });
-
-      const uploadResults = await Promise.all(
-        presigned.items.map(async (item, index) => {
-          const file = files[index];
-          if (!file) {
-            return null;
-          }
-
-          if (item.uploadUrl) {
-            const uploadHeaders: Record<string, string> = {
-              ...(item.requiredHeaders ?? {}),
-            };
-            if (!uploadHeaders['Content-Type']) {
-              uploadHeaders['Content-Type'] =
-                file.type || 'application/octet-stream';
-            }
-
-            const uploadResponse = await fetch(item.uploadUrl, {
-              method: 'PUT',
-              body: file,
-              headers: uploadHeaders,
-            });
-            if (!uploadResponse.ok) {
-              throw new Error(
-                await resolveStorageUploadErrorMessage(uploadResponse),
-              );
-            }
-          }
-
-          return {
-            uploadToken: item.uploadToken ?? '',
-            objectKey: item.objectKey ?? '',
-            fileName: file.name,
-            contentType: file.type || 'application/octet-stream',
-            fileSize: file.size,
-          };
-        }),
-      );
-
-      const completePayload = uploadResults.filter(
-        (item): item is NonNullable<typeof item> => Boolean(item),
-      );
-
-      if (completePayload.length) {
-        await completeHaccpAttachmentsUpload({
-          tenantCode,
-          approvalId: normalizedApprovalId,
-          items: completePayload,
-        });
+      if (result.succeeded) {
         if (onChanged) {
           await onChanged();
         }
         setSuccessMessage('첨부파일 업로드가 완료되었습니다.');
       }
-
+      if (result.failed) {
+        setErrorMessage(result.errorMessage ?? '첨부파일 업로드에 실패했습니다.');
+      }
       await loadAttachments();
-    } catch (error) {
-      const networkLikelyIssue =
-        error instanceof TypeError &&
-        /failed to fetch|networkerror|load failed/i.test(error.message);
-
-      setErrorMessage(
-        networkLikelyIssue
-          ? '스토리지 업로드 연결에 실패했습니다. MinIO(218.155.74.34:9000) 실행/CORS 설정을 확인해주세요.'
-          : extractApiErrorMessage(error, '첨부파일 업로드에 실패했습니다.'),
-      );
     } finally {
       setLoading(false);
-      if (inputRef.current) {
-        inputRef.current.value = '';
-      }
     }
+  };
+
+  const handleRemovePendingFile = (targetIndex: number) => {
+    onChangePendingFiles?.(
+      pendingFiles.filter((_, index) => index !== targetIndex),
+    );
   };
 
   const handlePreview = async (attachment: HaccpAttachmentItem) => {
@@ -317,12 +245,19 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     }
   };
 
+  // 기존 -> attachments 기준 요약만 표시
+  // 변경 -> 대기 첨부 모드는 대기 파일 수 표시
   const attachmentSummary = useMemo(() => {
+    if (isPendingMode) {
+      return pendingFiles.length
+        ? `대기 ${pendingFiles.length}개 첨부파일`
+        : '첨부파일이 없습니다.';
+    }
     if (!attachments.length) {
       return '첨부파일이 없습니다.';
     }
     return `${attachments.length}개 첨부파일`;
-  }, [attachments.length]);
+  }, [attachments.length, isPendingMode, pendingFiles.length]);
 
   const getStatusChipProps = (status: string | undefined) => {
     const normalized = (status ?? 'PENDING').toUpperCase();
@@ -414,7 +349,9 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
             variant="contained"
             startIcon={<FileUploadIcon />}
             onClick={() => inputRef.current?.click()}
-            disabled={loading || !canUseAttachmentApi}
+            // 기존 -> disabled={loading || !canUseAttachmentApi}
+            // 변경 -> 대기 첨부 모드에서는 활성
+            disabled={loading || (!canUseAttachmentApi && !isPendingMode)}
             sx={{
               borderRadius: 2,
               px: 1.75,
@@ -425,7 +362,8 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
               alignSelf: { xs: 'stretch', sm: 'auto' },
             }}
           >
-            {!canUseAttachmentApi
+            {/* 기존 -> !canUseAttachmentApi ? '문서 생성 후 업로드 가능' / 변경 -> 대기 첨부 모드는 파일 선택 */}
+            {!canUseAttachmentApi && !isPendingMode
               ? '문서 생성 후 업로드 가능'
               : loading
                 ? '업로드 중...'
@@ -455,13 +393,70 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
         </Alert>
       ) : null}
 
-      {!canUseAttachmentApi ? (
+      {/* 기존 -> 저장 후 첨부 가능 안내만 표시 / 변경 -> 대기 첨부 모드 안내 추가 */}
+      {isPendingMode ? (
+        <Alert severity="info" sx={{ mb: 1.5, borderRadius: 2 }}>
+          선택한 파일은 임시저장 또는 결재신청 시 함께 업로드됩니다.
+        </Alert>
+      ) : !canUseAttachmentApi ? (
         <Alert severity="info" sx={{ mb: 1.5, borderRadius: 2 }}>
           결재 문서 저장 후 첨부파일 기능을 사용할 수 있습니다.
         </Alert>
       ) : null}
 
-      {attachments.length ? (
+      {/* 기존 -> attachments.length 기준 목록/빈 상태 / 변경 -> 대기 첨부 모드는 대기 파일 목록 먼저 */}
+      {isPendingMode && pendingFiles.length ? (
+        <List dense disablePadding sx={{ display: 'grid', gap: 1 }}>
+          {pendingFiles.map((file, index) => (
+            <ListItem
+              key={`${file.name}-${index}`}
+              disableGutters
+              sx={{
+                px: 1.1,
+                py: 1,
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.common.white, 0.08)
+                    : alpha(theme.palette.common.black, 0.08),
+              }}
+            >
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1}
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                sx={{ width: '100%' }}
+              >
+                <Chip
+                  label="저장 시 업로드"
+                  color="info"
+                  size="small"
+                  sx={{ width: 'fit-content', fontWeight: 700 }}
+                />
+                <ListItemText
+                  primary={file.name}
+                  secondary={`${file.type || '알 수 없는 파일 타입'} / ${formatFileSize(file.size)}`}
+                  primaryTypographyProps={{ fontWeight: 600 }}
+                  sx={{ my: 0 }}
+                />
+                {!isReadOnly ? (
+                  <Tooltip title="삭제">
+                    <IconButton
+                      size="small"
+                      aria-label="remove pending attachment"
+                      onClick={() => handleRemovePendingFile(index)}
+                      sx={{ color: 'error.main' }}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+              </Stack>
+            </ListItem>
+          ))}
+        </List>
+      ) : !isPendingMode && attachments.length ? (
         <List dense disablePadding sx={{ display: 'grid', gap: 1 }}>
           {attachments.map((attachment) => {
             const statusChip = getStatusChipProps(attachment.uploadStatus);

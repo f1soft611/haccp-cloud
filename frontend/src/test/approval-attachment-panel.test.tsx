@@ -76,4 +76,49 @@ describe('ApprovalAttachmentPanel', () => {
       expect(screen.getByText('a.pdf')).toBeInTheDocument();
     });
   });
+
+  it('keeps files as pending when the document has no approval id', async () => {
+    const onChangePendingFiles = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <ApprovalAttachmentPanel
+        tenantCode="PLATFORM"
+        approvalId=""
+        pendingFiles={[]}
+        onChangePendingFiles={onChangePendingFiles}
+      />,
+    );
+
+    expect(
+      screen.getByText('선택한 파일은 임시저장 또는 결재신청 시 함께 업로드됩니다.'),
+    ).toBeInTheDocument();
+
+    const file = new File(['hello'], 'pending.pdf', { type: 'application/pdf' });
+    await user.upload(screen.getByLabelText('첨부파일 선택'), file);
+
+    expect(onChangePendingFiles).toHaveBeenCalledWith([file]);
+
+    rerender(
+      <ApprovalAttachmentPanel
+        tenantCode="PLATFORM"
+        approvalId=""
+        pendingFiles={[file]}
+        onChangePendingFiles={onChangePendingFiles}
+      />,
+    );
+
+    expect(screen.getByText('pending.pdf')).toBeInTheDocument();
+    expect(screen.getByText('저장 시 업로드')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'remove pending attachment' }));
+    expect(onChangePendingFiles).toHaveBeenLastCalledWith([]);
+  });
+
+  it('stays disabled without approval id when pending handler is absent', () => {
+    render(<ApprovalAttachmentPanel tenantCode="PLATFORM" approvalId="" />);
+
+    expect(
+      screen.getByRole('button', { name: '문서 생성 후 업로드 가능' }),
+    ).toBeDisabled();
+  });
 });

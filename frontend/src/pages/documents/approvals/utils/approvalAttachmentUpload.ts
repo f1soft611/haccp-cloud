@@ -27,12 +27,7 @@ const extractStorageErrorMessage = (rawText: string) => {
 };
 
 const resolveStorageUploadErrorMessage = async (response: Response) => {
-  let responseText = '';
-  try {
-    responseText = await response.text();
-  } catch {
-    responseText = '';
-  }
+  const responseText = await response.text().catch(() => '');
 
   const parsedMessage = responseText
     ? extractStorageErrorMessage(responseText)
