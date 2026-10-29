@@ -278,7 +278,8 @@ export function ApprovalDraftWritePage() {
         currentUserLoginCode={userId}
         tenantCode={tenantCode}
         approvalId={approvalIdForComments}
-        canWriteComments={true}
+        // 기존 -> canWriteComments={true} / 변경 -> 저장 전(approvalId 없음)에는 댓글 작성 비활성
+        canWriteComments={Boolean(approvalIdForComments)}
         commentLoadErrorMessage={commentLoadErrorMessage}
         onAttachmentChanged={refreshComments}
         isReadOnly={isReadOnly}
