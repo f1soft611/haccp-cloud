@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { apiClient } from '../services/api/apiClient';
+import { apiClient } from '../../services/api/apiClient.ts';
 import {
   completeHaccpAttachmentsUpload,
   listHaccpAttachments,
   presignHaccpAttachmentDownload,
   presignHaccpAttachmentsUpload,
-} from '../services/documents/haccpAttachmentService';
+  toBrowserStorageUrl,
+} from '../../services/documents/haccpAttachmentService.ts';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {
@@ -137,5 +138,25 @@ describe('haccpAttachmentService', () => {
     expect(presigned.items).toHaveLength(1);
     expect(presigned.items[0].uploadToken).toBe('token-2');
     expect(presigned.items[0].fileName).toBe('b.pdf');
+  });
+});
+
+describe('toBrowserStorageUrl', () => {
+  const signedUrl =
+      'http://218.155.74.34:9000/document-attachments/tenants/T1/approvals/72/a.jpg?X-Amz-Signature=abc&X-Amz-Expires=600';
+
+  it('routes http storage url through the vercel proxy on https pages', () => {
+    expect(toBrowserStorageUrl(signedUrl, 'https:')).toBe(
+        '/minio-proxy/document-attachments/tenants/T1/approvals/72/a.jpg?X-Amz-Signature=abc&X-Amz-Expires=600',
+    );
+  });
+
+  it('keeps the url as is on http pages (local dev)', () => {
+    expect(toBrowserStorageUrl(signedUrl, 'http:')).toBe(signedUrl);
+  });
+
+  it('keeps https storage urls as is', () => {
+    const httpsUrl = 'https://storage.example.com/bucket/a.jpg?X-Amz-Signature=abc';
+    expect(toBrowserStorageUrl(httpsUrl, 'https:')).toBe(httpsUrl);
   });
 });

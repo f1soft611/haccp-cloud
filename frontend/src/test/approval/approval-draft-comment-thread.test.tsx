@@ -1,8 +1,8 @@
 import userEvent from '@testing-library/user-event';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { ApprovalDraftCommentThread } from '../pages/documents/approvals/components/ApprovalDraftCommentThread';
-import type { DraftComment } from '../pages/documents/approvals/types';
+import { ApprovalDraftCommentThread } from '../../pages/documents/approvals/components/ApprovalDraftCommentThread.tsx';
+import type { DraftComment } from '../../pages/documents/approvals/types.ts';
 
 describe('ApprovalDraftCommentThread', () => {
   it('shows like count and toggles likes for manual comments', async () => {
