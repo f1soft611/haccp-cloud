@@ -9,18 +9,8 @@
       "destination": "http://218.155.74.34/haccp-cloud/api/:path*"
     },
     {
-      "source": "/minio-proxy/:path*",
-      "destination": "http://218.155.74.34:9000/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/minio-proxy/:path*",
-      "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }]
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { ApprovalAttachmentPanel } from '../../pages/documents/approvals/components/ApprovalAttachmentPanel.tsx';
+import { ApprovalAttachmentPanel } from '../pages/documents/approvals/components/ApprovalAttachmentPanel';
 
 const {
   listHaccpAttachmentsMock,
