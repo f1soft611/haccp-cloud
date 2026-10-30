@@ -44,7 +44,7 @@ public class HaccpWorkAttachmentServiceImpl extends EgovAbstractServiceImpl impl
             20L * 1024L * 1024L,
             20,
             100L * 1024L * 1024L,
-            Arrays.asList("pdf", "png", "jpg", "jpeg", "gif", "doc", "docx", "xls", "xlsx", "hwp")
+            Arrays.asList("pdf", "png", "jpg", "jpeg", "gif", "doc", "docx", "xls", "xlsx", "hwp", "ppt", "pptx")
     );
 
     private final HaccpWorkDAO haccpWorkDAO;
