@@ -29,4 +29,20 @@ describe('TenantStatusCardSection', () => {
         fireEvent.click(approvalWaiting);
         expect(onSelect).toHaveBeenCalledWith('결재대기중');
     });
+
+    it('renders each status as one row cell with a 건 unit', () => {
+        render(
+            <AppProviders>
+                <TenantStatusCardSection
+                    counts={counts}
+                    selected=""
+                    isLoading={false}
+                    onSelect={vi.fn()}
+                />
+            </AppProviders>,
+        );
+
+        expect(screen.getByRole('button', { name: /미작성/ })).toHaveTextContent('미작성4건');
+        expect(screen.getByRole('button', { name: /반려/ })).toHaveTextContent('반려0건');
+    });
 });

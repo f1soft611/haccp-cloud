@@ -1,149 +1,178 @@
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import ViewListOutlinedIcon from '@mui/icons-material/ViewListOutlined';
 import {
-  Button,
-  MenuItem,
-  Paper,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
+    Box,
+    Button,
+    IconButton,
+    MenuItem,
+    Stack,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
 } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useWorkCycleOptions } from '../../../../shared/hooks/useWorkCycleOptions';
 import {
-  TODO_STATUS_OPTIONS,
-  type TenantTodoFilter,
-  type TenantViewMode,
+    TODO_STATUS_OPTIONS,
+    type TenantTodoFilter,
+    type TenantViewMode,
 } from '../todoFilter';
 
 type TenantFilterSectionProps = {
-  value: TenantTodoFilter;
-  categoryOptions: string[];
-  viewMode: TenantViewMode;
-  onChange: (value: TenantTodoFilter) => void;
-  onReset: () => void;
-  onSearch: () => void;
-  onViewModeChange: (viewMode: TenantViewMode) => void;
+    value: TenantTodoFilter;
+    categoryOptions: string[];
+    viewMode: TenantViewMode;
+    onChange: (value: TenantTodoFilter) => void;
+    onReset: () => void;
+    onSearch: () => void;
+    onViewModeChange: (viewMode: TenantViewMode) => void;
 };
 
-// 다른 화면 검색필터(HaccpDocumentSearchPanel 등)와 같은 레이아웃: 조건 + 초기화/조회 버튼
+const placeholder = (text: string) => (
+    <Box component="span" sx={{ color: 'text.disabled' }}>
+        {text}
+    </Box>
+);
+
+// 기존 -> 자체 Paper, 윗줄 토글 + 아랫줄 라벨 붙은 조건 + 초기화/조회(contained)
+// 변경 -> 바깥 패널(TenantDashboard) 안의 한 줄: 돋보기 + placeholder 조건 + 조회(outlined) + 초기화 아이콘, 오른쪽 끝 토글
 export function TenantFilterSection(props: TenantFilterSectionProps) {
-  const {
-    value,
-    categoryOptions,
-    viewMode,
-    onChange,
-    onReset,
-    onSearch,
-    onViewModeChange,
-  } = props;
+    const {
+        value,
+        categoryOptions,
+        viewMode,
+        onChange,
+        onReset,
+        onSearch,
+        onViewModeChange,
+    } = props;
 
-  const cycleOptions = useWorkCycleOptions();
+    const cycleOptions = useWorkCycleOptions();
 
-  const selectField = (
-    key: 'category' | 'status',
-    label: string,
-    options: readonly string[],
-    minWidth: number,
-  ) => (
-    <TextField
-      select
-      size="small"
-      label={label}
-      value={value[key]}
-      onChange={(event) => onChange({ ...value, [key]: event.target.value })}
-      sx={{ minWidth }}
-      slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-    >
-      <MenuItem value="">전체</MenuItem>
-      {options.map((option) => (
-        <MenuItem key={option} value={option}>
-          {option}
-        </MenuItem>
-      ))}
-    </TextField>
-  );
-
-  return (
-    <Paper sx={{ p: 2 }}>
-      <Stack spacing={1.5}>
-        {/* 기존 -> 조회 버튼 아랫줄 오른쪽 / 변경 -> 검색조건 윗줄 오른쪽: 리스트형/캘린더형 전환 */}
-        <Stack direction="row" justifyContent="flex-end">
-          <ToggleButtonGroup
+    // 기존 -> label 표시 / 변경 -> label 없이 빈 값이면 placeholder, 접근성 이름은 aria-label
+    const selectField = (
+        key: 'category' | 'cycle' | 'status',
+        name: string,
+        allLabel: string,
+        options: { value: string; label: string }[],
+        minWidth: number,
+    ) => (
+        <TextField
+            select
             size="small"
-            exclusive
-            value={viewMode}
-            onChange={(_, next: TenantViewMode | null) => {
-              if (next) {
-                onViewModeChange(next);
-              }
+            value={value[key]}
+            onChange={(event) => onChange({ ...value, [key]: event.target.value })}
+            sx={{ minWidth, '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' } }}
+            slotProps={{
+                select: {
+                    displayEmpty: true,
+                    SelectDisplayProps: { 'aria-label': name },
+                    renderValue: (selected): ReactNode =>
+                        options.find((option) => option.value === selected)?.label ??
+                        placeholder(name),
+                },
             }}
-            aria-label="보기 형식"
-          >
-            <ToggleButton value="list" aria-label="리스트형">
-              <ViewListOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
-              리스트
-            </ToggleButton>
-            <ToggleButton value="calendar" aria-label="캘린더형">
-              <CalendarMonthOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
-              캘린더
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
-
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={1}
-          alignItems={{ xs: 'stretch', md: 'flex-end' }}
         >
-          {selectField('category', '업무분류', categoryOptions, 140)}
-          <TextField
-              select
-              size="small"
-              label="주기"
-              value={value.cycle}
-              onChange={(event) => onChange({ ...value, cycle: event.target.value })}
-              sx={{ minWidth: 120 }}
-              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-          >
-            <MenuItem value="">전체(수시제외)</MenuItem>
-            {cycleOptions.map((option) => (
-                <MenuItem key={option.code} value={option.code}>
-                  {option.name}
+            <MenuItem value="">{allLabel}</MenuItem>
+            {options.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                    {option.label}
                 </MenuItem>
             ))}
-          </TextField>
-          {selectField('status', '상태', TODO_STATUS_OPTIONS, 140)}
+        </TextField>
+    );
 
-          <TextField
-            size="small"
-            label="업무명"
-            value={value.keyword}
-            onChange={(event) =>
-              onChange({ ...value, keyword: event.target.value })
-            }
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                onSearch();
-              }
-            }}
-            sx={{ flex: 1, minWidth: 160 }}
-          />
+    const toOptions = (labels: readonly string[]) =>
+        labels.map((label) => ({ value: label, label }));
 
-          <Stack
-            direction="row"
+    return (
+        <Stack
+            direction={{ xs: 'column', md: 'row' }}
             spacing={1}
-            sx={{ flexShrink: 0, '& .MuiButton-root': { whiteSpace: 'nowrap' } }}
-          >
-            <Button variant="outlined" onClick={onReset}>
-              초기화
-            </Button>
-            <Button variant="contained" onClick={onSearch}>
-              조회
-            </Button>
-          </Stack>
+            useFlexGap
+            alignItems={{ xs: 'stretch', md: 'center' }}
+            sx={{ p: 2 }}
+        >
+            <SearchOutlinedIcon
+                color="primary"
+                sx={{ display: { xs: 'none', md: 'block' } }}
+            />
+            {selectField('category', '업무분류', '전체', toOptions(categoryOptions), 160)}
+            {selectField(
+                'cycle',
+                '주기',
+                '전체(수시제외)',
+                cycleOptions.map((option) => ({ value: option.code, label: option.name })),
+                120,
+            )}
+            {selectField('status', '상태', '전체', toOptions(TODO_STATUS_OPTIONS), 120)}
+
+            <TextField
+                size="small"
+                placeholder="업무명을 입력하세요."
+                value={value.keyword}
+                onChange={(event) => onChange({ ...value, keyword: event.target.value })}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                        onSearch();
+                    }
+                }}
+                slotProps={{ htmlInput: { 'aria-label': '업무명' } }}
+                sx={{
+                    flex: { md: '0 1 360px' },
+                    minWidth: 160,
+                    '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' },
+                }}
+            />
+
+            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+                <Button
+                    variant="outlined"
+                    onClick={onSearch}
+                    sx={{ whiteSpace: 'nowrap', bgcolor: 'background.paper' }}
+                >
+                    조회
+                </Button>
+                <IconButton
+                    aria-label="초기화"
+                    onClick={onReset}
+                    sx={{
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        bgcolor: 'background.paper',
+                    }}
+                >
+                    <RestartAltOutlinedIcon fontSize="small" />
+                </IconButton>
+            </Stack>
+
+            {/* 기존 -> 검색조건 윗줄 오른쪽 / 변경 -> 같은 줄 오른쪽 끝: 리스트형/캘린더형 전환 */}
+            <Box sx={{ ml: { md: 'auto' }, flexShrink: 0 }}>
+                <ToggleButtonGroup
+                    size="small"
+                    exclusive
+                    value={viewMode}
+                    onChange={(_, next: TenantViewMode | null) => {
+                        if (next) {
+                            onViewModeChange(next);
+                        }
+                    }}
+                    aria-label="보기 형식"
+                    sx={{ bgcolor: 'background.paper' }}
+                >
+                    <ToggleButton value="list" aria-label="리스트형">
+                        <ViewListOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        리스트
+                    </ToggleButton>
+                    <ToggleButton value="calendar" aria-label="캘린더형">
+                        <CalendarMonthOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        캘린더
+                    </ToggleButton>
+                </ToggleButtonGroup>
+            </Box>
         </Stack>
-      </Stack>
-    </Paper>
-  );
+    );
 }

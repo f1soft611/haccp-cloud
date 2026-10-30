@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Grid, Paper, Stack } from '@mui/material';
+import { Box, Divider, Grid, Paper, Stack } from '@mui/material';
 import { useSessionState } from '../../../shared/hooks/useSessionState';
 import { WorkCalendarView } from '../../documents/work-calendar/components/WorkCalendarView';
 import {
@@ -92,30 +92,44 @@ export function TenantDashboard() {
     <Grid container spacing={2}>
       <Grid size={{ xs: 12, lg: 12 }}>
         <Stack spacing={2}>
-            {viewMode === 'list' ? (
-                <TenantStatusCardSection
-                    counts={statusCounts}
-                    selected={filter.status}
-                    /* 기존 -> isTodoLoading || isApprovalLoading / 변경 -> 이번 달 이벤트 로딩 포함 */
-                    isLoading={isTodoLoading || isApprovalLoading || currentMonth.isLoading}
-                    onSelect={(status) => {
-                        setDraft({ ...draft, status });
-                        setFilter({ ...filter, status });
+            <Paper
+                sx={{
+                    bgcolor: 'action.hover',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: 'none',
+                }}
+            >
+                {viewMode === 'list' ? (
+                    <>
+                        <Box sx={{ px: 2, py: 1 }}>
+                            <TenantStatusCardSection
+                                counts={statusCounts}
+                                selected={filter.status}
+                                /* 기존 -> isTodoLoading || isApprovalLoading / 변경 -> 이번 달 이벤트 로딩 포함 */
+                                isLoading={isTodoLoading || isApprovalLoading || currentMonth.isLoading}
+                                onSelect={(status) => {
+                                    setDraft({ ...draft, status });
+                                    setFilter({ ...filter, status });
+                                }}
+                            />
+                        </Box>
+                        <Divider />
+                    </>
+                ) : null}
+                <TenantFilterSection
+                    value={draft}
+                    categoryOptions={categoryOptions}
+                    viewMode={viewMode}
+                    onChange={setDraft}
+                    onReset={() => {
+                        setDraft(EMPTY_TODO_FILTER);
+                        setFilter(EMPTY_TODO_FILTER);
                     }}
+                    onSearch={() => setFilter(draft)}
+                    onViewModeChange={setViewMode}
                 />
-            ) : null}
-          <TenantFilterSection
-            value={draft}
-            categoryOptions={categoryOptions}
-            viewMode={viewMode}
-            onChange={setDraft}
-            onReset={() => {
-              setDraft(EMPTY_TODO_FILTER);
-              setFilter(EMPTY_TODO_FILTER);
-            }}
-            onSearch={() => setFilter(draft)}
-            onViewModeChange={setViewMode}
-          />
+            </Paper>
 
           {viewMode === 'list' ? (
             <TenantTodoSection
