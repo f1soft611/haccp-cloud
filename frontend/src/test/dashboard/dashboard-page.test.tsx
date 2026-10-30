@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { DashboardPage } from '../pages/DashboardPage';
-import { useAuthStore } from '../shared/store/authStore';
-import { APP_LABELS } from '../shared/constants/labels';
+import { AppProviders } from '../../app/providers/AppProviders.tsx';
+import { DashboardPage } from '../../pages/DashboardPage.tsx';
+import { useAuthStore } from '../../shared/store/authStore.ts';
+import { APP_LABELS } from '../../shared/constants/labels.ts';
 
 describe('Dashboard page', () => {
   beforeEach(() => {
