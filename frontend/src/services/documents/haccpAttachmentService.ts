@@ -55,6 +55,18 @@ type AttachmentEnvelope = {
   previewUrl?: string;
 };
 
+// 화면이 https 인데 스토리지 URL 이 http 면 브라우저가 Mixed Content 로 막으므로 Vercel 프록시 경로로 바꿈
+export function toBrowserStorageUrl(
+    url: string,
+    pageProtocol = window.location.protocol,
+): string {
+  if (pageProtocol !== 'https:' || !url.startsWith('http://')) {
+    return url;
+  }
+  const parsed = new URL(url);
+  return `/minio-proxy${parsed.pathname}${parsed.search}`;
+}
+
 function normalizeAttachmentItems(data: unknown): HaccpAttachmentItem[] {
   const payload = data as AttachmentEnvelope | null;
 
