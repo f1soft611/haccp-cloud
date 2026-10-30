@@ -78,11 +78,13 @@ function normalizeAttachmentItems(data: unknown): HaccpAttachmentItem[] {
     ? payload.result.items
     : [];
 
+  // 기존 -> uploadUrl 을 받은 그대로 사용 / 변경 -> https 화면이면 Vercel 프록시 경로로 변환
   return [...directItems, ...wrappedItems, ...wrappedPlainItems].map(
-    (item) => ({
-      ...item,
-      fileName: item.fileName ?? item.originalFileName,
-    }),
+      (item) => ({
+        ...item,
+        uploadUrl: item.uploadUrl ? toBrowserStorageUrl(item.uploadUrl) : item.uploadUrl,
+        fileName: item.fileName ?? item.originalFileName,
+      }),
   );
 }
 
@@ -162,7 +164,8 @@ export async function presignHaccpAttachmentDownload(payload: {
     throw new Error('다운로드 URL을 찾지 못했습니다.');
   }
 
-  return { downloadUrl };
+  // 기존 -> return { downloadUrl }; / 변경 -> https 화면이면 Vercel 프록시 경로로 변환
+  return { downloadUrl: toBrowserStorageUrl(downloadUrl) };
 }
 
 export async function presignHaccpAttachmentPreview(payload: {
@@ -185,7 +188,8 @@ export async function presignHaccpAttachmentPreview(payload: {
     throw new Error('미리보기 URL을 찾지 못했습니다.');
   }
 
-  return { previewUrl };
+  // 기존 -> return { previewUrl }; / 변경 -> https 화면이면 Vercel 프록시 경로로 변환
+  return { previewUrl: toBrowserStorageUrl(previewUrl) };
 }
 
 export async function deleteHaccpAttachment(payload: {
