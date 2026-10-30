@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveApprovalStatusView } from '../../shared/utils/approvalStatus.ts';
+import { resolveApprovalStatusView } from '../shared/utils/approvalStatus';
 
 describe('resolveApprovalStatusView', () => {
   it('normalizes in-progress status to 결재진행중 with warning chip', () => {

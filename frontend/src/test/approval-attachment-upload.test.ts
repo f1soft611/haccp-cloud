@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   syncApprovalAttachmentsAfterSave,
   uploadApprovalAttachments,
-} from '../../pages/documents/approvals/utils/approvalAttachmentUpload.ts';
+} from '../pages/documents/approvals/utils/approvalAttachmentUpload';
 
 const {
   presignHaccpAttachmentsUploadMock,
