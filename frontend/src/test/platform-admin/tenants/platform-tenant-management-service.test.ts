@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiClient } from '../services/api/apiClient';
+import { apiClient } from '../../../services/api/apiClient.ts';
 import {
   getPlatformTenantByCode,
   listPlatformTenants,
+  updatePlatformTenant,
   type PlatformTenantManagementItem,
-} from '../services/platform-admin/tenants/platformTenantManagementService';
+} from '../../../services/platform-admin/tenants/platformTenantManagementService.ts';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {
     get: vi.fn(),
+    put: vi.fn(),
   },
 }));
 
@@ -73,5 +75,39 @@ describe('platformTenantManagementService', () => {
     );
     expect(detail?.tenantCode).toBe('TENANT-A');
     expect(detail?.onboardingStatus).toBe('EMAIL_SENT');
+  });
+
+  it('sends tenant update via PUT and returns normalized tenant', async () => {
+    vi.mocked(apiClient.put).mockResolvedValueOnce({
+      data: {
+        result: {
+          tenant: {
+            tenantCode: 'TENANT-A',
+            companyName: '수정푸드',
+            adminName: '홍길동',
+            adminEmail: 'admin@test.com',
+            status: 'ACTIVE',
+            onboardingStatus: 'ACTIVE',
+            createdAt: '2026-06-21T10:30:00.000Z',
+          },
+        },
+      },
+    });
+
+    const payload = {
+      companyName: '수정푸드',
+      corporateNumber: '123456-1234567',
+      businessType: '식품제조',
+      businessCategory: '즉석조리식품',
+      registrationDate: '2026-08-19',
+      removeLogo: true,
+    };
+    const updated = await updatePlatformTenant('TENANT-A', payload);
+
+    expect(apiClient.put).toHaveBeenCalledWith(
+        '/v1/platform-admin/tenants/TENANT-A',
+        payload,
+    );
+    expect(updated?.companyName).toBe('수정푸드');
   });
 });

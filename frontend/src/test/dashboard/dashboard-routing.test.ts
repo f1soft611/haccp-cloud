@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveDashboardLandingPath,
   resolveDashboardViewType,
-} from '../shared/utils/dashboardRouting';
+} from '../../shared/utils/dashboardRouting.ts';
 
 describe('dashboardRouting', () => {
   it('routes PLATFORM_ADMIN with P plan to platform dashboard', () => {

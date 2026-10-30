@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
@@ -20,6 +21,7 @@ import {
   resendTenantVerificationEmail,
   type PlatformTenantManagementItem,
 } from '../../../services/platform-admin/tenants/platformTenantManagementService';
+import { PlatformTenantEditDialog } from './components/PlatformTenantEditDialog';
 
 function onboardingStatusLabel(
   status: PlatformTenantManagementItem['onboardingStatus'],
@@ -86,6 +88,8 @@ function resolveActionErrorMessage(error: unknown): string {
 export function PlatformTenantDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaved, setEditSaved] = useState(false);
   const { tenantCode = '' } = useParams<{ tenantCode: string }>();
   const normalizedTenantCode = tenantCode.trim();
 
@@ -135,6 +139,14 @@ export function PlatformTenantDetailPage() {
     },
   });
 
+  const handleEditSaved = async () => {
+    setEditOpen(false);
+    setEditSaved(true);
+    await queryClient.invalidateQueries({
+      queryKey: ['platform-admin', 'tenant-management'],
+    });
+  };
+
   const row = tenantQuery.data;
   const onboardingStatus = row?.onboardingStatus;
   const isDispatchTarget = onboardingStatus === 'EMAIL_QUEUED';
@@ -183,6 +195,10 @@ export function PlatformTenantDetailPage() {
 
       {resendMutation.isSuccess ? (
         <Alert severity="success">인증 메일 재발송 요청을 완료했습니다.</Alert>
+      ) : null}
+
+      {editSaved ? (
+          <Alert severity="success">업체 정보를 수정했습니다.</Alert>
       ) : null}
 
       {row ? (
@@ -240,9 +256,25 @@ export function PlatformTenantDetailPage() {
           >
             <Card sx={{ borderRadius: 3 }}>
               <CardContent>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  기본 정보
-                </Typography>
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                >
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    기본 정보
+                  </Typography>
+                  <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => {
+                        setEditSaved(false);
+                        setEditOpen(true);
+                      }}
+                  >
+                    수정
+                  </Button>
+                </Stack>
                 <Divider sx={{ my: 1.5 }} />
                 <Box
                   sx={{
@@ -262,6 +294,11 @@ export function PlatformTenantDetailPage() {
                   />
                   <DetailField label="업종" value={row.businessType} />
                   <DetailField label="업태" value={row.businessCategory} />
+                  <DetailField
+                      label="사업자번호"
+                      value={row.businessRegistrationNumber}
+                  />
+                  <DetailField label="개업일" value={row.registrationDate} />
                 </Box>
               </CardContent>
             </Card>
@@ -313,6 +350,17 @@ export function PlatformTenantDetailPage() {
             </Card>
           </Box>
         </Stack>
+      ) : null}
+
+      {row && editOpen ? (
+          <PlatformTenantEditDialog
+              open
+              tenant={row}
+              onClose={() => setEditOpen(false)}
+              onSaved={() => {
+                void handleEditSaved();
+              }}
+          />
       ) : null}
     </Stack>
   );

@@ -39,4 +39,7 @@ public class PlatformTenantDashboardItemVO {
     private String corporateNumber;
     private String businessType;
     private String businessCategory;
+    private String businessRegistrationNumber;
+    private String registrationDate;
+    private String logoImage;
 }

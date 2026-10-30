@@ -139,4 +139,20 @@ public interface TenantInfoDAO {
      * @return 업데이트된 행 수
      */
     int updateLogoImage(Long tenantId, String logoImage);
+
+    /**
+     * 자기 자신을 제외한 활성 테넌트 중 같은 법인번호 건수
+     */
+    int selectActiveTenantCountByCorporateNumberExcludingTenant(String normalizedCorporateNumber, Long tenantId);
+
+    /**
+     * 플랫폼 관리자 업체 기본 정보 수정
+     */
+    int updateTenantBasicInfo(
+            Long tenantId,
+            String tenantNm,
+            String corporateNumber,
+            String businessType,
+            String businessCategory,
+            String registrationDate);
 }
