@@ -58,7 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TenantOnboardingServiceImpl implements TenantOnboardingService {
 
     private static final String DOMAIN_PATTERN = "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$";
-    private static final int MAX_LOGO_IMAGE_LENGTH = 4_000_000;
+    static final int MAX_LOGO_IMAGE_LENGTH = 4_000_000;
 
     @Autowired
     private TenantAuthTokenDAO tenantAuthTokenDAO;
@@ -695,7 +695,7 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         return normalized;
     }
 
-    private String normalizeLogoImage(String logoImage) {
+    static String normalizeLogoImage(String logoImage) {
         if (logoImage == null) {
             return null;
         }
@@ -703,6 +703,9 @@ public class TenantOnboardingServiceImpl implements TenantOnboardingService {
         String normalized = logoImage.trim();
         if (normalized.isEmpty()) {
             return null;
+        }
+        if (!normalized.startsWith("data:image/")) {
+            throw new IllegalArgumentException("로고는 이미지 파일만 등록할 수 있습니다");
         }
         if (normalized.length() > MAX_LOGO_IMAGE_LENGTH) {
             throw new IllegalArgumentException("로고 이미지 크기가 너무 큽니다");

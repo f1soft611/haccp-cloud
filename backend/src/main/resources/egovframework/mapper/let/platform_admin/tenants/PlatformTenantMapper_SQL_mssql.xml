@@ -17,6 +17,9 @@
         <result property="corporateNumber" column="corporate_number"/>
         <result property="businessType" column="business_type"/>
         <result property="businessCategory" column="business_category"/>
+        <result property="businessRegistrationNumber" column="business_registration_number"/>
+        <result property="registrationDate" column="registration_date"/>
+        <result property="logoImage" column="logo_image"/>
     </resultMap>
 
     <!-- 최근 테넌트 resultMap -->
@@ -227,7 +230,10 @@
             CONVERT(VARCHAR(19), t.created_at, 126) + 'Z' AS created_at,
             t.corporate_number,
             t.business_type,
-            t.business_category
+            t.business_category,
+               t.business_registration_number,
+               TO_CHAR(t.registration_date, 'YYYY-MM-DD') AS registration_date,
+               t.logo_image
         FROM tb_tenant t
         LEFT JOIN tb_user u
             ON u.tenant_id = t.tenant_id

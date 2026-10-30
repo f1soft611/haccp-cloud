@@ -585,6 +585,27 @@
         WHERE tenant_id = #{tenantId}
     </update>
 
+    <!-- 자기 자신 제외 법인번호 활성 테넌트 건수 -->
+    <select id="TenantInfoDAO.selectActiveTenantCountByCorporateNumberExcludingTenant" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM tb_tenant
+        WHERE corporate_number = #{corporateNumber}
+          AND use_at = 'Y'
+          AND tenant_id &lt;&gt; #{tenantId}
+    </select>
+
+    <!-- 플랫폼 관리자 업체 기본 정보 수정 -->
+    <update id="TenantInfoDAO.updateTenantBasicInfo" parameterType="map">
+        UPDATE tb_tenant
+        SET tenant_nm = #{tenantNm},
+            corporate_number = #{corporateNumber},
+            business_type = #{businessType},
+            business_category = #{businessCategory},
+            registration_date = NULLIF(#{registrationDate}, '')::date,
+            updated_at = now()
+        WHERE tenant_id = #{tenantId}
+    </update>
+
     <!-- 테넌트 resultMap -->
     <resultMap id="tenantResultMap" type="egovframework.let.platform_admin.tenants.domain.model.TenantVO">
         <result property="tenantId" column="tenant_id"/>

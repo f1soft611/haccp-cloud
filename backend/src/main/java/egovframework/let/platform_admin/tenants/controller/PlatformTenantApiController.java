@@ -6,26 +6,14 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import egovframework.let.platform_admin.tenants.domain.model.*;
+import org.springframework.web.bind.annotation.*;
 
 import egovframework.com.cmm.ResponseCode;
 import egovframework.com.cmm.service.ResultVO;
 import egovframework.com.cmm.util.ResultVoHelper;
 import egovframework.let.platform_admin.access.web.PlanAccessLevel;
 import egovframework.let.platform_admin.access.web.PlanAccessPolicy;
-import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO;
-import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantIssueCodeRequestVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantIssueCodeResponseVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationRequestVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
 import egovframework.let.platform_admin.tenants.service.TenantOnboardingService;
 import egovframework.let.platform_admin.tenants.service.exception.MailAuthenticationFailureException;
@@ -375,6 +363,31 @@ public class PlatformTenantApiController {
     @GetMapping("/{tenantCode}")
     public ResultVO getTenantDetail(@PathVariable String tenantCode) {
         PlatformTenantDashboardItemVO item = platformTenantService.findDashboardTenantByCode(tenantCode);
+        if (item == null) {
+            Map<String, Object> errorMap = new HashMap<String, Object>();
+            errorMap.put("errorCode", "TENANT_NOT_FOUND");
+            errorMap.put("errorMessage", "업체 정보를 찾을 수 없습니다.");
+            return resultVoHelper.buildFromMap(errorMap, ResponseCode.BUSINESS_ERROR);
+        }
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("tenant", item);
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @Operation(
+            summary = "업체 정보 수정",
+            description = "업체명, 법인번호, 업종, 업태, 개업일, 로고를 수정한다.",
+            security = {@SecurityRequirement(name = "Authorization")}
+    )
+    @PlanAccessPolicy(
+            menuUrl = "/platform/tenants",
+            featureCode = "FEATURE_PLATFORM_TENANT_MGMT",
+            requiredPermissionLevel = PlanAccessLevel.WRITE
+    )
+    @PutMapping("/{tenantCode}")
+    public ResultVO updateTenant(@PathVariable String tenantCode, @RequestBody TenantUpdateRequestVO requestVO) {
+        PlatformTenantDashboardItemVO item = platformTenantService.updateTenantInfo(tenantCode, requestVO);
         if (item == null) {
             Map<String, Object> errorMap = new HashMap<String, Object>();
             errorMap.put("errorCode", "TENANT_NOT_FOUND");

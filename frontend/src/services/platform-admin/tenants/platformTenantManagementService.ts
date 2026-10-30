@@ -22,6 +22,9 @@ export type PlatformTenantManagementItem = {
   corporateNumber?: string;
   businessType?: string;
   businessCategory?: string;
+  businessRegistrationNumber?: string;
+  registrationDate?: string;
+  logoImage?: string;
   createdAt: string;
 };
 
@@ -145,4 +148,25 @@ export async function resendTenantVerificationEmail(
     `/v1/platform-admin/tenants/${encodeURIComponent(normalizedTenantCode)}/onboarding/verification-emails`,
     {},
   );
+}
+
+export type UpdatePlatformTenantRequest = {
+  companyName: string;
+  corporateNumber?: string;
+  businessType: string;
+  businessCategory: string;
+  registrationDate?: string;
+  logoImage?: string;
+  removeLogo?: boolean;
+};
+
+export async function updatePlatformTenant(
+    tenantCode: string,
+    payload: UpdatePlatformTenantRequest,
+): Promise<PlatformTenantManagementItem | null> {
+  const { data } = await apiClient.put<
+      TenantDetailEnvelope | ResultEnvelope<TenantDetailEnvelope>
+  >(`/v1/platform-admin/tenants/${encodeURIComponent(tenantCode.trim())}`, payload);
+
+  return normalizeTenantDetail(data);
 }

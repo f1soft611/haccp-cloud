@@ -10,10 +10,12 @@ const {
   getPlatformTenantByCodeMock,
   dispatchTenantVerificationEmailMock,
   resendTenantVerificationEmailMock,
+  updatePlatformTenantMock,
 } = vi.hoisted(() => ({
   getPlatformTenantByCodeMock: vi.fn(),
   dispatchTenantVerificationEmailMock: vi.fn(),
   resendTenantVerificationEmailMock: vi.fn(),
+  updatePlatformTenantMock: vi.fn(),
 }));
 
 vi.mock(
@@ -22,6 +24,7 @@ vi.mock(
     getPlatformTenantByCode: getPlatformTenantByCodeMock,
     dispatchTenantVerificationEmail: dispatchTenantVerificationEmailMock,
     resendTenantVerificationEmail: resendTenantVerificationEmailMock,
+    updatePlatformTenant: updatePlatformTenantMock,
   }),
 );
 
@@ -168,5 +171,42 @@ describe('PlatformTenantDetailPage', () => {
     renderPage();
 
     expect(await screen.findByText('업체번호 482913')).toBeInTheDocument();
+  });
+
+  it('수정 다이얼로그에서 업체명을 바꿔 저장한다', async () => {
+    getPlatformTenantByCodeMock.mockResolvedValue({
+      tenantCode: 'TENANT-A',
+      companyName: '테스트푸드',
+      adminName: '홍길동',
+      adminEmail: 'admin@test.com',
+      status: 'ACTIVE',
+      onboardingStatus: 'ACTIVE',
+      businessType: '식품제조',
+      businessCategory: '즉석조리식품',
+      createdAt: '2026-06-21T10:30:00.000Z',
+    });
+    updatePlatformTenantMock.mockResolvedValue(null);
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: '수정' }));
+    const nameInput = await screen.findByLabelText(/업체명/);
+    fireEvent.change(nameInput, { target: { value: '수정푸드' } });
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => {
+      expect(updatePlatformTenantMock).toHaveBeenCalledWith(
+          'TENANT-A',
+          expect.objectContaining({
+            companyName: '수정푸드',
+            businessType: '식품제조',
+            businessCategory: '즉석조리식품',
+            removeLogo: false,
+          }),
+      );
+    });
+    expect(
+        await screen.findByText('업체 정보를 수정했습니다.'),
+    ).toBeInTheDocument();
   });
 });

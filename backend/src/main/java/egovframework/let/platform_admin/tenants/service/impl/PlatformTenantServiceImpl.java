@@ -6,18 +6,11 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Resource;
 
+import egovframework.let.platform_admin.tenants.domain.model.*;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO;
-import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardQueryVO;
-import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardResultVO;
-import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardSummaryVO;
-import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationRequestVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
 import egovframework.let.platform_admin.tenants.service.PlatformTenantService;
 import egovframework.let.platform_admin.tenants.service.TenantDatabaseProvisioningService;
@@ -302,6 +295,63 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
         if (result == 0) {
             throw new IllegalArgumentException("Failed to update logo image for tenantId: " + tenantId);
         }
+    }
+
+    @Override
+    @Transactional
+    public PlatformTenantDashboardItemVO updateTenantInfo(String tenantCode, TenantUpdateRequestVO requestVO) {
+        PlatformTenantDashboardItemVO current = findDashboardTenantByCode(tenantCode);
+        if (current == null) {
+            return null;
+        }
+        if (requestVO == null) {
+            throw new IllegalArgumentException("request is required");
+        }
+
+        Long tenantId = current.getTenantId();
+        String tenantNm = emptyToNull(requestVO.getCompanyName());
+        String businessType = emptyToNull(requestVO.getBusinessType());
+        String businessCategory = emptyToNull(requestVO.getBusinessCategory());
+        if (tenantNm == null) {
+            throw new IllegalArgumentException("업체명을 입력해 주세요");
+        }
+        if (businessType == null) {
+            throw new IllegalArgumentException("업종을 입력해 주세요");
+        }
+        if (businessCategory == null) {
+            throw new IllegalArgumentException("업태를 입력해 주세요");
+        }
+
+        String corporateNumber = emptyToNull(requestVO.getCorporateNumber());
+        String normalizedCorporateNumber = normalizeCorporateNumber(corporateNumber);
+        if (normalizedCorporateNumber != null
+                && tenantInfoDAO.selectActiveTenantCountByCorporateNumberExcludingTenant(normalizedCorporateNumber, tenantId) > 0) {
+            throw new IllegalStateException("이미 등록된 활성 업체의 법인번호입니다");
+        }
+
+        String registrationDate = emptyToNull(requestVO.getRegistrationDate());
+        if (registrationDate != null) {
+            try {
+                java.time.LocalDate.parse(registrationDate);
+            } catch (java.time.format.DateTimeParseException ex) {
+                throw new IllegalArgumentException("개업일 형식이 올바르지 않습니다");
+            }
+        }
+
+        tenantInfoDAO.updateTenantBasicInfo(
+                tenantId, tenantNm, corporateNumber, businessType, businessCategory, registrationDate);
+
+        if (Boolean.TRUE.equals(requestVO.getRemoveLogo())) {
+            tenantInfoDAO.updateLogoImage(tenantId, null);
+        } else {
+            String logoImage = TenantOnboardingServiceImpl.normalizeLogoImage(requestVO.getLogoImage());
+            if (logoImage != null) {
+                tenantInfoDAO.updateLogoImage(tenantId, logoImage);
+            }
+        }
+
+        PlatformTenantDashboardItemVO updated = tenantInfoDAO.selectDashboardTenantItemByCode(current.getTenantCode());
+        return updated == null ? current : updated;
     }
 
     private PlatformTenantDashboardQueryVO normalizeQuery(PlatformTenantDashboardQueryVO queryVO) {

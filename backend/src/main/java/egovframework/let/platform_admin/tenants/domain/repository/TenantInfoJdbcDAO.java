@@ -314,4 +314,31 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
         param.put("logoImage", logoImage);
         return update("TenantInfoDAO.updateLogoImage", param);
     }
+
+    @Override
+    public int selectActiveTenantCountByCorporateNumberExcludingTenant(String normalizedCorporateNumber, Long tenantId) {
+        Map<String, Object> param = new HashMap<String, Object>();
+        param.put("corporateNumber", normalizedCorporateNumber);
+        param.put("tenantId", tenantId);
+        Integer count = selectOne("TenantInfoDAO.selectActiveTenantCountByCorporateNumberExcludingTenant", param);
+        return count == null ? 0 : count;
+    }
+
+    @Override
+    public int updateTenantBasicInfo(
+            Long tenantId,
+            String tenantNm,
+            String corporateNumber,
+            String businessType,
+            String businessCategory,
+            String registrationDate) {
+        Map<String, Object> param = new HashMap<String, Object>();
+        param.put("tenantId", tenantId);
+        param.put("tenantNm", tenantNm);
+        param.put("corporateNumber", corporateNumber);
+        param.put("businessType", businessType);
+        param.put("businessCategory", businessCategory);
+        param.put("registrationDate", registrationDate);
+        return update("TenantInfoDAO.updateTenantBasicInfo", param);
+    }
 }

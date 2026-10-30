@@ -14,14 +14,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
+import egovframework.let.platform_admin.tenants.domain.model.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationRequestVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
 import egovframework.let.platform_admin.tenants.domain.repository.TenantInfoDAO;
 import egovframework.let.platform_admin.tenants.service.TenantDatabaseProvisioningService;
 
@@ -556,5 +554,129 @@ class PlatformTenantServiceImplTest {
         when(tenantInfoDAO.selectActiveTenantByTenantNo("482913")).thenReturn(tenant);
 
         assertSame(tenant, service.findActiveByTenantNo(" 482913 "));
+    }
+
+    private static PlatformTenantDashboardItemVO tenantItem(Long tenantId) {
+        PlatformTenantDashboardItemVO item = new PlatformTenantDashboardItemVO();
+        item.setTenantId(tenantId);
+        item.setTenantCode(TENANT_CODE);
+        return item;
+    }
+
+    private static TenantUpdateRequestVO updateRequest() {
+        TenantUpdateRequestVO requestVO = new TenantUpdateRequestVO();
+        requestVO.setCompanyName("수정업체");
+        requestVO.setCorporateNumber("123456-1234567");
+        requestVO.setBusinessType("식품제조");
+        requestVO.setBusinessCategory("즉석조리식품");
+        requestVO.setRegistrationDate("2026-08-19");
+        return requestVO;
+    }
+
+    private static PlatformTenantServiceImpl serviceWith(TenantInfoDAO tenantInfoDAO) {
+        PlatformTenantServiceImpl service = new PlatformTenantServiceImpl();
+        ReflectionTestUtils.setField(service, "tenantInfoDAO", tenantInfoDAO);
+        return service;
+    }
+
+    @DisplayName("업체 수정 시 기본 정보를 저장하고 로고는 건드리지 않는다")
+    @Test
+    void updateTenantInfo_savesBasicInfoWithoutTouchingLogo() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        when(tenantInfoDAO.selectDashboardTenantItemByCode(TENANT_CODE)).thenReturn(tenantItem(500L));
+        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumberExcludingTenant("1234561234567", 500L)).thenReturn(0);
+
+        PlatformTenantDashboardItemVO result = serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, updateRequest());
+
+        assertEquals(500L, result.getTenantId());
+        verify(tenantInfoDAO).updateTenantBasicInfo(
+                500L, "수정업체", "123456-1234567", "식품제조", "즉석조리식품", "2026-08-19");
+        verify(tenantInfoDAO, never()).updateLogoImage(any(), any());
+    }
+
+    @DisplayName("다른 활성 업체와 법인번호가 겹치면 업체 수정을 거부한다")
+    @Test
+    void updateTenantInfo_rejectsCorporateNumberUsedByOtherTenant() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        when(tenantInfoDAO.selectDashboardTenantItemByCode(TENANT_CODE)).thenReturn(tenantItem(500L));
+        when(tenantInfoDAO.selectActiveTenantCountByCorporateNumberExcludingTenant("1234561234567", 500L)).thenReturn(1);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, updateRequest()));
+
+        assertEquals("이미 등록된 활성 업체의 법인번호입니다", ex.getMessage());
+        verify(tenantInfoDAO, never()).updateTenantBasicInfo(any(), any(), any(), any(), any(), any());
+    }
+
+    @DisplayName("업체명이 비어 있으면 업체 수정을 거부한다")
+    @Test
+    void updateTenantInfo_requiresCompanyName() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        when(tenantInfoDAO.selectDashboardTenantItemByCode(TENANT_CODE)).thenReturn(tenantItem(500L));
+        TenantUpdateRequestVO requestVO = updateRequest();
+        requestVO.setCompanyName("  ");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, requestVO));
+    }
+
+    @DisplayName("개업일 형식이 YYYY-MM-DD 가 아니면 업체 수정을 거부한다")
+    @Test
+    void updateTenantInfo_rejectsInvalidRegistrationDate() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        when(tenantInfoDAO.selectDashboardTenantItemByCode(TENANT_CODE)).thenReturn(tenantItem(500L));
+        TenantUpdateRequestVO requestVO = updateRequest();
+        requestVO.setRegistrationDate("2026/08/19");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, requestVO));
+    }
+
+    @DisplayName("removeLogo 가 true 면 로고를 null 로 저장한다")
+    @Test
+    void updateTenantInfo_removesLogo() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        when(tenantInfoDAO.selectDashboardTenantItemByCode(TENANT_CODE)).thenReturn(tenantItem(500L));
+        TenantUpdateRequestVO requestVO = updateRequest();
+        requestVO.setLogoImage("data:image/png;base64,AAAA");
+        requestVO.setRemoveLogo(true);
+
+        serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, requestVO);
+
+        verify(tenantInfoDAO).updateLogoImage(500L, null);
+    }
+
+    @DisplayName("새 로고가 오면 data URL 그대로 저장한다")
+    @Test
+    void updateTenantInfo_savesNewLogo() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        when(tenantInfoDAO.selectDashboardTenantItemByCode(TENANT_CODE)).thenReturn(tenantItem(500L));
+        TenantUpdateRequestVO requestVO = updateRequest();
+        requestVO.setLogoImage("data:image/png;base64,AAAA");
+
+        serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, requestVO);
+
+        verify(tenantInfoDAO).updateLogoImage(500L, "data:image/png;base64,AAAA");
+    }
+
+    @DisplayName("이미지 data URL 이 아닌 로고는 거부한다")
+    @Test
+    void updateTenantInfo_rejectsNonImageLogo() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+        when(tenantInfoDAO.selectDashboardTenantItemByCode(TENANT_CODE)).thenReturn(tenantItem(500L));
+        TenantUpdateRequestVO requestVO = updateRequest();
+        requestVO.setLogoImage("data:text/html;base64,AAAA");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, requestVO));
+    }
+
+    @DisplayName("업체가 없으면 null 을 반환하고 아무것도 저장하지 않는다")
+    @Test
+    void updateTenantInfo_returnsNullWhenTenantMissing() {
+        TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
+
+        assertNull(serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, updateRequest()));
+        verify(tenantInfoDAO, never()).updateTenantBasicInfo(any(), any(), any(), any(), any(), any());
     }
 }

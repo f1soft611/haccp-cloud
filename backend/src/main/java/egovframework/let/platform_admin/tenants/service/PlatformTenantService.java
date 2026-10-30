@@ -2,13 +2,7 @@ package egovframework.let.platform_admin.tenants.service;
 
 import java.util.List;
 
-import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardQueryVO;
-import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardItemVO;
-import egovframework.let.platform_admin.tenants.domain.model.PlatformTenantDashboardResultVO;
-import egovframework.let.platform_admin.tenants.domain.model.SampleTenantVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationRequestVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantRegistrationResultVO;
-import egovframework.let.platform_admin.tenants.domain.model.TenantVO;
+import egovframework.let.platform_admin.tenants.domain.model.*;
 
 /**
  * 플랫폼 테넌트 서비스
@@ -71,4 +65,13 @@ public interface PlatformTenantService {
      * @param logoImage Base64 인코딩된 이미지
      */
     void updateLogoImage(Long tenantId, String logoImage);
+
+    /**
+     * 플랫폼 관리자 업체 기본 정보와 로고 수정
+     *
+     * @param tenantCode 업체 코드
+     * @param requestVO 수정 요청
+     * @return 수정 후 상세 항목, 업체가 없으면 null
+     */
+    PlatformTenantDashboardItemVO updateTenantInfo(String tenantCode, TenantUpdateRequestVO requestVO);
 }
