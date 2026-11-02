@@ -24,6 +24,7 @@ export type PlatformTenantManagementItem = {
   businessCategory?: string;
   businessRegistrationNumber?: string;
   registrationDate?: string;
+  serviceStartDate?: string;
   logoImage?: string;
   createdAt: string;
 };
@@ -156,6 +157,7 @@ export type UpdatePlatformTenantRequest = {
   businessType: string;
   businessCategory: string;
   registrationDate?: string;
+  serviceStartDate?: string;
   logoImage?: string;
   removeLogo?: boolean;
 };

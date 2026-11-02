@@ -62,6 +62,9 @@ export type HaccpBaseWorkItem = {
   pendingApprovalAlert?: boolean;
   pendingArrivalAt?: string;
   lastReportDate?: string;
+  lastWriterName?: string;
+  cycleEndDate?: string;
+  unwrittenCount?: number;
   sub?: ApprovalSubValues;
 };
 
@@ -174,6 +177,12 @@ type RawHaccpBaseWorkItem = {
   pending_arrival_at?: string | null;
   lastReportDate?: string | null;
   last_report_date?: string | null;
+  lastWriterName?: string | null;
+  last_writer_name?: string | null;
+  cycleEndDate?: string | null;
+  cycle_end_date?: string | null;
+  unwrittenCount?: number | string | null;
+  unwritten_count?: number | string | null;
   sub?: {
     equipmentId?: number | string | null;
     materialType?: string | null;
@@ -439,6 +448,9 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
       raw.pendingArrivalAt ?? raw.pending_arrival_at,
     ),
     lastReportDate: normalizeText(raw.lastReportDate ?? raw.last_report_date),
+    lastWriterName: normalizeText(raw.lastWriterName ?? raw.last_writer_name),
+    cycleEndDate: normalizeText(raw.cycleEndDate ?? raw.cycle_end_date),
+    unwrittenCount: Number(raw.unwrittenCount ?? raw.unwritten_count ?? 0) || 0,
     sub: raw.sub ? normalizeApprovalSub(raw.sub) : undefined,
   };
 }

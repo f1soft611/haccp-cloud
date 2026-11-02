@@ -22,10 +22,10 @@ describe('TenantFilterSection', () => {
             </AppProviders>,
         );
 
-        // 라벨 대신 빈 값 placeholder
-        expect(screen.getByRole('combobox', { name: '업무분류' })).toHaveTextContent('업무분류');
-        expect(screen.getByRole('combobox', { name: '주기' })).toHaveTextContent('주기');
-        expect(screen.getByRole('combobox', { name: '상태' })).toHaveTextContent('상태');
+        // 기존 -> 빈 값이면 placeholder(필드명) / 변경 -> 빈 값이면 전체 라벨
+        expect(screen.getByRole('combobox', { name: '업무분류' })).toHaveTextContent('전체');
+        expect(screen.getByRole('combobox', { name: '주기' })).toHaveTextContent('전체(수시제외)');
+        expect(screen.getByRole('combobox', { name: '상태' })).toHaveTextContent('전체');
 
         const keyword = screen.getByPlaceholderText('업무명을 입력하세요.');
         fireEvent.keyDown(keyword, { key: 'Enter' });

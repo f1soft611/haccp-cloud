@@ -17,6 +17,8 @@ export type TenantTodoCardItem = HaccpBaseWorkItem & {
   writtenInCycle: boolean;
   routeIdType: 'work' | 'approval';
   routeId: string;
+  dDay: string;
+  unwrittenCount: number;
 };
 
 export type TenantTodoSectionModel = {
@@ -25,6 +27,21 @@ export type TenantTodoSectionModel = {
   sortOrder: number;
   items: TenantTodoCardItem[];
 };
+
+export function computeDDay(cycleEndDate?: string): string {
+  if (!cycleEndDate || cycleEndDate.length !== 8) return '';
+  const end = new Date(
+    Number(cycleEndDate.slice(0, 4)),
+    Number(cycleEndDate.slice(4, 6)) - 1,
+    Number(cycleEndDate.slice(6, 8)),
+  );
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.round((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff > 0) return `D-${diff}`;
+  if (diff === 0) return 'D-Day';
+  return `D+${Math.abs(diff)}`;
+}
 
 export function toTenantTodoCardItem(
     item: HaccpBaseWorkItem,
@@ -41,6 +58,8 @@ export function toTenantTodoCardItem(
     writtenInCycle: Boolean(item.writtenInCycle),
     routeIdType: item.approvalId ? ('approval' as const) : ('work' as const),
     routeId: item.approvalId || item.id,
+    dDay: computeDDay(item.cycleEndDate),
+    unwrittenCount: item.unwrittenCount ?? 0,
   };
 }
 
@@ -126,6 +145,8 @@ export function useTenantDashboardData() {
           ? ('approval' as const)
           : ('work' as const),
         routeId: item.approvalId || item.id,
+        dDay: computeDDay(item.cycleEndDate),
+        unwrittenCount: item.unwrittenCount ?? 0,
       }));
     },
     retry: 0,

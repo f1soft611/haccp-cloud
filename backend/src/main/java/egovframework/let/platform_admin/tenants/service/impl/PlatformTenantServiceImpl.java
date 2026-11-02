@@ -334,12 +334,21 @@ public class PlatformTenantServiceImpl implements PlatformTenantService {
             try {
                 java.time.LocalDate.parse(registrationDate);
             } catch (java.time.format.DateTimeParseException ex) {
-                throw new IllegalArgumentException("개업일 형식이 올바르지 않습니다");
+                throw new IllegalArgumentException("사업자등록일 형식이 올바르지 않습니다");
+            }
+        }
+
+        String serviceStartDate = emptyToNull(requestVO.getServiceStartDate());
+        if (serviceStartDate != null) {
+            try {
+                java.time.LocalDate.parse(serviceStartDate);
+            } catch (java.time.format.DateTimeParseException ex) {
+                throw new IllegalArgumentException("업무개시일 형식이 올바르지 않습니다");
             }
         }
 
         tenantInfoDAO.updateTenantBasicInfo(
-                tenantId, tenantNm, corporateNumber, businessType, businessCategory, registrationDate);
+                tenantId, tenantNm, corporateNumber, businessType, businessCategory, registrationDate, serviceStartDate);
 
         if (Boolean.TRUE.equals(requestVO.getRemoveLogo())) {
             tenantInfoDAO.updateLogoImage(tenantId, null);

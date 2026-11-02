@@ -40,6 +40,7 @@ public class PlatformTenantDashboardItemVO {
     private String businessType;
     private String businessCategory;
     private String businessRegistrationNumber;
-    private String registrationDate;
+    private String registrationDate;    // 사업자 등록일
+    private String serviceStartDate;    // HACCP 서비스 시작일
     private String logoImage;
 }

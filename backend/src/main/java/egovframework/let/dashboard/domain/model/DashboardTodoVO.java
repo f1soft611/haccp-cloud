@@ -97,4 +97,19 @@ public class DashboardTodoVO implements Serializable {
 
     @Schema(description = "업무 최근 보고일자(본인 작성 문서 MAX report_date)")
     private String lastReportDate;
+
+    @Schema(description = "검토자명")
+    private String reviewerName;
+
+    @Schema(description = "결재자명")
+    private String approverName;
+
+    @Schema(description = "최근 작성자명")
+    private String lastWriterName;
+
+    @Schema(description = "현재 주기 종료일(yyyyMMdd)")
+    private String cycleEndDate;
+
+    @Schema(description = "테넌트 생성일~현재 주기까지 미작성 주기 수")
+    private Integer unwrittenCount;
 }

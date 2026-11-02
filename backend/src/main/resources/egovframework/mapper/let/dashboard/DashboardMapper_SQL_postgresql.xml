@@ -31,6 +31,11 @@
         <result property="pendingApprovalAlert" column="pending_approval_alert"/>
         <result property="pendingArrivalAt" column="pending_arrival_at"/>
         <result property="lastReportDate" column="last_report_date"/>
+        <result property="reviewerName" column="reviewer_name"/>
+        <result property="approverName" column="approver_name"/>
+        <result property="lastWriterName" column="last_writer_name"/>
+        <result property="cycleEndDate" column="cycle_end_date"/>
+        <result property="unwrittenCount" column="unwritten_count"/>
     </resultMap>
 
     <resultMap id="dashboardSummaryResult"
@@ -111,7 +116,14 @@
             END AS written_in_cycle,
             COALESCE(pending.pending_alert, FALSE) AS pending_approval_alert,
             TO_CHAR(pending.pending_arrival_at, 'YYYY-MM-DD HH24:MI') AS pending_arrival_at,
-            TO_CHAR(TO_DATE(rpt.max_report_date, 'YYYYMMDD'), 'YYYY-MM-DD') AS last_report_date
+            TO_CHAR(TO_DATE(rpt.max_report_date, 'YYYYMMDD'), 'YYYY-MM-DD') AS last_report_date,
+            COALESCE(NULLIF(TRIM(rev_u.user_nm), ''), '-') AS reviewer_name,
+            COALESCE(NULLIF(TRIM(apr_u.user_nm), ''), '-') AS approver_name,
+            COALESCE(rpt.last_writer_name, '-') AS last_writer_name,
+            CASE WHEN cyc.is_anytime THEN NULL
+                 ELSE TO_CHAR(cyc.cur_start + cyc.cycle_step - INTERVAL '1 day', 'YYYYMMDD')
+            END AS cycle_end_date,
+            COALESCE(uw.unwritten_count, 0) AS unwritten_count
         FROM tb_drafting_work_category w
         JOIN tb_tenant t ON t.tenant_id = w.tenant_id
         LEFT JOIN tb_drafting_work_category_group g
@@ -123,6 +135,50 @@
         LEFT JOIN tb_common_code_item cci
                   ON cci.group_id = ccg.common_code_group_id
                       AND cci.item_code = w.reg_term
+        LEFT JOIN tb_user rev_u
+          ON rev_u.tenant_id = w.tenant_id
+         AND rev_u.login_id = w.reviewer_id
+        LEFT JOIN tb_user apr_u
+          ON apr_u.tenant_id = w.tenant_id
+         AND apr_u.login_id = w.approver_id
+        LEFT JOIN LATERAL (
+          SELECT u.cycle_unit,
+                 u.is_anytime,
+                 u.cycle_step,
+                 CASE WHEN u.cycle_unit = 'half'
+                      THEN date_trunc('year', LOCALTIMESTAMP)
+                           + CASE WHEN EXTRACT(MONTH FROM LOCALTIMESTAMP) &gt;= 7 THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
+                      ELSE date_trunc(u.cycle_unit, LOCALTIMESTAMP)
+                 END AS cur_start,
+                 CASE WHEN u.cycle_unit = 'half'
+                      THEN date_trunc('year', GREATEST(t.created_at, w.created_at))
+                           + CASE WHEN EXTRACT(MONTH FROM GREATEST(t.created_at, w.created_at)) &gt;= 7 THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
+                      ELSE date_trunc(u.cycle_unit, GREATEST(t.created_at, w.created_at))
+                 END AS first_start
+          FROM (
+            SELECT k.cycle_unit,
+                   k.is_anytime,
+                   CASE k.cycle_unit
+                     WHEN 'month' THEN INTERVAL '1 month'
+                     WHEN 'week' THEN INTERVAL '1 week'
+                     WHEN 'quarter' THEN INTERVAL '3 months'
+                     WHEN 'half' THEN INTERVAL '6 months'
+                     WHEN 'year' THEN INTERVAL '1 year'
+                     ELSE INTERVAL '1 day'
+                   END AS cycle_step
+            FROM (
+              SELECT CASE
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY') THEN 'month'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY') THEN 'week'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'QUARTER' THEN 'quarter'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'HALF' THEN 'half'
+                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'YEAR' THEN 'year'
+                       ELSE 'day'
+                     END AS cycle_unit,
+                     COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('수시', 'ANYTIME', 'anytime') AS is_anytime
+            ) k
+          ) u
+        ) cyc ON TRUE
         LEFT JOIN LATERAL (
           SELECT
               COUNT(*) AS assignee_count,
@@ -176,33 +232,10 @@
           LIMIT 1
         ) pending ON TRUE
         LEFT JOIN LATERAL (
+          <!-- 기존 -> cycle_base 안에서 reg_term 별 주기 시작/종료를 직접 계산 / 변경 -> cyc 에서 계산한 현재 주기를 그대로 사용 (미작성 건수와 같은 기준) -->
           WITH cycle_base AS (
-            SELECT s.cycle_start,
-                   s.cycle_start + CASE
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY') THEN INTERVAL '1 month'
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY') THEN INTERVAL '1 week'
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'QUARTER' THEN INTERVAL '3 months'
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'HALF' THEN INTERVAL '6 months'
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'YEAR' THEN INTERVAL '1 year'
-                       ELSE INTERVAL '1 day'
-                   END AS cycle_end
-            FROM (
-              SELECT CASE
-                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY')
-                  THEN date_trunc('month', CURRENT_TIMESTAMP)
-                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY')
-                  THEN date_trunc('week', CURRENT_TIMESTAMP)
-                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'QUARTER'
-                    THEN date_trunc('quarter', CURRENT_TIMESTAMP)
-                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'HALF'
-                    THEN date_trunc('year', CURRENT_TIMESTAMP)
-                    + CASE WHEN EXTRACT(MONTH FROM CURRENT_TIMESTAMP) >= 7
-                                THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
-                WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'YEAR'
-                    THEN date_trunc('year', CURRENT_TIMESTAMP)
-                ELSE date_trunc('day', CURRENT_TIMESTAMP)
-              END AS cycle_start
-            ) s
+            SELECT cyc.cur_start AS cycle_start,
+                   cyc.cur_start + cyc.cycle_step AS cycle_end
           )
           SELECT
               COUNT(*) AS total_count,
@@ -230,14 +263,42 @@
             AND m.report_date &lt; TO_CHAR(cb.cycle_end, 'YYYYMMDD')
         ) appr ON TRUE
         <!-- 기존 -> 리스트 최근일시: 본인 작성 문서(삭제 제외)의 가장 큰 보고일자 / 변경 -> 업무 담당자 전체 문서(삭제 제외)의 가장 큰 보고일자 -->
+        <!-- 기존 -> MAX(report_date) 만 조회 / 변경 -> 보고일자가 가장 큰 문서 한 건에서 보고일자와 작성자명을 같이 조회 -->
         LEFT JOIN LATERAL (
-          SELECT MAX(m.report_date) AS max_report_date
+          SELECT m.report_date AS max_report_date,
+                 COALESCE(NULLIF(TRIM(wu.user_nm), ''), NULLIF(TRIM(wla.login_code), ''), '-') AS last_writer_name
           FROM tb_electronic_approval_main m
+          LEFT JOIN tb_user wu
+            ON wu.tenant_id = m.tenant_id
+           AND wu.login_id = m.login_id
+          LEFT JOIN tb_login_account wla
+            ON wla.tenant_id = m.tenant_id
+           AND wla.login_id = m.login_id
           WHERE m.tenant_id = w.tenant_id
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND COALESCE(m.delete_status, 'N') != 'Y'
             AND m.report_date ~ '^[0-9]{8}$'
+          ORDER BY m.report_date DESC, COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
+          LIMIT 1
         ) rpt ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT CASE
+                   WHEN cyc.is_anytime THEN 0
+                   ELSE (
+                     SELECT COUNT(*)::int
+                     FROM generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step) AS gs(cycle_start)
+                     WHERE NOT EXISTS (
+                       SELECT 1
+                       FROM tb_electronic_approval_main em
+                       WHERE em.tenant_id = w.tenant_id
+                         AND em.drafting_work_category_id = w.drafting_work_category_id
+                         AND COALESCE(em.delete_status, 'N') != 'Y'
+                         AND em.report_date &gt;= TO_CHAR(gs.cycle_start, 'YYYYMMDD')
+                         AND em.report_date &lt; TO_CHAR(gs.cycle_start + cyc.cycle_step, 'YYYYMMDD')
+                     )
+                   )
+                 END AS unwritten_count
+        ) uw ON TRUE
         WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'
           AND w.use_at = 'Y'

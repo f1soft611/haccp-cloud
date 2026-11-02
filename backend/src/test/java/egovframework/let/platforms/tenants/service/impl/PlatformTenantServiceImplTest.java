@@ -590,7 +590,7 @@ class PlatformTenantServiceImplTest {
 
         assertEquals(500L, result.getTenantId());
         verify(tenantInfoDAO).updateTenantBasicInfo(
-                500L, "수정업체", "123456-1234567", "식품제조", "즉석조리식품", "2026-08-19");
+                500L, "수정업체", "123456-1234567", "식품제조", "즉석조리식품", "2026-08-19", "");
         verify(tenantInfoDAO, never()).updateLogoImage(any(), any());
     }
 
@@ -605,7 +605,7 @@ class PlatformTenantServiceImplTest {
                 () -> serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, updateRequest()));
 
         assertEquals("이미 등록된 활성 업체의 법인번호입니다", ex.getMessage());
-        verify(tenantInfoDAO, never()).updateTenantBasicInfo(any(), any(), any(), any(), any(), any());
+        verify(tenantInfoDAO, never()).updateTenantBasicInfo(any(), any(), any(), any(), any(), any(), any());
     }
 
     @DisplayName("업체명이 비어 있으면 업체 수정을 거부한다")
@@ -677,6 +677,6 @@ class PlatformTenantServiceImplTest {
         TenantInfoDAO tenantInfoDAO = mock(TenantInfoDAO.class);
 
         assertNull(serviceWith(tenantInfoDAO).updateTenantInfo(TENANT_CODE, updateRequest()));
-        verify(tenantInfoDAO, never()).updateTenantBasicInfo(any(), any(), any(), any(), any(), any());
+        verify(tenantInfoDAO, never()).updateTenantBasicInfo(any(), any(), any(), any(), any(), any(), any());
     }
 }

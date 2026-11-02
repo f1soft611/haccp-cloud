@@ -154,5 +154,6 @@ public interface TenantInfoDAO {
             String corporateNumber,
             String businessType,
             String businessCategory,
-            String registrationDate);
+            String registrationDate,
+            String serviceStartDate);
 }

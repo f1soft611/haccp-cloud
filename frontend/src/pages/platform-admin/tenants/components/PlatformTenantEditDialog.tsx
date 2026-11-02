@@ -42,6 +42,7 @@ export function PlatformTenantEditDialog({ open, tenant, onClose, onSaved }: Pro
     const [businessType, setBusinessType] = useState(tenant.businessType ?? '');
     const [businessCategory, setBusinessCategory] = useState(tenant.businessCategory ?? '');
     const [registrationDate, setRegistrationDate] = useState(tenant.registrationDate ?? '');
+    const [serviceStartDate, setServiceStartDate] = useState(tenant.serviceStartDate ?? '');
     // undefined = 로고 변경 없음, string = 새 로고
     const [newLogo, setNewLogo] = useState<string | undefined>(undefined);
     const [removeLogo, setRemoveLogo] = useState(false);
@@ -57,6 +58,7 @@ export function PlatformTenantEditDialog({ open, tenant, onClose, onSaved }: Pro
                 businessType: businessType.trim(),
                 businessCategory: businessCategory.trim(),
                 registrationDate: registrationDate || undefined,
+                serviceStartDate: serviceStartDate || undefined,
                 logoImage: removeLogo ? undefined : newLogo,
                 removeLogo,
             }),
@@ -153,10 +155,18 @@ export function PlatformTenantEditDialog({ open, tenant, onClose, onSaved }: Pro
                         />
                     </Stack>
                     <TextField
-                        label="개업일"
+                        label="사업자등록일"
                         type="date"
                         value={registrationDate}
                         onChange={(e) => setRegistrationDate(e.target.value)}
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        fullWidth
+                    />
+                    <TextField
+                        label="업무개시일"
+                        type="date"
+                        value={serviceStartDate}
+                        onChange={(e) => setServiceStartDate(e.target.value)}
                         slotProps={{ inputLabel: { shrink: true } }}
                         fullWidth
                     />

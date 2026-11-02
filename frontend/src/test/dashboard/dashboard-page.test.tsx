@@ -5,6 +5,8 @@ import { DashboardPage } from '../../pages/DashboardPage.tsx';
 import { useAuthStore } from '../../shared/store/authStore.ts';
 import { APP_LABELS } from '../../shared/constants/labels.ts';
 
+const TODO_SECTION_TEXT = /^(오늘 작성|등록된 업무가 없습니다\.|할일 목록을 불러오지 못했습니다\.)$/;
+
 describe('Dashboard page', () => {
   beforeEach(() => {
     useAuthStore.setState({
@@ -26,9 +28,10 @@ describe('Dashboard page', () => {
 
     // 기존 -> KPI 카드(kpi-card-ccp-rate) 존재 확인
     // 변경 -> KPI 카드 제거됨, 당일현황 그리드로 렌더링 확인
+    // 기존 -> 당일현황 테이블(role=table) 확인 / 변경 -> 당일현황이 카드 그리드로 바뀌어 카드의 '오늘 작성' 버튼 또는 빈 목록 안내 확인
     expect(
-      await screen.findByRole('table', { name: '당일현황' }),
-    ).toBeInTheDocument();
+      (await screen.findAllByText(TODO_SECTION_TEXT)).length,
+    ).toBeGreaterThan(0);
     expect(screen.queryByTestId('kpi-card-ccp-rate')).not.toBeInTheDocument();
     // 기존 -> 결재 알림 헤딩 존재 확인
     // 변경 -> 결재 알림 패널 제거됨
@@ -43,7 +46,8 @@ describe('Dashboard page', () => {
     expect(screen.queryByTestId('tenant-dashboard-calendar')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '캘린더형' }));
     expect(screen.getByTestId('tenant-dashboard-calendar')).toBeInTheDocument();
-    expect(screen.queryByRole('table', { name: '당일현황' })).not.toBeInTheDocument();
+    // 기존 -> 당일현황 테이블이 사라졌는지 확인 / 변경 -> 당일현황 카드(또는 빈 목록 안내)가 사라졌는지 확인
+    expect(screen.queryAllByText(TODO_SECTION_TEXT)).toHaveLength(0);
     expect(
         screen.queryByRole('heading', { name: '관리자 허브' }),
     ).not.toBeInTheDocument();

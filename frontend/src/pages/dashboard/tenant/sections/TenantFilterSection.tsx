@@ -30,12 +30,6 @@ type TenantFilterSectionProps = {
     onViewModeChange: (viewMode: TenantViewMode) => void;
 };
 
-const placeholder = (text: string) => (
-    <Box component="span" sx={{ color: 'text.disabled' }}>
-        {text}
-    </Box>
-);
-
 // 기존 -> 자체 Paper, 윗줄 토글 + 아랫줄 라벨 붙은 조건 + 초기화/조회(contained)
 // 변경 -> 바깥 패널(TenantDashboard) 안의 한 줄: 돋보기 + placeholder 조건 + 조회(outlined) + 초기화 아이콘, 오른쪽 끝 토글
 export function TenantFilterSection(props: TenantFilterSectionProps) {
@@ -69,9 +63,11 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                 select: {
                     displayEmpty: true,
                     SelectDisplayProps: { 'aria-label': name },
+                    // 기존 -> options 에 없는 '' 이면 placeholder(name)
+                    // 변경 -> '' 이면 allLabel(전체, 전체(수시제외))
                     renderValue: (selected): ReactNode =>
                         options.find((option) => option.value === selected)?.label ??
-                        placeholder(name),
+                        allLabel,
                 },
             }}
         >
@@ -99,15 +95,15 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                 color="primary"
                 sx={{ display: { xs: 'none', md: 'block' } }}
             />
-            {selectField('category', '업무분류', '전체', toOptions(categoryOptions), 160)}
+            {selectField('category', '업무분류', '전체', toOptions(categoryOptions), 200)}
             {selectField(
                 'cycle',
                 '주기',
                 '전체(수시제외)',
                 cycleOptions.map((option) => ({ value: option.code, label: option.name })),
-                120,
+                150,
             )}
-            {selectField('status', '상태', '전체', toOptions(TODO_STATUS_OPTIONS), 120)}
+            {selectField('status', '상태', '전체', toOptions(TODO_STATUS_OPTIONS), 150)}
 
             <TextField
                 size="small"
@@ -121,7 +117,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                 }}
                 slotProps={{ htmlInput: { 'aria-label': '업무명' } }}
                 sx={{
-                    flex: { md: '0 1 360px' },
+                    flex: { md: '0 1 400px' },
                     minWidth: 160,
                     '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' },
                 }}
@@ -131,7 +127,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                 <Button
                     variant="outlined"
                     onClick={onSearch}
-                    sx={{ whiteSpace: 'nowrap', bgcolor: 'background.paper' }}
+                    sx={{ whiteSpace: 'nowrap', bgcolor: 'background.paper', }}
                 >
                     조회
                 </Button>

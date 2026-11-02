@@ -19,6 +19,7 @@
         <result property="corporateNumber" column="corporate_number"/>
         <result property="businessType" column="business_type"/>
         <result property="businessCategory" column="business_category"/>
+        <result property="serviceStartDate" column="service_start_date"/>
     </resultMap>
 
     <!-- 최근 테넌트 resultMap -->
@@ -362,7 +363,8 @@
             TO_CHAR(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
             t.corporate_number,
             t.business_type,
-            t.business_category
+            t.business_category,
+            TO_CHAR(t.service_start_date, 'YYYY-MM-DD') AS service_start_date
         FROM tb_tenant t
         LEFT JOIN (
             SELECT DISTINCT ON (s.tenant_id)
@@ -422,7 +424,8 @@
             TO_CHAR(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
             t.corporate_number,
             t.business_type,
-            t.business_category
+            t.business_category,
+            TO_CHAR(t.service_start_date, 'YYYY-MM-DD') AS service_start_date
         FROM tb_tenant t
         LEFT JOIN (
             SELECT DISTINCT ON (s.tenant_id)
@@ -602,6 +605,7 @@
             business_type = #{businessType},
             business_category = #{businessCategory},
             registration_date = NULLIF(#{registrationDate}, '')::date,
+            service_start_date = NULLIF(#{serviceStartDate}, '')::date,
             updated_at = now()
         WHERE tenant_id = #{tenantId}
     </update>
