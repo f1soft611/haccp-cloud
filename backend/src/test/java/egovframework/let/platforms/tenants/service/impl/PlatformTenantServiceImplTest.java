@@ -590,7 +590,7 @@ class PlatformTenantServiceImplTest {
 
         assertEquals(500L, result.getTenantId());
         verify(tenantInfoDAO).updateTenantBasicInfo(
-                500L, "수정업체", "123456-1234567", "식품제조", "즉석조리식품", "2026-08-19", "");
+                500L, "수정업체", "123456-1234567", "식품제조", "즉석조리식품", "2026-08-19", null);
         verify(tenantInfoDAO, never()).updateLogoImage(any(), any());
     }
 
