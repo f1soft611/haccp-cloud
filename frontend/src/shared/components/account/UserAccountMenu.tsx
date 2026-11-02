@@ -38,7 +38,7 @@ function resolveAvatarSx(size: number, hasImage: boolean) {
   return {
     width: size,
     height: size,
-    bgcolor: hasImage ? 'transparent' : 'primary.main',
+    bgcolor: hasImage ? 'transparent' : 'success.main',
     color: hasImage ? 'transparent' : 'common.white',
     fontSize: size === 30 ? '0.9rem' : '1rem',
     fontWeight: 800,
@@ -108,20 +108,20 @@ export function UserAccountMenu() {
   return (
     <>
       <IconButton
-        onClick={handleMenuOpen}
-        aria-label={`${visibleName} 사용자 메뉴`}
-        size="small"
-        sx={{
-          border: '1px solid',
-          borderColor: 'rgba(15,23,42,0.18)',
-          bgcolor: 'background.paper',
-          color: 'text.primary',
-          ml: 0.25,
-          '&:hover': {
-            bgcolor: 'rgba(20,184,166,0.08)',
-            borderColor: 'primary.main',
-          },
-        }}
+          onClick={handleMenuOpen}
+          aria-label={`${visibleName} 사용자 메뉴`}
+          size="small"
+          sx={{
+            p: 0,
+            ml: 0.5,
+            '&:hover': {
+              bgcolor: 'transparent',
+              boxShadow: '0 0 0 2px rgba(255,255,255,0.6)',
+            },
+            '&:focus-visible': {
+              boxShadow: '0 0 0 2px #ffffff',
+            },
+          }}
       >
         <Avatar
           src={profileImage || undefined}

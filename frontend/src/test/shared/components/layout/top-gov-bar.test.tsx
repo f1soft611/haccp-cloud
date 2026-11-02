@@ -104,4 +104,27 @@ describe('TopGovBar', () => {
     expect(manualLink).toHaveAttribute('target', '_blank');
     expect(manualLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
+
+  it('renders the platform logo linking to home', () => {
+    act(() => {
+      useAuthStore.setState({
+        isAuthenticated: true,
+        tenantCode: 'TENANT-A',
+        userId: 'tenant_user',
+        role: 'TENANT_USER',
+        onboardingRequired: false,
+        onboardingStatus: 'COMPLETED',
+      });
+    });
+
+    render(
+        <MemoryRouter>
+          <TopGovBar />
+        </MemoryRouter>,
+    );
+
+    const logo = screen.getByRole('img', { name: 'FoodLink' });
+    expect(logo).toHaveAttribute('src', '/f1foodlink_wh.png');
+    expect(logo.closest('a')).toHaveAttribute('href', '/');
+  });
 });

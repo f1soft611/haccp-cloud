@@ -1,20 +1,19 @@
 import { type MouseEvent, useEffect, useMemo, useState } from 'react';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
-import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
-import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
-import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import TextFieldsRoundedIcon from '@mui/icons-material/TextFieldsRounded';
 import {
     Box,
     Button,
     IconButton,
+    Link,
     Menu,
     MenuItem,
     Stack,
     Typography,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { SIDE_NAV_WIDTH } from './SideNav';
 import { useTheme } from '@mui/material/styles';
 import { useAuthStore } from '../../store/authStore';
 import { APP_LABELS } from '../../constants/labels';
@@ -24,6 +23,7 @@ import {
     type ThemeModePreference,
 } from '../../theme/themePreference';
 import { UserAccountMenu } from '../account/UserAccountMenu';
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 
 const ROOT_FONT_SIZE_PX = 16;
 const FONT_SIZE_STORAGE_KEY = 'haccp-ui-font-size';
@@ -45,8 +45,6 @@ type TopGovBarProps = {
     onOpenMobileNav?: () => void;
 };
 
-// 기존 -> export function TopGovBar() {
-// 변경 -> 모바일 사이드바를 여는 콜백을 받는다
 export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
@@ -131,17 +129,26 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
   };
 
     const headerButtonSx = {
-        borderRadius: 999,
-        px: 1.4,
-        py: 0.45,
-        minHeight: 34,
-        borderColor: 'rgba(255,255,255,0.32)',
+        borderRadius: 1,
+        px: 1.5,
+        py: 0.4,
+        minHeight: 32,
+        minWidth: 96,
+        bgcolor: 'rgba(255,255,255,0.08)',
+        borderColor: 'rgba(255,255,255,0.2)',
         color: '#f8fafc',
-        fontWeight: 700,
+        fontWeight: 600,
+        fontSize: '0.8125rem',
         '&:hover': {
             borderColor: isDarkMode ? '#fbbf24' : '#ffffff',
-            bgcolor: 'rgba(255,255,255,0.12)',
+            bgcolor: 'rgba(255,255,255,0.14)',
         },
+    } as const;
+
+    const headerDropdownButtonSx = {
+        ...headerButtonSx,
+        minWidth: 96,
+        justifyContent: 'space-between',
     } as const;
 
     return (
@@ -158,7 +165,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                 direction="row"
                 alignItems="center"
                 spacing={1}
-                sx={{ px: { xs: 2, md: 3 }, minHeight: 48 }}
+                sx={{ pl: { xs: 1, md: 0 }, pr: { xs: 2, md: 3 }, minHeight: 48 }}
             >
                 {onOpenMobileNav ? (
                     <IconButton
@@ -169,6 +176,38 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         <MenuRoundedIcon />
                     </IconButton>
                 ) : null}
+
+                <Box
+                    sx={{
+                        width: { md: SIDE_NAV_WIDTH },
+                        flexShrink: 0,
+                        px: { md: 3 },
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Link
+                        component={RouterLink}
+                        to="/"
+                        underline="none"
+                        aria-label="FoodLink 홈으로 이동"
+                        sx={{
+                            display: 'inline-flex',
+                            borderRadius: 1,
+                            '&:focus-visible': {
+                                outline: '2px solid #ffffff',
+                                outlineOffset: '2px',
+                            },
+                        }}
+                    >
+                        <Box
+                            component="img"
+                            src="/f1foodlink_wh.png"
+                            alt="FoodLink"
+                            sx={{ display: 'block', height: 22, objectFit: 'contain' }}
+                        />
+                    </Link>
+                </Box>
 
                 <Typography
                     variant="caption"
@@ -202,9 +241,8 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         color="inherit"
                         aria-label="테마"
                         onClick={handleThemeMenuOpen}
-                        startIcon={<PaletteOutlinedIcon fontSize="small" />}
                         endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
-                        sx={headerButtonSx}
+                        sx={headerDropdownButtonSx}
                     >
                         테마
                     </Button>
@@ -214,9 +252,8 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         color="inherit"
                         aria-label={APP_LABELS.header.fontSizeAction}
                         onClick={handleFontSizeMenuOpen}
-                        startIcon={<TextFieldsRoundedIcon fontSize="small" />}
                         endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
-                        sx={headerButtonSx}
+                        sx={headerDropdownButtonSx}
                     >
                         {APP_LABELS.header.fontSizeAction}
                     </Button>
@@ -229,7 +266,6 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         variant="outlined"
                         color="inherit"
                         aria-label={APP_LABELS.header.manualAction}
-                        startIcon={<HelpOutlineRoundedIcon fontSize="small" />}
                         sx={headerButtonSx}
                     >
                         {APP_LABELS.header.manualAction}

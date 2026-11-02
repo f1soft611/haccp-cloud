@@ -174,6 +174,7 @@ export function AppLayout() {
           <Box
               sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
           >
+            <TopGovBar onOpenMobileNav={() => setMobileNavOpen(true)} />
             <Box sx={{ flex: 1, display: 'flex' }}>
               <SideNav
                   menuGroups={menuGroups}
@@ -189,7 +190,6 @@ export function AppLayout() {
                     flexDirection: 'column',
                   }}
               >
-                <TopGovBar onOpenMobileNav={() => setMobileNavOpen(true)} />
                 <PageShell>
                   <Suspense fallback={null}>
                     <Outlet />
