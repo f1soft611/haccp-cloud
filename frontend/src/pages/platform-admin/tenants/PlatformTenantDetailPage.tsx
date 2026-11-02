@@ -2,12 +2,13 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   Divider,
   Paper,
   Stack,
+  Step,
+  StepLabel,
+  Stepper,
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -41,6 +42,21 @@ function onboardingStatusColor(
     return 'info' as const;
   }
   return 'warning' as const;
+}
+
+const ONBOARDING_STEPS = [
+  { status: 'EMAIL_QUEUED', label: '메일 대기' },
+  { status: 'EMAIL_SENT', label: '메일 발송' },
+  { status: 'EMAIL_VERIFIED', label: '메일 인증' },
+  { status: 'FIRST_SETUP_COMPLETED', label: '초기 설정' },
+  { status: 'ACTIVE', label: '활성' },
+] as const;
+
+function onboardingActiveStep(
+  status: PlatformTenantManagementItem['onboardingStatus'],
+): number {
+  const idx = ONBOARDING_STEPS.findIndex((s) => s.status === status);
+  return idx === -1 ? 0 : idx + 1; // +1 because Stepper activeStep marks the *next* incomplete
 }
 
 function detailValue(value?: string) {
@@ -201,31 +217,38 @@ export function PlatformTenantDetailPage() {
           <Alert severity="success">업체 정보를 수정했습니다.</Alert>
       ) : null}
 
+      {/* 기존 -> 그라데이션 개요 Paper + 기본 정보/온보딩 액션 Card 2단 배치 */}
+      {/* 변경 -> 단일 Paper 안에 섹션 구분선 + 3열 그리드 + 온보딩 타임라인 */}
       {row ? (
-        <Stack spacing={2.5}>
-          <Paper
+        <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
+          {/* 헤더: 회사명 + 상태 + 수정 */}
+          <Box
             sx={{
               p: 3,
-              borderRadius: 3,
-              background:
-                'linear-gradient(135deg, rgba(25,118,210,0.08), rgba(46,125,50,0.08))',
+              borderBottom: '2px solid',
+              borderColor: 'primary.main',
             }}
           >
-            <Stack spacing={1.5}>
-              <Typography variant="overline" color="text.secondary">
-                TENANT OVERVIEW
-              </Typography>
-              <Typography variant="h5" fontWeight={800}>
-                {detailValue(row.companyName)}
-              </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
+              spacing={1}
+            >
+              <Box>
+                <Typography variant="h5" fontWeight={700}>
+                  {detailValue(row.companyName)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  {detailValue(row.tenantCode)} / 업체번호 {detailValue(row.tenantNo)}
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                 <Chip
                   label={onboardingStatusLabel(row.onboardingStatus)}
                   size="small"
                   color={onboardingStatusColor(row.onboardingStatus)}
-                  variant={
-                    row.onboardingStatus === 'ACTIVE' ? 'filled' : 'outlined'
-                  }
+                  variant={row.onboardingStatus === 'ACTIVE' ? 'filled' : 'outlined'}
                 />
                 <Chip
                   label={row.status === 'ACTIVE' ? '활성' : '비활성'}
@@ -233,124 +256,117 @@ export function PlatformTenantDetailPage() {
                   color={row.status === 'ACTIVE' ? 'success' : 'default'}
                   variant={row.status === 'ACTIVE' ? 'filled' : 'outlined'}
                 />
-                <Chip
-                  label={`업체 코드 ${detailValue(row.tenantCode)}`}
+                <Button
                   size="small"
                   variant="outlined"
-                />
-                <Chip
-                    label={`업체번호 ${detailValue(row.tenantNo)}`}
-                    size="small"
-                    variant="outlined"
-                />
-              </Stack>
-            </Stack>
-          </Paper>
-
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
-              gap: 2,
-            }}
-          >
-            <Card sx={{ borderRadius: 3 }}>
-              <CardContent>
-                <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                >
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    기본 정보
-                  </Typography>
-                  <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => {
-                        setEditSaved(false);
-                        setEditOpen(true);
-                      }}
-                  >
-                    수정
-                  </Button>
-                </Stack>
-                <Divider sx={{ my: 1.5 }} />
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                    gap: 2,
+                  onClick={() => {
+                    setEditSaved(false);
+                    setEditOpen(true);
                   }}
                 >
-                  <DetailField label="관리자명" value={row.adminName} />
-                  <DetailField label="관리자 이메일" value={row.adminEmail} />
-                  <DetailField label="플랜 코드" value={row.planCode} />
-                  <DetailField label="플랜명" value={row.planName} />
-                  <DetailField label="법인번호" value={row.corporateNumber} />
-                  <DetailField
-                    label="생성일"
-                    value={formatDate(row.createdAt)}
-                  />
-                  <DetailField label="업종" value={row.businessType} />
-                  <DetailField label="업태" value={row.businessCategory} />
-                  <DetailField
-                      label="사업자번호"
-                      value={row.businessRegistrationNumber}
-                  />
-                  <DetailField label="사업자등록일" value={row.registrationDate} />
-                  <DetailField label="업무개시일" value={row.serviceStartDate} />
-                </Box>
-              </CardContent>
-            </Card>
-
-            <Card sx={{ borderRadius: 3 }}>
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  온보딩 액션
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 1 }}
-                >
-                  현재 상태에 따라 필요한 메일 액션만 노출됩니다.
-                </Typography>
-                <Stack spacing={1.25} sx={{ mt: 2 }}>
-                  {isDispatchTarget ? (
-                    <Button
-                      variant="contained"
-                      onClick={() => dispatchMutation.mutate()}
-                      disabled={
-                        dispatchMutation.isPending || resendMutation.isPending
-                      }
-                    >
-                      메일 발송
-                    </Button>
-                  ) : null}
-
-                  {isResendTarget ? (
-                    <Button
-                      variant="outlined"
-                      onClick={() => resendMutation.mutate()}
-                      disabled={
-                        dispatchMutation.isPending || resendMutation.isPending
-                      }
-                    >
-                      메일 재발송
-                    </Button>
-                  ) : null}
-
-                  {!isDispatchTarget && !isResendTarget ? (
-                    <Alert severity="info" sx={{ mt: 1 }}>
-                      현재 상태에서는 메일 액션이 필요하지 않습니다.
-                    </Alert>
-                  ) : null}
-                </Stack>
-              </CardContent>
-            </Card>
+                  수정
+                </Button>
+              </Stack>
+            </Stack>
           </Box>
-        </Stack>
+
+          {/* 섹션 1: 회사 / 사업자 정보 */}
+          <Box sx={{ p: 3 }}>
+            <Typography variant="subtitle2" fontWeight={700} color="primary" sx={{ mb: 1.5 }}>
+              회사 / 사업자 정보
+            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+                gap: 2,
+              }}
+            >
+              <DetailField label="업체명" value={row.companyName} />
+              <DetailField label="사업자번호" value={row.businessRegistrationNumber} />
+              <DetailField label="법인번호" value={row.corporateNumber} />
+              <DetailField label="업종" value={row.businessType} />
+              <DetailField label="업태" value={row.businessCategory} />
+              <DetailField label="사업자등록일" value={row.registrationDate} />
+              <DetailField label="업무개시일" value={row.serviceStartDate} />
+              <DetailField label="생성일" value={formatDate(row.createdAt)} />
+            </Box>
+          </Box>
+
+          <Divider />
+
+          {/* 섹션 2: 관리자 / 플랜 */}
+          <Box sx={{ p: 3 }}>
+            <Typography variant="subtitle2" fontWeight={700} color="primary" sx={{ mb: 1.5 }}>
+              관리자 / 플랜
+            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+                gap: 2,
+              }}
+            >
+              <DetailField label="관리자명" value={row.adminName} />
+              <DetailField label="관리자 이메일" value={row.adminEmail} />
+              <DetailField
+                label="플랜"
+                value={
+                  row.planName
+                    ? `${row.planName} (${detailValue(row.planCode)})`
+                    : detailValue(row.planCode)
+                }
+              />
+            </Box>
+          </Box>
+
+          <Divider />
+
+          {/* 섹션 3: 온보딩 */}
+          <Box sx={{ p: 3 }}>
+            <Typography variant="subtitle2" fontWeight={700} color="primary" sx={{ mb: 2 }}>
+              온보딩
+            </Typography>
+            <Stepper
+              activeStep={onboardingActiveStep(row.onboardingStatus)}
+              alternativeLabel
+              sx={{ mb: 2 }}
+            >
+              {ONBOARDING_STEPS.map((step) => (
+                <Step key={step.status}>
+                  <StepLabel>{step.label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+            <Stack direction="row" spacing={1.25} sx={{ mt: 1 }}>
+              {isDispatchTarget ? (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => dispatchMutation.mutate()}
+                  disabled={dispatchMutation.isPending || resendMutation.isPending}
+                >
+                  메일 발송
+                </Button>
+              ) : null}
+              {isResendTarget ? (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => resendMutation.mutate()}
+                  disabled={dispatchMutation.isPending || resendMutation.isPending}
+                >
+                  메일 재발송
+                </Button>
+              ) : null}
+              {!isDispatchTarget && !isResendTarget ? (
+                <Alert severity="info" sx={{ width: '100%' }}>
+                  현재 상태에서는 메일 액션이 필요하지 않습니다.
+                </Alert>
+              ) : null}
+            </Stack>
+          </Box>
+        </Paper>
       ) : null}
 
       {row && editOpen ? (
