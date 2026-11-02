@@ -19,7 +19,7 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
   const { openWorkDraft, dialog } = useOpenWorkDraft();
 
   const { label: statusLabel, color: statusColor } = pendingApproval
-    ? { label: '결재대기중', color: 'secondary' as const }
+    ? { label: '결재할문서', color: 'secondary' as const }
     : resolveApprovalStatusView({
         approvalStatusType: item.approvalStatusType,
         approvalStatusTypeName: item.approvalStatusTypeName,

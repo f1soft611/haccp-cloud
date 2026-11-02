@@ -68,7 +68,7 @@ export function TenantDashboard() {
 
     const isPendingApproval = filter.status === PENDING_APPROVAL_STATUS;
 
-    // 결재대기중이면 내가 결재할 문서(approvalSections)에 검색조건 적용
+    // 결재할문서이면 내가 결재할 문서(approvalSections)에 검색조건 적용
     const filteredSections = useMemo(
         () =>
             (isPendingApproval ? approvalSections : todoSections)

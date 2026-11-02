@@ -59,7 +59,7 @@ describe('matchesTodoFilter status rules', () => {
     ).toBe(true);
   });
 
-  it('ignores the status condition for 결재대기중 but keeps other conditions', () => {
+  it('ignores the status condition for 결재할문서 but keeps other conditions', () => {
     const approved = withStatus('승인', 'approved');
     expect(
         matchesTodoFilter(approved, {
@@ -92,7 +92,7 @@ describe('countTodoStatuses', () => {
     );
     expect(counts).toEqual({
       미작성: 2,
-      결재대기중: 3,
+      결재할문서: 3,
       결재진행중: 1,
       승인: 2,
       반려: 1,
@@ -113,7 +113,7 @@ describe('countCurrentMonthStatuses', () => {
         );
         expect(counts).toEqual({
             미작성: 1,
-            결재대기중: 2,
+            결재할문서: 2,
             결재진행중: 0,
             승인: 1,
             반려: 0,
