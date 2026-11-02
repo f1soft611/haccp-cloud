@@ -183,10 +183,7 @@ export function PlatformTenantDetailPage() {
         description="업체 기본 정보와 온보딩 상태를 확인하고 메일 발송을 처리합니다."
       />
 
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="subtitle1" fontWeight={700}>
-          업체 코드: {normalizedTenantCode || '-'}
-        </Typography>
+      <Stack direction="row" justifyContent="right" alignItems="center">
         <Button
           variant="outlined"
           onClick={() => navigate('/platform/tenants')}

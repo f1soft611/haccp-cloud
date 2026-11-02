@@ -115,23 +115,32 @@ export function PlatformTenantEditDialog({ open, tenant, onClose, onSaved }: Pro
                     ) : null}
 
                     <Stack direction="row" spacing={2}>
-                        <TextField label="업체 코드" value={tenant.tenantCode} disabled fullWidth />
+                        <TextField
+                            label="업체명"
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            required
+                            fullWidth
+                        />
+                        {/* 기존 -> value={tenant.tenantCode} (사업자번호 기반 코드) / 변경 -> value={tenant.tenantNo} (6자리 업체번호) */}
+                        <TextField label="업체 코드" value={tenant.tenantNo || '-'} disabled fullWidth />
+                    </Stack>
+                    <Stack direction="row" spacing={2}>
                         <TextField
                             label="사업자번호"
                             value={tenant.businessRegistrationNumber ?? '-'}
                             disabled
                             fullWidth
                         />
+                        <TextField
+                            label="사업자등록일"
+                            type="date"
+                            value={registrationDate}
+                            onChange={(e) => setRegistrationDate(e.target.value)}
+                            slotProps={{ inputLabel: { shrink: true } }}
+                            fullWidth
+                        />
                     </Stack>
-                    <TextField label="관리자 이메일" value={tenant.adminEmail} disabled fullWidth />
-
-                    <TextField
-                        label="업체명"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
-                        required
-                        fullWidth
-                    />
                     <TextField
                         label="법인번호"
                         value={corporateNumber}
@@ -154,22 +163,21 @@ export function PlatformTenantEditDialog({ open, tenant, onClose, onSaved }: Pro
                             fullWidth
                         />
                     </Stack>
-                    <TextField
-                        label="사업자등록일"
-                        type="date"
-                        value={registrationDate}
-                        onChange={(e) => setRegistrationDate(e.target.value)}
-                        slotProps={{ inputLabel: { shrink: true } }}
-                        fullWidth
-                    />
-                    <TextField
-                        label="업무개시일"
-                        type="date"
-                        value={serviceStartDate}
-                        onChange={(e) => setServiceStartDate(e.target.value)}
-                        slotProps={{ inputLabel: { shrink: true } }}
-                        fullWidth
-                    />
+                    <Stack direction="row" spacing={2}>
+                        <TextField label="관리자 이름" value={tenant.adminName || '-'} disabled fullWidth />
+                        <TextField label="관리자 이메일" value={tenant.adminEmail} disabled fullWidth />
+                    </Stack>
+                    <Stack direction="row" spacing={2}>
+                        <TextField label="플랜" value={tenant.planName || '-'} disabled fullWidth />
+                        <TextField
+                            label="업무개시일"
+                            type="date"
+                            value={serviceStartDate}
+                            onChange={(e) => setServiceStartDate(e.target.value)}
+                            slotProps={{ inputLabel: { shrink: true } }}
+                            fullWidth
+                        />
+                    </Stack>
 
                     <Stack spacing={1}>
                         <Typography variant="subtitle2">회사 로고</Typography>
