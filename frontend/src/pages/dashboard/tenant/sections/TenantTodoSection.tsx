@@ -1,27 +1,7 @@
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import {
-  Button,
-  Chip,
-  IconButton,
-  Skeleton,
-  Stack,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { Card, CardContent, Grid, Skeleton, Typography } from "@mui/material";
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { AdminGrid } from "../../../../shared/components/data/AdminGrid";
-import { APP_LABELS } from "../../../../shared/constants/labels";
-import { resolveApprovalStatusView } from "../../../../shared/utils/approvalStatus";
 import type { TenantTodoSectionModel } from "../hooks/useTenantDashboardData";
-import { getWorkCycleSx } from "../utils";
-import { resolveDraftRoute } from "../../../../shared/utils/workDraftRoute";
-import { useOpenWorkDraft } from "../../../../shared/hooks/useOpenWorkDraft";
+import { TenantTodoCard } from "./TenantTodoCard";
 
 type TenantTodoSectionProps = {
   isLoading: boolean;
@@ -30,31 +10,12 @@ type TenantTodoSectionProps = {
   pendingApproval?: boolean;
 };
 
-const COLUMN_COUNT = 7;
+const GRID_SIZE = { xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 };
 
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function getCurrentMonthDateRange(today: Date = new Date()): {
-  startDate: string;
-  endDate: string;
-} {
-  return {
-    startDate: formatDate(new Date(today.getFullYear(), today.getMonth(), 1)),
-    endDate: formatDate(today),
-  };
-}
-
-// 기존 -> 업무분류별 카드 안에 업무를 박스로 나열
-// 변경 -> 업무 1건 = 1행인 그리드(AdminGrid)로 표시, 분류는 행마다 반복, 최대 높이 내 스크롤
+// 기존 -> 업무 1건 = 1행인 그리드(AdminGrid) 테이블
+// 변경 -> 업무 1건 = 카드 1장인 카드 그리드 (조회 버튼, 작성 아이콘은 TenantTodoCard 로 이동)
 export function TenantTodoSection(props: TenantTodoSectionProps) {
   const { isLoading, isError, sections, pendingApproval = false } = props;
-  const navigate = useNavigate();
-  const { openWorkDraft, dialog } = useOpenWorkDraft();
 
   const rows = useMemo(
     () =>
@@ -68,150 +29,42 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
     [sections],
   );
 
-  return (
-      <>
-        <AdminGrid ariaLabel={APP_LABELS.dashboard.blocks.todos} maxHeight={560}>
-          <TableHead>
-            <TableRow>
-              <TableCell align="center" width={200}>
-                업무분류
-              </TableCell>
-              <TableCell align="center" sx={{ minWidth: 200 }}>
-                업무명
-              </TableCell>
-              <TableCell align="center" width={120}>
-                작성주기
-              </TableCell>
-              <TableCell align="center" width={110}>
-                상태
-              </TableCell>
-              <TableCell align="center" width={110}>
-                담당자
-              </TableCell>
-              <TableCell align="center" width={150}>
-                최근작성일
-              </TableCell>
-              <TableCell align="center" width={140}>
-                현황
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-                [1, 2, 3].map((skeletonId) => (
-                    <TableRow key={`todo-skeleton-${skeletonId}`}>
-                      {Array.from({ length: COLUMN_COUNT }, (_, cellIndex) => (
-                          <TableCell key={cellIndex}>
-                            <Skeleton variant="text" />
-                          </TableCell>
-                      ))}
-                    </TableRow>
-                ))
-            ) : rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={COLUMN_COUNT} align="center">
-                    <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                      {isError
-                          ? "할일 목록을 불러오지 못했습니다."
-                          : "등록된 업무가 없습니다."}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-            ) : (
-                rows.map(({ sectionLabel, sectionKey, item }) => {
-                  const { label: statusLabel, color: statusColor } = pendingApproval
-                      ? { label: '결재대기중', color: 'secondary' as const }
-                      : resolveApprovalStatusView({
-                        approvalStatusType: item.approvalStatusType,
-                        approvalStatusTypeName: item.approvalStatusTypeName,
-                        todoStatus: item.status,
-                        writtenInCycle: item.writtenInCycle,
-                      });
+  if (isLoading) {
+    return (
+      <Grid container spacing={2}>
+        {[1, 2, 3, 4].map((i) => (
+          <Grid key={i} size={GRID_SIZE}>
+            <Card variant="outlined">
+              <CardContent>
+                <Skeleton variant="text" width="60%" />
+                <Skeleton variant="text" width="80%" height={28} />
+                <Skeleton variant="text" />
+                <Skeleton variant="text" />
+                <Skeleton variant="text" />
+                <Skeleton variant="rectangular" height={36} sx={{ mt: 1 }} />
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    );
+  }
 
-                  return (
-                      <TableRow key={`${sectionKey}-${item.routeId}`} hover>
-                        <TableCell align="center">{sectionLabel}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={600}>
-                            {item.divisionName || item.title || "-"}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Chip
-                              size="small"
-                              label={item.cycleName || item.cycle || "-"}
-                              sx={{
-                                height: 22,
-                                fontWeight: 700,
-                                ...getWorkCycleSx(item.cycle),
-                              }}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <Chip
-                              size="small"
-                              label={statusLabel}
-                              color={statusColor}
-                              sx={{ height: 20, fontWeight: 700 }}
-                          />
-                        </TableCell>
-                        <TableCell align="center">{item.updatedBy}</TableCell>
-                        <TableCell align="center">{item.updatedAt || "-"}</TableCell>
-                        <TableCell align="center">
-                          <Stack
-                              direction="row"
-                              spacing={0.6}
-                              alignItems="center"
-                              justifyContent="center"
-                          >
-                            <Tooltip title="작성하러 가기">
-                              <IconButton
-                                  size="small"
-                                  color="primary"
-                                  aria-label="작성하러 가기"
-                                  onClick={() => {
-                                    // 기존 -> 항상 resolveDraftRoute (이번 주기 작성 문서가 있으면 그 결재 문서) 로 이동
-                                    // 변경 -> 결재대기중(결재할 문서)만 기존 경로, 나머지는 임시저장 확인 후 작성 화면 (같은 주기 여러 건 허용)
-                                    if (!pendingApproval) {
-                                      void openWorkDraft(item.id);
-                                      return;
-                                    }
-                                    const path = resolveDraftRoute(item);
-                                    if (!path) {
-                                      return;
-                                    }
-                                    navigate(path);
-                                  }}
-                              >
-                                <EditOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Button
-                                size="small"
-                                variant="outlined"
-                                endIcon={<ArrowForwardRoundedIcon />}
-                                onClick={() => {
-                                  const range = getCurrentMonthDateRange();
-                                  const query = new URLSearchParams({
-                                    workType: sectionLabel,
-                                    workDivisionId: item.id,
-                                    startDate: range.startDate,
-                                    endDate: range.endDate,
-                                  });
-                                  navigate(`/docs/haccp-doc?${query.toString()}`);
-                                }}
-                            >
-                              조회
-                            </Button>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                  );
-                })
-            )}
-          </TableBody>
-        </AdminGrid>
-        {dialog}
-      </>
+  if (rows.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+        {isError ? "할일 목록을 불러오지 못했습니다." : "등록된 업무가 없습니다."}
+      </Typography>
+    );
+  }
+
+  return (
+    <Grid container spacing={2}>
+      {rows.map(({ sectionLabel, sectionKey, item }) => (
+        <Grid key={`${sectionKey}-${item.routeId}`} size={GRID_SIZE}>
+          <TenantTodoCard item={item} sectionLabel={sectionLabel} pendingApproval={pendingApproval} />
+        </Grid>
+      ))}
+    </Grid>
   );
 }

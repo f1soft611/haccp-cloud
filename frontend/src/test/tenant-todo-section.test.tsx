@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { TenantTodoSection } from '../pages/dashboard/tenant/sections/TenantTodoSection';
@@ -84,12 +84,14 @@ describe('TenantTodoSection', () => {
       </AppProviders>,
     );
 
-    const grid = screen.getByRole('table', { name: '당일현황' });
-    // 헤더 1행 + 데이터 2행
-    expect(within(grid).getAllByRole('row')).toHaveLength(3);
-    expect(within(grid).getAllByText('HACCP (HA)')).toHaveLength(2);
-    expect(within(grid).getByText('점검 A')).toBeInTheDocument();
-    expect(within(grid).getByText('점검 B')).toBeInTheDocument();
+    // 기존 -> 테이블 행 3개 검증 / 변경 -> 카드 2장(업무명, 분류, 상태 칩, 미작성 버튼) 검증
+    expect(screen.getByText('점검 A')).toBeInTheDocument();
+    expect(screen.getByText('점검 B')).toBeInTheDocument();
+    expect(screen.getAllByText('HACCP (HA)')).toHaveLength(2);
+    expect(screen.getAllByText('검토자')).toHaveLength(2);
+    expect(screen.getAllByText('결재자')).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: '미작성 0건' })).toHaveLength(2);
+    expect(screen.getAllByText('미작성')).toHaveLength(2);
   });
 
   it('navigates to haccp document page with work type and current month range', () => {
@@ -141,7 +143,8 @@ describe('TenantTodoSection', () => {
       </AppProviders>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '이동' }));
+    // 기존 -> '이동' 버튼 + 당월 기간 쿼리 / 변경 -> 카드의 '미작성 N건' 버튼, workType/workDivisionId 쿼리
+    fireEvent.click(screen.getByRole('button', { name: '미작성 0건' }));
 
     expect(navigateMock).toHaveBeenCalledTimes(1);
     const destination = String(navigateMock.mock.calls[0]?.[0] || '');
@@ -151,8 +154,7 @@ describe('TenantTodoSection', () => {
     const params = new URLSearchParams(queryString);
 
     expect(params.get('workType')).toBe('HACCP (HA)');
-    expect(params.get('startDate')).toMatch(/^\d{4}-\d{2}-01$/);
-    expect(params.get('endDate')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(params.get('workDivisionId')).toBe('1');
   });
 
   it('opens work draft route when not written in current cycle even if approval id exists', async () => {
@@ -205,7 +207,7 @@ describe('TenantTodoSection', () => {
       </AppProviders>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '작성하러 가기' }));
+    fireEvent.click(screen.getByRole('button', { name: '오늘 작성' }));
 
     // 기존 -> 클릭 즉시 이동 / 변경 -> 임시저장 조회 후 이동
     await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
@@ -266,7 +268,7 @@ describe('TenantTodoSection', () => {
       </AppProviders>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '작성하러 가기' }));
+    fireEvent.click(screen.getByRole('button', { name: '오늘 작성' }));
 
     await waitFor(() => expect(navigateMock).toHaveBeenCalledTimes(1));
     expect(String(navigateMock.mock.calls[0]?.[0] || '')).toBe(
@@ -322,7 +324,7 @@ describe('TenantTodoSection', () => {
         </AppProviders>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '작성하러 가기' }));
+    fireEvent.click(screen.getByRole('button', { name: '오늘 작성' }));
     expect(
         await screen.findByText('임시저장된 문서를 불러오시겠습니까?'),
     ).toBeInTheDocument();
@@ -347,7 +349,7 @@ describe('TenantTodoSection', () => {
         </AppProviders>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '작성하러 가기' }));
+    fireEvent.click(screen.getByRole('button', { name: '오늘 작성' }));
 
     expect(getHaccpWorkDraftTemplateMock).not.toHaveBeenCalled();
     expect(navigateMock).toHaveBeenCalledWith(
