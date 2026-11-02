@@ -16,7 +16,8 @@ public class TenantUpdateRequestVO {
     private String corporateNumber;
     private String businessType;
     private String businessCategory;
-    private String registrationDate;
+    private String registrationDate;    // 사업자등록일
+    private String serviceStartDate;    // HACCP 서비스 시작일
 
     @Schema(description = "data:image/... data URL. null 이면 로고 변경 없음")
     private String logoImage;
