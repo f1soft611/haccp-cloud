@@ -1,9 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { TopGovBar } from '../shared/components/layout/TopGovBar';
-import { useAuthStore } from '../shared/store/authStore';
-import { getStoredThemeMode } from '../shared/theme/themePreference';
+import { TopGovBar } from '../../../../shared/components/layout/TopGovBar.tsx';
+import { useAuthStore } from '../../../../shared/store/authStore.ts';
+import { getStoredThemeMode } from '../../../../shared/theme/themePreference.ts';
 
 describe('TopGovBar', () => {
   it('stores dark theme preference for current user', async () => {
@@ -30,46 +30,6 @@ describe('TopGovBar', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: '다크 테마' }));
 
     expect(getStoredThemeMode('tenant_admin')).toBe('dark');
-  });
-
-  it('navigates to home when app title is clicked', async () => {
-    act(() => {
-      useAuthStore.setState({
-        isAuthenticated: false,
-        tenantCode: '',
-        userId: '',
-        role: 'TENANT_USER',
-        onboardingRequired: false,
-        onboardingStatus: 'COMPLETED',
-      });
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/documents']}>
-        <Routes>
-          <Route path="/" element={<div>home-page</div>} />
-          <Route
-            path="/documents"
-            element={
-              <>
-                <TopGovBar />
-                <div>documents-page</div>
-              </>
-            }
-          />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    const titleLink = screen.getByRole('link', {
-      name: 'HACCP 관리시스템 문서 포털 홈으로 이동',
-    });
-
-    expect(titleLink).toHaveAttribute('href', '/');
-
-    fireEvent.click(titleLink);
-
-    expect(await screen.findByText('home-page')).toBeInTheDocument();
   });
 
   it('opens the account menu for authenticated users and shows account actions', async () => {

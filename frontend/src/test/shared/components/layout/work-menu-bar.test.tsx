@@ -10,10 +10,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material';
 import { vi } from 'vitest';
-import { appTheme } from '../app/theme';
-import { AppLayout } from '../shared/components/layout/AppLayout';
-import { useAuthStore, type UserRole } from '../shared/store/authStore';
-import { APP_LABELS } from '../shared/constants/labels';
+import { appTheme } from '../../../../app/theme.ts';
+import { AppLayout } from '../../../../shared/components/layout/AppLayout.tsx';
+import { useAuthStore, type UserRole } from '../../../../shared/store/authStore.ts';
+import { APP_LABELS } from '../../../../shared/constants/labels.ts';
 
 const mockListAccessibleMenuPaths = vi.fn<() => Promise<string[]>>();
 const mockListAccessibleMenus = vi.fn();
@@ -380,17 +380,14 @@ describe('WorkMenuBar role-based visibility', () => {
     expect(screen.queryByTestId('org-users-stub')).not.toBeInTheDocument();
   });
 
-  it('work-menu-bar has segmented nav variant marker', async () => {
+  it('renders the left side navigation', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
     await screen.findByRole('button', {
       name: APP_LABELS.menu.dashboardGroup,
     });
 
-    expect(screen.getByTestId('work-menu-bar')).toHaveAttribute(
-      'data-nav-variant',
-      'segmented',
-    );
+    expect(screen.getByTestId('side-nav')).toBeInTheDocument();
   });
 
   it('does not show placeholder menu groups before accessible menu paths are resolved', async () => {
@@ -450,7 +447,7 @@ describe('WorkMenuBar role-based visibility', () => {
     });
   });
 
-  it('closes the dropdown after clicking a menu item', async () => {
+  it('keeps the group open and marks the clicked item as current', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
     const platformGroupButton = await screen.findByRole('button', {
@@ -463,21 +460,30 @@ describe('WorkMenuBar role-based visibility', () => {
     });
     fireEvent.click(tenantsLink);
 
-    await waitFor(() => {
-      expect(
-        screen.queryByRole('link', {
+    expect(
+        await screen.findByTestId('platform-tenants-stub'),
+    ).toBeInTheDocument();
+    expect(
+        screen.getByRole('link', {
           name: APP_LABELS.menu.platformFactoryManagement,
         }),
-      ).not.toBeInTheDocument();
-    });
+    ).toHaveAttribute('aria-current', 'page');
   });
 
-  it('group buttons expose aria-pressed state', async () => {
+  it('group buttons expose aria-expanded state', async () => {
     renderLayoutWithRole('PLATFORM_ADMIN', '/dashboard');
 
-    const [systemBtn] = await within(
-      screen.getByTestId('work-menu-bar'),
-    ).findAllByRole('button');
-    expect(systemBtn).toHaveAttribute('aria-pressed');
+    const sideNav = await screen.findByTestId('side-nav');
+
+    expect(
+        await within(sideNav).findByRole('button', {
+          name: APP_LABELS.menu.dashboardGroup,
+        }),
+    ).toHaveAttribute('aria-expanded', 'true');
+    expect(
+        within(sideNav).getByRole('button', {
+          name: APP_LABELS.menu.platformGroup,
+        }),
+    ).toHaveAttribute('aria-expanded', 'false');
   });
 });

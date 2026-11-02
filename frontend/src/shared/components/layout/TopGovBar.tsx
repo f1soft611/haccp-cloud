@@ -1,29 +1,27 @@
 import { type MouseEvent, useEffect, useMemo, useState } from 'react';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import TextFieldsRoundedIcon from '@mui/icons-material/TextFieldsRounded';
 import {
-  Box,
-  Button,
-  Link,
-  Container,
-  Menu,
-  MenuItem,
-  Stack,
-  Typography,
+    Box,
+    Button,
+    IconButton,
+    Menu,
+    MenuItem,
+    Stack,
+    Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Link as RouterLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { APP_LABELS } from '../../constants/labels';
-import { loadLastLoginTenantNo } from '../../utils/loginDomainRouting';
 import {
-  getStoredThemeMode,
-  storeThemeMode,
-  type ThemeModePreference,
+    getStoredThemeMode,
+    storeThemeMode,
+    type ThemeModePreference,
 } from '../../theme/themePreference';
 import { UserAccountMenu } from '../account/UserAccountMenu';
 
@@ -43,47 +41,13 @@ type FontSizeOptionKey = (typeof FONT_SIZE_OPTIONS)[number]['key'];
 const isFontSizeOptionKey = (value: string): value is FontSizeOptionKey =>
   FONT_SIZE_OPTIONS.some((option) => option.key === value);
 
-type TenantBrandCache = {
-  tenantNm?: string;
-  logoImage?: string;
+type TopGovBarProps = {
+    onOpenMobileNav?: () => void;
 };
 
-// function resolveTenantBrandStorageKey(domain: string): string {
-//   return `haccp.tenant-brand.${domain}`;
-// }
-// 기존 -> 도메인 기준 브랜드 캐시 키
-// 변경 -> 업체번호 기준 브랜드 캐시 키
-function resolveTenantBrandStorageKey(tenantNo: string): string {
-    return `haccp.tenant-brand.${tenantNo}`;
-}
-
-function resolveSafeLogoSrc(logoImage?: string): string {
-  const value = (logoImage ?? '').trim();
-  if (!value) {
-    return '';
-  }
-
-  if (value.startsWith('data:image/')) {
-    return value;
-  }
-
-  if (value.startsWith('https://')) {
-    return value;
-  }
-
-  if (value.startsWith('http://')) {
-    return import.meta.env.PROD ? '' : value;
-  }
-
-  if (/^[a-z0-9+/=\r\n]+$/i.test(value) && value.length >= 32) {
-    const compact = value.replace(/\s+/g, '');
-    return `data:image/png;base64,${compact}`;
-  }
-
-  return '';
-}
-
-export function TopGovBar() {
+// 기존 -> export function TopGovBar() {
+// 변경 -> 모바일 사이드바를 여는 콜백을 받는다
+export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -111,37 +75,6 @@ export function TopGovBar() {
     useState<ThemeModePreference>(
       () => getStoredThemeMode(themeStorageUserId) ?? 'light',
     );
-  const tenantBrand = (() => {
-    if (typeof window === 'undefined') {
-      return { logoSrc: '', logoAlt: '업체 로고' };
-    }
-
-      // 기존 -> 마지막 로그인 도메인으로 브랜드 캐시 조회
-      // 변경 -> 마지막 로그인 업체번호로 브랜드 캐시 조회
-      const tenantNo = loadLastLoginTenantNo();
-      if (!tenantNo) {
-          return { logoSrc: '', logoAlt: '업체 로고' };
-      }
-
-    try {
-      const raw = window.sessionStorage.getItem(
-          resolveTenantBrandStorageKey(tenantNo),
-      );
-      if (!raw) {
-        return { logoSrc: '', logoAlt: '업체 로고' };
-      }
-
-      const parsed = JSON.parse(raw) as TenantBrandCache;
-      const safeSrc = resolveSafeLogoSrc(parsed.logoImage);
-      const tenantName = (parsed.tenantNm ?? '').trim();
-      return {
-        logoSrc: safeSrc,
-        logoAlt: tenantName ? `${tenantName} 로고` : '업체 로고',
-      };
-    } catch {
-      return { logoSrc: '', logoAlt: '업체 로고' };
-    }
-  })();
 
   const selectedFontSize = useMemo(
     () =>
@@ -197,196 +130,114 @@ export function TopGovBar() {
     handleThemeMenuClose();
   };
 
-  return (
-    <Box
-      data-testid="top-gov-bar"
-      sx={{
-        bgcolor: isDarkMode ? '#111827' : 'common.white',
-        color: isDarkMode ? '#f8fafc' : 'text.primary',
-        borderBottom: '1px solid',
-        borderColor: isDarkMode ? 'rgba(251,191,36,0.28)' : 'divider',
-      }}
-    >
-      <Box
-        sx={{
-          bgcolor: isDarkMode ? '#0f172a' : '#EEF4FB',
-          borderBottom: '1px solid',
-          borderColor: isDarkMode ? 'rgba(251,191,36,0.2)' : 'divider',
-        }}
-      >
-          <Container maxWidth="xl" sx={{ py: 0.75 }}>
-              <Typography
-                variant="caption"
-                sx={{ display: 'block', textAlign: 'left' }}
-              >
-                {APP_LABELS.header.govNotice}
-              </Typography>
-          </Container>
-      </Box>
+    const headerButtonSx = {
+        borderRadius: 999,
+        px: 1.4,
+        py: 0.45,
+        minHeight: 34,
+        borderColor: 'rgba(255,255,255,0.32)',
+        color: '#f8fafc',
+        fontWeight: 700,
+        '&:hover': {
+            borderColor: isDarkMode ? '#fbbf24' : '#ffffff',
+            bgcolor: 'rgba(255,255,255,0.12)',
+        },
+    } as const;
 
-      <Container maxWidth="xl">
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          alignItems={{ xs: 'stretch', md: 'center' }}
-          justifyContent="space-between"
-          spacing={{ xs: 1.1, md: 0 }}
-          sx={{ py: 1.25 }}
-        >
-          <Link
-            component={RouterLink}
-            to="/"
-            underline="none"
-            color="inherit"
-            aria-label={`${APP_LABELS.appTitle} ${APP_LABELS.appSubtitle} 홈으로 이동`}
+    return (
+        <Box
+            data-testid="top-gov-bar"
             sx={{
-              display: 'inline-block',
-              borderRadius: 1,
-              '&:focus-visible': {
-                outline: isDarkMode ? '2px solid #fbbf24' : '2px solid #0f766e',
-                outlineOffset: '2px',
-              },
+                bgcolor: isDarkMode ? '#111827' : '#1b2a4e',
+                color: '#f8fafc',
+                borderBottom: '1px solid',
+                borderColor: isDarkMode ? 'rgba(251,191,36,0.28)' : '#1b2a4e',
             }}
-          >
-            {tenantBrand.logoSrc ? (
-              <Box
-                component="img"
-                src={tenantBrand.logoSrc}
-                alt={tenantBrand.logoAlt}
-                sx={{
-                  display: 'block',
-                  maxWidth: 163,
-                  height: 28,
-                  objectFit: 'contain',
-                  imageRendering: '-webkit-optimize-contrast',
-                }}
-              />
-            ) : (
-              <Typography
-                variant="subtitle1"
-                fontWeight={800}
-                sx={{ letterSpacing: 0.1, textAlign: 'left' }}
-              >
-                업체 포털
-              </Typography>
-            )}
-          </Link>
-
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
-            spacing={1}
-            sx={{ flexWrap: 'wrap' }}
-          >
-            <Button
-              variant="outlined"
-              color="inherit"
-              startIcon={<SearchRoundedIcon fontSize="small" />}
-              aria-label={APP_LABELS.header.searchAction}
-              sx={{
-                  display: 'none',
-                borderRadius: 999,
-                px: 1.5,
-                py: 0.45,
-                minHeight: 34,
-                borderColor: 'rgba(15,23,42,0.2)',
-                color: isDarkMode ? '#f8fafc' : '#0f172a',
-                fontWeight: 700,
-                '&:hover': {
-                  borderColor: isDarkMode ? '#fbbf24' : '#0f766e',
-                  bgcolor: isDarkMode
-                    ? 'rgba(251,191,36,0.12)'
-                    : 'rgba(20,184,166,0.08)',
-                },
-              }}
+        >
+            <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{ px: { xs: 2, md: 3 }, minHeight: 48 }}
             >
-              {APP_LABELS.header.searchAction}
-            </Button>
+                {onOpenMobileNav ? (
+                    <IconButton
+                        aria-label="메뉴 열기"
+                        onClick={onOpenMobileNav}
+                        sx={{ display: { xs: 'inline-flex', md: 'none' }, color: 'inherit' }}
+                    >
+                        <MenuRoundedIcon />
+                    </IconButton>
+                ) : null}
 
-            <Button
-              variant="outlined"
-              color="inherit"
-              aria-label="테마"
-              onClick={handleThemeMenuOpen}
-              startIcon={<PaletteOutlinedIcon fontSize="small" />}
-              endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
-              sx={{
-                borderRadius: 999,
-                px: 1.4,
-                py: 0.45,
-                minHeight: 34,
-                borderColor: 'rgba(15,23,42,0.2)',
-                color: isDarkMode ? '#f8fafc' : '#0f172a',
-                fontWeight: 700,
-                '&:hover': {
-                  borderColor: isDarkMode ? '#fbbf24' : '#0f766e',
-                  bgcolor: isDarkMode
-                    ? 'rgba(251,191,36,0.12)'
-                    : 'rgba(20,184,166,0.08)',
-                },
-              }}
-            >
-              테마
-            </Button>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        flex: 1,
+                        textAlign: 'center',
+                        display: { xs: 'none', sm: 'block' },
+                    }}
+                >
+                    {APP_LABELS.header.govNotice}
+                </Typography>
 
-            <Button
-              variant="outlined"
-              color="inherit"
-              aria-label={APP_LABELS.header.fontSizeAction}
-              onClick={handleFontSizeMenuOpen}
-              startIcon={<TextFieldsRoundedIcon fontSize="small" />}
-              endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
-              sx={{
-                borderRadius: 999,
-                px: 1.4,
-                py: 0.45,
-                minHeight: 34,
-                borderColor: 'rgba(15,23,42,0.2)',
-                color: isDarkMode ? '#f8fafc' : '#0f172a',
-                fontWeight: 700,
-                '&:hover': {
-                  borderColor: isDarkMode ? '#fbbf24' : '#0f766e',
-                  bgcolor: isDarkMode
-                    ? 'rgba(251,191,36,0.12)'
-                    : 'rgba(20,184,166,0.08)',
-                },
-              }}
-            >
-              {APP_LABELS.header.fontSizeAction}
-            </Button>
+                <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={1}
+                    sx={{ ml: 'auto', py: 0.75 }}
+                >
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        startIcon={<SearchRoundedIcon fontSize="small" />}
+                        aria-label={APP_LABELS.header.searchAction}
+                        sx={{ ...headerButtonSx, display: 'none' }}
+                    >
+                        {APP_LABELS.header.searchAction}
+                    </Button>
 
-              <Button
-                  component="a"
-                  href="/manual/index.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="outlined"
-                  color="inherit"
-                  aria-label={APP_LABELS.header.manualAction}
-                  startIcon={<HelpOutlineRoundedIcon fontSize="small" />}
-                  sx={{
-                      borderRadius: 999,
-                      px: 1.4,
-                      py: 0.45,
-                      minHeight: 34,
-                      borderColor: 'rgba(15,23,42,0.2)',
-                      color: isDarkMode ? '#f8fafc' : '#0f172a',
-                      fontWeight: 700,
-                      '&:hover': {
-                          borderColor: isDarkMode ? '#fbbf24' : '#0f766e',
-                          bgcolor: isDarkMode
-                              ? 'rgba(251,191,36,0.12)'
-                              : 'rgba(20,184,166,0.08)',
-                      },
-                  }}
-              >
-                  {APP_LABELS.header.manualAction}
-              </Button>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        aria-label="테마"
+                        onClick={handleThemeMenuOpen}
+                        startIcon={<PaletteOutlinedIcon fontSize="small" />}
+                        endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
+                        sx={headerButtonSx}
+                    >
+                        테마
+                    </Button>
 
-            <UserAccountMenu />
-          </Stack>
-        </Stack>
-      </Container>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        aria-label={APP_LABELS.header.fontSizeAction}
+                        onClick={handleFontSizeMenuOpen}
+                        startIcon={<TextFieldsRoundedIcon fontSize="small" />}
+                        endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
+                        sx={headerButtonSx}
+                    >
+                        {APP_LABELS.header.fontSizeAction}
+                    </Button>
+
+                    <Button
+                        component="a"
+                        href="/manual/index.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="outlined"
+                        color="inherit"
+                        aria-label={APP_LABELS.header.manualAction}
+                        startIcon={<HelpOutlineRoundedIcon fontSize="small" />}
+                        sx={headerButtonSx}
+                    >
+                        {APP_LABELS.header.manualAction}
+                    </Button>
+
+                    <UserAccountMenu />
+                </Stack>
+            </Stack>
 
       <Menu
         anchorEl={themeMenuAnchor}
