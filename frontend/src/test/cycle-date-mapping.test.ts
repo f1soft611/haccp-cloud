@@ -53,6 +53,8 @@ function buildItem(
         writtenInCycle: false,
         routeIdType: 'work',
         routeId: '1',
+        dDay: '',
+        unwrittenCount: 0,
         ...overrides,
     };
 }
