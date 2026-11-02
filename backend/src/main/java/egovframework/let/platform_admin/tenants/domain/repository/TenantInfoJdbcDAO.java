@@ -331,7 +331,8 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
             String corporateNumber,
             String businessType,
             String businessCategory,
-            String registrationDate) {
+            String registrationDate,
+            String serviceStartDate) {
         Map<String, Object> param = new HashMap<String, Object>();
         param.put("tenantId", tenantId);
         param.put("tenantNm", tenantNm);
@@ -339,6 +340,7 @@ public class TenantInfoJdbcDAO extends EgovAbstractMapper implements TenantInfoD
         param.put("businessType", businessType);
         param.put("businessCategory", businessCategory);
         param.put("registrationDate", registrationDate);
+        param.put("serviceStartDate", serviceStartDate);
         return update("TenantInfoDAO.updateTenantBasicInfo", param);
     }
 }
