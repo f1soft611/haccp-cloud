@@ -58,8 +58,8 @@ export function HaccpBaseCreateDialog(props: {
 
     const findCategoryCode = (categoryId: string) =>
         categoryOptions.find((category) => category.id === categoryId)?.code ?? '';
-    // 기존 -> 분류코드 + 등록주기로 판단 / 변경 -> 분류코드로만 판단
-    const showExpiration = isExpirationTarget(findCategoryCode(value.categoryId));
+    // 기존 -> 분류코드로만 판단 / 변경 -> HCP- 분류코드 + 수시 주기일 때만 만료일 관리 표시
+    const showExpiration = isExpirationTarget(findCategoryCode(value.categoryId)) && value.cycle === 'ANYTIME';
 
   return (
     <FormDialog
@@ -140,11 +140,12 @@ export function HaccpBaseCreateDialog(props: {
               select
               label="작성주기"
               value={value.cycle}
-              // 기존 -> 수시가 아니면 만료일 관리 양식 N 초기화 / 변경 -> 등록주기만 변경 (만료일은 분류로만 판단)
+              // 기존 -> 등록주기만 변경 / 변경 -> 수시가 아니면 만료일 관리 N 초기화
               onChange={(event) =>
                   onChange({
                       ...value,
                       cycle: event.target.value,
+                      expirationApply: event.target.value === 'ANYTIME' ? value.expirationApply : 'N',
                   })
               }
               required
