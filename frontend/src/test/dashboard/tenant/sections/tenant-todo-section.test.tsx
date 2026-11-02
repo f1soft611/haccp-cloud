@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { TenantTodoSection } from '../pages/dashboard/tenant/sections/TenantTodoSection';
+import { AppProviders } from '../../../../app/providers/AppProviders.tsx';
+import { TenantTodoSection } from '../../../../pages/dashboard/tenant/sections/TenantTodoSection.tsx';
 
 const { navigateMock } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
@@ -24,7 +24,7 @@ const { getHaccpWorkDraftTemplateMock } = vi.hoisted(() => ({
 
 vi.mock('../services/documents/haccpBaseWorkService', async () => {
   const actual = await vi.importActual<
-      typeof import('../services/documents/haccpBaseWorkService')
+      typeof import('../../../../services/documents/haccpBaseWorkService.ts')
   >('../services/documents/haccpBaseWorkService');
   return {
     ...actual,
@@ -84,13 +84,14 @@ describe('TenantTodoSection', () => {
       </AppProviders>,
     );
 
-    // 기존 -> 테이블 행 3개 검증 / 변경 -> 카드 2장(업무명, 분류, 상태 칩, 미작성 버튼) 검증
     expect(screen.getByText('점검 A')).toBeInTheDocument();
     expect(screen.getByText('점검 B')).toBeInTheDocument();
     expect(screen.getAllByText('HACCP (HA)')).toHaveLength(2);
-    expect(screen.getAllByText('검토자')).toHaveLength(2);
-    expect(screen.getAllByText('결재자')).toHaveLength(2);
+    expect(screen.getAllByText('검토:- / 승인:-')).toHaveLength(2);
+    expect(screen.getAllByText('최신 : 2026-07-20 / -')).toHaveLength(2);
+    expect(screen.getAllByText('월')).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: '미작성 0건' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: '오늘 작성' })).toHaveLength(2);
     expect(screen.getAllByText('미작성')).toHaveLength(2);
   });
 

@@ -10,10 +10,8 @@ type TenantTodoSectionProps = {
   pendingApproval?: boolean;
 };
 
-const GRID_SIZE = { xs: 12, sm: 6, md: 4, lg: 3, xl: 2.4 };
+const GRID_SIZE = { xs: 12, sm: 6, md: 4, lg: 3, xl: 3 };
 
-// 기존 -> 업무 1건 = 1행인 그리드(AdminGrid) 테이블
-// 변경 -> 업무 1건 = 카드 1장인 카드 그리드 (조회 버튼, 작성 아이콘은 TenantTodoCard 로 이동)
 export function TenantTodoSection(props: TenantTodoSectionProps) {
   const { isLoading, isError, sections, pendingApproval = false } = props;
 
@@ -29,26 +27,28 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
     [sections],
   );
 
-  if (isLoading) {
-    return (
-      <Grid container spacing={2}>
-        {[1, 2, 3, 4].map((i) => (
-          <Grid key={i} size={GRID_SIZE}>
-            <Card variant="outlined">
-              <CardContent>
-                <Skeleton variant="text" width="60%" />
-                <Skeleton variant="text" width="80%" height={28} />
-                <Skeleton variant="text" />
-                <Skeleton variant="text" />
-                <Skeleton variant="text" />
-                <Skeleton variant="rectangular" height={36} sx={{ mt: 1 }} />
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-    );
-  }
+    if (isLoading) {
+        return (
+            <Grid container spacing={2}>
+                {[1, 2, 3, 4].map((i) => (
+                    <Grid key={i} size={GRID_SIZE}>
+                        <Card
+                            variant="outlined"
+                            sx={{ borderTop: '3px solid', borderTopColor: 'primary.main', borderRadius: '4px' }}
+                        >
+                            <CardContent>
+                                <Skeleton variant="text" width="50%" />
+                                <Skeleton variant="text" width="30%" />
+                                <Skeleton variant="text" width="80%" height={28} />
+                                <Skeleton variant="text" width="60%" />
+                                <Skeleton variant="rectangular" height={32} sx={{ mt: 1 }} />
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                ))}
+            </Grid>
+        );
+    }
 
   if (rows.length === 0) {
     return (
