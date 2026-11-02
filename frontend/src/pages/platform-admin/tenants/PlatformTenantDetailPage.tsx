@@ -237,7 +237,7 @@ export function PlatformTenantDetailPage() {
                   {detailValue(row.companyName)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {detailValue(row.tenantCode)} / 업체번호 {detailValue(row.tenantNo)}
+                  업체번호 {detailValue(row.tenantNo)}
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
