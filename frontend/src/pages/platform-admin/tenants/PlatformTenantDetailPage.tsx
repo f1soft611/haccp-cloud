@@ -298,7 +298,8 @@ export function PlatformTenantDetailPage() {
                       label="사업자번호"
                       value={row.businessRegistrationNumber}
                   />
-                  <DetailField label="개업일" value={row.registrationDate} />
+                  <DetailField label="사업자등록일" value={row.registrationDate} />
+                  <DetailField label="업무개시일" value={row.serviceStartDate} />
                 </Box>
               </CardContent>
             </Card>
