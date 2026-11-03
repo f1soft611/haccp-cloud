@@ -2900,9 +2900,18 @@ export const handlers = [
           { status: 409 },
       );
     }
+    // 기존 -> 생성 결과로 연도 전체를 교체
+    // 변경 -> 실제 백엔드처럼 직접 수정(MANUAL)한 날짜는 유지
+    const manualByDate = new Map(
+        (workdayStore.get(body.year) ?? [])
+        .filter((item) => item.source === 'MANUAL')
+        .map((item) => [item.workdayDate, item]),
+    );
     workdayStore.set(
         body.year,
-        buildMockWorkdays(body.year, body.weeklyOffDays, body.includePublicHolidays),
+        buildMockWorkdays(body.year, body.weeklyOffDays, body.includePublicHolidays).map(
+            (item) => manualByDate.get(item.workdayDate) ?? item,
+        ),
     );
     return HttpResponse.json({ resultCode: 200, result: { message: '생성되었습니다.' } });
   }),

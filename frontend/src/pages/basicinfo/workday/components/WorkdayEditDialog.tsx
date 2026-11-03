@@ -59,7 +59,7 @@ export function WorkdayEditDialog({ item, onClose, onSubmit }: WorkdayEditDialog
                         onChange={(event) => setMemo(event.target.value)}
                         multiline
                         minRows={2}
-                        inputProps={{ maxLength: 500 }}
+                        inputProps={{ maxLength: 100 }}
                     />
                 </Stack>
             </DialogContent>
