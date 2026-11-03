@@ -45,8 +45,7 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
     };
 
     const handleUnwritten = () => {
-        // ponytail: 미작성 목록 화면은 별도 설계 예정, 일단 HACCP 문서 목록으로 이동
-        const query = new URLSearchParams({ workType: sectionLabel, workDivisionId: item.id });
+        const query = new URLSearchParams({ workType: sectionLabel, workDivisionId: item.id, status: '미작성' });
         navigate(`/docs/haccp-doc?${query.toString()}`);
     };
 
