@@ -76,6 +76,7 @@ export function WorkdayPage() {
             );
             setGenerateOpen(false);
             await queryClient.invalidateQueries({ queryKey: ['basicinfo-workday'] });
+            await queryClient.invalidateQueries({ queryKey: ['basicinfo-week'] });
         },
     });
 

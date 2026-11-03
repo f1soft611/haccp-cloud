@@ -91,7 +91,8 @@ export function WorkdayListTable({ items, changedDates, weeks, onChangeRow }: Wo
                     }
                 }}
                 disableRowSelectionOnClick
-                hideFooter
+                // 기존 -> hideFooter (MIT DataGrid 는 페이지당 100행 제한이라 100일 이후가 안 보임)
+                // 변경 -> footer 표시로 페이지 이동 가능
                 localeText={{
                     ...koKR.components.MuiDataGrid.defaultProps.localeText,
                     noRowsLabel: '조회된 업무일이 없습니다.',
