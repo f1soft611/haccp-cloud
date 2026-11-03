@@ -127,6 +127,7 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
             runScript(tenantJdbcUrl, tenantBootstrapFile, bootstrapVariables);
             upsertTenantMenuCatalog(tenantJdbcUrl, expandedMenuCodes);
             copyCommonCodes(tenantJdbcUrl, tenantId);
+            copyWorkCalendar(tenantJdbcUrl, tenantId);
 
             // 기존 -> 분류 스크립트도 optionalScripts 에 포함해 emptyMap 으로 실행
             // 변경 -> 분류 스크립트는 plan_code 조건이 있어 bootstrapVariables 로 실행
@@ -399,6 +400,52 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
             } catch (Exception ex) {
                 tenant.rollback();
                 throw new IllegalStateException("Failed to copy common codes to tenant database", ex);
+            }
+        }
+    }
+
+    // central(플랫폼) 근무일(tb_workdate), 주차(tb_week)를 새 업체 tenant_id 로 복사한다. PK는 테넌트 시퀀스로 새로 매김.
+    // ponytail: 업체 생성 시 1회 복사. 운영 중 업체는 DATABASE/migrate_tenant_workdate_week.ps1 로 반영
+    private void copyWorkCalendar(String tenantJdbcUrl, Long tenantId) throws Exception {
+        String platformTenant = "(SELECT tenant_id FROM public.tb_tenant WHERE UPPER(tenant_code) IN ('PLATFORM', '000001') ORDER BY tenant_id LIMIT 1)";
+
+        try (Connection central = openConnection(postgresUrl);
+             Connection tenant = openConnection(tenantJdbcUrl)) {
+            tenant.setAutoCommit(false);
+            try {
+                try (PreparedStatement select = central.prepareStatement(
+                        "SELECT work_date, work_type FROM public.tb_workdate WHERE tenant_id = " + platformTenant + " ORDER BY work_date");
+                     PreparedStatement insert = tenant.prepareStatement(
+                             "INSERT INTO public.tb_workdate (tenant_id, work_date, work_type) VALUES (?, ?, ?) ON CONFLICT DO NOTHING");
+                     ResultSet rs = select.executeQuery()) {
+                    while (rs.next()) {
+                        insert.setLong(1, tenantId);
+                        insert.setDate(2, rs.getDate("work_date"));
+                        insert.setString(3, rs.getString("work_type"));
+                        insert.addBatch();
+                    }
+                    insert.executeBatch();
+                }
+
+                try (PreparedStatement select = central.prepareStatement(
+                        "SELECT year, from_date, to_date, week FROM public.tb_week WHERE tenant_id = " + platformTenant + " ORDER BY year, week");
+                     PreparedStatement insert = tenant.prepareStatement(
+                             "INSERT INTO public.tb_week (tenant_id, year, from_date, to_date, week) VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING");
+                     ResultSet rs = select.executeQuery()) {
+                    while (rs.next()) {
+                        insert.setLong(1, tenantId);
+                        insert.setInt(2, rs.getInt("year"));
+                        insert.setDate(3, rs.getDate("from_date"));
+                        insert.setDate(4, rs.getDate("to_date"));
+                        insert.setInt(5, rs.getInt("week"));
+                        insert.addBatch();
+                    }
+                    insert.executeBatch();
+                }
+                tenant.commit();
+            } catch (Exception ex) {
+                tenant.rollback();
+                throw new IllegalStateException("Failed to copy work calendar to tenant database", ex);
             }
         }
     }
