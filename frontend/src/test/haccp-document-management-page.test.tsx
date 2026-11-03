@@ -34,6 +34,7 @@ function formatDate(date: Date): string {
 
 describe('HaccpDocumentManagementPage', () => {
   beforeEach(() => {
+    vi.mocked(getHaccpWorkDraftTemplate).mockClear();
     vi.mocked(listHaccpDocuments).mockReset();
     vi.mocked(listHaccpDocuments).mockResolvedValue({
       items: [
@@ -403,5 +404,45 @@ describe('HaccpDocumentManagementPage', () => {
       );
     });
     expect(screen.queryByText(/^기안일:/)).not.toBeInTheDocument();
+  });
+
+  it('moves to the cycle draft page from an unwritten row', async () => {
+    vi.mocked(listHaccpDocuments).mockResolvedValue({
+      items: [
+        {
+          id: 'w-1-2026-10-05',
+          approvalId: '',
+          workId: 'w-1',
+          workType: 'HACCP (HA)',
+          workDivision: 'CCP-1B 검증기록',
+          draftNumber: '',
+          title: 'CCP-1B 검증기록 - 2026-10-05',
+          writer: '',
+          status: '미작성',
+          draftedAt: '',
+          updatedAt: '',
+          cycleDate: '2026-10-05',
+        },
+      ],
+      totalCount: 1,
+    });
+    window.history.pushState({}, '', `/docs/haccp-doc?status=${encodeURIComponent('미작성')}`);
+
+    render(
+        <AppProviders>
+          <HaccpDocumentManagementPage />
+        </AppProviders>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: '작성하러 가기' }));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/approvals/draft/w-1');
+    });
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get('idType')).toBe('work');
+    expect(params.get('cycleDate')).toBe('2026-10-05');
+    expect(params.get('returnTo')).toContain('/docs/haccp-doc');
+    expect(getHaccpWorkDraftTemplate).not.toHaveBeenCalled();
   });
 });

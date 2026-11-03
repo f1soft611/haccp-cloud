@@ -16,6 +16,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { GridPaginationBar } from '../../../../shared/components/data/GridPaginationBar';
 import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
+import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
 import type { HaccpDocumentItem } from '../../../../services/documents/haccpDocumentService';
 
 export function HaccpDocumentGrid(props: {
@@ -151,12 +152,14 @@ export function HaccpDocumentGrid(props: {
                     label={row.status}
                     color={
                       row.status === '승인'
-                        ? 'success'
-                        : row.status === '결재진행중'
-                          ? 'warning'
-                          : row.status === '임시저장'
-                            ? 'info'
-                            : 'error'
+                          ? 'success'
+                          : row.status === '결재진행중'
+                              ? 'warning'
+                              : row.status === '임시저장'
+                                  ? 'info'
+                                  : row.status === '미작성'
+                                      ? 'default'
+                                      : 'error'
                     }
                   />
                 </TableCell>
@@ -197,10 +200,15 @@ export function HaccpDocumentGrid(props: {
                           disabled={!row.workId}
                           sx={row.workId ? actionIconSx : undefined}
                           onClick={() => {
-                            void openWorkDraft(
-                              row.workId,
-                              `${location.pathname}${location.search || ''}`,
-                            );
+                            const returnTo = `${location.pathname}${location.search || ''}`;
+                            const cyclePath = row.cycleDate
+                                ? resolveDraftRoute({ id: row.workId }, row.cycleDate)
+                                : null;
+                            if (cyclePath) {
+                              navigate(`${cyclePath}&returnTo=${encodeURIComponent(returnTo)}`);
+                              return;
+                            }
+                            void openWorkDraft(row.workId, returnTo);
                           }}
                         >
                           <EditOutlinedIcon fontSize="small" />
