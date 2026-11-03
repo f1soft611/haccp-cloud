@@ -12,6 +12,15 @@
         <result property="source" column="source"/>
     </resultMap>
 
+    <!-- 주차 resultMap -->
+    <resultMap id="weekResult"
+               type="egovframework.let.basicinfo.workday.domain.model.WeekVO">
+        <result property="year" column="year"/>
+        <result property="week" column="week"/>
+        <result property="fromDate" column="fromDate"/>
+        <result property="toDate" column="toDate"/>
+    </resultMap>
+
     <!-- 연도별 업무일 목록 -->
     <select id="WorkdayDAO.selectWorkdayList"
             parameterType="map"
@@ -71,6 +80,38 @@
                                                       updated_at  = CURRENT_TIMESTAMP
                                                   WHERE tb_workdate.work_source IS DISTINCT FROM 'MANUAL'
     </insert>
+
+    <!-- 업무일 생성 시 주차 저장: (tenant, year, week) 이 있으면 기간만 갱신 -->
+    <insert id="WorkdayDAO.upsertWeek"
+            parameterType="map">
+        INSERT INTO tb_week (tenant_id, year, week, from_date, to_date, created_by)
+        VALUES (#{tenantId},
+                #{year},
+                #{week},
+                CAST(#{fromDate} AS DATE),
+                CAST(#{toDate} AS DATE),
+                #{operatorUserId, jdbcType=BIGINT})
+            ON CONFLICT (tenant_id, year, week) DO UPDATE
+                                                       SET from_date  = EXCLUDED.from_date,
+                                                       to_date    = EXCLUDED.to_date,
+                                                       updated_by = EXCLUDED.created_by,
+                                                       updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <!-- 조회 기간과 겹치는 주차 (ix_week_tenant_date) -->
+    <select id="WorkdayDAO.selectWeekList"
+            parameterType="map"
+            resultMap="weekResult">
+        SELECT k.year                              AS year,
+               k.week                              AS week,
+               to_char(k.from_date, 'YYYY-MM-DD')  AS fromDate,
+               to_char(k.to_date, 'YYYY-MM-DD')    AS toDate
+        FROM tb_week k
+        WHERE k.tenant_id = #{tenantId}
+          AND k.from_date &lt;= CAST(#{to} AS DATE)
+          AND k.to_date &gt;= CAST(#{from} AS DATE)
+        ORDER BY k.from_date
+    </select>
 
     <select id="WorkdayDAO.selectTenantIdByCode"
             parameterType="string"

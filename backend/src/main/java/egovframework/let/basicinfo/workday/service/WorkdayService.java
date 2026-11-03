@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import egovframework.let.basicinfo.workday.domain.model.WeekVO;
 import egovframework.let.basicinfo.workday.domain.model.WorkdayGenerateRequestVO;
 import egovframework.let.basicinfo.workday.domain.model.WorkdaySaveRequestVO;
 import egovframework.let.basicinfo.workday.domain.model.WorkdayVO;
@@ -25,4 +26,8 @@ public interface WorkdayService {
 
     // holidays 는 트랜잭션 밖(컨트롤러)에서 미리 받아 넘긴다
     void generateWorkdays(WorkdayGenerateRequestVO payload, Map<LocalDate, String> holidays) throws Exception;
+
+    // from ~ to 와 겹치는 주차 (YYYY-MM-DD)
+    List<WeekVO> listWeeks(String tenantCode, String from, String to) throws Exception;
+
 }

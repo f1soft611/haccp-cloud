@@ -59,6 +59,17 @@ public class WorkdayApiController {
         return resultVoHelper.buildFromMap(response, ResponseCode.SUCCESS);
     }
 
+    @GetMapping("/weeks")
+    public ResultVO listWeeks(
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @RequestParam String from,
+            @RequestParam String to,
+            HttpServletRequest request) throws Exception {
+        Map<String, Object> response = new HashMap<String, Object>();
+        response.put("items", workdayService.listWeeks(resolveTenantCode(tenantHeader), from, to));
+        return resultVoHelper.buildFromMap(response, ResponseCode.SUCCESS);
+    }
+
     @PutMapping("/batch")
     public ResultVO saveWorkdays(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,

@@ -1,7 +1,9 @@
 package egovframework.let.basicinfo.workday.service.impl;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.IsoFields;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,6 +15,7 @@ import java.util.Set;
 
 import javax.annotation.Resource;
 
+import egovframework.let.basicinfo.workday.domain.model.WeekVO;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -110,6 +113,28 @@ public class WorkdayServiceImpl extends EgovAbstractServiceImpl implements Workd
             params.put("operatorUserId", operatorUserId);
             workdayDAO.upsertGeneratedWorkday(params);
         }
+
+        // 같은 트랜잭션: 업무일과 주차 중 하나라도 실패하면 함께 롤백
+        for (WeekVO week : buildWeeks(payload.getYear())) {
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put("tenantId", tenantId);
+            params.put("year", week.getYear());
+            params.put("week", week.getWeek());
+            params.put("fromDate", week.getFromDate());
+            params.put("toDate", week.getToDate());
+            params.put("operatorUserId", operatorUserId);
+            workdayDAO.upsertWeek(params);
+        }
+    }
+
+    @Override
+    public List<WeekVO> listWeeks(String tenantCode, String from, String to) throws Exception {
+        validateWeekRange(from, to);
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", resolveTenantId(tenantCode));
+        params.put("from", from.trim());
+        params.put("to", to.trim());
+        return workdayDAO.selectWeekList(params);
     }
 
     private Long resolveTenantId(String tenantCode) throws Exception {
@@ -184,6 +209,39 @@ public class WorkdayServiceImpl extends EgovAbstractServiceImpl implements Workd
                     throw new IllegalArgumentException("휴무 요일은 0(일) ~ 6(토) 이어야 합니다.");
                 }
             }
+        }
+    }
+
+    // ISO 8601: 월요일 시작, 1월 4일이 들어 있는 주가 1주차. 52 또는 53건
+    static List<WeekVO> buildWeeks(int isoYear) {
+        List<WeekVO> weeks = new ArrayList<WeekVO>();
+        for (LocalDate monday = LocalDate.of(isoYear, 1, 4).with(DayOfWeek.MONDAY);
+             monday.get(IsoFields.WEEK_BASED_YEAR) == isoYear;
+             monday = monday.plusWeeks(1)) {
+            WeekVO week = new WeekVO();
+            week.setYear(isoYear);
+            week.setWeek(monday.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR));
+            week.setFromDate(monday.toString());
+            week.setToDate(monday.plusDays(6).toString());
+            weeks.add(week);
+        }
+        return weeks;
+    }
+
+    static void validateWeekRange(String from, String to) {
+        if (!StringUtils.hasText(from) || !StringUtils.hasText(to)) {
+            throw new IllegalArgumentException("조회 기간은 필수입니다.");
+        }
+        LocalDate start;
+        LocalDate end;
+        try {
+            start = LocalDate.parse(from.trim());
+            end = LocalDate.parse(to.trim());
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("기간 형식이 올바르지 않습니다: " + from + " ~ " + to);
+        }
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("시작일이 종료일보다 늦습니다.");
         }
     }
 

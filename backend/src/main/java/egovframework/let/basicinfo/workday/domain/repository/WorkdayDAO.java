@@ -3,6 +3,7 @@ package egovframework.let.basicinfo.workday.domain.repository;
 import java.util.List;
 import java.util.Map;
 
+import egovframework.let.basicinfo.workday.domain.model.WeekVO;
 import org.egovframe.rte.psl.dataaccess.EgovAbstractMapper;
 import org.springframework.stereotype.Repository;
 
@@ -32,6 +33,14 @@ public class WorkdayDAO extends EgovAbstractMapper {
 
     public void upsertGeneratedWorkday(Map<String, Object> params) throws Exception {
         insert("WorkdayDAO.upsertGeneratedWorkday", params);
+    }
+
+    public void upsertWeek(Map<String, Object> params) throws Exception {
+        insert("WorkdayDAO.upsertWeek", params);
+    }
+
+    public List<WeekVO> selectWeekList(Map<String, Object> params) throws Exception {
+        return selectList("WorkdayDAO.selectWeekList", params);
     }
 
     public Long selectTenantIdByCode(String tenantCode) throws Exception {

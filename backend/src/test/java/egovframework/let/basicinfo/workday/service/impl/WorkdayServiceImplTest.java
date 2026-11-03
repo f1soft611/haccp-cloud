@@ -3,6 +3,7 @@ package egovframework.let.basicinfo.workday.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -12,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import egovframework.let.basicinfo.workday.domain.model.WeekVO;
 import org.junit.jupiter.api.Test;
 
 import egovframework.let.basicinfo.workday.domain.model.WorkdayVO;
@@ -93,5 +95,36 @@ class WorkdayServiceImplTest {
                 () -> WorkdayServiceImpl.validateGenerate(1999, Arrays.asList(0, 6)));
         assertThrows(IllegalArgumentException.class,
                 () -> WorkdayServiceImpl.validateGenerate(2026, Arrays.asList(7)));
+    }
+
+    @Test
+    void 주차는_ISO_8601_기준으로_만든다() {
+        List<WeekVO> weeks2026 = WorkdayServiceImpl.buildWeeks(2026);
+        assertEquals(53, weeks2026.size());
+        WeekVO first = weeks2026.get(0);
+        assertEquals(2026, first.getYear());
+        assertEquals(1, first.getWeek());
+        assertEquals("2025-12-29", first.getFromDate());
+        assertEquals("2026-01-04", first.getToDate());
+        WeekVO last = weeks2026.get(52);
+        assertEquals(53, last.getWeek());
+        assertEquals("2026-12-28", last.getFromDate());
+        assertEquals("2027-01-03", last.getToDate());
+
+        List<WeekVO> weeks2027 = WorkdayServiceImpl.buildWeeks(2027);
+        assertEquals(52, weeks2027.size());
+        assertEquals("2027-01-04", weeks2027.get(0).getFromDate());
+        assertEquals("2027-01-10", weeks2027.get(0).getToDate());
+    }
+
+    @Test
+    void 주차_조회_기간을_검증한다() {
+        assertThrows(IllegalArgumentException.class,
+                () -> WorkdayServiceImpl.validateWeekRange("2026-02-01", "2026-01-01"));
+        assertThrows(IllegalArgumentException.class,
+                () -> WorkdayServiceImpl.validateWeekRange("2026-13-01", "2026-12-31"));
+        assertThrows(IllegalArgumentException.class,
+                () -> WorkdayServiceImpl.validateWeekRange(null, "2026-12-31"));
+        assertDoesNotThrow(() -> WorkdayServiceImpl.validateWeekRange("2026-12-01", "2028-01-31"));
     }
 }
