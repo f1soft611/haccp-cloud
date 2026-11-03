@@ -65,4 +65,19 @@ class DashboardMapperPostgresqlTest {
                     "월 이상 주기만 generate_series 를 쓴다");
         }
     }
+
+    @Test
+    void dashboardMapper_should_start_calendar_from_service_start_date() throws Exception {
+        ClassPathResource resource = new ClassPathResource(
+                "egovframework/mapper/let/dashboard/DashboardMapper_SQL_postgresql.xml");
+
+        try (InputStream inputStream = resource.getInputStream();
+             Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name())) {
+            String xml = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+            assertTrue(xml.contains("SELECT TO_CHAR(COALESCE(t.service_start_date, DATE(t.created_at)), 'YYYYMMDD')"),
+                    "캘린더 표시 시작일은 미작성 건수와 같은 서비스 시작일 기준이어야 한다");
+            assertFalse(xml.contains("join_date"),
+                    "캘린더 표시 시작일은 입사일을 보지 않는다");
+        }
+    }
 }
