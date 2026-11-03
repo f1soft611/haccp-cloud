@@ -31,6 +31,15 @@ public class HaccpWorkDAO extends EgovAbstractMapper {
         return count == null ? 0 : count.intValue();
     }
 
+    public List<HaccpWorkVO> selectUnwrittenCycleList(HaccpWorkSearchConditionVO condition) throws Exception {
+        return selectList("HaccpWorkDAO.selectUnwrittenCycleList", condition);
+    }
+
+    public int selectUnwrittenCycleListCount(HaccpWorkSearchConditionVO condition) throws Exception {
+        Integer count = selectOne("HaccpWorkDAO.selectUnwrittenCycleListCount", condition);
+        return count == null ? 0 : count.intValue();
+    }
+
     public HaccpWorkVO selectDraftTemplateByWorkId(Map<String, Object> params) throws Exception {
         return selectOne("HaccpWorkDAO.selectDraftTemplateByWorkId", params);
     }

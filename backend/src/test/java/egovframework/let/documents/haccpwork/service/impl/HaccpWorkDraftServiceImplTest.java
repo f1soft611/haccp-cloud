@@ -222,4 +222,57 @@ class HaccpWorkDraftServiceImplTest {
         assertEquals(Boolean.TRUE, captor.getAllValues().get(0).get("fresh"));
         assertEquals(Boolean.FALSE, captor.getAllValues().get(1).get("fresh"));
     }
+
+    @DisplayName("문서 목록 페이지 조회 시 상태 '미작성'은 미작성 주기 쿼리로 분기한다")
+    @Test
+    void listDocumentsPaged_routesUnwrittenStatusToCycleQuery() throws Exception {
+        HaccpWorkDAO haccpWorkDAO = org.mockito.Mockito.mock(HaccpWorkDAO.class);
+        HaccpWorkDraftServiceImpl service = new HaccpWorkDraftServiceImpl(haccpWorkDAO);
+
+        when(haccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(haccpWorkDAO.selectUserIdByTenantAndLoginId(anyMap())).thenReturn(5001L);
+        when(haccpWorkDAO.selectUnwrittenCycleList(org.mockito.ArgumentMatchers.any(HaccpWorkSearchConditionVO.class)))
+                .thenReturn(Collections.emptyList());
+        when(haccpWorkDAO.selectUnwrittenCycleListCount(org.mockito.ArgumentMatchers.any(HaccpWorkSearchConditionVO.class)))
+                .thenReturn(7);
+
+        Map<String, Object> result = service.listDocumentsPaged(
+                "tenant_001", "3001", "tenant_user",
+                "전체", "101", "", "", "", "", "",
+                "미작성", "", "",
+                1, 10
+        );
+
+        ArgumentCaptor<HaccpWorkSearchConditionVO> captor = ArgumentCaptor.forClass(HaccpWorkSearchConditionVO.class);
+        verify(haccpWorkDAO).selectUnwrittenCycleList(captor.capture());
+        verify(haccpWorkDAO, never()).selectDocumentList(org.mockito.ArgumentMatchers.any(HaccpWorkSearchConditionVO.class));
+        verify(haccpWorkDAO, never()).selectDocumentListCount(org.mockito.ArgumentMatchers.any(HaccpWorkSearchConditionVO.class));
+        assertEquals("unwritten", captor.getValue().getStatusType());
+        assertEquals("101", captor.getValue().getWorkDivisionId());
+        assertEquals(7, result.get("totalCount"));
+    }
+
+    @DisplayName("문서 목록 조회 시 상태 '결재할문서'는 pending_mine 으로 정규화된다")
+    @Test
+    void listDocuments_normalizesPendingApprovalStatus() throws Exception {
+        HaccpWorkDAO haccpWorkDAO = org.mockito.Mockito.mock(HaccpWorkDAO.class);
+        HaccpWorkDraftServiceImpl service = new HaccpWorkDraftServiceImpl(haccpWorkDAO);
+
+        when(haccpWorkDAO.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
+        when(haccpWorkDAO.selectUserIdByTenantAndLoginId(anyMap())).thenReturn(5001L);
+        when(haccpWorkDAO.selectDocumentList(org.mockito.ArgumentMatchers.any(HaccpWorkSearchConditionVO.class)))
+                .thenReturn(Collections.emptyList());
+
+        service.listDocuments(
+                "tenant_001", "3001", "tenant_user",
+                "전체", "", "", "", "", "", "",
+                "결재할문서", "2026-07-01", "2026-07-21"
+        );
+
+        ArgumentCaptor<HaccpWorkSearchConditionVO> captor = ArgumentCaptor.forClass(HaccpWorkSearchConditionVO.class);
+        verify(haccpWorkDAO).selectDocumentList(captor.capture());
+        assertEquals("pending_mine", captor.getValue().getStatusType());
+    }
 }

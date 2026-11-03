@@ -33,6 +33,8 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
 
     private final HaccpWorkDAO haccpWorkDAO;
 
+    private static final String UNWRITTEN_STATUS_TYPE = "unwritten";
+
     @Override
     public List<HaccpWorkVO> listMyDraftWorks(String tenantCode, String actorLoginCode) throws Exception {
         String normalizedTenantCode = normalizeTenantCode(tenantCode);
@@ -82,6 +84,9 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
 
         condition.setRecordCountPerPage(0);
         condition.setFirstIndex(0);
+        if (isUnwrittenSearch(condition)) {
+            return haccpWorkDAO.selectUnwrittenCycleList(condition);
+        }
         return haccpWorkDAO.selectDocumentList(condition);
     }
 
@@ -135,8 +140,13 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         condition.setLastIndex(paginationInfo.getLastRecordIndex());
         condition.setRecordCountPerPage(paginationInfo.getRecordCountPerPage());
 
-        List<HaccpWorkVO> resultList = haccpWorkDAO.selectDocumentList(condition);
-        int totalCount = haccpWorkDAO.selectDocumentListCount(condition);
+        boolean unwritten = isUnwrittenSearch(condition);
+        List<HaccpWorkVO> resultList = unwritten
+                ? haccpWorkDAO.selectUnwrittenCycleList(condition)
+                : haccpWorkDAO.selectDocumentList(condition);
+        int totalCount = unwritten
+                ? haccpWorkDAO.selectUnwrittenCycleListCount(condition)
+                : haccpWorkDAO.selectDocumentListCount(condition);
         paginationInfo.setTotalRecordCount(totalCount);
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
@@ -188,6 +198,10 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         condition.setEndDate(normalizeDate(endDate));
 
         return condition;
+    }
+
+    private boolean isUnwrittenSearch(HaccpWorkSearchConditionVO condition) {
+        return UNWRITTEN_STATUS_TYPE.equals(condition.getStatusType());
     }
 
     @Override
@@ -330,16 +344,12 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         }
 
         String normalized = status.trim().toLowerCase();
-        // 기존 -> "결재중".equals(normalized) || "in_progress".equals(normalized)
-        // 변경 -> 상태 라벨을 '결재진행중'으로 통일
         if ("결재진행중".equals(normalized) || "in_progress".equals(normalized)) {
             return "in_progress";
         }
         if ("승인".equals(normalized) || "approved".equals(normalized)) {
             return "approved";
         }
-        // 기존 -> "반송".equals(normalized) || "반려".equals(normalized)
-        // 변경 -> "반려".equals(normalized) 만 남김
         if (
                 "반려".equals(normalized)
                         || "rejected".equals(normalized)
@@ -354,6 +364,12 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
                         || "draft".equals(normalized)
         ) {
             return "pre_apply";
+        }
+        if ("미작성".equals(normalized) || "unwritten".equals(normalized)) {
+            return UNWRITTEN_STATUS_TYPE;
+        }
+        if ("결재할문서".equals(normalized) || "pending_mine".equals(normalized)) {
+            return "pending_mine";
         }
         return null;
     }
