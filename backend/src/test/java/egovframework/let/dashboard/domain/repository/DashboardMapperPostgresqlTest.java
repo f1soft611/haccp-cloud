@@ -46,4 +46,23 @@ class DashboardMapperPostgresqlTest {
                     "임시저장만 있는 주기는 미작성으로 센다");
         }
     }
+
+    @Test
+    void dashboardMapper_should_count_unwritten_by_workdate_and_week_tables() throws Exception {
+        ClassPathResource resource = new ClassPathResource(
+                "egovframework/mapper/let/dashboard/DashboardMapper_SQL_postgresql.xml");
+
+        try (InputStream inputStream = resource.getInputStream();
+             Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name())) {
+            String xml = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+            assertTrue(xml.contains("FROM tb_workdate wd"),
+                    "일 주기 미작성은 tb_workdate 근무일 기준이어야 한다");
+            assertTrue(xml.contains("wd.work_type IN ('WORK', 'SPECIAL_WORK')"),
+                    "근무일, 특근일만 주기로 센다");
+            assertTrue(xml.contains("FROM tb_week wk"),
+                    "주 주기 미작성은 tb_week 기준이어야 한다");
+            assertTrue(xml.contains("WHERE cyc.cycle_unit NOT IN ('day', 'week')"),
+                    "월 이상 주기만 generate_series 를 쓴다");
+        }
+    }
 }
