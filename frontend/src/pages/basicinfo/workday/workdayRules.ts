@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import type { WorkdayItem, WorkdayType } from '../../../services/basicinfo/workday/workdayService';
+import type { WeekItem, WorkdayItem, WorkdayType } from '../../../services/basicinfo/workday/workdayService';
 
 export function isOffDay(dayType: WorkdayType): boolean {
     return dayType !== 'WORK' && dayType !== 'SPECIAL_WORK';
@@ -7,6 +7,14 @@ export function isOffDay(dayType: WorkdayType): boolean {
 
 export function isRedDay(dayType: WorkdayType): boolean {
     return dayType === 'PUBLIC_HOLIDAY' || dayType === 'SUBSTITUTE_HOLIDAY';
+}
+
+// 리스트 표시용: 공휴일/대체공휴일 빨강 > 토요일 파랑 > 일요일/회사휴일 빨강
+export function dayColor(workdayDate: string, dayType: WorkdayType): 'red' | 'blue' | null {
+    const weekday = dayjs(workdayDate).day();
+    if (isRedDay(dayType)) return 'red';
+    if (weekday === 6) return 'blue';
+    return weekday === 0 || dayType === 'COMPANY_HOLIDAY' ? 'red' : null;
 }
 
 export type MonthSummary = { workDays: number; offDays: number };
@@ -52,4 +60,9 @@ export function filterByRange(items: WorkdayItem[], start: string, end: string):
     return items
     .filter((item) => item.workdayDate >= start && item.workdayDate <= end)
     .sort((a, b) => a.workdayDate.localeCompare(b.workdayDate));
+}
+
+// YYYY-MM-DD 문자열이라 사전순 비교가 날짜 비교와 같음
+export function findWeek(weeks: WeekItem[], workdayDate: string): WeekItem | undefined {
+    return weeks.find((week) => week.fromDate <= workdayDate && workdayDate <= week.toDate);
 }

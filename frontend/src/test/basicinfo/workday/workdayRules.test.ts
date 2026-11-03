@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { WorkdayItem } from '../../../services/basicinfo/workday/workdayService';
+import type { WeekItem, WorkdayItem } from '../../../services/basicinfo/workday/workdayService';
 import {
     isOffDay,
     isRedDay,
+    dayColor,
     summarizeMonth,
     applyChanges,
     currentMonthRange,
     yearsInRange,
     filterByRange,
+    findWeek,
 } from "../../../pages/basicinfo/workday/workdayRules.ts";
 
 function day(workdayDate: string, dayType: WorkdayItem['dayType']): WorkdayItem {
@@ -27,6 +29,16 @@ describe('workdayRules', () => {
         expect(isRedDay('PUBLIC_HOLIDAY')).toBe(true);
         expect(isRedDay('SUBSTITUTE_HOLIDAY')).toBe(true);
         expect(isRedDay('COMPANY_HOLIDAY')).toBe(false);
+    });
+
+    it('리스트 색: 공휴일 빨강 > 토요일 파랑 > 일요일/회사휴일 빨강', () => {
+        expect(dayColor('2026-11-07', 'COMPANY_HOLIDAY')).toBe('blue'); // 토
+        expect(dayColor('2026-11-07', 'PUBLIC_HOLIDAY')).toBe('red'); // 토
+        expect(dayColor('2026-11-07', 'WORK')).toBe('blue'); // 토
+        expect(dayColor('2026-11-08', 'WORK')).toBe('red'); // 일
+        expect(dayColor('2026-11-04', 'PUBLIC_HOLIDAY')).toBe('red'); // 수
+        expect(dayColor('2026-11-04', 'COMPANY_HOLIDAY')).toBe('red'); // 수
+        expect(dayColor('2026-11-04', 'WORK')).toBeNull(); // 수
     });
 
     it('해당 월만 골라 영업일/휴무일을 센다', () => {
@@ -75,5 +87,16 @@ describe('workdayRules', () => {
             '2026-12-31',
             '2027-01-01',
         ]);
+    });
+
+    it('날짜가 들어 있는 주차를 찾는다', () => {
+        const weeks: WeekItem[] = [
+            { year: 2026, week: 53, fromDate: '2026-12-28', toDate: '2027-01-03' },
+            { year: 2027, week: 1, fromDate: '2027-01-04', toDate: '2027-01-10' },
+        ];
+        expect(findWeek(weeks, '2026-12-28')?.week).toBe(53);
+        expect(findWeek(weeks, '2027-01-02')).toEqual(weeks[0]);
+        expect(findWeek(weeks, '2027-01-10')?.week).toBe(1);
+        expect(findWeek(weeks, '2027-01-11')).toBeUndefined();
     });
 });

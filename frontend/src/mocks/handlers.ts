@@ -1,4 +1,6 @@
 import { http, HttpResponse } from 'msw';
+import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
 import type { AuthorityCode } from '../shared/auth/authorityCode';
 import type { UserRole } from '../shared/store/authStore';
 import type { DepartmentItem } from '../services/organization/departmentsService';
@@ -8,7 +10,9 @@ import type {
 } from '../services/documents/documentsService';
 import type { UserItem } from '../services/organization/usersService';
 import type { CommonCodeData } from '../services/basicinfo/commonCodeService';
-import type { WorkdayItem } from '../services/basicinfo/workday/workdayService';
+import type { WeekItem, WorkdayItem } from '../services/basicinfo/workday/workdayService';
+
+dayjs.extend(isoWeek);
 
 type TenantItem = {
   tenantCode: string;
@@ -2872,6 +2876,27 @@ export const handlers = [
   http.get(/\/api\/v1\/workday(\?.*)?$/, ({ request }) => {
     const year = Number(new URL(request.url).searchParams.get('year'));
     return HttpResponse.json({ resultCode: 200, result: { items: workdayStore.get(year) ?? [] } });
+  }),
+
+  // ponytail: 업무일 생성 여부와 상관없이 ISO 주차를 계산해서 돌려줌
+  http.get(/\/api\/v1\/workday\/weeks(\?.*)?$/, ({ request }) => {
+    const url = new URL(request.url);
+    const from = url.searchParams.get('from') ?? '';
+    const to = url.searchParams.get('to') ?? '';
+    const items: WeekItem[] = [];
+    for (
+        let monday = dayjs(from).startOf('isoWeek');
+        monday.isValid() && monday.format('YYYY-MM-DD') <= to;
+        monday = monday.add(1, 'week')
+    ) {
+      items.push({
+        year: monday.isoWeekYear(),
+        week: monday.isoWeek(),
+        fromDate: monday.format('YYYY-MM-DD'),
+        toDate: monday.add(6, 'day').format('YYYY-MM-DD'),
+      });
+    }
+    return HttpResponse.json({ resultCode: 200, result: { items } });
   }),
 
   http.put(/\/api\/v1\/workday\/batch$/, async ({ request }) => {

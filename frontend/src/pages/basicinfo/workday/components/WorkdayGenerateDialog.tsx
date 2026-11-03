@@ -45,7 +45,7 @@ export function WorkdayGenerateDialog(props: WorkdayGenerateDialogProps) {
         <Dialog open onClose={loading ? undefined : onClose} maxWidth="xs" fullWidth>
             <DialogTitle>{year}년 업무일 생성</DialogTitle>
             <DialogContent>
-                <Stack spacing={2} sx={{ pt: 1 }}>
+                <Stack spacing={2} sx={{ pt: 1, }}>
                     <div>
                         <Typography variant="subtitle2">기본 휴무 요일</Typography>
                         <FormGroup row>
