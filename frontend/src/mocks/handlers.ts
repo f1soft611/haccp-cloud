@@ -852,6 +852,7 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '업무 등록주기' },
     { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 단위' },
     { groupCode: 'ITEM_TYPE', groupName: '품목 계정', groupDesc: '품목 계정' },
+    { groupCode: 'WORKDAY_TYPE', groupName: '업무일 유형', groupDesc: '업무일 관리 날짜 유형' },
   ],
   details: [
     { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
@@ -880,6 +881,12 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'ITEM_TYPE', code: 'RAW', codeName: '원재료', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '제조 투입 주원료' },
     { groupCode: 'ITEM_TYPE', code: 'SUB', codeName: '부재료', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '포장재·첨가 부재료' },
     { groupCode: 'ITEM_TYPE', code: 'SUPPLY', codeName: '소모품', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '소모성 자재' },
+
+    { groupCode: 'WORKDAY_TYPE', code: 'WORK', codeName: '근무일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'WORKDAY_TYPE', code: 'PUBLIC_HOLIDAY', codeName: '공휴일', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+    { groupCode: 'WORKDAY_TYPE', code: 'COMPANY_HOLIDAY', codeName: '회사 휴일', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
+    { groupCode: 'WORKDAY_TYPE', code: 'SUBSTITUTE_HOLIDAY', codeName: '대체 휴일', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
+    { groupCode: 'WORKDAY_TYPE', code: 'SPECIAL_WORK', codeName: '특근일', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '' },
   ],
 };
 

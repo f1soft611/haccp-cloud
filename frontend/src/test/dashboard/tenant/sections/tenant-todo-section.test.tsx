@@ -156,6 +156,7 @@ describe('TenantTodoSection', () => {
 
     expect(params.get('workType')).toBe('HACCP (HA)');
     expect(params.get('workDivisionId')).toBe('1');
+    expect(params.get('status')).toBe('미작성');
   });
 
   it('opens work draft route when not written in current cycle even if approval id exists', async () => {

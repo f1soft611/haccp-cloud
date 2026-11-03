@@ -3,14 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../app/providers/AppProviders';
 import { HaccpDocumentManagementPage } from '../pages/documents/haccp-doc/HaccpDocumentManagementPage';
 import { listHaccpBaseCategories } from '../services/documents/haccpBaseCategoryService';
-// 기존 -> import { listHaccpBaseWorks } from '../services/documents/haccpBaseWorkService';
-// 변경 -> getHaccpWorkDraftTemplate 추가
 import {
   getHaccpWorkDraftTemplate,
   listHaccpBaseWorks,
 } from '../services/documents/haccpBaseWorkService';
 import { listHaccpDocuments } from '../services/documents/haccpDocumentService';
 import { useAuthStore } from '../shared/store/authStore';
+import { TODO_STATUS_OPTIONS } from '../pages/dashboard/tenant/todoFilter';
+
 
 vi.mock('../services/documents/haccpDocumentService', () => ({
   listHaccpDocuments: vi.fn(),
@@ -20,8 +20,6 @@ vi.mock('../services/documents/haccpBaseCategoryService', () => ({
   listHaccpBaseCategories: vi.fn(),
 }));
 
-// 기존 -> listHaccpBaseWorks 만 mock
-// 변경 -> 작성 버튼(useOpenWorkDraft)이 쓰는 getHaccpWorkDraftTemplate 도 mock
 vi.mock('../services/documents/haccpBaseWorkService', () => ({
   listHaccpBaseWorks: vi.fn(),
   getHaccpWorkDraftTemplate: vi.fn(),
@@ -36,6 +34,7 @@ function formatDate(date: Date): string {
 
 describe('HaccpDocumentManagementPage', () => {
   beforeEach(() => {
+    vi.mocked(getHaccpWorkDraftTemplate).mockClear();
     vi.mocked(listHaccpDocuments).mockReset();
     vi.mocked(listHaccpDocuments).mockResolvedValue({
       items: [
@@ -358,5 +357,92 @@ describe('HaccpDocumentManagementPage', () => {
     const params = new URLSearchParams(window.location.search);
     expect(params.get('idType')).toBe('work');
     expect(params.get('returnTo')).toBe(expectedReturnTo);
+  });
+
+  it('uses the same status options as tenant dashboard filter', async () => {
+    window.history.pushState({}, '', '/docs/haccp-doc');
+
+    render(
+        <AppProviders>
+          <HaccpDocumentManagementPage />
+        </AppProviders>,
+    );
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '상태' }));
+
+    const options = await screen.findAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual([
+      '전체',
+      ...TODO_STATUS_OPTIONS,
+    ]);
+  });
+
+  it('opens unwritten list without draft date range', async () => {
+    window.history.pushState(
+        {},
+        '',
+        `/docs/haccp-doc?workType=${encodeURIComponent('HACCP (HA)')}&workDivisionId=w-1&status=${encodeURIComponent('미작성')}`,
+    );
+
+    render(
+        <AppProviders>
+          <HaccpDocumentManagementPage />
+        </AppProviders>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('combobox', { name: '상태' })).toHaveTextContent('미작성');
+    });
+    await waitFor(() => {
+      expect(listHaccpDocuments).toHaveBeenCalledWith(
+          expect.objectContaining({
+            workDivisionId: 'w-1',
+            status: '미작성',
+            startDate: undefined,
+            endDate: undefined,
+          }),
+      );
+    });
+    expect(screen.queryByText(/^기안일:/)).not.toBeInTheDocument();
+  });
+
+  it('moves to the cycle draft page from an unwritten row', async () => {
+    vi.mocked(listHaccpDocuments).mockResolvedValue({
+      items: [
+        {
+          id: 'w-1-2026-10-05',
+          approvalId: '',
+          workId: 'w-1',
+          workType: 'HACCP (HA)',
+          workDivision: 'CCP-1B 검증기록',
+          draftNumber: '',
+          title: 'CCP-1B 검증기록 - 2026-10-05',
+          writer: '',
+          status: '미작성',
+          draftedAt: '',
+          updatedAt: '',
+          cycleDate: '2026-10-05',
+        },
+      ],
+      totalCount: 1,
+    });
+    window.history.pushState({}, '', `/docs/haccp-doc?status=${encodeURIComponent('미작성')}`);
+
+    render(
+        <AppProviders>
+          <HaccpDocumentManagementPage />
+        </AppProviders>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: '작성하러 가기' }));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/approvals/draft/w-1');
+    });
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get('idType')).toBe('work');
+    expect(params.get('cycleDate')).toBe('2026-10-05');
+    expect(params.get('returnTo')).toContain('/docs/haccp-doc');
+    expect(getHaccpWorkDraftTemplate).not.toHaveBeenCalled();
   });
 });

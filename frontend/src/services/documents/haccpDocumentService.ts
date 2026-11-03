@@ -9,11 +9,10 @@ export type HaccpDocumentItem = {
   draftNumber: string;
   title: string;
   writer: string;
-  // 기존 -> status: '임시저장' | '결재중' | '승인' | '반려'
-  // 변경 -> 상태 라벨을 '결재진행중'으로 통일
-  status: '임시저장' | '결재진행중' | '승인' | '반려';
+  status: '미작성' | '임시저장' | '결재진행중' | '승인' | '반려';
   draftedAt: string;
   updatedAt: string;
+  cycleDate?: string;
 };
 
 export type ListHaccpDocumentsResult = {
@@ -50,6 +49,8 @@ type RawHaccpDocumentItem = {
   latest_status_at?: string | null;
   approvalStatusTypeName?: string | null;
   approval_status_type_name?: string | null;
+  cycleDate?: string | null;
+  cycle_date?: string | null;
 };
 
 type ResultEnvelope<T> = {
@@ -76,16 +77,15 @@ function normalizeText(value: unknown): string {
 
 function normalizeStatus(value: unknown): HaccpDocumentItem['status'] {
   const normalized = normalizeText(value);
-  // 기존 -> normalized === '결재중' 이면 '결재중'
-  // 변경 -> normalized === '결재진행중' 이면 '결재진행중'
+  if (normalized === '미작성') {
+    return '미작성';
+  }
   if (normalized === '결재진행중') {
     return '결재진행중';
   }
   if (normalized === '승인') {
     return '승인';
   }
-  // 기존 -> normalized === '반송' || normalized === '반려' 이면 '반송'
-  // 변경 -> normalized === '반려' 이면 '반려'
   if (normalized === '반려') {
     return '반려';
   }
@@ -127,6 +127,7 @@ function normalizeItem(raw: RawHaccpDocumentItem): HaccpDocumentItem {
     ),
     draftedAt: normalizeText(raw.createdAt ?? raw.created_at),
     updatedAt: latestStatusAt,
+    cycleDate: normalizeText(raw.cycleDate ?? raw.cycle_date),
   };
 }
 

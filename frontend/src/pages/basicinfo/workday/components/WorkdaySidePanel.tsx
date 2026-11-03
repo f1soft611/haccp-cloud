@@ -11,7 +11,9 @@ import {
 } from '@mui/material';
 import dayjs from 'dayjs';
 import type { WorkdayItem } from '../../../../services/basicinfo/workday/workdayService';
-import { WORKDAY_TYPE_LABELS, isOffDay, isRedDay, summarizeMonth } from '../workdayRules';
+import { isOffDay, isRedDay, summarizeMonth } from '../workdayRules';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import { getCommonCodeName, useCommonCodeOptions } from '../../../../shared/hooks/useCommonCodeOptions';
 
 type WorkdaySidePanelProps = {
     year: number;
@@ -23,6 +25,7 @@ type WorkdaySidePanelProps = {
 
 export function WorkdaySidePanel({ year, month, items, onSelectDate }: WorkdaySidePanelProps) {
     const theme = useTheme();
+    const typeOptions = useCommonCodeOptions(COMMON_CODE_GROUP.WORKDAY_TYPE);
     const summary = summarizeMonth(items, year, month);
     const prefix = `${year}-${String(month).padStart(2, '0')}-`;
     const specialDays = items.filter(
@@ -63,7 +66,7 @@ export function WorkdaySidePanel({ year, month, items, onSelectDate }: WorkdaySi
                                 <ListItemButton key={item.workdayDate} onClick={() => onSelectDate(item.workdayDate)}>
                                     <ListItemText
                                         primary={`${dayjs(item.workdayDate).format('M/D (dd)')} ${item.dayName}`.trim()}
-                                        secondary={WORKDAY_TYPE_LABELS[item.dayType]}
+                                        secondary={getCommonCodeName(typeOptions, item.dayType)}
                                         primaryTypographyProps={{
                                             color: isRedDay(item.dayType)
                                                 ? 'error'
