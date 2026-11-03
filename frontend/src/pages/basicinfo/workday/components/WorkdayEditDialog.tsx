@@ -10,7 +10,8 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import type { WorkdayItem, WorkdayType } from '../../../../services/basicinfo/workday/workdayService';
-import { WORKDAY_TYPES, WORKDAY_TYPE_LABELS } from '../workdayRules';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import { useCommonCodeOptions } from '../../../../shared/hooks/useCommonCodeOptions';
 
 type WorkdayEditDialogProps = {
     item: WorkdayItem;
@@ -23,6 +24,12 @@ export function WorkdayEditDialog({ item, onClose, onSubmit }: WorkdayEditDialog
     const [dayName, setDayName] = useState(item.dayName);
     const [memo, setMemo] = useState(item.memo);
 
+    const typeOptions = useCommonCodeOptions(COMMON_CODE_GROUP.WORKDAY_TYPE);
+    // 조회 전이거나 미사용 처리된 현재 값도 셀렉트에 보이도록 덧붙임
+    const selectOptions = typeOptions.some((option) => option.code === dayType)
+        ? typeOptions
+        : [...typeOptions, { code: dayType, name: dayType }];
+
     return (
         <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
             <DialogTitle>{item.workdayDate}</DialogTitle>
@@ -34,9 +41,9 @@ export function WorkdayEditDialog({ item, onClose, onSubmit }: WorkdayEditDialog
                         value={dayType}
                         onChange={(event) => setDayType(event.target.value as WorkdayType)}
                     >
-                        {WORKDAY_TYPES.map((type) => (
-                            <MenuItem key={type} value={type}>
-                                {WORKDAY_TYPE_LABELS[type]}
+                        {selectOptions.map((option) => (
+                            <MenuItem key={option.code} value={option.code}>
+                                {option.name}
                             </MenuItem>
                         ))}
                     </TextField>
