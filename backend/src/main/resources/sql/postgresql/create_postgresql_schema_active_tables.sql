@@ -469,6 +469,9 @@ CREATE TABLE IF NOT EXISTS tb_workdate (
     created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 등록일시
     updated_by   BIGINT,                               -- 수정자
     updated_at   TIMESTAMP,                            -- 수정일시
+    work_source  VARCHAR(20),                          -- 출처: API (공휴일 API) / PATTERN (요일 규칙) / MANUAL (사용자 직접 수정)
+    work_name    VARCHAR(100),                         -- 휴일명 (공휴일 API dateName 또는 사용자 입력)
+    work_memo    VARCHAR(100),                         -- 메모
     CONSTRAINT uk_workdate_tenant_date UNIQUE (tenant_id, work_date),
     CONSTRAINT fk_workdate_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant (tenant_id) ON DELETE CASCADE
     );

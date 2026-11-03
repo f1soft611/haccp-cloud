@@ -80,7 +80,7 @@ ORDER BY d.db_name;
         ELSE (SELECT tenant_id FROM public.tb_tenant WHERE UPPER(tenant_code) IN ('PLATFORM', '000001') ORDER BY tenant_id LIMIT 1) END)
 "@
             & $psql -h $DbHost -p $Port -U $User -d $CentralDatabase -v ON_ERROR_STOP=1 -o $workdateCsv -c @"
-COPY (SELECT work_date, work_type, created_at, updated_at FROM public.tb_workdate
+COPY (SELECT work_date, work_type, work_source, work_name, work_memo, created_at, updated_at FROM public.tb_workdate
       WHERE tenant_id = $($sourceTenant -f 'tb_workdate') ORDER BY work_date) TO STDOUT WITH CSV
 "@
             if ($LASTEXITCODE -ne 0) { throw "export tb_workdate failed" }
@@ -106,15 +106,20 @@ COPY (SELECT year, from_date, to_date, week, created_at, updated_at FROM public.
 
             $workdatePath = $workdateCsv.Replace('\', '/')
             $weekPath = $weekCsv.Replace('\', '/')
+            # 기존 -> 테이블이 이미 있으면 컬럼 변경 없이 데이터만 복사
+            # 변경 -> 먼저 만들어진 테넌트 테이블에 work_source, work_name, work_memo 컬럼을 추가하고 함께 복사
             $dataSql = @"
 BEGIN;
-CREATE TEMP TABLE src_workdate (work_date DATE, work_type VARCHAR(50), created_at TIMESTAMP, updated_at TIMESTAMP) ON COMMIT DROP;
+ALTER TABLE public.tb_workdate ADD COLUMN IF NOT EXISTS work_source VARCHAR(20);
+ALTER TABLE public.tb_workdate ADD COLUMN IF NOT EXISTS work_name VARCHAR(100);
+ALTER TABLE public.tb_workdate ADD COLUMN IF NOT EXISTS work_memo VARCHAR(100);
+CREATE TEMP TABLE src_workdate (work_date DATE, work_type VARCHAR(50), work_source VARCHAR(20), work_name VARCHAR(100), work_memo VARCHAR(100), created_at TIMESTAMP, updated_at TIMESTAMP) ON COMMIT DROP;
 CREATE TEMP TABLE src_week (year INT, from_date DATE, to_date DATE, week INT, created_at TIMESTAMP, updated_at TIMESTAMP) ON COMMIT DROP;
 \copy src_workdate FROM '$workdatePath' WITH (FORMAT csv, ENCODING 'UTF8')
 \copy src_week FROM '$weekPath' WITH (FORMAT csv, ENCODING 'UTF8')
 
-INSERT INTO public.tb_workdate (tenant_id, work_date, work_type, created_at, updated_at)
-SELECT $tenantId, work_date, work_type, created_at, updated_at FROM src_workdate
+INSERT INTO public.tb_workdate (tenant_id, work_date, work_type, work_source, work_name, work_memo, created_at, updated_at)
+SELECT $tenantId, work_date, work_type, work_source, work_name, work_memo, created_at, updated_at FROM src_workdate
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.tb_week (tenant_id, year, from_date, to_date, week, created_at, updated_at)

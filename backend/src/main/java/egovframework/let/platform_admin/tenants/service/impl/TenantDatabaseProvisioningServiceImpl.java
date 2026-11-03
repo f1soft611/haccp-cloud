@@ -413,15 +413,20 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
              Connection tenant = openConnection(tenantJdbcUrl)) {
             tenant.setAutoCommit(false);
             try {
+                // 기존 -> work_date, work_type 만 복사
+                // 변경 -> 출처(work_source), 휴일명(work_name), 메모(work_memo)도 함께 복사
                 try (PreparedStatement select = central.prepareStatement(
-                        "SELECT work_date, work_type FROM public.tb_workdate WHERE tenant_id = " + platformTenant + " ORDER BY work_date");
+                        "SELECT work_date, work_type, work_source, work_name, work_memo FROM public.tb_workdate WHERE tenant_id = " + platformTenant + " ORDER BY work_date");
                      PreparedStatement insert = tenant.prepareStatement(
-                             "INSERT INTO public.tb_workdate (tenant_id, work_date, work_type) VALUES (?, ?, ?) ON CONFLICT DO NOTHING");
+                             "INSERT INTO public.tb_workdate (tenant_id, work_date, work_type, work_source, work_name, work_memo) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING");
                      ResultSet rs = select.executeQuery()) {
                     while (rs.next()) {
                         insert.setLong(1, tenantId);
                         insert.setDate(2, rs.getDate("work_date"));
                         insert.setString(3, rs.getString("work_type"));
+                        insert.setString(4, rs.getString("work_source"));
+                        insert.setString(5, rs.getString("work_name"));
+                        insert.setString(6, rs.getString("work_memo"));
                         insert.addBatch();
                     }
                     insert.executeBatch();
