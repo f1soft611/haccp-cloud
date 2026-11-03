@@ -1,11 +1,11 @@
-import { Suspense, useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Box } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Outlet, useLocation } from 'react-router-dom';
 import { TopGovBar } from './TopGovBar';
 import { PageShell } from './PageShell';
 import { PortalFooter } from './PortalFooter';
-import { WorkMenuBar } from './WorkMenuBar';
+import { SideNav } from './SideNav';
 import {
   buildMenuGroupsFromAccessibleMenus,
   toMenuIconName,
@@ -51,6 +51,7 @@ export function AppLayout() {
     retry: false,
   });
 
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const role = useAuthStore((state) => state.role);
   const hasAccessibleMenuMetaApi = typeof listAccessibleMenusFn === 'function';
 
@@ -168,21 +169,37 @@ export function AppLayout() {
   }, [prioritizedPrefetchPaths]);
 
   return (
-    <UserMenuMetadataProvider value={menuMetadataByPath}>
-      <CurrentMenuGroupLabelProvider value={currentMenuGroupLabel}>
-        <Box
-          sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
-        >
-          <TopGovBar />
-          <WorkMenuBar menuGroups={menuGroups} role={role} />
-          <PageShell>
-            <Suspense fallback={null}>
-              <Outlet />
-            </Suspense>
-          </PageShell>
-          <PortalFooter />
-        </Box>
-      </CurrentMenuGroupLabelProvider>
-    </UserMenuMetadataProvider>
+      <UserMenuMetadataProvider value={menuMetadataByPath}>
+        <CurrentMenuGroupLabelProvider value={currentMenuGroupLabel}>
+          <Box
+              sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+          >
+            <TopGovBar onOpenMobileNav={() => setMobileNavOpen(true)} />
+            <Box sx={{ flex: 1, display: 'flex' }}>
+              <SideNav
+                  menuGroups={menuGroups}
+                  role={role}
+                  mobileOpen={mobileNavOpen}
+                  onMobileClose={() => setMobileNavOpen(false)}
+              />
+              <Box
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+              >
+                <PageShell>
+                  <Suspense fallback={null}>
+                    <Outlet />
+                  </Suspense>
+                </PageShell>
+              </Box>
+            </Box>
+            <PortalFooter />
+          </Box>
+        </CurrentMenuGroupLabelProvider>
+      </UserMenuMetadataProvider>
   );
 }

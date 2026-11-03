@@ -13,7 +13,7 @@ import {
 
 const CARD_COLORS: Record<TodoStatusCardKey, string> = {
     미작성: 'text.primary',
-    결재대기중: 'secondary.main',
+    결재할문서: 'secondary.main',
     결재진행중: 'warning.main',
     승인: 'success.main',
     반려: 'error.main',
@@ -21,7 +21,7 @@ const CARD_COLORS: Record<TodoStatusCardKey, string> = {
 
 const CARD_ICONS: Record<TodoStatusCardKey, SvgIconComponent> = {
     미작성: NoteAddOutlinedIcon,
-    결재대기중: PendingActionsOutlinedIcon,
+    결재할문서: PendingActionsOutlinedIcon,
     결재진행중: HourglassTopOutlinedIcon,
     승인: TaskOutlinedIcon,
     반려: AssignmentReturnOutlinedIcon,
@@ -29,7 +29,7 @@ const CARD_ICONS: Record<TodoStatusCardKey, SvgIconComponent> = {
 
 const CARD_TOOLTIPS: Record<TodoStatusCardKey, string> = {
     미작성: '내가 작성해야 할 문서',
-    결재대기중: '내 결재를 기다리는 문서',
+    결재할문서: '내 결재를 기다리는 문서',
     결재진행중: '내가 결재 요청했으나 아직 결재가 끝나지 않은 문서',
     승인: '내가 결재 요청해 최종 승인된 문서',
     반려: '내가 결재 요청했으나 반려된 문서',

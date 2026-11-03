@@ -20,6 +20,8 @@ import {
     type TenantViewMode,
 } from '../todoFilter';
 
+const FILTER_RADIUS = '4px';
+
 type TenantFilterSectionProps = {
     value: TenantTodoFilter;
     categoryOptions: string[];
@@ -58,7 +60,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
             size="small"
             value={value[key]}
             onChange={(event) => onChange({ ...value, [key]: event.target.value })}
-            sx={{ minWidth, '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' } }}
+            sx={{ minWidth, '& .MuiOutlinedInput-root': { bgcolor: 'background.paper', borderRadius: FILTER_RADIUS } }}
             slotProps={{
                 select: {
                     displayEmpty: true,
@@ -119,7 +121,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                 sx={{
                     flex: { md: '0 1 400px' },
                     minWidth: 160,
-                    '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' },
+                    '& .MuiOutlinedInput-root': { bgcolor: 'background.paper', borderRadius: FILTER_RADIUS },
                 }}
             />
 
@@ -127,7 +129,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                 <Button
                     variant="outlined"
                     onClick={onSearch}
-                    sx={{ whiteSpace: 'nowrap', bgcolor: 'background.paper', }}
+                    sx={{ whiteSpace: 'nowrap', bgcolor: 'background.paper', borderRadius: FILTER_RADIUS }}
                 >
                     조회
                 </Button>
@@ -137,7 +139,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                     sx={{
                         border: '1px solid',
                         borderColor: 'divider',
-                        borderRadius: 1,
+                        borderRadius: FILTER_RADIUS,
                         bgcolor: 'background.paper',
                     }}
                 >
@@ -157,7 +159,17 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                         }
                     }}
                     aria-label="보기 형식"
-                    sx={{ bgcolor: 'background.paper' }}
+                    sx={{
+                        bgcolor: 'background.paper',
+                        '& .MuiToggleButtonGroup-firstButton': {
+                            borderTopLeftRadius: FILTER_RADIUS,
+                            borderBottomLeftRadius: FILTER_RADIUS,
+                        },
+                        '& .MuiToggleButtonGroup-lastButton': {
+                            borderTopRightRadius: FILTER_RADIUS,
+                            borderBottomRightRadius: FILTER_RADIUS,
+                        },
+                    }}
                 >
                     <ToggleButton value="list" aria-label="리스트형">
                         <ViewListOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />

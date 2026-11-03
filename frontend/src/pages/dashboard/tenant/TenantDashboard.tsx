@@ -68,7 +68,7 @@ export function TenantDashboard() {
 
     const isPendingApproval = filter.status === PENDING_APPROVAL_STATUS;
 
-    // 결재대기중이면 내가 결재할 문서(approvalSections)에 검색조건 적용
+    // 결재할문서이면 내가 결재할 문서(approvalSections)에 검색조건 적용
     const filteredSections = useMemo(
         () =>
             (isPendingApproval ? approvalSections : todoSections)
@@ -98,6 +98,7 @@ export function TenantDashboard() {
                     border: '1px solid',
                     borderColor: 'divider',
                     boxShadow: 'none',
+                    borderRadius: '4px',
                 }}
             >
                 {viewMode === 'list' ? (
@@ -143,9 +144,8 @@ export function TenantDashboard() {
               data-testid="tenant-dashboard-calendar"
               sx={{
                 p: 2,
-                // 기존 -> 둥근 모서리(borderRadius 3)
-                // 변경 -> 검색필터와 같은 테마 기본 모서리
                 border: '1px solid',
+                  borderRadius: '4px',
                 borderColor: 'divider',
               }}
             >

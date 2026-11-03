@@ -8,6 +8,7 @@ import type {
 } from '../services/documents/documentsService';
 import type { UserItem } from '../services/organization/usersService';
 import type { CommonCodeData } from '../services/basicinfo/commonCodeService';
+import type { WorkdayItem } from '../services/basicinfo/workday/workdayService';
 
 type TenantItem = {
   tenantCode: string;
@@ -350,7 +351,7 @@ const accessibleMenuPathsByAuthorityCode: Record<AuthorityCode, string[]> = {
     '/platform/login-history',
     '/platform/migrations',
   ],
-  TENANT_ADMIN: ['/dashboard', '/users', '/documents'],
+  TENANT_ADMIN: ['/dashboard', '/users', '/documents', '/basicinfo/workday'],
   TENANT_USER: ['/dashboard', '/documents'],
 };
 
@@ -881,6 +882,82 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'ITEM_TYPE', code: 'SUPPLY', codeName: '소모품', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '소모성 자재' },
   ],
 };
+
+// ponytail: 2026, 2027 공휴일만 하드코딩. 실제는 백엔드가 공공API(특일정보)로 채움
+const mockPublicHolidays: Record<string, string> = {
+  '2026-01-01': '신정',
+  '2026-02-16': '설날 연휴',
+  '2026-02-17': '설날',
+  '2026-02-18': '설날 연휴',
+  '2026-03-01': '삼일절',
+  '2026-03-02': '대체공휴일(삼일절)',
+  '2026-05-05': '어린이날',
+  '2026-05-24': '부처님오신날',
+  '2026-05-25': '대체공휴일(부처님오신날)',
+  '2026-06-06': '현충일',
+  '2026-08-15': '광복절',
+  '2026-08-17': '대체공휴일(광복절)',
+  '2026-09-24': '추석 연휴',
+  '2026-09-25': '추석',
+  '2026-09-26': '추석 연휴',
+  '2026-10-03': '개천절',
+  '2026-10-05': '대체공휴일(개천절)',
+  '2026-10-09': '한글날',
+  '2026-12-25': '성탄절',
+  '2027-01-01': '신정',
+  '2027-02-06': '설날 연휴',
+  '2027-02-07': '설날',
+  '2027-02-08': '설날 연휴',
+  '2027-02-09': '대체공휴일(설날)',
+  '2027-03-01': '삼일절',
+  '2027-05-05': '어린이날',
+  '2027-05-13': '부처님오신날',
+  '2027-06-06': '현충일',
+  '2027-08-15': '광복절',
+  '2027-08-16': '대체공휴일(광복절)',
+  '2027-09-14': '추석 연휴',
+  '2027-09-15': '추석',
+  '2027-09-16': '추석 연휴',
+  '2027-10-03': '개천절',
+  '2027-10-04': '대체공휴일(개천절)',
+  '2027-10-09': '한글날',
+  '2027-10-11': '대체공휴일(한글날)',
+  '2027-12-25': '성탄절',
+  '2027-12-27': '대체공휴일(성탄절)',
+};
+
+// ponytail: 테넌트 구분 없이 연도별 메모리 저장 (새로고침 시 초기화)
+const workdayStore = new Map<number, WorkdayItem[]>();
+
+function buildMockWorkdays(
+    year: number,
+    weeklyOffDays: number[],
+    includePublicHolidays: boolean,
+): WorkdayItem[] {
+  const items: WorkdayItem[] = [];
+  for (const date = new Date(year, 0, 1); date.getFullYear() === year; date.setDate(date.getDate() + 1)) {
+    const workdayDate = `${year}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const holidayName = includePublicHolidays ? mockPublicHolidays[workdayDate] : undefined;
+    if (holidayName) {
+      items.push({
+        workdayDate,
+        dayType: holidayName.startsWith('대체') ? 'SUBSTITUTE_HOLIDAY' : 'PUBLIC_HOLIDAY',
+        dayName: holidayName,
+        memo: '',
+        source: 'API',
+      });
+    } else {
+      items.push({
+        workdayDate,
+        dayType: weeklyOffDays.includes(date.getDay()) ? 'COMPANY_HOLIDAY' : 'WORK',
+        dayName: '',
+        memo: '',
+        source: 'PATTERN',
+      });
+    }
+  }
+  return items;
+}
 
 export const handlers = [
   http.post('/api/auth/login', async ({ request }) => {
@@ -2783,5 +2860,43 @@ export const handlers = [
       details: [...updated, ...details.filter((detail) => !existingKeys.has(keyOf(detail)))],
     };
     return HttpResponse.json({ resultCode: 200, result: { message: '저장되었습니다.' } });
+  }),
+
+  http.get(/\/api\/v1\/workday(\?.*)?$/, ({ request }) => {
+    const year = Number(new URL(request.url).searchParams.get('year'));
+    return HttpResponse.json({ resultCode: 200, result: { items: workdayStore.get(year) ?? [] } });
+  }),
+
+  http.put(/\/api\/v1\/workday\/batch$/, async ({ request }) => {
+    const { items } = (await request.json()) as { items: WorkdayItem[] };
+    for (const changed of items) {
+      const year = Number(changed.workdayDate.slice(0, 4));
+      const stored = workdayStore.get(year) ?? [];
+      workdayStore.set(
+          year,
+          stored.map((item) => (item.workdayDate === changed.workdayDate ? changed : item)),
+      );
+    }
+    return HttpResponse.json({ resultCode: 200, result: { message: '저장되었습니다.' } });
+  }),
+
+  http.post(/\/api\/v1\/workday\/generate$/, async ({ request }) => {
+    const body = (await request.json()) as {
+      year: number;
+      weeklyOffDays: number[];
+      includePublicHolidays: boolean;
+      overwrite: boolean;
+    };
+    if (workdayStore.has(body.year) && !body.overwrite) {
+      return HttpResponse.json(
+          { resultCode: 409, resultMessage: `${body.year}년 업무일이 이미 있습니다.` },
+          { status: 409 },
+      );
+    }
+    workdayStore.set(
+        body.year,
+        buildMockWorkdays(body.year, body.weeklyOffDays, body.includePublicHolidays),
+    );
+    return HttpResponse.json({ resultCode: 200, result: { message: '생성되었습니다.' } });
   }),
 ];

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../../app/providers/AppProviders.tsx';
 import { TenantStatusCardSection } from '../../pages/dashboard/tenant/sections/TenantStatusCardSection';
 
-const counts = { 미작성: 4, 결재대기중: 2, 결재진행중: 1, 승인: 7, 반려: 0 };
+const counts = { 미작성: 4, 결재할문서: 2, 결재진행중: 1, 승인: 7, 반려: 0 };
 
 describe('TenantStatusCardSection', () => {
     it('shows a count per status and reports the clicked status', () => {
@@ -19,7 +19,7 @@ describe('TenantStatusCardSection', () => {
             </AppProviders>,
         );
 
-        const approvalWaiting = screen.getByRole('button', { name: /결재대기중/ });
+        const approvalWaiting = screen.getByRole('button', { name: /결재할문서/ });
         expect(approvalWaiting).toHaveTextContent('2');
         expect(screen.getByRole('button', { name: /승인/ })).toHaveAttribute(
             'aria-pressed',
@@ -27,7 +27,7 @@ describe('TenantStatusCardSection', () => {
         );
 
         fireEvent.click(approvalWaiting);
-        expect(onSelect).toHaveBeenCalledWith('결재대기중');
+        expect(onSelect).toHaveBeenCalledWith('결재할문서');
     });
 
     it('renders each status as one row cell with a 건 unit', () => {
