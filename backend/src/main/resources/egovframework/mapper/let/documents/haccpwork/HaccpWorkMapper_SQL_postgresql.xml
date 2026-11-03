@@ -421,9 +421,7 @@
           <if test="writer != null and writer != ''">
             AND COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{writer}, '%')
           </if>
-          <if test="statusType != null and statusType != ''">
-            AND COALESCE(m.status_type, '') = #{statusType}
-          </if>
+            <include refid="documentStatusCondition"/>
           <if test="startDate != null and startDate != ''">
             AND COALESCE(
                   CASE
@@ -573,9 +571,7 @@
           <if test="writer != null and writer != ''">
             AND COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{writer}, '%')
           </if>
-          <if test="statusType != null and statusType != ''">
-            AND COALESCE(m.status_type, '') = #{statusType}
-          </if>
+            <include refid="documentStatusCondition"/>
           <if test="startDate != null and startDate != ''">
             AND COALESCE(
                   CASE
@@ -604,6 +600,81 @@
           </if>
     </select>
 
+    <!-- 미작성 주기 목록: 업무개시일부터 현재 주기까지 상신 문서가 없는 주기마다 한 행, 그 주기 최신 임시저장이 있으면 그 문서로 채움 -->
+    <select id="HaccpWorkDAO.selectUnwrittenCycleList"
+            parameterType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkSearchConditionVO"
+            resultMap="haccpWorkResult">
+        SELECT
+        w.drafting_work_category_id,
+        tmp.electronic_approval_id,
+        COALESCE(tmp.ea_exe_id, '') AS ea_exe_id,
+        CASE
+        WHEN tmp.electronic_approval_id IS NOT NULL THEN COALESCE(tmp.ea_title, '')
+        ELSE CONCAT(COALESCE(w.code_name, ''), ' - ', TO_CHAR(gs.cycle_start, 'YYYY-MM-DD'))
+        END AS title,
+        t.tenant_code,
+        w.drafting_work_category_group_id,
+        g.cata_code,
+        g.cata_name AS category_name,
+        CASE
+        WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+        ELSE 0
+        END AS category_sort_order,
+        w.cata_type_code,
+        w.code_name,
+        w.reg_term,
+        TO_CHAR(gs.cycle_start, 'YYYY-MM-DD') AS cycle_date,
+        TRUE AS active,
+        CASE
+        WHEN tmp.electronic_approval_id IS NOT NULL
+        THEN COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), CAST(tmp.login_id AS varchar))
+        ELSE ''
+        END AS created_by,
+        COALESCE(TO_CHAR(tmp.created_at, 'YYYY-MM-DD'), '') AS created_at,
+        'DRAFT' AS todo_status,
+        CASE WHEN tmp.electronic_approval_id IS NOT NULL THEN 'pre_apply' ELSE '' END AS approval_status_type,
+        CASE WHEN tmp.electronic_approval_id IS NOT NULL THEN '임시저장' ELSE '미작성' END AS approval_status_type_name,
+        COALESCE(TO_CHAR(COALESCE(tmp.updated_at, tmp.created_at), 'YYYY-MM-DD HH24:MI'), '') AS latest_status_at
+        <include refid="unwrittenCycleFrom"/>
+        LEFT JOIN LATERAL (
+        SELECT m.electronic_approval_id,
+        m.ea_exe_id,
+        m.ea_title,
+        m.login_id,
+        m.created_at,
+        m.updated_at
+        FROM tb_electronic_approval_main m
+        WHERE m.tenant_id = w.tenant_id
+        AND m.drafting_work_category_id = w.drafting_work_category_id
+        AND COALESCE(m.delete_status, 'N') != 'Y'
+        AND COALESCE(m.status_type, '') = 'pre_apply'
+        AND m.report_date &gt;= TO_CHAR(gs.cycle_start, 'YYYYMMDD')
+        AND m.report_date &lt; TO_CHAR(gs.cycle_start + cyc.cycle_step, 'YYYYMMDD')
+        ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
+        LIMIT 1
+        ) tmp ON TRUE
+        LEFT JOIN tb_login_account la
+        ON la.tenant_id = w.tenant_id
+        AND la.login_id = tmp.login_id
+        LEFT JOIN tb_user du
+        ON du.tenant_id = w.tenant_id
+        AND du.login_id = tmp.login_id
+        <include refid="unwrittenCycleWhere"/>
+        ORDER BY gs.cycle_start DESC, category_sort_order, w.code_name, w.drafting_work_category_id
+        <if test="recordCountPerPage > 0">
+            LIMIT #{recordCountPerPage}
+            OFFSET #{firstIndex}
+        </if>
+    </select>
+
+    <select id="HaccpWorkDAO.selectUnwrittenCycleListCount"
+            parameterType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkSearchConditionVO"
+            resultType="int">
+        SELECT COUNT(1)
+        <include refid="unwrittenCycleFrom"/>
+        <include refid="unwrittenCycleWhere"/>
+    </select>
+
     <!-- 요청 일자(#{cycleDate}, yyyy-MM-dd, 없으면 오늘)가 속한 주기의 시작일. 판정 값은 HaccpWorkCycleDates와 같다. -->
     <sql id="actorIsWorkAssignee">
         EXISTS (
@@ -619,6 +690,108 @@
                OR (#{actorLoginCode, jdbcType=VARCHAR} IS NOT NULL AND a2.employee_no = #{actorLoginCode, jdbcType=VARCHAR})
             )
         )
+    </sql>
+
+    <sql id="documentStatusCondition">
+        <if test="statusType != null and statusType != ''">
+            <choose>
+                <when test="statusType == 'pending_mine'">
+                    AND COALESCE(m.status_type, '') = 'in_progress'
+                    AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
+                    AND EXISTS (
+                    SELECT 1
+                    FROM tb_electronic_approval_line_info li
+                    WHERE li.tenant_id = m.tenant_id
+                    AND li.electronic_approval_id = m.electronic_approval_id
+                    AND li.login_id = #{actorLoginId, jdbcType=BIGINT}
+                    AND li.arrival_at IS NOT NULL
+                    AND COALESCE(li.muldec_status, '') = 'drafted'
+                    AND li.exe_at IS NULL
+                    )
+                </when>
+                <otherwise>
+                    AND COALESCE(m.status_type, '') = #{statusType}
+                </otherwise>
+            </choose>
+        </if>
+    </sql>
+
+    <sql id="unwrittenCycleFrom">
+        FROM tb_drafting_work_category w
+        JOIN tb_tenant t
+          ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
+         AND g.tenant_id = w.tenant_id
+        CROSS JOIN LATERAL (
+          SELECT k.cycle_unit,
+                 CASE k.cycle_unit
+                   WHEN 'month' THEN INTERVAL '1 month'
+                   WHEN 'week' THEN INTERVAL '1 week'
+                   WHEN 'quarter' THEN INTERVAL '3 months'
+                   WHEN 'half' THEN INTERVAL '6 months'
+                   WHEN 'year' THEN INTERVAL '1 year'
+                   ELSE INTERVAL '1 day'
+                 END AS cycle_step,
+                 CASE WHEN k.cycle_unit = 'half'
+                      THEN date_trunc('year', LOCALTIMESTAMP)
+                           + CASE WHEN EXTRACT(MONTH FROM LOCALTIMESTAMP) &gt;= 7 THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
+                      ELSE date_trunc(k.cycle_unit, LOCALTIMESTAMP)
+                 END AS cur_start,
+                 CASE WHEN k.cycle_unit = 'half'
+                      THEN date_trunc('year', k.base_date)
+                           + CASE WHEN EXTRACT(MONTH FROM k.base_date) &gt;= 7 THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
+                      ELSE date_trunc(k.cycle_unit, k.base_date)
+                 END AS first_start
+          FROM (
+            SELECT CASE
+                     WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY') THEN 'month'
+                     WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY') THEN 'week'
+                     WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'QUARTER' THEN 'quarter'
+                     WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'HALF' THEN 'half'
+                     WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'YEAR' THEN 'year'
+                     ELSE 'day'
+                   END AS cycle_unit,
+                   CAST(COALESCE(t.service_start_date, DATE(t.created_at)) AS timestamp) AS base_date
+          ) k
+        ) cyc
+        CROSS JOIN LATERAL generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step) AS gs(cycle_start)
+    </sql>
+
+    <sql id="unwrittenCycleWhere">
+        WHERE t.tenant_code = #{tenantCode}
+        AND COALESCE(w.delete_status, 'N') != 'Y'
+        AND w.use_at = 'Y'
+        AND COALESCE(NULLIF(TRIM(w.reg_term), ''), '') NOT IN ('수시', 'ANYTIME', 'anytime')
+        AND (
+        COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
+        OR <include refid="actorIsWorkAssignee"/>
+        )
+        AND NOT EXISTS (
+        SELECT 1
+        FROM tb_electronic_approval_main em
+        WHERE em.tenant_id = w.tenant_id
+        AND em.drafting_work_category_id = w.drafting_work_category_id
+        AND COALESCE(em.delete_status, 'N') != 'Y'
+        AND COALESCE(em.status_type, '') != 'pre_apply'
+        AND em.report_date &gt;= TO_CHAR(gs.cycle_start, 'YYYYMMDD')
+        AND em.report_date &lt; TO_CHAR(gs.cycle_start + cyc.cycle_step, 'YYYYMMDD')
+        )
+        <if test="workType != null and workType != '' and workType != '전체'">
+            AND (
+            g.cata_name = #{workType}
+            OR g.cata_code = #{workType}
+            )
+        </if>
+        <if test="workDivisionId != null and workDivisionId != ''">
+            AND CAST(w.drafting_work_category_id AS varchar) = #{workDivisionId}
+        </if>
+        <if test="(workDivisionId == null or workDivisionId == '') and workDivision != null and workDivision != ''">
+            AND COALESCE(w.code_name, '') ILIKE CONCAT('%', #{workDivision}, '%')
+        </if>
+        <if test="title != null and title != ''">
+            AND COALESCE(w.code_name, '') ILIKE CONCAT('%', #{title}, '%')
+        </if>
     </sql>
 
     <sql id="requestedCycleStart">
