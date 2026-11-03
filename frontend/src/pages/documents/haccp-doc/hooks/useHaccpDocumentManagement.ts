@@ -236,6 +236,8 @@ export function useHaccpDocumentManagement() {
       appliedFilters,
     ],
     queryFn: () => {
+      // 미작성은 업무개시일부터 전체 주기를 보므로 기안일 조건을 보내지 않음
+      const isUnwritten = appliedFilters.status === '미작성';
       const divisionValue = appliedFilters.workDivision.trim();
       const isKnownDivisionId = divisionOptions.some(
         (option) => option.id === divisionValue,
@@ -261,8 +263,6 @@ export function useHaccpDocumentManagement() {
             : divisionValue || undefined,
         draftNumber: appliedFilters.draftNumber.trim() || undefined,
         title: appliedFilters.title.trim() || undefined,
-        // 기존 -> writer: canViewAllDocuments ? appliedFilters.writer.trim() || undefined : undefined,
-        // 변경 -> 권한과 무관하게 작성자 조건 전달
         writer: appliedFilters.writer.trim() || undefined,
         participantType:
           appliedFilters.participantType.length > 0
@@ -272,8 +272,8 @@ export function useHaccpDocumentManagement() {
           appliedFilters.status.trim() && appliedFilters.status !== '전체'
             ? appliedFilters.status.trim()
             : undefined,
-        startDate: appliedFilters.startDate || undefined,
-        endDate: appliedFilters.endDate || undefined,
+        startDate: isUnwritten ? undefined : appliedFilters.startDate || undefined,
+        endDate: isUnwritten ? undefined : appliedFilters.endDate || undefined,
       });
     },
     retry: false,
@@ -286,12 +286,16 @@ export function useHaccpDocumentManagement() {
   const activeFilterChips = useMemo<HaccpDocFilterChip[]>(() => {
     const chips: HaccpDocFilterChip[] = [];
 
-    chips.push({
-      key: 'dateRange',
-      // 기존 -> 기간:
-      // 변경 -> 기안일:
-      label: `기안일: ${appliedFilters.startDate || '-'} ~ ${appliedFilters.endDate || '-'}`,
-    });
+    // 기존 -> 기안일 칩 항상 추가
+    // 변경 -> 미작성이면 기안일 조건을 쓰지 않으므로 칩도 뺌
+    if (appliedFilters.status !== '미작성') {
+      chips.push({
+        key: 'dateRange',
+        // 기존 -> 기간:
+        // 변경 -> 기안일:
+        label: `기안일: ${appliedFilters.startDate || '-'} ~ ${appliedFilters.endDate || '-'}`,
+      });
+    }
 
     if (appliedFilters.workType && appliedFilters.workType !== '전체') {
       chips.push({

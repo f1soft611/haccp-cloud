@@ -12,8 +12,9 @@ import {
   TextField,
 } from '@mui/material';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
+import { TODO_STATUS_OPTIONS } from '../../../dashboard/tenant/todoFilter';
 
-const STATUS_OPTIONS = ['전체', '임시저장', '결재진행중', '승인', '반려'];
+const STATUS_OPTIONS = ['전체', ...TODO_STATUS_OPTIONS];
 const PARTICIPANT_OPTIONS = ['담당자', '기안자', '검토자', '결재자'];
 
 export function HaccpDocumentSearchPanel(props: {
