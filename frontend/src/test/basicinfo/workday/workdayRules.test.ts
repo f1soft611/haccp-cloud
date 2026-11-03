@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkdayItem } from '../../../services/basicinfo/workday/workdayService';
-import { isOffDay, isRedDay, summarizeMonth, applyChanges } from "../../../pages/basicinfo/workday/workdayRules.ts";
+import {
+    isOffDay,
+    isRedDay,
+    summarizeMonth,
+    applyChanges,
+    currentMonthRange,
+    yearsInRange,
+    filterByRange,
+} from "../../../pages/basicinfo/workday/workdayRules.ts";
 
 function day(workdayDate: string, dayType: WorkdayItem['dayType']): WorkdayItem {
     return { workdayDate, dayType, dayName: '', memo: '', source: 'PATTERN' };
@@ -37,5 +45,35 @@ describe('workdayRules', () => {
         const items = [day('2026-02-02', 'WORK'), day('2026-02-03', 'WORK')];
         const changed = { ...day('2026-02-03', 'COMPANY_HOLIDAY'), source: 'MANUAL' as const };
         expect(applyChanges(items, { '2026-02-03': changed })).toEqual([items[0], changed]);
+    });
+
+    it('이번 달 1일부터 말일까지를 기본 기간으로 잡는다', () => {
+        expect(currentMonthRange(new Date(2026, 10, 3))).toEqual({
+            start: '2026-11-01',
+            end: '2026-11-30',
+        });
+        expect(currentMonthRange(new Date(2028, 1, 10))).toEqual({
+            start: '2028-02-01',
+            end: '2028-02-29',
+        });
+    });
+
+    it('기간이 걸친 연도를 모두 돌려준다', () => {
+        expect(yearsInRange('2026-11-01', '2026-11-30')).toEqual([2026]);
+        expect(yearsInRange('2026-12-15', '2028-01-15')).toEqual([2026, 2027, 2028]);
+        expect(yearsInRange('2026-12-15', '2026-01-01')).toEqual([]);
+    });
+
+    it('기간 안의 날짜만 남기고 날짜순으로 정렬한다', () => {
+        const items = [
+            day('2027-01-01', 'PUBLIC_HOLIDAY'),
+            day('2026-12-31', 'WORK'),
+            day('2026-12-30', 'WORK'),
+            day('2027-01-02', 'COMPANY_HOLIDAY'),
+        ];
+        expect(filterByRange(items, '2026-12-31', '2027-01-01').map((item) => item.workdayDate)).toEqual([
+            '2026-12-31',
+            '2027-01-01',
+        ]);
     });
 });
