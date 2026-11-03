@@ -13,6 +13,7 @@ import {
   loadDocumentHistoryPage,
   loadDocumentsPage,
   loadEquipmentPage,
+    loadWorkdayPage,
   loadHaccpBaseCategoryManagementPage,
   loadHaccpBaseEditorPage,
   loadHaccpBaseManagementPage,
@@ -189,6 +190,11 @@ const CommonCodePage = lazy(() =>
         default: module.CommonCodePage,
     })),
 );
+const WorkdayPage = lazy(() =>
+    loadWorkdayPage().then((module) => ({
+        default: module.WorkdayPage,
+    })),
+);
 
 function DefaultHomeRoute() {
   const role = useAuthStore((state) => state.role);
@@ -342,6 +348,14 @@ export function AppRoutes() {
               </ProtectedRoute>
             }
           />
+            <Route
+                path="/basicinfo/workday"
+                element={
+                    <ProtectedRoute enforceMenuAccess>
+                        <WorkdayPage />
+                    </ProtectedRoute>
+                }
+            />
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/document-history" element={<DocumentHistoryPage />} />
           <Route

@@ -64,6 +64,8 @@ export const loadWorkOrderPage = () =>
     import('../../pages/documents/work-order/WorkOrderPage');
 export const loadCommonCodePage = () =>
     import('../../pages/basicinfo/common-code/CommonCodePage');
+export const loadWorkdayPage = () =>
+    import('../../pages/basicinfo/workday/WorkdayPage');
 
 const prefetchedRouteKeys = new Set<string>();
 const inflightRoutePrefetches = new Map<string, Promise<void>>();
@@ -222,6 +224,11 @@ const routeLoaders: RouteLoader[] = [
     key: 'common-code',
     matches: (path) => path === '/basicinfo/cmmnCode',
     load: loadCommonCodePage,
+  },
+  {
+    key: 'basicinfo-workday',
+    matches: (path) => path === '/basicinfo/workday',
+    load: loadWorkdayPage,
   },
   {
     key: 'account-my-page',
