@@ -151,9 +151,9 @@
                       ELSE date_trunc(u.cycle_unit, LOCALTIMESTAMP)
                  END AS cur_start,
                  CASE WHEN u.cycle_unit = 'half'
-                      THEN date_trunc('year', GREATEST(t.created_at, w.created_at))
-                           + CASE WHEN EXTRACT(MONTH FROM GREATEST(t.created_at, w.created_at)) &gt;= 7 THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
-                      ELSE date_trunc(u.cycle_unit, GREATEST(t.created_at, w.created_at))
+                        THEN date_trunc('year', CAST(COALESCE(t.service_start_date, DATE(t.created_at)) AS timestamp))
+                            + CASE WHEN EXTRACT(MONTH FROM COALESCE(t.service_start_date, DATE(t.created_at))) &gt;= 7 THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
+                        ELSE date_trunc(u.cycle_unit, CAST(COALESCE(t.service_start_date, DATE(t.created_at)) AS timestamp))
                  END AS first_start
           FROM (
             SELECT k.cycle_unit,
@@ -290,10 +290,11 @@
                      WHERE NOT EXISTS (
                        SELECT 1
                        FROM tb_electronic_approval_main em
-                       WHERE em.tenant_id = w.tenant_id
-                         AND em.drafting_work_category_id = w.drafting_work_category_id
-                         AND COALESCE(em.delete_status, 'N') != 'Y'
-                         AND em.report_date &gt;= TO_CHAR(gs.cycle_start, 'YYYYMMDD')
+                        WHERE em.tenant_id = w.tenant_id
+                        AND em.drafting_work_category_id = w.drafting_work_category_id
+                        AND COALESCE(em.delete_status, 'N') != 'Y'
+                        AND COALESCE(em.status_type, '') != 'pre_apply'
+                        AND em.report_date &gt;= TO_CHAR(gs.cycle_start, 'YYYYMMDD')
                          AND em.report_date &lt; TO_CHAR(gs.cycle_start + cyc.cycle_step, 'YYYYMMDD')
                      )
                    )
