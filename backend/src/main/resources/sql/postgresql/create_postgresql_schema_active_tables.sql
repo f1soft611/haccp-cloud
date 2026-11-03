@@ -459,6 +459,43 @@ CREATE INDEX IF NOT EXISTS idx_menu_parent ON tb_menu(parent_menu_id);
 
 CREATE INDEX IF NOT EXISTS idx_tenant_permission ON tb_permission(tenant_id);
 
+-- 근무일 관리
+CREATE TABLE IF NOT EXISTS tb_workdate (
+    workdate_id  BIGSERIAL PRIMARY KEY,                -- 근무일ID
+    tenant_id    BIGINT NOT NULL,                      -- 테넌트ID
+    work_date    DATE NOT NULL,                        -- 근무일
+    work_type    VARCHAR(50) NOT NULL,                 -- 근무일 유형(공통코드 111 item_code)
+    created_by   BIGINT,                               -- 등록자
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 등록일시
+    updated_by   BIGINT,                               -- 수정자
+    updated_at   TIMESTAMP,                            -- 수정일시
+    work_source  VARCHAR(20),                          -- 출처: API (공휴일 API) / PATTERN (요일 규칙) / MANUAL (사용자 직접 수정)
+    work_name    VARCHAR(100),                         -- 휴일명 (공휴일 API dateName 또는 사용자 입력)
+    work_memo    VARCHAR(100),                         -- 메모
+    CONSTRAINT uk_workdate_tenant_date UNIQUE (tenant_id, work_date),
+    CONSTRAINT fk_workdate_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant (tenant_id) ON DELETE CASCADE
+    );
+
+-- 주차 관리
+CREATE TABLE IF NOT EXISTS tb_week (
+    week_id      BIGSERIAL PRIMARY KEY,                -- 주차ID
+    tenant_id    BIGINT NOT NULL,                      -- 테넌트ID
+    year         INTEGER NOT NULL,                     -- 년도
+    from_date    DATE NOT NULL,                        -- 시작일
+    to_date      DATE NOT NULL,                        -- 종료일
+    week         INTEGER NOT NULL,                     -- 주차
+    created_by   BIGINT,                               -- 등록자
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 등록일시
+    updated_by   BIGINT,                               -- 수정자
+    updated_at   TIMESTAMP,                            -- 수정일시
+    CONSTRAINT uk_week_tenant_year_week UNIQUE (tenant_id, year, week),
+    CONSTRAINT chk_week_no CHECK (week >= 1 AND week <= 53),
+    CONSTRAINT chk_week_date_range CHECK (from_date <= to_date),
+    CONSTRAINT fk_week_tenant FOREIGN KEY (tenant_id) REFERENCES tb_tenant (tenant_id) ON DELETE CASCADE
+    );
+
+CREATE INDEX IF NOT EXISTS ix_week_tenant_date ON tb_week(tenant_id, from_date, to_date);
+
 CREATE INDEX IF NOT EXISTS idx_role_menu_permission_role ON tb_role_menu_permission(role_id);
 CREATE INDEX IF NOT EXISTS idx_role_menu_permission_menu ON tb_role_menu_permission(menu_id);
 CREATE INDEX IF NOT EXISTS idx_role_menu_permission_permission ON tb_role_menu_permission(permission_id);

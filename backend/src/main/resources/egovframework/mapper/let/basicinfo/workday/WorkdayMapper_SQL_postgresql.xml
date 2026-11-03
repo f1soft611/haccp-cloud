@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WorkdayDAO">
+
+    <!-- 업무일 resultMap -->
+    <resultMap id="workdayResult"
+               type="egovframework.let.basicinfo.workday.domain.model.WorkdayVO">
+        <result property="workdayDate" column="workdayDate"/>
+        <result property="dayType" column="dayType"/>
+        <result property="dayName" column="dayName"/>
+        <result property="memo" column="memo"/>
+        <result property="source" column="source"/>
+    </resultMap>
+
+    <!-- 주차 resultMap -->
+    <resultMap id="weekResult"
+               type="egovframework.let.basicinfo.workday.domain.model.WeekVO">
+        <result property="year" column="year"/>
+        <result property="week" column="week"/>
+        <result property="fromDate" column="fromDate"/>
+        <result property="toDate" column="toDate"/>
+    </resultMap>
+
+    <!-- 연도별 업무일 목록 -->
+    <select id="WorkdayDAO.selectWorkdayList"
+            parameterType="map"
+            resultMap="workdayResult">
+        SELECT to_char(w.work_date, 'YYYY-MM-DD')   AS workdayDate,
+               w.work_type                          AS dayType,
+               COALESCE(w.work_name, '')            AS dayName,
+               COALESCE(w.work_memo, '')            AS memo,
+               COALESCE(w.work_source, 'PATTERN')   AS source
+        FROM tb_workdate w
+        WHERE w.tenant_id = #{tenantId}
+          AND w.work_date &gt;= make_date(#{year}, 1, 1)
+          AND w.work_date &lt; make_date(#{year} + 1, 1, 1)
+        ORDER BY w.work_date
+    </select>
+
+    <!-- 연도별 업무일 건수 (생성 시 기존 데이터 확인) -->
+    <select id="WorkdayDAO.selectWorkdayCount"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM tb_workdate
+        WHERE tenant_id = #{tenantId}
+          AND work_date &gt;= make_date(#{year}, 1, 1)
+          AND work_date &lt; make_date(#{year} + 1, 1, 1)
+    </select>
+
+    <!-- 사용자 수정: 출처를 MANUAL 로 고정 -->
+    <update id="WorkdayDAO.updateWorkday"
+            parameterType="map">
+        UPDATE tb_workdate
+        SET work_type   = #{dayType},
+            work_name   = #{dayName, jdbcType=VARCHAR},
+            work_memo   = #{memo, jdbcType=VARCHAR},
+            work_source = 'MANUAL',
+            updated_by  = #{updatedBy, jdbcType=BIGINT},
+            updated_at  = CURRENT_TIMESTAMP
+        WHERE tenant_id = #{tenantId}
+          AND work_date = CAST(#{workdayDate} AS DATE)
+    </update>
+
+    <!-- 연간 생성: 사용자 수정(MANUAL) 행은 그대로, 나머지는 유형/출처/휴일명만 갱신 (메모 유지) -->
+    <insert id="WorkdayDAO.upsertGeneratedWorkday"
+            parameterType="map">
+        INSERT INTO tb_workdate (tenant_id, work_date, work_type, work_source, work_name, created_by)
+        VALUES (#{tenantId},
+                CAST(#{workdayDate} AS DATE),
+                #{dayType},
+                #{source},
+                #{dayName, jdbcType=VARCHAR},
+                #{operatorUserId, jdbcType=BIGINT})
+            ON CONFLICT (tenant_id, work_date) DO UPDATE
+                                                      SET work_type   = EXCLUDED.work_type,
+                                                      work_source = EXCLUDED.work_source,
+                                                      work_name   = EXCLUDED.work_name,
+                                                      updated_by  = EXCLUDED.created_by,
+                                                      updated_at  = CURRENT_TIMESTAMP
+                                                  WHERE tb_workdate.work_source IS DISTINCT FROM 'MANUAL'
+    </insert>
+
+    <!-- 업무일 생성 시 주차 저장: (tenant, year, week) 이 있으면 기간만 갱신 -->
+    <insert id="WorkdayDAO.upsertWeek"
+            parameterType="map">
+        INSERT INTO tb_week (tenant_id, year, week, from_date, to_date, created_by)
+        VALUES (#{tenantId},
+                #{year},
+                #{week},
+                CAST(#{fromDate} AS DATE),
+                CAST(#{toDate} AS DATE),
+                #{operatorUserId, jdbcType=BIGINT})
+            ON CONFLICT (tenant_id, year, week) DO UPDATE
+                                                       SET from_date  = EXCLUDED.from_date,
+                                                       to_date    = EXCLUDED.to_date,
+                                                       updated_by = EXCLUDED.created_by,
+                                                       updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <!-- 조회 기간과 겹치는 주차 (ix_week_tenant_date) -->
+    <select id="WorkdayDAO.selectWeekList"
+            parameterType="map"
+            resultMap="weekResult">
+        SELECT k.year                              AS year,
+               k.week                              AS week,
+               to_char(k.from_date, 'YYYY-MM-DD')  AS fromDate,
+               to_char(k.to_date, 'YYYY-MM-DD')    AS toDate
+        FROM tb_week k
+        WHERE k.tenant_id = #{tenantId}
+          AND k.from_date &lt;= CAST(#{to} AS DATE)
+          AND k.to_date &gt;= CAST(#{from} AS DATE)
+        ORDER BY k.from_date
+    </select>
+
+    <select id="WorkdayDAO.selectTenantIdByCode"
+            parameterType="string"
+            resultType="long">
+        SELECT tenant_id
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+            LIMIT 1
+    </select>
+
+    <select id="WorkdayDAO.selectUserIdByLoginCode"
+            parameterType="map"
+            resultType="long">
+        SELECT u.user_id
+        FROM tb_user u
+                 JOIN tb_login_account la ON la.login_id = u.login_id
+        WHERE la.tenant_id = #{tenantId}
+          AND la.login_code = #{loginCode}
+            LIMIT 1
+    </select>
+</mapper>

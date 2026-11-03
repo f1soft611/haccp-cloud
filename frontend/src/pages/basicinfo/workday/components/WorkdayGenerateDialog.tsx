@@ -45,7 +45,7 @@ export function WorkdayGenerateDialog(props: WorkdayGenerateDialogProps) {
         <Dialog open onClose={loading ? undefined : onClose} maxWidth="xs" fullWidth>
             <DialogTitle>{year}년 업무일 생성</DialogTitle>
             <DialogContent>
-                <Stack spacing={2} sx={{ pt: 1 }}>
+                <Stack spacing={2} sx={{ pt: 1, }}>
                     <div>
                         <Typography variant="subtitle2">기본 휴무 요일</Typography>
                         <FormGroup row>
@@ -74,7 +74,9 @@ export function WorkdayGenerateDialog(props: WorkdayGenerateDialogProps) {
                         }
                     />
                     {hasExistingData ? (
-                        <Alert severity="warning">{year}년 기존 데이터를 덮어씁니다.</Alert>
+                        <Alert severity="warning">
+                            {year}년 기존 데이터를 덮어씁니다. 직접 수정한 날짜는 유지됩니다.
+                        </Alert>
                     ) : null}
                     {hasUnsavedChanges ? (
                         <Alert severity="warning">저장하지 않은 {year}년 변경분은 사라집니다.</Alert>

@@ -103,11 +103,13 @@ function normalizeItem(raw: RawHaccpDocumentItem): HaccpDocumentItem {
   const latestStatusAt = normalizeText(
     raw.latestStatusAt ?? raw.latest_status_at,
   );
+  const cycleDate = normalizeText(raw.cycleDate ?? raw.cycle_date);
 
   // Document list rows must use a unique identity per approval document.
+  // 기존 -> [workId, draftNumber, latestStatusAt] / 변경 -> 미작성 행은 주기별로 구분되도록 cycleDate 추가
   const rowId =
     approvalId ||
-    [draftingWorkCategoryId, draftNumber, latestStatusAt]
+    [draftingWorkCategoryId, draftNumber, latestStatusAt, cycleDate]
       .filter((value) => value.length > 0)
       .join('-');
 
@@ -127,7 +129,7 @@ function normalizeItem(raw: RawHaccpDocumentItem): HaccpDocumentItem {
     ),
     draftedAt: normalizeText(raw.createdAt ?? raw.created_at),
     updatedAt: latestStatusAt,
-    cycleDate: normalizeText(raw.cycleDate ?? raw.cycle_date),
+    cycleDate,
   };
 }
 

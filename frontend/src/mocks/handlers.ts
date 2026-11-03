@@ -1,4 +1,6 @@
 import { http, HttpResponse } from 'msw';
+import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
 import type { AuthorityCode } from '../shared/auth/authorityCode';
 import type { UserRole } from '../shared/store/authStore';
 import type { DepartmentItem } from '../services/organization/departmentsService';
@@ -8,7 +10,9 @@ import type {
 } from '../services/documents/documentsService';
 import type { UserItem } from '../services/organization/usersService';
 import type { CommonCodeData } from '../services/basicinfo/commonCodeService';
-import type { WorkdayItem } from '../services/basicinfo/workday/workdayService';
+import type { WeekItem, WorkdayItem } from '../services/basicinfo/workday/workdayService';
+
+dayjs.extend(isoWeek);
 
 type TenantItem = {
   tenantCode: string;
@@ -2874,6 +2878,27 @@ export const handlers = [
     return HttpResponse.json({ resultCode: 200, result: { items: workdayStore.get(year) ?? [] } });
   }),
 
+  // ponytail: 업무일 생성 여부와 상관없이 ISO 주차를 계산해서 돌려줌
+  http.get(/\/api\/v1\/workday\/weeks(\?.*)?$/, ({ request }) => {
+    const url = new URL(request.url);
+    const from = url.searchParams.get('from') ?? '';
+    const to = url.searchParams.get('to') ?? '';
+    const items: WeekItem[] = [];
+    for (
+        let monday = dayjs(from).startOf('isoWeek');
+        monday.isValid() && monday.format('YYYY-MM-DD') <= to;
+        monday = monday.add(1, 'week')
+    ) {
+      items.push({
+        year: monday.isoWeekYear(),
+        week: monday.isoWeek(),
+        fromDate: monday.format('YYYY-MM-DD'),
+        toDate: monday.add(6, 'day').format('YYYY-MM-DD'),
+      });
+    }
+    return HttpResponse.json({ resultCode: 200, result: { items } });
+  }),
+
   http.put(/\/api\/v1\/workday\/batch$/, async ({ request }) => {
     const { items } = (await request.json()) as { items: WorkdayItem[] };
     for (const changed of items) {
@@ -2900,9 +2925,18 @@ export const handlers = [
           { status: 409 },
       );
     }
+    // 기존 -> 생성 결과로 연도 전체를 교체
+    // 변경 -> 실제 백엔드처럼 직접 수정(MANUAL)한 날짜는 유지
+    const manualByDate = new Map(
+        (workdayStore.get(body.year) ?? [])
+        .filter((item) => item.source === 'MANUAL')
+        .map((item) => [item.workdayDate, item]),
+    );
     workdayStore.set(
         body.year,
-        buildMockWorkdays(body.year, body.weeklyOffDays, body.includePublicHolidays),
+        buildMockWorkdays(body.year, body.weeklyOffDays, body.includePublicHolidays).map(
+            (item) => manualByDate.get(item.workdayDate) ?? item,
+        ),
     );
     return HttpResponse.json({ resultCode: 200, result: { message: '생성되었습니다.' } });
   }),

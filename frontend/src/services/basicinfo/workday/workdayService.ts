@@ -30,6 +30,14 @@ export type GenerateWorkdaysRequest = {
     overwrite: boolean;
 };
 
+// year 는 ISO 주 기준 연도 (2027-01-01 은 2026년 53주차)
+export type WeekItem = {
+    year: number;
+    week: number;
+    fromDate: string;
+    toDate: string;
+};
+
 function tenantHeaders(tenantCode?: string) {
     return tenantCode ? { 'x-tenant-code': tenantCode } : undefined;
 }
@@ -67,4 +75,16 @@ export async function generateWorkdays(params: GenerateWorkdaysRequest): Promise
         },
         { headers: tenantHeaders(params.tenantCode) },
     );
+}
+
+export async function listWeeks(params: {
+    tenantCode?: string;
+    from: string;
+    to: string;
+}): Promise<WeekItem[]> {
+    const { data } = await apiClient.get<ResultEnvelope<{ items: WeekItem[] }>>(
+        '/v1/workday/weeks',
+        { headers: tenantHeaders(params.tenantCode), params: { from: params.from, to: params.to } },
+    );
+    return data?.result?.items ?? [];
 }

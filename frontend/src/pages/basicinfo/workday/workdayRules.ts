@@ -1,4 +1,5 @@
-import type { WorkdayItem, WorkdayType } from '../../../services/basicinfo/workday/workdayService';
+import dayjs from 'dayjs';
+import type { WeekItem, WorkdayItem, WorkdayType } from '../../../services/basicinfo/workday/workdayService';
 
 export function isOffDay(dayType: WorkdayType): boolean {
     return dayType !== 'WORK' && dayType !== 'SPECIAL_WORK';
@@ -6,6 +7,14 @@ export function isOffDay(dayType: WorkdayType): boolean {
 
 export function isRedDay(dayType: WorkdayType): boolean {
     return dayType === 'PUBLIC_HOLIDAY' || dayType === 'SUBSTITUTE_HOLIDAY';
+}
+
+// 리스트 표시용: 공휴일/대체공휴일 빨강 > 토요일 파랑 > 일요일/회사휴일 빨강
+export function dayColor(workdayDate: string, dayType: WorkdayType): 'red' | 'blue' | null {
+    const weekday = dayjs(workdayDate).day();
+    if (isRedDay(dayType)) return 'red';
+    if (weekday === 6) return 'blue';
+    return weekday === 0 || dayType === 'COMPANY_HOLIDAY' ? 'red' : null;
 }
 
 export type MonthSummary = { workDays: number; offDays: number };
@@ -23,4 +32,37 @@ export function applyChanges(
     changes: Record<string, WorkdayItem>,
 ): WorkdayItem[] {
     return items.map((item) => changes[item.workdayDate] ?? item);
+}
+
+export type DateRange = { start: string; end: string };
+
+export function currentMonthRange(today: Date): DateRange {
+    const base = dayjs(today);
+    return {
+        start: base.startOf('month').format('YYYY-MM-DD'),
+        end: base.endOf('month').format('YYYY-MM-DD'),
+    };
+}
+
+// start/end: YYYY-MM-DD
+export function yearsInRange(start: string, end: string): number[] {
+    const from = Number(start.slice(0, 4));
+    const to = Number(end.slice(0, 4));
+    const years: number[] = [];
+    for (let year = from; year <= to; year += 1) {
+        years.push(year);
+    }
+    return years;
+}
+
+// YYYY-MM-DD 문자열이라 사전순 비교가 날짜 비교와 같음
+export function filterByRange(items: WorkdayItem[], start: string, end: string): WorkdayItem[] {
+    return items
+    .filter((item) => item.workdayDate >= start && item.workdayDate <= end)
+    .sort((a, b) => a.workdayDate.localeCompare(b.workdayDate));
+}
+
+// YYYY-MM-DD 문자열이라 사전순 비교가 날짜 비교와 같음
+export function findWeek(weeks: WeekItem[], workdayDate: string): WeekItem | undefined {
+    return weeks.find((week) => week.fromDate <= workdayDate && workdayDate <= week.toDate);
 }
