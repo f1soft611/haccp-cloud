@@ -37,12 +37,12 @@ export const appTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#0f766e',
-      dark: '#115e59',
-      light: '#2dd4bf',
+      main: '#2a5bb8',
+      dark: '#1e3a6e',
+      light: '#6b8fd6',
     },
     secondary: {
-      main: '#14b8a6',
+      main: '#3b82f6',
       dark: '#0f766e',
       light: '#99f6e4',
     },
@@ -50,7 +50,7 @@ export const appTheme = createTheme({
       main: '#e57a22',
     },
     background: {
-      default: '#ecfdf5',
+      default: '#f5f6f8',
       paper: '#ffffff',
     },
   },

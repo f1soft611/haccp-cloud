@@ -107,7 +107,13 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
                         startIcon={<DescriptionOutlinedIcon />}
                         aria-label={`미작성 ${item.unwrittenCount}건`}
                         onClick={handleUnwritten}
-                        sx={{ borderRadius: '4px', whiteSpace: 'nowrap', flexShrink: 0, fontSize: 12 }}
+                        sx={{
+                            borderRadius: '4px',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                            fontSize: 12,
+                            height: 30,
+                        }}
                     >
                         미작성건 :&nbsp;
                         <Box component="span" sx={{ textDecoration: 'underline' }}>{item.unwrittenCount}</Box>
@@ -117,7 +123,13 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
                         color="primary"
                         aria-label="오늘 작성"
                         onClick={handleWrite}
-                        sx={{ border: '1px solid', borderColor: 'primary.main', borderRadius: '4px', flexShrink: 0 }}
+                        sx={{
+                            border: '1px solid',
+                            borderColor: 'primary.main',
+                            borderRadius: '4px',
+                            flexShrink: 0,
+                            height: 30
+                        }}
                     >
                         <EditOutlinedIcon fontSize="small" />
                     </IconButton>
