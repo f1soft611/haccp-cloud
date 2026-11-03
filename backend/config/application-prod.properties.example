@@ -15,3 +15,5 @@ Globals.jwt.secret=YOUR_JWT_SECRET_KEY
 
 # Government log api
 gov.log.api.crtfcKey=YOUR_GOV_LOG_CERT_KEY
+
+holiday.api.service-key=YOUR_DATA_GO_KR_DECODING_KEY
