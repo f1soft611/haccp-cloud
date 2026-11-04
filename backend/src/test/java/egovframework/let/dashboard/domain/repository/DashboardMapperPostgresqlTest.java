@@ -101,4 +101,23 @@ class DashboardMapperPostgresqlTest {
                     "resultMap 에 승인 주기 수 매핑이 있어야 한다");
         }
     }
+
+    @Test
+    void dashboardMapper_should_count_expiration_targets_by_latest_status() throws Exception {
+        ClassPathResource resource = new ClassPathResource(
+                "egovframework/mapper/let/dashboard/DashboardMapper_SQL_postgresql.xml");
+
+        try (InputStream inputStream = resource.getInputStream();
+             Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name())) {
+            String xml = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+            assertTrue(xml.contains("WHERE NOT cyc.is_anytime AND COALESCE(w.expiration_apply, 'N') != 'Y'"),
+                    "주기 기반 집계는 만료일 관리 업무를 제외해야 한다");
+            assertTrue(xml.contains("DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)"),
+                    "만료일 관리 업무는 대상(설비, 품목유형, 증명서 소유자) 단위로 센다");
+            assertTrue(xml.contains("CASE WHEN es.status_type = 'approved' THEN NULL ELSE es.status_type END"),
+                    "대상의 최신 문서가 승인이면 미작성으로 센다");
+            assertTrue(xml.contains("AND COALESCE(xm.status_type, '') != 'pre_apply'"),
+                    "대상 최신 문서 선택 시 임시저장은 제외한다");
+        }
+    }
 }
