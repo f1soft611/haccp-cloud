@@ -48,11 +48,14 @@ export function WorkdayGenerateDialog(props: WorkdayGenerateDialogProps) {
                 <Stack spacing={2} sx={{ pt: 1, }}>
                     <div>
                         <Typography variant="subtitle2">기본 휴무 요일</Typography>
-                        <FormGroup row>
+                        {/* 기존 -> <FormGroup row> / 변경 -> 7개 요일을 한 줄로 고정 */}
+                        <FormGroup row sx={{ flexWrap: 'nowrap' }}>
                             {WEEKDAY_LABELS.map((label, day) => (
                                 <FormControlLabel
                                     key={label}
                                     label={label}
+                                    // 기존 -> 기본 오른쪽 여백(16px) / 변경 -> 8px 로 줄여 xs 다이얼로그 폭에 맞춤
+                                    sx={{ mr: 1 }}
                                     control={
                                         <Checkbox
                                             size="small"
@@ -66,6 +69,8 @@ export function WorkdayGenerateDialog(props: WorkdayGenerateDialogProps) {
                     </div>
                     <FormControlLabel
                         label="법정 공휴일 반영"
+                        // 기존 -> Stack 이 margin 을 0 으로 초기화해 들여쓰기됨 / 변경 -> 기본 -11px 복원해 위 체크박스와 정렬
+                        sx={{ ml: '-11px' }}
                         control={
                             <Checkbox
                                 checked={includePublicHolidays}
