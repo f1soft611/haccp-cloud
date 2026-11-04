@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../../app/providers/AppProviders.tsx';
-import { TenantStatusCardSection } from '../../pages/dashboard/tenant/sections/TenantStatusCardSection';
+import { AppProviders } from '../../../app/providers/AppProviders.tsx';
+import { TenantStatusCardSection } from '../../../pages/dashboard/tenant/sections/TenantStatusCardSection.tsx';
 
 const counts = { 미작성: 4, 결재할문서: 2, 결재진행중: 1, 승인: 7, 반려: 0 };
 
@@ -12,7 +12,6 @@ describe('TenantStatusCardSection', () => {
             <AppProviders>
                 <TenantStatusCardSection
                     counts={counts}
-                    selected="승인"
                     isLoading={false}
                     onSelect={onSelect}
                 />
@@ -21,10 +20,9 @@ describe('TenantStatusCardSection', () => {
 
         const approvalWaiting = screen.getByRole('button', { name: /결재할문서/ });
         expect(approvalWaiting).toHaveTextContent('2');
-        expect(screen.getByRole('button', { name: /승인/ })).toHaveAttribute(
-            'aria-pressed',
-            'true',
-        );
+        // 기존 -> 승인 칸이 aria-pressed=true 인지 확인
+        // 변경 -> 클릭하면 페이지를 이동하므로 선택 표시 없음
+        expect(screen.getByRole('button', { name: /승인/ })).not.toHaveAttribute('aria-pressed');
 
         fireEvent.click(approvalWaiting);
         expect(onSelect).toHaveBeenCalledWith('결재할문서');
@@ -35,7 +33,6 @@ describe('TenantStatusCardSection', () => {
             <AppProviders>
                 <TenantStatusCardSection
                     counts={counts}
-                    selected=""
                     isLoading={false}
                     onSelect={vi.fn()}
                 />

@@ -1,15 +1,15 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { HaccpDocumentManagementPage } from '../pages/documents/haccp-doc/HaccpDocumentManagementPage';
-import { listHaccpBaseCategories } from '../services/documents/haccpBaseCategoryService';
+import { AppProviders } from '../../../app/providers/AppProviders.tsx';
+import { HaccpDocumentManagementPage } from '../../../pages/documents/haccp-doc/HaccpDocumentManagementPage.tsx';
+import { listHaccpBaseCategories } from '../../../services/documents/haccpBaseCategoryService.ts';
 import {
   getHaccpWorkDraftTemplate,
   listHaccpBaseWorks,
-} from '../services/documents/haccpBaseWorkService';
-import { listHaccpDocuments } from '../services/documents/haccpDocumentService';
-import { useAuthStore } from '../shared/store/authStore';
-import { TODO_STATUS_OPTIONS } from '../pages/dashboard/tenant/todoFilter';
+} from '../../../services/documents/haccpBaseWorkService.ts';
+import { listHaccpDocuments } from '../../../services/documents/haccpDocumentService.ts';
+import { useAuthStore } from '../../../shared/store/authStore.ts';
+import { TODO_STATUS_OPTIONS } from '../../../pages/dashboard/tenant/todoFilter.ts';
 
 
 vi.mock('../services/documents/haccpDocumentService', () => ({
@@ -218,6 +218,41 @@ describe('HaccpDocumentManagementPage', () => {
     await waitFor(() => {
       expect(listHaccpDocuments).toHaveBeenCalled();
     });
+  });
+
+  it('keeps empty draft dates from the query and searches without a date range', async () => {
+    window.history.pushState(
+      {},
+      '',
+      `/docs/haccp-doc?status=${encodeURIComponent('반려')}&startDate=&endDate=`,
+    );
+
+    render(
+      <AppProviders>
+        <HaccpDocumentManagementPage />
+      </AppProviders>,
+    );
+
+    expect(screen.getByLabelText('기안일 시작')).toHaveValue('');
+    expect(screen.getByLabelText('기안일 종료')).toHaveValue('');
+    await waitFor(() => {
+      expect(listHaccpDocuments).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: '반려',
+          startDate: undefined,
+          endDate: undefined,
+        }),
+      );
+    });
+    expect(screen.getByText('기안일: 전체')).toBeInTheDocument();
+
+    // 조회 후에도 날짜 키가 URL 에 남아 새로고침해도 이번 달 범위로 바뀌지 않음
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    const params = new URLSearchParams(window.location.search);
+    expect(params.has('startDate')).toBe(true);
+    expect(params.get('startDate')).toBe('');
+    expect(params.has('endDate')).toBe(true);
+    expect(params.get('endDate')).toBe('');
   });
 
   it('shows all documents for admin roles', async () => {

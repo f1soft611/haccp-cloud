@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { TenantTodoCardItem } from '../pages/dashboard/tenant/hooks/useTenantDashboardData';
+import type { TenantTodoCardItem } from '../../../pages/dashboard/tenant/hooks/useTenantDashboardData.ts';
 import {
-    countCurrentMonthStatuses,
+    countCumulativeStatuses,
     countTodoStatuses,
     EMPTY_TODO_FILTER,
     matchesTodoFilter,
     PENDING_APPROVAL_STATUS,
-} from '../pages/dashboard/tenant/todoFilter';
+} from '../../../pages/dashboard/tenant/todoFilter.ts';
 
 const item = {
   id: 'W1',
@@ -100,23 +100,43 @@ describe('countTodoStatuses', () => {
   });
 });
 
-describe('countCurrentMonthStatuses', () => {
-    it('counts only non-future calendar events and keeps the pending approval count', () => {
-        const counts = countCurrentMonthStatuses(
+describe('countCumulativeStatuses', () => {
+    it('sums cumulative cycle counts of todos and keeps the pending approval count', () => {
+        const counts = countCumulativeStatuses(
             [
-                { isFuture: false, resource: item },
-                { isFuture: false, resource: withStatus('승인', 'approved') },
-                { isFuture: true, resource: item },
-                { isFuture: true, resource: withStatus('반려', 'rejected') },
+                {
+                    ...item,
+                    unwrittenCount: 2,
+                    inProgressCycleCount: 1,
+                    approvedCycleCount: 10,
+                    rejectedCycleCount: 0,
+                },
+                {
+                    ...item,
+                    id: 'W2',
+                    unwrittenCount: 3,
+                    inProgressCycleCount: 0,
+                    approvedCycleCount: 5,
+                    rejectedCycleCount: 2,
+                },
+                {
+                    ...item,
+                    id: 'W3',
+                    cycle: 'ANYTIME',
+                    unwrittenCount: 0,
+                    inProgressCycleCount: 0,
+                    approvedCycleCount: 0,
+                    rejectedCycleCount: 0,
+                },
             ],
-            2,
+            4,
         );
         expect(counts).toEqual({
-            미작성: 1,
-            결재할문서: 2,
-            결재진행중: 0,
-            승인: 1,
-            반려: 0,
+            미작성: 5,
+            결재할문서: 4,
+            결재진행중: 1,
+            승인: 15,
+            반려: 2,
         });
     });
 });

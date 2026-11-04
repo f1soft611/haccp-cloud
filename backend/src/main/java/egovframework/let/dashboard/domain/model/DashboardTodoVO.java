@@ -110,6 +110,15 @@ public class DashboardTodoVO implements Serializable {
     @Schema(description = "현재 주기 종료일(yyyyMMdd)")
     private String cycleEndDate;
 
-    @Schema(description = "테넌트 생성일~현재 주기까지 미작성 주기 수")
+    @Schema(description = "서비스 시작일~현재 주기까지 미작성 주기 수")
     private Integer unwrittenCount;
+
+    @Schema(description = "서비스 시작일~현재 주기까지 최신 문서가 결재진행중인 주기 수")
+    private Integer inProgressCycleCount;
+
+    @Schema(description = "서비스 시작일~현재 주기까지 최신 문서가 승인인 주기 수")
+    private Integer approvedCycleCount;
+
+    @Schema(description = "서비스 시작일~현재 주기까지 최신 문서가 반려인 주기 수")
+    private Integer rejectedCycleCount;
 }

@@ -37,16 +37,13 @@ const CARD_TOOLTIPS: Record<TodoStatusCardKey, string> = {
 
 type TenantStatusCardSectionProps = {
     counts: TodoStatusCounts;
-    selected: string;
     isLoading: boolean;
     onSelect: (status: TodoStatusCardKey) => void;
 };
 
-// 종합현황 리스트 상단: 상태별 건수(검색조건과 무관한 전체 기준), 클릭 시 상태필터 적용
-// 기존 -> 상태별 개별 Paper 카드 5개
-// 변경 -> 바깥 패널(TenantDashboard) 안의 가로 한 줄, 칸 사이 세로 구분선, 아이콘 + 라벨 + 숫자 + 건
+// 종합현황 리스트 상단: 상태별 건수(검색조건과 무관한 전체 기준)
 export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
-    const { counts, selected, isLoading, onSelect } = props;
+    const { counts, isLoading, onSelect } = props;
 
     return (
         <Stack
@@ -61,13 +58,11 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
             }
         >
             {STATUS_CARD_KEYS.map((status) => {
-                const isSelected = selected === status;
                 const Icon = CARD_ICONS[status];
                 // 마우스를 올리면 상태 설명 툴팁 표시 (describeChild로 버튼 이름은 상태명 유지)
                 return (
                     <Tooltip key={status} title={CARD_TOOLTIPS[status]} describeChild arrow>
                         <ButtonBase
-                            aria-pressed={isSelected}
                             onClick={() => onSelect(status)}
                             sx={{
                                 flex: { xs: '1 1 50%', sm: 1 },
@@ -75,14 +70,11 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                                 py: 1.5,
                                 px: 2,
                                 borderRadius: 1,
-                                bgcolor: isSelected ? 'action.selected' : 'transparent',
-                                '&:hover': {
-                                    bgcolor: isSelected ? 'action.selected' : 'action.hover',
-                                },
+                                '&:hover': { bgcolor: 'action.hover' },
                             }}
                         >
                             <Icon fontSize="small" sx={{ color: 'text.secondary' }} />
-                            <Typography variant="body2" fontWeight={isSelected ? 700 : 400}>
+                            <Typography variant="body2">
                                 {status}
                             </Typography>
                             <Typography

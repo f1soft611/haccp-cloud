@@ -324,4 +324,36 @@ COMMENT ON COLUMN tb_electronic_approval_sub.created_at IS '등록일시';
 COMMENT ON COLUMN tb_electronic_approval_sub.updated_by IS '변경자';
 COMMENT ON COLUMN tb_electronic_approval_sub.updated_at IS '변경일시';
 
+-- 만료일 관리 업무: 업무 + 대상(설비, 품목유형, 증명서 소유자)별 최신 문서 (삭제, 임시저장 제외)
+CREATE OR REPLACE VIEW v_expiration_target_latest AS
+SELECT DISTINCT ON (m.tenant_id, m.drafting_work_category_id,
+                    s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)
+       m.tenant_id,
+       m.drafting_work_category_id,
+       m.electronic_approval_id,
+       COALESCE(m.status_type, '') AS status_type,
+       CAST(COALESCE(m.updated_at, m.created_at) AS timestamp) AS status_at,
+       s.equipment_id,
+       COALESCE(s.material_type, '') AS material_type,
+       s.certification_user_id,
+       s.inspected_date,
+       s.expiration_date,
+       COALESCE(e.equip_nm, u.user_nm, '') AS target_name
+FROM tb_electronic_approval_sub s
+JOIN tb_electronic_approval_main m
+  ON m.tenant_id = s.tenant_id
+ AND m.electronic_approval_id = s.electronic_approval_id
+LEFT JOIN tb_equipment_info e
+  ON e.tenant_id = s.tenant_id
+ AND e.equipment_id = s.equipment_id
+LEFT JOIN tb_user u
+  ON u.tenant_id = s.tenant_id
+ AND u.user_id = s.certification_user_id
+WHERE COALESCE(m.delete_status, 'N') != 'Y'
+  AND COALESCE(m.status_type, '') != 'pre_apply'
+ORDER BY m.tenant_id, m.drafting_work_category_id,
+         s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id,
+         s.inspected_date DESC, m.electronic_approval_id DESC;
+
+
 COMMIT;

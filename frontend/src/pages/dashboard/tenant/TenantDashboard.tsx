@@ -1,18 +1,16 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, Divider, Grid, Paper, Stack } from '@mui/material';
 import { useSessionState } from '../../../shared/hooks/useSessionState';
 import { WorkCalendarView } from '../../documents/work-calendar/components/WorkCalendarView';
-import {
-    useCalendarMonthEvents,
-    useWorkCalendarData,
-} from '../../documents/work-calendar/hooks/useWorkCalendarData';
+import { useWorkCalendarData } from '../../documents/work-calendar/hooks/useWorkCalendarData';
 import { useTenantDashboardData } from './hooks/useTenantDashboardData';
 import { TenantFilterSection } from './sections/TenantFilterSection';
 import { TenantSidebarSection } from './sections/TenantSidebarSection';
 import { TenantTodoSection } from './sections/TenantTodoSection';
 import { TenantStatusCardSection } from './sections/TenantStatusCardSection';
 import {
-    countCurrentMonthStatuses,
+    countCumulativeStatuses,
     EMPTY_TODO_FILTER,
     matchesTodoFilter,
     PENDING_APPROVAL_STATUS,
@@ -20,11 +18,8 @@ import {
     type TenantViewMode,
 } from './todoFilter';
 
-// 기존 -> 상단 요약 배너(TenantSummarySection) + KPI 카드 4개(TenantKpiSection) + 할 일 그리드 + 우측 사이드바
-// 변경 -> 좌측: 검색필터(리스트/캘린더 토글) + 할 일 리스트 또는 업무 캘린더, 우측: 공지사항
 export function TenantDashboard() {
-  // 기존 -> useState : 문서 화면에서 뒤로가기로 돌아오면 보기 방식·검색조건이 초기화
-  // 변경 -> useSessionState : sessionStorage에 저장해 돌아와도 유지
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useSessionState<TenantViewMode>(
     'tenantDashboard.viewMode',
     'list',
@@ -47,23 +42,20 @@ export function TenantDashboard() {
         isApprovalLoading,
     } = useTenantDashboardData();
   const calendar = useWorkCalendarData();
-    //  상태 카드용: 오늘이 있는 달 이벤트 (캘린더에서 보고 있는 달과 무관)
-    const today = useMemo(() => new Date(), []);
-    const currentMonth = useCalendarMonthEvents(today);
 
   const categoryOptions = useMemo(
     () => todoSections.map((section) => section.label),
     [todoSections],
   );
 
-    // 오늘이 있는 달 캘린더 범위의 미래가 아닌 이벤트 기준 건수 (검색조건과 무관)
+    // 업무카드별 서비스 시작일부터 누적 주기 수 합 (검색조건과 무관)
     const statusCounts = useMemo(
         () =>
-            countCurrentMonthStatuses(
-                currentMonth.events,
+            countCumulativeStatuses(
+                todoSections.flatMap((section) => section.items),
                 approvalSections.reduce((sum, section) => sum + section.items.length, 0),
             ),
-        [currentMonth.events, approvalSections],
+        [todoSections, approvalSections],
     );
 
     const isPendingApproval = filter.status === PENDING_APPROVAL_STATUS;
@@ -106,13 +98,16 @@ export function TenantDashboard() {
                         <Box sx={{ px: 2, py: 1 }}>
                             <TenantStatusCardSection
                                 counts={statusCounts}
-                                selected={filter.status}
-                                /* 기존 -> isTodoLoading || isApprovalLoading / 변경 -> 이번 달 이벤트 로딩 포함 */
-                                isLoading={isTodoLoading || isApprovalLoading || currentMonth.isLoading}
-                                onSelect={(status) => {
-                                    setDraft({ ...draft, status });
-                                    setFilter({ ...filter, status });
-                                }}
+                                isLoading={isTodoLoading || isApprovalLoading}
+                                onSelect={(status) =>
+                                    navigate(
+                                        `/docs/haccp-doc?${new URLSearchParams({
+                                            status,
+                                            startDate: '',
+                                            endDate: '',
+                                        })}`,
+                                    )
+                                }
                             />
                         </Box>
                         <Divider />

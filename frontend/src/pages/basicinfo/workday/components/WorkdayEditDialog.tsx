@@ -73,7 +73,7 @@ export function WorkdayEditDialog({ item, onClose, onSubmit }: WorkdayEditDialog
                             dayType,
                             dayName: dayName.trim(),
                             memo: memo.trim(),
-                            source: 'MANUAL',
+                            source: dayType !== item.dayType ? 'MANUAL' : item.source,
                         })
                     }
                 >

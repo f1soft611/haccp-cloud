@@ -47,8 +47,12 @@ function toSearchValue(searchParams: URLSearchParams): HaccpDocSearchValue {
     writer: searchParams.get('writer') || '',
     participantType: participantTypes,
     status: searchParams.get('status') || '전체',
-    startDate: searchParams.get('startDate') || monthRange.startDate,
-    endDate: searchParams.get('endDate') || monthRange.endDate,
+    startDate: searchParams.has('startDate')
+      ? (searchParams.get('startDate') ?? '')
+      : monthRange.startDate,
+    endDate: searchParams.has('endDate')
+      ? (searchParams.get('endDate') ?? '')
+      : monthRange.endDate,
   };
 }
 
@@ -104,13 +108,8 @@ function toSearchParams(
     params.set('status', trimmedStatus);
   }
 
-  if (value.startDate) {
-    params.set('startDate', value.startDate);
-  }
-
-  if (value.endDate) {
-    params.set('endDate', value.endDate);
-  }
+  params.set('startDate', value.startDate);
+  params.set('endDate', value.endDate);
 
   return params;
 }
@@ -286,14 +285,14 @@ export function useHaccpDocumentManagement() {
   const activeFilterChips = useMemo<HaccpDocFilterChip[]>(() => {
     const chips: HaccpDocFilterChip[] = [];
 
-    // 기존 -> 기안일 칩 항상 추가
-    // 변경 -> 미작성이면 기안일 조건을 쓰지 않으므로 칩도 뺌
     if (appliedFilters.status !== '미작성') {
       chips.push({
         key: 'dateRange',
-        // 기존 -> 기간:
-        // 변경 -> 기안일:
-        label: `기안일: ${appliedFilters.startDate || '-'} ~ ${appliedFilters.endDate || '-'}`,
+        // 변경 -> 시작일, 종료일이 모두 비면 '기안일: 전체'
+        label:
+          !appliedFilters.startDate && !appliedFilters.endDate
+            ? '기안일: 전체'
+            : `기안일: ${appliedFilters.startDate || '-'} ~ ${appliedFilters.endDate || '-'}`,
       });
     }
 

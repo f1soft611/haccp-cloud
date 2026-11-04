@@ -55,6 +55,9 @@ function buildItem(
         routeId: '1',
         dDay: '',
         unwrittenCount: 0,
+        inProgressCycleCount: 0,
+        approvedCycleCount: 0,
+        rejectedCycleCount: 0,
         ...overrides,
     };
 }
@@ -624,6 +627,103 @@ describe('mapTodosToCalendarEvents', () => {
         });
     });
 });
+
+    describe('workdays', () => {
+        // 2026-02: 1일 일요일, 2일 월요일, 16~18일 설 연휴
+        const SEOLLAL = ['2026-02-16', '2026-02-17', '2026-02-18'];
+        const isWeekday = (date: string) => {
+            const day = new Date(`${date}T00:00:00`).getDay();
+            return day !== 0 && day !== 6;
+        };
+        const isWorkDate = (date: string) => isWeekday(date) && !SEOLLAL.includes(date);
+        const noWorkDate = () => false;
+        const name = (code: string) => code;
+
+        it('places a daily item only on work dates', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'DAY' })], ...FEB_2026, [], TODAY, '', name, isWorkDate,
+            );
+
+            // 2월 평일 20일 - 설 연휴 3일
+            expect(events).toHaveLength(17);
+            expect(events.every((event) => isWorkDate(event.date))).toBe(true);
+        });
+
+        it('keeps a daily document written on an off day', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'DAY' })],
+                ...FEB_2026,
+                [instance('2026-02-01', 'approved')],
+                TODAY,
+                '',
+                name,
+                isWorkDate,
+            );
+
+            expect(events).toHaveLength(18);
+            expect(events[0]).toMatchObject({ date: '2026-02-01', cycleDate: '2026-02-01' });
+            expect(events[0].item.approvalId).toBe('900');
+        });
+
+        it('hides every daily cell when no work date exists', () => {
+            expect(
+                mapTodosToCalendarEvents(
+                    [buildItem({ cycle: 'DAY' })], ...FEB_2026, [], TODAY, '', name, noWorkDate,
+                ),
+            ).toEqual([]);
+        });
+
+        it('moves a past month to its first work date', () => {
+            expect(
+                mapTodosToCalendarEvents(
+                    [buildItem({ cycle: 'MONTH' })], ...FEB_2026, [], TODAY, '', name, isWorkDate,
+                ),
+            ).toMatchObject([{ date: '2026-02-02', cycleDate: '2026-02-01', isFuture: false }]);
+        });
+
+        it('moves a past week to its first work date', () => {
+            const events = mapTodosToCalendarEvents(
+                [buildItem({ cycle: 'WEEK' })], ...FEB_2026, [], TODAY, '', name, isWorkDate,
+            );
+
+            expect(events.map((event) => [event.date, event.cycleDate])).toEqual([
+                ['2026-02-02', '2026-02-02'],
+                ['2026-02-09', '2026-02-09'],
+                ['2026-02-19', '2026-02-16'],
+                ['2026-02-23', '2026-02-23'],
+            ]);
+        });
+
+        it('keeps a cycle on its start date when the cycle has no work date', () => {
+            expect(
+                mapTodosToCalendarEvents(
+                    [buildItem({ cycle: 'MONTH' })], ...FEB_2026, [], TODAY, '', name, noWorkDate,
+                ),
+            ).toMatchObject([{ date: '2026-02-01', cycleDate: '2026-02-01' }]);
+        });
+
+        it('keeps the current cycle on today even when today is not a work date', () => {
+            expect(
+                mapTodosToCalendarEvents(
+                    [buildItem({ cycle: 'MONTH' })], ...OCT_2026, [], TODAY, '', name, noWorkDate,
+                ),
+            ).toMatchObject([{ date: '2026-10-08', cycleDate: '2026-10-01' }]);
+        });
+
+        it('keeps a written past month on its report date', () => {
+            expect(
+                mapTodosToCalendarEvents(
+                    [buildItem({ cycle: 'MONTH' })],
+                    ...FEB_2026,
+                    [instance('2026-02-01', 'approved')],
+                    TODAY,
+                    '',
+                    name,
+                    isWorkDate,
+                ),
+            ).toMatchObject([{ date: '2026-02-01', cycleDate: '2026-02-01' }]);
+        });
+    });
 
 describe('expiration work (expirationApply)', () => {
     const CYCLES = ['DAY', 'WEEK', 'MONTH', 'QUARTER', 'HALF', 'YEAR', 'ANYTIME'];

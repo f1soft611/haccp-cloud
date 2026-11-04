@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AppProviders } from '../../app/providers/AppProviders.tsx';
-import { DashboardPage } from '../../pages/DashboardPage.tsx';
-import { useAuthStore } from '../../shared/store/authStore.ts';
-import { APP_LABELS } from '../../shared/constants/labels.ts';
+import { AppProviders } from '../../../app/providers/AppProviders.tsx';
+import { DashboardPage } from '../../../pages/DashboardPage.tsx';
+import { useAuthStore } from '../../../shared/store/authStore.ts';
+import { APP_LABELS } from '../../../shared/constants/labels.ts';
 
 const TODO_SECTION_TEXT = /^(오늘 작성|등록된 업무가 없습니다\.|할일 목록을 불러오지 못했습니다\.)$/;
 
@@ -26,23 +26,16 @@ describe('Dashboard page', () => {
       </AppProviders>,
     );
 
-    // 기존 -> KPI 카드(kpi-card-ccp-rate) 존재 확인
-    // 변경 -> KPI 카드 제거됨, 당일현황 그리드로 렌더링 확인
-    // 기존 -> 당일현황 테이블(role=table) 확인 / 변경 -> 당일현황이 카드 그리드로 바뀌어 카드의 '오늘 작성' 버튼 또는 빈 목록 안내 확인
     expect(
       (await screen.findAllByText(TODO_SECTION_TEXT)).length,
     ).toBeGreaterThan(0);
     expect(screen.queryByTestId('kpi-card-ccp-rate')).not.toBeInTheDocument();
-    // 기존 -> 결재 알림 헤딩 존재 확인
-    // 변경 -> 결재 알림 패널 제거됨
     expect(
       screen.queryByRole('heading', { name: '결재 알림' }),
     ).not.toBeInTheDocument();
     expect(
         screen.getByRole('heading', { name: '공지사항' }),
     ).toBeInTheDocument();
-    // 기존 -> 사이드바의 업무 캘린더 바로가기 카드 확인
-    // 변경 -> 리스트/캘린더 토글로 메인 영역 전환 확인
     expect(screen.queryByTestId('tenant-dashboard-calendar')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '캘린더형' }));
     expect(screen.getByTestId('tenant-dashboard-calendar')).toBeInTheDocument();
@@ -126,5 +119,22 @@ describe('Dashboard page', () => {
       screen.queryByText(APP_LABELS.dashboard.platformAdmin.title),
     ).not.toBeInTheDocument();
     expect(screen.queryByText('platform_admin')).not.toBeInTheDocument();
+  });
+
+  it('moves to the HACCP document page with the clicked status and empty draft dates', async () => {
+    window.history.pushState({}, '', '/');
+    render(
+        <AppProviders>
+          <DashboardPage />
+        </AppProviders>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /^반려/ }));
+
+    expect(window.location.pathname).toBe('/docs/haccp-doc');
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get('status')).toBe('반려');
+    expect(params.get('startDate')).toBe('');
+    expect(params.get('endDate')).toBe('');
   });
 });
