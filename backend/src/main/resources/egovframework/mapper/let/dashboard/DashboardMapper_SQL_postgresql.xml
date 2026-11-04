@@ -36,6 +36,9 @@
         <result property="lastWriterName" column="last_writer_name"/>
         <result property="cycleEndDate" column="cycle_end_date"/>
         <result property="unwrittenCount" column="unwritten_count"/>
+        <result property="inProgressCycleCount" column="in_progress_cycle_count"/>
+        <result property="approvedCycleCount" column="approved_cycle_count"/>
+        <result property="rejectedCycleCount" column="rejected_cycle_count"/>
     </resultMap>
 
     <resultMap id="dashboardSummaryResult"
@@ -71,12 +74,10 @@
             w.cata_type_code,
             w.code_name,
             w.reg_term,
-            <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(pending.pending_drafter_name, pending.pending_login_code, CAST(pending.pending_login_id AS varchar), '-') AS created_by,
-            <!-- 기존 -> 검토자/승인자 이름 / 변경 -> 실제 배정 담당자 기준 요약 -->
             CASE
               WHEN COALESCE(wa.assignee_count, 0) = 0 THEN '-'
               WHEN wa.assignee_count = 1 THEN wa.first_assignee_name
@@ -94,7 +95,6 @@
               ELSE NULL
             END AS approval_status_type,
             CASE
-              <!-- 기존 -> THEN '결재중' / 변경 -> 상태 라벨을 '결재진행중'으로 통일 -->
               WHEN COALESCE(appr.latest_status_type, '') = 'in_progress' THEN '결재진행중'
               WHEN COALESCE(appr.latest_status_type, '') = 'approved' THEN '승인'
               WHEN COALESCE(appr.latest_status_type, '') = 'pre_apply' THEN '임시저장'
@@ -123,7 +123,10 @@
             CASE WHEN cyc.is_anytime THEN NULL
                  ELSE TO_CHAR(cyc.cur_start + cyc.cycle_step - INTERVAL '1 day', 'YYYYMMDD')
             END AS cycle_end_date,
-            COALESCE(uw.unwritten_count, 0) AS unwritten_count
+            COALESCE(uw.unwritten_count, 0) AS unwritten_count,
+            COALESCE(uw.in_progress_cycle_count, 0) AS in_progress_cycle_count,
+            COALESCE(uw.approved_cycle_count, 0) AS approved_cycle_count,
+            COALESCE(uw.rejected_cycle_count, 0) AS rejected_cycle_count
         FROM tb_drafting_work_category w
         JOIN tb_tenant t ON t.tenant_id = w.tenant_id
         LEFT JOIN tb_drafting_work_category_group g
@@ -280,10 +283,11 @@
           LIMIT 1
         ) rpt ON TRUE
         LEFT JOIN LATERAL (
-            SELECT CASE
-                     WHEN cyc.is_anytime THEN 0
-            ELSE (
-            SELECT COUNT(*)::int
+            SELECT
+                COUNT(*) FILTER (WHERE ls.status_type IS NULL)::int AS unwritten_count,
+                COUNT(*) FILTER (WHERE ls.status_type = 'in_progress')::int AS in_progress_cycle_count,
+                COUNT(*) FILTER (WHERE ls.status_type = 'approved')::int AS approved_cycle_count,
+                COUNT(*) FILTER (WHERE ls.status_type = 'rejected')::int AS rejected_cycle_count
             FROM (
                 SELECT wd.work_date AS p_start,
                         wd.work_date + 1 AS p_end
@@ -307,18 +311,19 @@
                 FROM generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step) AS gs(cycle_start)
                 WHERE cyc.cycle_unit NOT IN ('day', 'week')
             ) p
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM tb_electronic_approval_main em
-                WHERE em.tenant_id = w.tenant_id
-                AND em.drafting_work_category_id = w.drafting_work_category_id
-                AND COALESCE(em.delete_status, 'N') != 'Y'
-                AND COALESCE(em.status_type, '') != 'pre_apply'
-                AND em.report_date &gt;= TO_CHAR(p.p_start, 'YYYYMMDD')
-                AND em.report_date &lt; TO_CHAR(p.p_end, 'YYYYMMDD')
-            )
-            )
-            END AS unwritten_count
+            LEFT JOIN LATERAL (
+            SELECT COALESCE(em.status_type, '') AS status_type
+            FROM tb_electronic_approval_main em
+            WHERE em.tenant_id = w.tenant_id
+            AND em.drafting_work_category_id = w.drafting_work_category_id
+            AND COALESCE(em.delete_status, 'N') != 'Y'
+            AND COALESCE(em.status_type, '') != 'pre_apply'
+            AND em.report_date &gt;= TO_CHAR(p.p_start, 'YYYYMMDD')
+            AND em.report_date &lt; TO_CHAR(p.p_end, 'YYYYMMDD')
+            ORDER BY COALESCE(em.updated_at, em.created_at) DESC, em.electronic_approval_id DESC
+            LIMIT 1
+            ) ls ON TRUE
+            WHERE NOT cyc.is_anytime
         ) uw ON TRUE
         WHERE w.tenant_id = #{tenantId}
           AND COALESCE(w.delete_status, 'N') != 'Y'

@@ -80,4 +80,25 @@ class DashboardMapperPostgresqlTest {
                     "캘린더 표시 시작일은 입사일을 보지 않는다");
         }
     }
+
+    @Test
+    void dashboardMapper_should_count_cycles_by_latest_status_from_service_start_date() throws Exception {
+        ClassPathResource resource = new ClassPathResource(
+                "egovframework/mapper/let/dashboard/DashboardMapper_SQL_postgresql.xml");
+
+        try (InputStream inputStream = resource.getInputStream();
+             Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name())) {
+            String xml = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+            assertTrue(xml.contains("COUNT(*) FILTER (WHERE ls.status_type IS NULL)::int AS unwritten_count"),
+                    "최신 문서가 없는 주기를 미작성으로 센다");
+            assertTrue(xml.contains("COUNT(*) FILTER (WHERE ls.status_type = 'in_progress')::int AS in_progress_cycle_count"),
+                    "결재진행중 주기 수가 있어야 한다");
+            assertTrue(xml.contains("COUNT(*) FILTER (WHERE ls.status_type = 'approved')::int AS approved_cycle_count"),
+                    "승인 주기 수가 있어야 한다");
+            assertTrue(xml.contains("COUNT(*) FILTER (WHERE ls.status_type = 'rejected')::int AS rejected_cycle_count"),
+                    "반려 주기 수가 있어야 한다");
+            assertTrue(xml.contains("<result property=\"approvedCycleCount\" column=\"approved_cycle_count\"/>"),
+                    "resultMap 에 승인 주기 수 매핑이 있어야 한다");
+        }
+    }
 }

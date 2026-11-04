@@ -19,6 +19,9 @@ export type TenantTodoCardItem = HaccpBaseWorkItem & {
   routeId: string;
   dDay: string;
   unwrittenCount: number;
+  inProgressCycleCount: number;
+  approvedCycleCount: number;
+  rejectedCycleCount: number;
 };
 
 export type TenantTodoSectionModel = {
@@ -60,6 +63,9 @@ export function toTenantTodoCardItem(
     routeId: item.approvalId || item.id,
     dDay: computeDDay(item.cycleEndDate),
     unwrittenCount: item.unwrittenCount ?? 0,
+    inProgressCycleCount: item.inProgressCycleCount ?? 0,
+    approvedCycleCount: item.approvedCycleCount ?? 0,
+    rejectedCycleCount: item.rejectedCycleCount ?? 0,
   };
 }
 
@@ -147,6 +153,9 @@ export function useTenantDashboardData() {
         routeId: item.approvalId || item.id,
         dDay: computeDDay(item.cycleEndDate),
         unwrittenCount: item.unwrittenCount ?? 0,
+        inProgressCycleCount: item.inProgressCycleCount ?? 0,
+        approvedCycleCount: item.approvedCycleCount ?? 0,
+        rejectedCycleCount: item.rejectedCycleCount ?? 0,
       }));
     },
     retry: 0,

@@ -65,6 +65,9 @@ export type HaccpBaseWorkItem = {
   lastWriterName?: string;
   cycleEndDate?: string;
   unwrittenCount?: number;
+  inProgressCycleCount?: number;
+  approvedCycleCount?: number;
+  rejectedCycleCount?: number;
   sub?: ApprovalSubValues;
 };
 
@@ -183,6 +186,12 @@ type RawHaccpBaseWorkItem = {
   cycle_end_date?: string | null;
   unwrittenCount?: number | string | null;
   unwritten_count?: number | string | null;
+  inProgressCycleCount?: number | string | null;
+  in_progress_cycle_count?: number | string | null;
+  approvedCycleCount?: number | string | null;
+  approved_cycle_count?: number | string | null;
+  rejectedCycleCount?: number | string | null;
+  rejected_cycle_count?: number | string | null;
   sub?: {
     equipmentId?: number | string | null;
     materialType?: string | null;
@@ -451,6 +460,9 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     lastWriterName: normalizeText(raw.lastWriterName ?? raw.last_writer_name),
     cycleEndDate: normalizeText(raw.cycleEndDate ?? raw.cycle_end_date),
     unwrittenCount: Number(raw.unwrittenCount ?? raw.unwritten_count ?? 0) || 0,
+    inProgressCycleCount: Number(raw.inProgressCycleCount ?? raw.in_progress_cycle_count ?? 0) || 0,
+    approvedCycleCount: Number(raw.approvedCycleCount ?? raw.approved_cycle_count ?? 0) || 0,
+    rejectedCycleCount: Number(raw.rejectedCycleCount ?? raw.rejected_cycle_count ?? 0) || 0,
     sub: raw.sub ? normalizeApprovalSub(raw.sub) : undefined,
   };
 }

@@ -103,13 +103,18 @@ export function countTodoStatuses(
   return counts;
 }
 
-// 오늘이 있는 달 캘린더 이벤트 중 미래가 아닌 것(주기 단위)으로 셈, 결재할문서은 그대로
-export function countCurrentMonthStatuses(
-    events: { isFuture: boolean; resource: TenantTodoCardItem }[],
+// 업무카드별 서비스 시작일부터 누적 주기 수 합(검색조건 무관), 결재할문서은 approval-alerts 건수
+export function countCumulativeStatuses(
+    todos: TenantTodoCardItem[],
     pendingApprovalCount: number,
 ): TodoStatusCounts {
-  return countTodoStatuses(
-      events.filter((event) => !event.isFuture).map((event) => event.resource),
-      pendingApprovalCount,
-  );
+  const sum = (pick: (todo: TenantTodoCardItem) => number) =>
+      todos.reduce((total, todo) => total + (pick(todo) ?? 0), 0);
+  return {
+    미작성: sum((todo) => todo.unwrittenCount),
+    결재할문서: pendingApprovalCount,
+    결재진행중: sum((todo) => todo.inProgressCycleCount),
+    승인: sum((todo) => todo.approvedCycleCount),
+    반려: sum((todo) => todo.rejectedCycleCount),
+  };
 }

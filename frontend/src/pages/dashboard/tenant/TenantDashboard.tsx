@@ -2,17 +2,14 @@ import { useMemo } from 'react';
 import { Box, Divider, Grid, Paper, Stack } from '@mui/material';
 import { useSessionState } from '../../../shared/hooks/useSessionState';
 import { WorkCalendarView } from '../../documents/work-calendar/components/WorkCalendarView';
-import {
-    useCalendarMonthEvents,
-    useWorkCalendarData,
-} from '../../documents/work-calendar/hooks/useWorkCalendarData';
+import { useWorkCalendarData } from '../../documents/work-calendar/hooks/useWorkCalendarData';
 import { useTenantDashboardData } from './hooks/useTenantDashboardData';
 import { TenantFilterSection } from './sections/TenantFilterSection';
 import { TenantSidebarSection } from './sections/TenantSidebarSection';
 import { TenantTodoSection } from './sections/TenantTodoSection';
 import { TenantStatusCardSection } from './sections/TenantStatusCardSection';
 import {
-    countCurrentMonthStatuses,
+    countCumulativeStatuses,
     EMPTY_TODO_FILTER,
     matchesTodoFilter,
     PENDING_APPROVAL_STATUS,
@@ -47,23 +44,20 @@ export function TenantDashboard() {
         isApprovalLoading,
     } = useTenantDashboardData();
   const calendar = useWorkCalendarData();
-    //  상태 카드용: 오늘이 있는 달 이벤트 (캘린더에서 보고 있는 달과 무관)
-    const today = useMemo(() => new Date(), []);
-    const currentMonth = useCalendarMonthEvents(today);
 
   const categoryOptions = useMemo(
     () => todoSections.map((section) => section.label),
     [todoSections],
   );
 
-    // 오늘이 있는 달 캘린더 범위의 미래가 아닌 이벤트 기준 건수 (검색조건과 무관)
+    // 업무카드별 서비스 시작일부터 누적 주기 수 합 (검색조건과 무관)
     const statusCounts = useMemo(
         () =>
-            countCurrentMonthStatuses(
-                currentMonth.events,
+            countCumulativeStatuses(
+                todoSections.flatMap((section) => section.items),
                 approvalSections.reduce((sum, section) => sum + section.items.length, 0),
             ),
-        [currentMonth.events, approvalSections],
+        [todoSections, approvalSections],
     );
 
     const isPendingApproval = filter.status === PENDING_APPROVAL_STATUS;
@@ -107,8 +101,7 @@ export function TenantDashboard() {
                             <TenantStatusCardSection
                                 counts={statusCounts}
                                 selected={filter.status}
-                                /* 기존 -> isTodoLoading || isApprovalLoading / 변경 -> 이번 달 이벤트 로딩 포함 */
-                                isLoading={isTodoLoading || isApprovalLoading || currentMonth.isLoading}
+                                isLoading={isTodoLoading || isApprovalLoading}
                                 onSelect={(status) => {
                                     setDraft({ ...draft, status });
                                     setFilter({ ...filter, status });
