@@ -55,6 +55,9 @@ function buildItem(
         routeId: '1',
         dDay: '',
         unwrittenCount: 0,
+        inProgressCycleCount: 0,
+        approvedCycleCount: 0,
+        rejectedCycleCount: 0,
         ...overrides,
     };
 }
