@@ -601,9 +601,13 @@
     </select>
 
     <!-- 미작성 주기 목록: 업무개시일부터 현재 주기까지 상신 문서가 없는 주기마다 한 행, 그 주기 최신 임시저장이 있으면 그 문서로 채움 -->
+    <!-- 기존 -> 주기 행만 조회, 만료일 관리 업무도 주기 기준이라 대시보드 미작성 건수와 목록이 달랐음 -->
+    <!-- 변경 -> 주기 행(만료일 관리 업무 제외) + 만료일 관리 대상 행(최신 문서 승인)을 UNION ALL, 정렬 키 sort_date 로 함께 정렬 -->
     <select id="HaccpWorkDAO.selectUnwrittenCycleList"
             parameterType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkSearchConditionVO"
             resultMap="haccpWorkResult">
+        SELECT uw.*
+        FROM (
         SELECT
         w.drafting_work_category_id,
         tmp.electronic_approval_id,
@@ -634,7 +638,8 @@
         'DRAFT' AS todo_status,
         CASE WHEN tmp.electronic_approval_id IS NOT NULL THEN 'pre_apply' ELSE '' END AS approval_status_type,
         CASE WHEN tmp.electronic_approval_id IS NOT NULL THEN '임시저장' ELSE '미작성' END AS approval_status_type_name,
-        COALESCE(TO_CHAR(COALESCE(tmp.updated_at, tmp.created_at), 'YYYY-MM-DD HH24:MI'), '') AS latest_status_at
+        COALESCE(TO_CHAR(COALESCE(tmp.updated_at, tmp.created_at), 'YYYY-MM-DD HH24:MI'), '') AS latest_status_at,
+        CAST(gs.cycle_start AS timestamp) AS sort_date
         <include refid="unwrittenCycleFrom"/>
         LEFT JOIN LATERAL (
         SELECT m.electronic_approval_id,
@@ -660,19 +665,55 @@
         ON du.tenant_id = w.tenant_id
         AND du.login_id = tmp.login_id
         <include refid="unwrittenCycleWhere"/>
-        ORDER BY gs.cycle_start DESC, category_sort_order, w.code_name, w.drafting_work_category_id
+        UNION ALL
+        SELECT
+        w.drafting_work_category_id,
+        es.electronic_approval_id,
+        '' AS ea_exe_id,
+        CONCAT(COALESCE(w.code_name, ''), ' - ', es.target_name,
+               CASE WHEN es.material_type != '' THEN CONCAT(' (', es.material_type, ')') ELSE '' END) AS title,
+        t.tenant_code,
+        w.drafting_work_category_group_id,
+        g.cata_code,
+        g.cata_name AS category_name,
+        CASE
+        WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)
+        ELSE 0
+        END AS category_sort_order,
+        w.cata_type_code,
+        w.code_name,
+        w.reg_term,
+        '' AS cycle_date,
+        TRUE AS active,
+        '' AS created_by,
+        '' AS created_at,
+        'DRAFT' AS todo_status,
+        '' AS approval_status_type,
+        '미작성' AS approval_status_type_name,
+        COALESCE(TO_CHAR(es.status_at, 'YYYY-MM-DD HH24:MI'), '') AS latest_status_at,
+        es.status_at AS sort_date
+        <include refid="unwrittenExpirationFrom"/>
+        <include refid="unwrittenExpirationWhere"/>
+        ) uw
+        ORDER BY uw.sort_date DESC, uw.category_sort_order, uw.code_name, uw.drafting_work_category_id
         <if test="recordCountPerPage > 0">
             LIMIT #{recordCountPerPage}
             OFFSET #{firstIndex}
         </if>
     </select>
 
+    <!-- 기존 -> 주기 행 건수만 / 변경 -> 주기 행 건수 + 만료일 관리 대상 행 건수 -->
     <select id="HaccpWorkDAO.selectUnwrittenCycleListCount"
             parameterType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkSearchConditionVO"
             resultType="int">
-        SELECT COUNT(1)
+        SELECT
+        (SELECT COUNT(1)
         <include refid="unwrittenCycleFrom"/>
-        <include refid="unwrittenCycleWhere"/>
+        <include refid="unwrittenCycleWhere"/>)
+        +
+        (SELECT COUNT(1)
+        <include refid="unwrittenExpirationFrom"/>
+        <include refid="unwrittenExpirationWhere"/>)
     </select>
 
     <!-- 요청 일자(#{cycleDate}, yyyy-MM-dd, 없으면 오늘)가 속한 주기의 시작일. 판정 값은 HaccpWorkCycleDates와 같다. -->
@@ -758,15 +799,11 @@
         CROSS JOIN LATERAL generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step) AS gs(cycle_start)
     </sql>
 
+    <!-- 공통 조건은 unwrittenWorkWhere 로 분리해 만료일 관리 분기와 같이 씀, 주기 행에서는 만료일 관리 업무 제외 -->
     <sql id="unwrittenCycleWhere">
-        WHERE t.tenant_code = #{tenantCode}
-        AND COALESCE(w.delete_status, 'N') != 'Y'
-        AND w.use_at = 'Y'
+        <include refid="unwrittenWorkWhere"/>
         AND COALESCE(NULLIF(TRIM(w.reg_term), ''), '') NOT IN ('수시', 'ANYTIME', 'anytime')
-        AND (
-        COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
-        OR <include refid="actorIsWorkAssignee"/>
-        )
+        AND COALESCE(w.expiration_apply, 'N') != 'Y'
         AND NOT EXISTS (
         SELECT 1
         FROM tb_electronic_approval_main em
@@ -776,6 +813,16 @@
         AND COALESCE(em.status_type, '') != 'pre_apply'
         AND em.report_date &gt;= TO_CHAR(gs.cycle_start, 'YYYYMMDD')
         AND em.report_date &lt; TO_CHAR(gs.cycle_start + cyc.cycle_step, 'YYYYMMDD')
+        )
+    </sql>
+
+    <sql id="unwrittenWorkWhere">
+        WHERE t.tenant_code = #{tenantCode}
+        AND COALESCE(w.delete_status, 'N') != 'Y'
+        AND w.use_at = 'Y'
+        AND (
+        COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
+        OR <include refid="actorIsWorkAssignee"/>
         )
         <if test="workType != null and workType != '' and workType != '전체'">
             AND (
@@ -792,6 +839,47 @@
         <if test="title != null and title != ''">
             AND COALESCE(w.code_name, '') ILIKE CONCAT('%', #{title}, '%')
         </if>
+    </sql>
+
+    <!-- 만료일 관리 대상별 최신 문서(임시저장 제외). 대시보드 selectMyTodoList 의 uw 만료일 분기와 같은 대상 키, 같은 정렬 -->
+    <sql id="unwrittenExpirationFrom">
+        FROM tb_drafting_work_category w
+        JOIN tb_tenant t
+          ON t.tenant_id = w.tenant_id
+        LEFT JOIN tb_drafting_work_category_group g
+          ON g.drafting_work_category_group_id = w.drafting_work_category_group_id
+         AND g.tenant_id = w.tenant_id
+        CROSS JOIN LATERAL (
+          SELECT DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)
+                 m.electronic_approval_id,
+                 COALESCE(m.status_type, '') AS status_type,
+                 CAST(COALESCE(m.updated_at, m.created_at) AS timestamp) AS status_at,
+                 COALESCE(s.material_type, '') AS material_type,
+                 COALESCE(e.equip_nm, u.user_nm, '') AS target_name
+          FROM tb_electronic_approval_sub s
+          JOIN tb_electronic_approval_main m
+            ON m.tenant_id = s.tenant_id
+           AND m.electronic_approval_id = s.electronic_approval_id
+          LEFT JOIN tb_equipment_info e
+            ON e.tenant_id = s.tenant_id
+           AND e.equipment_id = s.equipment_id
+          LEFT JOIN tb_user u
+            ON u.tenant_id = s.tenant_id
+           AND u.user_id = s.certification_user_id
+          WHERE s.tenant_id = w.tenant_id
+            AND m.drafting_work_category_id = w.drafting_work_category_id
+            AND COALESCE(m.delete_status, 'N') != 'Y'
+            AND COALESCE(m.status_type, '') != 'pre_apply'
+          ORDER BY s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id,
+                   s.inspected_date DESC, m.electronic_approval_id DESC
+        ) es
+    </sql>
+
+    <!-- ponytail: 만료일과 무관하게 최신 문서가 승인이면 미작성(대시보드와 같은 기준). D-N 기준이 필요하면 대시보드와 함께 AND es 에 만료일 조건 추가 -->
+    <sql id="unwrittenExpirationWhere">
+        <include refid="unwrittenWorkWhere"/>
+        AND w.expiration_apply = 'Y'
+        AND es.status_type = 'approved'
     </sql>
 
     <sql id="requestedCycleStart">

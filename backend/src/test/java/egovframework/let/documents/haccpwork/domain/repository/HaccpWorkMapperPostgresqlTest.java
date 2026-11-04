@@ -39,4 +39,19 @@ class HaccpWorkMapperPostgresqlTest {
         assertTrue(xml.contains("generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step)"), "주기 생성이 없다");
         assertTrue(xml.contains("TO_CHAR(gs.cycle_start, 'YYYY-MM-DD') AS cycle_date"), "cycle_date 형식이 다르다");
     }
+
+    @Test
+    void unwrittenList_should_list_expiration_targets_by_latest_approved_document() throws Exception {
+        String xml = readMapper();
+        assertTrue(xml.contains("<sql id=\"unwrittenWorkWhere\">"), "미작성 공통 조건 fragment 가 없다");
+        assertTrue(xml.contains("<sql id=\"unwrittenExpirationFrom\">"), "만료일 관리 대상 FROM fragment 가 없다");
+        assertTrue(xml.contains("AND COALESCE(w.expiration_apply, 'N') != 'Y'"),
+                "주기 기반 미작성은 만료일 관리 업무를 제외해야 한다");
+        assertTrue(xml.contains("DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)"),
+                "만료일 관리 업무는 대상(설비, 품목유형, 증명서 소유자) 단위로 조회한다");
+        assertTrue(xml.contains("AND es.status_type = 'approved'"),
+                "대상의 최신 문서가 승인이면 미작성이다");
+        assertEquals(2, xml.split("<include refid=\"unwrittenExpirationFrom\"/>", -1).length - 1,
+                "목록과 건수 쿼리 모두 만료일 관리 대상 분기를 써야 한다");
+    }
 }
