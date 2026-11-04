@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, Divider, Grid, Paper, Stack } from '@mui/material';
 import { useSessionState } from '../../../shared/hooks/useSessionState';
 import { WorkCalendarView } from '../../documents/work-calendar/components/WorkCalendarView';
@@ -17,11 +18,8 @@ import {
     type TenantViewMode,
 } from './todoFilter';
 
-// 기존 -> 상단 요약 배너(TenantSummarySection) + KPI 카드 4개(TenantKpiSection) + 할 일 그리드 + 우측 사이드바
-// 변경 -> 좌측: 검색필터(리스트/캘린더 토글) + 할 일 리스트 또는 업무 캘린더, 우측: 공지사항
 export function TenantDashboard() {
-  // 기존 -> useState : 문서 화면에서 뒤로가기로 돌아오면 보기 방식·검색조건이 초기화
-  // 변경 -> useSessionState : sessionStorage에 저장해 돌아와도 유지
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useSessionState<TenantViewMode>(
     'tenantDashboard.viewMode',
     'list',
@@ -100,12 +98,16 @@ export function TenantDashboard() {
                         <Box sx={{ px: 2, py: 1 }}>
                             <TenantStatusCardSection
                                 counts={statusCounts}
-                                selected={filter.status}
                                 isLoading={isTodoLoading || isApprovalLoading}
-                                onSelect={(status) => {
-                                    setDraft({ ...draft, status });
-                                    setFilter({ ...filter, status });
-                                }}
+                                onSelect={(status) =>
+                                    navigate(
+                                        `/docs/haccp-doc?${new URLSearchParams({
+                                            status,
+                                            startDate: '',
+                                            endDate: '',
+                                        })}`,
+                                    )
+                                }
                             />
                         </Box>
                         <Divider />
