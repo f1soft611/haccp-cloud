@@ -112,12 +112,14 @@ class DashboardMapperPostgresqlTest {
             String xml = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
             assertTrue(xml.contains("WHERE NOT cyc.is_anytime AND COALESCE(w.expiration_apply, 'N') != 'Y'"),
                     "주기 기반 집계는 만료일 관리 업무를 제외해야 한다");
-            assertTrue(xml.contains("DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)"),
-                    "만료일 관리 업무는 대상(설비, 품목유형, 증명서 소유자) 단위로 센다");
+            assertTrue(xml.contains("FROM v_expiration_target_latest es"),
+                    "만료일 관리 대상별 최신 문서는 뷰에서 읽는다");
+            assertTrue(xml.contains("AND es.drafting_work_category_id = w.drafting_work_category_id"),
+                    "뷰는 업무 단위로 걸러야 한다");
             assertTrue(xml.contains("CASE WHEN es.status_type = 'approved' THEN NULL ELSE es.status_type END"),
                     "대상의 최신 문서가 승인이면 미작성으로 센다");
-            assertTrue(xml.contains("AND COALESCE(xm.status_type, '') != 'pre_apply'"),
-                    "대상 최신 문서 선택 시 임시저장은 제외한다");
+            assertFalse(xml.contains("DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)"),
+                    "대상별 최신 문서 서브쿼리를 매퍼에 복사하지 않는다");
         }
     }
 }

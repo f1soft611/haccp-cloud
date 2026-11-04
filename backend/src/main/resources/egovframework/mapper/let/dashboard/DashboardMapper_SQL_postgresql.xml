@@ -328,25 +328,13 @@
                 ) cs ON TRUE
                 WHERE NOT cyc.is_anytime AND COALESCE(w.expiration_apply, 'N') != 'Y'
                 UNION ALL
-                <!-- 만료일 관리 대상별 최신 문서(임시저장 제외). selectMyExpirationList 와 같은 대상 키, 같은 정렬 -->
+                <!-- 기존 -> 서브쿼리 DISTINCT ON 으로 대상별 최신 문서 선택 / 변경 -> v_expiration_target_latest 뷰 사용 (삭제, 임시저장 제외와 대상 키, 정렬은 뷰 안에) -->
                 <!-- ponytail: 만료일과 무관하게 승인이면 미작성. D-N 기준이 필요하면 CASE 에 AND es.expiration_date &lt;= TO_CHAR(CURRENT_DATE + N, 'YYYYMMDD') 조건 추가 -->
                 SELECT CASE WHEN es.status_type = 'approved' THEN NULL ELSE es.status_type END
-                FROM (
-                    SELECT DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)
-                        COALESCE(xm.status_type, '') AS status_type,
-                        s.expiration_date
-                    FROM tb_electronic_approval_sub s
-                    JOIN tb_electronic_approval_main xm
-                      ON xm.tenant_id = s.tenant_id
-                     AND xm.electronic_approval_id = s.electronic_approval_id
-                    WHERE w.expiration_apply = 'Y'
-                      AND s.tenant_id = w.tenant_id
-                      AND xm.drafting_work_category_id = w.drafting_work_category_id
-                      AND COALESCE(xm.delete_status, 'N') != 'Y'
-                      AND COALESCE(xm.status_type, '') != 'pre_apply'
-                    ORDER BY s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id,
-                             s.inspected_date DESC, xm.electronic_approval_id DESC
-                ) es
+                FROM v_expiration_target_latest es
+                WHERE w.expiration_apply = 'Y'
+                  AND es.tenant_id = w.tenant_id
+                  AND es.drafting_work_category_id = w.drafting_work_category_id
             ) ls
         ) uw ON TRUE
         WHERE w.tenant_id = #{tenantId}

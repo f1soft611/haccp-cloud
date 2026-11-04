@@ -2,6 +2,7 @@ package egovframework.let.documents.haccpwork.domain.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -47,8 +48,10 @@ class HaccpWorkMapperPostgresqlTest {
         assertTrue(xml.contains("<sql id=\"unwrittenExpirationFrom\">"), "만료일 관리 대상 FROM fragment 가 없다");
         assertTrue(xml.contains("AND COALESCE(w.expiration_apply, 'N') != 'Y'"),
                 "주기 기반 미작성은 만료일 관리 업무를 제외해야 한다");
-        assertTrue(xml.contains("DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)"),
-                "만료일 관리 업무는 대상(설비, 품목유형, 증명서 소유자) 단위로 조회한다");
+        assertTrue(xml.contains("JOIN v_expiration_target_latest es"),
+                "만료일 관리 대상별 최신 문서는 뷰에서 읽는다");
+        assertFalse(xml.contains("DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)"),
+                "대상별 최신 문서 서브쿼리를 매퍼에 복사하지 않는다");
         assertTrue(xml.contains("AND es.status_type = 'approved'"),
                 "대상의 최신 문서가 승인이면 미작성이다");
         assertEquals(2, xml.split("<include refid=\"unwrittenExpirationFrom\"/>", -1).length - 1,
