@@ -5,10 +5,8 @@ import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import { WorkCalendarView } from './components/WorkCalendarView';
 import { useWorkCalendarData } from './hooks/useWorkCalendarData';
 
-// 기존 -> Calendar 설정(localizer, 스타일, 클릭 라우팅)을 페이지에서 직접 구성
-// 변경 -> WorkCalendarView 컴포넌트로 분리해 재사용
 export function WorkCalendarPage() {
-    const { viewDate, setViewDate, events, isError, error } =
+    const { viewDate, setViewDate, events, workdays, isError, error } =
         useWorkCalendarData();
 
     return (
@@ -37,6 +35,7 @@ export function WorkCalendarPage() {
                     events={events}
                     viewDate={viewDate}
                     onNavigate={setViewDate}
+                    workdays={workdays}
                 />
             </Paper>
         </Stack>

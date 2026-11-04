@@ -150,6 +150,7 @@ export function TenantDashboard() {
                     events={filteredEvents}
                     viewDate={calendar.viewDate}
                     onNavigate={calendar.setViewDate}
+                    workdays={calendar.workdays}
                     legendFilter={{
                         cycle: filter.cycle,
                         status: filter.status,

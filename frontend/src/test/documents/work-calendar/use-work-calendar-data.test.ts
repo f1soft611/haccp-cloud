@@ -1,13 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { useWorkCalendarData } from '../pages/documents/work-calendar/hooks/useWorkCalendarData';
+import { AppProviders } from '../../../app/providers/AppProviders.tsx';
+import { useWorkCalendarData } from '../../../pages/documents/work-calendar/hooks/useWorkCalendarData.ts';
 import {
     listHaccpWorkTodoCycles,
     listHaccpWorkTodos,
-} from '../services/documents/haccpBaseWorkService';
-import { useAuthStore } from '../shared/store/authStore';
-import { listWorkdays } from '../services/basicinfo/workday/workdayService';
+} from '../../../services/documents/haccpBaseWorkService.ts';
+import { useAuthStore } from '../../../shared/store/authStore.ts';
+import { listWorkdays } from '../../../services/basicinfo/workday/workdayService.ts';
 
 vi.mock('../services/documents/haccpBaseWorkService', () => ({
     listHaccpWorkTodos: vi.fn(),
@@ -202,5 +202,21 @@ describe('useWorkCalendarData', () => {
                 new Date(2026, 9, 17),
             ]);
         });
+    });
+
+    it('returns the workday items of the visible years keyed by date', async () => {
+        vi.mocked(listWorkdays).mockResolvedValue([
+            { workdayDate: '2026-10-03', dayType: 'PUBLIC_HOLIDAY', dayName: '개천절', memo: '', source: 'API' },
+            { workdayDate: '2026-10-12', dayType: 'WORK', dayName: '', memo: '', source: 'PATTERN' },
+        ]);
+        const { result } = renderHook(() => useWorkCalendarData(), {
+            wrapper: AppProviders,
+        });
+
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        expect(result.current.workdays.get('2026-10-03')?.dayName).toBe('개천절');
+        expect(result.current.workdays.get('2026-10-12')?.dayType).toBe('WORK');
+        expect(result.current.workdays.has('2026-10-04')).toBe(false);
     });
 });

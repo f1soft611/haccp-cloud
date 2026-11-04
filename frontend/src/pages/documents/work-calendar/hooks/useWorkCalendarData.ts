@@ -15,7 +15,7 @@ import { mapExpirationsToCalendarEvents, mapTodosToCalendarEvents } from '../cyc
 import type { HaccpWorkExpiration } from '../../../../services/documents/haccpBaseWorkService';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 import { getCommonCodeName, useCommonCodeOptions } from '../../../../shared/hooks/useCommonCodeOptions';
-import { listWorkdays } from '../../../../services/basicinfo/workday/workdayService';
+import { listWorkdays, type WorkdayItem } from '../../../../services/basicinfo/workday/workdayService';
 import { isOffDay, yearsInRange } from '../../../basicinfo/workday/workdayRules';
 
 export type WorkCalendarEvent = {
@@ -29,7 +29,7 @@ export type WorkCalendarEvent = {
     expiration?: HaccpWorkExpiration;   // 만료일 이벤트면 만료 문서 정보 (클릭 시 대상 미리 선택 경로)
 };
 
-const EMPTY_WORK_DATES = new Set<string>();
+const EMPTY_WORKDAYS = new Map<string, WorkdayItem>();
 
 export function useCalendarMonthEvents(monthDate: Date) {
     const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
@@ -68,20 +68,17 @@ export function useCalendarMonthEvents(monthDate: Date) {
         retry: 0,
     });
 
-    // 보이는 범위 연도들의 근무일 (WORK, SPECIAL_WORK). 미생성일은 Set 에 없어 근무일이 아님 (백엔드 미작성 집계와 같은 기준)
+    // 보이는 범위 연도들의 근무일 정보 (날짜 -> WorkdayItem). 미생성일은 Map 에 없어 근무일이 아님 (백엔드 미작성 집계와 같은 기준)
     const workdayYears = yearsInRange(rangeStart, rangeEnd);
-    const { data: workDates = EMPTY_WORK_DATES, isLoading: isWorkdaysLoading } = useQuery({
-        queryKey: ['workday-dates', tenantCode, workdayYears.join(',')],
+    // 기존 -> queryKey 'workday-dates', 근무일 날짜 Set 만 반환
+    // 변경 -> queryKey 'workday-items', 휴일 표시용으로 전체 항목 Map 반환
+    const { data: workdays = EMPTY_WORKDAYS, isLoading: isWorkdaysLoading } = useQuery({
+        queryKey: ['workday-items', tenantCode, workdayYears.join(',')],
         queryFn: async () => {
             const lists = await Promise.all(
                 workdayYears.map((year) => listWorkdays({ tenantCode, year })),
             );
-            return new Set(
-                lists
-                .flat()
-                .filter((item) => !isOffDay(item.dayType))
-                .map((item) => item.workdayDate),
-            );
+            return new Map(lists.flat().map((item) => [item.workdayDate, item]));
         },
         retry: 0,
     });
@@ -100,7 +97,10 @@ export function useCalendarMonthEvents(monthDate: Date) {
                 new Date(),
                 cycles.displayStartDate,
                 (code) => getCommonCodeName(materialTypeOptions, code),
-                (date) => workDates.has(date),
+                (date) => {
+                    const item = workdays.get(date);
+                    return !!item && !isOffDay(item.dayType);
+                },
             ),
             ...mapExpirationsToCalendarEvents(
                 todoDocuments,
@@ -138,9 +138,9 @@ export function useCalendarMonthEvents(monthDate: Date) {
                 expiration: mappedEvent.expiration,
             };
         });
-    }, [todoDocuments, rangeStart, rangeEnd, cycles, materialTypeOptions, workDates, isWorkdaysLoading]);
+    }, [todoDocuments, rangeStart, rangeEnd, cycles, materialTypeOptions, workdays, isWorkdaysLoading]);
 
-    return { events, isLoading: isLoading || isCyclesLoading || isWorkdaysLoading, isError, error };
+    return { events, workdays, isLoading: isLoading || isCyclesLoading || isWorkdaysLoading, isError, error };
 }
 
 export function useWorkCalendarData() {
@@ -153,14 +153,16 @@ export function useWorkCalendarData() {
     const viewDate = useMemo(() => new Date(viewDateText), [viewDateText]);
     const setViewDate = (date: Date) => setViewDateText(date.toISOString());
 
-    const { events, isLoading, isError, error } = useCalendarMonthEvents(viewDate);
+    const { events, workdays, isLoading, isError, error } = useCalendarMonthEvents(viewDate);
 
     return {
         viewDate,
         setViewDate,
         events,
+        workdays,
         isLoading,
         isError,
         error,
     };
+
 }
