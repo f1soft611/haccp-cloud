@@ -32,6 +32,27 @@ function parseLocalDate(value: string): Date {
     return new Date(year, month - 1, day);
 }
 
+const CYCLE_MONTHS: Record<string, number> = { MONTH: 1, QUARTER: 3, HALF: 6, YEAR: 12 };
+
+// 주기 시작일 ~ 다음 주기 시작일 전날 중 첫 근무일, 없으면 시작일 (백엔드는 주기 업무를 업무일과 무관하게 셈)
+function firstWorkDate(
+    cycle: string,
+    cycleDate: string,
+    isWorkDate: (date: string) => boolean,
+): string {
+    const start = parseLocalDate(cycleDate);
+    const end = cycle === 'WEEK'
+        ? new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7)
+        : new Date(start.getFullYear(), start.getMonth() + (CYCLE_MONTHS[cycle] ?? 0), start.getDate());
+    for (const cursor = new Date(start); cursor < end; cursor.setDate(cursor.getDate() + 1)) {
+        const date = toLocalDateString(cursor);
+        if (isWorkDate(date)) {
+            return date;
+        }
+    }
+    return cycleDate;
+}
+
 // 인스턴스가 없으면 미작성(상태값 비움, 업무 경로)
 function withCycleInstance(
     item: TenantTodoCardItem,
@@ -60,6 +81,8 @@ export function mapTodosToCalendarEvents(
     today: Date = new Date(),
     displayStartDate: string = '',
     materialTypeName: (code: string) => string = (code) => code,
+    // 근무일 판정 (업무일 미생성일도 false). 기본값은 모든 날 근무일
+    isWorkDate: (date: string) => boolean = () => true,
 ): CalendarWorkEvent[] {
     const todayString = toLocalDateString(today);
     const currentWeekMonday = toLocalDateString(
@@ -158,7 +181,8 @@ export function mapTodosToCalendarEvents(
     ) => {
         const instance = instances.get(`${item.id}|${cycleDate}`);
         if (cycleDate !== currentCycleDate) {
-            return instance?.cycleDate ?? cycleDate;
+            // 기존 -> return instance?.cycleDate ?? cycleDate; / 변경 -> 문서 없으면 주기 안의 첫 근무일 칸
+            return instance?.cycleDate ?? firstWorkDate(item.cycle, cycleDate, isWorkDate);
         }
         // 상신 이후 문서는 문서 표시일 칸
         if (instance && !followsToday(instance.statusType)) {
@@ -227,7 +251,11 @@ export function mapTodosToCalendarEvents(
         const cycle = item.cycle;
 
         if (cycle === 'DAY') {
-            days.forEach((date) => push(date, item, date, todayString));
+            // 기존 -> days.forEach((date) => push(date, item, date, todayString));
+            // 변경 -> 근무일 칸만, 근무일이 아니어도 작성 문서가 있으면 표시
+            days
+            .filter((date) => isWorkDate(date) || instances.has(`${item.id}|${date}`))
+            .forEach((date) => push(date, item, date, todayString));
             return;
         }
 
