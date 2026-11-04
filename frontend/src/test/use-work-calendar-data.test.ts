@@ -7,10 +7,15 @@ import {
     listHaccpWorkTodos,
 } from '../services/documents/haccpBaseWorkService';
 import { useAuthStore } from '../shared/store/authStore';
+import { listWorkdays } from '../services/basicinfo/workday/workdayService';
 
 vi.mock('../services/documents/haccpBaseWorkService', () => ({
     listHaccpWorkTodos: vi.fn(),
     listHaccpWorkTodoCycles: vi.fn(),
+}));
+
+vi.mock('../services/basicinfo/workday/workdayService', () => ({
+    listWorkdays: vi.fn(),
 }));
 
 describe('useWorkCalendarData', () => {
@@ -45,6 +50,8 @@ describe('useWorkCalendarData', () => {
 
         vi.mocked(listHaccpWorkTodoCycles).mockReset();
         vi.mocked(listHaccpWorkTodoCycles).mockResolvedValue({ instances: [], displayStartDate: '', expirations: [] });
+        vi.mocked(listWorkdays).mockReset();
+        vi.mocked(listWorkdays).mockResolvedValue([]);
     });
 
     afterEach(() => {
@@ -152,5 +159,48 @@ describe('useWorkCalendarData', () => {
         await waitFor(() => expect(result.current.isLoading).toBe(false));
 
         expect(renderedEventCounts.every((count) => count === 0)).toBe(true);
+    });
+
+    it('draws daily items only on work dates of the visible years', async () => {
+        vi.mocked(listHaccpWorkTodos).mockResolvedValue([
+            {
+                id: 'wc-day',
+                tenantCode: 'TENANT-A',
+                categoryGroupId: '10',
+                categoryCode: 'HA',
+                categoryName: 'HACCP (HA)',
+                categorySortOrder: 1,
+                divisionCode: '002',
+                divisionName: '일일 점검',
+                cycle: 'DAY', cycleName: '일',
+                title: '일일 점검',
+                active: true,
+                expirationApply: false,
+                approvalApply: true,
+                assigneeIds: [],
+                referenceIds: [],
+                assigneeMapped: true,
+                hasDocument: true,
+                writtenInCycle: false,
+            },
+        ]);
+        vi.mocked(listWorkdays).mockResolvedValue([
+            { workdayDate: '2026-10-12', dayType: 'WORK', dayName: '', memo: '', source: 'PATTERN' },
+            { workdayDate: '2026-10-13', dayType: 'COMPANY_HOLIDAY', dayName: '', memo: '', source: 'MANUAL' },
+            { workdayDate: '2026-10-17', dayType: 'SPECIAL_WORK', dayName: '', memo: '', source: 'MANUAL' },
+        ]);
+        const { result } = renderHook(() => useWorkCalendarData(), {
+            wrapper: AppProviders,
+        });
+
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        expect(listWorkdays).toHaveBeenCalledWith({ tenantCode: 'TENANT-A', year: 2026 });
+        await waitFor(() => {
+            expect(result.current.events.map((event) => event.start)).toEqual([
+                new Date(2026, 9, 12),
+                new Date(2026, 9, 17),
+            ]);
+        });
     });
 });
