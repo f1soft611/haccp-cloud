@@ -1,7 +1,6 @@
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import {
-  Chip,
   IconButton,
   Skeleton,
   Stack,
@@ -18,6 +17,7 @@ import { GridPaginationBar } from '../../../../shared/components/data/GridPagina
 import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
 import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
 import type { HaccpDocumentItem } from '../../../../services/documents/haccpDocumentService';
+import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 
 export function HaccpDocumentGrid(props: {
   rows: HaccpDocumentItem[];
@@ -147,21 +147,7 @@ export function HaccpDocumentGrid(props: {
                 <TableCell>{row.title}</TableCell>
                 <TableCell align="center">{row.writer}</TableCell>
                 <TableCell align="center">
-                  <Chip
-                    size="small"
-                    label={row.status}
-                    color={
-                      row.status === '승인'
-                          ? 'success'
-                          : row.status === '결재진행중'
-                              ? 'warning'
-                              : row.status === '임시저장'
-                                  ? 'info'
-                                  : row.status === '미작성'
-                                      ? 'default'
-                                      : 'error'
-                    }
-                  />
+                  <ApprovalStatusChip label={row.status === '임시저장' ? '미작성' : row.status} />
                 </TableCell>
                 <TableCell align="center">{row.draftedAt}</TableCell>
                 <TableCell align="center">{row.updatedAt}</TableCell>

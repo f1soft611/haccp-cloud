@@ -4,7 +4,6 @@ import { AppProviders } from '../app/providers/AppProviders';
 import { WorkCalendarPage } from '../pages/documents/work-calendar/WorkCalendarPage';
 import {listHaccpWorkTodoCycles, listHaccpWorkTodos} from '../services/documents/haccpBaseWorkService';
 import { useAuthStore } from '../shared/store/authStore';
-import { getWorkCycleSx } from '../pages/dashboard/tenant/utils';
 import { getCommonCodes } from '../services/basicinfo/commonCodeService';
 
 vi.mock('../services/basicinfo/commonCodeService', () => ({
@@ -181,9 +180,7 @@ describe('WorkCalendarPage', () => {
         );
 
         const eventText = await screen.findByText('수시 점검 업무');
-        expect((eventText.closest('.rbc-event') as HTMLElement).style.backgroundColor).toBe(
-            getWorkCycleSx('ANYTIME').bgcolor,
-        );
+        expect((eventText.closest('.rbc-event') as HTMLElement).style.color).toBe('rgb(59, 59, 59)');
 
         fireEvent.click(eventText);
 
@@ -212,7 +209,7 @@ describe('WorkCalendarPage', () => {
         ).toBeInTheDocument();
     });
 
-    it('colors the event pill background by the todo cycle', async () => {
+    it('colors the event pill by the todo cycle', async () => {
         render(
             <AppProviders>
                 <WorkCalendarPage />
@@ -223,9 +220,7 @@ describe('WorkCalendarPage', () => {
         const eventEl = eventText.closest('.rbc-event') as HTMLElement | null;
 
         expect(eventEl).not.toBeNull();
-        expect(eventEl?.style.backgroundColor).toBe(
-            getWorkCycleSx('MONTH').bgcolor,
-        );
+        expect(eventEl?.style.color).toBe('rgb(110, 49, 255)');
     });
 
     it('renders a legend with common-code cycle names and status badges', async () => {
@@ -244,7 +239,8 @@ describe('WorkCalendarPage', () => {
         const legendBadges = Array.from(
             document.querySelectorAll('[data-legend] [data-status-badge]'),
         ).map((el) => el.textContent);
-        expect(legendBadges).toEqual(['임시저장', '결재진행중', '반려', '승인']);
+        // 기존 -> ['임시저장', '결재진행중', '반려', '승인'] / 변경 -> 임시저장은 미작성으로 보므로 배지 없음
+        expect(legendBadges).toEqual(['결재진행중', '반려', '승인']);
     });
 
     it('falls back to cycle codes when common codes fail to load', async () => {
@@ -303,8 +299,10 @@ describe('WorkCalendarPage', () => {
 
         // 기존 -> '임시저장' / '결재중' / '반려'
         // 변경 -> 이벤트 배지는 한 글자
-        await waitFor(() => expect(badgeOf('임시저장 업무')).toBe('임'));
-        expect(badgeOf('결재진행중 업무')).toBe('중');
+        // 기존 -> await waitFor(() => expect(badgeOf('임시저장 업무')).toBe('임'))
+        // 변경 -> 임시저장은 미작성으로 보므로 배지 없음
+        await waitFor(() => expect(badgeOf('결재진행중 업무')).toBe('중'));
+        expect(badgeOf('임시저장 업무')).toBeNull();
         expect(badgeOf('반려 업무')).toBe('반');
         expect(badgeOf('승인 업무')).toBe('승');
     });

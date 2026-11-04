@@ -24,9 +24,9 @@ describe('resolveApprovalStatusView', () => {
     ).toEqual({ label: '미작성', color: 'default' });
   });
 
-  it('keeps pre-apply as 임시저장 with info chip', () => {
+  it('shows pre-apply as 미작성', () => {
     expect(
       resolveApprovalStatusView({ approvalStatusType: 'pre_apply' }),
-    ).toEqual({ label: '임시저장', color: 'info' });
+    ).toEqual({ label: '미작성', color: 'default' });
   });
 });

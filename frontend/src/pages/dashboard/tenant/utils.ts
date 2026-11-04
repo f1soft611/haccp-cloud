@@ -1,57 +1,27 @@
+const WORK_CYCLE_COLORS: Record<string, { border: string; color: string }> = {
+  DAY: { border: '#00B76E', color: '#00B76E' },
+  WEEK: { border: '#0094D5', color: '#0094D5' },
+  MONTH: { border: '#6D30FF', color: '#6E31FF' },
+  ANYTIME: { border: '#3B3B3B', color: '#3B3B3B' },
+};
+const WORK_CYCLE_DEFAULT_COLOR = { border: '#929FBC', color: '#596785' };
 
 export function getWorkCycleSx(cycle: string) {
-  if (cycle === 'DAY') {
-    return {
-      bgcolor: 'rgba(239, 68, 68, 0.12)',
-      color: '#b91c1c',
-      border: '1px solid rgba(239, 68, 68, 0.25)',
-    };
-  }
-
-  if (cycle === 'WEEK') {
-    return {
-      bgcolor: 'rgba(245, 158, 11, 0.16)',
-      color: '#92400e',
-      border: '1px solid rgba(245, 158, 11, 0.3)',
-    };
-  }
-
-  if (cycle === 'MONTH') {
-    return {
-      bgcolor: 'rgba(59, 130, 246, 0.12)',
-      color: '#1d4ed8',
-      border: '1px solid rgba(59, 130, 246, 0.25)',
-    };
-  }
-
-  if (cycle === 'QUARTER') {
-    return {
-      bgcolor: 'rgba(14, 165, 233, 0.14)',
-      color: '#0369a1',
-      border: '1px solid rgba(14, 165, 233, 0.3)',
-    };
-  }
-
-  if (cycle === 'HALF') {
-    return {
-      bgcolor: 'rgba(236, 72, 153, 0.12)',
-      color: '#be185d',
-      border: '1px solid rgba(236, 72, 153, 0.28)',
-    };
-  }
-
-  if (cycle === 'ANYTIME') {
-    return {
-      bgcolor: 'rgba(139, 92, 246, 0.14)',
-      color: '#6d28d9',
-      border: '1px solid rgba(139, 92, 246, 0.32)',
-    };
-  }
-
+  const { border, color } = WORK_CYCLE_COLORS[cycle] ?? WORK_CYCLE_DEFAULT_COLOR;
   return {
-    bgcolor: 'rgba(16, 185, 129, 0.12)',
-    color: '#047857',
-    border: '1px solid rgba(16, 185, 129, 0.28)',
+    bgcolor: '#FFFFFF',
+    color,
+    border: `1px solid ${border}`,
+  };
+}
+
+// 캘린더 이벤트용: 칩과 같은 색, 기존 캘린더 모양(연한 배경 + 옅은 테두리)
+export function getWorkCycleEventSx(cycle: string) {
+  const { border, color } = WORK_CYCLE_COLORS[cycle] ?? WORK_CYCLE_DEFAULT_COLOR;
+  return {
+    bgcolor: `${border}1F`,
+    color,
+    border: `1px solid ${border}47`,
   };
 }
 

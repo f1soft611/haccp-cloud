@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, dayjsLocalizer, type ToolbarProps } from 'react-big-calendar';
 import { resolveDraftRoute, resolveExpirationDraftRoute } from '../../../../shared/utils/workDraftRoute';
-import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
+import { getWorkCycleEventSx } from '../../../dashboard/tenant/utils';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
 import { WorkCalendarEventContent } from './WorkCalendarEvent';
 import { WorkCalendarToolbar, type WorkCalendarLegendFilter } from './WorkCalendarToolbar';
@@ -49,7 +49,9 @@ export function WorkCalendarView(props: WorkCalendarViewProps) {
             startAccessor="start"
             endAccessor="end"
             eventPropGetter={(event) => {
-                const sx = getWorkCycleSx(event.resource.cycle);
+                // 기존 -> getWorkCycleSx (칩과 같은 흰 배경 + 진한 테두리)
+                // 변경 -> getWorkCycleEventSx (같은 색, 연한 배경 + 옅은 테두리)
+                const sx = getWorkCycleEventSx(event.resource.cycle);
                 return {
                     style: {
                         backgroundColor: sx.bgcolor,

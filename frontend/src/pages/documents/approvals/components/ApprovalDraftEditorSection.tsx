@@ -5,8 +5,9 @@ import type { ReactNode } from 'react';
 import type { HaccpBaseWorkItem } from '../../../../services/documents/haccpBaseWorkService';
 import { NotionLikeEditor } from '../../../../editor/components/NotionLikeEditor';
 import type { DocumentFieldValues } from '../../../../editor/utils/documentFieldValues';
-import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
+import {PENDING_APPROVAL_LABEL, resolveApprovalStatusView} from '../../../../shared/utils/approvalStatus';
 import { formatNow } from '../utils/approvalDraftUtils';
+import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 
 const REPORT_DATE_HELPER_TEXT: Record<string, string> = {
   WEEK: '주간 업무는 해당 주 월요일로 저장됩니다',
@@ -58,9 +59,13 @@ export function ApprovalDraftEditorSection(
   const approvalStatus = String(work?.approvalStatusType ?? '')
     .trim()
     .toLowerCase();
-  const { label: statusLabel, color: statusColor } = resolveApprovalStatusView({
+  const { label: viewLabel } = resolveApprovalStatusView({
     approvalStatusType: approvalStatus,
   });
+  const statusLabel =
+    viewLabel === '결재진행중' && (work?.canApprove || work?.canConfirm)
+      ? PENDING_APPROVAL_LABEL
+      : viewLabel;
   const draftNumber = (work?.draftNumber || '').trim();
   const draftDate = (work?.createdAt || '').trim() || formatNow(new Date());
 
@@ -95,13 +100,7 @@ export function ApprovalDraftEditorSection(
             alignItems="center"
             sx={{ ml: { md: 'auto' } }}
           >
-            <Chip
-              size="small"
-              color={statusColor}
-              variant="filled"
-              label={`${statusLabel}`}
-              sx={{ fontWeight: 700 }}
-            />
+            <ApprovalStatusChip label={statusLabel} />
             {isReadOnly ? (
               <Chip
                 size="small"
