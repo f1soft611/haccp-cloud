@@ -4,8 +4,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { useMemo, type CSSProperties } from 'react';
 import { Calendar, dayjsLocalizer, type DateHeaderProps } from 'react-big-calendar';
-import type { WorkdayItem } from '../../../../services/basicinfo/workday/workdayService';
-import { isOffDay, isRedDay } from '../workdayRules';
+import type { WeekItem, WorkdayItem } from '../../../../services/basicinfo/workday/workdayService';
+import { dayColor, findWeek, isOffDay, isRedDay } from '../workdayRules';
 
 dayjs.locale('ko');
 const localizer = dayjsLocalizer(dayjs);
@@ -21,13 +21,14 @@ type WorkdayEvent = {
 type WorkdayCalendarProps = {
     items: WorkdayItem[];
     changedDates: Set<string>;
+    weeks: WeekItem[];
     viewDate: Date;
     onNavigate: (date: Date) => void;
     onSelectDate: (workdayDate: string) => void;
 };
 
 export function WorkdayCalendar(props: WorkdayCalendarProps) {
-    const { items, changedDates, viewDate, onNavigate, onSelectDate } = props;
+    const { items, changedDates, weeks, viewDate, onNavigate, onSelectDate } = props;
     const theme = useTheme();
     const itemByDate = useMemo(
         () => new Map(items.map((item) => [item.workdayDate, item])),
@@ -52,16 +53,36 @@ export function WorkdayCalendar(props: WorkdayCalendarProps) {
         () => ({
             month: {
                 dateHeader: ({ date, label }: DateHeaderProps) => {
-                    const item = itemByDate.get(dayjs(date).format('YYYY-MM-DD'));
+                    const workdayDate = dayjs(date).format('YYYY-MM-DD');
+                    const item = itemByDate.get(workdayDate);
+                    // 데이터 없는 칸(생성 안 된 연도, 앞뒤 달)은 요일만 보고 색을 정함
+                    const color = dayColor(workdayDate, item?.dayType ?? 'WORK');
+                    const week = dayjs(date).day() === 1 ? findWeek(weeks, workdayDate) : undefined;
                     return (
-                        <span style={{ color: item && isRedDay(item.dayType) ? theme.palette.error.main : undefined }}>
-              {label}
-            </span>
+                        <span>
+                            {week ? (
+                                <span style={{ fontSize: 11, color: theme.palette.text.secondary, marginRight: 4 }}>
+                                    W{week.week}
+                                </span>
+                            ) : null}
+                            <span
+                                style={{
+                                    color:
+                                        color === 'red'
+                                            ? theme.palette.error.main
+                                            : color === 'blue'
+                                                ? theme.palette.primary.main
+                                                : undefined,
+                                }}
+                            >
+                                {label}
+                            </span>
+                        </span>
                     );
                 },
             },
         }),
-        [itemByDate, theme],
+        [itemByDate, weeks, theme],
     );
 
     return (
