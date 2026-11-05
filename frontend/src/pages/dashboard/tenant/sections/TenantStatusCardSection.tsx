@@ -1,31 +1,32 @@
-import AssignmentReturnOutlinedIcon from '@mui/icons-material/AssignmentReturnOutlined';
-import HourglassTopOutlinedIcon from '@mui/icons-material/HourglassTopOutlined';
-import NoteAddOutlinedIcon from '@mui/icons-material/NoteAddOutlined';
-import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
-import TaskOutlinedIcon from '@mui/icons-material/TaskOutlined';
-import type { SvgIconComponent } from '@mui/icons-material';
-import { ButtonBase, Divider, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
+import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
+import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined';
 import {
-    STATUS_CARD_KEYS,
+    Box,
+    ButtonBase,
+    FormControlLabel,
+    Radio,
+    RadioGroup,
+    Skeleton,
+    Stack,
+    ToggleButton,
+    ToggleButtonGroup,
+    Tooltip,
+    Typography,
+} from '@mui/material';
+import { Fragment, type ReactNode } from 'react';
+import {
+    DRAFT_STATUS_CARD_KEYS,
+    PENDING_APPROVAL_STATUS,
+    type TenantDocScope,
+    type TenantViewMode,
     type TodoStatusCardKey,
     type TodoStatusCounts,
 } from '../todoFilter';
 
-const CARD_COLORS: Record<TodoStatusCardKey, string> = {
-    미작성: 'text.primary',
-    결재할문서: 'secondary.main',
-    결재진행중: 'warning.main',
-    승인: 'success.main',
-    반려: 'error.main',
-};
-
-const CARD_ICONS: Record<TodoStatusCardKey, SvgIconComponent> = {
-    미작성: NoteAddOutlinedIcon,
-    결재할문서: PendingActionsOutlinedIcon,
-    결재진행중: HourglassTopOutlinedIcon,
-    승인: TaskOutlinedIcon,
-    반려: AssignmentReturnOutlinedIcon,
-};
+const STATUS_BAR_RADIUS = '4px';
 
 const CARD_TOOLTIPS: Record<TodoStatusCardKey, string> = {
     미작성: '내가 작성해야 할 문서',
@@ -35,63 +36,168 @@ const CARD_TOOLTIPS: Record<TodoStatusCardKey, string> = {
     반려: '내가 결재 요청했으나 반려된 문서',
 };
 
+const DOC_SCOPE_OPTIONS: { value: TenantDocScope; label: string }[] = [
+    { value: 'all', label: '전체' },
+    { value: 'draft', label: '기안문서' },
+    { value: 'approval', label: '결재할문서' },
+];
+
 type TenantStatusCardSectionProps = {
     counts: TodoStatusCounts;
     isLoading: boolean;
     onSelect: (status: TodoStatusCardKey) => void;
+    docScope: TenantDocScope;
+    onDocScopeChange: (docScope: TenantDocScope) => void;
+    viewMode: TenantViewMode;
+    onViewModeChange: (viewMode: TenantViewMode) => void;
 };
 
-// 종합현황 리스트 상단: 상태별 건수(검색조건과 무관한 전체 기준)
+// 기존 -> 종합현황 리스트 상단에 상태별 건수만 표시, 문서 구분과 보기 전환은 없음
+// 변경 -> 나의 담당업무 상태바: 건수, 문서 구분 라디오, 카드형/캘린더 전환. 건수는 항상 전체 기준
 export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
-    const { counts, isLoading, onSelect } = props;
+    const { counts, isLoading, onSelect, docScope, onDocScopeChange, viewMode, onViewModeChange } = props;
+
+    // 마우스를 올리면 상태 설명 툴팁 표시 (describeChild로 버튼 이름은 상태명 유지)
+    const renderCount = (status: TodoStatusCardKey, label: ReactNode) => (
+        <Tooltip title={CARD_TOOLTIPS[status]} describeChild arrow>
+            <ButtonBase
+                onClick={() => onSelect(status)}
+                sx={{
+                    gap: 0.5,
+                    px: 0.75,
+                    py: 0.5,
+                    borderRadius: 1,
+                    '&:hover': { bgcolor: 'action.hover' },
+                }}
+            >
+                {label}
+                <Typography
+                    component="span"
+                    fontWeight={800}
+                    sx={{ color: 'primary.main', fontSize: 18 }}
+                >
+                    {isLoading ? <Skeleton width={24} /> : counts[status]}
+                </Typography>
+                <Typography variant="body2" component="span" color="text.secondary">
+                    건
+                </Typography>
+            </ButtonBase>
+        </Tooltip>
+    );
 
     return (
         <Stack
             direction="row"
-            flexWrap={{ xs: 'wrap', sm: 'nowrap' }}
-            divider={
-                <Divider
-                    orientation="vertical"
-                    flexItem
-                    sx={{ my: 1.5, display: { xs: 'none', sm: 'block' } }}
-                />
-            }
+            flexWrap="wrap"
+            alignItems="center"
+            useFlexGap
+            columnGap={3}
+            rowGap={1}
         >
-            {STATUS_CARD_KEYS.map((status) => {
-                const Icon = CARD_ICONS[status];
-                // 마우스를 올리면 상태 설명 툴팁 표시 (describeChild로 버튼 이름은 상태명 유지)
-                return (
-                    <Tooltip key={status} title={CARD_TOOLTIPS[status]} describeChild arrow>
-                        <ButtonBase
-                            onClick={() => onSelect(status)}
-                            sx={{
-                                flex: { xs: '1 1 50%', sm: 1 },
-                                gap: 1,
-                                py: 1.5,
-                                px: 2,
-                                borderRadius: 1,
-                                '&:hover': { bgcolor: 'action.hover' },
-                            }}
-                        >
-                            <Icon fontSize="small" sx={{ color: 'text.secondary' }} />
-                            <Typography variant="body2">
-                                {status}
-                            </Typography>
-                            <Typography
-                                variant="h5"
-                                component="span"
-                                fontWeight={800}
-                                sx={{ color: CARD_COLORS[status] }}
-                            >
-                                {isLoading ? <Skeleton width={32} /> : counts[status]}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                건
-                            </Typography>
-                        </ButtonBase>
-                    </Tooltip>
-                );
-            })}
+            <Stack direction="row" flexWrap="wrap" alignItems="center" useFlexGap columnGap={0.5} rowGap={0.5}>
+                <EditNoteOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                <Typography variant="body2" fontWeight={700} sx={{ mr: 1 }}>
+                    기안문서
+                </Typography>
+                {DRAFT_STATUS_CARD_KEYS.map((status, index) => (
+                    <Fragment key={status}>
+                        {index > 0 ? (
+                            <ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+                        ) : null}
+                        {renderCount(status, <Typography variant="body2" component="span">{status}</Typography>)}
+                    </Fragment>
+                ))}
+            </Stack>
+
+            {renderCount(
+                PENDING_APPROVAL_STATUS,
+                <>
+                    <AssignmentTurnedInOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                    <Typography variant="body2" component="span" fontWeight={700} sx={{ mr: 0.5 }}>
+                        결재할 문서
+                    </Typography>
+                </>,
+            )}
+
+            <Stack
+                direction="row"
+                flexWrap="wrap"
+                alignItems="center"
+                useFlexGap
+                columnGap={2}
+                rowGap={1}
+                sx={{ ml: { md: 'auto' } }}
+            >
+                <RadioGroup
+                    row
+                    aria-label="문서 구분"
+                    value={docScope}
+                    onChange={(event) => onDocScopeChange(event.target.value as TenantDocScope)}
+                >
+                    {DOC_SCOPE_OPTIONS.map((option) => (
+                        <FormControlLabel
+                            key={option.value}
+                            value={option.value}
+                            control={<Radio size="small" />}
+                            label={option.label}
+                            disabled={viewMode === 'calendar'}
+                            sx={{ mr: 1.5, '& .MuiFormControlLabel-label': { fontSize: 14 } }}
+                        />
+                    ))}
+                </RadioGroup>
+
+                {/* 기존 -> TenantFilterSection 오른쪽 끝 / 변경 -> 검색필터 제거로 상태바로 이동 */}
+                <Box sx={{ flexShrink: 0 }}>
+                    <ToggleButtonGroup
+                        size="small"
+                        exclusive
+                        value={viewMode}
+                        onChange={(_, next: TenantViewMode | null) => {
+                            if (next) {
+                                onViewModeChange(next);
+                            }
+                        }}
+                        aria-label="보기 형식"
+                        sx={{
+                            gap: 0.5,
+                            '& .MuiToggleButton-root': {
+                                minWidth: 88,
+                                height: 36,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: `${STATUS_BAR_RADIUS} !important`,
+                                bgcolor: 'background.paper',
+                                color: 'text.disabled',
+                                fontWeight: 600,
+                                '&:hover': { bgcolor: 'background.paper', color: 'text.secondary' },
+                            },
+                            '& .MuiToggleButton-root.Mui-selected': {
+                                borderColor: 'text.secondary',
+                                color: 'text.primary',
+                                bgcolor: 'background.paper',
+                                '&:hover': { bgcolor: 'background.paper' },
+                            },
+                            '& .MuiToggleButtonGroup-grouped:not(:first-of-type)': {
+                                ml: 0,
+                                borderLeft: '1px solid',
+                                borderLeftColor: 'divider',
+                            },
+                            '& .MuiToggleButtonGroup-grouped.Mui-selected:not(:first-of-type)': {
+                                borderLeftColor: 'text.secondary',
+                            },
+                        }}
+                    >
+                        <ToggleButton value="list" aria-label="카드형">
+                            <GridViewOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                            카드형
+                        </ToggleButton>
+                        <ToggleButton value="calendar" aria-label="캘린더형">
+                            <CalendarMonthOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                            캘린더
+                        </ToggleButton>
+                    </ToggleButtonGroup>
+                </Box>
+            </Stack>
         </Stack>
     );
 }

@@ -3,6 +3,9 @@ import type { TenantTodoCardItem } from './hooks/useTenantDashboardData';
 
 export type TenantViewMode = 'list' | 'calendar';
 
+// 나의 담당업무 카드 목록의 문서 구분
+export type TenantDocScope = 'all' | 'draft' | 'approval';
+
 export type TenantTodoFilter = {
   keyword: string;
   category: string;
@@ -40,6 +43,8 @@ export const STATUS_CARD_KEYS = [
 
 export type TodoStatusCardKey = (typeof STATUS_CARD_KEYS)[number];
 export type TodoStatusCounts = Record<TodoStatusCardKey, number>;
+// 상태바의 기안문서 건수 순서 (결재할문서는 따로 표시)
+export const DRAFT_STATUS_CARD_KEYS = ['미작성', '결재진행중', '승인', '반려'] as const;
 
 export function getTodoStatusLabel(item: TenantTodoCardItem): string {
   return resolveApprovalStatusView({
