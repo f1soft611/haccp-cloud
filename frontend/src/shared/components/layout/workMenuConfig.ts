@@ -30,6 +30,8 @@ export type MenuGroup = {
   label: string;
   roles: UserRole[];
   items: MenuItem[];
+  // 하위 없이 자기 자신만 항목으로 가지는 메뉴인지 여부
+  isSingleMenu?: boolean;
 };
 
 export type AccessibleMenuHierarchyMeta = {
@@ -90,6 +92,7 @@ function toSortedMenus(menus: AccessibleMenuHierarchyMeta[]) {
   });
 }
 
+// 접근 가능한 메뉴 목록을 왼쪽 메뉴바 그룹 구조로 변환한다.
 export function buildMenuGroupsFromAccessibleMenus(
   role: UserRole,
   menus: AccessibleMenuHierarchyMeta[],
@@ -126,6 +129,7 @@ export function buildMenuGroupsFromAccessibleMenus(
             ? `menu-group-${menu.menuId}`
             : `menu-group-${menu.path}`),
         label: menu.menuNm || menu.path,
+        isSingleMenu: true,
         roles: [role],
         items: [
           {
@@ -158,11 +162,14 @@ export function buildMenuGroupsFromAccessibleMenus(
           icon: toMenuIconName(child.iconNm),
         }));
 
-      if (
+      // 기존 -> 단일 메뉴 조건을 if 문에 직접 작성
+      // 변경 -> 조건을 변수로 두고 그룹의 단일 메뉴 표시에도 사용
+      const isSingleMenu =
         items.length === 0 &&
         root.path.length > 0 &&
-        allowedPathSet.has(root.path)
-      ) {
+        allowedPathSet.has(root.path);
+
+      if (isSingleMenu) {
         items.push({
           label: root.menuNm || root.path,
           description: root.menuDc,
@@ -185,6 +192,7 @@ export function buildMenuGroupsFromAccessibleMenus(
         label: root.menuNm || root.path,
         roles: [role],
         items,
+        isSingleMenu,
       };
     })
     .filter((group): group is MenuGroup => group !== null);
