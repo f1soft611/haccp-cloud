@@ -658,7 +658,7 @@
         AND COALESCE(m.delete_status, 'N') != 'Y'
         AND COALESCE(m.status_type, '') = 'pre_apply'
         AND m.report_date &gt;= TO_CHAR(gs.cycle_start, 'YYYYMMDD')
-        AND m.report_date &lt; TO_CHAR(gs.cycle_start + cyc.cycle_step, 'YYYYMMDD')
+        AND m.report_date &lt; TO_CHAR(gs.cycle_end, 'YYYYMMDD')
         ORDER BY COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
         LIMIT 1
         ) tmp ON TRUE
@@ -774,6 +774,7 @@
         )
     </sql>
 
+    <!-- 미작성 목록, 건수의 주기 행 생성: 업무개시일부터 현재까지 업무별 주기마다 한 행 -->
     <sql id="unwrittenCycleFrom">
         FROM tb_drafting_work_category w
         JOIN tb_tenant t
@@ -813,7 +814,31 @@
                    CAST(COALESCE(t.service_start_date, DATE(t.created_at)) AS timestamp) AS base_date
           ) k
         ) cyc
-        CROSS JOIN LATERAL generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step) AS gs(cycle_start)
+        <!-- 기존 -> CROSS JOIN LATERAL generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step) AS gs(cycle_start) -->
+        <!-- 변경 -> 일 단위는 tb_workdate 근무일, 주 단위는 tb_week 주차, 나머지는 generate_series (DashboardMapper selectMyTodoList 의 uw 와 같은 기준) -->
+        CROSS JOIN LATERAL (
+          SELECT wd.work_date AS cycle_start,
+                 wd.work_date + 1 AS cycle_end
+          FROM tb_workdate wd
+          WHERE cyc.cycle_unit = 'day'
+            AND wd.tenant_id = w.tenant_id
+            AND wd.work_type IN ('WORK', 'SPECIAL_WORK')
+            AND wd.work_date &gt;= CAST(cyc.first_start AS date)
+            AND wd.work_date &lt;= CURRENT_DATE
+          UNION ALL
+          SELECT wk.from_date,
+                 wk.to_date + 1
+          FROM tb_week wk
+          WHERE cyc.cycle_unit = 'week'
+            AND wk.tenant_id = w.tenant_id
+            AND wk.to_date &gt;= CAST(cyc.first_start AS date)
+            AND wk.from_date &lt;= CURRENT_DATE
+          UNION ALL
+          SELECT CAST(s.cycle_start AS date),
+                 CAST(s.cycle_start + cyc.cycle_step AS date)
+          FROM generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step) AS s(cycle_start)
+          WHERE cyc.cycle_unit NOT IN ('day', 'week')
+        ) gs
     </sql>
 
     <!-- 공통 조건은 unwrittenWorkWhere 로 분리해 만료일 관리 분기와 같이 씀, 주기 행에서는 만료일 관리 업무 제외 -->
@@ -830,7 +855,7 @@
         AND COALESCE(em.status_type, '') != 'pre_apply'
         AND (COALESCE(em.status_type, '') != 'rejected' OR <include refid="finalOwnerConfirmPending"><property name="doc" value="em"/></include>)
         AND em.report_date &gt;= TO_CHAR(gs.cycle_start, 'YYYYMMDD')
-        AND em.report_date &lt; TO_CHAR(gs.cycle_start + cyc.cycle_step, 'YYYYMMDD')
+        AND em.report_date &lt; TO_CHAR(gs.cycle_end, 'YYYYMMDD')
         )
     </sql>
 
