@@ -83,3 +83,97 @@ describe('normalizeClipboardHtmlForEditor', () => {
         expect(result).not.toContain('clipboard-table');
     });
 });
+
+function cells(html: string): HTMLTableCellElement[] {
+    return Array.from(
+        new DOMParser().parseFromString(html, 'text/html').querySelectorAll('td'),
+    );
+}
+
+const colwidths = (html: string) =>
+    cells(html).map((cell) => cell.getAttribute('colwidth'));
+
+const td = (width: string, attributes = '') =>
+    `<td ${attributes} style="width:${width}">x</td>`;
+
+describe('normalizeClipboardHtmlForEditor 표 크기', () => {
+    it('colgroup 이 없으면 셀 너비로 colwidth 를 만들고 셀 style 에는 width 를 남기지 않는다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            `<table><tr>${td('100px')}${td('200px')}${td('300px')}</tr></table>`,
+        );
+
+        expect(colwidths(result)).toEqual(['100', '200', '300']);
+        expect(cells(result)[0].style.width).toBe('');
+    });
+
+    it('첫 행이 병합되어도 아래 행 너비로 열 너비를 만든다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            `<table><tr>${td('600px', 'colspan="3"')}</tr>` +
+            `<tr>${td('100px')}${td('200px')}${td('300px')}</tr></table>`,
+        );
+
+        expect(colwidths(result)).toEqual(['100,200,300', '100', '200', '300']);
+    });
+
+    it('rowspan 으로 밀린 셀을 실제 열에 맞춘다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            `<table><tr>${td('100px', 'rowspan="2"')}${td('500px', 'colspan="2"')}</tr>` +
+            `<tr>${td('200px')}${td('300px')}</tr></table>`,
+        );
+
+        expect(colwidths(result)).toEqual(['100', '200,300', '200', '300']);
+    });
+
+    it('병합 셀로만 알 수 있는 열은 병합 셀 너비에서 빼서 채운다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            `<table><tr>${td('300px', 'colspan="2"')}${td('300px')}</tr>` +
+            `<tr>${td('100px')}<td>x</td>${td('300px')}</tr></table>`,
+        );
+
+        expect(colwidths(result)).toEqual(['100,200', '300', '100', '200', '300']);
+    });
+
+    it('pt 단위 셀 너비를 px 로 바꾼다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            `<table><tr>${td('75pt')}${td('150pt')}</tr></table>`,
+        );
+
+        expect(colwidths(result)).toEqual(['100', '200']);
+    });
+
+    it('% 너비만 있으면 colwidth 없이 셀 style 을 유지한다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            `<table><tr>${td('50%')}${td('50%')}</tr></table>`,
+        );
+
+        expect(colwidths(result)).toEqual([null, null]);
+        expect(cells(result)[0].style.width).toBe('50%');
+    });
+
+    it('너비를 알 수 없는 열이 남으면 colwidth 를 만들지 않는다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            `<table><tr>${td('100px')}<td>x</td></tr></table>`,
+        );
+
+        expect(colwidths(result)).toEqual([null, null]);
+        expect(cells(result)[0].style.width).toBe('100px');
+    });
+
+    it('colgroup 너비가 셀 너비보다 우선한다 (엑셀)', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            '<table><colgroup><col width="80"><col width="120"></colgroup>' +
+            `<tr>${td('999px')}${td('999px')}</tr></table>`,
+        );
+
+        expect(colwidths(result)).toEqual(['80', '120']);
+    });
+
+    it('colgroup 에 비어 있는 열은 셀 너비로 채운다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            '<table><colgroup><col width="80"><col></colgroup>' +
+            `<tr>${td('999px')}${td('120px')}</tr></table>`,
+        );
+
+        expect(colwidths(result)).toEqual(['80', '120']);
+    });
+});
