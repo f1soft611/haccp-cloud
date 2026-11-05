@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeClipboardHtmlForEditor } from '../../../editor/utils/clipboardPaste';
+import { normalizeClipboardHtmlForEditor } from './clipboardPaste';
 
 function firstCell(html: string): HTMLTableCellElement {
     const cell = new DOMParser()
