@@ -136,5 +136,22 @@ describe('Dashboard page', () => {
     expect(params.get('status')).toBe('반려');
     expect(params.get('startDate')).toBe('');
     expect(params.get('endDate')).toBe('');
+    expect(params.get('participantType')).toBe('담당자');
+  });
+
+  it('does not add the assignee condition when moving from pending approvals', async () => {
+    window.history.pushState({}, '', '/');
+    render(
+        <AppProviders>
+          <DashboardPage />
+        </AppProviders>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /^결재할 문서/ }));
+
+    expect(window.location.pathname).toBe('/docs/haccp-doc');
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get('status')).toBe('결재할문서');
+    expect(params.has('participantType')).toBe(false);
   });
 });

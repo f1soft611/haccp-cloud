@@ -59,6 +59,15 @@ class HaccpWorkMapperPostgresqlTest {
     }
 
     @Test
+    void unwrittenWorkWhere_should_apply_assignee_participant_filter() throws Exception {
+        String xml = readMapper();
+        int start = xml.indexOf("<sql id=\"unwrittenWorkWhere\">");
+        String fragment = xml.substring(start, xml.indexOf("</sql>", start));
+        assertTrue(fragment.contains("<if test=\"participantTypes != null and participantTypes.contains('ASSIGNEE')\">"),
+                "미작성 목록도 참여유형 담당자 조건을 적용해야 한다");
+    }
+
+    @Test
     void unwrittenList_should_include_cycles_with_only_final_confirmed_rejections() throws Exception {
         String xml = readMapper();
         assertTrue(xml.contains("<sql id=\"finalOwnerConfirmPending\">"), "최종확인 대기 fragment 가 없다");

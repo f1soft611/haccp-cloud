@@ -12,6 +12,7 @@ import {
     countCumulativeStatuses,
     EMPTY_TODO_FILTER,
     matchesTodoFilter,
+    PENDING_APPROVAL_STATUS,
     type TenantDocScope,
     type TenantTodoFilter,
     type TenantViewMode,
@@ -100,15 +101,13 @@ export function TenantDashboard() {
                         <TenantStatusCardSection
                             counts={statusCounts}
                             isLoading={isTodoLoading || isApprovalLoading}
-                            onSelect={(status) =>
-                                navigate(
-                                    `/docs/haccp-doc?${new URLSearchParams({
-                                        status,
-                                        startDate: '',
-                                        endDate: '',
-                                    })}`,
-                                )
-                            }
+                            onSelect={(status) => {
+                                const query = new URLSearchParams({ status, startDate: '', endDate: '' });
+                                if (status !== PENDING_APPROVAL_STATUS) {
+                                    query.set('participantType', '담당자');
+                                }
+                                navigate(`/docs/haccp-doc?${query}`);
+                            }}
                             docScope={docScope}
                             onDocScopeChange={setDocScope}
                             viewMode={viewMode}
