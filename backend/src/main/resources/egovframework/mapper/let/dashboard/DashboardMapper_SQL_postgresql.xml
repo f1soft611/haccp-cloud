@@ -315,12 +315,18 @@
                     WHERE cyc.cycle_unit NOT IN ('day', 'week')
                 ) p
                 LEFT JOIN LATERAL (
-                SELECT COALESCE(em.status_type, '') AS status_type
+                <!-- 기존 -> SELECT COALESCE(em.status_type, '') AS status_type -->
+                <!-- 변경 -> 최종확인 대기가 아닌 승인은 confirmed 로 돌려 승인 건수에서 뺀다 (주기는 작성 완료라 미작성도 아님) -->
+                SELECT CASE
+                         WHEN COALESCE(em.status_type, '') = 'approved' AND NOT <include refid="finalOwnerConfirmPending"><property name="doc" value="em"/></include> THEN 'confirmed'
+                         ELSE COALESCE(em.status_type, '')
+                       END AS status_type
                 FROM tb_electronic_approval_main em
                 WHERE em.tenant_id = w.tenant_id
                 AND em.drafting_work_category_id = w.drafting_work_category_id
                 AND COALESCE(em.delete_status, 'N') != 'Y'
                 AND COALESCE(em.status_type, '') != 'pre_apply'
+                AND (COALESCE(em.status_type, '') != 'rejected' OR <include refid="finalOwnerConfirmPending"><property name="doc" value="em"/></include>)
                 AND em.report_date &gt;= TO_CHAR(p.p_start, 'YYYYMMDD')
                 AND em.report_date &lt; TO_CHAR(p.p_end, 'YYYYMMDD')
                 ORDER BY COALESCE(em.updated_at, em.created_at) DESC, em.electronic_approval_id DESC
@@ -328,9 +334,12 @@
                 ) cs ON TRUE
                 WHERE NOT cyc.is_anytime AND COALESCE(w.expiration_apply, 'N') != 'Y'
                 UNION ALL
-                <!-- 기존 -> 서브쿼리 DISTINCT ON 으로 대상별 최신 문서 선택 / 변경 -> v_expiration_target_latest 뷰 사용 (삭제, 임시저장 제외와 대상 키, 정렬은 뷰 안에) -->
-                <!-- ponytail: 만료일과 무관하게 승인이면 미작성. D-N 기준이 필요하면 CASE 에 AND es.expiration_date &lt;= TO_CHAR(CURRENT_DATE + N, 'YYYYMMDD') 조건 추가 -->
-                SELECT CASE WHEN es.status_type = 'approved' THEN NULL ELSE es.status_type END
+                <!-- 변경 -> 최신 문서가 최종확인된 반려여도 미작성 -->
+                SELECT CASE
+                         WHEN es.status_type = 'approved' THEN NULL
+                         WHEN es.status_type = 'rejected' AND NOT <include refid="finalOwnerConfirmPending"><property name="doc" value="es"/></include> THEN NULL
+                         ELSE es.status_type
+                       END
                 FROM v_expiration_target_latest es
                 WHERE w.expiration_apply = 'Y'
                   AND es.tenant_id = w.tenant_id
@@ -361,6 +370,19 @@
             )
         ORDER BY COALESCE(appr.latest_updated_at, w.updated_at, w.created_at) DESC, w.drafting_work_category_id DESC
     </select>
+
+    <!-- 최종확인 대기: 최종확인 결재선이 있고 아직 확인 전. 확인 완료 문서와 결재선이 없는 결재 미적용 문서는 거짓 -->
+    <sql id="finalOwnerConfirmPending">
+        EXISTS (
+          SELECT 1
+          FROM tb_electronic_approval_line_info fo
+          WHERE fo.tenant_id = ${doc}.tenant_id
+            AND fo.electronic_approval_id = ${doc}.electronic_approval_id
+            AND COALESCE(fo.last_owner_status, '') = 'Y'
+            AND COALESCE(fo.muldec_status, '') = 'cooperated'
+            AND NOT (COALESCE(fo.app_status, '') = 'confirmed' AND fo.exe_at IS NOT NULL)
+        )
+    </sql>
 
     <!-- 캘린더용: 기간 내 업무별·주기 기준일별 최신 결재문서 상태 -->
     <!-- 기존 -> 업무 + report_date 당 최신 문서 한 건 -->
