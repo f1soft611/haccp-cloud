@@ -696,8 +696,13 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             bgcolor: isDarkMode ? '#eef2f7' : 'common.white',
             fontWeight: 700,
           },
+          '& .tiptap td[data-pasted-style], & .tiptap th[data-pasted-style]': {
+            p: 0,
+          },
           '& .tiptap td[data-pasted-style] p, & .tiptap th[data-pasted-style] p': {
             my: 0,
+            lineHeight: 'normal',
+            whiteSpace: 'pre-wrap',
           },
           '& .tiptap .selectedCell::after': {
             content: '""',
