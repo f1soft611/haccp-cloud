@@ -761,6 +761,19 @@
         </if>
     </sql>
 
+    <!-- 최종확인 대기: 최종확인 결재선이 있고 아직 확인 전. DashboardMapper 의 같은 이름 fragment 와 조건을 맞춘다 -->
+    <sql id="finalOwnerConfirmPending">
+        EXISTS (
+          SELECT 1
+          FROM tb_electronic_approval_line_info fo
+          WHERE fo.tenant_id = ${doc}.tenant_id
+            AND fo.electronic_approval_id = ${doc}.electronic_approval_id
+            AND COALESCE(fo.last_owner_status, '') = 'Y'
+            AND COALESCE(fo.muldec_status, '') = 'cooperated'
+            AND NOT (COALESCE(fo.app_status, '') = 'confirmed' AND fo.exe_at IS NOT NULL)
+        )
+    </sql>
+
     <sql id="unwrittenCycleFrom">
         FROM tb_drafting_work_category w
         JOIN tb_tenant t
@@ -815,6 +828,7 @@
         AND em.drafting_work_category_id = w.drafting_work_category_id
         AND COALESCE(em.delete_status, 'N') != 'Y'
         AND COALESCE(em.status_type, '') != 'pre_apply'
+        AND (COALESCE(em.status_type, '') != 'rejected' OR <include refid="finalOwnerConfirmPending"><property name="doc" value="em"/></include>)
         AND em.report_date &gt;= TO_CHAR(gs.cycle_start, 'YYYYMMDD')
         AND em.report_date &lt; TO_CHAR(gs.cycle_start + cyc.cycle_step, 'YYYYMMDD')
         )
@@ -859,11 +873,13 @@
          AND es.drafting_work_category_id = w.drafting_work_category_id
     </sql>
 
-    <!-- ponytail: 만료일과 무관하게 최신 문서가 승인이면 미작성(대시보드와 같은 기준). D-N 기준이 필요하면 대시보드와 함께 AND es 에 만료일 조건 추가 -->
+    <!-- ponytail: 만료일과 무관하게 최신 문서가 승인이거나 최종확인된 반려면 미작성(대시보드와 같은 기준). D-N 기준이 필요하면 대시보드와 함께 AND es 에 만료일 조건 추가 -->
     <sql id="unwrittenExpirationWhere">
         <include refid="unwrittenWorkWhere"/>
         AND w.expiration_apply = 'Y'
-        AND es.status_type = 'approved'
+        <!-- 기존 -> AND es.status_type = 'approved' -->
+        <!-- 변경 -> 최종확인된 반려도 포함 -->
+        AND (es.status_type = 'approved' OR (es.status_type = 'rejected' AND NOT <include refid="finalOwnerConfirmPending"><property name="doc" value="es"/></include>))
     </sql>
 
     <sql id="requestedCycleStart">
