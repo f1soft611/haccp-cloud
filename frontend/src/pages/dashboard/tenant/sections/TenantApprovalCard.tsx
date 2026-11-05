@@ -4,7 +4,14 @@ import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
 import type { TenantTodoCardItem } from '../hooks/useTenantDashboardData';
-import { CARD_CHIP_SX, getDDayColor, getWorkCycleSx } from '../utils';
+import {
+    APPROVAL_CARD_TOP_COLOR,
+    CARD_CHIP_SX,
+    getDDayColor,
+    getWorkCycleSx,
+    WORK_CARD_BUTTON_SX,
+    WORK_CARD_SX,
+} from '../utils';
 
 type TenantApprovalCardProps = {
     item: TenantTodoCardItem;
@@ -29,10 +36,8 @@ export function TenantApprovalCard({ item, sectionLabel }: TenantApprovalCardPro
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                borderColor: 'divider',
-                borderTop: '3px solid',
-                borderTopColor: 'text.primary',
-                borderRadius: '4px',
+                ...WORK_CARD_SX,
+                borderTop: `3px solid ${APPROVAL_CARD_TOP_COLOR}`,
             }}
         >
             <Box sx={{ flexGrow: 1, px: 2.5, pt: 2, pb: 2 }}>
@@ -76,8 +81,7 @@ export function TenantApprovalCard({ item, sectionLabel }: TenantApprovalCardPro
                     aria-label="결재 문서 열기"
                     onClick={handleOpen}
                     sx={{
-                        border: '1px solid',
-                        borderColor: 'primary.main',
+                        ...WORK_CARD_BUTTON_SX,
                         borderRadius: '4px',
                         flexShrink: 0,
                         height: 30,

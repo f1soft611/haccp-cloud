@@ -92,11 +92,9 @@ export function TenantDashboard() {
                         sx={{
                             px: 2,
                             py: 1,
-                            bgcolor: 'action.hover',
-                            border: '1px solid',
-                            borderColor: 'divider',
+                            bgcolor: '#EFF0F6',
                             boxShadow: 'none',
-                            borderRadius: '4px',
+                            borderRadius: '7px',
                         }}
                     >
                         <TenantStatusCardSection

@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import type { TenantTodoSectionModel } from "../hooks/useTenantDashboardData";
 import { TenantApprovalCard } from "./TenantApprovalCard";
 import { TenantTodoCard } from "./TenantTodoCard";
+import { APPROVAL_CARD_TOP_COLOR, DRAFT_CARD_TOP_COLOR, WORK_CARD_SX } from "../utils";
 
 type TenantTodoSectionVariant = "draft" | "approval";
 
@@ -22,12 +23,12 @@ const VARIANT_VIEW: Record<
   { borderColor: string; emptyText: string; errorText: string }
 > = {
   draft: {
-    borderColor: "primary.main",
+  borderColor: DRAFT_CARD_TOP_COLOR,
     emptyText: "등록된 업무가 없습니다.",
     errorText: "할일 목록을 불러오지 못했습니다.",
   },
   approval: {
-    borderColor: "text.primary",
+    borderColor: APPROVAL_CARD_TOP_COLOR,
     emptyText: "결재할 문서가 없습니다.",
     errorText: "결재할 문서를 불러오지 못했습니다.",
   },
@@ -57,7 +58,7 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
           <Grid key={i} size={GRID_SIZE}>
             <Card
               variant="outlined"
-              sx={{ borderTop: "3px solid", borderTopColor: view.borderColor, borderRadius: "4px" }}
+              sx={{ ...WORK_CARD_SX, borderTop: `3px solid ${view.borderColor}` }}
             >
               <CardContent>
                 <Skeleton variant="text" width="50%" />

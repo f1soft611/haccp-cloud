@@ -4,7 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
 import type { TenantTodoCardItem } from '../hooks/useTenantDashboardData';
-import { CARD_CHIP_SX, getDDayColor, getWorkCycleSx } from '../utils';
+import {
+    CARD_CHIP_SX,
+    DRAFT_CARD_TOP_COLOR,
+    getDDayColor,
+    getWorkCycleSx,
+    WORK_CARD_BUTTON_SX,
+    WORK_CARD_SX,
+} from '../utils';
 import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 
 type TenantTodoCardProps = {
@@ -38,10 +45,8 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    borderColor: 'divider',
-                    borderTop: '3px solid',
-                    borderTopColor: 'primary.main',
-                    borderRadius: '4px',
+                    ...WORK_CARD_SX,
+                    borderTop: `3px solid ${DRAFT_CARD_TOP_COLOR}`,
                 }}
             >
                 <Box sx={{ flexGrow: 1, px: 2.5, pt: 2, pb: 2 }}>
@@ -90,6 +95,7 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
                         aria-label={`미작성 ${item.unwrittenCount}건`}
                         onClick={handleUnwritten}
                         sx={{
+                            ...WORK_CARD_BUTTON_SX,
                             borderRadius: '4px',
                             whiteSpace: 'nowrap',
                             flexShrink: 0,
@@ -106,8 +112,7 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
                         aria-label="오늘 작성"
                         onClick={() => void openWorkDraft(item.id)}
                         sx={{
-                            border: '1px solid',
-                            borderColor: 'primary.main',
+                            ...WORK_CARD_BUTTON_SX,
                             borderRadius: '4px',
                             flexShrink: 0,
                             height: 30
