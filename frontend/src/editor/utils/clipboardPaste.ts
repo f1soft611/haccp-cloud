@@ -17,6 +17,11 @@ const allowedCellStyleProperties = new Set([
   'height',
   'line-height',
   'overflow-wrap',
+  'padding',
+  'padding-bottom',
+  'padding-left',
+  'padding-right',
+  'padding-top',
   'text-align',
   'text-decoration',
   'vertical-align',
@@ -159,6 +164,113 @@ function getClipboardTableColumnWidths(table: Element): number[] {
     const span = Math.max(1, Number(column.getAttribute('span')) || 1);
     return Array.from({ length: span }, () => width ?? 0);
   });
+}
+
+function getClipboardRowCells(row: Element): Element[] {
+  return Array.from(row.children).filter(
+    (cell) =>
+      cell.tagName.toLowerCase() === 'td' ||
+      cell.tagName.toLowerCase() === 'th',
+  );
+}
+
+function getClipboardCellSpan(
+  cell: Element,
+  attribute: 'colspan' | 'rowspan',
+): number {
+  return Math.max(1, Number(cell.getAttribute(attribute)) || 1);
+}
+
+// rowspan 으로 이미 차지된 열을 건너뛰어 셀의 실제 열 위치를 구하고 차지한 칸을 기록한다
+function placeClipboardCell(
+  occupiedUntil: number[],
+  rowIndex: number,
+  startColumn: number,
+  colspan: number,
+  rowspan: number,
+): number {
+  const isFree = (column: number) => {
+    for (let offset = 0; offset < colspan; offset += 1) {
+      if ((occupiedUntil[column + offset] ?? 0) > rowIndex) return false;
+    }
+    return true;
+  };
+  let column = startColumn;
+  while (!isFree(column)) {
+    column += 1;
+  }
+  for (let offset = 0; offset < colspan; offset += 1) {
+    occupiedUntil[column + offset] = Math.max(
+      occupiedUntil[column + offset] ?? 0,
+      rowIndex + rowspan,
+    );
+  }
+  return column;
+}
+
+// 한글은 colgroup 없이 셀 style 로 너비를 보내므로 비어 있는 열을 셀 너비로 채운다
+// 모든 열이 채워질 때만 쓰고, 아니면 colgroup 값을 그대로 돌려준다
+function fillColumnWidthsFromCells(
+  rows: Element[],
+  columnWidths: number[],
+  columnCount: number,
+): number[] {
+  const filled = Array.from(
+    { length: columnCount },
+    (_, column) => columnWidths[column] ?? 0,
+  );
+  if (filled.every((width) => width > 0)) {
+    return filled;
+  }
+
+  const cellWidths: { column: number; colspan: number; width: number }[] = [];
+  const occupiedUntil: number[] = [];
+  rows.forEach((row, rowIndex) => {
+    let columnIndex = 0;
+    getClipboardRowCells(row).forEach((cell) => {
+      const colspan = getClipboardCellSpan(cell, 'colspan');
+      const column = placeClipboardCell(
+        occupiedUntil,
+        rowIndex,
+        columnIndex,
+        colspan,
+        getClipboardCellSpan(cell, 'rowspan'),
+      );
+      columnIndex = column + colspan;
+      const width = normalizeColumnWidth(
+        (cell as HTMLElement).style.getPropertyValue('width') ||
+          cell.getAttribute('width'),
+      );
+      if (width) {
+        cellWidths.push({ column, colspan, width });
+      }
+    });
+  });
+
+  for (const { column, colspan, width } of cellWidths) {
+    if (colspan === 1 && !filled[column]) {
+      filled[column] = width;
+    }
+  }
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const { column, colspan, width } of cellWidths) {
+      const covered = filled.slice(column, column + colspan);
+      const emptyCount = covered.filter((value) => !value).length;
+      if (covered.length !== colspan || emptyCount !== 1) {
+        continue;
+      }
+      const rest = width - covered.reduce((total, value) => total + value, 0);
+      if (rest > 0) {
+        filled[column + covered.indexOf(0)] = rest;
+        changed = true;
+      }
+    }
+  }
+
+  return filled.every((width) => width > 0) ? filled : columnWidths;
 }
 
 export function parseClipboardTextGrid(text: string): string[][] {
@@ -507,6 +619,7 @@ function serializeClipboardChildren(parent: ParentNode): string {
   return serialized.join('');
 }
 
+// 붙여넣은 표를 에디터가 읽는 형태(colwidth, 허용된 셀 서식)로 다시 직렬화한다
 function normalizeClipboardTable(
   table: Element,
   plainTextRows?: string[][],
@@ -514,22 +627,22 @@ function normalizeClipboardTable(
   const rows = Array.from(table.querySelectorAll('tr')).filter(
     (row) => row.closest('table') === table,
   );
-  const columnWidths = getClipboardTableColumnWidths(table);
+  const colgroupWidths = getClipboardTableColumnWidths(table);
   const logicalColumnCount = Math.max(
-    columnWidths.length,
+    colgroupWidths.length,
     ...rows.map((row) =>
-      Array.from(row.children)
-        .filter(
-          (cell) =>
-            cell.tagName.toLowerCase() === 'td' ||
-            cell.tagName.toLowerCase() === 'th',
-        )
-        .reduce(
-          (total, cell) =>
-            total + Math.max(1, Number(cell.getAttribute('colspan')) || 1),
-          0,
-        ),
+      getClipboardRowCells(row).reduce(
+        (total, cell) => total + getClipboardCellSpan(cell, 'colspan'),
+        0,
+      ),
     ),
+  );
+  // 기존 -> colgroup 너비만 열 너비로 사용
+  // 변경 -> colgroup 에 없는 열은 셀 너비로 채워서 사용 (한글 표)
+  const columnWidths = fillColumnWidthsFromCells(
+    rows,
+    colgroupWidths,
+    logicalColumnCount,
   );
   const plainTextMatchesTable = Boolean(
     plainTextRows &&
@@ -539,11 +652,7 @@ function normalizeClipboardTable(
   const occupiedUntil: number[] = [];
   const normalizedRows = rows
     .map((row, rowIndex) => {
-      const cells = Array.from(row.children).filter(
-        (cell) =>
-          cell.tagName.toLowerCase() === 'td' ||
-          cell.tagName.toLowerCase() === 'th',
-      );
+      const cells = getClipboardRowCells(row);
       if (cells.length === 0) {
         return '<tr></tr>';
       }
@@ -551,22 +660,17 @@ function normalizeClipboardTable(
       let columnIndex = 0;
       const normalizedCells = cells.map((cell) => {
         const tagName = cell.tagName.toLowerCase() === 'th' ? 'th' : 'td';
-        const colspan = Math.max(1, Number(cell.getAttribute('colspan')) || 1);
-        const rowspan = Math.max(1, Number(cell.getAttribute('rowspan')) || 1);
-        const hasAvailableColumnRange = (startColumn: number) => {
-          for (
-            let spanColumn = startColumn;
-            spanColumn < startColumn + colspan;
-            spanColumn += 1
-          ) {
-            if ((occupiedUntil[spanColumn] ?? 0) > rowIndex) return false;
-          }
-          return true;
-        };
-        while (!hasAvailableColumnRange(columnIndex)) {
-          columnIndex += 1;
-        }
-        const cellColumn = columnIndex;
+        const colspan = getClipboardCellSpan(cell, 'colspan');
+        const rowspan = getClipboardCellSpan(cell, 'rowspan');
+        // 기존 -> 셀 위치 계산을 이 안에서 직접 수행
+        // 변경 -> 열 너비 계산과 같은 placeClipboardCell 로 위치 계산
+        const cellColumn = placeClipboardCell(
+          occupiedUntil,
+          rowIndex,
+          columnIndex,
+          colspan,
+          rowspan,
+        );
         const cellColumnWidths = columnWidths.slice(
           cellColumn,
           cellColumn + colspan,
@@ -580,17 +684,7 @@ function normalizeClipboardTable(
           colspan > 1 ? ` colspan="${colspan}"` : '',
           rowspan > 1 ? ` rowspan="${rowspan}"` : '',
         ].join('');
-        for (
-          let spanColumn = cellColumn;
-          spanColumn < cellColumn + colspan;
-          spanColumn += 1
-        ) {
-          occupiedUntil[spanColumn] = Math.max(
-            occupiedUntil[spanColumn] ?? 0,
-            rowIndex + rowspan,
-          );
-        }
-        columnIndex += colspan;
+        columnIndex = cellColumn + colspan;
         const style = sanitizeCellStyle(cell, Boolean(colwidthAttribute));
         const styleAttribute = style ? ` style="${escapeHtml(style)}"` : '';
         const plainTextCell = plainTextMatchesTable
@@ -605,7 +699,11 @@ function normalizeClipboardTable(
                 ? serializePlainTextCell(plainTextCell, cell)
                 : serializeClipboardChildren(cell);
 
-        return `<${tagName}${spanAttributes}${colwidthAttribute}${styleAttribute}>${content}</${tagName}>`;
+        // 기존 -> 빈 셀을 <td></td> 로 출력
+        // 변경 -> 빈 셀에 문단을 넣는다 (범위 양 끝의 빈 셀은 파서가 채워 주지 않아 붙여넣기 오류가 난다)
+        const cellContent = content.trim() ? content : '<p></p>';
+
+        return `<${tagName}${spanAttributes}${colwidthAttribute}${styleAttribute}>${cellContent}</${tagName}>`;
       });
 
       return `<tr>${normalizedCells.join('')}</tr>`;
@@ -683,6 +781,7 @@ function serializeClipboardCellNode(node: Node): string {
   return content;
 }
 
+// 붙여넣은 HTML 의 <style> 규칙을 각 요소의 인라인 style 로 옮긴다 (원래 인라인 값이 우선)
 function applyEmbeddedCellStyles(root: HTMLElement): void {
   const styleTargets = Array.from(
     root.querySelectorAll(
@@ -690,6 +789,10 @@ function applyEmbeddedCellStyles(root: HTMLElement): void {
     ),
   );
   const styleProperties = Array.from(allowedCellStyleProperties);
+  const inlineStyles = styleTargets.flatMap((element) => {
+    const inlineStyle = element.getAttribute('style');
+    return inlineStyle ? [[element, inlineStyle] as const] : [];
+  });
 
   const applyDeclarationText = (
     selectorText: string,
@@ -802,6 +905,15 @@ function applyEmbeddedCellStyles(root: HTMLElement): void {
     }
 
     runtimeStyle.remove();
+  });
+
+  // 기존 -> 클래스 서식이 인라인 서식을 덮어씀
+  // 변경 -> 원래 인라인 서식을 뒤에 다시 붙여 브라우저 우선순위와 맞춘다 (엑셀은 병합 셀 테두리를 인라인으로 보낸다)
+  inlineStyles.forEach(([element, inlineStyle]) => {
+    element.setAttribute(
+      'style',
+      `${element.getAttribute('style') ?? ''};${inlineStyle}`,
+    );
   });
 }
 

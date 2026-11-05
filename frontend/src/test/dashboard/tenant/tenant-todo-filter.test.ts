@@ -54,9 +54,7 @@ describe('matchesTodoFilter status rules', () => {
     expect(
         matchesTodoFilter(preApply, { ...EMPTY_TODO_FILTER, status: '미작성' }),
     ).toBe(true);
-    expect(
-        matchesTodoFilter(preApply, { ...EMPTY_TODO_FILTER, status: '임시저장' }),
-    ).toBe(true);
+    // 기존 -> status: '임시저장' 필터도 true / 변경 -> 임시저장 필터 옵션 제거, 단언 삭제
   });
 
   it('ignores the status condition for 결재할문서 but keeps other conditions', () => {
@@ -78,7 +76,8 @@ describe('matchesTodoFilter status rules', () => {
 });
 
 describe('countTodoStatuses', () => {
-  it('counts card statuses, folding 임시저장 into 미작성', () => {
+  // 기존 -> 'counts card statuses, folding 임시저장 into 미작성' / 변경 -> 임시저장은 라벨부터 미작성
+  it('counts card statuses, 임시저장 shows as 미작성', () => {
     const counts = countTodoStatuses(
         [
           item,

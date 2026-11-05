@@ -1,4 +1,4 @@
-import { resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
+import { PENDING_APPROVAL_LABEL, resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
 import type { TenantTodoCardItem } from './hooks/useTenantDashboardData';
 
 export type TenantViewMode = 'list' | 'calendar';
@@ -18,11 +18,11 @@ export const EMPTY_TODO_FILTER: TenantTodoFilter = {
 };
 
 // 결재할문서 = 내가 결재할 문서(approval-alerts). 리스트 데이터 자체를 바꾸는 상태값
-export const PENDING_APPROVAL_STATUS = '결재할문서';
+// 기존 -> '결재할문서' 문자열 직접 선언 / 변경 -> 진행상태 칩과 같은 상수 사용
+export const PENDING_APPROVAL_STATUS = PENDING_APPROVAL_LABEL;
 
 export const TODO_STATUS_OPTIONS = [
   '미작성',
-  '임시저장',
   PENDING_APPROVAL_STATUS,
   '결재진행중',
   '승인',
@@ -50,15 +50,14 @@ export function getTodoStatusLabel(item: TenantTodoCardItem): string {
   }).label;
 }
 
-// 미작성은 결재를 아직 올리지 않은 임시저장도 포함, 결재할문서은 데이터 교체로 처리하므로 상태 조건 없음
+// 결재할문서은 데이터 교체로 처리하므로 상태 조건 없음 (임시저장은 라벨이 이미 미작성)
 function matchesTodoStatus(item: TenantTodoCardItem, status: string): boolean {
   if (!status || status === PENDING_APPROVAL_STATUS) {
     return true;
   }
-  const label = getTodoStatusLabel(item);
-  return status === '미작성'
-      ? label === '미작성' || label === '임시저장'
-      : label === status;
+  // 기존 -> status === '미작성' ? label === '미작성' || label === '임시저장' : label === status
+  // 변경 -> 임시저장도 미작성 라벨로 오므로 라벨 비교만
+  return getTodoStatusLabel(item) === status;
 }
 
 // 업무분류 라벨은 useTenantDashboardData의 섹션 라벨과 같은 규칙
@@ -81,7 +80,7 @@ export function matchesTodoFilter(
   );
 }
 
-// 상태 카드 건수: todos는 라벨별로 세고(임시저장 → 미작성), 결재할문서은 approval-alerts 건수
+// 상태 카드 건수: todos는 라벨별로 세고, 결재할문서은 approval-alerts 건수
 export function countTodoStatuses(
     todos: TenantTodoCardItem[],
     pendingApprovalCount: number,
@@ -94,8 +93,9 @@ export function countTodoStatuses(
     반려: 0,
   };
   todos.forEach((todo) => {
-    const label = getTodoStatusLabel(todo);
-    const key = label === '임시저장' ? '미작성' : label;
+    // 기존 -> const label = ...; const key = label === '임시저장' ? '미작성' : label;
+    // 변경 -> 임시저장도 미작성 라벨로 오므로 그대로 사용
+    const key = getTodoStatusLabel(todo);
     if (key in counts && key !== PENDING_APPROVAL_STATUS) {
       counts[key as TodoStatusCardKey] += 1;
     }

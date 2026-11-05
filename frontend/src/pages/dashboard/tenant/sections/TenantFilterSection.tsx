@@ -1,10 +1,9 @@
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined';
 import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
-import ViewListOutlinedIcon from '@mui/icons-material/ViewListOutlined';
 import {
     Box,
-    Button,
     IconButton,
     MenuItem,
     Stack,
@@ -21,6 +20,8 @@ import {
 } from '../todoFilter';
 
 const FILTER_RADIUS = '4px';
+const FILTER_BUTTON_SIZE = 40;
+const SEARCH_BUTTON_COLOR = '#2f3654';
 
 type TenantFilterSectionProps = {
     value: TenantTodoFilter;
@@ -125,18 +126,29 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                 }}
             />
 
-            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-                <Button
-                    variant="outlined"
+            {/* 기존 -> 조회 outlined 글자 버튼 + 초기화 아이콘, 간격 8px */}
+            {/* 변경 -> 조회 남색 채움 돋보기 아이콘 버튼 + 초기화 아이콘, 둘 다 40px 정사각형, 간격 4px */}
+            <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                <IconButton
+                    aria-label="조회"
                     onClick={onSearch}
-                    sx={{ whiteSpace: 'nowrap', bgcolor: 'background.paper', borderRadius: FILTER_RADIUS }}
+                    sx={{
+                        width: FILTER_BUTTON_SIZE,
+                        height: FILTER_BUTTON_SIZE,
+                        borderRadius: FILTER_RADIUS,
+                        bgcolor: SEARCH_BUTTON_COLOR,
+                        color: 'common.white',
+                        '&:hover': { bgcolor: SEARCH_BUTTON_COLOR, opacity: 0.9 },
+                    }}
                 >
-                    조회
-                </Button>
+                    <SearchOutlinedIcon fontSize="small" />
+                </IconButton>
                 <IconButton
                     aria-label="초기화"
                     onClick={onReset}
                     sx={{
+                        width: FILTER_BUTTON_SIZE,
+                        height: FILTER_BUTTON_SIZE,
                         border: '1px solid',
                         borderColor: 'divider',
                         borderRadius: FILTER_RADIUS,
@@ -159,21 +171,42 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                         }
                     }}
                     aria-label="보기 형식"
+                    // 기존 -> 붙어 있는 그룹, 선택 시 MUI 기본 회색 배경
+                    // 변경 -> 떨어진 버튼, 선택 시 짙은 테두리 + 진한 글자, 미선택은 연한 테두리 + 회색 글자
                     sx={{
-                        bgcolor: 'background.paper',
-                        '& .MuiToggleButtonGroup-firstButton': {
-                            borderTopLeftRadius: FILTER_RADIUS,
-                            borderBottomLeftRadius: FILTER_RADIUS,
+                        gap: 0.5,
+                        '& .MuiToggleButton-root': {
+                            minWidth: 96,
+                            height: FILTER_BUTTON_SIZE,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: `${FILTER_RADIUS} !important`,
+                            bgcolor: 'background.paper',
+                            color: 'text.disabled',
+                            fontWeight: 600,
+                            '&:hover': { bgcolor: 'background.paper', color: 'text.secondary' },
                         },
-                        '& .MuiToggleButtonGroup-lastButton': {
-                            borderTopRightRadius: FILTER_RADIUS,
-                            borderBottomRightRadius: FILTER_RADIUS,
+                        '& .MuiToggleButton-root.Mui-selected': {
+                            borderColor: 'text.secondary',
+                            color: 'text.primary',
+                            bgcolor: 'background.paper',
+                            '&:hover': { bgcolor: 'background.paper' },
+                        },
+                        '& .MuiToggleButtonGroup-grouped:not(:first-of-type)': {
+                            ml: 0,
+                            borderLeft: '1px solid',
+                            borderLeftColor: 'divider',
+                        },
+                        '& .MuiToggleButtonGroup-grouped.Mui-selected:not(:first-of-type)': {
+                            borderLeftColor: 'text.secondary',
                         },
                     }}
                 >
-                    <ToggleButton value="list" aria-label="리스트형">
-                        <ViewListOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
-                        리스트
+                    {/* 기존 -> ViewListOutlined 아이콘, '리스트', aria-label 리스트형 */}
+                    {/* 변경 -> GridViewOutlined 아이콘, '카드형', aria-label 카드형 */}
+                    <ToggleButton value="list" aria-label="카드형">
+                        <GridViewOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        카드형
                     </ToggleButton>
                     <ToggleButton value="calendar" aria-label="캘린더형">
                         <CalendarMonthOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />

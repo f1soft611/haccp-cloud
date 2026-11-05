@@ -2,11 +2,12 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { Box, Button, Card, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
+import { PENDING_APPROVAL_LABEL, resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
 import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
 import type { TenantTodoCardItem } from '../hooks/useTenantDashboardData';
 import { getWorkCycleSx } from '../utils';
+import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 
 type TenantTodoCardProps = {
     item: TenantTodoCardItem;
@@ -20,14 +21,14 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
     const navigate = useNavigate();
     const { openWorkDraft, dialog } = useOpenWorkDraft();
 
-    const { label: statusLabel, color: statusColor } = pendingApproval
-        ? { label: '결재할문서', color: 'secondary' as const }
+    const statusLabel = pendingApproval
+        ? PENDING_APPROVAL_LABEL
         : resolveApprovalStatusView({
             approvalStatusType: item.approvalStatusType,
             approvalStatusTypeName: item.approvalStatusTypeName,
             todoStatus: item.status,
             writtenInCycle: item.writtenInCycle,
-        });
+        }).label;
 
     const dDayColor = item.dDay.startsWith('D+')
         ? 'error.main'
@@ -65,7 +66,7 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
             >
                 <Box sx={{ flexGrow: 1, px: 2.5, pt: 2, pb: 2 }}>
                     <Stack direction="row" spacing={0.75} alignItems="center" mb={2}>
-                        <Chip size="small" label={statusLabel} color={statusColor} sx={CHIP_SX} />
+                        <ApprovalStatusChip label={statusLabel} />
                         <Chip
                             size="small"
                             variant="outlined"

@@ -116,10 +116,30 @@ class DashboardMapperPostgresqlTest {
                     "만료일 관리 대상별 최신 문서는 뷰에서 읽는다");
             assertTrue(xml.contains("AND es.drafting_work_category_id = w.drafting_work_category_id"),
                     "뷰는 업무 단위로 걸러야 한다");
-            assertTrue(xml.contains("CASE WHEN es.status_type = 'approved' THEN NULL ELSE es.status_type END"),
+            assertTrue(xml.contains("WHEN es.status_type = 'approved' THEN NULL"),
                     "대상의 최신 문서가 승인이면 미작성으로 센다");
             assertFalse(xml.contains("DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)"),
                     "대상별 최신 문서 서브쿼리를 매퍼에 복사하지 않는다");
+        }
+    }
+
+    @Test
+    void dashboardMapper_should_count_only_final_confirm_pending_documents() throws Exception {
+        ClassPathResource resource = new ClassPathResource(
+                "egovframework/mapper/let/dashboard/DashboardMapper_SQL_postgresql.xml");
+
+        try (InputStream inputStream = resource.getInputStream();
+             Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name())) {
+            String xml = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+            assertTrue(xml.contains("<sql id=\"finalOwnerConfirmPending\">"), "최종확인 대기 fragment 가 없다");
+            assertTrue(xml.contains("AND NOT (COALESCE(fo.app_status, '') = 'confirmed' AND fo.exe_at IS NOT NULL)"),
+                    "확인 완료 문서는 대기가 아니다");
+            assertTrue(xml.contains("WHEN COALESCE(em.status_type, '') = 'approved' AND NOT <include refid=\"finalOwnerConfirmPending\"><property name=\"doc\" value=\"em\"/></include> THEN 'confirmed'"),
+                    "최종확인 대기가 아닌 승인은 승인 건수에서 뺀다");
+            assertTrue(xml.contains("AND (COALESCE(em.status_type, '') != 'rejected' OR <include refid=\"finalOwnerConfirmPending\"><property name=\"doc\" value=\"em\"/></include>)"),
+                    "최종확인 대기가 아닌 반려는 상신 문서로 보지 않아 미작성이 된다");
+            assertTrue(xml.contains("WHEN es.status_type = 'rejected' AND NOT <include refid=\"finalOwnerConfirmPending\"><property name=\"doc\" value=\"es\"/></include> THEN NULL"),
+                    "만료일 관리 대상의 최종확인된 반려는 미작성이다");
         }
     }
 }
