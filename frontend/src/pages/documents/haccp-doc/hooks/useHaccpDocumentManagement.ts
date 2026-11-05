@@ -118,6 +118,7 @@ function isDocumentViewerAdmin(role: string): boolean {
   return role === 'PLATFORM_ADMIN' || role === 'TENANT_ADMIN';
 }
 
+// 문서현황 페이지의 검색 조건, 상세조건 펼침, 목록 조회 상태를 관리
 export function useHaccpDocumentManagement() {
   const role = useAuthStore((state) => state.role);
   const tenantCode = useAuthStore((state) => state.tenantCode || 'PLATFORM');
@@ -138,7 +139,10 @@ export function useHaccpDocumentManagement() {
     useState<HaccpDocSearchValue>(initialValue);
   const [appliedFilters, setAppliedFilters] =
     useState<HaccpDocSearchValue>(initialValue);
-  const [detailOpen, setDetailOpen] = useState(false);
+  // 참여유형은 상세조건 안의 필드이므로 URL 에 값이 있으면 펼친 상태로 시작
+  const [detailOpen, setDetailOpen] = useState(
+    initialValue.participantType.length > 0,
+  );
 
   const categoriesQuery = useQuery({
     queryKey: ['haccp-base-categories', tenantCode],

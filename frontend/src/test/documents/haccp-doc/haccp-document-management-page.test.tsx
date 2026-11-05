@@ -12,15 +12,15 @@ import { useAuthStore } from '../../../shared/store/authStore.ts';
 import { TODO_STATUS_OPTIONS } from '../../../pages/dashboard/tenant/todoFilter.ts';
 
 
-vi.mock('../services/documents/haccpDocumentService', () => ({
+vi.mock('../../../services/documents/haccpDocumentService', () => ({
   listHaccpDocuments: vi.fn(),
 }));
 
-vi.mock('../services/documents/haccpBaseCategoryService', () => ({
+vi.mock('../../../services/documents/haccpBaseCategoryService', () => ({
   listHaccpBaseCategories: vi.fn(),
 }));
 
-vi.mock('../services/documents/haccpBaseWorkService', () => ({
+vi.mock('../../../services/documents/haccpBaseWorkService', () => ({
   listHaccpBaseWorks: vi.fn(),
   getHaccpWorkDraftTemplate: vi.fn(),
 }));
@@ -253,6 +253,40 @@ describe('HaccpDocumentManagementPage', () => {
     expect(params.get('startDate')).toBe('');
     expect(params.has('endDate')).toBe(true);
     expect(params.get('endDate')).toBe('');
+  });
+
+  it('opens detail conditions with the assignee selected when the query has a participant type', async () => {
+    window.history.pushState(
+      {},
+      '',
+      `/docs/haccp-doc?status=${encodeURIComponent('반려')}&participantType=${encodeURIComponent('담당자')}&startDate=&endDate=`,
+    );
+
+    render(
+      <AppProviders>
+        <HaccpDocumentManagementPage />
+      </AppProviders>,
+    );
+
+    expect(screen.getByRole('button', { name: '상세조건 닫기' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /참여유형/ })).toHaveTextContent('담당자');
+    await waitFor(() => {
+      expect(listHaccpDocuments).toHaveBeenCalledWith(
+        expect.objectContaining({ status: '반려', participantType: '담당자' }),
+      );
+    });
+  });
+
+  it('keeps detail conditions closed when the query has no participant type', () => {
+    window.history.pushState({}, '', `/docs/haccp-doc?status=${encodeURIComponent('반려')}`);
+
+    render(
+      <AppProviders>
+        <HaccpDocumentManagementPage />
+      </AppProviders>,
+    );
+
+    expect(screen.getByRole('button', { name: '상세조건' })).toBeInTheDocument();
   });
 
   it('shows all documents for admin roles', async () => {
