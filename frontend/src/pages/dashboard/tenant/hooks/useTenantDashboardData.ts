@@ -106,6 +106,7 @@ function groupTodoSections(
   });
 }
 
+// 대시보드 건수, 기안문서 목록, 결재할문서 목록 조회
 export function useTenantDashboardData() {
   const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
 
@@ -131,9 +132,12 @@ export function useTenantDashboardData() {
     retry: 0,
   });
 
+  // 기존 -> 결재할문서 조회 실패 여부를 반환하지 않음
+  // 변경 -> 결재할문서 섹션의 오류 문구 표시용으로 isError 반환
   const {
     data: approvalAlertDocuments = [],
     isLoading: isApprovalLoading,
+    isError: isApprovalError,
   } = useQuery({
     queryKey: ['haccp-work-approval-alerts', tenantCode],
     queryFn: async () => {
@@ -219,5 +223,6 @@ export function useTenantDashboardData() {
     isTodoError,
     approvalSections,
     isApprovalLoading,
+    isApprovalError,
   };
 }
