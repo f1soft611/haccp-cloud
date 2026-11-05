@@ -82,6 +82,16 @@ describe('normalizeClipboardHtmlForEditor', () => {
         expect(result).toContain('font-size:18pt');
         expect(result).not.toContain('clipboard-table');
     });
+
+    it('셀 padding 을 유지한다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            '<table><tr><td style="padding:1.4pt 5.1pt 1.4pt 5.1pt">x</td></tr></table>',
+        );
+
+        expect(cells(result)[0].getAttribute('style')).toContain(
+            'padding:1.4pt 5.1pt',
+        );
+    });
 });
 
 function cells(html: string): HTMLTableCellElement[] {
