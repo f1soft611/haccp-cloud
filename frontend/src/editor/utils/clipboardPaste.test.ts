@@ -1,3 +1,9 @@
+import { createNodeFromContent, getSchema } from '@tiptap/core';
+import { Table } from '@tiptap/extension-table';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import TableRow from '@tiptap/extension-table-row';
+import StarterKit from '@tiptap/starter-kit';
 import { describe, expect, it } from 'vitest';
 import { normalizeClipboardHtmlForEditor } from './clipboardPaste';
 
@@ -185,5 +191,52 @@ describe('normalizeClipboardHtmlForEditor 표 크기', () => {
         );
 
         expect(colwidths(result)).toEqual(['80', '120']);
+    });
+});
+
+const pasteSchema = getSchema([
+    StarterKit,
+    Table,
+    TableRow,
+    TableCell,
+    TableHeader,
+]);
+
+// insertContent 와 같은 방식으로 파싱하고 검사한다 (잘못된 셀이면 RangeError)
+function checkAsInsertContent(html: string): void {
+    createNodeFromContent(html, pasteSchema, {
+        slice: true,
+        parseOptions: { preserveWhitespace: 'full' },
+    }).forEach((node) => node.check());
+}
+
+describe('normalizeClipboardHtmlForEditor 빈 셀', () => {
+    it.each([
+        ['첫 셀', '<td>&nbsp;</td><td>b</td>', '\tb\r\n'],
+        ['마지막 셀', '<td>a</td><td>&nbsp;</td>', 'a\t\r\n'],
+    ])('%s 이 비어도 에디터에 넣을 수 있다 (엑셀 표시값 경로)', (_, row, text) => {
+        const result = normalizeClipboardHtmlForEditor(
+            `<table><tr>${row}</tr></table>`,
+            text,
+        );
+
+        expect(result).toContain('<td><p></p></td>');
+        expect(() => checkAsInsertContent(result)).not.toThrow();
+    });
+
+    it('표시값 없이 빈 태그로 와도 에디터에 넣을 수 있다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            '<table><tr><td>a</td><td></td></tr></table>',
+        );
+
+        expect(() => checkAsInsertContent(result)).not.toThrow();
+    });
+
+    it('내용이 있는 셀은 그대로 둔다', () => {
+        const result = normalizeClipboardHtmlForEditor(
+            '<table><tr><td>a</td></tr></table>',
+        );
+
+        expect(result).toBe('<table><tbody><tr><td>a</td></tr></tbody></table>');
     });
 });

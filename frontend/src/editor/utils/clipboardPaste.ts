@@ -619,6 +619,7 @@ function serializeClipboardChildren(parent: ParentNode): string {
   return serialized.join('');
 }
 
+// 붙여넣은 표를 에디터가 읽는 형태(colwidth, 허용된 셀 서식)로 다시 직렬화한다
 function normalizeClipboardTable(
   table: Element,
   plainTextRows?: string[][],
@@ -698,7 +699,11 @@ function normalizeClipboardTable(
                 ? serializePlainTextCell(plainTextCell, cell)
                 : serializeClipboardChildren(cell);
 
-        return `<${tagName}${spanAttributes}${colwidthAttribute}${styleAttribute}>${content}</${tagName}>`;
+        // 기존 -> 빈 셀을 <td></td> 로 출력
+        // 변경 -> 빈 셀에 문단을 넣는다 (범위 양 끝의 빈 셀은 파서가 채워 주지 않아 붙여넣기 오류가 난다)
+        const cellContent = content.trim() ? content : '<p></p>';
+
+        return `<${tagName}${spanAttributes}${colwidthAttribute}${styleAttribute}>${cellContent}</${tagName}>`;
       });
 
       return `<tr>${normalizedCells.join('')}</tr>`;
