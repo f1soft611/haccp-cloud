@@ -22,10 +22,10 @@ const { getHaccpWorkDraftTemplateMock } = vi.hoisted(() => ({
   getHaccpWorkDraftTemplateMock: vi.fn(),
 }));
 
-vi.mock('../services/documents/haccpBaseWorkService', async () => {
+vi.mock('../../../../services/documents/haccpBaseWorkService', async () => {
   const actual = await vi.importActual<
-      typeof import('../../../../services/documents/haccpBaseWorkService.ts')
-  >('../services/documents/haccpBaseWorkService');
+      typeof import('../../../../services/documents/haccpBaseWorkService')
+  >('../../../../services/documents/haccpBaseWorkService');
   return {
     ...actual,
     getHaccpWorkDraftTemplate: getHaccpWorkDraftTemplateMock,
@@ -90,7 +90,7 @@ describe('TenantTodoSection', () => {
     expect(screen.getByText('점검 A')).toBeInTheDocument();
     expect(screen.getByText('점검 B')).toBeInTheDocument();
     expect(screen.getAllByText('HACCP (HA)')).toHaveLength(2);
-    expect(screen.getAllByText('검토:- / 승인:-')).toHaveLength(2);
+    expect(screen.getAllByText('검토 : - | 승인 : -')).toHaveLength(2);
     expect(screen.getAllByText('최신 : 2026-07-20 / -')).toHaveLength(2);
     expect(screen.getAllByText('월')).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: '미작성 0건' })).toHaveLength(2);
@@ -352,7 +352,7 @@ describe('TenantTodoSection', () => {
     );
   });
 
-  it('keeps opening the approval document in the pending approval tab', () => {
+  it('renders the approval card for the approval variant', () => {
     navigateMock.mockReset();
 
     render(
@@ -360,17 +360,47 @@ describe('TenantTodoSection', () => {
           <TenantTodoSection
               isLoading={false}
               isError={false}
-              pendingApproval
+              variant="approval"
               sections={[{ key: 'ha', label: 'HACCP (HA)', sortOrder: 1, items: [writtenItem] }]}
           />
         </AppProviders>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '오늘 작성' }));
+    expect(screen.queryByRole('button', { name: '미작성 0건' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '결재 문서 열기' }));
 
     expect(getHaccpWorkDraftTemplateMock).not.toHaveBeenCalled();
     expect(navigateMock).toHaveBeenCalledWith(
         '/approvals/draft/9001?idType=approval',
     );
+  });
+
+  it('does not use the error color for the unwritten button', () => {
+    render(
+        <AppProviders>
+          <TenantTodoSection
+              isLoading={false}
+              isError={false}
+              sections={[{ key: 'ha', label: 'HACCP (HA)', sortOrder: 1, items: [{ ...writtenItem, unwrittenCount: 3 }] }]}
+          />
+        </AppProviders>,
+    );
+
+    expect(screen.getByRole('button', { name: '미작성 3건' })).not.toHaveClass('MuiButton-colorError');
+  });
+
+  it.each([
+    ['draft', false, '등록된 업무가 없습니다.'],
+    ['draft', true, '할일 목록을 불러오지 못했습니다.'],
+    ['approval', false, '결재할 문서가 없습니다.'],
+    ['approval', true, '결재할 문서를 불러오지 못했습니다.'],
+  ] as const)('shows the %s message when isError is %s', (variant, isError, message) => {
+    render(
+        <AppProviders>
+          <TenantTodoSection isLoading={false} isError={isError} variant={variant} sections={[]} />
+        </AppProviders>,
+    );
+
+    expect(screen.getByText(message)).toBeInTheDocument();
   });
 });

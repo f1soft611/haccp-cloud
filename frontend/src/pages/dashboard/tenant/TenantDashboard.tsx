@@ -132,7 +132,7 @@ export function TenantDashboard() {
               isLoading={isTodoLoading}
               isError={isTodoError}
               sections={filteredSections}
-              pendingApproval={isPendingApproval}
+              variant={isPendingApproval ? 'approval' : 'draft'}
             />
           ) : (
             <Paper
