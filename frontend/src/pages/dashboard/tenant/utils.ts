@@ -15,16 +15,6 @@ export function getWorkCycleSx(cycle: string) {
   };
 }
 
-// 캘린더 이벤트용: 칩과 같은 색, 기존 캘린더 모양(연한 배경 + 옅은 테두리)
-export function getWorkCycleEventSx(cycle: string) {
-  const { border, color } = WORK_CYCLE_COLORS[cycle] ?? WORK_CYCLE_DEFAULT_COLOR;
-  return {
-    bgcolor: `${border}1F`,
-    color,
-    border: `1px solid ${border}47`,
-  };
-}
-
 // 선택된 범례 강조 (주기 칩, 상태 배지 공용)
 export const SELECTED_LEGEND_SX = {
   outline: '2px solid',

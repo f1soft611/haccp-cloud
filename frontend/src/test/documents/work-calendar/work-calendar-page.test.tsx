@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { WorkCalendarPage } from '../pages/documents/work-calendar/WorkCalendarPage';
-import {listHaccpWorkTodoCycles, listHaccpWorkTodos} from '../services/documents/haccpBaseWorkService';
-import { useAuthStore } from '../shared/store/authStore';
-import { getCommonCodes } from '../services/basicinfo/commonCodeService';
+import { AppProviders } from '../../../app/providers/AppProviders';
+import { WorkCalendarPage } from '../../../pages/documents/work-calendar/WorkCalendarPage';
+import {listHaccpWorkTodoCycles, listHaccpWorkTodos} from '../../../services/documents/haccpBaseWorkService';
+import { useAuthStore } from '../../../shared/store/authStore';
+import { getCommonCodes } from '../../../services/basicinfo/commonCodeService';
 
-vi.mock('../services/basicinfo/commonCodeService', () => ({
+vi.mock('../../../services/basicinfo/commonCodeService', () => ({
     getCommonCodes: vi.fn(),
 }));
 
@@ -25,7 +25,7 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
-vi.mock('../services/documents/haccpBaseWorkService', () => ({
+vi.mock('../../../services/documents/haccpBaseWorkService', () => ({
     listHaccpWorkTodos: vi.fn(),
     listHaccpWorkTodoCycles: vi.fn(),
 }));
@@ -221,6 +221,8 @@ describe('WorkCalendarPage', () => {
 
         expect(eventEl).not.toBeNull();
         expect(eventEl?.style.color).toBe('rgb(110, 49, 255)');
+        expect(eventEl?.style.backgroundColor).toBe('rgb(255, 255, 255)');
+        expect(eventEl?.style.border).toBe('1px solid rgb(109, 48, 255)');
     });
 
     it('renders a legend with common-code cycle names and status badges', async () => {
