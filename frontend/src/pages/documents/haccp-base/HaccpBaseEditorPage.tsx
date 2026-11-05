@@ -216,7 +216,8 @@ export function HaccpBaseEditorPage() {
     }
 
     setContent(parseTemplateJson(targetWork.templateJson));
-    setContentHtml(decodeHtmlEntities(targetWork.templateHtml ?? ''));
+    // 기존 -> decodeHtmlEntities 로 응답 이스케이프를 풀어서 사용 / 변경 -> 응답 값을 그대로 사용
+    setContentHtml(targetWork.templateHtml ?? '');
   }, [targetWork, baseId]);
 
   const handleChangeContent = (nextContent: JSONContent, nextHtml: string) => {

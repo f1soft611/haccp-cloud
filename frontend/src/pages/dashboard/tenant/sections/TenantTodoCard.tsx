@@ -1,49 +1,36 @@
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { Box, Button, Card, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { PENDING_APPROVAL_LABEL, resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
-import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
+import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
 import type { TenantTodoCardItem } from '../hooks/useTenantDashboardData';
-import { getWorkCycleSx } from '../utils';
+import {
+    CARD_CHIP_SX,
+    DRAFT_CARD_TOP_COLOR,
+    getDDayColor,
+    getWorkCycleSx,
+    WORK_CARD_BUTTON_SX,
+    WORK_CARD_SX,
+} from '../utils';
 import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 
 type TenantTodoCardProps = {
     item: TenantTodoCardItem;
     sectionLabel: string;
-    pendingApproval?: boolean;
 };
 
-const CHIP_SX = { height: 22, fontWeight: 700, fontSize: 12 };
-
-export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: TenantTodoCardProps) {
+// 나의 담당업무의 기안문서 카드: 진행상태, 담당 결재자, 미작성 건수를 보여주고 작성 화면으로 이동
+// 기안문서 전용. 결재할문서는 TenantApprovalCard 에서 처리
+export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
     const navigate = useNavigate();
     const { openWorkDraft, dialog } = useOpenWorkDraft();
 
-    const statusLabel = pendingApproval
-        ? PENDING_APPROVAL_LABEL
-        : resolveApprovalStatusView({
-            approvalStatusType: item.approvalStatusType,
-            approvalStatusTypeName: item.approvalStatusTypeName,
-            todoStatus: item.status,
-            writtenInCycle: item.writtenInCycle,
-        }).label;
-
-    const dDayColor = item.dDay.startsWith('D+')
-        ? 'error.main'
-        : item.dDay === 'D-Day'
-            ? 'warning.main'
-            : 'text.secondary';
-
-    const handleWrite = () => {
-        if (!pendingApproval) {
-            void openWorkDraft(item.id);
-            return;
-        }
-        const path = resolveDraftRoute(item);
-        if (path) navigate(path);
-    };
+    const statusLabel = resolveApprovalStatusView({
+        approvalStatusType: item.approvalStatusType,
+        approvalStatusTypeName: item.approvalStatusTypeName,
+        todoStatus: item.status,
+        writtenInCycle: item.writtenInCycle,
+    }).label;
 
     const handleUnwritten = () => {
         const query = new URLSearchParams({ workType: sectionLabel, workDivisionId: item.id, status: '미작성' });
@@ -58,27 +45,26 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    borderColor: 'divider',
-                    borderTop: '3px solid',
-                    borderTopColor: 'primary.main',
-                    borderRadius: '4px',
+                    ...WORK_CARD_SX,
+                    borderTop: `3px solid ${DRAFT_CARD_TOP_COLOR}`,
                 }}
             >
                 <Box sx={{ flexGrow: 1, px: 2.5, pt: 2, pb: 2 }}>
-                    <Stack direction="row" spacing={0.75} alignItems="center" mb={2}>
+                    {/* 기존 -> 칩 왼쪽 정렬, 아래 여백 16px / 변경 -> 시안대로 오른쪽 정렬, 아래 여백 8px */}
+                    <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="flex-end" mb={1}>
                         <ApprovalStatusChip label={statusLabel} />
                         <Chip
                             size="small"
                             variant="outlined"
                             label={item.cycleName || item.cycle || '-'}
-                            sx={{ ...CHIP_SX, ...getWorkCycleSx(item.cycle) }}
+                            sx={{ ...CARD_CHIP_SX, ...getWorkCycleSx(item.cycle) }}
                         />
                         {item.dDay ? (
                             <Chip
                                 size="small"
                                 variant="outlined"
                                 label={item.dDay}
-                                sx={{ ...CHIP_SX, color: dDayColor, borderColor: 'divider' }}
+                                sx={{ ...CARD_CHIP_SX, color: getDDayColor(item.dDay), borderColor: 'divider' }}
                             />
                         ) : null}
                     </Stack>
@@ -89,8 +75,9 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
                     <Typography variant="subtitle1" fontWeight={700} noWrap mb={0.5}>
                         {item.divisionName || item.title || '-'}
                     </Typography>
+                    {/* 기존 -> 검토:이름 / 승인:이름 | 변경 -> 시안 표기 */}
                     <Typography variant="body2" color="text.secondary" noWrap>
-                        {`검토:${item.reviewerName || '-'}  /  승인:${item.approverName || '-'}`}
+                        {`검토 : ${item.reviewerName || '-'} | 승인 : ${item.approverName || '-'}`}
                     </Typography>
                 </Box>
 
@@ -100,14 +87,15 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
                     <Typography variant="body2" color="text.secondary" noWrap sx={{ flexGrow: 1, minWidth: 0 }}>
                         {`최신 : ${item.updatedAt ? item.updatedAt.slice(0, 10) : '-'} / ${item.lastWriterName || '-'}`}
                     </Typography>
+                    {/* 기존 -> 건수가 있으면 빨간색, 문서 아이콘 표시 / 변경 -> 시안대로 항상 같은 색, 아이콘 없음 */}
                     <Button
                         size="small"
                         variant="outlined"
-                        color={item.unwrittenCount > 0 ? 'error' : 'primary'}
-                        startIcon={<DescriptionOutlinedIcon />}
+                        color="primary"
                         aria-label={`미작성 ${item.unwrittenCount}건`}
                         onClick={handleUnwritten}
                         sx={{
+                            ...WORK_CARD_BUTTON_SX,
                             borderRadius: '4px',
                             whiteSpace: 'nowrap',
                             flexShrink: 0,
@@ -122,10 +110,9 @@ export function TenantTodoCard({ item, sectionLabel, pendingApproval = false }: 
                         size="small"
                         color="primary"
                         aria-label="오늘 작성"
-                        onClick={handleWrite}
+                        onClick={() => void openWorkDraft(item.id)}
                         sx={{
-                            border: '1px solid',
-                            borderColor: 'primary.main',
+                            ...WORK_CARD_BUTTON_SX,
                             borderRadius: '4px',
                             flexShrink: 0,
                             height: 30

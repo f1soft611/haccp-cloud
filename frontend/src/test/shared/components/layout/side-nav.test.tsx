@@ -6,6 +6,13 @@ import type { MenuGroup } from '../../../../shared/components/layout/workMenuCon
 
 const menuGroups: MenuGroup[] = [
     {
+        key: 'dashboard',
+        label: '종합현황',
+        roles: ['TENANT_ADMIN'],
+        isSingleMenu: true,
+        items: [{ label: '종합현황', path: '/dashboard', roles: ['TENANT_ADMIN'] }],
+    },
+    {
         key: 'haccp',
         label: 'HACCP관리',
         roles: ['TENANT_ADMIN'],
@@ -94,5 +101,40 @@ describe('SideNav', () => {
         fireEvent.click(homeLink);
 
         expect(await screen.findByText('home-page')).toBeInTheDocument();
+    });
+
+    it('renders a single menu as a direct link without an expand button', () => {
+        renderSideNav('/documents');
+
+        expect(screen.getByRole('link', { name: '종합현황' })).toHaveAttribute(
+            'href',
+            '/dashboard',
+        );
+        expect(
+            screen.queryByRole('button', { name: '종합현황' }),
+        ).not.toBeInTheDocument();
+        expect(screen.getAllByText('종합현황')).toHaveLength(1);
+    });
+
+    it('marks the single menu as current on its route', () => {
+        renderSideNav('/dashboard');
+
+        expect(screen.getByRole('link', { name: '종합현황' })).toHaveAttribute(
+            'aria-current',
+            'page',
+        );
+        expect(screen.getAllByText('종합현황')).toHaveLength(1);
+    });
+
+    it('keeps a group with one child as an expandable group', () => {
+        renderSideNav('/documents');
+
+        expect(screen.getByRole('button', { name: '조직관리' })).toHaveAttribute(
+            'aria-expanded',
+            'false',
+        );
+        expect(
+            screen.queryByRole('link', { name: '사용자관리' }),
+        ).not.toBeInTheDocument();
     });
 });

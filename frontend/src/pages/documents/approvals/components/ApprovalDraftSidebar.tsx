@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import type { HaccpBaseWorkItem } from '../../../../services/documents/haccpBaseWorkService';
 import type { UserItem } from '../../../../services/organization/usersService';
+import { ApprovalStatusChip } from '../../../../shared/components/data/ApprovalStatusChip';
 
 type SignerRole = 'drafter' | 'reviewer' | 'approver';
 
@@ -61,21 +62,6 @@ function getStatusLabel(value: string): string {
     return '반려';
   }
   return '대기';
-}
-
-function getStatusChipColor(
-  value: string,
-): 'default' | 'success' | 'info' | 'warning' | 'error' {
-  if (value === 'approved') {
-    return 'success';
-  }
-  if (value === 'confirmed') {
-    return 'info';
-  }
-  if (value === 'returned') {
-    return 'error';
-  }
-  return 'default';
 }
 
 export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
@@ -219,12 +205,7 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
                 <Typography variant="body2" fontWeight={700}>
                   {item.name}
                 </Typography>
-                <Chip
-                  size="small"
-                  color={getStatusChipColor(normalizeStatus(item.appStatus))}
-                  variant="outlined"
-                  // 기존 -> label={getStatusLabel(normalizeStatus(item.appStatus))}
-                  // 변경 -> 기안자가 approved 면 "작성" 으로 표시
+                <ApprovalStatusChip
                   label={
                     item.role === 'drafter' &&
                     normalizeStatus(item.appStatus) === 'approved'

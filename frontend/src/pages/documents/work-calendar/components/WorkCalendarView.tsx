@@ -8,7 +8,7 @@ import { Calendar, dayjsLocalizer, type DateHeaderProps, type ToolbarProps } fro
 import type { WorkdayItem } from '../../../../services/basicinfo/workday/workdayService';
 import { dayColor, isOffDay } from '../../../basicinfo/workday/workdayRules';
 import { resolveDraftRoute, resolveExpirationDraftRoute } from '../../../../shared/utils/workDraftRoute';
-import { getWorkCycleEventSx } from '../../../dashboard/tenant/utils';
+import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
 import { WorkCalendarEventContent } from './WorkCalendarEvent';
 import { WorkCalendarToolbar, type WorkCalendarLegendFilter } from './WorkCalendarToolbar';
@@ -89,7 +89,7 @@ export function WorkCalendarView(props: WorkCalendarViewProps) {
                     : {};
             }}
             eventPropGetter={(event) => {
-                const sx = getWorkCycleEventSx(event.resource.cycle);
+                const sx = getWorkCycleSx(event.resource.cycle);
                 return {
                     style: {
                         backgroundColor: sx.bgcolor,

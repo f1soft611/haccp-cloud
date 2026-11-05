@@ -22,6 +22,7 @@ import {
 } from './userMenuMetadataContext';
 import { scheduleRoutePrefetch } from '../../../app/router/routePrefetch';
 
+// 왼쪽 메뉴바, 상단바, 본문을 묶는 로그인 후 공통 레이아웃.
 export function AppLayout() {
   const location = useLocation();
 
@@ -147,7 +148,9 @@ export function AppLayout() {
       group.items.some((item) => location.pathname.startsWith(item.path)),
     );
 
-    return matchedGroup?.label;
+    // 기존 -> 단일 메뉴도 그룹명을 넘겨 상단 경로에 메뉴명이 두 번 표시됨
+    // 변경 -> 단일 메뉴는 그룹명을 넘기지 않음
+    return matchedGroup?.isSingleMenu ? undefined : matchedGroup?.label;
   }, [location.pathname, menuGroups]);
 
   const prioritizedPrefetchPaths = useMemo(() => {

@@ -98,6 +98,7 @@ type SideNavProps = {
     onMobileClose: () => void;
 };
 
+// 권한에 맞는 메뉴 그룹을 왼쪽 메뉴바로 표시한다.
 export function SideNav({
                             menuGroups,
                             role,
@@ -209,6 +210,45 @@ export function SideNav({
 
             <List disablePadding sx={{ borderTop: '1px solid', borderColor: dividerColor }}>
                 {visibleGroups.map((group) => {
+                    if (group.isSingleMenu) {
+                        const item = group.items[0];
+                        const isActive = isPathActive(location.pathname, item.path);
+
+                        return (
+                            <Box
+                                key={group.key}
+                                sx={{ borderBottom: '1px solid', borderColor: dividerColor }}
+                            >
+                                <ListItemButton
+                                    component={NavLink}
+                                    to={item.path}
+                                    onClick={isDesktop ? undefined : onMobileClose}
+                                    onMouseEnter={() => {
+                                        void prefetchRouteByPath(item.path);
+                                    }}
+                                    onFocus={() => {
+                                        void prefetchRouteByPath(item.path);
+                                    }}
+                                    sx={{
+                                        px: 3,
+                                        py: 1.5,
+                                        color: isActive ? accentColor : 'inherit',
+                                    }}
+                                >
+                                    <ListItemText
+                                        primary={item.label}
+                                        slotProps={{
+                                            primary: {
+                                                fontSize: '0.9375rem',
+                                                fontWeight: isActive ? 700 : 500,
+                                            },
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </Box>
+                        );
+                    }
+
                     const isOpen = openGroupKeys.has(group.key);
 
                     return (

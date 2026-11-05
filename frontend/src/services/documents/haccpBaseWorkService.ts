@@ -64,6 +64,8 @@ export type HaccpBaseWorkItem = {
   lastReportDate?: string;
   lastWriterName?: string;
   cycleEndDate?: string;
+  approvalRequestLabel?: string;
+  submittedAt?: string;
   unwrittenCount?: number;
   inProgressCycleCount?: number;
   approvedCycleCount?: number;
@@ -184,6 +186,10 @@ type RawHaccpBaseWorkItem = {
   last_writer_name?: string | null;
   cycleEndDate?: string | null;
   cycle_end_date?: string | null;
+  approvalRequestLabel?: string | null;
+  approval_request_label?: string | null;
+  submittedAt?: string | null;
+  submitted_at?: string | null;
   unwrittenCount?: number | string | null;
   unwritten_count?: number | string | null;
   inProgressCycleCount?: number | string | null;
@@ -459,6 +465,8 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     lastReportDate: normalizeText(raw.lastReportDate ?? raw.last_report_date),
     lastWriterName: normalizeText(raw.lastWriterName ?? raw.last_writer_name),
     cycleEndDate: normalizeText(raw.cycleEndDate ?? raw.cycle_end_date),
+    approvalRequestLabel: normalizeText(raw.approvalRequestLabel ?? raw.approval_request_label),
+    submittedAt: normalizeText(raw.submittedAt ?? raw.submitted_at),
     unwrittenCount: Number(raw.unwrittenCount ?? raw.unwritten_count ?? 0) || 0,
     inProgressCycleCount: Number(raw.inProgressCycleCount ?? raw.in_progress_cycle_count ?? 0) || 0,
     approvedCycleCount: Number(raw.approvedCycleCount ?? raw.approved_cycle_count ?? 0) || 0,

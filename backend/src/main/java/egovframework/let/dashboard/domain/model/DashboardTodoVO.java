@@ -107,8 +107,14 @@ public class DashboardTodoVO implements Serializable {
     @Schema(description = "최근 작성자명")
     private String lastWriterName;
 
-    @Schema(description = "현재 주기 종료일(yyyyMMdd)")
+    @Schema(description = "주기 종료일(yyyyMMdd). 할일은 현재 주기, 결재할문서는 문서 보고일자가 속한 주기 기준")
     private String cycleEndDate;
+
+    @Schema(description = "결재 요청 구분(검토요청, 승인요청)")
+    private String approvalRequestLabel;
+
+    @Schema(description = "기안자 상신 일시")
+    private String submittedAt;
 
     @Schema(description = "서비스 시작일~현재 주기까지 미작성 주기 수")
     private Integer unwrittenCount;
