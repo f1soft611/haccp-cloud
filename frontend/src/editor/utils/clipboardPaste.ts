@@ -781,6 +781,7 @@ function serializeClipboardCellNode(node: Node): string {
   return content;
 }
 
+// 붙여넣은 HTML 의 <style> 규칙을 각 요소의 인라인 style 로 옮긴다 (원래 인라인 값이 우선)
 function applyEmbeddedCellStyles(root: HTMLElement): void {
   const styleTargets = Array.from(
     root.querySelectorAll(
@@ -788,6 +789,10 @@ function applyEmbeddedCellStyles(root: HTMLElement): void {
     ),
   );
   const styleProperties = Array.from(allowedCellStyleProperties);
+  const inlineStyles = styleTargets.flatMap((element) => {
+    const inlineStyle = element.getAttribute('style');
+    return inlineStyle ? [[element, inlineStyle] as const] : [];
+  });
 
   const applyDeclarationText = (
     selectorText: string,
@@ -900,6 +905,15 @@ function applyEmbeddedCellStyles(root: HTMLElement): void {
     }
 
     runtimeStyle.remove();
+  });
+
+  // 기존 -> 클래스 서식이 인라인 서식을 덮어씀
+  // 변경 -> 원래 인라인 서식을 뒤에 다시 붙여 브라우저 우선순위와 맞춘다 (엑셀은 병합 셀 테두리를 인라인으로 보낸다)
+  inlineStyles.forEach(([element, inlineStyle]) => {
+    element.setAttribute(
+      'style',
+      `${element.getAttribute('style') ?? ''};${inlineStyle}`,
+    );
   });
 }
 

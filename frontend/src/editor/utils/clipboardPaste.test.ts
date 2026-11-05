@@ -240,3 +240,45 @@ describe('normalizeClipboardHtmlForEditor 빈 셀', () => {
         expect(result).toBe('<table><tbody><tr><td>a</td></tr></tbody></table>');
     });
 });
+
+describe('normalizeClipboardHtmlForEditor 인라인 서식 우선', () => {
+    const excelTable = (rule: string, cell: string) =>
+        `<html><head><style>${rule}</style></head><body><table><tr>${cell}</tr></table></body></html>`;
+
+    it('병합 셀의 인라인 테두리가 클래스의 none 에 지워지지 않는다', () => {
+        const html = excelTable(
+            '.xl80{border-top:.5pt solid windowtext;border-right:none;border-bottom:none;border-left:.5pt solid windowtext}',
+            '<td class=xl80 style="border-right:.5pt solid black;border-bottom:.5pt solid black">값</td>',
+        );
+
+        const style = firstCell(normalizeClipboardHtmlForEditor(html)).getAttribute('style');
+
+        expect(style).toContain('border-right:0.5pt solid black');
+        expect(style).toContain('border-bottom:0.5pt solid black');
+        expect(style).toContain('border-top:0.5pt solid windowtext');
+    });
+
+    it('인라인 border-left:none 이 클래스 테두리를 끈다', () => {
+        const html = excelTable(
+            '.xl81{border-top:.5pt solid windowtext;border-right:.5pt solid windowtext;border-bottom:.5pt solid windowtext;border-left:.5pt solid windowtext}',
+            '<td class=xl81 style="border-left:none">값</td>',
+        );
+
+        const style = firstCell(normalizeClipboardHtmlForEditor(html)).getAttribute('style');
+
+        expect(style).not.toMatch(/border-left:[^;]*solid/);
+        expect(style).toContain('border-right:0.5pt solid windowtext');
+    });
+
+    it('글자 서식도 인라인이 클래스보다 우선한다', () => {
+        const html = excelTable(
+            '.xl65{color:red;font-size:11pt}',
+            '<td class=xl65 style="color:blue">값</td>',
+        );
+
+        const cell = firstCell(normalizeClipboardHtmlForEditor(html));
+
+        expect(cell.style.color).toBe('blue');
+        expect(cell.style.fontSize).toBe('11pt');
+    });
+});
