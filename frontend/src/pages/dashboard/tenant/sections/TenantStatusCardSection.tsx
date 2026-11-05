@@ -90,11 +90,20 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
             direction="row"
             flexWrap="wrap"
             alignItems="center"
+            justifyContent="space-between"
             useFlexGap
             columnGap={3}
             rowGap={1}
         >
-            <Stack direction="row" flexWrap="wrap" alignItems="center" useFlexGap columnGap={0.5} rowGap={0.5}>
+            <Stack
+                direction="row"
+                flexWrap="wrap"
+                alignItems="center"
+                useFlexGap
+                columnGap={0.5}
+                rowGap={0.5}
+                sx={{ flexBasis: { xs: '100%', xl: 'auto' } }}
+            >
                 <EditNoteOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
                 <Typography variant="body2" fontWeight={700} sx={{ mr: 1 }}>
                     기안문서
@@ -126,7 +135,6 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                 useFlexGap
                 columnGap={2}
                 rowGap={1}
-                sx={{ ml: { md: 'auto' } }}
             >
                 <RadioGroup
                     row
