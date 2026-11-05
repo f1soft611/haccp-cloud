@@ -834,6 +834,7 @@
         )
     </sql>
 
+    <!-- 미작성 목록 공통 조건: 테넌트, 사용 업무, 조회 권한, 검색 조건 -->
     <sql id="unwrittenWorkWhere">
         WHERE t.tenant_code = #{tenantCode}
         AND COALESCE(w.delete_status, 'N') != 'Y'
@@ -842,6 +843,9 @@
         COALESCE(#{actorRoleCode, jdbcType=VARCHAR}, '') IN ('PLATFORM_ADMIN', 'TENANT_ADMIN')
         OR <include refid="actorIsWorkAssignee"/>
         )
+        <if test="participantTypes != null and participantTypes.contains('ASSIGNEE')">
+            AND <include refid="actorIsWorkAssignee"/>
+        </if>
         <if test="workType != null and workType != '' and workType != '전체'">
             AND (
             g.cata_name = #{workType}
