@@ -1,9 +1,11 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import { Box, Button, Paper, Stack, Typography } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import { koKR } from '@mui/x-data-grid/locales';
+import { appTheme } from '../../../../app/theme';
 import { markEdited } from '../commonCodeRows';
 import type { CommonCodeGroupRow } from '../types';
 import { centerColumns, COMMON_CODE_GRID_SX, TOOLBAR_BUTTON_SX } from './gridStyles';
@@ -60,28 +62,30 @@ export function CommonCodeGroupGrid(props: {
                 ) : null}
             </Stack>
             <Box sx={{ flex: 1, minHeight: 0 }}>
-                <DataGrid
-                    rows={rows}
-                    columns={COLUMNS}
-                    editMode="cell"
-                    processRowUpdate={processRowUpdate}
-                    isCellEditable={(params) =>
-                        canManage && (params.field !== 'groupCode' || params.row.rowState === 'new')
-                    }
-                    onRowClick={(params) => onSelect(String(params.id))}
-                    disableRowSelectionOnClick
-                    // ponytail: 공통코드 그룹은 수십 건 수준이라 가상화/페이지 불필요, jsdom 테스트에서도 행이 렌더됨
-                    disableVirtualization
-                    hideFooter
-                    localeText={koKR.components.MuiDataGrid.defaultProps.localeText}
-                    getRowClassName={(params) =>
-                        [
-                            params.row.rowState === 'saved' ? '' : `row-${params.row.rowState}`,
-                            params.id === selectedId ? 'row-current' : '',
-                        ].join(' ')
-                    }
-                    sx={COMMON_CODE_GRID_SX}
-                />
+                <ThemeProvider theme={appTheme}>
+                    <DataGrid
+                        rows={rows}
+                        columns={COLUMNS}
+                        editMode="cell"
+                        processRowUpdate={processRowUpdate}
+                        isCellEditable={(params) =>
+                            canManage && (params.field !== 'groupCode' || params.row.rowState === 'new')
+                        }
+                        onRowClick={(params) => onSelect(String(params.id))}
+                        disableRowSelectionOnClick
+                        // ponytail: 공통코드 그룹은 수십 건 수준이라 가상화/페이지 불필요, jsdom 테스트에서도 행이 렌더됨
+                        disableVirtualization
+                        hideFooter
+                        localeText={koKR.components.MuiDataGrid.defaultProps.localeText}
+                        getRowClassName={(params) =>
+                            [
+                                params.row.rowState === 'saved' ? '' : `row-${params.row.rowState}`,
+                                params.id === selectedId ? 'row-current' : '',
+                            ].join(' ')
+                        }
+                        sx={COMMON_CODE_GRID_SX}
+                    />
+                </ThemeProvider>
             </Box>
         </Paper>
     );

@@ -1,8 +1,10 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import { Box, Button, Checkbox, Paper, Stack, Typography } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { koKR } from '@mui/x-data-grid/locales';
+import { appTheme } from '../../../../app/theme';
 import { markEdited } from '../commonCodeRows';
 import type { CommonCodeDetailRow } from '../types';
 import { centerColumns, COMMON_CODE_GRID_SX, TOOLBAR_BUTTON_SX } from './gridStyles';
@@ -90,21 +92,23 @@ export function CommonCodeDetailGrid(props: {
                 </Stack>
             </Stack>
             <Box sx={{ flex: 1, minHeight: 0 }}>
-                <DataGrid
-                    rows={rows}
-                    columns={columns}
-                    editMode="cell"
-                    processRowUpdate={processRowUpdate}
-                    isCellEditable={(params) => params.field !== 'code' || params.row.rowState === 'new'}
-                    disableRowSelectionOnClick
-                    // ponytail: 그룹당 상세 수십 건 수준이라 가상화/페이지 불필요, jsdom 테스트에서도 행이 렌더됨
-                    disableVirtualization
-                    hideFooter
-                    initialState={{ sorting: { sortModel: [{ field: 'sortOrder', sort: 'asc' }] } }}
-                    localeText={koKR.components.MuiDataGrid.defaultProps.localeText}
-                    getRowClassName={(params) => (params.row.rowState === 'saved' ? '' : `row-${params.row.rowState}`)}
-                    sx={COMMON_CODE_GRID_SX}
-                />
+                <ThemeProvider theme={appTheme}>
+                    <DataGrid
+                        rows={rows}
+                        columns={columns}
+                        editMode="cell"
+                        processRowUpdate={processRowUpdate}
+                        isCellEditable={(params) => params.field !== 'code' || params.row.rowState === 'new'}
+                        disableRowSelectionOnClick
+                        // ponytail: 그룹당 상세 수십 건 수준이라 가상화/페이지 불필요, jsdom 테스트에서도 행이 렌더됨
+                        disableVirtualization
+                        hideFooter
+                        initialState={{ sorting: { sortModel: [{ field: 'sortOrder', sort: 'asc' }] } }}
+                        localeText={koKR.components.MuiDataGrid.defaultProps.localeText}
+                        getRowClassName={(params) => (params.row.rowState === 'saved' ? '' : `row-${params.row.rowState}`)}
+                        sx={COMMON_CODE_GRID_SX}
+                    />
+                </ThemeProvider>
             </Box>
         </Paper>
     );

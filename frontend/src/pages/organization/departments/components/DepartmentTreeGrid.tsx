@@ -213,10 +213,10 @@ export function DepartmentTreeGrid(props: {
                 <TableRow
                   sx={{
                     '& .MuiTableCell-root': {
-                      backgroundColor: isDarkMode ? '#1e293b' : '#f0f7ff',
+                      backgroundColor: '#f0f7ff',
                     },
                     '&:hover .MuiTableCell-root': {
-                      backgroundColor: isDarkMode ? '#263348' : '#e2efff',
+                      backgroundColor: '#e2efff',
                     },
                   }}
                 >
@@ -261,15 +261,13 @@ export function DepartmentTreeGrid(props: {
                       key={child.id}
                       sx={{
                         '& .MuiTableCell-root': {
-                          backgroundColor: isDarkMode ? '#0f172a' : '#f8fbff',
+                          backgroundColor: '#f8fbff',
                         },
                         '& .MuiTableCell-root:first-of-type': {
-                          borderLeft: isDarkMode
-                            ? '4px solid #fbbf24'
-                            : '4px solid #1f4f8f',
+                          borderLeft: '4px solid #1f4f8f',
                         },
                         '&:hover .MuiTableCell-root': {
-                          backgroundColor: isDarkMode ? '#162032' : '#edf4ff',
+                          backgroundColor: '#edf4ff',
                         },
                       }}
                     >

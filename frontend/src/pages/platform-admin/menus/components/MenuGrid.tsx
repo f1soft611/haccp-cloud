@@ -260,19 +260,7 @@ export function MenuGrid(props: {
           ) : (
             rows.map(({ menu: rootMenu, children, orphanParentLabel }) => (
               <Fragment key={rootMenu.menuId}>
-                <TableRow
-                  sx={{
-                    '& .MuiTableCell-root': {
-                      backgroundColor: isDarkMode ? '#111827' : '#ffffff',
-                    },
-                    '&:nth-of-type(even) .MuiTableCell-root': {
-                      backgroundColor: isDarkMode ? '#162032' : '#fbfdff',
-                    },
-                    '&:hover .MuiTableCell-root': {
-                      backgroundColor: isDarkMode ? '#1b2535' : '#f2f7ff',
-                    },
-                  }}
-                >
+                <TableRow>
                   <TableCell align="center">
                     {children.length > 0 ? (
                       <IconButton
@@ -352,17 +340,17 @@ export function MenuGrid(props: {
                   ? children.map((childMenu) => (
                       <TableRow
                         key={childMenu.menuId}
+                        // 기존 -> 배경, 강조선, hover 를 isDarkMode 로 분기
+                        // 변경 -> 다크모드도 흰 테이블이라 라이트 값 고정
                         sx={{
                           '& .MuiTableCell-root': {
-                            backgroundColor: isDarkMode ? '#0f172a' : '#f8fbff',
+                            backgroundColor: '#f8fbff',
                           },
                           '& .MuiTableCell-root:first-of-type': {
-                            borderLeft: isDarkMode
-                              ? '4px solid #fbbf24'
-                              : '4px solid #1f4f8f',
+                            borderLeft: '4px solid #1f4f8f',
                           },
                           '&:hover .MuiTableCell-root': {
-                            backgroundColor: isDarkMode ? '#162032' : '#edf4ff',
+                            backgroundColor: '#edf4ff',
                           },
                         }}
                       >

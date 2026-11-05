@@ -1,8 +1,10 @@
 import { Box } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { koKR } from '@mui/x-data-grid/locales';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { appTheme } from '../../../../app/theme';
 import type { WeekItem, WorkdayItem } from '../../../../services/basicinfo/workday/workdayService';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 import { useCommonCodeOptions } from '../../../../shared/hooks/useCommonCodeOptions';
@@ -62,13 +64,9 @@ export function WorkdayListTable({ items, changedDates, weeks, onChangeRow }: Wo
             valueOptions,
         },
         { field: 'dayName', headerName: '휴일명', minWidth: 140, flex: 1 },
-        // 기존 -> { field: 'memo', headerName: '메모', minWidth: 180, flex: 2 },
-        // 변경 -> 메모 셀 편집 가능
         { field: 'memo', headerName: '메모', minWidth: 180, flex: 2, editable: true },
     ]);
 
-    // 기존 -> if (newRow.dayType !== oldRow.dayType) onChangeType(oldRow, newRow.dayType);
-    // 변경 -> 메모 변경도 감지, 메모는 앞뒤 공백 제거
     const processRowUpdate = (newRow: WorkdayItem, oldRow: WorkdayItem) => {
         const row = { ...newRow, memo: (newRow.memo ?? '').trim() };
         if (row.dayType !== oldRow.dayType || row.memo !== oldRow.memo) onChangeRow(oldRow, row);
@@ -77,35 +75,33 @@ export function WorkdayListTable({ items, changedDates, weeks, onChangeRow }: Wo
 
     return (
         <Box sx={{ height: 560 }}>
-            <DataGrid
-                rows={items}
-                columns={columns}
-                getRowId={(row) => row.workdayDate}
-                density="compact"
-                editMode="cell"
-                processRowUpdate={processRowUpdate}
-                // 휴무일 구분 셀은 한 번 클릭으로 바로 셀렉트 열기
-                onCellClick={(params) => {
-                    if (params.isEditable && params.cellMode === 'view') {
-                        params.api.startCellEditMode({ id: params.id, field: params.field });
-                    }
-                }}
-                disableRowSelectionOnClick
-                // 기존 -> hideFooter (MIT DataGrid 는 페이지당 100행 제한이라 100일 이후가 안 보임)
-                // 변경 -> footer 표시로 페이지 이동 가능
-                localeText={{
-                    ...koKR.components.MuiDataGrid.defaultProps.localeText,
-                    noRowsLabel: '조회된 업무일이 없습니다.',
-                }}
-                getRowClassName={(params) => (changedDates.has(params.row.workdayDate) ? 'row-modified' : '')}
-                // 기존 -> sx={{ ...COMMON_CODE_GRID_SX, '& .cell-red-day': { color: 'error.main' } }}
-                // 변경 -> 토요일 파랑 클래스 추가
-                sx={{
-                    ...COMMON_CODE_GRID_SX,
-                    '& .cell-red-day': { color: 'error.main' },
-                    '& .cell-blue-day': { color: 'primary.main' },
-                }}
-            />
+            {/* 다크모드에서도 흰 바탕이라 그리드 내부 팔레트 색을 라이트로 고정 */}
+            <ThemeProvider theme={appTheme}>
+                <DataGrid
+                    rows={items}
+                    columns={columns}
+                    getRowId={(row) => row.workdayDate}
+                    editMode="cell"
+                    processRowUpdate={processRowUpdate}
+                    // 휴무일 구분 셀은 한 번 클릭으로 바로 셀렉트 열기
+                    onCellClick={(params) => {
+                        if (params.isEditable && params.cellMode === 'view') {
+                            params.api.startCellEditMode({ id: params.id, field: params.field });
+                        }
+                    }}
+                    disableRowSelectionOnClick
+                    localeText={{
+                        ...koKR.components.MuiDataGrid.defaultProps.localeText,
+                        noRowsLabel: '조회된 업무일이 없습니다.',
+                    }}
+                    getRowClassName={(params) => (changedDates.has(params.row.workdayDate) ? 'row-modified' : '')}
+                    sx={{
+                        ...COMMON_CODE_GRID_SX,
+                        '& .cell-red-day': { color: 'error.main' },
+                        '& .cell-blue-day': { color: 'primary.main' },
+                    }}
+                />
+            </ThemeProvider>
         </Box>
     );
 }

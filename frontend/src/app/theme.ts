@@ -1,4 +1,5 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import type {} from '@mui/x-data-grid/themeAugmentation';
 import type { ThemeModePreference } from '../shared/theme/themePreference';
 
 export const dashboardThemeTokens = {
@@ -33,6 +34,97 @@ const sharedThemeOptions = {
   },
 } as const;
 
+// 테이블, 그리드 공통 스타일 값. 라이트와 다크 모드가 같은 값을 쓴다.
+export const tableStyleTokens = {
+  headerTopBorder: '2px solid #3263B9',
+  headerBackground: '#EEF0F3',
+  headerText: '#000',
+  headerBottomBorder: '1px solid #D9DCE1',
+  headerHeight: 40,
+  rowBackground: '#FFFFFF',
+  rowHoverBackground: '#F5F7FA',
+  rowHeight: 47,
+  bodyText: '#333333',
+  borderColor: '#E5E7EB',
+} as const;
+
+// MUI Table 과 DataGrid 의 공통 스타일 정의. appTheme, darkTheme 이 함께 쓴다.
+const tableComponents: ThemeOptions['components'] = {
+  MuiTable: {
+    styleOverrides: {
+      root: {
+        backgroundColor: tableStyleTokens.rowBackground,
+        borderCollapse: 'separate',
+        borderSpacing: 0,
+      },
+    },
+  },
+  MuiTableHead: {
+    styleOverrides: {
+      root: {
+        backgroundColor: tableStyleTokens.headerBackground,
+      },
+    },
+  },
+  MuiTableRow: {
+    styleOverrides: {
+      root: {
+        backgroundColor: tableStyleTokens.rowBackground,
+        // hover prop 행은 MUI 기본 선택자의 우선순위가 더 높아 함께 지정한다.
+        '&:hover, &.MuiTableRow-hover:hover': {
+          backgroundColor: tableStyleTokens.rowHoverBackground,
+        },
+      },
+    },
+  },
+  MuiTableCell: {
+    styleOverrides: {
+      head: {
+        height: tableStyleTokens.headerHeight,
+        borderTop: tableStyleTokens.headerTopBorder,
+        borderBottom: tableStyleTokens.headerBottomBorder,
+        fontWeight: 700,
+        color: tableStyleTokens.headerText,
+        backgroundColor: tableStyleTokens.headerBackground,
+      },
+      body: {
+        height: tableStyleTokens.rowHeight,
+        fontSize: 14,
+        color: tableStyleTokens.bodyText,
+        borderBottom: `1px solid ${tableStyleTokens.borderColor}`,
+      },
+    },
+  },
+  MuiDataGrid: {
+    defaultProps: {
+      rowHeight: tableStyleTokens.rowHeight,
+      columnHeaderHeight: tableStyleTokens.headerHeight,
+    },
+    styleOverrides: {
+      root: {
+        '--DataGrid-rowBorderColor': tableStyleTokens.borderColor,
+        // ponytail: 헤더가 항상 맨 위라 상단띠를 그리드 테두리로 처리, 헤더 높이 계산에 영향 없음
+        border: `1px solid ${tableStyleTokens.borderColor}`,
+        borderTop: tableStyleTokens.headerTopBorder,
+        borderRadius: 0,
+        backgroundColor: tableStyleTokens.rowBackground,
+        color: tableStyleTokens.bodyText,
+        fontSize: 14,
+        '& .MuiDataGrid-columnHeader, & .MuiDataGrid-filler, & .MuiDataGrid-scrollbarFiller--header': {
+          backgroundColor: tableStyleTokens.headerBackground,
+          color: tableStyleTokens.headerText,
+        },
+        '& .MuiDataGrid-columnHeaderTitle': {
+          fontWeight: 700,
+        },
+        '& .MuiDataGrid-row:hover': {
+          backgroundColor: tableStyleTokens.rowHoverBackground,
+        },
+      },
+    },
+  },
+};
+
 export const appTheme = createTheme({
   palette: {
     mode: 'light',
@@ -55,47 +147,7 @@ export const appTheme = createTheme({
     },
   },
   ...sharedThemeOptions,
-  components: {
-    MuiTable: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#ffffff',
-          borderCollapse: 'separate',
-          borderSpacing: 0,
-        },
-      },
-    },
-    MuiTableHead: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#d7ecea',
-        },
-      },
-    },
-    MuiTableRow: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#ffffff',
-          '&:hover': {
-            backgroundColor: '#f0fdfa',
-          },
-        },
-      },
-    },
-    MuiTableCell: {
-      styleOverrides: {
-        head: {
-          borderBottom: '1px solid rgba(66, 111, 106, 0.28)',
-          fontWeight: 700,
-          color: '#2f5f5b',
-          backgroundColor: '#d7ecea',
-        },
-        body: {
-          borderBottom: '1px solid rgba(15, 118, 110, 0.12)',
-        },
-      },
-    },
-  },
+  components: tableComponents,
 });
 
 export const darkTheme = createTheme({
@@ -121,47 +173,7 @@ export const darkTheme = createTheme({
     },
   },
   ...sharedThemeOptions,
-  components: {
-    MuiTable: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#111827',
-          borderCollapse: 'separate',
-          borderSpacing: 0,
-        },
-      },
-    },
-    MuiTableHead: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#172131',
-        },
-      },
-    },
-    MuiTableRow: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#111827',
-          '&:hover': {
-            backgroundColor: '#1b2535',
-          },
-        },
-      },
-    },
-    MuiTableCell: {
-      styleOverrides: {
-        head: {
-          borderBottom: '1px solid rgba(251, 191, 36, 0.28)',
-          fontWeight: 700,
-          color: '#fef3c7',
-          backgroundColor: '#172131',
-        },
-        body: {
-          borderBottom: '1px solid rgba(148, 163, 184, 0.22)',
-        },
-      },
-    },
-  },
+  components: tableComponents,
 });
 
 export function getThemeByMode(mode: ThemeModePreference) {

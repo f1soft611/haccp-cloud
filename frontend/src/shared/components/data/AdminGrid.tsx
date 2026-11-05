@@ -1,26 +1,17 @@
 import { Table, TableContainer } from '@mui/material';
 import Paper from '@mui/material/Paper';
-import { useTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import type { ReactNode } from 'react';
+import { appTheme, tableStyleTokens } from '../../../app/theme';
 
-const DEFAULT_CONTAINER_SX = {
-  border: '1px solid rgba(66, 111, 106, 0.24)',
-  borderRadius: 0.5,
-  boxShadow: '0 8px 18px rgba(66, 111, 106, 0.08)',
+// 기존 -> 민트색 테두리와 그림자, 다크모드 분기
+// 변경 -> 연회색 테두리 고정, 그림자 없음
+const CONTAINER_SX = {
+  border: `1px solid ${tableStyleTokens.borderColor}`,
+  borderRadius: 0,
+  boxShadow: 'none',
   overflow: 'auto',
-  bgcolor: '#fff',
-};
-
-const DEFAULT_TABLE_SX = {
-  '& .MuiTableCell-head': {
-    bgcolor: '#d7ecea',
-    color: '#2f5f5b',
-    fontWeight: 700,
-    borderBottom: '1px solid rgba(66, 111, 106, 0.28)',
-  },
-  '& .MuiTableCell-root': {
-    borderBottom: '1px solid rgba(15, 118, 110, 0.12)',
-  },
+  bgcolor: tableStyleTokens.rowBackground,
 };
 
 export type AdminGridProps = {
@@ -30,59 +21,26 @@ export type AdminGridProps = {
   minWidth?: number;
 };
 
+// 목록 화면 공통 테이블. 다크모드에서도 흰 바탕이라 내부 팔레트 색이 흐려지지 않도록 appTheme 으로 감싼다.
 export function AdminGrid({
   ariaLabel,
   children,
   maxHeight = 620,
-                            minWidth,
-                          }: AdminGridProps) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
-
-  const containerSx = {
-    border: isDarkMode
-      ? '1px solid rgba(251, 191, 36, 0.28)'
-      : DEFAULT_CONTAINER_SX.border,
-    borderRadius: DEFAULT_CONTAINER_SX.borderRadius,
-    boxShadow: isDarkMode
-      ? '0 16px 36px rgba(2, 6, 23, 0.55)'
-      : DEFAULT_CONTAINER_SX.boxShadow,
-    overflow: DEFAULT_CONTAINER_SX.overflow,
-    bgcolor: isDarkMode ? '#111827' : DEFAULT_CONTAINER_SX.bgcolor,
-    maxHeight,
-  };
-
-  const tableSx = isDarkMode
-    ? {
-        '& .MuiTableCell-head': {
-          bgcolor: '#172131',
-          color: '#fef3c7',
-          fontWeight: 700,
-          borderBottom: '1px solid rgba(251, 191, 36, 0.26)',
-        },
-        '& .MuiTableCell-root': {
-          color: '#f8fafc',
-          borderBottom: '1px solid rgba(148, 163, 184, 0.24)',
-        },
-        '& .MuiTableRow-root': {
-          bgcolor: '#111827',
-          '&:hover': {
-            bgcolor: '#1b2535',
-          },
-        },
-      }
-    : DEFAULT_TABLE_SX;
-
+  minWidth,
+}: AdminGridProps) {
   return (
-    <TableContainer component={Paper} sx={containerSx}>
-      <Table
+    <ThemeProvider theme={appTheme}>
+      <TableContainer component={Paper} sx={{ ...CONTAINER_SX, maxHeight }}>
+        {/* 기존 -> sx 로 헤더, 셀 색을 직접 지정 / 변경 -> theme.ts 공통 정의 사용 */}
+        <Table
           size="small"
           stickyHeader
           aria-label={ariaLabel}
-          sx={minWidth ? { ...tableSx, minWidth } : tableSx}
-      >
-        {children}
-      </Table>
-    </TableContainer>
+          sx={minWidth ? { minWidth } : undefined}
+        >
+          {children}
+        </Table>
+      </TableContainer>
+    </ThemeProvider>
   );
 }
