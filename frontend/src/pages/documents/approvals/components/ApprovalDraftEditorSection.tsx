@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import type { HaccpBaseWorkItem } from '../../../../services/documents/haccpBaseWorkService';
 import { NotionLikeEditor } from '../../../../editor/components/NotionLikeEditor';
 import type { DocumentFieldValues } from '../../../../editor/utils/documentFieldValues';
-import {PENDING_APPROVAL_LABEL, resolveApprovalStatusView} from '../../../../shared/utils/approvalStatus';
+import {resolveApprovalStatusView} from '../../../../shared/utils/approvalStatus';
 import { formatNow } from '../utils/approvalDraftUtils';
 import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 
@@ -59,13 +59,9 @@ export function ApprovalDraftEditorSection(
   const approvalStatus = String(work?.approvalStatusType ?? '')
     .trim()
     .toLowerCase();
-  const { label: viewLabel } = resolveApprovalStatusView({
+  const { label: statusLabel } = resolveApprovalStatusView({
     approvalStatusType: approvalStatus,
   });
-  const statusLabel =
-    viewLabel === '결재진행중' && (work?.canApprove || work?.canConfirm)
-      ? PENDING_APPROVAL_LABEL
-      : viewLabel;
   const draftNumber = (work?.draftNumber || '').trim();
   const draftDate = (work?.createdAt || '').trim() || formatNow(new Date());
 

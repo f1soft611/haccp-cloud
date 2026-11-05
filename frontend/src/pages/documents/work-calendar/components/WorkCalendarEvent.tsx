@@ -96,12 +96,10 @@ export function WorkCalendarStatusBadge({
                         bgcolor: 'background.paper',
                         color: `${color}.main`,
                     }
-                    // 기존 -> bgcolor: `${color}.main`, color: `${color}.contrastText`
-                    // 변경 -> XD 진행상태 색 (연한 배경 + 괄호 문구 글자색)
                     : {
                         lineHeight: 1.6,
                         bgcolor: APPROVAL_STATUS_COLORS[status ?? '']?.bg ?? `${color}.main`,
-                        color: APPROVAL_STATUS_COLORS[status ?? '']?.suffix?.color ?? `${color}.contrastText`,
+                        color: APPROVAL_STATUS_COLORS[status ?? '']?.color ?? `${color}.contrastText`,
                     }),
             }}
         >

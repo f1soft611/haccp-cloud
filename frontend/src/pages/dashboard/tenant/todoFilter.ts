@@ -1,4 +1,4 @@
-import { PENDING_APPROVAL_LABEL, resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
+import { resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
 import type { TenantTodoCardItem } from './hooks/useTenantDashboardData';
 
 export type TenantViewMode = 'list' | 'calendar';
@@ -20,9 +20,9 @@ export const EMPTY_TODO_FILTER: TenantTodoFilter = {
   status: '',
 };
 
-// 결재할문서 = 내가 결재할 문서(approval-alerts). 리스트 데이터 자체를 바꾸는 상태값
-// 기존 -> '결재할문서' 문자열 직접 선언 / 변경 -> 진행상태 칩과 같은 상수 사용
-export const PENDING_APPROVAL_STATUS = PENDING_APPROVAL_LABEL;
+// 기존 -> 진행상태 칩과 같은 상수 사용
+// 변경 -> 칩에서 쓰지 않으므로 필터 값으로 직접 선언
+export const PENDING_APPROVAL_STATUS = '결재할문서';
 
 export const TODO_STATUS_OPTIONS = [
   '미작성',

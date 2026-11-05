@@ -71,15 +71,12 @@ export function resolveApprovalStatusView(params: {
   return { label: '미작성', color: 'default' };
 }
 
-export const PENDING_APPROVAL_LABEL = '결재할문서';
-
-export const APPROVAL_STATUS_COLORS: Record<
-  string,
-  { bg: string; color: string; suffix?: { text: string; color: string } }
-> = {
-  미작성: { bg: '#E9EFF1', color: '#879499' },
-  [PENDING_APPROVAL_LABEL]: { bg: '#D9F3FC', color: '#087DBD' },
-  결재진행중: { bg: '#D8F4E9', color: '#079E63', suffix: { text: '(결재진행중)', color: '#079E63' } },
-  승인: { bg: '#D8F4E9', color: '#079E63', suffix: { text: '(승인)', color: '#0094D5' } },
-  반려: { bg: '#D8F4E9', color: '#079E63', suffix: { text: '(반려)', color: '#D6004F' } },
+export const APPROVAL_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  미작성: { bg: '#E6EDEE', color: '#879499' },
+  결재진행중: { bg: '#D9F3FC', color: '#004DB1' },
+  승인: { bg: '#D8F4E9', color: '#079E63' },
+  반려: { bg: '#FFDFF8', color: '#CF014E' },
+  작성: { bg: '#D8F4E9', color: '#079E63' },
+  확인: { bg: '#D8F4E9', color: '#079E63' },
+  대기: { bg: '#E6EDEE', color: '#879499' },
 };
