@@ -32,6 +32,17 @@ export const SELECTED_LEGEND_SX = {
   outlineOffset: 1,
 };
 
+// 업무 카드 칩 공용 크기
+export const CARD_CHIP_SX = { height: 22, fontWeight: 700, fontSize: 12 };
+
+// D-day 칩 글자색: 지남은 빨강, 당일은 주황, 그 외는 회색
+export function getDDayColor(dDay: string): string {
+  if (dDay.startsWith('D+')) {
+    return 'error.main';
+  }
+  return dDay === 'D-Day' ? 'warning.main' : 'text.secondary';
+}
+
 export function formatDate(value: string): string {
   if (!value) {
     return '-';
