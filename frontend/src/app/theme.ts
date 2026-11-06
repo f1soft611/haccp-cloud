@@ -142,7 +142,7 @@ export const appTheme = createTheme({
       main: '#e57a22',
     },
     background: {
-      default: '#f5f6f8',
+      default: 'rgba(245, 246, 248, 0.54)',
       paper: '#ffffff',
     },
   },

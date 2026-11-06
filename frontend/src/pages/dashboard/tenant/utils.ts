@@ -1,6 +1,6 @@
 const WORK_CYCLE_COLORS: Record<string, { border: string; color: string }> = {
-  DAY: { border: '#00B76E', color: '#00B76E' },
-  WEEK: { border: '#0094D5', color: '#0094D5' },
+  DAY: { border: '#00B718', color: '#00B718' },
+  WEEK: { border: '#2089F3', color: '#2066F3' },
   MONTH: { border: '#6D30FF', color: '#6E31FF' },
   ANYTIME: { border: '#3B3B3B', color: '#3B3B3B' },
 };

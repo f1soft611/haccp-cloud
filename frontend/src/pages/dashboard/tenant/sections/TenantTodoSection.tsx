@@ -11,8 +11,6 @@ type TenantTodoSectionProps = {
   isLoading: boolean;
   isError: boolean;
   sections: TenantTodoSectionModel[];
-  // 기존 -> pendingApproval?: boolean
-  // 변경 -> 카드 종류, 상단 선 색, 안내 문구를 함께 고르는 variant
   variant?: TenantTodoSectionVariant;
 };
 
