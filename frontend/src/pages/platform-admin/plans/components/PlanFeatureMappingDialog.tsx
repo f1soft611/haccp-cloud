@@ -6,9 +6,9 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import type {
@@ -113,16 +113,16 @@ export function PlanFeatureMappingDialog(props: {
               </TableCell>
               <TableCell>
                 {feature.featureType === 'LIMIT' ? (
-                  <TextField
+                  <AppTextField
                     size="small"
                     type="number"
                     label={`${feature.featureCode} 값`}
                     value={feature.limitValue ?? ''}
-                    onChange={(event) =>
-                      onLimitChange(feature.featureCode, event.target.value)
+                    onChange={(nextValue) =>
+                      onLimitChange(feature.featureCode, nextValue)
                     }
                     disabled={!feature.enabled}
-                    inputProps={{ min: 0 }}
+                    slotProps={{ htmlInput: { min: 0 } }}
                     fullWidth
                   />
                 ) : (

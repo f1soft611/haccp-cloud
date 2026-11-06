@@ -7,9 +7,10 @@ import {
     DialogContent,
     DialogTitle,
     Stack,
-    TextField,
     Typography,
 } from '@mui/material';
+import { AppDateField } from '../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useMutation } from '@tanstack/react-query';
 import { useState, type ChangeEvent } from 'react';
 import { extractApiErrorMessage } from '../../../../services/api/errorMessage';
@@ -115,66 +116,62 @@ export function PlatformTenantEditDialog({ open, tenant, onClose, onSaved }: Pro
                     ) : null}
 
                     <Stack direction="row" spacing={2}>
-                        <TextField
+                        <AppTextField
                             label="업체명"
                             value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
+                            onChange={setCompanyName}
                             required
                             fullWidth
                         />
                         {/* 기존 -> value={tenant.tenantCode} (사업자번호 기반 코드) / 변경 -> value={tenant.tenantNo} (6자리 업체번호) */}
-                        <TextField label="업체 코드" value={tenant.tenantNo || '-'} disabled fullWidth />
+                        <AppTextField label="업체 코드" value={tenant.tenantNo || '-'} disabled fullWidth />
                     </Stack>
                     <Stack direction="row" spacing={2}>
-                        <TextField
+                        <AppTextField
                             label="사업자번호"
                             value={tenant.businessRegistrationNumber ?? '-'}
                             disabled
                             fullWidth
                         />
-                        <TextField
+                        <AppDateField
                             label="사업자등록일"
-                            type="date"
                             value={registrationDate}
-                            onChange={(e) => setRegistrationDate(e.target.value)}
-                            slotProps={{ inputLabel: { shrink: true } }}
+                            onChange={setRegistrationDate}
                             fullWidth
                         />
                     </Stack>
-                    <TextField
+                    <AppTextField
                         label="법인번호"
                         value={corporateNumber}
-                        onChange={(e) => setCorporateNumber(e.target.value)}
+                        onChange={setCorporateNumber}
                         fullWidth
                     />
                     <Stack direction="row" spacing={2}>
-                        <TextField
+                        <AppTextField
                             label="업종"
                             value={businessType}
-                            onChange={(e) => setBusinessType(e.target.value)}
+                            onChange={setBusinessType}
                             required
                             fullWidth
                         />
-                        <TextField
+                        <AppTextField
                             label="업태"
                             value={businessCategory}
-                            onChange={(e) => setBusinessCategory(e.target.value)}
+                            onChange={setBusinessCategory}
                             required
                             fullWidth
                         />
                     </Stack>
                     <Stack direction="row" spacing={2}>
-                        <TextField label="관리자 이름" value={tenant.adminName || '-'} disabled fullWidth />
-                        <TextField label="관리자 이메일" value={tenant.adminEmail} disabled fullWidth />
+                        <AppTextField label="관리자 이름" value={tenant.adminName || '-'} disabled fullWidth />
+                        <AppTextField label="관리자 이메일" value={tenant.adminEmail} disabled fullWidth />
                     </Stack>
                     <Stack direction="row" spacing={2}>
-                        <TextField label="플랜" value={tenant.planName || '-'} disabled fullWidth />
-                        <TextField
+                        <AppTextField label="플랜" value={tenant.planName || '-'} disabled fullWidth />
+                        <AppDateField
                             label="업무개시일"
-                            type="date"
                             value={serviceStartDate}
-                            onChange={(e) => setServiceStartDate(e.target.value)}
-                            slotProps={{ inputLabel: { shrink: true } }}
+                            onChange={setServiceStartDate}
                             fullWidth
                         />
                     </Stack>

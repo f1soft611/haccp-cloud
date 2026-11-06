@@ -1,4 +1,5 @@
-import { Box, Button, TextField } from '@mui/material';
+import { Box, Button } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
@@ -50,16 +51,16 @@ export function MaterialsSearchBar({
           onChange={(itemType) => onChange({ ...value, itemType })}
         />
       </Box>
-      <TextField
+      <AppTextField
         size="small"
         fullWidth
         label="검색어"
         placeholder="품목코드, 품목명, 규격, 품목계정"
         value={value.keyword}
-        onChange={(event) =>
+        onChange={(keyword) =>
           onChange({
             ...value,
-            keyword: event.target.value,
+            keyword,
           })
         }
       />

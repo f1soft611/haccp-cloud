@@ -1,4 +1,5 @@
-import { Alert, Button, Paper, Stack, TextField } from '@mui/material';
+import { Alert, Button, Paper, Stack } from '@mui/material';
+import { AppTextField } from '../../../shared/components/forms/AppTextField';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { APP_LABELS } from '../../../shared/constants/labels';
@@ -77,21 +78,21 @@ export function PlatformRoleManagementPage() {
 
       <Paper sx={{ p: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-          <TextField
+          <AppTextField
             label="권한 코드"
             value={code}
-            onChange={(event) => setCode(event.target.value)}
+            onChange={setCode}
             placeholder="ROLE_QA_MANAGER"
           />
-          <TextField
+          <AppTextField
             label="권한명"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={setName}
           />
-          <TextField
+          <AppTextField
             label={APP_LABELS.field.content}
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
+            onChange={setDescription}
           />
           <Button
             variant="contained"

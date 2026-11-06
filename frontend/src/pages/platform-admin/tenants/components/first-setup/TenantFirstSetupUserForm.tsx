@@ -1,4 +1,5 @@
-import { Button, Stack, TextField } from '@mui/material';
+import { Button, Stack } from '@mui/material';
+import { AppTextField } from '../../../../../shared/components/forms/AppTextField';
 import { APP_LABELS } from '../../../../../shared/constants/labels';
 
 type TenantFirstSetupUserFormProps = {
@@ -24,20 +25,20 @@ export function TenantFirstSetupUserForm({
 }: TenantFirstSetupUserFormProps) {
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-      <TextField
+      <AppTextField
         label={APP_LABELS.field.name}
         value={name}
-        onChange={(event) => onNameChange(event.target.value)}
+        onChange={onNameChange}
       />
-      <TextField
+      <AppTextField
         label={APP_LABELS.field.email}
         value={email}
-        onChange={(event) => onEmailChange(event.target.value)}
+        onChange={onEmailChange}
       />
-      <TextField
+      <AppTextField
         label={APP_LABELS.field.department}
         value={department}
-        onChange={(event) => onDepartmentChange(event.target.value)}
+        onChange={onDepartmentChange}
       />
       <Button variant="contained" onClick={onSubmit} disabled={pending}>
         {APP_LABELS.action.addUser}

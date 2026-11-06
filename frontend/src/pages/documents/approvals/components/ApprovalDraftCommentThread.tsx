@@ -19,8 +19,8 @@ import {
   Stack,
   Tooltip,
   Typography,
-  TextField,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useState, type MouseEvent } from 'react';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import type { DraftComment, DraftReply } from '../types';
@@ -699,7 +699,7 @@ export function ApprovalDraftCommentThread(
                               spacing={0.8}
                               sx={{ mt: 1.1 }}
                             >
-                              <TextField
+                              <AppTextField
                                 size="small"
                                 fullWidth
                                 placeholder="대댓글을 입력하세요"
@@ -707,10 +707,10 @@ export function ApprovalDraftCommentThread(
                                 minRows={2}
                                 disabled={!canWriteComments}
                                 value={replyDraftByCommentId[comment.id] || ''}
-                                onChange={(event) =>
+                                onChange={(nextValue) =>
                                   onChangeReplyDraft(
                                     comment.id,
-                                    event.target.value,
+                                    nextValue,
                                   )
                                 }
                                 sx={{
@@ -780,13 +780,13 @@ export function ApprovalDraftCommentThread(
           </>
         }
       >
-        <TextField
+        <AppTextField
           label="댓글 내용"
           multiline
           minRows={4}
           fullWidth
           value={editDraft}
-          onChange={(event) => setEditDraft(event.target.value)}
+          onChange={setEditDraft}
         />
       </FormDialog>
 
@@ -923,14 +923,14 @@ export function ApprovalDraftCommentThread(
         }
       >
         <Stack spacing={1} className="comment-opinion-editor">
-          <TextField
+          <AppTextField
             label="결재의견"
             placeholder="의견을 입력하세요"
             multiline
             minRows={4}
             disabled={!canWriteComments}
             value={opinionDraft}
-            onChange={(event) => setOpinionDraft(event.target.value)}
+            onChange={setOpinionDraft}
             fullWidth
           />
           <Stack

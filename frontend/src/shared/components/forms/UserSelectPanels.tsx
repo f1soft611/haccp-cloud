@@ -8,9 +8,9 @@ import {
     ListItemIcon,
     ListItemText,
     Radio,
-    TextField,
     Typography,
 } from '@mui/material';
+import { AppTextField } from './AppTextField';
 import type { UserItem } from '../../../services/organization/usersService';
 
 type UserSelectPanelsProps = {
@@ -75,12 +75,12 @@ export function UserSelectPanels(props: UserSelectPanelsProps) {
 
     return (
         <>
-            <TextField
+            <AppTextField
                 label="이름 검색"
                 size="small"
                 fullWidth
                 value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
+                onChange={setKeyword}
                 sx={{ mb: 1 }}
             />
             {loading ? (

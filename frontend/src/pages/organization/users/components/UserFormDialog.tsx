@@ -3,8 +3,9 @@ import {
   FormControlLabel,
   Stack,
   Switch,
-  TextField,
 } from '@mui/material';
+import { AppDateField } from '../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useEffect, useMemo, useState } from 'react';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
@@ -164,20 +165,20 @@ export function UserFormDialog({
       }
     >
       <Stack spacing={2} sx={{ mt: 0.5 }}>
-        <TextField
+        <AppTextField
           label="이름"
           value={value.name}
-          onChange={(event) =>
-            setValue((prev) => ({ ...prev, name: event.target.value }))
+          onChange={(name) =>
+            setValue((prev) => ({ ...prev, name }))
           }
           fullWidth
         />
-        <TextField
+        <AppTextField
             label="이메일"
             type="email"
             value={value.email}
-            onChange={(event) => {
-              setValue((prev) => ({ ...prev, email: event.target.value }));
+            onChange={(email) => {
+              setValue((prev) => ({ ...prev, email }));
               onEmailChange?.();
             }}
             error={emailInvalid || Boolean(emailError)}
@@ -210,28 +211,24 @@ export function UserFormDialog({
         />
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField
+          <AppDateField
               label="입사일"
-              type="date"
               value={value.joinDate}
-              onChange={(event) =>
-                  setValue((prev) => ({ ...prev, joinDate: event.target.value }))
+              onChange={(joinDate) =>
+                  setValue((prev) => ({ ...prev, joinDate }))
               }
-              slotProps={{ inputLabel: { shrink: true } }}
               fullWidth
           />
-          <TextField
+          <AppDateField
               label="퇴사일"
-              type="date"
               value={value.retireDate}
-              onChange={(event) =>
-                  setValue((prev) => ({ ...prev, retireDate: event.target.value }))
+              onChange={(retireDate) =>
+                  setValue((prev) => ({ ...prev, retireDate }))
               }
               error={retireBeforeJoin}
               helperText={
                 retireBeforeJoin ? '퇴사일은 입사일 이후여야 합니다.' : undefined
               }
-              slotProps={{ inputLabel: { shrink: true } }}
               fullWidth
           />
         </Stack>

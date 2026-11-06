@@ -1,4 +1,5 @@
-import { Button, Stack, TextField } from '@mui/material';
+import { Button, Stack } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import { ICON_OPTIONS } from './MenuGrid';
@@ -73,11 +74,11 @@ export function MenuFormDialog(props: {
       }
     >
       <Stack spacing={2}>
-        <TextField
+        <AppTextField
           label="메뉴코드"
           value={formData.menuCode}
-          onChange={(e) =>
-            onChange({ ...formData, menuCode: e.target.value.toUpperCase() })
+          onChange={(nextValue) =>
+            onChange({ ...formData, menuCode: nextValue.toUpperCase() })
           }
           fullWidth
           required
@@ -88,17 +89,17 @@ export function MenuFormDialog(props: {
               : '예: MENU_PLATFORM_REPORTS (미입력 시 자동 생성)'
           }
         />
-        <TextField
+        <AppTextField
           label="메뉴명 *"
           value={formData.menuNm}
-          onChange={(e) => onChange({ ...formData, menuNm: e.target.value })}
+          onChange={(menuNm) => onChange({ ...formData, menuNm })}
           fullWidth
           required
         />
-        <TextField
+        <AppTextField
           label="메뉴 설명"
           value={formData.menuDc}
-          onChange={(e) => onChange({ ...formData, menuDc: e.target.value })}
+          onChange={(menuDc) => onChange({ ...formData, menuDc })}
           fullWidth
           multiline
           rows={2}
@@ -121,22 +122,22 @@ export function MenuFormDialog(props: {
             })),
           ]}
         />
-        <TextField
+        <AppTextField
           label={isRootMenu ? '메뉴 URL' : '메뉴 URL *'}
           value={formData.menuUrl}
-          onChange={(e) => onChange({ ...formData, menuUrl: e.target.value })}
+          onChange={(menuUrl) => onChange({ ...formData, menuUrl })}
           fullWidth
           required={!isRootMenu}
           placeholder={
             isRootMenu ? '선택 사항 (예: /platform)' : '/platform/menus'
           }
         />
-        <TextField
+        <AppTextField
           label="순서"
           type="number"
           value={formData.menuOrdr}
-          onChange={(e) =>
-            onChange({ ...formData, menuOrdr: Number(e.target.value) || 0 })
+          onChange={(nextValue) =>
+            onChange({ ...formData, menuOrdr: Number(nextValue) || 0 })
           }
           fullWidth
         />

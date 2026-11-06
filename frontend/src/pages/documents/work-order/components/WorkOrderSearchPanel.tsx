@@ -1,5 +1,7 @@
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import { Button, TextField } from '@mui/material';
+import { Button } from '@mui/material';
+import { AppDateField } from '../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { WorkOrderSearchValue } from '../types';
 
@@ -22,27 +24,23 @@ export function WorkOrderSearchPanel(props: {
                 </Button>
             }
         >
-            <TextField
+            <AppDateField
                 size="small"
-                type="date"
                 label="생산계획일 시작"
                 value={value.startDate}
-                onChange={(event) => onChange({ ...value, startDate: event.target.value })}
-                slotProps={{ inputLabel: { shrink: true } }}
+                onChange={(startDate) => onChange({ ...value, startDate })}
             />
-            <TextField
+            <AppDateField
                 size="small"
-                type="date"
                 label="생산계획일 종료"
                 value={value.endDate}
-                onChange={(event) => onChange({ ...value, endDate: event.target.value })}
-                slotProps={{ inputLabel: { shrink: true } }}
+                onChange={(endDate) => onChange({ ...value, endDate })}
             />
-            <TextField
+            <AppTextField
                 size="small"
                 label="품명"
                 value={value.itemName}
-                onChange={(event) => onChange({ ...value, itemName: event.target.value })}
+                onChange={(itemName) => onChange({ ...value, itemName })}
             />
         </SearchFilterBar>
     );

@@ -5,6 +5,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import { UserMultiSelectDialog } from '../../../../shared/components/forms/UserMultiSelectDialog';
 import type { WorkCycleOption } from '../../../../shared/hooks/useWorkCycleOptions';
@@ -101,7 +102,7 @@ export function HaccpBaseCreateDialog(props: {
     >
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField
+          <AppTextField
             fullWidth
             label="업무코드"
             value={value.divisionCode}
@@ -110,14 +111,14 @@ export function HaccpBaseCreateDialog(props: {
             helperText="업무코드는 자동으로 채번됩니다."
           />
 
-          <TextField
+          <AppTextField
             fullWidth
             label="업무명"
             value={value.divisionName}
-            onChange={(event) =>
+            onChange={(divisionName) =>
               onChange({
                 ...value,
-                divisionName: event.target.value,
+                divisionName,
               })
             }
             required
@@ -174,7 +175,7 @@ export function HaccpBaseCreateDialog(props: {
 
         {/* 기존 -> Autocomplete multiple 로 이름 검색 후 다중 선택 */}
         {/* 변경 -> 읽기 전용 칸 클릭 시 공용 UserMultiSelectDialog 로 다중 선택 */}
-        <TextField
+        <AppTextField
           label="담당자"
           value={assigneeNames}
           placeholder="클릭해서 담당자 선택"

@@ -1,4 +1,5 @@
-import { TextField } from '@mui/material';
+import { AppDateField } from '../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 
@@ -43,11 +44,11 @@ export function LoginHistorySearchBar(props: {
         sx={{ minWidth: 120 }}
       />
 
-      <TextField
+      <AppTextField
         label="검색어"
         value={value.searchKeyword}
-        onChange={(e) =>
-          onChange({ ...value, searchKeyword: e.target.value })
+        onChange={(searchKeyword) =>
+          onChange({ ...value, searchKeyword })
         }
         size="small"
         sx={{ flex: 1, minWidth: 180 }}
@@ -63,35 +64,31 @@ export function LoginHistorySearchBar(props: {
         sx={{ minWidth: 160 }}
       />
 
-      <TextField
+      <AppTextField
         label="업체코드"
         value={value.filterFactoryCode}
-        onChange={(e) =>
-          onChange({ ...value, filterFactoryCode: e.target.value })
+        onChange={(filterFactoryCode) =>
+          onChange({ ...value, filterFactoryCode })
         }
         size="small"
         sx={{ minWidth: 160 }}
       />
 
-      <TextField
+      <AppDateField
         label="시작일"
-        type="date"
         size="small"
         value={value.filterStartDt}
-        onChange={(e) =>
-          onChange({ ...value, filterStartDt: e.target.value })
+        onChange={(filterStartDt) =>
+          onChange({ ...value, filterStartDt })
         }
-        slotProps={{ inputLabel: { shrink: true } }}
         sx={{ minWidth: 160 }}
       />
 
-      <TextField
+      <AppDateField
         label="종료일"
-        type="date"
         size="small"
         value={value.filterEndDt}
-        onChange={(e) => onChange({ ...value, filterEndDt: e.target.value })}
-        slotProps={{ inputLabel: { shrink: true } }}
+        onChange={(filterEndDt) => onChange({ ...value, filterEndDt })}
         sx={{ minWidth: 160 }}
       />
     </SearchFilterBar>

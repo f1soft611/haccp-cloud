@@ -1,4 +1,5 @@
-import { Alert, Stack, TextField } from '@mui/material';
+import { Alert, Stack } from '@mui/material';
+import { AppTextField } from '../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../shared/components/forms/AppSelect';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
@@ -48,12 +49,12 @@ export function HaccpPortalPage() {
           sx={{ minWidth: 180 }}
         />
 
-        <TextField
+        <AppTextField
           size="small"
           label="구분명, 담당자 검색"
           value={search.keyword}
-          onChange={(event) =>
-            setSearch({ ...search, keyword: event.target.value })
+          onChange={(keyword) =>
+            setSearch({ ...search, keyword })
           }
           sx={{ flex: 1, minWidth: 260 }}
         />

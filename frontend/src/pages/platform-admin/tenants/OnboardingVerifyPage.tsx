@@ -4,10 +4,10 @@ import {
   Button,
   Card,
   CardContent,
-  TextField,
   Stack,
   Typography,
 } from '@mui/material';
+import { AppTextField } from '../../../shared/components/forms/AppTextField';
 import { useMutation } from '@tanstack/react-query';
 import {
   useEffect,
@@ -374,12 +374,11 @@ export function OnboardingVerifyPage() {
 
                 {!completeMutation.isSuccess ? (
                   <Stack spacing={1.25} sx={{ pt: 1 }}>
-                    <TextField
+                    <AppTextField
                       label="회사 로그인 도메인"
                       placeholder="example.com"
                       value={loginDomainInput}
-                      onChange={(event) =>
-                        setLoginDomainInput(event.target.value)
+                      onChange={setLoginDomainInput
                       }
                       fullWidth
                     />
@@ -407,28 +406,27 @@ export function OnboardingVerifyPage() {
                         노출됩니다.
                       </Typography>
                     )}
-                    <TextField
+                    <AppTextField
                       label="비밀번호"
                       type="password"
                       value={password}
-                      onChange={(event) => setPassword(event.target.value)}
+                      onChange={setPassword}
                       autoComplete="new-password"
                       fullWidth
                     />
-                    <TextField
+                    <AppTextField
                       label="비밀번호 확인"
                       type="password"
                       value={passwordConfirm}
-                      onChange={(event) =>
-                        setPasswordConfirm(event.target.value)
+                      onChange={setPasswordConfirm
                       }
                       autoComplete="new-password"
                       fullWidth
                     />
-                    <TextField
+                    <AppTextField
                       label="전화번호(선택)"
                       value={phoneNumber}
-                      onChange={(event) => setPhoneNumber(event.target.value)}
+                      onChange={setPhoneNumber}
                       fullWidth
                     />
                     <Button

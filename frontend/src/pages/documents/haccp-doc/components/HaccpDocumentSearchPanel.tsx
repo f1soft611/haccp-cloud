@@ -10,6 +10,8 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
+import { AppDateField } from '../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
@@ -121,41 +123,37 @@ export function HaccpDocumentSearchPanel(props: {
                 alignItems={{ xs: 'stretch', md: 'flex-end' }}
               >
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                  <TextField
+                  <AppDateField
                     size="small"
-                    type="date"
                     label="기안일 시작"
                     value={value.startDate}
-                    onChange={(event) =>
+                    onChange={(startDate) =>
                       onChange({
                         ...value,
-                        startDate: event.target.value,
+                        startDate,
                       })
                     }
-                    slotProps={{ inputLabel: { shrink: true } }}
                   />
-                  <TextField
+                  <AppDateField
                     size="small"
-                    type="date"
                     label="기안일 종료"
                     value={value.endDate}
-                    onChange={(event) =>
+                    onChange={(endDate) =>
                       onChange({
                         ...value,
-                        endDate: event.target.value,
+                        endDate,
                       })
                     }
-                    slotProps={{ inputLabel: { shrink: true } }}
                   />
                 </Stack>
-                <TextField
+                <AppTextField
                   size="small"
                   label="기안번호"
                   value={value.draftNumber}
-                  onChange={(event) =>
+                  onChange={(draftNumber) =>
                     onChange({
                       ...value,
-                      draftNumber: event.target.value,
+                      draftNumber,
                     })
                   }
                   sx={{ minWidth: 180 }}
@@ -197,14 +195,14 @@ export function HaccpDocumentSearchPanel(props: {
                   ))}
                 </TextField>
 
-                <TextField
+                <AppTextField
                   size="small"
                   label="작성자"
                   value={value.writer}
-                  onChange={(event) =>
+                  onChange={(writer) =>
                     onChange({
                       ...value,
-                      writer: event.target.value,
+                      writer,
                     })
                   }
                   sx={{ minWidth: 160 }}
@@ -249,14 +247,14 @@ export function HaccpDocumentSearchPanel(props: {
         sx={{ minWidth: 140 }}
       />
 
-      <TextField
+      <AppTextField
         size="small"
         label="제목"
         value={value.title}
-        onChange={(event) =>
+        onChange={(title) =>
           onChange({
             ...value,
-            title: event.target.value,
+            title,
           })
         }
         sx={{ flex: 1, minWidth: 220 }}

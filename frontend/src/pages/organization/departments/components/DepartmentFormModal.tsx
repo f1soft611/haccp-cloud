@@ -1,4 +1,5 @@
-import { Button, Stack, TextField } from '@mui/material';
+import { Button, Stack } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import type {
@@ -60,10 +61,10 @@ export function DepartmentFormModal(props: {
       }
     >
       <Stack spacing={2}>
-        <TextField
+        <AppTextField
           label="부서명 *"
           value={formData.name}
-          onChange={(e) => onChange({ ...formData, name: e.target.value })}
+          onChange={(name) => onChange({ ...formData, name })}
           fullWidth
           required
           autoFocus
@@ -87,15 +88,15 @@ export function DepartmentFormModal(props: {
           ]}
         />
 
-        <TextField
+        <AppTextField
           label="순서"
           type="number"
           value={formData.sortOrder}
-          onChange={(e) =>
-            onChange({ ...formData, sortOrder: Number(e.target.value) || 0 })
+          onChange={(nextValue) =>
+            onChange({ ...formData, sortOrder: Number(nextValue) || 0 })
           }
           fullWidth
-          inputProps={{ min: 0 }}
+          slotProps={{ htmlInput: { min: 0 } }}
         />
 
         {isEdit && (

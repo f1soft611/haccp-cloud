@@ -1,5 +1,7 @@
 import dayjs from 'dayjs';
-import { Box, Chip, Divider, Paper, Stack, TextField } from '@mui/material';
+import { Box, Chip, Divider, Paper, Stack } from '@mui/material';
+import { AppDateField } from '../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import type { JSONContent } from '@tiptap/core';
 import type { ReactNode } from 'react';
 import type { HaccpBaseWorkItem } from '../../../../services/documents/haccpBaseWorkService';
@@ -125,45 +127,43 @@ export function ApprovalDraftEditorSection(
             gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
           }}
         >
-          <TextField
+          <AppTextField
               // 기존 -> label="구분"
               // 변경 -> 업무분류
               label="업무분류"
               value={work?.categoryName || '-'}
-              InputProps={{ readOnly: true }}
+              slotProps={{ input: { readOnly: true } }}
               sx={{ minWidth: 0 }}
           />
-          <TextField
+          <AppTextField
               label="업무명"
               value={work?.divisionName || '-'}
-              InputProps={{ readOnly: true }}
+              slotProps={{ input: { readOnly: true } }}
               fullWidth
               sx={{
                 minWidth: 0,
                 // gridColumn: { xs: '1 / -1', md: '2 / span 2' },
               }}
           />
-          <TextField
+          <AppDateField
               label="업무 기준일"
-              type="date"
               value={reportDate}
-              onChange={(event) => onReportDateChange?.(event.target.value)}
+              onChange={(nextValue) => onReportDateChange?.(nextValue)}
               // 기존 -> disabled={isReadOnly}
               // 변경 -> 변경 핸들러가 없으면(만료일 관리 업무) 수정 불가
               disabled={isReadOnly || !onReportDateChange}
               helperText={REPORT_DATE_HELPER_TEXT[work?.cycle ?? '']}
-              InputLabelProps={{ shrink: true }}
-              inputProps={{ max: dayjs().format('YYYY-MM-DD') }}
+              max={dayjs().format('YYYY-MM-DD')}
               sx={{ minWidth: 0 }}
           />
-          <TextField
+          <AppTextField
             // 기존 -> label="기안 제목", placeholder="예: 2026-07-16 품질 점검 기안"
             // 변경 -> 제목, 자동 세팅 형식과 같은 예시
             label="제목"
             placeholder="예: 2026-07-16_품질 점검"
             required
             value={title}
-            onChange={(event) => onTitleChange?.(event.target.value)}
+            onChange={(nextValue) => onTitleChange?.(nextValue)}
             disabled={isReadOnly}
             fullWidth
             sx={{
@@ -171,25 +171,25 @@ export function ApprovalDraftEditorSection(
               gridColumn: { xs: '1 / -1', md: '1 / span 2' },
             }}
           />
-          <TextField
+          <AppTextField
             label="기안번호"
             value={draftNumber}
             placeholder="결재 신청 시 자동 생성"
-            InputProps={{ readOnly: true }}
+            slotProps={{ input: { readOnly: true } }}
             fullWidth
             sx={{ minWidth: 0 }}
           />
 
-          <TextField
+          <AppTextField
             label="기안자"
             value={drafterDisplayName || userId}
-            InputProps={{ readOnly: true }}
+            slotProps={{ input: { readOnly: true } }}
             sx={{ minWidth: 0 }}
           />
-          <TextField
+          <AppTextField
             label="기안일"
             value={draftDate}
-            InputProps={{ readOnly: true }}
+            slotProps={{ input: { readOnly: true } }}
             sx={{ minWidth: 0 }}
           />
 

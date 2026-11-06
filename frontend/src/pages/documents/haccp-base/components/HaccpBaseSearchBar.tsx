@@ -1,4 +1,5 @@
-import { Button, TextField } from '@mui/material';
+import { Button } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { HaccpCategoryOption } from '../types';
@@ -61,14 +62,14 @@ export function HaccpBaseSearchBar(props: {
         sx={{ minWidth: 180 }}
       />
 
-      <TextField
+      <AppTextField
         size="small"
         label="구분명, 담당자 검색"
         value={value.keyword}
-        onChange={(event) =>
+        onChange={(keyword) =>
           onChange({
             ...value,
-            keyword: event.target.value,
+            keyword,
           })
         }
         sx={{ flex: 1, minWidth: 260 }}

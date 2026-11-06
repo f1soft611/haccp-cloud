@@ -1,5 +1,7 @@
 import SearchIcon from '@mui/icons-material/Search';
-import { Button, Grid, InputAdornment, TextField } from '@mui/material';
+import { Button, Grid, InputAdornment } from '@mui/material';
+import { AppDateField } from '../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useEffect, useState } from 'react';
 import type { MaterialItem } from '../../../../services/basicinfo/materialsService';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
@@ -115,12 +117,12 @@ export function WorkOrderFormDialog(props: {
                 <Grid container spacing={2}>
                     {workdtNo ? (
                         <Grid size={12}>
-                            <TextField size="small" label="작업지시번호" value={workdtNo} disabled />
+                            <AppTextField size="small" label="작업지시번호" value={workdtNo} disabled />
                         </Grid>
                     ) : null}
                     {/* 기존 -> 품명 TextField 직접 입력 / 변경 -> 품목 Autocomplete 선택 */}
                     <Grid size={12}>
-                        <TextField
+                        <AppTextField
                             required
                             size="small"
                             label="품목"
@@ -147,40 +149,36 @@ export function WorkOrderFormDialog(props: {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                         {/* 기존 -> 생산일자 / 변경 -> 생산계획일, 변경 시 소비기한 자동 계산 */}
-                        <TextField
+                        <AppDateField
                             required
                             size="small"
-                            type="date"
                             label="생산계획일"
                             value={value.productionDate}
-                            onChange={(event) => handleChangeProductionDate(event.target.value)}
+                            onChange={handleChangeProductionDate}
                             error={Boolean(errors.productionDate)}
                             helperText={errors.productionDate}
-                            slotProps={{ inputLabel: { shrink: true } }}
                         />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField
+                        <AppDateField
                             required
                             size="small"
-                            type="date"
                             label="소비기한"
                             value={value.expiryDate}
-                            onChange={(event) => setField('expiryDate', event.target.value)}
+                            onChange={(nextValue) => setField('expiryDate', nextValue)}
                             error={Boolean(errors.expiryDate)}
                             helperText={errors.expiryDate ?? expiryHelperText}
-                            slotProps={{ inputLabel: { shrink: true } }}
                         />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
-                        <TextField
+                        <AppTextField
                             required
                             size="small"
                             type="number"
                             label="생산량"
                             value={value.quantity ?? ''}
-                            onChange={(event) =>
-                                setField('quantity', event.target.value === '' ? null : Number(event.target.value))
+                            onChange={(nextValue) =>
+                                setField('quantity', nextValue === '' ? null : Number(nextValue))
                             }
                             error={Boolean(errors.quantity)}
                             helperText={errors.quantity}
@@ -188,19 +186,19 @@ export function WorkOrderFormDialog(props: {
                     </Grid>
                     {/* 기존 -> 단위·규격 직접 입력 / 변경 -> 품목 정보에서 가져와 읽기 전용 */}
                     <Grid size={{ xs: 12, sm: 4 }}>
-                        <TextField size="small" label="단위" value={getCommonCodeName(unitOptions, value.unit)} disabled />
+                        <AppTextField size="small" label="단위" value={getCommonCodeName(unitOptions, value.unit)} disabled />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
-                        <TextField size="small" label="규격" value={value.spec} disabled />
+                        <AppTextField size="small" label="규격" value={value.spec} disabled />
                     </Grid>
                     <Grid size={12}>
-                        <TextField
+                        <AppTextField
                             size="small"
                             label="비고"
                             multiline
                             minRows={2}
                             value={value.remark}
-                            onChange={(event) => setField('remark', event.target.value)}
+                            onChange={(nextValue) => setField('remark', nextValue)}
                             error={Boolean(errors.remark)}
                             helperText={errors.remark}
                         />

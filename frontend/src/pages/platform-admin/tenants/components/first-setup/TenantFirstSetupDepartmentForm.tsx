@@ -1,4 +1,5 @@
-import { Button, Stack, TextField } from '@mui/material';
+import { Button, Stack } from '@mui/material';
+import { AppTextField } from '../../../../../shared/components/forms/AppTextField';
 import { APP_LABELS } from '../../../../../shared/constants/labels';
 
 type TenantFirstSetupDepartmentFormProps = {
@@ -16,10 +17,10 @@ export function TenantFirstSetupDepartmentForm({
 }: TenantFirstSetupDepartmentFormProps) {
   return (
     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-      <TextField
+      <AppTextField
         label={APP_LABELS.field.departmentName}
         value={departmentName}
-        onChange={(event) => onDepartmentNameChange(event.target.value)}
+        onChange={onDepartmentNameChange}
       />
       <Button variant="contained" onClick={onSubmit} disabled={pending}>
         {APP_LABELS.action.addDepartment}

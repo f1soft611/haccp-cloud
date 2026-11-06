@@ -1,4 +1,4 @@
-import { TextField } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 
@@ -38,14 +38,14 @@ export function PlatformPlanSearchBar(props: {
         sx={{ minWidth: 140 }}
       />
 
-      <TextField
+      <AppTextField
         label="검색어"
         size="small"
         value={value.searchKeyword}
-        onChange={(event) =>
+        onChange={(searchKeyword) =>
           onChange({
             ...value,
-            searchKeyword: event.target.value,
+            searchKeyword,
           })
         }
         sx={{ flex: 1, minWidth: 220 }}

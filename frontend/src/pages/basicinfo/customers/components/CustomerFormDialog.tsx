@@ -3,9 +3,9 @@ import {
   Grid,
   Stack,
   Switch,
-  TextField,
   Button,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useEffect, useState } from 'react';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import {
@@ -141,7 +141,7 @@ export function CustomerFormDialog({
         <Grid container spacing={2}>
           {mode === 'edit' ? (
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
+              <AppTextField
                 label="거래처코드"
                 value={customerCode ?? ''}
                 fullWidth
@@ -150,46 +150,46 @@ export function CustomerFormDialog({
             </Grid>
           ) : null}
           <Grid size={{ xs: 12, sm: mode === 'edit' ? 8 : 12 }}>
-            <TextField
+            <AppTextField
               label="거래처명 *"
               value={value.customerName}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, customerName: e.target.value }))
+              onChange={(customerName) =>
+                setValue((prev) => ({ ...prev, customerName }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="거래처약어명"
               value={value.custNameAbbr}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, custNameAbbr: e.target.value }))
+              onChange={(custNameAbbr) =>
+                setValue((prev) => ({ ...prev, custNameAbbr }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="대표자명"
               value={value.presidentName}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, presidentName: e.target.value }))
+              onChange={(presidentName) =>
+                setValue((prev) => ({ ...prev, presidentName }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="사업자번호"
               placeholder="000-00-00000"
               value={formatBusinessNo(value.businessNo)}
               error={businessNoError}
               helperText={businessNoError ? '사업자번호는 숫자 10자리입니다.' : ' '}
-              onChange={(e) => {
+              onChange={(nextValue) => {
                 setValue((prev) => ({
                   ...prev,
-                  businessNo: toDigitsOnly(e.target.value).slice(0, 10),
+                  businessNo: toDigitsOnly(nextValue).slice(0, 10),
                 }));
                 setBusinessNoError(false);
               }}
@@ -197,16 +197,16 @@ export function CustomerFormDialog({
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="법인번호"
               placeholder="000000-0000000"
               value={formatJuridNo(value.juridNo)}
               error={juridNoError}
               helperText={juridNoError ? '법인번호는 숫자 13자리입니다.' : ' '}
-              onChange={(e) => {
+              onChange={(nextValue) => {
                 setValue((prev) => ({
                   ...prev,
-                  juridNo: toDigitsOnly(e.target.value).slice(0, 13),
+                  juridNo: toDigitsOnly(nextValue).slice(0, 13),
                 }));
                 setJuridNoError(false);
               }}
@@ -214,74 +214,74 @@ export function CustomerFormDialog({
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="업태"
               value={value.businessStatus1}
-              onChange={(e) =>
+              onChange={(businessStatus1) =>
                 setValue((prev) => ({
                   ...prev,
-                  businessStatus1: e.target.value,
+                  businessStatus1,
                 }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="종목"
               value={value.businessItem1}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, businessItem1: e.target.value }))
+              onChange={(businessItem1) =>
+                setValue((prev) => ({ ...prev, businessItem1 }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
+            <AppTextField
               label="우편번호"
               value={value.postCode}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, postCode: e.target.value }))
+              onChange={(postCode) =>
+                setValue((prev) => ({ ...prev, postCode }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 8 }}>
-            <TextField
+            <AppTextField
               label="주소"
               value={value.address}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, address: e.target.value }))
+              onChange={(address) =>
+                setValue((prev) => ({ ...prev, address }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="전화번호"
               value={value.telephoneNo}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, telephoneNo: e.target.value }))
+              onChange={(telephoneNo) =>
+                setValue((prev) => ({ ...prev, telephoneNo }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="팩스번호"
               value={value.facsimileNo}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, facsimileNo: e.target.value }))
+              onChange={(facsimileNo) =>
+                setValue((prev) => ({ ...prev, facsimileNo }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <TextField
+            <AppTextField
               label="비고"
               value={value.custMemo}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, custMemo: e.target.value }))
+              onChange={(custMemo) =>
+                setValue((prev) => ({ ...prev, custMemo }))
               }
               fullWidth
               multiline

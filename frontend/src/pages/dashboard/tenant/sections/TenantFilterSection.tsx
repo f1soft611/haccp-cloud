@@ -6,10 +6,10 @@ import {
     Box,
     IconButton,
     Stack,
-    TextField,
     ToggleButton,
     ToggleButtonGroup,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import type { ReactNode } from 'react';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { useWorkCycleOptions } from '../../../../shared/hooks/useWorkCycleOptions';
@@ -97,11 +97,11 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
             )}
             {selectField('status', '상태', '전체', toOptions(TODO_STATUS_OPTIONS), 150)}
 
-            <TextField
+            <AppTextField
                 size="small"
                 placeholder="업무명을 입력하세요."
                 value={value.keyword}
-                onChange={(event) => onChange({ ...value, keyword: event.target.value })}
+                onChange={(keyword) => onChange({ ...value, keyword })}
                 onKeyDown={(event) => {
                     if (event.key === 'Enter') {
                         onSearch();

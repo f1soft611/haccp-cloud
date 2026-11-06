@@ -5,8 +5,8 @@ import {
     DialogContent,
     DialogTitle,
     Stack,
-    TextField,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useState } from 'react';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import type { WorkdayItem, WorkdayType } from '../../../../services/basicinfo/workday/workdayService';
@@ -44,19 +44,19 @@ export function WorkdayEditDialog({ item, onClose, onSubmit }: WorkdayEditDialog
                             label: option.name,
                         }))}
                     />
-                    <TextField
+                    <AppTextField
                         label="휴일명"
                         value={dayName}
-                        onChange={(event) => setDayName(event.target.value)}
-                        inputProps={{ maxLength: 100 }}
+                        onChange={setDayName}
+                        slotProps={{ htmlInput: { maxLength: 100 } }}
                     />
-                    <TextField
+                    <AppTextField
                         label="메모"
                         value={memo}
-                        onChange={(event) => setMemo(event.target.value)}
+                        onChange={setMemo}
                         multiline
                         minRows={2}
-                        inputProps={{ maxLength: 100 }}
+                        slotProps={{ htmlInput: { maxLength: 100 } }}
                     />
                 </Stack>
             </DialogContent>

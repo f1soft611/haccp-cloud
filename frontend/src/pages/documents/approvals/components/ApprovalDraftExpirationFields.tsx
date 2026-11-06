@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Autocomplete, Box, TextField } from '@mui/material';
+import { AppDateField } from '../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useQuery } from '@tanstack/react-query';
 import { listEquipmentPaged } from '../../../../services/basicinfo/equipmentService';
 import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
@@ -101,7 +103,7 @@ export function ApprovalDraftExpirationFields(
             {/* 기존 -> 사원도 드롭다운(select)으로 선택 */}
             {/* 변경 -> 사원은 읽기 전용 칸 클릭 시 참석자 dialog 와 같은 형식의 UserSelectDialog */}
             {config.target === 'user' ? (
-                <TextField
+                <AppTextField
                     required
                     label={config.targetLabel}
                     value={selectedUserName}
@@ -177,24 +179,20 @@ export function ApprovalDraftExpirationFields(
                     }}
                 />
             ) : null}
-            <TextField
+            <AppDateField
                 required
                 label={config.inspectedLabel}
-                type="date"
                 value={value.inspectedDate}
-                onChange={(event) => change('inspectedDate', event.target.value)}
+                onChange={(nextValue) => change('inspectedDate', nextValue)}
                 disabled={isReadOnly}
-                InputLabelProps={{ shrink: true }}
                 sx={{ minWidth: 0 }}
             />
-            <TextField
+            <AppDateField
                 required
                 label={config.expirationLabel}
-                type="date"
                 value={value.expirationDate}
-                onChange={(event) => change('expirationDate', event.target.value)}
+                onChange={(nextValue) => change('expirationDate', nextValue)}
                 disabled={isReadOnly}
-                InputLabelProps={{ shrink: true }}
                 sx={{ minWidth: 0 }}
             />
         </>

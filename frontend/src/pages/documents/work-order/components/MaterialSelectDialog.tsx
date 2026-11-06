@@ -8,8 +8,8 @@ import {
     TableHead,
     TablePagination,
     TableRow,
-    TextField,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -108,13 +108,13 @@ export function MaterialSelectDialog(props: {
                     emptyLabel="전체"
                     sx={{ minWidth: 140 }}
                 />
-                <TextField
+                <AppTextField
                     size="small"
                     fullWidth
                     label="검색어"
                     placeholder="품목코드, 품목명, 규격"
                     value={draft.keyword}
-                    onChange={(event) => setDraft((prev) => ({ ...prev, keyword: event.target.value }))}
+                    onChange={(keyword) => setDraft((prev) => ({ ...prev, keyword }))}
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') handleSearch();
                     }}

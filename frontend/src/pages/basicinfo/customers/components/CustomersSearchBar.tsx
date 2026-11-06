@@ -1,4 +1,5 @@
-import { Button, TextField } from '@mui/material';
+import { Button } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 
@@ -43,16 +44,16 @@ export function CustomersSearchBar({
         </Button>
       }
     >
-      <TextField
+      <AppTextField
         size="small"
         fullWidth
         label="검색어"
         placeholder="거래처코드, 거래처명, 대표자명, 사업자번호"
         value={value.keyword}
-        onChange={(event) =>
+        onChange={(keyword) =>
           onChange({
             ...value,
-            keyword: event.target.value,
+            keyword,
           })
         }
       />

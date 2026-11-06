@@ -1,4 +1,5 @@
-import { Button, TextField } from '@mui/material';
+import { Button } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 
@@ -32,11 +33,11 @@ export function DepartmentSearchBar(props: {
         </Button>
       }
     >
-      <TextField
+      <AppTextField
         label="검색어"
         value={value.searchKeyword}
-        onChange={(e) =>
-          onChange({ ...value, searchKeyword: e.target.value })
+        onChange={(searchKeyword) =>
+          onChange({ ...value, searchKeyword })
         }
         size="small"
         sx={{ flex: 1, minWidth: 200 }}

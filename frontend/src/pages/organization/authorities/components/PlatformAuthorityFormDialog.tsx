@@ -1,4 +1,5 @@
-import { Button, Stack, TextField } from '@mui/material';
+import { Button, Stack } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 
@@ -78,7 +79,7 @@ export function PlatformAuthorityFormDialog(props: {
       <Stack spacing={2}>
         {/* 기존 -> 등록 시 권한 코드 직접 입력 */}
         {/* 변경 -> 항상 비활성, 등록 시 자동 채번 안내 */}
-        <TextField
+        <AppTextField
           value={value.code}
           label="권한 코드"
           helperText={isCreateMode ? '저장 시 자동 채번됩니다 (001부터)' : undefined}
@@ -86,12 +87,12 @@ export function PlatformAuthorityFormDialog(props: {
           disabled
           fullWidth
         />
-        <TextField
+        <AppTextField
           value={value.name}
-          onChange={(event) =>
+          onChange={(name) =>
             onChange({
               ...value,
-              name: event.target.value,
+              name,
             })
           }
           label="권한명 *"
@@ -99,12 +100,12 @@ export function PlatformAuthorityFormDialog(props: {
           required
           fullWidth
         />
-        <TextField
+        <AppTextField
           value={value.description}
-          onChange={(event) =>
+          onChange={(description) =>
             onChange({
               ...value,
-              description: event.target.value,
+              description,
             })
           }
           label="설명"

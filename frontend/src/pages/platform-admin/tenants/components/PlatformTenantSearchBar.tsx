@@ -1,4 +1,5 @@
-import { Button, TextField } from '@mui/material';
+import { Button } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import { type PlatformTenantSearchValue } from '../types';
@@ -58,15 +59,15 @@ export function PlatformTenantSearchBar({
         sx={{ minWidth: 130 }}
       />
 
-      <TextField
+      <AppTextField
         size="small"
         label="검색어"
         fullWidth
         value={value.searchKeyword}
-        onChange={(event) =>
+        onChange={(searchKeyword) =>
           onChange({
             ...value,
-            searchKeyword: event.target.value,
+            searchKeyword,
           })
         }
         sx={{ flex: 1 }}

@@ -5,9 +5,10 @@ import {
   Divider,
   Paper,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
+import { AppDateField } from '../../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../../shared/components/forms/AppSelect';
 import { APP_LABELS } from '../../../../../shared/constants/labels';
 import { type TenantOnboardingFormData } from './types';
@@ -55,10 +56,10 @@ export function OnboardingStepOneForm({
           </Typography>
           <Stack spacing={2}>
             <Stack direction="row" spacing={2}>
-              <TextField
+              <AppTextField
                 label={APP_LABELS.field.companyName}
                 value={form.companyName}
-                onChange={(e) => onFieldChange('companyName', e.target.value)}
+                onChange={(nextValue) => onFieldChange('companyName', nextValue)}
                 required
                 fullWidth
               />
@@ -84,11 +85,11 @@ export function OnboardingStepOneForm({
               />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField
+              <AppTextField
                 label={APP_LABELS.field.businessRegistrationNumber}
                 placeholder="000-00-00000"
                 value={form.businessRegistrationNumber}
-                onChange={(e) => onBrnChange(e.target.value)}
+                onChange={onBrnChange}
                 error={brnError}
                 helperText={
                   brnError
@@ -97,13 +98,13 @@ export function OnboardingStepOneForm({
                 }
                 required
                 fullWidth
-                inputProps={{ maxLength: 12 }}
+                slotProps={{ htmlInput: { maxLength: 12 } }}
               />
-              <TextField
+              <AppTextField
                 label={APP_LABELS.field.corporateNumber}
                 placeholder="000000-0000000"
                 value={form.corporateNumber}
-                onChange={(e) => onCorporateNumberChange(e.target.value)}
+                onChange={onCorporateNumberChange}
                 error={corporateNumberError}
                 helperText={
                   corporateNumberError
@@ -111,59 +112,58 @@ export function OnboardingStepOneForm({
                     : '미입력 가능 (숫자 13자리)'
                 }
                 fullWidth
-                inputProps={{ maxLength: 14, inputMode: 'numeric' }}
+                slotProps={{ htmlInput: { maxLength: 14, inputMode: 'numeric' } }}
               />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField
+              <AppTextField
                 label={APP_LABELS.field.representativeName}
                 value={form.representativeName}
-                onChange={(e) =>
-                  onFieldChange('representativeName', e.target.value)
+                onChange={(nextValue) =>
+                  onFieldChange('representativeName', nextValue)
                 }
                 fullWidth
               />
             </Stack>
             <Stack direction="row" spacing={2}>
-              <TextField
+              <AppTextField
                 label={APP_LABELS.field.businessType}
                 placeholder="예: 식품제조업"
                 value={form.businessType}
-                onChange={(e) => onFieldChange('businessType', e.target.value)}
+                onChange={(nextValue) => onFieldChange('businessType', nextValue)}
                 required
                 fullWidth
               />
-              <TextField
+              <AppTextField
                 label={APP_LABELS.field.businessCategory}
                 placeholder="예: 즉석조리식품"
                 value={form.businessCategory}
-                onChange={(e) =>
-                  onFieldChange('businessCategory', e.target.value)
+                onChange={(nextValue) =>
+                  onFieldChange('businessCategory', nextValue)
                 }
                 required
                 fullWidth
               />
             </Stack>
-            <TextField
+            <AppTextField
               label={APP_LABELS.field.address}
               value={form.address}
-              onChange={(e) => onFieldChange('address', e.target.value)}
+              onChange={(nextValue) => onFieldChange('address', nextValue)}
               fullWidth
             />
             <Stack direction="row" spacing={2}>
-              <TextField
+              <AppTextField
                 label={APP_LABELS.field.phoneNumber}
                 placeholder="02-0000-0000"
                 value={form.phoneNumber}
-                onChange={(e) => onFieldChange('phoneNumber', e.target.value)}
+                onChange={(nextValue) => onFieldChange('phoneNumber', nextValue)}
                 fullWidth
               />
-              <TextField
+              <AppDateField
                 label={APP_LABELS.field.registrationDate}
-                type="date"
                 value={form.registrationDate}
-                onChange={(e) =>
-                  onFieldChange('registrationDate', e.target.value)
+                onChange={(nextValue) =>
+                  onFieldChange('registrationDate', nextValue)
                 }
                 error={registrationDateError}
                 helperText={
@@ -172,11 +172,8 @@ export function OnboardingStepOneForm({
                     : undefined
                 }
                 fullWidth
-                slotProps={{ inputLabel: { shrink: true } }}
-                inputProps={{
-                  min: '1900-01-01',
-                  max: new Date().toISOString().slice(0, 10),
-                }}
+                min="1900-01-01"
+                max={new Date().toISOString().slice(0, 10)}
               />
             </Stack>
           </Stack>
@@ -189,18 +186,18 @@ export function OnboardingStepOneForm({
             {APP_LABELS.onboarding.sectionAdminInfo}
           </Typography>
           <Stack direction="row" spacing={2}>
-            <TextField
+            <AppTextField
               label={APP_LABELS.field.adminName}
               value={form.adminName}
-              onChange={(e) => onFieldChange('adminName', e.target.value)}
+              onChange={(nextValue) => onFieldChange('adminName', nextValue)}
               required
               fullWidth
             />
-            <TextField
+            <AppTextField
               label={APP_LABELS.field.adminEmail}
               type="email"
               value={form.adminEmail}
-              onChange={(e) => onFieldChange('adminEmail', e.target.value)}
+              onChange={(nextValue) => onFieldChange('adminEmail', nextValue)}
               error={adminEmailError}
               helperText={
                 adminEmailError

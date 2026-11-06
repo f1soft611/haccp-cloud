@@ -8,9 +8,9 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Tooltip,
 } from '@mui/material';
+import { AppTextField } from '../../../shared/components/forms/AppTextField';
 import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useMemo, useState } from 'react';
@@ -337,36 +337,36 @@ export function HaccpBaseCategoryManagementPage() {
         }
       >
         <Stack spacing={2}>
-          <TextField
+          <AppTextField
             label="분류코드"
             value={createForm.categoryCode}
             placeholder="자동 채번됩니다"
             helperText="분류코드는 자동으로 채번됩니다."
             disabled
           />
-          <TextField
+          <AppTextField
             label="분류명"
             value={createForm.categoryName}
-            onChange={(event) =>
+            onChange={(categoryName) =>
               setCreateForm((prev) => ({
                 ...prev,
-                categoryName: event.target.value,
+                categoryName,
               }))
             }
             required
             autoFocus
           />
-          <TextField
+          <AppTextField
             label="정렬순서"
             type="number"
             value={createForm.sortOrder}
-            onChange={(event) =>
+            onChange={(nextValue) =>
               setCreateForm((prev) => ({
                 ...prev,
-                sortOrder: Number(event.target.value) || 0,
+                sortOrder: Number(nextValue) || 0,
               }))
             }
-            inputProps={{ min: 0 }}
+            slotProps={{ htmlInput: { min: 0 } }}
           />
           <AppSelect
             label="사용여부"
@@ -408,30 +408,30 @@ export function HaccpBaseCategoryManagementPage() {
         }
       >
         <Stack spacing={2}>
-          <TextField label="분류코드" value={editForm.categoryCode} disabled />
-          <TextField
+          <AppTextField label="분류코드" value={editForm.categoryCode} disabled />
+          <AppTextField
             label="분류명"
             value={editForm.categoryName}
-            onChange={(event) =>
+            onChange={(categoryName) =>
               setEditForm((prev) => ({
                 ...prev,
-                categoryName: event.target.value,
+                categoryName,
               }))
             }
             required
             autoFocus
           />
-          <TextField
+          <AppTextField
             label="정렬순서"
             type="number"
             value={editForm.sortOrder}
-            onChange={(event) =>
+            onChange={(nextValue) =>
               setEditForm((prev) => ({
                 ...prev,
-                sortOrder: Number(event.target.value) || 0,
+                sortOrder: Number(nextValue) || 0,
               }))
             }
-            inputProps={{ min: 0 }}
+            slotProps={{ htmlInput: { min: 0 } }}
           />
           <AppSelect
             label="사용여부"
