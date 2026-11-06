@@ -34,13 +34,16 @@ async function fillStep1({
   adminEmail = 'admin@testfood.com',
   registrationDate = '',
 } = {}) {
-  await screen.findByRole('option', { name: '기본 플랜' });
-
-  fireEvent.change(
-    screen.getByLabelText(new RegExp(APP_LABELS.field.planCode)),
-    {
-      target: { value: 'A' },
-    },
+  const planSelect = await screen.findByRole('combobox', {
+    name: new RegExp(APP_LABELS.field.planCode),
+  });
+  await waitFor(() =>
+    expect(planSelect).not.toHaveAttribute('aria-disabled', 'true'),
+  );
+  fireEvent.mouseDown(planSelect);
+  fireEvent.click(await screen.findByRole('option', { name: '기본 플랜' }));
+  await waitFor(() =>
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument(),
   );
 
   if (companyName) {

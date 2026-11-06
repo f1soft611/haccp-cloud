@@ -1,5 +1,18 @@
-import { Button, MenuItem, TextField } from '@mui/material';
+import { Button, TextField } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+
+const SEARCH_FIELD_OPTIONS = [
+  { value: 'menuNm', label: '메뉴명' },
+  { value: 'menuDc', label: '설명' },
+  { value: 'menuUrl', label: 'URL' },
+];
+
+const ACTIVE_FILTER_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+];
 
 export type MenuSearchValue = {
   searchField: string;
@@ -38,20 +51,14 @@ export function MenuSearchBar(props: {
         </Button>
       }
     >
-      <TextField
-        select
+      <AppSelect
+        size="small"
         label="검색 조건"
         value={value.searchField}
-        onChange={(e) =>
-          onChange({ ...value, searchField: e.target.value })
-        }
-        size="small"
+        onChange={(searchField) => onChange({ ...value, searchField })}
+        options={SEARCH_FIELD_OPTIONS}
         sx={{ minWidth: 120 }}
-      >
-        <MenuItem value="menuNm">메뉴명</MenuItem>
-        <MenuItem value="menuDc">설명</MenuItem>
-        <MenuItem value="menuUrl">URL</MenuItem>
-      </TextField>
+      />
 
       <TextField
         label="검색어"
@@ -63,20 +70,14 @@ export function MenuSearchBar(props: {
         sx={{ flex: 1, minWidth: 200 }}
       />
 
-      <TextField
-        select
+      <AppSelect
+        size="small"
         label="사용여부"
         value={value.filterActive}
-        onChange={(e) =>
-          onChange({ ...value, filterActive: e.target.value })
-        }
-        size="small"
+        onChange={(filterActive) => onChange({ ...value, filterActive })}
+        options={ACTIVE_FILTER_OPTIONS}
         sx={{ minWidth: 120 }}
-      >
-        <MenuItem value="all">전체</MenuItem>
-        <MenuItem value="Y">사용</MenuItem>
-        <MenuItem value="N">미사용</MenuItem>
-      </TextField>
+      />
     </SearchFilterBar>
   );
 }

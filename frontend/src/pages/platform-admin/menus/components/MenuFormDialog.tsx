@@ -1,14 +1,12 @@
-import {
-  Box,
-  Button,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Button, Stack, TextField } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import { ICON_OPTIONS } from './MenuGrid';
+
+const USE_AT_OPTIONS = [
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
 
 export type MenuFormData = {
   menuCode: string;
@@ -105,28 +103,24 @@ export function MenuFormDialog(props: {
           multiline
           rows={2}
         />
-        <Box>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            상위 메뉴
-          </Typography>
-          <Select
-            value={formData.parentMenuId ?? 'none'}
-            onChange={(e) =>
-              onChange({
-                ...formData,
-                parentMenuId: e.target.value === 'none' ? null : e.target.value,
-              })
-            }
-            fullWidth
-          >
-            <MenuItem value="none">없음 (루트)</MenuItem>
-            {parentMenuOptions.map((menu) => (
-              <MenuItem key={menu.menuId} value={menu.menuId}>
-                {menu.menuNm}
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
+        <AppSelect
+          label="상위 메뉴"
+          value={formData.parentMenuId ?? 'none'}
+          onChange={(parentMenuId) =>
+            onChange({
+              ...formData,
+              parentMenuId: parentMenuId === 'none' ? null : parentMenuId,
+            })
+          }
+          fullWidth
+          options={[
+            { value: 'none', label: '없음 (루트)' },
+            ...parentMenuOptions.map((menu) => ({
+              value: menu.menuId,
+              label: menu.menuNm,
+            })),
+          ]}
+        />
         <TextField
           label={isRootMenu ? '메뉴 URL' : '메뉴 URL *'}
           value={formData.menuUrl}
@@ -146,37 +140,20 @@ export function MenuFormDialog(props: {
           }
           fullWidth
         />
-        <Box>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            아이콘
-          </Typography>
-          <Select
-            value={formData.iconNm}
-            onChange={(e) => onChange({ ...formData, iconNm: e.target.value })}
-            fullWidth
-          >
-            {ICON_OPTIONS.map((icon) => (
-              <MenuItem key={icon} value={icon}>
-                {icon}
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
-        <Box>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            사용여부
-          </Typography>
-          <Select
-            value={formData.useAt}
-            onChange={(e) =>
-              onChange({ ...formData, useAt: e.target.value as 'Y' | 'N' })
-            }
-            fullWidth
-          >
-            <MenuItem value="Y">사용</MenuItem>
-            <MenuItem value="N">미사용</MenuItem>
-          </Select>
-        </Box>
+        <AppSelect
+          label="아이콘"
+          value={formData.iconNm}
+          onChange={(iconNm) => onChange({ ...formData, iconNm })}
+          fullWidth
+          options={ICON_OPTIONS.map((icon) => ({ value: icon, label: icon }))}
+        />
+        <AppSelect
+          label="사용여부"
+          value={formData.useAt}
+          onChange={(useAt) => onChange({ ...formData, useAt })}
+          fullWidth
+          options={USE_AT_OPTIONS}
+        />
       </Stack>
     </FormDialog>
   );

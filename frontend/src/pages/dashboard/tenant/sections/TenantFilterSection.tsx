@@ -5,13 +5,13 @@ import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import {
     Box,
     IconButton,
-    MenuItem,
     Stack,
     TextField,
     ToggleButton,
     ToggleButtonGroup,
 } from '@mui/material';
 import type { ReactNode } from 'react';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { useWorkCycleOptions } from '../../../../shared/hooks/useWorkCycleOptions';
 import {
     TODO_STATUS_OPTIONS,
@@ -56,31 +56,20 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
         options: { value: string; label: string }[],
         minWidth: number,
     ) => (
-        <TextField
-            select
+        <AppSelect
             size="small"
             value={value[key]}
-            onChange={(event) => onChange({ ...value, [key]: event.target.value })}
+            onChange={(next) => onChange({ ...value, [key]: next })}
+            options={options}
+            emptyLabel={allLabel}
             sx={{ minWidth, '& .MuiOutlinedInput-root': { bgcolor: 'background.paper', borderRadius: FILTER_RADIUS } }}
-            slotProps={{
-                select: {
-                    displayEmpty: true,
-                    SelectDisplayProps: { 'aria-label': name },
-                    // 기존 -> options 에 없는 '' 이면 placeholder(name)
-                    // 변경 -> '' 이면 allLabel(전체, 전체(수시제외))
-                    renderValue: (selected): ReactNode =>
-                        options.find((option) => option.value === selected)?.label ??
-                        allLabel,
-                },
+            selectProps={{
+                SelectDisplayProps: { 'aria-label': name },
+                renderValue: (selected): ReactNode =>
+                    options.find((option) => option.value === selected)?.label ??
+                    allLabel,
             }}
-        >
-            <MenuItem value="">{allLabel}</MenuItem>
-            {options.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                </MenuItem>
-            ))}
-        </TextField>
+        />
     );
 
     const toOptions = (labels: readonly string[]) =>

@@ -10,6 +10,7 @@ import {
   Stack,
   TextField,
 } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 import { TODO_STATUS_OPTIONS } from '../../../dashboard/tenant/todoFilter';
@@ -214,68 +215,39 @@ export function HaccpDocumentSearchPanel(props: {
         </>
       }
     >
-      <TextField
-        select
+      <AppSelect
         size="small"
         label="업무분류"
         value={value.workType}
-        onChange={(event) =>
-          onChange({
-            ...value,
-            workType: event.target.value,
-          })
-        }
+        onChange={(workType) => onChange({ ...value, workType })}
+        options={[
+          { value: '전체', label: '전체' },
+          ...workTypeOptions.map((cat) => ({ value: cat.name, label: cat.name })),
+        ]}
         sx={{ minWidth: 180 }}
-      >
-        <MenuItem value="전체">전체</MenuItem>
-        {workTypeOptions.map((cat) => (
-          <MenuItem key={cat.id} value={cat.name}>
-            {cat.name}
-          </MenuItem>
-        ))}
-      </TextField>
+      />
 
-      <TextField
-        select
+      <AppSelect
         size="small"
         label="업무구분"
         value={value.workDivision}
-        onChange={(event) =>
-          onChange({
-            ...value,
-            workDivision: event.target.value,
-          })
-        }
+        onChange={(workDivision) => onChange({ ...value, workDivision })}
+        options={workDivisionOptions.map((division) => ({
+          value: division.id,
+          label: division.name,
+        }))}
+        emptyLabel="전체"
         sx={{ minWidth: 220 }}
-        slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-      >
-        <MenuItem value="">전체</MenuItem>
-        {workDivisionOptions.map((division) => (
-          <MenuItem key={division.id} value={division.id}>
-            {division.name}
-          </MenuItem>
-        ))}
-      </TextField>
+      />
 
-      <TextField
-        select
+      <AppSelect
         size="small"
         label="상태"
         value={value.status}
-        onChange={(event) =>
-          onChange({
-            ...value,
-            status: event.target.value,
-          })
-        }
+        onChange={(status) => onChange({ ...value, status })}
+        options={STATUS_OPTIONS.map((option) => ({ value: option, label: option }))}
         sx={{ minWidth: 140 }}
-      >
-        {STATUS_OPTIONS.map((option) => (
-          <MenuItem key={option} value={option}>
-            {option}
-          </MenuItem>
-        ))}
-      </TextField>
+      />
 
       <TextField
         size="small"

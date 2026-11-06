@@ -1,5 +1,12 @@
-import { Button, MenuItem, TextField } from '@mui/material';
+import { Button, TextField } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+
+const ACTIVE_FILTER_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'Y', label: '활성' },
+  { value: 'N', label: '비활성' },
+] as const;
 
 export type UsersSearchValue = {
   keyword: string;
@@ -50,24 +57,14 @@ export function UsersSearchBar({
         }
       />
 
-      <TextField
-        select
+      <AppSelect
         size="small"
         label="상태"
         value={value.filterActive}
-        onChange={(event) =>
-          onChange({
-            ...value,
-            filterActive: event.target
-              .value as UsersSearchValue['filterActive'],
-          })
-        }
+        onChange={(filterActive) => onChange({ ...value, filterActive })}
+        options={ACTIVE_FILTER_OPTIONS}
         sx={{ minWidth: 140 }}
-      >
-        <MenuItem value="all">전체</MenuItem>
-        <MenuItem value="Y">활성</MenuItem>
-        <MenuItem value="N">비활성</MenuItem>
-      </TextField>
+      />
     </SearchFilterBar>
   );
 }

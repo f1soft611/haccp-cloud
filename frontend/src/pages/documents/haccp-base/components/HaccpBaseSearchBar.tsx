@@ -1,13 +1,13 @@
-import {
-  Button,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
-} from '@mui/material';
+import { Button, TextField } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { HaccpCategoryOption } from '../types';
+
+const USE_AT_FILTER_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
 
 export type HaccpBaseSearchValue = {
   categoryId: 'ALL' | string;
@@ -46,27 +46,20 @@ export function HaccpBaseSearchBar(props: {
         </>
       }
     >
-      <FormControl size="small" sx={{ minWidth: 180 }}>
-        <InputLabel id="haccp-base-category-label">업무분류</InputLabel>
-        <Select
-          labelId="haccp-base-category-label"
-          value={value.categoryId}
-          label="업무분류"
-          onChange={(event) =>
-            onChange({
-              ...value,
-              categoryId: event.target.value,
-            })
-          }
-        >
-          <MenuItem value="ALL">전체</MenuItem>
-          {categoryOptions.map((category) => (
-            <MenuItem key={category.id} value={category.id}>
-              {category.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <AppSelect
+        size="small"
+        label="업무분류"
+        value={value.categoryId}
+        onChange={(categoryId) => onChange({ ...value, categoryId })}
+        options={[
+          { value: 'ALL', label: '전체' },
+          ...categoryOptions.map((category) => ({
+            value: category.id,
+            label: category.name,
+          })),
+        ]}
+        sx={{ minWidth: 180 }}
+      />
 
       <TextField
         size="small"
@@ -81,23 +74,14 @@ export function HaccpBaseSearchBar(props: {
         sx={{ flex: 1, minWidth: 260 }}
       />
 
-      <TextField
-        select
+      <AppSelect
         size="small"
         label="사용유무"
         value={value.useAt}
-        onChange={(event) =>
-          onChange({
-            ...value,
-            useAt: event.target.value as HaccpBaseSearchValue['useAt'],
-          })
-        }
+        onChange={(useAt) => onChange({ ...value, useAt })}
+        options={USE_AT_FILTER_OPTIONS}
         sx={{ minWidth: 140 }}
-      >
-        <MenuItem value="all">전체</MenuItem>
-        <MenuItem value="Y">사용</MenuItem>
-        <MenuItem value="N">미사용</MenuItem>
-      </TextField>
+      />
     </SearchFilterBar>
   );
 }

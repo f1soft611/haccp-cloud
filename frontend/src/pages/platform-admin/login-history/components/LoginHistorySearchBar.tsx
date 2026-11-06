@@ -1,5 +1,16 @@
-import { MenuItem, TextField } from '@mui/material';
+import { TextField } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+
+const SEARCH_FIELD_OPTIONS = [
+  { value: 'userId', label: '사용자 ID' },
+  { value: 'userName', label: '사용자명' },
+] as const;
+
+const LOGIN_RESULT_OPTIONS = [
+  { value: 'Y', label: '성공' },
+  { value: 'N', label: '실패' },
+] as const;
 
 type SearchField = 'userId' | 'userName';
 
@@ -23,19 +34,14 @@ export function LoginHistorySearchBar(props: {
     <SearchFilterBar onSearch={onSearch}>
       {/* 기존 -> 칸 위 Typography 라벨 + Select */}
       {/* 변경 -> 칸 안 라벨을 쓰는 TextField select */}
-      <TextField
-        select
+      <AppSelect
+        size="small"
         label="검색 조건"
         value={value.searchField}
-        onChange={(e) =>
-          onChange({ ...value, searchField: e.target.value as SearchField })
-        }
-        size="small"
+        onChange={(searchField) => onChange({ ...value, searchField })}
+        options={SEARCH_FIELD_OPTIONS}
         sx={{ minWidth: 120 }}
-      >
-        <MenuItem value="userId">사용자 ID</MenuItem>
-        <MenuItem value="userName">사용자명</MenuItem>
-      </TextField>
+      />
 
       <TextField
         label="검색어"
@@ -47,24 +53,15 @@ export function LoginHistorySearchBar(props: {
         sx={{ flex: 1, minWidth: 180 }}
       />
 
-      <TextField
-        select
+      <AppSelect
+        size="small"
         label="로그인 결과"
         value={value.filterLoginResult}
-        onChange={(e) =>
-          onChange({
-            ...value,
-            filterLoginResult: e.target.value as 'Y' | 'N' | '',
-          })
-        }
-        size="small"
+        onChange={(filterLoginResult) => onChange({ ...value, filterLoginResult })}
+        options={LOGIN_RESULT_OPTIONS}
+        emptyLabel="전체"
         sx={{ minWidth: 160 }}
-        slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-      >
-        <MenuItem value="">전체</MenuItem>
-        <MenuItem value="Y">성공</MenuItem>
-        <MenuItem value="N">실패</MenuItem>
-      </TextField>
+      />
 
       <TextField
         label="업체코드"

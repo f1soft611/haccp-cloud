@@ -1,12 +1,12 @@
 import {
   Button,
   FormControlLabel,
-  MenuItem,
   Stack,
   Switch,
   TextField,
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 
 export type UserFormValue = {
@@ -188,36 +188,26 @@ export function UserFormDialog({
             }
             fullWidth
         />
-        <TextField
-          select
+        <AppSelect
           label="부서"
           value={value.department}
-          onChange={(event) =>
-            setValue((prev) => ({ ...prev, department: event.target.value }))
-          }
+          onChange={(department) => setValue((prev) => ({ ...prev, department }))}
           fullWidth
-        >
-          {normalizedDepartmentOptions.map((departmentName) => (
-            <MenuItem key={departmentName} value={departmentName}>
-              {departmentName}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          select
+          options={normalizedDepartmentOptions.map((departmentName) => ({
+            value: departmentName,
+            label: departmentName,
+          }))}
+        />
+        <AppSelect
           label="권한"
           value={value.roleCode}
-          onChange={(event) =>
-            setValue((prev) => ({ ...prev, roleCode: event.target.value }))
-          }
+          onChange={(roleCode) => setValue((prev) => ({ ...prev, roleCode }))}
           fullWidth
-        >
-          {normalizedRoleOptions.map((role) => (
-            <MenuItem key={role.code} value={role.code}>
-              {role.name}
-            </MenuItem>
-          ))}
-        </TextField>
+          options={normalizedRoleOptions.map((role) => ({
+            value: role.code,
+            label: role.name,
+          }))}
+        />
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <TextField

@@ -1,11 +1,28 @@
-import { Button, MenuItem, TextField } from '@mui/material';
+import { Button, TextField } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
-import {
-  type PlatformTenantSearchValue,
-  type SearchField,
-  type StatusFilter,
-  type OnboardingStatusFilter,
-} from '../types';
+import { type PlatformTenantSearchValue } from '../types';
+
+const SEARCH_FIELD_OPTIONS = [
+  { value: 'tenantCode', label: '업체코드' },
+  { value: 'companyName', label: '업체명' },
+  { value: 'adminName', label: '관리자명' },
+] as const;
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'ACTIVE', label: '활성' },
+  { value: 'INACTIVE', label: '비활성' },
+] as const;
+
+const ONBOARDING_STATUS_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'EMAIL_QUEUED', label: '메일 발송 대기' },
+  { value: 'EMAIL_SENT', label: '메일 발송 완료' },
+  { value: 'EMAIL_VERIFIED', label: '메일 인증 완료' },
+  { value: 'FIRST_SETUP_COMPLETED', label: '초기 설정 완료' },
+  { value: 'ACTIVE', label: '온보딩 완료' },
+] as const;
 
 type PlatformTenantSearchBarProps = {
   value: PlatformTenantSearchValue;
@@ -32,23 +49,14 @@ export function PlatformTenantSearchBar({
         </Button>
       }
     >
-      <TextField
-        select
+      <AppSelect
+        size="small"
         label="검색 조건"
         value={value.searchField}
-        size="small"
-        onChange={(event) =>
-          onChange({
-            ...value,
-            searchField: event.target.value as SearchField,
-          })
-        }
+        onChange={(searchField) => onChange({ ...value, searchField })}
+        options={SEARCH_FIELD_OPTIONS}
         sx={{ minWidth: 130 }}
-      >
-        <MenuItem value="tenantCode">업체코드</MenuItem>
-        <MenuItem value="companyName">업체명</MenuItem>
-        <MenuItem value="adminName">관리자명</MenuItem>
-      </TextField>
+      />
 
       <TextField
         size="small"
@@ -64,44 +72,23 @@ export function PlatformTenantSearchBar({
         sx={{ flex: 1 }}
       />
 
-      <TextField
-        select
+      <AppSelect
+        size="small"
         label="상태"
         value={value.status}
-        size="small"
-        onChange={(event) =>
-          onChange({
-            ...value,
-            status: event.target.value as StatusFilter,
-          })
-        }
+        onChange={(status) => onChange({ ...value, status })}
+        options={STATUS_OPTIONS}
         sx={{ minWidth: 120 }}
-      >
-        <MenuItem value="all">전체</MenuItem>
-        <MenuItem value="ACTIVE">활성</MenuItem>
-        <MenuItem value="INACTIVE">비활성</MenuItem>
-      </TextField>
+      />
 
-      <TextField
-        select
+      <AppSelect
+        size="small"
         label="온보딩 상태"
         value={value.onboardingStatus}
-        size="small"
-        onChange={(event) =>
-          onChange({
-            ...value,
-            onboardingStatus: event.target.value as OnboardingStatusFilter,
-          })
-        }
+        onChange={(onboardingStatus) => onChange({ ...value, onboardingStatus })}
+        options={ONBOARDING_STATUS_OPTIONS}
         sx={{ minWidth: 170 }}
-      >
-        <MenuItem value="all">전체</MenuItem>
-        <MenuItem value="EMAIL_QUEUED">메일 발송 대기</MenuItem>
-        <MenuItem value="EMAIL_SENT">메일 발송 완료</MenuItem>
-        <MenuItem value="EMAIL_VERIFIED">메일 인증 완료</MenuItem>
-        <MenuItem value="FIRST_SETUP_COMPLETED">초기 설정 완료</MenuItem>
-        <MenuItem value="ACTIVE">온보딩 완료</MenuItem>
-      </TextField>
+      />
     </SearchFilterBar>
   );
 }

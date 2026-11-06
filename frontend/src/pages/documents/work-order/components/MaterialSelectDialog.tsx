@@ -1,7 +1,6 @@
 import {
     Button,
     CircularProgress,
-    MenuItem,
     Stack,
     Table,
     TableBody,
@@ -11,6 +10,7 @@ import {
     TableRow,
     TextField,
 } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import {
@@ -96,22 +96,18 @@ export function MaterialSelectDialog(props: {
             }
         >
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
-                <TextField
-                    select
+                <AppSelect
                     size="small"
                     label="품목계정"
                     value={draft.itemType}
-                    onChange={(event) => setDraft((prev) => ({ ...prev, itemType: event.target.value }))}
+                    onChange={(itemType) => setDraft((prev) => ({ ...prev, itemType }))}
+                    options={WORK_ORDER_ITEM_TYPES.map((code) => ({
+                        value: code,
+                        label: getCommonCodeName(itemTypeOptions, code),
+                    }))}
+                    emptyLabel="전체"
                     sx={{ minWidth: 140 }}
-                    slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-                >
-                    <MenuItem value="">전체</MenuItem>
-                    {WORK_ORDER_ITEM_TYPES.map((code) => (
-                        <MenuItem key={code} value={code}>
-                            {getCommonCodeName(itemTypeOptions, code)}
-                        </MenuItem>
-                    ))}
-                </TextField>
+                />
                 <TextField
                     size="small"
                     fullWidth

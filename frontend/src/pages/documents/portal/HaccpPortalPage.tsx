@@ -1,12 +1,5 @@
-import {
-  Alert,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-} from '@mui/material';
+import { Alert, Stack, TextField } from '@mui/material';
+import { AppSelect } from '../../../shared/components/forms/AppSelect';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { SearchFilterBar } from '../../../shared/components/forms/SearchFilterBar';
@@ -31,43 +24,29 @@ export function HaccpPortalPage() {
 
       {/* 기존 -> 검색필터 없음 / 변경 -> 업무분류·등록주기·키워드 검색필터 */}
       <SearchFilterBar onSearch={onSearch}>
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel id="haccp-portal-category-label">업무분류</InputLabel>
-          <Select
-            labelId="haccp-portal-category-label"
-            value={search.category}
-            label="업무분류"
-            onChange={(event) =>
-              setSearch({ ...search, category: event.target.value })
-            }
-          >
-            <MenuItem value="ALL">전체</MenuItem>
-            {categoryOptions.map((category) => (
-              <MenuItem key={category} value={category}>
-                {category}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <AppSelect
+          size="small"
+          label="업무분류"
+          value={search.category}
+          onChange={(category) => setSearch({ ...search, category })}
+          options={[
+            { value: 'ALL', label: '전체' },
+            ...categoryOptions.map((category) => ({ value: category, label: category })),
+          ]}
+          sx={{ minWidth: 180 }}
+        />
 
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel id="haccp-portal-cycle-label">작성주기</InputLabel>
-          <Select
-            labelId="haccp-portal-cycle-label"
-            value={search.cycle}
-            label="작성주기"
-            onChange={(event) =>
-              setSearch({ ...search, cycle: event.target.value })
-            }
-          >
-            <MenuItem value="ALL">전체</MenuItem>
-            {cycleOptions.map((option) => (
-              <MenuItem key={option.code} value={option.code}>
-                {option.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <AppSelect
+          size="small"
+          label="작성주기"
+          value={search.cycle}
+          onChange={(cycle) => setSearch({ ...search, cycle })}
+          options={[
+            { value: 'ALL', label: '전체' },
+            ...cycleOptions.map((option) => ({ value: option.code, label: option.name })),
+          ]}
+          sx={{ minWidth: 180 }}
+        />
 
         <TextField
           size="small"

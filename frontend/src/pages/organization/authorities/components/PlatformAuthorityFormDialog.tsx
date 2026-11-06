@@ -1,5 +1,11 @@
-import { Button, MenuItem, Select, Stack, TextField } from '@mui/material';
+import { Button, Stack, TextField } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
+
+const USE_AT_OPTIONS = [
+  { value: 'Y', label: '활성' },
+  { value: 'N', label: '비활성' },
+] as const;
 
 export type PlatformAuthorityFormValue = {
   code: string;
@@ -50,20 +56,14 @@ export function PlatformAuthorityFormDialog(props: {
       }}
       actions={
         <>
-          <Select
-            value={value.useAt}
-            onChange={(event) =>
-              onChange({
-                ...value,
-                useAt: event.target.value as 'Y' | 'N',
-              })
-            }
+          <AppSelect
             size="small"
+            value={value.useAt}
+            onChange={(useAt) => onChange({ ...value, useAt })}
+            options={USE_AT_OPTIONS}
+            selectProps={{ SelectDisplayProps: { 'aria-label': '활성 상태' } }}
             sx={{ minWidth: 120, mr: 'auto' }}
-          >
-            <MenuItem value="Y">활성</MenuItem>
-            <MenuItem value="N">비활성</MenuItem>
-          </Select>
+          />
           <Button
             variant="contained"
             onClick={onSubmit}

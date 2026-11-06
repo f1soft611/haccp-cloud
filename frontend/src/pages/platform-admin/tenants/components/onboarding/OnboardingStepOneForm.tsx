@@ -8,6 +8,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { AppSelect } from '../../../../../shared/components/forms/AppSelect';
 import { APP_LABELS } from '../../../../../shared/constants/labels';
 import { type TenantOnboardingFormData } from './types';
 import type { PlanSummary } from '../../../../../services/platform-admin/planAccessService';
@@ -61,12 +62,10 @@ export function OnboardingStepOneForm({
                 required
                 fullWidth
               />
-              <TextField
+              <AppSelect
                 label={APP_LABELS.field.planCode}
                 value={form.planCode}
-                onChange={(e) => onFieldChange('planCode', e.target.value)}
-                select
-                SelectProps={{ native: true }}
+                onChange={(planCode) => onFieldChange('planCode', planCode)}
                 disabled={planLoading || planOptions.length === 0}
                 helperText={
                   planLoading
@@ -77,15 +76,12 @@ export function OnboardingStepOneForm({
                 }
                 required
                 fullWidth
-                slotProps={{ inputLabel: { shrink: true } }}
-              >
-                <option value="">플랜을 선택하세요</option>
-                {planOptions.map((plan) => (
-                  <option key={plan.planCode} value={plan.planCode}>
-                    {plan.planName || plan.planCode}
-                  </option>
-                ))}
-              </TextField>
+                emptyLabel="플랜을 선택하세요"
+                options={planOptions.map((plan) => ({
+                  value: plan.planCode,
+                  label: plan.planName || plan.planCode,
+                }))}
+              />
             </Stack>
             <Stack direction="row" spacing={2}>
               <TextField

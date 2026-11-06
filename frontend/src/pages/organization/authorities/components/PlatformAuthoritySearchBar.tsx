@@ -1,12 +1,18 @@
-import {
-  Button,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
-} from '@mui/material';
+import { Button, TextField } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+
+const SEARCH_FIELD_OPTIONS = [
+  { value: 'code', label: '권한 코드' },
+  { value: 'name', label: '권한명' },
+  { value: 'description', label: '설명' },
+] as const;
+
+const ACTIVE_FILTER_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'Y', label: '활성' },
+  { value: 'N', label: '비활성' },
+] as const;
 
 export type AuthoritySearchValue = {
   searchField: 'code' | 'name' | 'description';
@@ -43,27 +49,14 @@ export function PlatformAuthoritySearchBar(props: {
         ) : null
       }
     >
-      <FormControl size="small" sx={{ minWidth: 140 }}>
-        <InputLabel id="authority-search-field-label">검색 조건</InputLabel>
-        <Select
-          labelId="authority-search-field-label"
-          label="검색 조건"
-          value={value.searchField}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              searchField: event.target.value as
-                | 'code'
-                | 'name'
-                | 'description',
-            })
-          }
-        >
-          <MenuItem value="code">권한 코드</MenuItem>
-          <MenuItem value="name">권한명</MenuItem>
-          <MenuItem value="description">설명</MenuItem>
-        </Select>
-      </FormControl>
+      <AppSelect
+        size="small"
+        label="검색 조건"
+        value={value.searchField}
+        onChange={(searchField) => onChange({ ...value, searchField })}
+        options={SEARCH_FIELD_OPTIONS}
+        sx={{ minWidth: 140 }}
+      />
 
       <TextField
         label="검색어"
@@ -78,24 +71,14 @@ export function PlatformAuthoritySearchBar(props: {
         sx={{ flex: 1, minWidth: 220 }}
       />
 
-      <FormControl size="small" sx={{ minWidth: 120 }}>
-        <InputLabel id="authority-status-label">상태</InputLabel>
-        <Select
-          labelId="authority-status-label"
-          label="상태"
-          value={value.filterActive}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              filterActive: event.target.value as 'all' | 'Y' | 'N',
-            })
-          }
-        >
-          <MenuItem value="all">전체</MenuItem>
-          <MenuItem value="Y">활성</MenuItem>
-          <MenuItem value="N">비활성</MenuItem>
-        </Select>
-      </FormControl>
+      <AppSelect
+        size="small"
+        label="상태"
+        value={value.filterActive}
+        onChange={(filterActive) => onChange({ ...value, filterActive })}
+        options={ACTIVE_FILTER_OPTIONS}
+        sx={{ minWidth: 120 }}
+      />
     </SearchFilterBar>
   );
 }

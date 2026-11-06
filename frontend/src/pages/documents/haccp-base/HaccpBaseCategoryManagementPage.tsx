@@ -3,7 +3,6 @@ import {
   Button,
   Chip,
   IconButton,
-  MenuItem,
   Stack,
   TableBody,
   TableCell,
@@ -32,6 +31,12 @@ import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { useAuthStore } from '../../../shared/store/authStore';
+import { AppSelect } from '../../../shared/components/forms/AppSelect';
+
+const USE_AT_OPTIONS = [
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
 
 type CategoryRow = {
   id: string;
@@ -363,20 +368,12 @@ export function HaccpBaseCategoryManagementPage() {
             }
             inputProps={{ min: 0 }}
           />
-          <TextField
-            select
+          <AppSelect
             label="사용여부"
             value={createForm.useAt}
-            onChange={(event) =>
-              setCreateForm((prev) => ({
-                ...prev,
-                useAt: event.target.value as 'Y' | 'N',
-              }))
-            }
-          >
-            <MenuItem value="Y">사용</MenuItem>
-            <MenuItem value="N">미사용</MenuItem>
-          </TextField>
+            onChange={(useAt) => setCreateForm((prev) => ({ ...prev, useAt }))}
+            options={USE_AT_OPTIONS}
+          />
         </Stack>
       </FormDialog>
 
@@ -436,20 +433,12 @@ export function HaccpBaseCategoryManagementPage() {
             }
             inputProps={{ min: 0 }}
           />
-          <TextField
-            select
+          <AppSelect
             label="사용여부"
             value={editForm.useAt}
-            onChange={(event) =>
-              setEditForm((prev) => ({
-                ...prev,
-                useAt: event.target.value as 'Y' | 'N',
-              }))
-            }
-          >
-            <MenuItem value="Y">사용</MenuItem>
-            <MenuItem value="N">미사용</MenuItem>
-          </TextField>
+            onChange={(useAt) => setEditForm((prev) => ({ ...prev, useAt }))}
+            options={USE_AT_OPTIONS}
+          />
         </Stack>
       </FormDialog>
 

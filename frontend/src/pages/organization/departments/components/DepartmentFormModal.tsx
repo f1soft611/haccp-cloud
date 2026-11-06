@@ -1,17 +1,15 @@
-import {
-  Box,
-  Button,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Button, Stack, TextField } from '@mui/material';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import type {
   DepartmentItem,
   DepartmentFormData,
 } from '../../../../services/organization/departmentsService';
+
+const ACTIVE_OPTIONS = [
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
 
 export function DepartmentFormModal(props: {
   open: boolean;
@@ -71,30 +69,23 @@ export function DepartmentFormModal(props: {
           autoFocus
         />
 
-        <Box>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            상위 부서
-          </Typography>
-          <Select
-            value={formData.parentId ?? 'none'}
-            onChange={(e) =>
-              onChange({
-                ...formData,
-                parentId: e.target.value === 'none' ? null : e.target.value,
-              })
-            }
-            fullWidth
-          >
-            <MenuItem value="none">없음 (최상위)</MenuItem>
-            {parentOptions
+        <AppSelect
+          label="상위 부서"
+          value={formData.parentId ?? 'none'}
+          onChange={(parentId) =>
+            onChange({
+              ...formData,
+              parentId: parentId === 'none' ? null : parentId,
+            })
+          }
+          fullWidth
+          options={[
+            { value: 'none', label: '없음 (최상위)' },
+            ...parentOptions
               .filter((d) => d.id !== editTargetId)
-              .map((dept) => (
-                <MenuItem key={dept.id} value={dept.id}>
-                  {dept.name}
-                </MenuItem>
-              ))}
-          </Select>
-        </Box>
+              .map((dept) => ({ value: dept.id, label: dept.name })),
+          ]}
+        />
 
         <TextField
           label="순서"
@@ -108,21 +99,15 @@ export function DepartmentFormModal(props: {
         />
 
         {isEdit && (
-          <Box>
-            <Typography variant="body2" sx={{ mb: 0.5 }}>
-              사용여부
-            </Typography>
-            <Select
-              value={formData.active ? 'Y' : 'N'}
-              onChange={(e) =>
-                onChange({ ...formData, active: e.target.value === 'Y' })
-              }
-              fullWidth
-            >
-              <MenuItem value="Y">사용</MenuItem>
-              <MenuItem value="N">미사용</MenuItem>
-            </Select>
-          </Box>
+          <AppSelect
+            label="사용여부"
+            value={formData.active ? 'Y' : 'N'}
+            onChange={(active) =>
+              onChange({ ...formData, active: active === 'Y' })
+            }
+            fullWidth
+            options={ACTIVE_OPTIONS}
+          />
         )}
       </Stack>
     </FormDialog>
