@@ -3,11 +3,10 @@ import {
   FormControl,
   InputLabel,
   MenuItem,
-  Paper,
   Select,
-  Stack,
   TextField,
 } from '@mui/material';
+import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { HaccpCategoryOption } from '../types';
 
 export type HaccpBaseSearchValue = {
@@ -34,80 +33,71 @@ export function HaccpBaseSearchBar(props: {
   } = props;
 
   return (
-    <Paper sx={{ p: 2 }}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1}
-        alignItems={{ xs: 'stretch', md: 'flex-end' }}
-      >
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel id="haccp-base-category-label">업무분류</InputLabel>
-          <Select
-            labelId="haccp-base-category-label"
-            value={value.categoryId}
-            label="업무분류"
-            onChange={(event) =>
-              onChange({
-                ...value,
-                categoryId: event.target.value,
-              })
-            }
-          >
-            <MenuItem value="ALL">전체</MenuItem>
-            {categoryOptions.map((category) => (
-              <MenuItem key={category.id} value={category.id}>
-                {category.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <TextField
-          size="small"
-          label="구분명, 담당자 검색"
-          value={value.keyword}
+    <SearchFilterBar
+      onSearch={onSearch}
+      actions={
+        <>
+          <Button variant="contained" onClick={onCreate}>
+            + 업무 추가
+          </Button>
+          <Button variant="outlined" onClick={onCategorySettings}>
+            분류 설정
+          </Button>
+        </>
+      }
+    >
+      <FormControl size="small" sx={{ minWidth: 180 }}>
+        <InputLabel id="haccp-base-category-label">업무분류</InputLabel>
+        <Select
+          labelId="haccp-base-category-label"
+          value={value.categoryId}
+          label="업무분류"
           onChange={(event) =>
             onChange({
               ...value,
-              keyword: event.target.value,
+              categoryId: event.target.value,
             })
           }
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              onSearch();
-            }
-          }}
-          sx={{ flex: 1, minWidth: 260 }}
-        />
-
-        <TextField
-          select
-          size="small"
-          label="사용유무"
-          value={value.useAt}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              useAt: event.target.value as HaccpBaseSearchValue['useAt'],
-            })
-          }
-          sx={{ minWidth: 140 }}
         >
-          <MenuItem value="all">전체</MenuItem>
-          <MenuItem value="Y">사용</MenuItem>
-          <MenuItem value="N">미사용</MenuItem>
-        </TextField>
+          <MenuItem value="ALL">전체</MenuItem>
+          {categoryOptions.map((category) => (
+            <MenuItem key={category.id} value={category.id}>
+              {category.name}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-        <Button variant="contained" onClick={onSearch}>
-          조회
-        </Button>
-        <Button variant="contained" onClick={onCreate}>
-          + 업무 추가
-        </Button>
-        <Button variant="outlined" onClick={onCategorySettings}>
-          분류 설정
-        </Button>
-      </Stack>
-    </Paper>
+      <TextField
+        size="small"
+        label="구분명, 담당자 검색"
+        value={value.keyword}
+        onChange={(event) =>
+          onChange({
+            ...value,
+            keyword: event.target.value,
+          })
+        }
+        sx={{ flex: 1, minWidth: 260 }}
+      />
+
+      <TextField
+        select
+        size="small"
+        label="사용유무"
+        value={value.useAt}
+        onChange={(event) =>
+          onChange({
+            ...value,
+            useAt: event.target.value as HaccpBaseSearchValue['useAt'],
+          })
+        }
+        sx={{ minWidth: 140 }}
+      >
+        <MenuItem value="all">전체</MenuItem>
+        <MenuItem value="Y">사용</MenuItem>
+        <MenuItem value="N">미사용</MenuItem>
+      </TextField>
+    </SearchFilterBar>
   );
 }

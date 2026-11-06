@@ -1,13 +1,5 @@
-import {
-  Box,
-  Button,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { MenuItem, TextField } from '@mui/material';
+import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 
 type SearchField = 'userId' | 'userName';
 
@@ -28,97 +20,83 @@ export function LoginHistorySearchBar(props: {
   const { value, onChange, onSearch } = props;
 
   return (
-    <Paper sx={{ p: 2 }}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1}
-        alignItems="flex-end"
+    <SearchFilterBar onSearch={onSearch}>
+      {/* 기존 -> 칸 위 Typography 라벨 + Select */}
+      {/* 변경 -> 칸 안 라벨을 쓰는 TextField select */}
+      <TextField
+        select
+        label="검색 조건"
+        value={value.searchField}
+        onChange={(e) =>
+          onChange({ ...value, searchField: e.target.value as SearchField })
+        }
+        size="small"
+        sx={{ minWidth: 120 }}
       >
-        <Box sx={{ minWidth: 120 }}>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            검색 조건
-          </Typography>
-          <Select
-            value={value.searchField}
-            onChange={(e) =>
-              onChange({ ...value, searchField: e.target.value as SearchField })
-            }
-            size="small"
-            fullWidth
-          >
-            <MenuItem value="userId">사용자 ID</MenuItem>
-            <MenuItem value="userName">사용자명</MenuItem>
-          </Select>
-        </Box>
+        <MenuItem value="userId">사용자 ID</MenuItem>
+        <MenuItem value="userName">사용자명</MenuItem>
+      </TextField>
 
-        <TextField
-          label="검색어"
-          value={value.searchKeyword}
-          onChange={(e) =>
-            onChange({ ...value, searchKeyword: e.target.value })
-          }
-          size="small"
-          sx={{ flex: 1, minWidth: 180 }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') onSearch();
-          }}
-        />
+      <TextField
+        label="검색어"
+        value={value.searchKeyword}
+        onChange={(e) =>
+          onChange({ ...value, searchKeyword: e.target.value })
+        }
+        size="small"
+        sx={{ flex: 1, minWidth: 180 }}
+      />
 
-        <TextField
-          select
-          label="로그인 결과"
-          value={value.filterLoginResult}
-          onChange={(e) =>
-            onChange({
-              ...value,
-              filterLoginResult: e.target.value as 'Y' | 'N' | '',
-            })
-          }
-          size="small"
-          sx={{ minWidth: 160 }}
-          slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-        >
-          <MenuItem value="">전체</MenuItem>
-          <MenuItem value="Y">성공</MenuItem>
-          <MenuItem value="N">실패</MenuItem>
-        </TextField>
+      <TextField
+        select
+        label="로그인 결과"
+        value={value.filterLoginResult}
+        onChange={(e) =>
+          onChange({
+            ...value,
+            filterLoginResult: e.target.value as 'Y' | 'N' | '',
+          })
+        }
+        size="small"
+        sx={{ minWidth: 160 }}
+        slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+      >
+        <MenuItem value="">전체</MenuItem>
+        <MenuItem value="Y">성공</MenuItem>
+        <MenuItem value="N">실패</MenuItem>
+      </TextField>
 
-        <TextField
-          label="업체코드"
-          value={value.filterFactoryCode}
-          onChange={(e) =>
-            onChange({ ...value, filterFactoryCode: e.target.value })
-          }
-          size="small"
-          sx={{ minWidth: 160 }}
-        />
+      <TextField
+        label="업체코드"
+        value={value.filterFactoryCode}
+        onChange={(e) =>
+          onChange({ ...value, filterFactoryCode: e.target.value })
+        }
+        size="small"
+        sx={{ minWidth: 160 }}
+      />
 
-        <TextField
-          label="시작일"
-          type="date"
-          size="small"
-          value={value.filterStartDt}
-          onChange={(e) =>
-            onChange({ ...value, filterStartDt: e.target.value })
-          }
-          slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ minWidth: 160 }}
-        />
+      <TextField
+        label="시작일"
+        type="date"
+        size="small"
+        value={value.filterStartDt}
+        onChange={(e) =>
+          onChange({ ...value, filterStartDt: e.target.value })
+        }
+        slotProps={{ inputLabel: { shrink: true } }}
+        sx={{ minWidth: 160 }}
+      />
 
-        <TextField
-          label="종료일"
-          type="date"
-          size="small"
-          value={value.filterEndDt}
-          onChange={(e) => onChange({ ...value, filterEndDt: e.target.value })}
-          slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ minWidth: 160 }}
-        />
-
-        <Button variant="contained" onClick={onSearch}>
-          조회
-        </Button>
-      </Stack>
-    </Paper>
+      <TextField
+        label="종료일"
+        type="date"
+        size="small"
+        value={value.filterEndDt}
+        onChange={(e) => onChange({ ...value, filterEndDt: e.target.value })}
+        slotProps={{ inputLabel: { shrink: true } }}
+        sx={{ minWidth: 160 }}
+      />
+    </SearchFilterBar>
   );
 }

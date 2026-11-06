@@ -1,4 +1,5 @@
-import { Button, MenuItem, Paper, Stack, TextField } from '@mui/material';
+import { Button, MenuItem, TextField } from '@mui/material';
+import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 
 export type UsersSearchValue = {
   keyword: string;
@@ -21,59 +22,10 @@ export function UsersSearchBar({
   onCreate,
 }: UsersSearchBarProps) {
   return (
-    <Paper sx={{ p: 2 }}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1}
-        alignItems={{ xs: 'stretch', md: 'flex-end' }}
-      >
-        <TextField
-          size="small"
-          fullWidth
-          label="검색어"
-          placeholder="이름, 이메일, 부서"
-          value={value.keyword}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              keyword: event.target.value,
-            })
-          }
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              onSearch();
-            }
-          }}
-        />
-
-        <TextField
-          select
-          size="small"
-          label="상태"
-          value={value.filterActive}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              filterActive: event.target
-                .value as UsersSearchValue['filterActive'],
-            })
-          }
-          sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="all">전체</MenuItem>
-          <MenuItem value="Y">활성</MenuItem>
-          <MenuItem value="N">비활성</MenuItem>
-        </TextField>
-
-        <Button
-          variant="contained"
-          onClick={onSearch}
-          disabled={disabled}
-          sx={{ minWidth: 96 }}
-        >
-          검색
-        </Button>
-
+    <SearchFilterBar
+      onSearch={onSearch}
+      disabled={disabled}
+      actions={
         <Button
           variant="contained"
           onClick={onCreate}
@@ -82,7 +34,40 @@ export function UsersSearchBar({
         >
           사용자 등록
         </Button>
-      </Stack>
-    </Paper>
+      }
+    >
+      <TextField
+        size="small"
+        fullWidth
+        label="검색어"
+        placeholder="이름, 이메일, 부서"
+        value={value.keyword}
+        onChange={(event) =>
+          onChange({
+            ...value,
+            keyword: event.target.value,
+          })
+        }
+      />
+
+      <TextField
+        select
+        size="small"
+        label="상태"
+        value={value.filterActive}
+        onChange={(event) =>
+          onChange({
+            ...value,
+            filterActive: event.target
+              .value as UsersSearchValue['filterActive'],
+          })
+        }
+        sx={{ minWidth: 140 }}
+      >
+        <MenuItem value="all">전체</MenuItem>
+        <MenuItem value="Y">활성</MenuItem>
+        <MenuItem value="N">비활성</MenuItem>
+      </TextField>
+    </SearchFilterBar>
   );
 }

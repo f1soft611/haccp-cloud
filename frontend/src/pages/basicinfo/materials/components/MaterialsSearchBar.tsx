@@ -1,4 +1,5 @@
-import { Box, Button, Paper, Stack, TextField } from '@mui/material';
+import { Box, Button, TextField } from '@mui/material';
+import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 
@@ -24,46 +25,10 @@ export function MaterialsSearchBar({
   onCreate,
 }: MaterialsSearchBarProps) {
   return (
-    <Paper sx={{ p: 2 }}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1}
-        alignItems={{ xs: 'stretch', md: 'flex-end' }}
-      >
-        <Box sx={{ minWidth: { md: 180 } }}>
-          <CommonCodeSelect
-              groupCode={COMMON_CODE_GROUP.ITEM_TYPE}
-              label="품목계정"
-              emptyLabel="전체"
-              size="small"
-              fullWidth
-              value={value.itemType}
-              onChange={(itemType) => onChange({ ...value, itemType })}
-          />
-        </Box>
-        <TextField
-          size="small"
-          fullWidth
-          label="검색어"
-          placeholder="품목코드, 품목명, 규격, 품목계정"
-          value={value.keyword}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              keyword: event.target.value,
-            })
-          }
-        />
-
-        <Button
-          variant="contained"
-          onClick={onSearch}
-          disabled={disabled}
-          sx={{ minWidth: 96 }}
-        >
-          검색
-        </Button>
-
+    <SearchFilterBar
+      onSearch={onSearch}
+      disabled={disabled}
+      actions={
         <Button
           variant="contained"
           onClick={onCreate}
@@ -72,7 +37,32 @@ export function MaterialsSearchBar({
         >
           품목 등록
         </Button>
-      </Stack>
-    </Paper>
+      }
+    >
+      <Box sx={{ minWidth: { md: 180 } }}>
+        <CommonCodeSelect
+          groupCode={COMMON_CODE_GROUP.ITEM_TYPE}
+          label="품목계정"
+          emptyLabel="전체"
+          size="small"
+          fullWidth
+          value={value.itemType}
+          onChange={(itemType) => onChange({ ...value, itemType })}
+        />
+      </Box>
+      <TextField
+        size="small"
+        fullWidth
+        label="검색어"
+        placeholder="품목코드, 품목명, 규격, 품목계정"
+        value={value.keyword}
+        onChange={(event) =>
+          onChange({
+            ...value,
+            keyword: event.target.value,
+          })
+        }
+      />
+    </SearchFilterBar>
   );
 }

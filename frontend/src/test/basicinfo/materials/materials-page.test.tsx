@@ -1,26 +1,26 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../../app/providers/AppProviders.tsx';
-import { MaterialsPage } from '../../pages/basicinfo/materials/MaterialsPage.tsx';
+import { AppProviders } from '../../../app/providers/AppProviders.tsx';
+import { MaterialsPage } from '../../../pages/basicinfo/materials/MaterialsPage.tsx';
 import type {
     CreateMaterialRequest,
     ListMaterialsPagedResult,
-} from '../../services/basicinfo/materialsService';
-import { useAuthStore } from '../../shared/store/authStore.ts';
+} from '../../../services/basicinfo/materialsService';
+import { useAuthStore } from '../../../shared/store/authStore.ts';
 
 const { listMaterialsPagedMock, createMaterialMock } = vi.hoisted(() => ({
     listMaterialsPagedMock: vi.fn(async (): Promise<ListMaterialsPagedResult> => ({ items: [], totalCount: 0 })),
     createMaterialMock: vi.fn<(payload: CreateMaterialRequest) => Promise<unknown>>(async () => ({})),
 }));
 
-vi.mock('../../services/basicinfo/materialsService', () => ({
+vi.mock('../../../services/basicinfo/materialsService', () => ({
     listMaterialsPaged: listMaterialsPagedMock,
     createMaterial: createMaterialMock,
     updateMaterial: vi.fn(),
     deleteMaterial: vi.fn(),
 }));
 
-vi.mock('../../services/basicinfo/commonCodeService', () => ({
+vi.mock('../../../services/basicinfo/commonCodeService', () => ({
     getCommonCodes: async () => ({
         groups: [],
         details: [
@@ -87,7 +87,7 @@ describe('MaterialsPage 품목계정 검색', () => {
         expect(within(listbox).getByRole('option', { name: '전체' })).toBeInTheDocument();
         fireEvent.click(await within(listbox).findByRole('option', { name: '원재료' }));
 
-        fireEvent.click(screen.getByRole('button', { name: '검색' }));
+        fireEvent.click(screen.getByRole('button', { name: '조회' }));
 
         await vi.waitFor(() =>
             expect(listMaterialsPagedMock).toHaveBeenLastCalledWith(
