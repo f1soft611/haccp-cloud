@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { AppProviders } from '../../app/providers/AppProviders';
-import { CommonCodePage } from '../../pages/basicinfo/common-code/CommonCodePage';
-import { useAuthStore, type UserRole } from '../../shared/store/authStore';
+import { AppProviders } from '../../../app/providers/AppProviders';
+import { CommonCodePage } from '../../../pages/basicinfo/common-code/CommonCodePage';
+import { useAuthStore, type UserRole } from '../../../shared/store/authStore';
 
 function renderPage(role: UserRole) {
     useAuthStore.setState({
@@ -66,7 +66,7 @@ describe('CommonCodePage', () => {
     it('검색어와 일치하는 그룹만 보여준다', async () => {
         renderPage('TENANT_ADMIN');
         await screen.findByText('기안양식 등록주기');
-        fireEvent.change(screen.getByRole('textbox', { name: '그룹 검색' }), {
+        fireEvent.change(screen.getByRole('textbox', { name: '그룹 코드/명/설명 검색' }), {
             target: { value: 'unit' },
         });
         expect(screen.getByText('단위')).toBeInTheDocument();

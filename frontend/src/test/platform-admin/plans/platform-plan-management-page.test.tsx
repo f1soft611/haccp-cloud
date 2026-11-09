@@ -6,8 +6,8 @@ import {
   within,
 } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { PlatformPlanManagementPage } from '../pages/platform-admin/plans/PlatformPlanManagementPage';
+import { AppProviders } from '../../../app/providers/AppProviders';
+import { PlatformPlanManagementPage } from '../../../pages/platform-admin/plans/PlatformPlanManagementPage';
 
 const {
   listPlanSummariesMock,
@@ -25,7 +25,7 @@ const {
   listPlatformMenusMock: vi.fn(),
 }));
 
-vi.mock('../services/platform-admin/planAccessService', () => ({
+vi.mock('../../../services/platform-admin/planAccessService', () => ({
   listPlanSummaries: listPlanSummariesMock,
   getPlanMenuCodes: getPlanMenuCodesMock,
   getPlanFeatures: getPlanFeaturesMock,
@@ -33,7 +33,7 @@ vi.mock('../services/platform-admin/planAccessService', () => ({
   savePlanFeatures: savePlanFeaturesMock,
 }));
 
-vi.mock('../services/platform-admin/platformMenuService', () => ({
+vi.mock('../../../services/platform-admin/platformMenuService', () => ({
   listPlatformMenus: listPlatformMenusMock,
 }));
 
@@ -277,7 +277,7 @@ describe('PlatformPlanManagementPage', () => {
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '검색 조건' }));
     fireEvent.click(screen.getByRole('option', { name: '플랜 코드' }));
 
-    fireEvent.change(screen.getByLabelText('검색어'), {
+    fireEvent.change(screen.getByLabelText('검색어 입력'), {
       target: { value: 'B' },
     });
 

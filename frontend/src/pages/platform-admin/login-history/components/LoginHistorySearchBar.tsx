@@ -45,7 +45,8 @@ export function LoginHistorySearchBar(props: {
       />
 
       <AppTextField
-        label="검색어"
+        placeholder="검색어 입력"
+        slotProps={{ htmlInput: { 'aria-label': '검색어 입력' } }}
         value={value.searchKeyword}
         onChange={(searchKeyword) =>
           onChange({ ...value, searchKeyword })

@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { PlatformMenuManagementPage } from '../pages/platform-admin/menus/PlatformMenuManagementPage';
-import { useAuthStore } from '../shared/store/authStore';
+import { AppProviders } from '../../../app/providers/AppProviders';
+import { PlatformMenuManagementPage } from '../../../pages/platform-admin/menus/PlatformMenuManagementPage';
+import { useAuthStore } from '../../../shared/store/authStore';
 
 const { listPlatformMenusMock } = vi.hoisted(() => ({
   listPlatformMenusMock: vi.fn(async () => [
@@ -43,7 +43,7 @@ const DEFAULT_MENUS = [
   },
 ];
 
-vi.mock('../services/platform-admin/platformMenuService', () => ({
+vi.mock('../../../services/platform-admin/platformMenuService', () => ({
   listPlatformMenus: listPlatformMenusMock,
   listPlatformMenusPaged: listPlatformMenusPagedMock,
   createPlatformMenu: createPlatformMenuMock,
@@ -163,7 +163,7 @@ describe('PlatformMenuManagementPage', () => {
 
     await screen.findByRole('heading', { name: '메뉴 관리' });
 
-    fireEvent.change(screen.getByLabelText('검색어'), {
+    fireEvent.change(screen.getByLabelText('검색어 입력'), {
       target: { value: '관리' },
     });
     fireEvent.click(screen.getByRole('button', { name: '조회' }));

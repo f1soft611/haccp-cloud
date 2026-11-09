@@ -47,6 +47,15 @@ export function HaccpBaseSearchBar(props: {
         </>
       }
     >
+
+      <AppSelect
+        size="small"
+        label="사용유무"
+        value={value.useAt}
+        onChange={(useAt) => onChange({ ...value, useAt })}
+        options={USE_AT_FILTER_OPTIONS}
+        sx={{ minWidth: 140 }}
+      />
       <AppSelect
         size="small"
         label="업무분류"
@@ -74,15 +83,6 @@ export function HaccpBaseSearchBar(props: {
           })
         }
         sx={{ flex: 1, minWidth: 260 }}
-      />
-
-      <AppSelect
-        size="small"
-        label="사용유무"
-        value={value.useAt}
-        onChange={(useAt) => onChange({ ...value, useAt })}
-        options={USE_AT_FILTER_OPTIONS}
-        sx={{ minWidth: 140 }}
       />
     </SearchFilterBar>
   );

@@ -191,8 +191,6 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                         },
                     }}
                 >
-                    {/* 기존 -> ViewListOutlined 아이콘, '리스트', aria-label 리스트형 */}
-                    {/* 변경 -> GridViewOutlined 아이콘, '카드형', aria-label 카드형 */}
                     <ToggleButton value="list" aria-label="카드형">
                         <GridViewOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
                         카드형

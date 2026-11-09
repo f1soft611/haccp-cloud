@@ -44,20 +44,6 @@ export function UsersSearchBar({
         </Button>
       }
     >
-      <AppTextField
-        size="small"
-        fullWidth
-        label="검색어"
-        placeholder="이름, 이메일, 부서"
-        value={value.keyword}
-        onChange={(keyword) =>
-          onChange({
-            ...value,
-            keyword,
-          })
-        }
-      />
-
       <AppSelect
         size="small"
         label="상태"
@@ -65,6 +51,19 @@ export function UsersSearchBar({
         onChange={(filterActive) => onChange({ ...value, filterActive })}
         options={ACTIVE_FILTER_OPTIONS}
         sx={{ minWidth: 140 }}
+      />
+      <AppTextField
+        size="small"
+        fullWidth
+        placeholder="이름, 이메일, 부서 검색"
+        slotProps={{ htmlInput: { 'aria-label': '이름, 이메일, 부서 검색' } }}
+        value={value.keyword}
+        onChange={(keyword) =>
+          onChange({
+            ...value,
+            keyword,
+          })
+        }
       />
     </SearchFilterBar>
   );

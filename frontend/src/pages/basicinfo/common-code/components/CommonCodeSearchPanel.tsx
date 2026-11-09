@@ -13,8 +13,8 @@ export function CommonCodeSearchPanel(props: {
         <SearchFilterBar onSearch={onSearch}>
             <AppTextField
                 size="small"
-                label="그룹 검색"
                 placeholder="그룹 코드/명/설명 검색"
+                slotProps={{ htmlInput: { 'aria-label': '그룹 코드/명/설명 검색' } }}
                 value={keyword}
                 onChange={onKeywordChange}
                 sx={{ minWidth: { md: 320 } }}
