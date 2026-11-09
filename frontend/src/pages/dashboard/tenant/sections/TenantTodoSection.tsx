@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import type { TenantTodoSectionModel } from "../hooks/useTenantDashboardData";
 import { TenantApprovalCard } from "./TenantApprovalCard";
 import { TenantTodoCard } from "./TenantTodoCard";
-import { APPROVAL_CARD_TOP_COLOR, DRAFT_CARD_TOP_COLOR, WORK_CARD_SX } from "../utils";
+import styles from "../tenantDashboard.module.css";
 
 type TenantTodoSectionVariant = "draft" | "approval";
 
@@ -18,15 +18,15 @@ const GRID_SIZE = { xs: 12, sm: 6, md: 4, lg: 3, xl: 3 };
 
 const VARIANT_VIEW: Record<
   TenantTodoSectionVariant,
-  { borderColor: string; emptyText: string; errorText: string }
+  { toneClassName: string; emptyText: string; errorText: string }
 > = {
   draft: {
-  borderColor: DRAFT_CARD_TOP_COLOR,
+    toneClassName: styles.workCardDraft,
     emptyText: "등록된 업무가 없습니다.",
     errorText: "할일 목록을 불러오지 못했습니다.",
   },
   approval: {
-    borderColor: APPROVAL_CARD_TOP_COLOR,
+    toneClassName: styles.workCardApproval,
     emptyText: "결재할 문서가 없습니다.",
     errorText: "결재할 문서를 불러오지 못했습니다.",
   },
@@ -54,16 +54,13 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
       <Grid container spacing={2}>
         {[1, 2, 3, 4].map((i) => (
           <Grid key={i} size={GRID_SIZE}>
-            <Card
-              variant="outlined"
-              sx={{ ...WORK_CARD_SX, borderTop: `3px solid ${view.borderColor}` }}
-            >
+            <Card variant="outlined" className={`${styles.workCard} ${view.toneClassName}`}>
               <CardContent>
                 <Skeleton variant="text" width="50%" />
                 <Skeleton variant="text" width="30%" />
                 <Skeleton variant="text" width="80%" height={28} />
                 <Skeleton variant="text" width="60%" />
-                <Skeleton variant="rectangular" height={32} sx={{ mt: 1 }} />
+                <Skeleton variant="rectangular" height={32} className={styles.skeletonAction} />
               </CardContent>
             </Card>
           </Grid>
@@ -74,7 +71,7 @@ export function TenantTodoSection(props: TenantTodoSectionProps) {
 
   if (rows.length === 0) {
     return (
-      <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+      <Typography variant="body2" align="center" className={styles.emptyText}>
         {isError ? view.errorText : view.emptyText}
       </Typography>
     );

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Grid, Paper, Stack, type Theme, Typography } from '@mui/material';
+import { Box, Grid, Paper, Stack, Typography, useTheme } from '@mui/material';
 import { useSessionState } from '../../../shared/hooks/useSessionState';
 import { WorkCalendarView } from '../../documents/work-calendar/components/WorkCalendarView';
 import { useWorkCalendarData } from '../../documents/work-calendar/hooks/useWorkCalendarData';
@@ -17,34 +17,14 @@ import {
     type TenantTodoFilter,
     type TenantViewMode,
 } from './todoFilter';
-import { APPROVAL_CARD_TOP_COLOR, DRAFT_CARD_TOP_COLOR } from './utils';
+import { getDashboardCssVars } from './utils';
+import styles from './tenantDashboard.module.css';
 
-// 카드 섹션 제목: 동그라미 표시 + 문서 구분명
-// 시안대로 동그라미 13px, 테두리 3px, 배경 흰색, 글씨 16px, 간격 7px, color 는 동그라미와 글씨에 적용
-//         다크 모드는 페이지 배경에 묻히므로 시안 색 대신 text.primary 사용
-function DocSectionTitle({ label, color }: { label: string; color: string }) {
-    const resolveColor = (theme: Theme) =>
-        theme.palette.mode === 'light' ? color : theme.palette.text.primary;
-
+function DocSectionTitle({ label, toneClassName }: { label: string; toneClassName: string }) {
     return (
-        <Stack direction="row" alignItems="center" sx={{ gap: '7px', mb: 1 }}>
-            <Box
-                sx={{
-                    width: 13,
-                    height: 13,
-                    boxSizing: 'border-box',
-                    bgcolor: 'background.paper',
-                    border: '3px solid',
-                    borderColor: resolveColor,
-                    borderRadius: '50%',
-                }}
-            />
-            <Typography
-                variant="subtitle1"
-                component="h2"
-                fontWeight={700}
-                sx={{ fontSize: 16, color: resolveColor }}
-            >
+        <Stack direction="row" alignItems="center" className={`${styles.docTitleRow} ${toneClassName}`}>
+            <Box className={styles.docTitleDot} />
+            <Typography variant="subtitle1" component="h2" className={styles.docTitleText}>
                 {label}
             </Typography>
         </Stack>
@@ -55,6 +35,7 @@ function DocSectionTitle({ label, color }: { label: string; color: string }) {
 // 변경 -> 나의 담당업무: 상태바 + 라디오로 고른 기안문서, 결재할문서 카드 또는 캘린더
 export function TenantDashboard() {
     const navigate = useNavigate();
+    const theme = useTheme();
     const [viewMode, setViewMode] = useSessionState<TenantViewMode>(
         'tenantDashboard.viewMode',
         'list',
@@ -99,18 +80,16 @@ export function TenantDashboard() {
     );
 
     return (
-        <Grid container spacing={2}>
+        <Grid
+            container
+            spacing={2}
+            className={styles.scope}
+            data-mode={theme.palette.mode}
+            style={getDashboardCssVars(theme)}
+        >
             <Grid size={{ xs: 12, lg: 12 }}>
                 <Stack spacing={2}>
-                    <Paper
-                        sx={{
-                            px: 2,
-                            py: 1,
-                            bgcolor: '#EFF0F6',
-                            boxShadow: 'none',
-                            borderRadius: '7px',
-                        }}
-                    >
+                    <Paper className={styles.statusPanel}>
                         <TenantStatusCardSection
                             counts={statusCounts}
                             isLoading={isTodoLoading || isApprovalLoading}
@@ -132,7 +111,7 @@ export function TenantDashboard() {
                         <Stack spacing={3}>
                             {docScope !== 'approval' ? (
                                 <Box>
-                                    <DocSectionTitle label="기안문서" color={DRAFT_CARD_TOP_COLOR} />
+                                    <DocSectionTitle label="기안문서" toneClassName={styles.docTitleDraft} />
                                     <TenantTodoSection
                                         isLoading={isTodoLoading}
                                         isError={isTodoError}
@@ -143,7 +122,7 @@ export function TenantDashboard() {
                             ) : null}
                             {docScope !== 'draft' ? (
                                 <Box>
-                                    <DocSectionTitle label="결재할문서" color={APPROVAL_CARD_TOP_COLOR} />
+                                    <DocSectionTitle label="결재할문서" toneClassName={styles.docTitleApproval} />
                                     <TenantTodoSection
                                         isLoading={isApprovalLoading}
                                         isError={isApprovalError}
@@ -154,16 +133,7 @@ export function TenantDashboard() {
                             ) : null}
                         </Stack>
                     ) : (
-                        <Paper
-                            data-testid="tenant-dashboard-calendar"
-                            sx={{
-                                p: 2,
-                                border: '1px solid',
-                                borderRadius: '4px',
-                                borderColor: 'divider',
-                            }}
-                        >
-                            {/* 기존 -> 범례 클릭 시 draft, filter 동시 세팅 / 변경 -> legendFilter 만 세팅, 적용된 값을 다시 클릭하면 해제('') */}
+                        <Paper data-testid="tenant-dashboard-calendar" className={styles.calendarPanel}>
                             <WorkCalendarView
                                 events={filteredEvents}
                                 viewDate={calendar.viewDate}
@@ -184,7 +154,8 @@ export function TenantDashboard() {
                     )}
                 </Stack>
             </Grid>
-            <Grid size={{ xs: 12, lg: 3 }} sx={{ display: 'none' }}>
+            {/* 사이드바 */}
+            <Grid size={{ xs: 12, lg: 3 }} className={styles.hiddenSidebar}>
                 <TenantSidebarSection />
             </Grid>
         </Grid>

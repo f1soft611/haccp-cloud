@@ -1,4 +1,5 @@
-
+import { alpha, type Theme } from '@mui/material/styles';
+import type { CSSProperties } from 'react';
 
 const WORK_CYCLE_COLORS: Record<string, { border: string; color: string }> = {
   DAY: { border: '#00B718', color: '#00B718' },
@@ -30,41 +31,28 @@ export const SELECTED_LEGEND_SX = {
   outlineOffset: 1,
 };
 
-// 업무 카드 칩 공용 크기
-// 기존 -> fontWeight 700 / 변경 -> 시안 500
-export const CARD_CHIP_SX = { height: 24, fontWeight: 500, fontSize: 12 };
-
-// 업무 카드 업무분류 글씨
-export const WORK_CARD_CATEGORY_SX = { fontSize: 12, fontWeight: 400, color: '#8E8E8E' };
-
-// 업무 카드 업무명 글씨
-export const WORK_CARD_TITLE_SX = { fontSize: 17, fontWeight: 600, color: '#1E1F21' };
-
-// 업무 카드 공용 스타일 (위 띠는 borderTop 으로 이 뒤에 지정해 덮어쓴다)
-export const WORK_CARD_SX = {
-  bgcolor: '#FFFFFF',
-  border: '1px solid #EBEBEB',
-  borderRadius: '6px',
-  boxShadow: '1px 1px 5px #1A388A0A',
-};
-
-// 업무 카드 위 띠 색
-export const DRAFT_CARD_TOP_COLOR = '#3263B9';
-export const APPROVAL_CARD_TOP_COLOR = '#404244';
-
-// 업무 카드 버튼 공용 색 (미작성건, 작성, 문서 열기)
-export const WORK_CARD_BUTTON_SX = {
-  color: '#29409A',
-  bgcolor: '#F9FAFC',
-  border: '1px solid #B4BDDF',
-};
-
-// D-day 칩 글자색: 지남은 빨강, 당일은 주황, 그 외는 시안 색
-export function getDDayColor(dDay: string): string {
+// D-day 칩의 CSS 클래스 이름: 지남, 당일, 그 외
+export function getDDayTone(dDay: string): 'overdue' | 'today' | 'normal' {
   if (dDay.startsWith('D+')) {
-    return 'error.main';
+    return 'overdue';
   }
-  return dDay === 'D-Day' ? 'warning.main' : '#555555';
+  return dDay === 'D-Day' ? 'today' : 'normal';
+}
+
+// CSS 파일에서 읽을 테마 값을 대시보드 최상위 요소의 CSS 변수로 넘긴다
+export function getDashboardCssVars(theme: Theme) {
+  return {
+    '--dashboard-paper': theme.palette.background.paper,
+    '--dashboard-divider': theme.palette.divider,
+    '--dashboard-text-primary': theme.palette.text.primary,
+    '--dashboard-text-secondary': theme.palette.text.secondary,
+    '--dashboard-text-disabled': theme.palette.text.disabled,
+    '--dashboard-action-hover': theme.palette.action.hover,
+    '--dashboard-primary': theme.palette.primary.main,
+    '--dashboard-error': theme.palette.error.main,
+    '--dashboard-warning': theme.palette.warning.main,
+    '--dashboard-primary-hover': alpha(theme.palette.primary.main, theme.palette.action.hoverOpacity),
+  } as CSSProperties;
 }
 
 export function formatDate(value: string): string {

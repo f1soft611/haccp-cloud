@@ -1,0 +1,352 @@
+/* 업체 대시보드 스타일. 모든 규칙을 .scope 아래에 두어 MUI 기본 스타일보다 우선하게 한다. */
+
+/* 패널 */
+.scope .statusPanel {
+  padding: 8px 16px;
+  background-color: #eff0f6;
+  box-shadow: none;
+  border-radius: 7px;
+}
+
+.scope .calendarPanel {
+  padding: 16px;
+  border: 1px solid var(--dashboard-divider);
+  border-radius: 4px;
+}
+
+.scope .hiddenSidebar {
+  display: none;
+}
+
+/* 문서 구분 제목 */
+.scope .docTitleDraft {
+  --doc-title-color: #3263b9;
+}
+
+.scope .docTitleApproval {
+  --doc-title-color: #404244;
+}
+
+.scope[data-mode='dark'] .docTitleDraft,
+.scope[data-mode='dark'] .docTitleApproval {
+  --doc-title-color: var(--dashboard-text-primary);
+}
+
+.scope .docTitleRow {
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.scope .docTitleDot {
+  width: 13px;
+  height: 13px;
+  box-sizing: border-box;
+  background-color: var(--dashboard-paper);
+  border: 3px solid var(--doc-title-color);
+  border-radius: 50%;
+}
+
+.scope .docTitleText {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--doc-title-color);
+}
+
+/* 상태바 */
+.scope .statusDraftGroup {
+  flex-basis: 100%;
+}
+
+@media (min-width: 1536px) {
+  .scope .statusDraftGroup {
+    flex-basis: auto;
+  }
+}
+
+.scope .statusIcon {
+  color: var(--dashboard-text-secondary);
+}
+
+.scope .statusChevron {
+  color: var(--dashboard-text-disabled);
+}
+
+.scope .statusLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1d1d1d;
+}
+
+.scope .statusLabelDraft {
+  margin-right: 8px;
+}
+
+.scope .statusLabelApproval {
+  margin-right: 4px;
+}
+
+.scope .statusName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555555;
+}
+
+.scope .countButton {
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 10px;
+}
+
+.scope .countButton:hover {
+  background-color: var(--dashboard-action-hover);
+}
+
+.scope .countValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0763cc;
+}
+
+.scope .countUnit {
+  font-size: 16px;
+  font-weight: 500;
+  color: #5e5e5e;
+}
+
+/* 문서 구분 라디오 */
+.scope .radioOuter {
+  width: 21px;
+  height: 21px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid #989898;
+  background-color: var(--dashboard-paper);
+}
+
+.scope .radioDot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: #d5dbef;
+}
+
+.scope .radioDot[data-checked='true'] {
+  background-color: #375ace;
+}
+
+.scope .docScopeRadio {
+  padding: 0;
+  margin-right: 9px;
+}
+
+.scope .docScopeRadio:global(.Mui-focusVisible) {
+  outline: 2px solid var(--dashboard-primary);
+  outline-offset: 1px;
+}
+
+.scope .docScopeRadio:global(.Mui-disabled) {
+  opacity: 0.5;
+}
+
+.scope .docScopeLabel {
+  margin-left: 0;
+  margin-right: 19px;
+}
+
+.scope .docScopeLabel :global(.MuiFormControlLabel-label) {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 캘린더 보기의 비활성 글자색은 MUI 값을 유지한다 */
+.scope .docScopeLabel :global(.MuiFormControlLabel-label:not(.Mui-disabled)) {
+  color: #262626;
+}
+
+.scope[data-mode='dark'] .docScopeLabel :global(.MuiFormControlLabel-label:not(.Mui-disabled)) {
+  color: var(--dashboard-text-primary);
+}
+
+/* 보기 전환 */
+.scope .viewToggleWrap {
+  flex-shrink: 0;
+}
+
+.scope .viewToggle {
+  gap: 4px;
+}
+
+.scope .viewToggle :global(.MuiToggleButton-root) {
+  min-width: 88px;
+  height: 36px;
+  border: 1px solid var(--dashboard-divider);
+  border-radius: 4px !important;
+  background-color: var(--dashboard-paper);
+  color: var(--dashboard-text-disabled);
+  font-weight: 600;
+}
+
+.scope .viewToggle :global(.MuiToggleButton-root):hover {
+  background-color: var(--dashboard-paper);
+  color: var(--dashboard-text-secondary);
+}
+
+.scope .viewToggle :global(.MuiToggleButton-root.Mui-selected) {
+  border-color: var(--dashboard-text-secondary);
+  color: var(--dashboard-text-primary);
+  background-color: var(--dashboard-paper);
+}
+
+.scope .viewToggle :global(.MuiToggleButton-root.Mui-selected):hover {
+  background-color: var(--dashboard-paper);
+}
+
+.scope .viewToggle :global(.MuiToggleButtonGroup-grouped:not(:first-of-type)) {
+  margin-left: 0;
+  border-left: 1px solid var(--dashboard-divider);
+}
+
+.scope .viewToggle :global(.MuiToggleButtonGroup-grouped.Mui-selected:not(:first-of-type)) {
+  border-left-color: var(--dashboard-text-secondary);
+}
+
+.scope .toggleIcon {
+  margin-right: 4px;
+}
+
+/* 업무 카드. 위 띠는 .workCard 뒤에 있어야 테두리를 덮어쓴다 */
+.scope .workCard {
+  background-color: #ffffff;
+  border: 1px solid #ebebeb;
+  border-radius: 6px;
+  box-shadow: 1px 1px 5px #1a388a0a;
+}
+
+.scope .workCardDraft {
+  border-top: 3px solid #3263b9;
+}
+
+.scope .workCardApproval {
+  border-top: 3px solid #404244;
+}
+
+.scope .workCardFull {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.scope .cardBody {
+  flex-grow: 1;
+  padding: 16px 20px;
+}
+
+.scope .chipRow {
+  margin-bottom: 8px;
+}
+
+.scope .cardChip {
+  height: 24px;
+  font-size: 12px;
+  font-weight: 500;
+  border-color: var(--dashboard-divider);
+}
+
+.scope .overdue {
+  color: var(--dashboard-error);
+}
+
+.scope .today {
+  color: var(--dashboard-warning);
+}
+
+.scope .normal {
+  color: #555555;
+}
+
+.scope .workCategory {
+  font-size: 12px;
+  font-weight: 400;
+  color: #8e8e8e;
+}
+
+.scope .workTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1e1f21;
+}
+
+.scope .workTitleGap {
+  margin-bottom: 4px;
+}
+
+.scope .reviewLine {
+  font-size: 14px;
+  font-weight: 400;
+  color: #8e8e8e;
+}
+
+.scope .cardFooter {
+  padding: 12px 20px;
+}
+
+.scope .updatedText {
+  flex-grow: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: #8a8a8a;
+}
+
+.scope .footerLabel {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: #a8a8a8;
+}
+
+.scope .footerGrow {
+  flex-grow: 1;
+}
+
+.scope .footerValue {
+  font-weight: 500;
+  color: #444444;
+}
+
+.scope .workCardButton {
+  height: 30px;
+  flex-shrink: 0;
+  color: #29409a;
+  background-color: #f9fafc;
+  border: 1px solid #b4bddf;
+  border-radius: 4px;
+}
+
+/* .scope 규칙이 MUI hover 를 덮으므로 같은 값을 직접 지정한다 */
+.scope .workCardButton:hover {
+  background-color: var(--dashboard-primary-hover);
+}
+
+.scope .unwrittenButton {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.scope .underline {
+  text-decoration: underline;
+}
+
+/* 목록 상태 */
+.scope .emptyText {
+  padding-top: 32px;
+  padding-bottom: 32px;
+  color: var(--dashboard-text-secondary);
+}
+
+.scope .skeletonAction {
+  margin-top: 8px;
+}
