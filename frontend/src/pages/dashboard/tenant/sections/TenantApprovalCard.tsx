@@ -10,13 +10,21 @@ import {
     getDDayColor,
     getWorkCycleSx,
     WORK_CARD_BUTTON_SX,
+    WORK_CARD_CATEGORY_SX,
     WORK_CARD_SX,
+    WORK_CARD_TITLE_SX,
 } from '../utils';
 
 type TenantApprovalCardProps = {
     item: TenantTodoCardItem;
     sectionLabel: string;
 };
+
+// 카드 하단 라벨 글씨 (기안자, 작성시간)
+const FOOTER_LABEL_SX = { fontSize: 14, fontWeight: 400, color: '#A8A8A8' };
+
+// 카드 하단 값 글씨 (이름, 시각)
+const FOOTER_VALUE_SX = { fontWeight: 500, color: '#444444' };
 
 // 나의 담당업무의 결재할문서 카드: 요청 구분, 기안자, 상신 시각을 보여주고 결재 문서로 이동
 export function TenantApprovalCard({ item, sectionLabel }: TenantApprovalCardProps) {
@@ -46,7 +54,7 @@ export function TenantApprovalCard({ item, sectionLabel }: TenantApprovalCardPro
                         size="small"
                         variant="outlined"
                         label={item.cycleName || item.cycle || '-'}
-                        sx={{ ...CARD_CHIP_SX, ...getWorkCycleSx(item.cycle) }}
+                        sx={getWorkCycleSx(item.cycle)}
                     />
                     {item.dDay ? (
                         <Chip
@@ -58,10 +66,10 @@ export function TenantApprovalCard({ item, sectionLabel }: TenantApprovalCardPro
                     ) : null}
                 </Stack>
 
-                <Typography variant="caption" color="text.secondary" noWrap component="div">
+                <Typography variant="caption" noWrap component="div" sx={WORK_CARD_CATEGORY_SX}>
                     {[sectionLabel, item.approvalRequestLabel].filter(Boolean).join(' | ')}
                 </Typography>
-                <Typography variant="subtitle1" fontWeight={700} noWrap>
+                <Typography variant="subtitle1" noWrap sx={WORK_CARD_TITLE_SX}>
                     {item.divisionName || item.title || '-'}
                 </Typography>
             </Box>
@@ -69,11 +77,13 @@ export function TenantApprovalCard({ item, sectionLabel }: TenantApprovalCardPro
             <Divider />
 
             <Stack direction="row" alignItems="center" spacing={1.5} sx={{ px: 2.5, py: 1.5 }}>
-                <Typography variant="body2" color="text.secondary" noWrap sx={{ minWidth: 0 }}>
-                    {`기안자 : ${item.createdBy || '-'}`}
+                <Typography variant="body2" noWrap sx={{ minWidth: 0, ...FOOTER_LABEL_SX }}>
+                    {'기안자 : '}
+                    <Box component="span" sx={FOOTER_VALUE_SX}>{item.createdBy || '-'}</Box>
                 </Typography>
-                <Typography variant="body2" color="text.secondary" noWrap sx={{ flexGrow: 1, minWidth: 0 }}>
-                    {`작성시간 : ${submittedAt}`}
+                <Typography variant="body2" noWrap sx={{ flexGrow: 1, minWidth: 0, ...FOOTER_LABEL_SX }}>
+                    {'작성시간 : '}
+                    <Box component="span" sx={FOOTER_VALUE_SX}>{submittedAt}</Box>
                 </Typography>
                 <IconButton
                     size="small"

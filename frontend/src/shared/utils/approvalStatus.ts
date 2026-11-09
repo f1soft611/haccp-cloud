@@ -72,11 +72,16 @@ export function resolveApprovalStatusView(params: {
 }
 
 export const APPROVAL_STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  미작성: { bg: '#E6EDEE', color: '#879499' },
-  결재진행중: { bg: '#D9F3FC', color: '#004DB1' },
+  미작성: { bg: '#E9EFF1', color: '#879499' },
+  결재진행중: { bg: '#D9F3FC', color: '#087DBD' },
   승인: { bg: '#D8F4E9', color: '#079E63' },
   반려: { bg: '#FFDFF8', color: '#CF014E' },
   작성: { bg: '#D8F4E9', color: '#079E63' },
   확인: { bg: '#D8F4E9', color: '#079E63' },
-  대기: { bg: '#E6EDEE', color: '#879499' },
+  대기: { bg: '#E9EFF1', color: '#879499' },
 };
+
+// 결재상태칩 라벨의 좌우 패딩 (달력 범례 뱃지와 공용)
+export function getApprovalChipPaddingX(label: string): string {
+  return label === '결재진행중' ? '13px' : '10px';
+}

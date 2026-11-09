@@ -20,6 +20,8 @@ import { useAuthStore } from '../../store/authStore';
 import { getRoleLabel } from '../../constants/labels';
 import { resolveLoginPathWithLastTenantNo } from '../../utils/loginDomainRouting';
 
+const HEADER_AVATAR_SIZE = 27;
+
 function resolveAvatarLabel(displayName: string, userId: string): string {
   const visibleName = displayName.trim();
   if (visibleName) {
@@ -35,13 +37,15 @@ function resolveAvatarLabel(displayName: string, userId: string): string {
 }
 
 function resolveAvatarSx(size: number, hasImage: boolean) {
+  const isHeaderAvatar = size === HEADER_AVATAR_SIZE;
+
   return {
     width: size,
     height: size,
-    bgcolor: hasImage ? 'transparent' : 'success.main',
+    bgcolor: hasImage ? 'transparent' : '#009F25',
     color: hasImage ? 'transparent' : 'common.white',
-    fontSize: size === 30 ? '0.9rem' : '1rem',
-    fontWeight: 800,
+    fontSize: isHeaderAvatar ? '0.75rem' : '1rem',
+    fontWeight: isHeaderAvatar ? 600 : 800,
     img: {
       objectFit: 'cover',
     },
@@ -113,7 +117,7 @@ export function UserAccountMenu() {
           size="small"
           sx={{
             p: 0,
-            ml: 0.5,
+            ml: '10px',
             '&:hover': {
               bgcolor: 'transparent',
               boxShadow: '0 0 0 2px rgba(255,255,255,0.6)',
@@ -125,7 +129,7 @@ export function UserAccountMenu() {
       >
         <Avatar
           src={profileImage || undefined}
-          sx={resolveAvatarSx(30, Boolean(profileImage))}
+          sx={resolveAvatarSx(HEADER_AVATAR_SIZE, Boolean(profileImage))}
           imgProps={{
             style: {
               objectFit: 'cover',

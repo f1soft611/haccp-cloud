@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Box, Grid, Paper, Stack, type Theme, Typography } from '@mui/material';
 import { useSessionState } from '../../../shared/hooks/useSessionState';
 import { WorkCalendarView } from '../../documents/work-calendar/components/WorkCalendarView';
 import { useWorkCalendarData } from '../../documents/work-calendar/hooks/useWorkCalendarData';
@@ -17,21 +17,34 @@ import {
     type TenantTodoFilter,
     type TenantViewMode,
 } from './todoFilter';
+import { APPROVAL_CARD_TOP_COLOR, DRAFT_CARD_TOP_COLOR } from './utils';
 
 // 카드 섹션 제목: 동그라미 표시 + 문서 구분명
+// 시안대로 동그라미 13px, 테두리 3px, 배경 흰색, 글씨 16px, 간격 7px, color 는 동그라미와 글씨에 적용
+//         다크 모드는 페이지 배경에 묻히므로 시안 색 대신 text.primary 사용
 function DocSectionTitle({ label, color }: { label: string; color: string }) {
+    const resolveColor = (theme: Theme) =>
+        theme.palette.mode === 'light' ? color : theme.palette.text.primary;
+
     return (
-        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1 }}>
+        <Stack direction="row" alignItems="center" sx={{ gap: '7px', mb: 1 }}>
             <Box
                 sx={{
-                    width: 10,
-                    height: 10,
-                    border: '2px solid',
-                    borderColor: color,
+                    width: 13,
+                    height: 13,
+                    boxSizing: 'border-box',
+                    bgcolor: 'background.paper',
+                    border: '3px solid',
+                    borderColor: resolveColor,
                     borderRadius: '50%',
                 }}
             />
-            <Typography variant="subtitle1" component="h2" fontWeight={700}>
+            <Typography
+                variant="subtitle1"
+                component="h2"
+                fontWeight={700}
+                sx={{ fontSize: 16, color: resolveColor }}
+            >
                 {label}
             </Typography>
         </Stack>
@@ -119,7 +132,7 @@ export function TenantDashboard() {
                         <Stack spacing={3}>
                             {docScope !== 'approval' ? (
                                 <Box>
-                                    <DocSectionTitle label="기안문서" color="primary.main" />
+                                    <DocSectionTitle label="기안문서" color={DRAFT_CARD_TOP_COLOR} />
                                     <TenantTodoSection
                                         isLoading={isTodoLoading}
                                         isError={isTodoError}
@@ -130,7 +143,7 @@ export function TenantDashboard() {
                             ) : null}
                             {docScope !== 'draft' ? (
                                 <Box>
-                                    <DocSectionTitle label="결재할문서" color="text.primary" />
+                                    <DocSectionTitle label="결재할문서" color={APPROVAL_CARD_TOP_COLOR} />
                                     <TenantTodoSection
                                         isLoading={isApprovalLoading}
                                         isError={isApprovalError}

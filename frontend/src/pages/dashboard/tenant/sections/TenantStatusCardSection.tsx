@@ -42,6 +42,35 @@ const DOC_SCOPE_OPTIONS: { value: TenantDocScope; label: string }[] = [
     { value: 'approval', label: '결재할문서' },
 ];
 
+// 문서 구분 라디오 모양 (바깥 원 21px, 안쪽 원 15px)
+function DocScopeRadioIcon({ checked }: { checked: boolean }) {
+    return (
+        <Box
+            sx={{
+                width: 21,
+                height: 21,
+                boxSizing: 'border-box',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                border: '1px solid #989898',
+                bgcolor: 'background.paper',
+            }}
+        >
+            <Box
+                data-testid="doc-scope-radio-dot"
+                sx={{
+                    width: 15,
+                    height: 15,
+                    borderRadius: '50%',
+                    bgcolor: checked ? '#375ACE' : '#D5DBEF',
+                }}
+            />
+        </Box>
+    );
+}
+
 type TenantStatusCardSectionProps = {
     counts: TodoStatusCounts;
     isLoading: boolean;
@@ -73,12 +102,12 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                 {label}
                 <Typography
                     component="span"
-                    fontWeight={800}
-                    sx={{ color: 'primary.main', fontSize: 18 }}
+                    fontWeight={600}
+                    sx={{ color: '#0763CC', fontSize: 18 }}
                 >
                     {isLoading ? <Skeleton width={24} /> : counts[status]}
                 </Typography>
-                <Typography variant="body2" component="span" color="text.secondary">
+                <Typography component="span" sx={{ fontSize: 16, fontWeight: 500, color: '#5E5E5E' }}>
                     건
                 </Typography>
             </ButtonBase>
@@ -105,7 +134,7 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                 sx={{ flexBasis: { xs: '100%', xl: 'auto' } }}
             >
                 <EditNoteOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                <Typography variant="body2" fontWeight={700} sx={{ mr: 1 }}>
+                <Typography fontWeight={700} sx={{ mr: 1, fontSize: 16, color: '#1D1D1D' }}>
                     기안문서
                 </Typography>
                 {DRAFT_STATUS_CARD_KEYS.map((status, index) => (
@@ -113,7 +142,12 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                         {index > 0 ? (
                             <ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />
                         ) : null}
-                        {renderCount(status, <Typography variant="body2" component="span">{status}</Typography>)}
+                        {renderCount(
+                            status,
+                            <Typography component="span" sx={{ fontSize: 14, fontWeight: 500, color: '#555555' }}>
+                                {status}
+                            </Typography>,
+                        )}
                     </Fragment>
                 ))}
             </Stack>
@@ -122,7 +156,7 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                 PENDING_APPROVAL_STATUS,
                 <>
                     <AssignmentTurnedInOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                    <Typography variant="body2" component="span" fontWeight={700} sx={{ mr: 0.5 }}>
+                    <Typography component="span" fontWeight={700} sx={{ mr: 0.5, fontSize: 16, color: '#1D1D1D' }}>
                         결재할 문서
                     </Typography>
                 </>,
@@ -146,10 +180,34 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                         <FormControlLabel
                             key={option.value}
                             value={option.value}
-                            control={<Radio size="small" />}
+                            control={
+                                <Radio
+                                    disableRipple
+                                    icon={<DocScopeRadioIcon checked={false} />}
+                                    checkedIcon={<DocScopeRadioIcon checked />}
+                                    sx={{
+                                        p: 0,
+                                        mr: '9px',
+                                        '&.Mui-focusVisible': {
+                                            outline: '2px solid',
+                                            outlineColor: 'primary.main',
+                                            outlineOffset: 1,
+                                        },
+                                        '&.Mui-disabled': { opacity: 0.5 },
+                                    }}
+                                />
+                            }
                             label={option.label}
                             disabled={viewMode === 'calendar'}
-                            sx={{ mr: 1.5, '& .MuiFormControlLabel-label': { fontSize: 14 } }}
+                            sx={{
+                                ml: 0,
+                                mr: '19px',
+                                '& .MuiFormControlLabel-label': {
+                                    fontSize: 14,
+                                    fontWeight: 500,
+                                    color: (theme) => (theme.palette.mode === 'light' ? '#262626' : theme.palette.text.primary),
+                                },
+                            }}
                         />
                     ))}
                 </RadioGroup>

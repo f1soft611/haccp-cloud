@@ -120,11 +120,7 @@ export function HaccpPortalGrid({
                         <Chip
                             size="small"
                             label={row.cycleName || row.cycle || '-'}
-                            sx={{
-                              height: 22,
-                              fontWeight: 700,
-                              ...getWorkCycleSx(row.cycle),
-                            }}
+                            sx={getWorkCycleSx(row.cycle)}
                         />
                       </TableCell>
                       <TableCell>{row.assigneeSummary || '-'}</TableCell>

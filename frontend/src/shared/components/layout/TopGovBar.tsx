@@ -129,25 +129,27 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
   };
 
     const headerButtonSx = {
-        borderRadius: 1,
-        px: 1.5,
+        borderRadius: '4px',
+        px: '15px',
         py: 0.4,
-        minHeight: 32,
-        minWidth: 96,
-        bgcolor: 'rgba(255,255,255,0.08)',
-        borderColor: 'rgba(255,255,255,0.2)',
-        color: '#f8fafc',
+        minHeight: 31,
+        minWidth: 78,
+        bgcolor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#374364',
+        borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : '#697595',
+        color: isDarkMode ? '#f8fafc' : '#A5B3D9',
         fontWeight: 600,
-        fontSize: '0.8125rem',
+        fontSize: '0.75rem',
         '&:hover': {
             borderColor: isDarkMode ? '#fbbf24' : '#ffffff',
             bgcolor: 'rgba(255,255,255,0.14)',
         },
     } as const;
 
+    // 테마, 화면크기 드롭다운 버튼 스타일
+    // 기존 -> 최소 너비 96px / 변경 -> 시안 101px
     const headerDropdownButtonSx = {
         ...headerButtonSx,
-        minWidth: 96,
+        minWidth: 101,
         justifyContent: 'space-between',
     } as const;
 
@@ -223,8 +225,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                 <Stack
                     direction="row"
                     alignItems="center"
-                    spacing={1}
-                    sx={{ ml: 'auto', py: 0.75 }}
+                    sx={{ ml: 'auto', py: 0.75, gap: '5px' }}
                 >
                     <Button
                         variant="outlined"

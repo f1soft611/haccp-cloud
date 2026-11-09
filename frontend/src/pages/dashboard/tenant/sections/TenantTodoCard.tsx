@@ -10,7 +10,9 @@ import {
     getDDayColor,
     getWorkCycleSx,
     WORK_CARD_BUTTON_SX,
+    WORK_CARD_CATEGORY_SX,
     WORK_CARD_SX,
+    WORK_CARD_TITLE_SX,
 } from '../utils';
 import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 
@@ -57,7 +59,7 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
                             size="small"
                             variant="outlined"
                             label={item.cycleName || item.cycle || '-'}
-                            sx={{ ...CARD_CHIP_SX, ...getWorkCycleSx(item.cycle) }}
+                            sx={getWorkCycleSx(item.cycle)}
                         />
                         {item.dDay ? (
                             <Chip
@@ -69,14 +71,13 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
                         ) : null}
                     </Stack>
 
-                    <Typography variant="caption" color="text.secondary" noWrap component="div">
+                    <Typography variant="caption" noWrap component="div" sx={WORK_CARD_CATEGORY_SX}>
                         {sectionLabel}
                     </Typography>
-                    <Typography variant="subtitle1" fontWeight={700} noWrap mb={0.5}>
+                    <Typography variant="subtitle1" noWrap mb={0.5} sx={WORK_CARD_TITLE_SX}>
                         {item.divisionName || item.title || '-'}
                     </Typography>
-                    {/* 기존 -> 검토:이름 / 승인:이름 | 변경 -> 시안 표기 */}
-                    <Typography variant="body2" color="text.secondary" noWrap>
+                    <Typography variant="body2" noWrap sx={{ fontSize: 14, fontWeight: 400, color: '#8E8E8E' }}>
                         {`검토 : ${item.reviewerName || '-'} | 승인 : ${item.approverName || '-'}`}
                     </Typography>
                 </Box>
@@ -84,10 +85,13 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
                 <Divider />
 
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2.5, py: 1.5 }}>
-                    <Typography variant="body2" color="text.secondary" noWrap sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <Typography
+                        variant="body2"
+                        noWrap
+                        sx={{ flexGrow: 1, minWidth: 0, fontSize: 14, fontWeight: 400, color: '#8A8A8A' }}
+                    >
                         {`최신 : ${item.updatedAt ? item.updatedAt.slice(0, 10) : '-'} / ${item.lastWriterName || '-'}`}
                     </Typography>
-                    {/* 기존 -> 건수가 있으면 빨간색, 문서 아이콘 표시 / 변경 -> 시안대로 항상 같은 색, 아이콘 없음 */}
                     <Button
                         size="small"
                         variant="outlined"
