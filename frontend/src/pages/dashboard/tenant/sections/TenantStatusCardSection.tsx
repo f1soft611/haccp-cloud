@@ -90,43 +90,54 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
             columnGap={3}
             rowGap={1}
         >
+            {/* 기존 -> 기안문서, 결재할 문서, 라디오+버튼 3구역 / 변경 -> 기안문서+결재할 문서를 왼쪽 구역으로 묶음 */}
             <Stack
                 direction="row"
                 flexWrap="wrap"
                 alignItems="center"
                 useFlexGap
-                columnGap={0.5}
+                columnGap={5}
                 rowGap={0.5}
-                className={styles.statusDraftGroup}
+                className={styles.statusLeftGroup}
             >
-                <EditNoteOutlinedIcon fontSize="small" className={styles.statusIcon} />
-                <Typography className={`${styles.statusLabel} ${styles.statusLabelDraft}`}>
-                    기안문서
-                </Typography>
-                {DRAFT_STATUS_CARD_KEYS.map((status, index) => (
-                    <Fragment key={status}>
-                        {index > 0 ? (
-                            <ChevronRightIcon fontSize="small" className={styles.statusChevron} />
-                        ) : null}
-                        {renderCount(
-                            status,
-                            <Typography component="span" className={styles.statusName}>
-                                {status}
-                            </Typography>,
-                        )}
-                    </Fragment>
-                ))}
-            </Stack>
-
-            {renderCount(
-                PENDING_APPROVAL_STATUS,
-                <>
-                    <AssignmentTurnedInOutlinedIcon fontSize="small" className={styles.statusIcon} />
-                    <Typography component="span" className={`${styles.statusLabel} ${styles.statusLabelApproval}`}>
-                        결재할 문서
+                <Stack
+                    direction="row"
+                    flexWrap="wrap"
+                    alignItems="center"
+                    useFlexGap
+                    columnGap={0.5}
+                    rowGap={0.5}
+                    className={styles.statusDraftGroup}
+                >
+                    <EditNoteOutlinedIcon fontSize="small" className={styles.statusIcon} />
+                    <Typography className={`${styles.statusLabel} ${styles.statusLabelDraft}`}>
+                        기안문서
                     </Typography>
-                </>,
-            )}
+                    {DRAFT_STATUS_CARD_KEYS.map((status, index) => (
+                        <Fragment key={status}>
+                            {index > 0 ? (
+                                <ChevronRightIcon fontSize="small" className={styles.statusChevron} />
+                            ) : null}
+                            {renderCount(
+                                status,
+                                <Typography component="span" className={styles.statusName}>
+                                    {status}
+                                </Typography>,
+                            )}
+                        </Fragment>
+                    ))}
+                </Stack>
+
+                {renderCount(
+                    PENDING_APPROVAL_STATUS,
+                    <>
+                        <AssignmentTurnedInOutlinedIcon fontSize="small" className={styles.statusIcon} />
+                        <Typography component="span" className={`${styles.statusLabel} ${styles.statusLabelApproval}`}>
+                            결재할 문서
+                        </Typography>
+                    </>,
+                )}
+            </Stack>
 
             <Stack
                 direction="row"
