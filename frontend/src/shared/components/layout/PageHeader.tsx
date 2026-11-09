@@ -5,6 +5,8 @@ import {
   useCurrentMenuGroupLabel,
   useUserMenuMetadata,
 } from './userMenuMetadataContext';
+import styles from '../sharedComponents.module.css';
+import { useSharedScope } from '../useSharedScope';
 
 export type PageHeaderProps = {
   title: string;
@@ -21,6 +23,7 @@ export function PageHeader({
   useMenuMetadata = true,
   showGroupLabel = true,
 }: PageHeaderProps) {
+  const scope = useSharedScope();
   const location = useLocation();
   const currentMenuGroupLabel = useCurrentMenuGroupLabel();
   const menuMetadataByPath = useUserMenuMetadata();
@@ -48,28 +51,24 @@ export function PageHeader({
     ? currentMenuGroupLabel || groupLabel
     : undefined;
 
+  // 기존 -> sx, 스타일 prop 으로 스타일 지정
+  // 변경 -> sharedComponents.module.css 클래스 사용
   return (
-    <Box
-      sx={{
-        pl: 1.5,
-        borderLeft: '3px solid',
-        borderColor: 'primary.main',
-      }}
-    >
+    <Box {...scope} className={`${scope.className} ${styles.pageHeader}`}>
       {resolvedGroupLabel ? (
         <Stack
           direction="row"
           alignItems="center"
           spacing={0.5}
-          sx={{ mb: 0.4 }}
+          className={styles.pageHeaderPath}
         >
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" className={styles.textSecondary}>
             {resolvedGroupLabel}
           </Typography>
-          <Typography variant="caption" color="text.disabled">
+          <Typography variant="caption" className={styles.textDisabled}>
             /
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" className={styles.textSecondary}>
             {resolvedTitle}
           </Typography>
         </Stack>
@@ -78,14 +77,13 @@ export function PageHeader({
       <Typography
         component="h1"
         variant="h5"
-        fontWeight={700}
-        sx={{ lineHeight: 1.2 }}
+        className={styles.pageHeaderTitle}
       >
         {resolvedTitle}
       </Typography>
 
       {resolvedDescription ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        <Typography variant="body2" className={`${styles.textSecondary} ${styles.pageHeaderDescription}`}>
           {resolvedDescription}
         </Typography>
       ) : null}

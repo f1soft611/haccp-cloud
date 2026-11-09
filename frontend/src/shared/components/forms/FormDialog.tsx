@@ -11,8 +11,9 @@ import {
   type SxProps,
   type Theme,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
+import styles from '../sharedComponents.module.css';
+import { useSharedScope } from '../useSharedScope';
 
 export type FormDialogProps = {
   open: boolean;
@@ -37,51 +38,26 @@ export function FormDialog({
   fullWidth = true,
   contentSx,
 }: FormDialogProps) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
+  const scope = useSharedScope();
 
+  // 기존 -> sx, 스타일 prop 으로 스타일 지정
+  // 변경 -> sharedComponents.module.css 클래스 사용
   return (
     <Dialog
+      {...scope}
       open={open}
       onClose={onClose}
       maxWidth={maxWidth}
       fullWidth={fullWidth}
-      slotProps={{
-        paper: {
-          sx: {
-            overflow: 'hidden',
-            borderRadius: 1,
-            maxHeight: 'calc(100vh - 64px)',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: isDarkMode
-              ? '0 24px 80px rgba(2, 6, 23, 0.6)'
-              : '0 20px 56px rgba(15, 36, 64, 0.16)',
-            backgroundColor: isDarkMode ? '#111827' : '#ffffff',
-            color: isDarkMode ? '#f8fafc' : '#111827',
-          },
-        },
-      }}
+      slotProps={{ paper: { className: styles.formDialogPaper } }}
     >
-      <DialogTitle
-        sx={{
-          px: 3,
-          pt: 3,
-          pb: 2,
-          borderBottom: isDarkMode
-            ? '1px solid rgba(251, 191, 36, 0.18)'
-            : '1px solid rgba(20, 184, 166, 0.14)',
-        }}
-      >
+      <DialogTitle className={styles.formDialogTitle}>
         <Stack direction="row" spacing={2} alignItems="flex-start">
-          <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box className={styles.formDialogTitleBox}>
             <Typography
               component="span"
               variant="h5"
-              sx={{
-                fontWeight: 700,
-                color: isDarkMode ? '#f8fafc' : '#115e59',
-              }}
+              className={styles.formDialogTitleText}
             >
               {title}
             </Typography>
@@ -89,21 +65,9 @@ export function FormDialog({
           <IconButton
             aria-label="닫기"
             onClick={onClose}
-            sx={{
-              color: isDarkMode
-                ? 'rgba(248, 250, 252, 0.82)'
-                : 'rgba(17, 94, 89, 0.72)',
-              bgcolor: isDarkMode
-                ? 'rgba(251, 191, 36, 0.12)'
-                : 'rgba(20, 184, 166, 0.08)',
-              '&:hover': {
-                bgcolor: isDarkMode
-                  ? 'rgba(251, 191, 36, 0.22)'
-                  : 'rgba(20, 184, 166, 0.16)',
-              },
-            }}
+            className={styles.formDialogClose}
           >
-            <Typography component="span" variant="subtitle2" fontWeight={800}>
+            <Typography component="span" variant="subtitle2" className={styles.formDialogCloseMark}>
               ×
             </Typography>
           </IconButton>
@@ -111,35 +75,9 @@ export function FormDialog({
       </DialogTitle>
 
       <DialogContent
+        className={styles.formDialogContent}
         sx={[
-          {
-            px: 3,
-            pt: '24px !important',
-            pb: 3,
-            overflow: 'auto',
-            flex: 1,
-            '& .MuiFormControl-root': {
-              width: '100%',
-            },
-            '& .MuiInputLabel-root': {
-              px: 0.5,
-              backgroundColor: isDarkMode
-                ? 'rgba(17,24,39,0.96)'
-                : 'rgba(255,255,255,0.92)',
-              color: isDarkMode ? 'rgba(248,250,252,0.78)' : undefined,
-            },
-            '& .MuiInputBase-input, & .MuiSelect-select': {
-              color: isDarkMode ? '#f8fafc' : undefined,
-            },
-            '& .MuiOutlinedInput-root': {
-              bgcolor: isDarkMode ? 'rgba(15,23,42,0.55)' : '#ffffff',
-            },
-            '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: isDarkMode
-                ? 'rgba(251,191,36,0.26)'
-                : 'rgba(20,184,166,0.2)',
-            },
-          },
+          { flex: 1 },
           ...(Array.isArray(contentSx)
             ? contentSx
             : contentSx
@@ -150,13 +88,7 @@ export function FormDialog({
         {description ? (
           <Typography
             variant="body2"
-            sx={{
-              mb: 2,
-              color: isDarkMode
-                ? 'rgba(248, 250, 252, 0.72)'
-                : 'rgba(17, 94, 89, 0.72)',
-              lineHeight: 1.6,
-            }}
+            className={styles.formDialogDescription}
           >
             {description}
           </Typography>
@@ -166,16 +98,7 @@ export function FormDialog({
 
       <DialogActions
         data-testid="form-dialog-actions"
-        sx={{
-          px: 3,
-          py: 2,
-          borderTop: isDarkMode
-            ? '1px solid rgba(251, 191, 36, 0.2)'
-            : '1px solid rgba(66, 111, 106, 0.16)',
-          bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.92)' : '#ffffff',
-          justifyContent: 'flex-end',
-          gap: 1,
-        }}
+        className={styles.formDialogActions}
       >
         {actions}
       </DialogActions>

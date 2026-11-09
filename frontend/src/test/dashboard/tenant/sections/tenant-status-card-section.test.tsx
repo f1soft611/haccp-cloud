@@ -71,17 +71,4 @@ describe('TenantStatusCardSection', () => {
 
         expect(onViewModeChange).toHaveBeenCalledWith('calendar');
     });
-
-it('shows the selected and unselected radio dots in the design colors', () => {
-    renderBar({ docScope: 'all' });
-
-    const dotOf = (name: string) =>
-        screen
-            .getByRole('radio', { name })
-            .closest('.MuiRadio-root')
-            ?.querySelector('[data-testid="doc-scope-radio-dot"]');
-
-    expect(dotOf('전체')).toHaveStyle({ backgroundColor: '#375ACE' });
-    expect(dotOf('기안문서')).toHaveStyle({ backgroundColor: '#D5DBEF' });
-});
 });

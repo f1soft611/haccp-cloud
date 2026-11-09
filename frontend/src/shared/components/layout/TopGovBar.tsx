@@ -13,7 +13,6 @@ import {
     Typography,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import { SIDE_NAV_WIDTH } from './SideNav';
 import { useTheme } from '@mui/material/styles';
 import { useAuthStore } from '../../store/authStore';
 import { APP_LABELS } from '../../constants/labels';
@@ -24,6 +23,8 @@ import {
 } from '../../theme/themePreference';
 import { UserAccountMenu } from '../account/UserAccountMenu';
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import styles from '../sharedComponents.module.css';
+import { useSharedScope } from '../useSharedScope';
 
 const ROOT_FONT_SIZE_PX = 16;
 const FONT_SIZE_STORAGE_KEY = 'haccp-ui-font-size';
@@ -47,6 +48,7 @@ type TopGovBarProps = {
 
 export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
   const theme = useTheme();
+  const scope = useSharedScope();
   const isDarkMode = theme.palette.mode === 'dark';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const userId = useAuthStore((state) => state.userId);
@@ -128,96 +130,50 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
     handleThemeMenuClose();
   };
 
-    const headerButtonSx = {
-        borderRadius: '4px',
-        px: '15px',
-        py: 0.4,
-        minHeight: 31,
-        minWidth: 78,
-        bgcolor: isDarkMode ? 'rgba(255,255,255,0.08)' : '#374364',
-        borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : '#697595',
-        color: isDarkMode ? '#f8fafc' : '#A5B3D9',
-        fontWeight: 600,
-        fontSize: '0.75rem',
-        '&:hover': {
-            borderColor: isDarkMode ? '#fbbf24' : '#ffffff',
-            bgcolor: 'rgba(255,255,255,0.14)',
-        },
-    } as const;
-
-    // 테마, 화면크기 드롭다운 버튼 스타일
-    // 기존 -> 최소 너비 96px / 변경 -> 시안 101px
-    const headerDropdownButtonSx = {
-        ...headerButtonSx,
-        minWidth: 101,
-        justifyContent: 'space-between',
-    } as const;
-
+    // 기존 -> sx, 스타일 prop 으로 스타일 지정
+    // 변경 -> sharedComponents.module.css 클래스 사용
     return (
         <Box
+            {...scope}
+            className={`${scope.className} ${styles.topGov}`}
             data-testid="top-gov-bar"
-            sx={{
-                bgcolor: isDarkMode ? '#111827' : '#1b2a4e',
-                color: '#f8fafc',
-                borderBottom: '1px solid',
-                borderColor: isDarkMode ? 'rgba(251,191,36,0.28)' : '#1b2a4e',
-            }}
         >
             <Stack
                 direction="row"
                 alignItems="center"
                 spacing={1}
-                sx={{ pl: { xs: 1, md: 0 }, pr: { xs: 2, md: 3 }, minHeight: 48 }}
+                className={styles.topGovRow}
             >
                 {onOpenMobileNav ? (
                     <IconButton
                         aria-label="메뉴 열기"
                         onClick={onOpenMobileNav}
-                        sx={{ display: { xs: 'inline-flex', md: 'none' }, color: 'inherit' }}
+                        className={styles.topGovMobileNav}
                     >
                         <MenuRoundedIcon />
                     </IconButton>
                 ) : null}
 
-                <Box
-                    sx={{
-                        width: { md: SIDE_NAV_WIDTH },
-                        flexShrink: 0,
-                        px: { md: 3 },
-                        display: 'flex',
-                        alignItems: 'center',
-                    }}
-                >
+                <Box className={styles.topGovLogoBox}>
                     <Link
                         component={RouterLink}
                         to="/"
                         underline="none"
                         aria-label="FoodLink 홈으로 이동"
-                        sx={{
-                            display: 'inline-flex',
-                            borderRadius: 1,
-                            '&:focus-visible': {
-                                outline: '2px solid #ffffff',
-                                outlineOffset: '2px',
-                            },
-                        }}
+                        className={styles.topGovLogoLink}
                     >
                         <Box
                             component="img"
                             src="/f1foodlink_wh.png"
                             alt="FoodLink"
-                            sx={{ display: 'block', height: 22, objectFit: 'contain' }}
+                            className={styles.topGovLogo}
                         />
                     </Link>
                 </Box>
 
                 <Typography
                     variant="caption"
-                    sx={{
-                        flex: 1,
-                        textAlign: 'center',
-                        display: { xs: 'none', sm: 'block' },
-                    }}
+                    className={styles.topGovNotice}
                 >
                     {APP_LABELS.header.govNotice}
                 </Typography>
@@ -225,14 +181,14 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                 <Stack
                     direction="row"
                     alignItems="center"
-                    sx={{ ml: 'auto', py: 0.75, gap: '5px' }}
+                    className={styles.topGovActions}
                 >
                     <Button
                         variant="outlined"
                         color="inherit"
                         startIcon={<SearchRoundedIcon fontSize="small" />}
                         aria-label={APP_LABELS.header.searchAction}
-                        sx={{ ...headerButtonSx, display: 'none' }}
+                        className={`${styles.topGovButton} ${styles.topGovButtonHidden}`}
                     >
                         {APP_LABELS.header.searchAction}
                     </Button>
@@ -243,7 +199,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         aria-label="테마"
                         onClick={handleThemeMenuOpen}
                         endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
-                        sx={headerDropdownButtonSx}
+                        className={`${styles.topGovButton} ${styles.topGovDropdownButton}`}
                     >
                         테마
                     </Button>
@@ -254,7 +210,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         aria-label={APP_LABELS.header.fontSizeAction}
                         onClick={handleFontSizeMenuOpen}
                         endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
-                        sx={headerDropdownButtonSx}
+                        className={`${styles.topGovButton} ${styles.topGovDropdownButton}`}
                     >
                         {APP_LABELS.header.fontSizeAction}
                     </Button>
@@ -267,7 +223,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         variant="outlined"
                         color="inherit"
                         aria-label={APP_LABELS.header.manualAction}
-                        sx={headerButtonSx}
+                        className={styles.topGovButton}
                     >
                         {APP_LABELS.header.manualAction}
                     </Button>
@@ -277,70 +233,38 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
             </Stack>
 
       <Menu
+        {...scope}
         anchorEl={themeMenuAnchor}
         open={Boolean(themeMenuAnchor)}
         onClose={handleThemeMenuClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{
-          paper: {
-            elevation: 0,
-            sx: {
-              mt: 0.8,
-              border: '1px solid rgba(15,23,42,0.14)',
-              borderRadius: 2,
-              minWidth: 190,
-              boxShadow: '0 14px 28px rgba(15,23,42,0.12)',
-              p: 0.6,
-            },
-          },
-        }}
+        slotProps={{ paper: { elevation: 0, className: styles.topGovMenuPaper } }}
       >
         <MenuItem
           selected={selectedThemeMode === 'light'}
           onClick={() => handleThemeModeSelect('light')}
-          sx={{
-            borderRadius: 1.5,
-            minHeight: 38,
-            fontWeight: selectedThemeMode === 'light' ? 700 : 500,
-            color: selectedThemeMode === 'light' ? '#0f5f59' : 'text.primary',
-          }}
+          className={styles.topGovMenuItem}
         >
           밝은 테마
         </MenuItem>
         <MenuItem
           selected={selectedThemeMode === 'dark'}
           onClick={() => handleThemeModeSelect('dark')}
-          sx={{
-            borderRadius: 1.5,
-            minHeight: 38,
-            fontWeight: selectedThemeMode === 'dark' ? 700 : 500,
-            color: selectedThemeMode === 'dark' ? '#0f5f59' : 'text.primary',
-          }}
+          className={styles.topGovMenuItem}
         >
           다크 테마
         </MenuItem>
       </Menu>
 
       <Menu
+        {...scope}
         anchorEl={fontSizeMenuAnchor}
         open={Boolean(fontSizeMenuAnchor)}
         onClose={handleFontSizeMenuClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{
-          paper: {
-            elevation: 0,
-            sx: {
-              mt: 0.8,
-              border: '1px solid rgba(15,23,42,0.14)',
-              borderRadius: 2,
-              minWidth: 190,
-              boxShadow: '0 14px 28px rgba(15,23,42,0.12)',
-              p: 0.6,
-            },
-          },
-        }}
+        slotProps={{ paper: { elevation: 0, className: styles.topGovMenuPaper } }}
       >
         {FONT_SIZE_OPTIONS.map((option) => {
           const isSelected = selectedFontSize.key === option.key;
@@ -350,18 +274,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
               key={option.key}
               selected={isSelected}
               onClick={() => handleFontSizeSelect(option.key)}
-              sx={{
-                borderRadius: 1.5,
-                minHeight: 38,
-                fontWeight: isSelected ? 700 : 500,
-                color: isSelected ? '#0f5f59' : 'text.primary',
-                '&.Mui-selected': {
-                  bgcolor: 'rgba(20,184,166,0.14)',
-                },
-                '&.Mui-selected:hover': {
-                  bgcolor: 'rgba(20,184,166,0.2)',
-                },
-              }}
+              className={`${styles.topGovMenuItem} ${styles.topGovFontItem}`}
             >
               {option.label}
             </MenuItem>
@@ -370,14 +283,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
 
         <MenuItem
           onClick={handleFontSizeReset}
-          sx={{
-            borderRadius: 1.5,
-            mt: 0.2,
-            borderTop: '1px solid rgba(15,23,42,0.12)',
-            gap: 0.8,
-            color: 'text.secondary',
-            minHeight: 40,
-          }}
+          className={styles.topGovMenuReset}
         >
           <RestartAltRoundedIcon fontSize="small" />
           {APP_LABELS.header.fontSizeResetAction}

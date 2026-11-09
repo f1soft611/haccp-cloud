@@ -1,20 +1,6 @@
-@font-face {
-  font-family: 'Pretendard';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('@fontsource/pretendard/files/pretendard-latin-400-normal.woff2')
-    format('woff2');
-}
-
-@font-face {
-  font-family: 'Pretendard';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('@fontsource/pretendard/files/pretendard-latin-700-normal.woff2')
-    format('woff2');
-}
+/* 기존 -> @fontsource latin 400, 700 파일만 @font-face 로 등록 */
+/* 변경 -> 한글 포함 전 굵기 subset 사용, 화면에 필요한 글자 조각만 내려받는다 */
+@import 'pretendard/dist/web/static/pretendard-dynamic-subset.css';
 
 html,
 body,

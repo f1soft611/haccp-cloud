@@ -413,24 +413,6 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
         backgroundColor: '#f3f4f6',
       }}
     >
-      {!isTenantScopedLogin && (
-        <Box
-          component="img"
-          src={appLogoSrc}
-          alt="F1FoodLink"
-          sx={{
-            position: 'absolute',
-            top: 30,
-            left: { xs: 16, md: 'calc(50% - 470px)' },
-            display: 'block',
-            width: 148,
-            height: 25,
-            objectFit: 'contain',
-            imageRendering: '-webkit-optimize-contrast',
-          }}
-        />
-      )}
-
       <Box
         sx={{
           width: '100%',
@@ -442,6 +424,22 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
         }}
       >
         <Stack spacing={2.8} sx={{ width: '100%', maxWidth: 460 }}>
+
+          {!isTenantScopedLogin && (
+            <Box
+              component="img"
+              src={appLogoSrc}
+              alt="F1FoodLink"
+              sx={{
+                display: 'block',
+                alignSelf: 'center',
+                width: 148,
+                height: 25,
+                objectFit: 'contain',
+                imageRendering: '-webkit-optimize-contrast',
+              }}
+            />
+          )}
           <Card
             sx={{
               borderRadius: 2,

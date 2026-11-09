@@ -1,5 +1,6 @@
 import { Chip } from '@mui/material';
 import { APPROVAL_STATUS_COLORS, getApprovalChipPaddingX } from '../../utils/approvalStatus';
+import styles from '../sharedComponents.module.css';
 
 // 진행상태 라벨(미작성, 결재진행중, 승인, 반려)
 export function ApprovalStatusChip({ label }: { label: string }) {
@@ -8,16 +9,13 @@ export function ApprovalStatusChip({ label }: { label: string }) {
     <Chip
       size="small"
       label={label}
-        sx={{
-          height: 24,
-          borderRadius: '17px',
-          fontSize: 12,
-          fontWeight: 700,
-          bgcolor: style.bg,
-          color: style.color,
-          border: label === '미작성' ? '1px solid #FFFFFF' : 'none',
-          '& .MuiChip-label': { px: getApprovalChipPaddingX(label) },
-        }}
+      className={`${styles.scope} ${styles.approvalChip}`}
+      data-unwritten={label === '미작성'}
+      sx={{
+        bgcolor: style.bg,
+        color: style.color,
+        '& .MuiChip-label': { px: getApprovalChipPaddingX(label) },
+      }}
     />
   );
 }

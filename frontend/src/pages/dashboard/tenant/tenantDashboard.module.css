@@ -2,8 +2,12 @@
 
 /* 패널 */
 .scope .statusPanel {
-  padding: 8px 16px;
-  background-color: #eff0f6;
+  /* 기존 -> padding: 8px 16px; background-color: #eff0f6; 테두리, 위쪽 마진 없음 */
+  /* 변경 -> 위쪽 마진 5px, 왼쪽 패딩 10px 추가, 배경색 변경, 테두리 추가 */
+  margin-top: 5px;
+  padding: 8px 16px 8px 26px;
+  background-color: #e9ecf1;
+  border: 1px solid #d9e0eb;
   box-shadow: none;
   border-radius: 7px;
 }
@@ -53,13 +57,15 @@
 }
 
 /* 상태바 */
-.scope .statusDraftGroup {
-  flex-basis: 100%;
-}
+/* 기존 -> 1536px 미만에서 기안문서 그룹을 한 줄 전체로 표시 */
+/* 변경 -> 1100px 이하에서만 기안문서 다음 줄로 결재할 문서와 라디오+버튼을 표시 */
+@media (max-width: 1100px) {
+  .scope .statusLeftGroup {
+    display: contents;
+  }
 
-@media (min-width: 1536px) {
   .scope .statusDraftGroup {
-    flex-basis: auto;
+    flex-basis: 100%;
   }
 }
 
@@ -68,7 +74,9 @@
 }
 
 .scope .statusChevron {
-  color: var(--dashboard-text-disabled);
+  /* 기존 -> color: var(--dashboard-text-disabled); */
+  /* 변경 -> 기안문서 화살표 색 지정 */
+  color: #8d8d8d;
 }
 
 .scope .statusLabel {
@@ -269,7 +277,7 @@
 
 .scope .workCategory {
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 500;
   color: #8e8e8e;
 }
 
@@ -285,7 +293,7 @@
 
 .scope .reviewLine {
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   color: #8e8e8e;
 }
 
@@ -297,14 +305,14 @@
   flex-grow: 1;
   min-width: 0;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   color: #8a8a8a;
 }
 
 .scope .footerLabel {
   min-width: 0;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   color: #a8a8a8;
 }
 

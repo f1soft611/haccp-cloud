@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import type { UserItem } from '../../../services/organization/usersService';
 import { UserSelectPanels } from './UserSelectPanels';
+import styles from '../sharedComponents.module.css';
 
 type UserMultiSelectDialogProps = {
     users: UserItem[];
@@ -56,6 +57,8 @@ export function UserMultiSelectDialog(props: UserMultiSelectDialogProps) {
         };
     };
 
+    // 기존 -> sx, 스타일 prop 으로 스타일 지정
+    // 변경 -> sharedComponents.module.css 클래스 사용
     return (
         <Dialog open onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle>{title}</DialogTitle>
@@ -70,7 +73,7 @@ export function UserMultiSelectDialog(props: UserMultiSelectDialogProps) {
 
                         return (
                             <>
-                                <ListItemIcon sx={{ minWidth: 36 }}>
+                                <ListItemIcon className={styles.userPanelsControl}>
                                     <Checkbox
                                         edge="start"
                                         size="small"
@@ -82,7 +85,7 @@ export function UserMultiSelectDialog(props: UserMultiSelectDialogProps) {
                                     />
                                 </ListItemIcon>
                                 <ListItemText primary={name} />
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography variant="caption" className={styles.textSecondary}>
                                     ({state.count}/{ids.length})
                                 </Typography>
                             </>
@@ -93,7 +96,7 @@ export function UserMultiSelectDialog(props: UserMultiSelectDialogProps) {
 
                         return (
                             <FormControlLabel
-                                sx={{ px: 2, py: 0.5 }}
+                                className={styles.userPanelsSelectAll}
                                 control={
                                     <Checkbox
                                         size="small"
