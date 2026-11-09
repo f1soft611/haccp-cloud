@@ -19,8 +19,8 @@ import { logout as logoutApi } from '../../../services/auth/logoutService';
 import { useAuthStore } from '../../store/authStore';
 import { getRoleLabel } from '../../constants/labels';
 import { resolveLoginPathWithLastTenantNo } from '../../utils/loginDomainRouting';
-
-const HEADER_AVATAR_SIZE = 27;
+import styles from '../sharedComponents.module.css';
+import { useSharedScope } from '../useSharedScope';
 
 function resolveAvatarLabel(displayName: string, userId: string): string {
   const visibleName = displayName.trim();
@@ -36,24 +36,9 @@ function resolveAvatarLabel(displayName: string, userId: string): string {
   return 'U';
 }
 
-function resolveAvatarSx(size: number, hasImage: boolean) {
-  const isHeaderAvatar = size === HEADER_AVATAR_SIZE;
-
-  return {
-    width: size,
-    height: size,
-    bgcolor: hasImage ? 'transparent' : '#009F25',
-    color: hasImage ? 'transparent' : 'common.white',
-    fontSize: isHeaderAvatar ? '0.75rem' : '1rem',
-    fontWeight: isHeaderAvatar ? 600 : 800,
-    img: {
-      objectFit: 'cover',
-    },
-  };
-}
-
 export function UserAccountMenu() {
   const navigate = useNavigate();
+  const scope = useSharedScope();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const displayName = useAuthStore((state) => state.displayName);
   const userId = useAuthStore((state) => state.userId);
@@ -109,27 +94,21 @@ export function UserAccountMenu() {
     return null;
   }
 
+  // 기존 -> sx, 스타일 prop 으로 스타일 지정
+  // 변경 -> sharedComponents.module.css 클래스 사용
   return (
     <>
       <IconButton
+          {...scope}
+          className={`${scope.className} ${styles.accountTrigger}`}
           onClick={handleMenuOpen}
           aria-label={`${visibleName} 사용자 메뉴`}
           size="small"
-          sx={{
-            p: 0,
-            ml: '10px',
-            '&:hover': {
-              bgcolor: 'transparent',
-              boxShadow: '0 0 0 2px rgba(255,255,255,0.6)',
-            },
-            '&:focus-visible': {
-              boxShadow: '0 0 0 2px #ffffff',
-            },
-          }}
       >
         <Avatar
           src={profileImage || undefined}
-          sx={resolveAvatarSx(HEADER_AVATAR_SIZE, Boolean(profileImage))}
+          className={`${styles.accountAvatar} ${styles.accountAvatarHeader}`}
+          data-has-image={Boolean(profileImage)}
           imgProps={{
             style: {
               objectFit: 'cover',
@@ -141,30 +120,20 @@ export function UserAccountMenu() {
       </IconButton>
 
       <Menu
+        {...scope}
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{
-          paper: {
-            elevation: 0,
-            sx: {
-              mt: 0.8,
-              border: '1px solid rgba(15,23,42,0.14)',
-              borderRadius: 2,
-              minWidth: 240,
-              boxShadow: '0 16px 32px rgba(15,23,42,0.14)',
-              p: 0.75,
-            },
-          },
-        }}
+        slotProps={{ paper: { elevation: 0, className: styles.accountMenuPaper } }}
       >
-        <Box sx={{ px: 1.2, py: 0.8 }}>
+        <Box className={styles.accountProfile}>
           <Stack direction="row" spacing={1} alignItems="center">
             <Avatar
               src={profileImage || undefined}
-              sx={resolveAvatarSx(42, Boolean(profileImage))}
+              className={`${styles.accountAvatar} ${styles.accountAvatarLarge}`}
+              data-has-image={Boolean(profileImage)}
               imgProps={{
                 style: {
                   objectFit: 'cover',
@@ -173,15 +142,15 @@ export function UserAccountMenu() {
             >
               {avatarLabel}
             </Avatar>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="subtitle1" fontWeight={800} noWrap>
+            <Box className={styles.accountProfileText}>
+              <Typography variant="subtitle1" className={styles.accountName} noWrap>
                 {visibleName}
               </Typography>
-              <Typography variant="body2" color="text.secondary" noWrap>
+              <Typography variant="body2" className={styles.textSecondary} noWrap>
                 {getRoleLabel(role)}
               </Typography>
               {visibleEmail ? (
-                <Typography variant="caption" color="text.secondary" noWrap>
+                <Typography variant="caption" className={styles.textSecondary} noWrap>
                   {visibleEmail}
                 </Typography>
               ) : null}
@@ -189,24 +158,24 @@ export function UserAccountMenu() {
           </Stack>
         </Box>
 
-        <Divider sx={{ my: 0.75 }} />
+        <Divider className={styles.accountDivider} />
 
-        <MenuItem onClick={handleGoToMyPage} sx={{ borderRadius: 1.5 }}>
+        <MenuItem onClick={handleGoToMyPage} className={styles.accountMenuItem}>
           <ListItemIcon>
             <BadgeRoundedIcon fontSize="small" />
           </ListItemIcon>
           내 정보 관리
-          <ListItemIcon sx={{ ml: 'auto', minWidth: 0 }}>
+          <ListItemIcon className={styles.accountMenuEndIcon}>
             <ChevronRightRoundedIcon fontSize="small" />
           </ListItemIcon>
         </MenuItem>
-        <MenuItem onClick={handleGoToPassword} sx={{ borderRadius: 1.5 }}>
+        <MenuItem onClick={handleGoToPassword} className={styles.accountMenuItem}>
           <ListItemIcon>
             <SecurityRoundedIcon fontSize="small" />
           </ListItemIcon>
           보안 설정
         </MenuItem>
-        <MenuItem onClick={handleLogout} sx={{ borderRadius: 1.5 }}>
+        <MenuItem onClick={handleLogout} className={styles.accountMenuItem}>
           <ListItemIcon>
             <LogoutRoundedIcon fontSize="small" />
           </ListItemIcon>

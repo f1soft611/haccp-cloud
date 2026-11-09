@@ -1,8 +1,10 @@
 import { Box, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { SIDE_NAV_WIDTH } from './SideNav';
+import styles from '../sharedComponents.module.css';
+import { useSharedScope } from '../useSharedScope';
 
 export function PortalFooter() {
+  const scope = useSharedScope();
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const footerLogoSrc = isDarkMode
@@ -14,61 +16,38 @@ export function PortalFooter() {
     'COPYRIGHT(C) F1soft CO.,LTD. ALL RIGHTS RESERVED.',
   ];
 
+    // 기존 -> sx, 스타일 prop 으로 스타일 지정
+    // 변경 -> sharedComponents.module.css 클래스 사용
     return (
         <Box
+            {...scope}
+            className={`${scope.className} ${styles.portalFooter}`}
             component="footer"
             data-testid="portal-footer"
-            sx={{
-                mt: 'auto',
-                py: { xs: 1.5, md: 1.25 },
-                borderTop: '1px solid',
-                borderColor: 'divider',
-                bgcolor: 'background.paper',
-            }}
         >
             <Stack
                 direction={{ xs: 'column', md: 'row' }}
                 spacing={{ xs: 1.2, md: 0 }}
                 alignItems={{ xs: 'flex-start', md: 'center' }}
             >
-                <Box
-                    sx={{
-                        width: { xs: 'auto', md: SIDE_NAV_WIDTH },
-                        flexShrink: 0,
-                        display: 'flex',
-                        justifyContent: { xs: 'flex-start', md: 'center' },
-                        px: { xs: 2, md: 0 },
-                    }}
-                >
+                <Box className={styles.portalFooterLogoBox}>
                     <Box
                         component="img"
                         src={footerLogoSrc}
                         alt="F1FoodLink"
-                        sx={{
-                            display: 'block',
-                            width: { xs: 96, md: 116 },
-                            height: { xs: 18, md: 22 },
-                            objectFit: 'contain',
-                            imageRendering: '-webkit-optimize-contrast',
-                            opacity: isDarkMode ? 0.95 : 0.92,
-                        }}
+                        className={styles.portalFooterLogo}
                     />
                 </Box>
                 <Stack
                     spacing={0.1}
                     data-testid="portal-footer-company-info"
-                    sx={{ px: 2, minWidth: 0 }}
+                    className={styles.portalFooterInfo}
                 >
                     {companyInfoLines.map((line) => (
                         <Typography
                             key={line}
                             variant="caption"
-                            color="text.secondary"
-                            sx={{
-                                lineHeight: 1.35,
-                                fontSize: { xs: 10.5, md: 11.5 },
-                                wordBreak: 'keep-all',
-                            }}
+                            className={`${styles.textSecondary} ${styles.portalFooterText}`}
                         >
                             {line}
                         </Typography>

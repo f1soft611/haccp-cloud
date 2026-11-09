@@ -21,6 +21,7 @@ import {
   UserMenuMetadataProvider,
 } from './userMenuMetadataContext';
 import { scheduleRoutePrefetch } from '../../../app/router/routePrefetch';
+import styles from '../sharedComponents.module.css';
 
 // 왼쪽 메뉴바, 상단바, 본문을 묶는 로그인 후 공통 레이아웃.
 export function AppLayout() {
@@ -171,28 +172,23 @@ export function AppLayout() {
     scheduleRoutePrefetch(prioritizedPrefetchPaths, 6);
   }, [prioritizedPrefetchPaths]);
 
+  // 기존 -> sx, 스타일 prop 으로 스타일 지정
+  // 변경 -> sharedComponents.module.css 클래스 사용
   return (
       <UserMenuMetadataProvider value={menuMetadataByPath}>
         <CurrentMenuGroupLabelProvider value={currentMenuGroupLabel}>
           <Box
-              sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+              className={`${styles.scope} ${styles.appLayout}`}
           >
             <TopGovBar onOpenMobileNav={() => setMobileNavOpen(true)} />
-            <Box sx={{ flex: 1, display: 'flex' }}>
+            <Box className={styles.appLayoutBody}>
               <SideNav
                   menuGroups={menuGroups}
                   role={role}
                   mobileOpen={mobileNavOpen}
                   onMobileClose={() => setMobileNavOpen(false)}
               />
-              <Box
-                  sx={{
-                    flex: 1,
-                    minWidth: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-              >
+              <Box className={styles.appLayoutMain}>
                 <PageShell>
                   <Suspense fallback={null}>
                     <Outlet />

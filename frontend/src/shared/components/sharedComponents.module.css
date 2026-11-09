@@ -1,0 +1,797 @@
+/* 공용 컴포넌트 스타일. 규칙을 .scope 아래에 두어 MUI 기본 스타일보다 우선하게 한다. */
+
+.scope {
+  --shared-side-nav-width: 240px;
+
+  --form-dialog-shadow: 0 20px 56px rgba(15, 36, 64, 0.16);
+  --form-dialog-bg: #ffffff;
+  --form-dialog-text: #111827;
+  --form-dialog-title: #115e59;
+  --form-dialog-title-border: rgba(20, 184, 166, 0.14);
+  --form-dialog-close: rgba(17, 94, 89, 0.72);
+  --form-dialog-close-bg: rgba(20, 184, 166, 0.08);
+  --form-dialog-close-hover: rgba(20, 184, 166, 0.16);
+  --form-dialog-label-bg: rgba(255, 255, 255, 0.92);
+  --form-dialog-input-bg: #ffffff;
+  --form-dialog-outline: rgba(20, 184, 166, 0.2);
+  --form-dialog-description: rgba(17, 94, 89, 0.72);
+  --form-dialog-actions-border: rgba(66, 111, 106, 0.16);
+  --form-dialog-actions-bg: #ffffff;
+
+  --confirm-shadow: 0 18px 48px rgba(15, 36, 64, 0.16);
+  --confirm-bg: #ffffff;
+  --confirm-icon-bg: rgba(229, 122, 34, 0.12);
+  --confirm-icon: #c76b1f;
+  --confirm-title: #115e59;
+  --confirm-description: rgba(17, 94, 89, 0.8);
+  --confirm-actions-border: rgba(66, 111, 106, 0.16);
+  --confirm-actions-bg: #ffffff;
+
+  --top-gov-bg: #1b2a4e;
+  --top-gov-border: #1b2a4e;
+  --top-gov-button-bg: #374364;
+  --top-gov-button-border: #697595;
+  --top-gov-button-text: #a5b3d9;
+  --top-gov-button-hover-border: #ffffff;
+
+  --side-nav-bg: var(--shared-white);
+  /* 기존 -> --side-nav-text: var(--shared-text-primary); */
+  /* 변경 -> 메뉴 글자, 우측 화살표 색상 #637080 */
+  --side-nav-text: #637080;
+  --side-nav-sub-text: #637080;
+  --side-nav-accent: var(--shared-primary);
+  /* 기존 -> --side-nav-divider: var(--shared-divider); */
+  /* 변경 -> 메뉴 라인 색상 #E8ECF3 */
+  --side-nav-divider: #e8ecf3;
+  --side-nav-focus: #0f766e;
+
+  --portal-footer-logo-opacity: 0.92;
+}
+
+.scope[data-mode='dark'] {
+  --form-dialog-shadow: 0 24px 80px rgba(2, 6, 23, 0.6);
+  --form-dialog-bg: #111827;
+  --form-dialog-text: #f8fafc;
+  --form-dialog-title: #f8fafc;
+  --form-dialog-title-border: rgba(251, 191, 36, 0.18);
+  --form-dialog-close: rgba(248, 250, 252, 0.82);
+  --form-dialog-close-bg: rgba(251, 191, 36, 0.12);
+  --form-dialog-close-hover: rgba(251, 191, 36, 0.22);
+  --form-dialog-label-bg: rgba(17, 24, 39, 0.96);
+  --form-dialog-input-bg: rgba(15, 23, 42, 0.55);
+  --form-dialog-outline: rgba(251, 191, 36, 0.26);
+  --form-dialog-description: rgba(248, 250, 252, 0.72);
+  --form-dialog-actions-border: rgba(251, 191, 36, 0.2);
+  --form-dialog-actions-bg: rgba(15, 23, 42, 0.92);
+
+  --confirm-shadow: 0 20px 70px rgba(2, 6, 23, 0.6);
+  --confirm-bg: #111827;
+  --confirm-icon-bg: rgba(251, 191, 36, 0.16);
+  --confirm-icon: #fbbf24;
+  --confirm-title: #f8fafc;
+  --confirm-description: rgba(248, 250, 252, 0.8);
+  --confirm-actions-border: rgba(251, 191, 36, 0.18);
+  --confirm-actions-bg: rgba(15, 23, 42, 0.92);
+
+  --top-gov-bg: #111827;
+  --top-gov-border: rgba(251, 191, 36, 0.28);
+  --top-gov-button-bg: rgba(255, 255, 255, 0.08);
+  --top-gov-button-border: rgba(255, 255, 255, 0.2);
+  --top-gov-button-text: #f8fafc;
+  --top-gov-button-hover-border: #fbbf24;
+
+  --side-nav-bg: #111827;
+  --side-nav-text: #f8fafc;
+  --side-nav-sub-text: var(--shared-text-secondary);
+  --side-nav-accent: #fef3c7;
+  --side-nav-divider: rgba(251, 191, 36, 0.16);
+  --side-nav-focus: #fbbf24;
+
+  --portal-footer-logo-opacity: 0.95;
+}
+
+/* 공통 글자색 */
+.scope .textSecondary {
+  color: var(--shared-text-secondary);
+}
+
+.scope .textDisabled {
+  color: var(--shared-text-disabled);
+}
+
+/* ApprovalStatusChip: 라벨별 색상과 패딩은 approvalStatus.ts 가 원본이라 sx 로 둔다 */
+.scope.approvalChip {
+  height: 24px;
+  border: none;
+  border-radius: 17px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.scope.approvalChip[data-unwritten='true'] {
+  border: 1px solid #ffffff;
+}
+
+/* AdminGrid: 색상은 tableStyleTokens 가 원본이라 CSS 변수로 받는다 */
+.scope.adminGrid {
+  overflow: auto;
+  border: 1px solid var(--admin-grid-border);
+  border-radius: 0;
+  box-shadow: none;
+  background-color: var(--admin-grid-bg);
+}
+
+/* GridPaginationBar */
+.scope .gridPaginationSize {
+  min-width: 100px;
+}
+
+/* SearchFilterBar */
+.scope.searchFilter {
+  padding: 16px;
+}
+
+.scope .searchFilterActions {
+  flex-shrink: 0;
+}
+
+.scope .searchFilterActions > * {
+  flex: 1;
+}
+
+.scope .searchFilterSubmit {
+  min-width: 96px;
+}
+
+@media (min-width: 900px) {
+  .scope .searchFilterActions {
+    margin-left: auto;
+  }
+
+  .scope .searchFilterActions > * {
+    flex: none;
+  }
+}
+
+/* PageHeader */
+.scope.pageHeader {
+  padding-left: 12px;
+  border-left: 3px solid var(--shared-primary);
+}
+
+.scope .pageHeaderPath {
+  margin-bottom: 3.2px;
+}
+
+.scope .pageHeaderTitle {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.scope .pageHeaderDescription {
+  margin-top: 4px;
+}
+
+/* PageShell: 라이트는 지정하지 않는다 (플랜의 함정 표 참고) */
+.scope.pageShell {
+  flex-grow: 1;
+}
+
+.scope.pageShell[data-mode='dark'] {
+  background: radial-gradient(circle at 84% 8%, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0) 30%),
+    radial-gradient(circle at 0% 100%, rgba(249, 115, 22, 0.12) 0%, rgba(249, 115, 22, 0) 35%),
+    linear-gradient(180deg, #0b1220 0%, #111827 52%, #0f172a 100%);
+}
+
+.scope .pageShellContainer {
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+/* AppLayout */
+.scope.appLayout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.scope .appLayoutBody {
+  display: flex;
+  flex: 1;
+}
+
+.scope .appLayoutMain {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* PortalFooter */
+.scope.portalFooter {
+  margin-top: auto;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-top: 1px solid var(--shared-divider);
+  background-color: var(--shared-paper);
+}
+
+.scope .portalFooterLogoBox {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-start;
+  width: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.scope .portalFooterLogo {
+  display: block;
+  width: 96px;
+  height: 18px;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  opacity: var(--portal-footer-logo-opacity);
+}
+
+.scope .portalFooterInfo {
+  min-width: 0;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.scope .portalFooterText {
+  font-size: 10.5px;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+@media (min-width: 900px) {
+  .scope.portalFooter {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .scope .portalFooterLogoBox {
+    justify-content: center;
+    width: var(--shared-side-nav-width);
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .scope .portalFooterLogo {
+    width: 116px;
+    height: 22px;
+  }
+
+  .scope .portalFooterText {
+    font-size: 11.5px;
+  }
+}
+
+/* UserSelectPanels */
+.scope.userPanelsLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 408px;
+  margin-top: 8px;
+}
+
+.scope.userPanelsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.scope .userPanel {
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--shared-divider);
+  border-radius: 10px;
+}
+
+.scope .userPanelsEmpty {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  text-align: center;
+}
+
+.scope .userPanelsControl {
+  min-width: 36px;
+}
+
+.scope .userPanelsSelectAll {
+  padding: 4px 16px;
+}
+
+@media (min-width: 600px) {
+  .scope.userPanelsLoading {
+    height: 360px;
+  }
+
+  .scope.userPanelsGrid {
+    grid-template-columns: 200px 1fr;
+  }
+
+  .scope .userPanel {
+    height: 360px;
+  }
+}
+
+/* FormDialog */
+.scope .formDialogPaper {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100vh - 64px);
+  border-radius: 10px;
+  box-shadow: var(--form-dialog-shadow);
+  background-color: var(--form-dialog-bg);
+  color: var(--form-dialog-text);
+}
+
+.scope .formDialogTitle {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--form-dialog-title-border);
+}
+
+.scope .formDialogTitleBox {
+  flex: 1;
+  min-width: 0;
+}
+
+.scope .formDialogTitleText {
+  font-weight: 700;
+  color: var(--form-dialog-title);
+}
+
+.scope .formDialogClose {
+  color: var(--form-dialog-close);
+  background-color: var(--form-dialog-close-bg);
+}
+
+.scope .formDialogClose:hover {
+  background-color: var(--form-dialog-close-hover);
+}
+
+.scope .formDialogCloseMark {
+  font-weight: 800;
+}
+
+.scope .formDialogContent {
+  overflow: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-top: 24px !important;
+  padding-bottom: 24px;
+}
+
+.scope .formDialogDescription {
+  margin-bottom: 16px;
+  color: var(--form-dialog-description);
+  line-height: 1.6;
+}
+
+.scope .formDialogActions {
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--form-dialog-actions-border);
+  background-color: var(--form-dialog-actions-bg);
+}
+
+/* 입력칸 규칙은 MUI 상태 규칙과 contentSx 가 이기도록 .scope 를 붙이지 않는다 */
+.formDialogContent :global(.MuiFormControl-root) {
+  width: 100%;
+}
+
+.formDialogContent :global(.MuiInputLabel-root) {
+  padding-left: 4px;
+  padding-right: 4px;
+  background-color: var(--form-dialog-label-bg);
+}
+
+.formDialogContent :global(.MuiOutlinedInput-root) {
+  background-color: var(--form-dialog-input-bg);
+}
+
+.formDialogContent :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: var(--form-dialog-outline);
+}
+
+:where([data-mode='dark']) .formDialogContent :global(.MuiInputLabel-root) {
+  color: rgba(248, 250, 252, 0.78);
+}
+
+:where([data-mode='dark']) .formDialogContent :global(.MuiInputBase-input),
+:where([data-mode='dark']) .formDialogContent :global(.MuiSelect-select) {
+  color: #f8fafc;
+}
+
+/* ConfirmDialog */
+.scope .confirmPaper {
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: var(--confirm-shadow);
+  background-color: var(--confirm-bg);
+}
+
+.scope .confirmTitle {
+  padding: 24px 24px 12px;
+}
+
+.scope .confirmIcon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: var(--confirm-icon-bg);
+  color: var(--confirm-icon);
+}
+
+.scope .confirmIconMark {
+  font-weight: 800;
+}
+
+.scope .confirmTitleText {
+  font-weight: 700;
+  color: var(--confirm-title);
+}
+
+.scope .confirmContent {
+  padding-left: 24px;
+  padding-right: 24px;
+  padding-bottom: 24px;
+}
+
+.scope .confirmDescription {
+  color: var(--confirm-description);
+  line-height: 1.7;
+}
+
+.scope .confirmActions {
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--confirm-actions-border);
+  background-color: var(--confirm-actions-bg);
+}
+
+/* UserAccountMenu */
+.scope.accountTrigger {
+  margin-left: 10px;
+  padding: 0;
+}
+
+.scope.accountTrigger:hover {
+  background-color: transparent;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.scope.accountTrigger:focus-visible {
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.scope .accountAvatar {
+  background-color: #009f25;
+  color: var(--shared-white);
+}
+
+.scope .accountAvatar[data-has-image='true'] {
+  background-color: transparent;
+  color: transparent;
+}
+
+.scope .accountAvatar img {
+  object-fit: cover;
+}
+
+.scope .accountAvatarHeader {
+  width: 27px;
+  height: 27px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.scope .accountAvatarLarge {
+  width: 42px;
+  height: 42px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.scope .accountMenuPaper {
+  min-width: 240px;
+  margin-top: 6.4px;
+  padding: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 20px;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.14);
+}
+
+.scope .accountProfile {
+  padding: 6.4px 9.6px;
+}
+
+.scope .accountProfileText {
+  min-width: 0;
+}
+
+.scope .accountName {
+  font-weight: 800;
+}
+
+.scope .accountDivider {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.scope .accountMenuItem {
+  border-radius: 15px;
+}
+
+.scope .accountMenuEndIcon {
+  min-width: 0;
+  margin-left: auto;
+}
+
+/* TopGovBar */
+.scope.topGov {
+  border-bottom: 1px solid var(--top-gov-border);
+  background-color: var(--top-gov-bg);
+  color: #f8fafc;
+}
+
+.scope .topGovRow {
+  min-height: 48px;
+  padding-left: 8px;
+  padding-right: 16px;
+}
+
+.scope .topGovMobileNav {
+  display: inline-flex;
+  color: inherit;
+}
+
+.scope .topGovLogoBox {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.scope .topGovLogoLink {
+  display: inline-flex;
+  border-radius: 10px;
+}
+
+.scope .topGovLogoLink:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.scope .topGovLogo {
+  display: block;
+  height: 22px;
+  object-fit: contain;
+}
+
+.scope .topGovNotice {
+  display: none;
+  flex: 1;
+  text-align: center;
+}
+
+/* margin-left: auto 는 Stack 간격 규칙에 덮여 지금도 동작하지 않으므로 옮기지 않는다 */
+.scope .topGovActions {
+  gap: 5px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.scope .topGovButton {
+  min-width: 78px;
+  min-height: 31px;
+  padding: 3.2px 15px;
+  border-color: var(--top-gov-button-border);
+  border-radius: 4px;
+  background-color: var(--top-gov-button-bg);
+  color: var(--top-gov-button-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.scope .topGovButton:hover {
+  border-color: var(--top-gov-button-hover-border);
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.scope .topGovButtonHidden {
+  display: none;
+}
+
+.scope .topGovDropdownButton {
+  justify-content: space-between;
+  min-width: 101px;
+}
+
+.scope .topGovMenuPaper {
+  min-width: 190px;
+  margin-top: 6.4px;
+  padding: 4.8px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 20px;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+
+.scope .topGovMenuItem {
+  min-height: 38px;
+  border-radius: 15px;
+  color: var(--shared-text-primary);
+  font-weight: 500;
+}
+
+.scope .topGovMenuItem:global(.Mui-selected) {
+  color: #0f5f59;
+  font-weight: 700;
+}
+
+.scope .topGovFontItem:global(.Mui-selected):not(:global(.Mui-focusVisible)) {
+  background-color: rgba(20, 184, 166, 0.14);
+}
+
+.scope .topGovFontItem:global(.Mui-selected):hover {
+  background-color: rgba(20, 184, 166, 0.2);
+}
+
+.scope .topGovMenuReset {
+  gap: 6.4px;
+  min-height: 40px;
+  margin-top: 1.6px;
+  border-top: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 15px;
+  color: var(--shared-text-secondary);
+}
+
+@media (min-width: 600px) {
+  .scope .topGovNotice {
+    display: block;
+  }
+}
+
+@media (min-width: 900px) {
+  .scope .topGovRow {
+    padding-left: 0;
+    padding-right: 24px;
+  }
+
+  .scope .topGovMobileNav {
+    display: none;
+  }
+
+  .scope .topGovLogoBox {
+    width: var(--shared-side-nav-width);
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+/* SideNav */
+.scope.sideNavDrawer[data-desktop='true'] {
+  display: flex;
+  flex-shrink: 0;
+  width: var(--shared-side-nav-width);
+}
+
+.scope.sideNavDrawer :global(.MuiDrawer-paper) {
+  box-sizing: border-box;
+  width: var(--shared-side-nav-width);
+  border-right: 1px solid var(--side-nav-divider);
+}
+
+.scope.sideNavDrawer[data-desktop='true'] :global(.MuiDrawer-paper) {
+  position: relative;
+  height: auto;
+}
+
+.scope .sideNavRoot {
+  overflow-y: auto;
+  height: 100%;
+  background-color: var(--side-nav-bg);
+  color: var(--side-nav-text);
+}
+
+.scope .sideNavBrand {
+  /* 기존 -> padding: 28px 24px; */
+  /* 변경 -> 좌측 여백 15px 추가 */
+  padding: 28px 24px 28px 39px;
+}
+
+.scope .sideNavBrandLink {
+  display: inline-block;
+  border-radius: 10px;
+}
+
+.scope .sideNavBrandLink:focus-visible {
+  outline: 2px solid var(--side-nav-focus);
+  outline-offset: 2px;
+}
+
+.scope .sideNavLogo {
+  display: block;
+  max-width: 163px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.scope .sideNavBrandText {
+  font-weight: 800;
+}
+
+.scope .sideNavList {
+  border-top: 1px solid var(--side-nav-divider);
+}
+
+.scope .sideNavGroup {
+  border-bottom: 1px solid var(--side-nav-divider);
+}
+
+.scope .sideNavItem {
+  /* 기존 -> padding: 12px 24px; */
+  /* 변경 -> 좌측 여백 15px 추가 */
+  padding: 12px 24px 12px 39px;
+}
+
+.scope .sideNavLink {
+  color: inherit;
+}
+
+.scope .sideNavLink[data-active='true'] {
+  color: var(--side-nav-accent);
+}
+
+.scope .sideNavText {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.scope [data-active='true'] .sideNavText {
+  font-weight: 700;
+}
+
+.scope .sideNavSubList {
+  padding-bottom: 8px;
+}
+
+.scope .sideNavSubItem {
+  /* 기존 -> padding: 6px 16px 6px 24px; color: var(--shared-text-secondary); */
+  /* 변경 -> 좌측 여백 15px 추가, 글자색 #637080 (다크 모드는 기존 색 유지) */
+  padding: 6px 16px 6px 39px;
+  color: var(--side-nav-sub-text);
+}
+
+.scope .sideNavSubItem[data-active='true'] {
+  color: var(--side-nav-accent);
+}
+
+.scope .sideNavChevron {
+  visibility: hidden;
+  margin-right: 4px;
+}
+
+.scope [data-active='true'] .sideNavChevron {
+  visibility: visible;
+}
+
+.scope .sideNavSubText {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.scope [data-active='true'] .sideNavSubText {
+  font-weight: 700;
+}

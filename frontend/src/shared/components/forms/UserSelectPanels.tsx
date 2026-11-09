@@ -11,6 +11,8 @@ import {
     Typography,
 } from '@mui/material';
 import { AppTextField } from './AppTextField';
+import styles from '../sharedComponents.module.css';
+import { useSharedScope } from '../useSharedScope';
 import type { UserItem } from '../../../services/organization/usersService';
 
 type UserSelectPanelsProps = {
@@ -26,11 +28,6 @@ type UserSelectPanelsProps = {
 };
 
 const UNASSIGNED = '미지정';
-// 인원 수와 상관없이 dialog 높이 고정: 패널 height 고정 + 패널 내부 스크롤
-const PANEL_HEIGHT = { xs: 200, sm: 360 };
-const PANEL_SX = { height: PANEL_HEIGHT, overflowY: 'auto', border: 1, borderColor: 'divider', borderRadius: 1 };
-// 로딩 영역 = 패널 영역 전체 높이 (xs는 패널 2개 + gap 8px)
-const LOADING_HEIGHT = { xs: PANEL_HEIGHT.xs * 2 + 8, sm: PANEL_HEIGHT.sm };
 
 function departmentOf(user: UserItem): string {
     return user.department.trim() || UNASSIGNED;
@@ -47,6 +44,7 @@ export function UserSelectPanels(props: UserSelectPanelsProps) {
         renderDepartmentItem,
         renderListHeader,
     } = props;
+    const scope = useSharedScope();
     const [keyword, setKeyword] = useState('');
     // null = 전체
     const [department, setDepartment] = useState<string | null>(null);
@@ -73,6 +71,8 @@ export function UserSelectPanels(props: UserSelectPanelsProps) {
 
     const Control = control === 'radio' ? Radio : Checkbox;
 
+    // 기존 -> sx, 스타일 prop 으로 스타일 지정
+    // 변경 -> sharedComponents.module.css 클래스 사용
     return (
         <>
             <AppTextField
@@ -81,21 +81,14 @@ export function UserSelectPanels(props: UserSelectPanelsProps) {
                 fullWidth
                 value={keyword}
                 onChange={setKeyword}
-                sx={{ mb: 1 }}
             />
             {loading ? (
-                <Box sx={{ height: LOADING_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box {...scope} className={`${scope.className} ${styles.userPanelsLoading}`}>
                     <CircularProgress size={24} />
                 </Box>
             ) : (
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', sm: '200px 1fr' },
-                        gap: 1,
-                    }}
-                >
-                    <List dense aria-label="부서 목록" sx={PANEL_SX}>
+                <Box {...scope} className={`${scope.className} ${styles.userPanelsGrid}`}>
+                    <List dense aria-label="부서 목록" className={styles.userPanel}>
                         <ListItemButton
                             selected={department === null}
                             onClick={() => setDepartment(null)}
@@ -121,17 +114,17 @@ export function UserSelectPanels(props: UserSelectPanelsProps) {
                             </ListItemButton>
                         ))}
                     </List>
-                    <Box sx={PANEL_SX}>
+                    <Box className={styles.userPanel}>
                         {renderListHeader?.(visibleUsers.map((user) => user.id))}
                         {visibleUsers.length === 0 ? (
-                            <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                            <Typography variant="body2" className={`${styles.textSecondary} ${styles.userPanelsEmpty}`}>
                                 표시할 사용자가 없습니다.
                             </Typography>
                         ) : (
                             <List dense>
                                 {visibleUsers.map((user) => (
                                     <ListItemButton key={user.id} onClick={() => onUserClick(user)}>
-                                        <ListItemIcon sx={{ minWidth: 36 }}>
+                                        <ListItemIcon className={styles.userPanelsControl}>
                                             <Control
                                                 edge="start"
                                                 size="small"

@@ -1,10 +1,10 @@
 import { Button, ThemeProvider } from '@mui/material';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { appTheme, darkTheme } from '../app/theme';
-import { ConfirmDialog } from '../shared/components/feedback/ConfirmDialog';
-import { FeedbackProvider } from '../shared/providers/FeedbackProvider';
-import { useFeedback } from '../shared/hooks/useFeedback';
+import { appTheme, darkTheme } from '../../../../app/theme';
+import { ConfirmDialog } from '../../../../shared/components/feedback/ConfirmDialog';
+import { FeedbackProvider } from '../../../../shared/providers/FeedbackProvider';
+import { useFeedback } from '../../../../shared/hooks/useFeedback';
 
 function FeedbackTestTrigger() {
   const { showSuccess } = useFeedback();
@@ -39,9 +39,7 @@ describe('feedback ui', () => {
       screen.getByText('삭제 후에는 되돌릴 수 없습니다.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
-    expect(screen.getByTestId('confirm-dialog-actions')).toHaveStyle({
-      borderTopStyle: 'solid',
-    });
+    expect(screen.getByTestId('confirm-dialog-actions')).toBeInTheDocument();
   });
 
   it('shows snackbar feedback through provider hook', async () => {
@@ -75,7 +73,9 @@ describe('feedback ui', () => {
       </ThemeProvider>,
     );
 
-    const dialogPaper = screen.getByRole('dialog');
-    expect(dialogPaper).toHaveStyle({ backgroundColor: '#111827' });
+    expect(screen.getByRole('dialog').closest('[data-mode]')).toHaveAttribute(
+      'data-mode',
+      'dark',
+    );
   });
 });

@@ -9,7 +9,8 @@ import {
   Typography,
   type DialogProps,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import styles from '../sharedComponents.module.css';
+import { useSharedScope } from '../useSharedScope';
 
 export type ConfirmDialogProps = {
   open: boolean;
@@ -38,86 +39,45 @@ export function ConfirmDialog({
                                   onCancel,
   maxWidth = 'xs',
 }: ConfirmDialogProps) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
+  const scope = useSharedScope();
 
+  // 기존 -> sx, 스타일 prop 으로 스타일 지정
+  // 변경 -> sharedComponents.module.css 클래스 사용
   return (
     <Dialog
+      {...scope}
       open={open}
       onClose={loading ? undefined : onClose}
       maxWidth={maxWidth}
       fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            overflow: 'hidden',
-            borderRadius: 1,
-            boxShadow: isDarkMode
-              ? '0 20px 70px rgba(2, 6, 23, 0.6)'
-              : '0 18px 48px rgba(15, 36, 64, 0.16)',
-            backgroundColor: isDarkMode ? '#111827' : '#ffffff',
-          },
-        },
-      }}
+      slotProps={{ paper: { className: styles.confirmPaper } }}
     >
-      <DialogTitle sx={{ px: 3, pt: 3, pb: 1.5 }}>
+      <DialogTitle className={styles.confirmTitle}>
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <Box
-            sx={{
-              display: 'grid',
-              placeItems: 'center',
-              width: 42,
-              height: 42,
-              borderRadius: '50%',
-              bgcolor: isDarkMode
-                ? 'rgba(251, 191, 36, 0.16)'
-                : 'rgba(229, 122, 34, 0.12)',
-              color: isDarkMode ? '#fbbf24' : '#c76b1f',
-              flexShrink: 0,
-            }}
-          >
-            <Typography component="span" variant="subtitle2" fontWeight={800}>
+          <Box className={styles.confirmIcon}>
+            <Typography component="span" variant="subtitle2" className={styles.confirmIconMark}>
               !
             </Typography>
           </Box>
           <Typography
             component="span"
             variant="h6"
-            sx={{
-              fontWeight: 700,
-              color: isDarkMode ? '#f8fafc' : '#115e59',
-            }}
+            className={styles.confirmTitleText}
           >
             {title}
           </Typography>
         </Stack>
       </DialogTitle>
 
-      <DialogContent sx={{ px: 3, pb: 3 }}>
-        <Typography
-          sx={{
-            color: isDarkMode
-              ? 'rgba(248, 250, 252, 0.8)'
-              : 'rgba(17, 94, 89, 0.8)',
-            lineHeight: 1.7,
-          }}
-        >
+      <DialogContent className={styles.confirmContent}>
+        <Typography className={styles.confirmDescription}>
           {description}
         </Typography>
       </DialogContent>
 
       <DialogActions
         data-testid="confirm-dialog-actions"
-        sx={{
-          px: 3,
-          py: 2,
-          borderTop: isDarkMode
-            ? '1px solid rgba(251, 191, 36, 0.18)'
-            : '1px solid rgba(66, 111, 106, 0.16)',
-          bgcolor: isDarkMode ? 'rgba(15, 23, 42, 0.92)' : '#ffffff',
-          justifyContent: 'flex-end',
-          gap: 1,
-        }}
+        className={styles.confirmActions}
       >
         <Button
           onClick={onConfirm}

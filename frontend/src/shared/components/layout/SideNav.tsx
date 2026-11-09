@@ -20,8 +20,8 @@ import type { MenuGroup } from './workMenuConfig';
 import { prefetchRouteByPath } from '../../../app/router/routePrefetch';
 import { APP_LABELS } from '../../constants/labels';
 import { loadLastLoginTenantNo } from '../../utils/loginDomainRouting';
-
-export const SIDE_NAV_WIDTH = 240;
+import styles from '../sharedComponents.module.css';
+import { useSharedScope } from '../useSharedScope';
 
 type TenantBrandCache = {
     tenantNm?: string;
@@ -106,7 +106,7 @@ export function SideNav({
                             onMobileClose,
                         }: SideNavProps) {
     const theme = useTheme();
-    const isDarkMode = theme.palette.mode === 'dark';
+    const scope = useSharedScope();
     // jsdom 처럼 matchMedia 가 없는 환경에서는 데스크톱(permanent)으로 렌더링한다.
     const isDesktop = useMediaQuery(theme.breakpoints.up('md'), {
         noSsr: true,
@@ -156,69 +156,47 @@ export function SideNav({
         });
     };
 
-    const accentColor = isDarkMode ? '#fef3c7' : theme.palette.primary.main;
-    const dividerColor = isDarkMode ? 'rgba(251,191,36,0.16)' : 'divider';
-
+    // 기존 -> sx, 스타일 prop 으로 스타일 지정
+    // 변경 -> sharedComponents.module.css 클래스 사용
     const content = (
         <Box
             component="nav"
             data-testid="side-nav"
             aria-label="주 메뉴"
-            sx={{
-                height: '100%',
-                overflowY: 'auto',
-                bgcolor: isDarkMode ? '#111827' : 'common.white',
-                color: isDarkMode ? '#f8fafc' : 'text.primary',
-            }}
+            className={styles.sideNavRoot}
         >
-            <Box sx={{ px: 3, py: 3.5 }}>
+            <Box className={styles.sideNavBrand}>
                 <Link
                     component={RouterLink}
                     to="/"
                     underline="none"
                     color="inherit"
                     aria-label={`${APP_LABELS.appTitle} ${APP_LABELS.appSubtitle} 홈으로 이동`}
-                    sx={{
-                        display: 'inline-block',
-                        borderRadius: 1,
-                        '&:focus-visible': {
-                            outline: isDarkMode ? '2px solid #fbbf24' : '2px solid #0f766e',
-                            outlineOffset: '2px',
-                        },
-                    }}
+                    className={styles.sideNavBrandLink}
                 >
                     {tenantBrand.logoSrc ? (
                         <Box
                             component="img"
                             src={tenantBrand.logoSrc}
                             alt={tenantBrand.logoAlt}
-                            sx={{
-                                display: 'block',
-                                maxWidth: 163,
-                                height: 28,
-                                objectFit: 'contain',
-                                imageRendering: '-webkit-optimize-contrast',
-                            }}
+                            className={styles.sideNavLogo}
                         />
                     ) : (
-                        <Typography variant="subtitle1" fontWeight={800}>
+                        <Typography variant="subtitle1" className={styles.sideNavBrandText}>
                             업체 포털
                         </Typography>
                     )}
                 </Link>
             </Box>
 
-            <List disablePadding sx={{ borderTop: '1px solid', borderColor: dividerColor }}>
+            <List disablePadding className={styles.sideNavList}>
                 {visibleGroups.map((group) => {
                     if (group.isSingleMenu) {
                         const item = group.items[0];
                         const isActive = isPathActive(location.pathname, item.path);
 
                         return (
-                            <Box
-                                key={group.key}
-                                sx={{ borderBottom: '1px solid', borderColor: dividerColor }}
-                            >
+                            <Box key={group.key} className={styles.sideNavGroup}>
                                 <ListItemButton
                                     component={NavLink}
                                     to={item.path}
@@ -229,20 +207,12 @@ export function SideNav({
                                     onFocus={() => {
                                         void prefetchRouteByPath(item.path);
                                     }}
-                                    sx={{
-                                        px: 3,
-                                        py: 1.5,
-                                        color: isActive ? accentColor : 'inherit',
-                                    }}
+                                    className={`${styles.sideNavItem} ${styles.sideNavLink}`}
+                                    data-active={isActive}
                                 >
                                     <ListItemText
                                         primary={item.label}
-                                        slotProps={{
-                                            primary: {
-                                                fontSize: '0.9375rem',
-                                                fontWeight: isActive ? 700 : 500,
-                                            },
-                                        }}
+                                        slotProps={{ primary: { className: styles.sideNavText } }}
                                     />
                                 </ListItemButton>
                             </Box>
@@ -252,23 +222,16 @@ export function SideNav({
                     const isOpen = openGroupKeys.has(group.key);
 
                     return (
-                        <Box
-                            key={group.key}
-                            sx={{ borderBottom: '1px solid', borderColor: dividerColor }}
-                        >
+                        <Box key={group.key} className={styles.sideNavGroup}>
                             <ListItemButton
                                 onClick={() => toggleGroup(group.key)}
                                 aria-expanded={isOpen}
-                                sx={{ px: 3, py: 1.5 }}
+                                className={styles.sideNavItem}
+                                data-active={group.key === activeGroupKey}
                             >
                                 <ListItemText
                                     primary={group.label}
-                                    slotProps={{
-                                        primary: {
-                                            fontSize: '0.9375rem',
-                                            fontWeight: group.key === activeGroupKey ? 700 : 500,
-                                        },
-                                    }}
+                                    slotProps={{ primary: { className: styles.sideNavText } }}
                                 />
                                 {isOpen ? (
                                     <ExpandLessRoundedIcon fontSize="small" />
@@ -278,7 +241,7 @@ export function SideNav({
                             </ListItemButton>
 
                             <Collapse in={isOpen} timeout="auto" unmountOnExit>
-                                <List disablePadding sx={{ pb: 1 }}>
+                                <List disablePadding className={styles.sideNavSubList}>
                                     {group.items.map((item) => {
                                         const isActive = isPathActive(location.pathname, item.path);
 
@@ -294,25 +257,16 @@ export function SideNav({
                                                 onFocus={() => {
                                                     void prefetchRouteByPath(item.path);
                                                 }}
-                                                sx={{
-                                                    pl: 3,
-                                                    pr: 2,
-                                                    py: 0.75,
-                                                    color: isActive ? accentColor : 'text.secondary',
-                                                }}
+                                                className={styles.sideNavSubItem}
+                                                data-active={isActive}
                                             >
                                                 <ChevronRightRoundedIcon
                                                     fontSize="small"
-                                                    sx={{ mr: 0.5, visibility: isActive ? 'visible' : 'hidden' }}
+                                                    className={styles.sideNavChevron}
                                                 />
                                                 <ListItemText
                                                     primary={item.label}
-                                                    slotProps={{
-                                                        primary: {
-                                                            fontSize: '0.875rem',
-                                                            fontWeight: isActive ? 700 : 400,
-                                                        },
-                                                    }}
+                                                    slotProps={{ primary: { className: styles.sideNavSubText } }}
                                                 />
                                             </ListItemButton>
                                         );
@@ -328,21 +282,12 @@ export function SideNav({
 
     return (
         <Drawer
+            {...scope}
+            className={`${scope.className} ${styles.sideNavDrawer}`}
+            data-desktop={isDesktop}
             variant={isDesktop ? 'permanent' : 'temporary'}
             open={isDesktop || mobileOpen}
             onClose={onMobileClose}
-            sx={{
-                ...(isDesktop
-                    ? { width: SIDE_NAV_WIDTH, flexShrink: 0, display: 'flex' }
-                    : {}),
-                '& .MuiDrawer-paper': {
-                    width: SIDE_NAV_WIDTH,
-                    boxSizing: 'border-box',
-                    borderRight: '1px solid',
-                    borderColor: dividerColor,
-                    ...(isDesktop ? { position: 'relative', height: 'auto' } : {}),
-                },
-            }}
         >
             {content}
         </Drawer>
