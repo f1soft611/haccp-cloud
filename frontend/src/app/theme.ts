@@ -31,6 +31,7 @@ const sharedThemeOptions = {
       'Segoe UI',
       'sans-serif',
     ].join(','),
+    fontWeightRegular: 500,
   },
 } as const;
 
