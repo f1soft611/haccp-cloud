@@ -383,13 +383,14 @@ export function HaccpBaseEditorPage() {
                 },
                 '& .tiptap ul[data-type="taskList"]': {
                   pl: 0,
+                  m: 0,
                   listStyle: 'none',
                 },
                 '& .tiptap ul[data-type="taskList"] li': {
                   display: 'flex',
                   alignItems: 'flex-start',
-                  gap: 1.25,
-                  my: 0.9,
+                  gap: 0,
+                  my: 0,
                 },
                 '& .tiptap ul[data-type="taskList"] li:has(> div > p[style*="text-align: center"]), & .tiptap ul[data-type="taskList"] li:has(> p[style*="text-align: center"])':
                   {
@@ -404,21 +405,27 @@ export function HaccpBaseEditorPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   flex: '0 0 auto',
-                  mt: '6px',
+                  mt: 0,
                   lineHeight: 1,
+                },
+                '& .tiptap ul[data-type="taskList"] li > label span': {
+                  display: 'none',
                 },
                 '& .tiptap ul[data-type="taskList"] li:has(> div > p[style*="text-align: center"]) > div, & .tiptap ul[data-type="taskList"] li:has(> p[style*="text-align: center"]) > div, & .tiptap ul[data-type="taskList"] li:has(> div > p[style*="text-align: right"]) > div, & .tiptap ul[data-type="taskList"] li:has(> p[style*="text-align: right"]) > div':
                   {
                     flex: '0 1 auto',
                   },
                 '& .tiptap ul[data-type="taskList"] li > label input': {
-                  width: 16,
-                  height: 16,
+                  width: 14,
+                  height: 14,
                   margin: 0,
                   pointerEvents: 'none',
                 },
                 '& .tiptap ul[data-type="taskList"] li > div': {
-                  flex: 1,
+                  flex: '0 0 0',
+                  width: 0,
+                  height: 0,
+                  overflow: 'hidden',
                   minWidth: 0,
                 },
                 '& .tiptap ul[data-type="taskList"] li > div > p, & .tiptap ul[data-type="taskList"] li > p':
@@ -437,7 +444,7 @@ export function HaccpBaseEditorPage() {
                     ? 'rgba(15, 23, 42, 0.35)'
                     : 'divider',
                   p: 1,
-                  verticalAlign: 'top',
+                  verticalAlign: 'middle',
                 },
                 '& .tiptap th': {
                   bgcolor: isDarkMode ? '#eef2f7' : 'common.white',
