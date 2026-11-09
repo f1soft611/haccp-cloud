@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { PageHeader } from '../shared/components/layout/PageHeader';
+import { PageHeader } from '../../../../shared/components/layout/PageHeader';
 import {
   CurrentMenuGroupLabelProvider,
   UserMenuMetadataProvider,
-} from '../shared/components/layout/userMenuMetadataContext';
+} from '../../../../shared/components/layout/userMenuMetadataContext';
 
 describe('PageHeader', () => {
   it('renders group breadcrumb, title, and description', () => {
