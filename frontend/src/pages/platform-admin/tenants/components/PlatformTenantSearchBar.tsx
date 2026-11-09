@@ -1,19 +1,29 @@
-import {
-  Box,
-  Button,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
-import {
-  type PlatformTenantSearchValue,
-  type SearchField,
-  type StatusFilter,
-  type OnboardingStatusFilter,
-} from '../types';
+import { Button } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+import { type PlatformTenantSearchValue } from '../types';
+
+const SEARCH_FIELD_OPTIONS = [
+  { value: 'tenantCode', label: '업체코드' },
+  { value: 'companyName', label: '업체명' },
+  { value: 'adminName', label: '관리자명' },
+] as const;
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'ACTIVE', label: '활성' },
+  { value: 'INACTIVE', label: '비활성' },
+] as const;
+
+const ONBOARDING_STATUS_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'EMAIL_QUEUED', label: '메일 발송 대기' },
+  { value: 'EMAIL_SENT', label: '메일 발송 완료' },
+  { value: 'EMAIL_VERIFIED', label: '메일 인증 완료' },
+  { value: 'FIRST_SETUP_COMPLETED', label: '초기 설정 완료' },
+  { value: 'ACTIVE', label: '온보딩 완료' },
+] as const;
 
 type PlatformTenantSearchBarProps = {
   value: PlatformTenantSearchValue;
@@ -31,109 +41,55 @@ export function PlatformTenantSearchBar({
   onClickOnboarding,
 }: PlatformTenantSearchBarProps) {
   return (
-    <Paper sx={{ p: 2 }}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1}
-        alignItems="flex-end"
-      >
-        <Box sx={{ minWidth: 130 }}>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            검색 조건
-          </Typography>
-          <Select
-            value={value.searchField}
-            size="small"
-            fullWidth
-            onChange={(event) =>
-              onChange({
-                ...value,
-                searchField: event.target.value as SearchField,
-              })
-            }
-          >
-            <MenuItem value="tenantCode">업체코드</MenuItem>
-            <MenuItem value="companyName">업체명</MenuItem>
-            <MenuItem value="adminName">관리자명</MenuItem>
-          </Select>
-        </Box>
-
-        <TextField
-          size="small"
-          label="검색어"
-          fullWidth
-          value={value.searchKeyword}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              searchKeyword: event.target.value,
-            })
-          }
-          sx={{ flex: 1 }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              onSearch();
-            }
-          }}
-        />
-
-        <Box sx={{ minWidth: 120 }}>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            상태
-          </Typography>
-          <Select
-            value={value.status}
-            size="small"
-            fullWidth
-            onChange={(event) =>
-              onChange({
-                ...value,
-                status: event.target.value as StatusFilter,
-              })
-            }
-          >
-            <MenuItem value="all">전체</MenuItem>
-            <MenuItem value="ACTIVE">활성</MenuItem>
-            <MenuItem value="INACTIVE">비활성</MenuItem>
-          </Select>
-        </Box>
-
-        <Box sx={{ minWidth: 170 }}>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            온보딩 상태
-          </Typography>
-          <Select
-            value={value.onboardingStatus}
-            size="small"
-            fullWidth
-            onChange={(event) =>
-              onChange({
-                ...value,
-                onboardingStatus: event.target.value as OnboardingStatusFilter,
-              })
-            }
-          >
-            <MenuItem value="all">전체</MenuItem>
-            <MenuItem value="EMAIL_QUEUED">메일 발송 대기</MenuItem>
-            <MenuItem value="EMAIL_SENT">메일 발송 완료</MenuItem>
-            <MenuItem value="EMAIL_VERIFIED">메일 인증 완료</MenuItem>
-            <MenuItem value="FIRST_SETUP_COMPLETED">초기 설정 완료</MenuItem>
-            <MenuItem value="ACTIVE">온보딩 완료</MenuItem>
-          </Select>
-        </Box>
-
-        <Button variant="contained" onClick={onSearch} disabled={disabled}>
-          조회
-        </Button>
-
-        <Button
-          variant="contained"
-          onClick={onClickOnboarding}
-          sx={{ ml: { md: 'auto' } }}
-        >
+    <SearchFilterBar
+      onSearch={onSearch}
+      disabled={disabled}
+      actions={
+        <Button variant="contained" onClick={onClickOnboarding}>
           신규 온보딩
         </Button>
-      </Stack>
-    </Paper>
+      }
+    >
+      <AppSelect
+        size="small"
+        label="검색 조건"
+        value={value.searchField}
+        onChange={(searchField) => onChange({ ...value, searchField })}
+        options={SEARCH_FIELD_OPTIONS}
+        sx={{ minWidth: 130 }}
+      />
+
+      <AppTextField
+        size="small"
+        label="검색어"
+        fullWidth
+        value={value.searchKeyword}
+        onChange={(searchKeyword) =>
+          onChange({
+            ...value,
+            searchKeyword,
+          })
+        }
+        sx={{ flex: 1 }}
+      />
+
+      <AppSelect
+        size="small"
+        label="상태"
+        value={value.status}
+        onChange={(status) => onChange({ ...value, status })}
+        options={STATUS_OPTIONS}
+        sx={{ minWidth: 120 }}
+      />
+
+      <AppSelect
+        size="small"
+        label="온보딩 상태"
+        value={value.onboardingStatus}
+        onChange={(onboardingStatus) => onChange({ ...value, onboardingStatus })}
+        options={ONBOARDING_STATUS_OPTIONS}
+        sx={{ minWidth: 170 }}
+      />
+    </SearchFilterBar>
   );
 }

@@ -1,14 +1,13 @@
-import {
-  Box,
-  Button,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Button, Stack } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import { ICON_OPTIONS } from './MenuGrid';
+
+const USE_AT_OPTIONS = [
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
 
 export type MenuFormData = {
   menuCode: string;
@@ -75,11 +74,11 @@ export function MenuFormDialog(props: {
       }
     >
       <Stack spacing={2}>
-        <TextField
+        <AppTextField
           label="메뉴코드"
           value={formData.menuCode}
-          onChange={(e) =>
-            onChange({ ...formData, menuCode: e.target.value.toUpperCase() })
+          onChange={(nextValue) =>
+            onChange({ ...formData, menuCode: nextValue.toUpperCase() })
           }
           fullWidth
           required
@@ -90,93 +89,72 @@ export function MenuFormDialog(props: {
               : '예: MENU_PLATFORM_REPORTS (미입력 시 자동 생성)'
           }
         />
-        <TextField
+        <AppTextField
           label="메뉴명 *"
           value={formData.menuNm}
-          onChange={(e) => onChange({ ...formData, menuNm: e.target.value })}
+          onChange={(menuNm) => onChange({ ...formData, menuNm })}
           fullWidth
           required
         />
-        <TextField
+        <AppTextField
           label="메뉴 설명"
           value={formData.menuDc}
-          onChange={(e) => onChange({ ...formData, menuDc: e.target.value })}
+          onChange={(menuDc) => onChange({ ...formData, menuDc })}
           fullWidth
           multiline
           rows={2}
         />
-        <Box>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            상위 메뉴
-          </Typography>
-          <Select
-            value={formData.parentMenuId ?? 'none'}
-            onChange={(e) =>
-              onChange({
-                ...formData,
-                parentMenuId: e.target.value === 'none' ? null : e.target.value,
-              })
-            }
-            fullWidth
-          >
-            <MenuItem value="none">없음 (루트)</MenuItem>
-            {parentMenuOptions.map((menu) => (
-              <MenuItem key={menu.menuId} value={menu.menuId}>
-                {menu.menuNm}
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
-        <TextField
+        <AppSelect
+          label="상위 메뉴"
+          value={formData.parentMenuId ?? 'none'}
+          onChange={(parentMenuId) =>
+            onChange({
+              ...formData,
+              parentMenuId: parentMenuId === 'none' ? null : parentMenuId,
+            })
+          }
+          fullWidth
+          options={[
+            { value: 'none', label: '없음 (루트)' },
+            ...parentMenuOptions.map((menu) => ({
+              value: menu.menuId,
+              label: menu.menuNm,
+            })),
+          ]}
+        />
+        <AppTextField
           label={isRootMenu ? '메뉴 URL' : '메뉴 URL *'}
           value={formData.menuUrl}
-          onChange={(e) => onChange({ ...formData, menuUrl: e.target.value })}
+          onChange={(menuUrl) => onChange({ ...formData, menuUrl })}
           fullWidth
           required={!isRootMenu}
           placeholder={
             isRootMenu ? '선택 사항 (예: /platform)' : '/platform/menus'
           }
         />
-        <TextField
+        <AppTextField
           label="순서"
           type="number"
           value={formData.menuOrdr}
-          onChange={(e) =>
-            onChange({ ...formData, menuOrdr: Number(e.target.value) || 0 })
+          onChange={(nextValue) =>
+            onChange({ ...formData, menuOrdr: Number(nextValue) || 0 })
           }
           fullWidth
         />
-        <Box>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            아이콘
-          </Typography>
-          <Select
-            value={formData.iconNm}
-            onChange={(e) => onChange({ ...formData, iconNm: e.target.value })}
-            fullWidth
-          >
-            {ICON_OPTIONS.map((icon) => (
-              <MenuItem key={icon} value={icon}>
-                {icon}
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
-        <Box>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            사용여부
-          </Typography>
-          <Select
-            value={formData.useAt}
-            onChange={(e) =>
-              onChange({ ...formData, useAt: e.target.value as 'Y' | 'N' })
-            }
-            fullWidth
-          >
-            <MenuItem value="Y">사용</MenuItem>
-            <MenuItem value="N">미사용</MenuItem>
-          </Select>
-        </Box>
+        <AppSelect
+          label="아이콘"
+          value={formData.iconNm}
+          onChange={(iconNm) => onChange({ ...formData, iconNm })}
+          fullWidth
+          options={ICON_OPTIONS.map((icon) => ({ value: icon, label: icon }))}
+        />
+        <AppSelect
+          label="사용여부"
+          value={formData.useAt}
+          onChange={(useAt) => onChange({ ...formData, useAt })}
+          fullWidth
+          options={USE_AT_OPTIONS}
+        />
       </Stack>
     </FormDialog>
   );

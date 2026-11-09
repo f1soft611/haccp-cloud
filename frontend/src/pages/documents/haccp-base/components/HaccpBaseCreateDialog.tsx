@@ -2,10 +2,10 @@ import { useState } from 'react';
 import {
   Autocomplete,
   Button,
-  MenuItem,
   Stack,
   TextField,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import { UserMultiSelectDialog } from '../../../../shared/components/forms/UserMultiSelectDialog';
 import type { WorkCycleOption } from '../../../../shared/hooks/useWorkCycleOptions';
@@ -14,6 +14,22 @@ import {
   type HaccpCategoryOption,
   type HaccpBaseCreateForm,
 } from '../types';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+
+const APPROVAL_APPLY_OPTIONS = [
+  { value: 'Y', label: '적용' },
+  { value: 'N', label: '미적용' },
+] as const;
+
+const EXPIRATION_APPLY_OPTIONS = [
+  { value: 'Y', label: '해당' },
+  { value: 'N', label: '미해당' },
+] as const;
+
+const USE_AT_OPTIONS = [
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
 
 // 분류코드 HCP-XXX 이면 대상
 function isExpirationTarget(categoryCode: string) {
@@ -86,7 +102,7 @@ export function HaccpBaseCreateDialog(props: {
     >
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField
+          <AppTextField
             fullWidth
             label="업무코드"
             value={value.divisionCode}
@@ -95,14 +111,14 @@ export function HaccpBaseCreateDialog(props: {
             helperText="업무코드는 자동으로 채번됩니다."
           />
 
-          <TextField
+          <AppTextField
             fullWidth
             label="업무명"
             value={value.divisionName}
-            onChange={(event) =>
+            onChange={(divisionName) =>
               onChange({
                 ...value,
-                divisionName: event.target.value,
+                divisionName,
               })
             }
             required
@@ -111,41 +127,37 @@ export function HaccpBaseCreateDialog(props: {
         </Stack>
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField
+          <AppSelect
             fullWidth
-            select
             label="분류"
             value={value.categoryId}
               // 기존 -> 분류코드 + 등록주기로 초기화 판단 / 변경 -> HCP- 분류가 아니게 되면 N 으로 초기화
-            onChange={(event) =>
+            onChange={(categoryId) =>
                 onChange({
                     ...value,
-                    categoryId: event.target.value,
-                    expirationApply: isExpirationTarget(findCategoryCode(event.target.value))
+                    categoryId,
+                    expirationApply: isExpirationTarget(findCategoryCode(categoryId))
                         ? value.expirationApply
                         : 'N',
                 })
             }
             required
-          >
-            {categoryOptions.map((category) => (
-              <MenuItem key={category.id} value={category.id}>
-                {category.name}
-              </MenuItem>
-            ))}
-          </TextField>
+            options={categoryOptions.map((category) => ({
+              value: category.id,
+              label: category.name,
+            }))}
+          />
 
-          <TextField
+          <AppSelect
               fullWidth
-              select
               label="작성주기"
               value={value.cycle}
               // 기존 -> 등록주기만 변경 / 변경 -> 수시가 아니면 만료일 관리 N 초기화
-              onChange={(event) =>
+              onChange={(cycle) =>
                   onChange({
                       ...value,
-                      cycle: event.target.value,
-                      expirationApply: event.target.value === 'ANYTIME' ? value.expirationApply : 'N',
+                      cycle,
+                      expirationApply: cycle === 'ANYTIME' ? value.expirationApply : 'N',
                   })
               }
               required
@@ -154,18 +166,16 @@ export function HaccpBaseCreateDialog(props: {
                     ? '공통코드 WF_FORM_CYCLE(등록주기)을 먼저 등록하세요.'
                     : undefined
               }
-          >
-            {cycleOptions.map((option) => (
-                <MenuItem key={option.code} value={option.code}>
-                  {option.name}
-                </MenuItem>
-            ))}
-          </TextField>
+              options={cycleOptions.map((option) => ({
+                value: option.code,
+                label: option.name,
+              }))}
+          />
         </Stack>
 
         {/* 기존 -> Autocomplete multiple 로 이름 검색 후 다중 선택 */}
         {/* 변경 -> 읽기 전용 칸 클릭 시 공용 UserMultiSelectDialog 로 다중 선택 */}
-        <TextField
+        <AppTextField
           label="담당자"
           value={assigneeNames}
           placeholder="클릭해서 담당자 선택"
@@ -241,58 +251,38 @@ export function HaccpBaseCreateDialog(props: {
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
 
-              <TextField
+              <AppSelect
                   fullWidth
-                  select
                   label="결재 적용 여부"
                   value={value.approvalApply}
-                  onChange={(event) => {
-                      const approvalApply = event.target.value as 'Y' | 'N';
+                  onChange={(approvalApply) =>
                       onChange({
                           ...value,
                           approvalApply,
                           reviewerId: approvalApply === 'N' ? '' : value.reviewerId,
                           approverId: approvalApply === 'N' ? '' : value.approverId,
-                      });
-                  }}
-              >
-                  <MenuItem value="Y">적용</MenuItem>
-                  <MenuItem value="N">미적용</MenuItem>
-              </TextField>
+                      })
+                  }
+                  options={APPROVAL_APPLY_OPTIONS}
+              />
 
               {showExpiration ? (
-                  <TextField
+                  <AppSelect
                       fullWidth
-                      select
                       label="만료일 관리 양식"
                       value={value.expirationApply}
-                      onChange={(event) =>
-                          onChange({
-                              ...value,
-                              expirationApply: event.target.value as 'Y' | 'N',
-                          })
-                      }
-                  >
-                      <MenuItem value="Y">해당</MenuItem>
-                      <MenuItem value="N">미해당</MenuItem>
-                  </TextField>
+                      onChange={(expirationApply) => onChange({ ...value, expirationApply })}
+                      options={EXPIRATION_APPLY_OPTIONS}
+                  />
               ) : null}
           </Stack>
 
-        <TextField
-          select
+        <AppSelect
           label="사용여부"
           value={value.useAt}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              useAt: event.target.value as 'Y' | 'N',
-            })
-          }
-        >
-          <MenuItem value="Y">사용</MenuItem>
-          <MenuItem value="N">미사용</MenuItem>
-        </TextField>
+          onChange={(useAt) => onChange({ ...value, useAt })}
+          options={USE_AT_OPTIONS}
+        />
       </Stack>
 
       {assigneeDialogOpen ? (

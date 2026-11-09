@@ -4,11 +4,11 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    MenuItem,
     Stack,
-    TextField,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useState } from 'react';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import type { WorkdayItem, WorkdayType } from '../../../../services/basicinfo/workday/workdayService';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 import { useCommonCodeOptions } from '../../../../shared/hooks/useCommonCodeOptions';
@@ -35,31 +35,28 @@ export function WorkdayEditDialog({ item, onClose, onSubmit }: WorkdayEditDialog
             <DialogTitle>{item.workdayDate}</DialogTitle>
             <DialogContent>
                 <Stack spacing={2} sx={{ pt: 1 }}>
-                    <TextField
-                        select
+                    <AppSelect
                         label="유형"
                         value={dayType}
-                        onChange={(event) => setDayType(event.target.value as WorkdayType)}
-                    >
-                        {selectOptions.map((option) => (
-                            <MenuItem key={option.code} value={option.code}>
-                                {option.name}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                    <TextField
+                        onChange={setDayType}
+                        options={selectOptions.map((option) => ({
+                            value: option.code as WorkdayType,
+                            label: option.name,
+                        }))}
+                    />
+                    <AppTextField
                         label="휴일명"
                         value={dayName}
-                        onChange={(event) => setDayName(event.target.value)}
-                        inputProps={{ maxLength: 100 }}
+                        onChange={setDayName}
+                        slotProps={{ htmlInput: { maxLength: 100 } }}
                     />
-                    <TextField
+                    <AppTextField
                         label="메모"
                         value={memo}
-                        onChange={(event) => setMemo(event.target.value)}
+                        onChange={setMemo}
                         multiline
                         minRows={2}
-                        inputProps={{ maxLength: 100 }}
+                        slotProps={{ htmlInput: { maxLength: 100 } }}
                     />
                 </Stack>
             </DialogContent>

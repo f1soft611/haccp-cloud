@@ -207,11 +207,7 @@ export function HaccpBaseGrid(props: {
                   <Chip
                       size="small"
                       label={row.cycleName || row.cycle || '-'}
-                      sx={{
-                        height: 22,
-                        fontWeight: 700,
-                        ...getWorkCycleSx(row.cycle),
-                      }}
+                      sx={getWorkCycleSx(row.cycle)}
                   />
                 </TableCell>
                 {/*<TableCell align="center">{row.createdBy}</TableCell>*/}

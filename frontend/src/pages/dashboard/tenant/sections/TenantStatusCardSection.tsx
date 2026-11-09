@@ -25,8 +25,7 @@ import {
     type TodoStatusCardKey,
     type TodoStatusCounts,
 } from '../todoFilter';
-
-const STATUS_BAR_RADIUS = '4px';
+import styles from '../tenantDashboard.module.css';
 
 const CARD_TOOLTIPS: Record<TodoStatusCardKey, string> = {
     미작성: '내가 작성해야 할 문서',
@@ -41,6 +40,15 @@ const DOC_SCOPE_OPTIONS: { value: TenantDocScope; label: string }[] = [
     { value: 'draft', label: '기안문서' },
     { value: 'approval', label: '결재할문서' },
 ];
+
+// 문서 구분 라디오 모양 (바깥 원 21px, 안쪽 원 15px)
+function DocScopeRadioIcon({ checked }: { checked: boolean }) {
+    return (
+        <Box className={styles.radioOuter}>
+            <Box data-testid="doc-scope-radio-dot" data-checked={checked} className={styles.radioDot} />
+        </Box>
+    );
+}
 
 type TenantStatusCardSectionProps = {
     counts: TodoStatusCounts;
@@ -60,25 +68,12 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
     // 마우스를 올리면 상태 설명 툴팁 표시 (describeChild로 버튼 이름은 상태명 유지)
     const renderCount = (status: TodoStatusCardKey, label: ReactNode) => (
         <Tooltip title={CARD_TOOLTIPS[status]} describeChild arrow>
-            <ButtonBase
-                onClick={() => onSelect(status)}
-                sx={{
-                    gap: 0.5,
-                    px: 0.75,
-                    py: 0.5,
-                    borderRadius: 1,
-                    '&:hover': { bgcolor: 'action.hover' },
-                }}
-            >
+            <ButtonBase onClick={() => onSelect(status)} className={styles.countButton}>
                 {label}
-                <Typography
-                    component="span"
-                    fontWeight={800}
-                    sx={{ color: 'primary.main', fontSize: 18 }}
-                >
+                <Typography component="span" className={styles.countValue}>
                     {isLoading ? <Skeleton width={24} /> : counts[status]}
                 </Typography>
-                <Typography variant="body2" component="span" color="text.secondary">
+                <Typography component="span" className={styles.countUnit}>
                     건
                 </Typography>
             </ButtonBase>
@@ -102,18 +97,23 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                 useFlexGap
                 columnGap={0.5}
                 rowGap={0.5}
-                sx={{ flexBasis: { xs: '100%', xl: 'auto' } }}
+                className={styles.statusDraftGroup}
             >
-                <EditNoteOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                <Typography variant="body2" fontWeight={700} sx={{ mr: 1 }}>
+                <EditNoteOutlinedIcon fontSize="small" className={styles.statusIcon} />
+                <Typography className={`${styles.statusLabel} ${styles.statusLabelDraft}`}>
                     기안문서
                 </Typography>
                 {DRAFT_STATUS_CARD_KEYS.map((status, index) => (
                     <Fragment key={status}>
                         {index > 0 ? (
-                            <ChevronRightIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+                            <ChevronRightIcon fontSize="small" className={styles.statusChevron} />
                         ) : null}
-                        {renderCount(status, <Typography variant="body2" component="span">{status}</Typography>)}
+                        {renderCount(
+                            status,
+                            <Typography component="span" className={styles.statusName}>
+                                {status}
+                            </Typography>,
+                        )}
                     </Fragment>
                 ))}
             </Stack>
@@ -121,8 +121,8 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
             {renderCount(
                 PENDING_APPROVAL_STATUS,
                 <>
-                    <AssignmentTurnedInOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                    <Typography variant="body2" component="span" fontWeight={700} sx={{ mr: 0.5 }}>
+                    <AssignmentTurnedInOutlinedIcon fontSize="small" className={styles.statusIcon} />
+                    <Typography component="span" className={`${styles.statusLabel} ${styles.statusLabelApproval}`}>
                         결재할 문서
                     </Typography>
                 </>,
@@ -146,16 +146,23 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                         <FormControlLabel
                             key={option.value}
                             value={option.value}
-                            control={<Radio size="small" />}
+                            control={
+                                <Radio
+                                    disableRipple
+                                    icon={<DocScopeRadioIcon checked={false} />}
+                                    checkedIcon={<DocScopeRadioIcon checked />}
+                                    className={styles.docScopeRadio}
+                                />
+                            }
                             label={option.label}
                             disabled={viewMode === 'calendar'}
-                            sx={{ mr: 1.5, '& .MuiFormControlLabel-label': { fontSize: 14 } }}
+                            className={styles.docScopeLabel}
                         />
                     ))}
                 </RadioGroup>
 
                 {/* 기존 -> TenantFilterSection 오른쪽 끝 / 변경 -> 검색필터 제거로 상태바로 이동 */}
-                <Box sx={{ flexShrink: 0 }}>
+                <Box className={styles.viewToggleWrap}>
                     <ToggleButtonGroup
                         size="small"
                         exclusive
@@ -166,41 +173,14 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                             }
                         }}
                         aria-label="보기 형식"
-                        sx={{
-                            gap: 0.5,
-                            '& .MuiToggleButton-root': {
-                                minWidth: 88,
-                                height: 36,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: `${STATUS_BAR_RADIUS} !important`,
-                                bgcolor: 'background.paper',
-                                color: 'text.disabled',
-                                fontWeight: 600,
-                                '&:hover': { bgcolor: 'background.paper', color: 'text.secondary' },
-                            },
-                            '& .MuiToggleButton-root.Mui-selected': {
-                                borderColor: 'text.secondary',
-                                color: 'text.primary',
-                                bgcolor: 'background.paper',
-                                '&:hover': { bgcolor: 'background.paper' },
-                            },
-                            '& .MuiToggleButtonGroup-grouped:not(:first-of-type)': {
-                                ml: 0,
-                                borderLeft: '1px solid',
-                                borderLeftColor: 'divider',
-                            },
-                            '& .MuiToggleButtonGroup-grouped.Mui-selected:not(:first-of-type)': {
-                                borderLeftColor: 'text.secondary',
-                            },
-                        }}
+                        className={styles.viewToggle}
                     >
                         <ToggleButton value="list" aria-label="카드형">
-                            <GridViewOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                            <GridViewOutlinedIcon fontSize="small" className={styles.toggleIcon} />
                             카드형
                         </ToggleButton>
                         <ToggleButton value="calendar" aria-label="캘린더형">
-                            <CalendarMonthOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                            <CalendarMonthOutlinedIcon fontSize="small" className={styles.toggleIcon} />
                             캘린더
                         </ToggleButton>
                     </ToggleButtonGroup>

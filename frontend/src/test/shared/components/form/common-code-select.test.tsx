@@ -2,8 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
-import { CommonCodeSelect } from '../../shared/components/forms/CommonCodeSelect';
-import {COMMON_CODE_GROUP} from "../../shared/constants/commonCodeGroups.ts";
+import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect.tsx';
+import {COMMON_CODE_GROUP} from "../../../../shared/constants/commonCodeGroups.ts";
 
 function Harness({ initial = '', emptyLabel }: { initial?: string; emptyLabel?: string }) {
     const [value, setValue] = useState(initial);

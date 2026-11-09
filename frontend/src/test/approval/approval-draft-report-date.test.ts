@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { toCycleStartDate } from '../../pages/documents/approvals/utils/approvalDraftUtils';
+import {
+    resolveApprovalTitle,
+    toApprovalAutoTitle,
+    toCycleStartDate,
+} from '../../pages/documents/approvals/utils/approvalDraftUtils';
 
 describe('toCycleStartDate', () => {
     it('일일 업무는 고른 날짜 그대로', () => {
@@ -39,5 +43,58 @@ describe('toCycleStartDate', () => {
 
     it('빈 값은 그대로', () => {
         expect(toCycleStartDate('WEEK', '')).toBe('');
+    });
+});
+
+describe('toApprovalAutoTitle', () => {
+    it('업무 기준일과 업무명을 밑줄로 잇는다', () => {
+        expect(toApprovalAutoTitle('2026-11-01', '품질 점검')).toBe('2026-11-01_품질 점검');
+    });
+
+    it('업무 기준일이 없으면 빈 문자열', () => {
+        expect(toApprovalAutoTitle('', '품질 점검')).toBe('');
+    });
+
+    it('업무명이 없으면 빈 문자열', () => {
+        expect(toApprovalAutoTitle('2026-11-01', '')).toBe('');
+    });
+});
+
+describe('resolveApprovalTitle', () => {
+    const base = {
+        initialTitle: '2026-11-02_품질 점검',
+        autoTitle: '2026-11-02_품질 점검',
+        previousAutoTitle: '2026-11-01_품질 점검',
+    };
+
+    it('빈 제목은 초기 제목으로 채운다', () => {
+        expect(resolveApprovalTitle({ ...base, current: '' })).toBe('2026-11-02_품질 점검');
+        expect(resolveApprovalTitle({ ...base, current: '   ' })).toBe('2026-11-02_품질 점검');
+    });
+
+    it('빈 제목이면 자동 제목보다 저장된 제목이 우선', () => {
+        expect(
+            resolveApprovalTitle({ ...base, current: '', initialTitle: '저장된 제목' }),
+        ).toBe('저장된 제목');
+    });
+
+    it('이전 자동 제목 그대로면 새 자동 제목을 따라간다', () => {
+        expect(resolveApprovalTitle({ ...base, current: '2026-11-01_품질 점검' })).toBe(
+            '2026-11-02_품질 점검',
+        );
+    });
+
+    it('사용자가 고친 제목은 유지한다', () => {
+        expect(resolveApprovalTitle({ ...base, current: '직접 입력한 제목' })).toBe('직접 입력한 제목');
+    });
+
+    it('기준일을 지워 자동 제목이 없으면 제목을 유지한다', () => {
+        expect(
+            resolveApprovalTitle({
+                ...base,
+                current: '2026-11-01_품질 점검',
+                autoTitle: '',
+            }),
+        ).toBe('2026-11-01_품질 점검');
     });
 });

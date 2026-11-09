@@ -1,7 +1,6 @@
 import {
     Button,
     CircularProgress,
-    MenuItem,
     Stack,
     Table,
     TableBody,
@@ -9,8 +8,9 @@ import {
     TableHead,
     TablePagination,
     TableRow,
-    TextField,
 } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import {
@@ -96,29 +96,25 @@ export function MaterialSelectDialog(props: {
             }
         >
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
-                <TextField
-                    select
+                <AppSelect
                     size="small"
                     label="품목계정"
                     value={draft.itemType}
-                    onChange={(event) => setDraft((prev) => ({ ...prev, itemType: event.target.value }))}
+                    onChange={(itemType) => setDraft((prev) => ({ ...prev, itemType }))}
+                    options={WORK_ORDER_ITEM_TYPES.map((code) => ({
+                        value: code,
+                        label: getCommonCodeName(itemTypeOptions, code),
+                    }))}
+                    emptyLabel="전체"
                     sx={{ minWidth: 140 }}
-                    slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-                >
-                    <MenuItem value="">전체</MenuItem>
-                    {WORK_ORDER_ITEM_TYPES.map((code) => (
-                        <MenuItem key={code} value={code}>
-                            {getCommonCodeName(itemTypeOptions, code)}
-                        </MenuItem>
-                    ))}
-                </TextField>
-                <TextField
+                />
+                <AppTextField
                     size="small"
                     fullWidth
                     label="검색어"
                     placeholder="품목코드, 품목명, 규격"
                     value={draft.keyword}
-                    onChange={(event) => setDraft((prev) => ({ ...prev, keyword: event.target.value }))}
+                    onChange={(keyword) => setDraft((prev) => ({ ...prev, keyword }))}
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') handleSearch();
                     }}

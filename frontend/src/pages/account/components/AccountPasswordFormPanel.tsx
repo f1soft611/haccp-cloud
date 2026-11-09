@@ -1,4 +1,5 @@
-import { Alert, Button, Paper, Stack, TextField } from '@mui/material';
+import { Alert, Button, Paper, Stack } from '@mui/material';
+import { AppTextField } from '../../../shared/components/forms/AppTextField';
 import { APP_LABELS } from '../../../shared/constants/labels';
 
 type AccountPasswordFormPanelProps = {
@@ -40,27 +41,27 @@ export function AccountPasswordFormPanel({
         <Alert severity="info">
           현재 비밀번호 확인 후 새 비밀번호를 적용합니다.
         </Alert>
-        <TextField
+        <AppTextField
           type="password"
           label="현재 비밀번호"
           value={currentPassword}
-          onChange={(event) => onChangeCurrentPassword(event.target.value)}
+          onChange={onChangeCurrentPassword}
           autoComplete="current-password"
           fullWidth
         />
-        <TextField
+        <AppTextField
           type="password"
           label="새 비밀번호"
           value={nextPassword}
-          onChange={(event) => onChangeNextPassword(event.target.value)}
+          onChange={onChangeNextPassword}
           autoComplete="new-password"
           fullWidth
         />
-        <TextField
+        <AppTextField
           type="password"
           label="새 비밀번호 확인"
           value={confirmPassword}
-          onChange={(event) => onChangeConfirmPassword(event.target.value)}
+          onChange={onChangeConfirmPassword}
           autoComplete="new-password"
           fullWidth
         />

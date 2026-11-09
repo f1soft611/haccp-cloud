@@ -4,9 +4,9 @@ import {
   Grid,
   Paper,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
+import { AppTextField } from '../../../shared/components/forms/AppTextField';
 
 type MyPageAccountInfoPanelProps = {
   visibleName: string;
@@ -38,48 +38,48 @@ export function MyPageAccountInfoPanel({
         </Typography>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
+            <AppTextField
               label="이름"
               value={visibleName}
               fullWidth
               disabled
-              InputProps={{ readOnly: true }}
+              slotProps={{ input: { readOnly: true } }}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
+            <AppTextField
               label="이메일"
               value={visibleEmail}
               fullWidth
               disabled
-              InputProps={{ readOnly: true }}
+              slotProps={{ input: { readOnly: true } }}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
+            <AppTextField
               label="부서"
               value={visibleDepartment}
               fullWidth
               disabled
-              InputProps={{ readOnly: true }}
+              slotProps={{ input: { readOnly: true } }}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
+            <AppTextField
               label="권한"
               value={visibleRole}
               fullWidth
               disabled
-              InputProps={{ readOnly: true }}
+              slotProps={{ input: { readOnly: true } }}
             />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
+            <AppTextField
               label="로그인 아이디"
               value={resolvedLoginId || '미등록'}
               fullWidth
               disabled
-              InputProps={{ readOnly: true }}
+              slotProps={{ input: { readOnly: true } }}
             />
           </Grid>
         </Grid>

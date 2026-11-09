@@ -1,13 +1,19 @@
-import {
-  Box,
-  Button,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Button } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+
+const SEARCH_FIELD_OPTIONS = [
+  { value: 'menuNm', label: '메뉴명' },
+  { value: 'menuDc', label: '설명' },
+  { value: 'menuUrl', label: 'URL' },
+];
+
+const ACTIVE_FILTER_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+];
 
 export type MenuSearchValue = {
   searchField: string;
@@ -33,64 +39,10 @@ export function MenuSearchBar(props: {
   } = props;
 
   return (
-    <Paper sx={{ p: 2 }}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1}
-        alignItems="flex-end"
-      >
-        <Box sx={{ minWidth: 120 }}>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            검색 조건
-          </Typography>
-          <Select
-            value={value.searchField}
-            onChange={(e) =>
-              onChange({ ...value, searchField: e.target.value })
-            }
-            size="small"
-            fullWidth
-          >
-            <MenuItem value="menuNm">메뉴명</MenuItem>
-            <MenuItem value="menuDc">설명</MenuItem>
-            <MenuItem value="menuUrl">URL</MenuItem>
-          </Select>
-        </Box>
-
-        <TextField
-          label="검색어"
-          value={value.searchKeyword}
-          onChange={(e) =>
-            onChange({ ...value, searchKeyword: e.target.value })
-          }
-          size="small"
-          sx={{ flex: 1, minWidth: 200 }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') onSearch();
-          }}
-        />
-
-        <Box sx={{ minWidth: 120 }}>
-          <Typography variant="body2" sx={{ mb: 0.5 }}>
-            사용여부
-          </Typography>
-          <Select
-            value={value.filterActive}
-            onChange={(e) =>
-              onChange({ ...value, filterActive: e.target.value })
-            }
-            size="small"
-            fullWidth
-          >
-            <MenuItem value="all">전체</MenuItem>
-            <MenuItem value="Y">사용</MenuItem>
-            <MenuItem value="N">미사용</MenuItem>
-          </Select>
-        </Box>
-
-        <Button variant="contained" onClick={onSearch} disabled={loading}>
-          조회
-        </Button>
+    <SearchFilterBar
+      onSearch={onSearch}
+      disabled={loading}
+      actions={
         <Button
           variant="contained"
           onClick={onAdd}
@@ -98,7 +50,35 @@ export function MenuSearchBar(props: {
         >
           + 메뉴 추가
         </Button>
-      </Stack>
-    </Paper>
+      }
+    >
+      <AppSelect
+        size="small"
+        label="검색 조건"
+        value={value.searchField}
+        onChange={(searchField) => onChange({ ...value, searchField })}
+        options={SEARCH_FIELD_OPTIONS}
+        sx={{ minWidth: 120 }}
+      />
+
+      <AppTextField
+        label="검색어"
+        value={value.searchKeyword}
+        onChange={(searchKeyword) =>
+          onChange({ ...value, searchKeyword })
+        }
+        size="small"
+        sx={{ flex: 1, minWidth: 200 }}
+      />
+
+      <AppSelect
+        size="small"
+        label="사용여부"
+        value={value.filterActive}
+        onChange={(filterActive) => onChange({ ...value, filterActive })}
+        options={ACTIVE_FILTER_OPTIONS}
+        sx={{ minWidth: 120 }}
+      />
+    </SearchFilterBar>
   );
 }

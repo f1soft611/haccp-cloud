@@ -1,4 +1,5 @@
-import { Button, Grid, Stack, TextField } from '@mui/material';
+import { Button, Grid, Stack } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useEffect, useState } from 'react';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
@@ -109,7 +110,7 @@ export function MaterialFormDialog({
           <Grid container spacing={2}>
             {mode === 'edit' ? (
                 <Grid size={{ xs: 12, sm: 5 }}>
-                  <TextField
+                  <AppTextField
                       label="품목코드"
                       value={materialCode ?? ''}
                       fullWidth
@@ -118,11 +119,11 @@ export function MaterialFormDialog({
                 </Grid>
             ) : null}
             <Grid size={{ xs: 12, sm: mode === 'edit' ? 7 : 12 }}>
-              <TextField
+              <AppTextField
                   label="품목명 *"
                   value={value.materialName}
-                  onChange={(e) =>
-                      setValue((prev) => ({ ...prev, materialName: e.target.value }))
+                  onChange={(materialName) =>
+                      setValue((prev) => ({ ...prev, materialName }))
                   }
                   fullWidth
               />
@@ -146,24 +147,24 @@ export function MaterialFormDialog({
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <AppTextField
                   label="규격"
                   value={value.materialSpec}
-                  onChange={(e) =>
-                      setValue((prev) => ({ ...prev, materialSpec: e.target.value }))
+                  onChange={(materialSpec) =>
+                      setValue((prev) => ({ ...prev, materialSpec }))
                   }
                   fullWidth
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <AppTextField
                   label="중량"
                   type="number"
                   value={value.materialWeight}
-                  onChange={(e) =>
+                  onChange={(materialWeight) =>
                       setValue((prev) => ({
                         ...prev,
-                        materialWeight: e.target.value,
+                        materialWeight,
                       }))
                   }
                   fullWidth
@@ -205,12 +206,12 @@ export function MaterialFormDialog({
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
+              <AppTextField
                   label={usesExpiryCount ? '소비기한 계산숫자 *' : '소비기한 계산숫자'}
                   type="number"
                   value={value.expiryedCount}
-                  onChange={(e) =>
-                      setValue((prev) => ({ ...prev, expiryedCount: e.target.value }))
+                  onChange={(expiryedCount) =>
+                      setValue((prev) => ({ ...prev, expiryedCount }))
                   }
                   disabled={!usesExpiryCount}
                   error={expiryCountInvalid}
@@ -220,22 +221,22 @@ export function MaterialFormDialog({
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <TextField
+              <AppTextField
                   label="품목보고번호"
                   value={value.kfdaReportNo}
-                  onChange={(e) =>
-                      setValue((prev) => ({ ...prev, kfdaReportNo: e.target.value }))
+                  onChange={(kfdaReportNo) =>
+                      setValue((prev) => ({ ...prev, kfdaReportNo }))
                   }
                   slotProps={{ htmlInput: { maxLength: 20 } }}
                   fullWidth
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <TextField
+              <AppTextField
                   label="비고"
                   value={value.etc}
-                  onChange={(e) =>
-                      setValue((prev) => ({ ...prev, etc: e.target.value }))
+                  onChange={(etc) =>
+                      setValue((prev) => ({ ...prev, etc }))
                   }
                   fullWidth
                   multiline

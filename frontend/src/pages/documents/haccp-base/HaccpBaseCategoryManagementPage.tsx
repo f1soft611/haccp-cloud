@@ -3,15 +3,14 @@ import {
   Button,
   Chip,
   IconButton,
-  MenuItem,
   Stack,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Tooltip,
 } from '@mui/material';
+import { AppTextField } from '../../../shared/components/forms/AppTextField';
 import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useMemo, useState } from 'react';
@@ -32,6 +31,12 @@ import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { useAuthStore } from '../../../shared/store/authStore';
+import { AppSelect } from '../../../shared/components/forms/AppSelect';
+
+const USE_AT_OPTIONS = [
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
 
 type CategoryRow = {
   id: string;
@@ -332,51 +337,43 @@ export function HaccpBaseCategoryManagementPage() {
         }
       >
         <Stack spacing={2}>
-          <TextField
+          <AppTextField
             label="분류코드"
             value={createForm.categoryCode}
             placeholder="자동 채번됩니다"
             helperText="분류코드는 자동으로 채번됩니다."
             disabled
           />
-          <TextField
+          <AppTextField
             label="분류명"
             value={createForm.categoryName}
-            onChange={(event) =>
+            onChange={(categoryName) =>
               setCreateForm((prev) => ({
                 ...prev,
-                categoryName: event.target.value,
+                categoryName,
               }))
             }
             required
             autoFocus
           />
-          <TextField
+          <AppTextField
             label="정렬순서"
             type="number"
             value={createForm.sortOrder}
-            onChange={(event) =>
+            onChange={(nextValue) =>
               setCreateForm((prev) => ({
                 ...prev,
-                sortOrder: Number(event.target.value) || 0,
+                sortOrder: Number(nextValue) || 0,
               }))
             }
-            inputProps={{ min: 0 }}
+            slotProps={{ htmlInput: { min: 0 } }}
           />
-          <TextField
-            select
+          <AppSelect
             label="사용여부"
             value={createForm.useAt}
-            onChange={(event) =>
-              setCreateForm((prev) => ({
-                ...prev,
-                useAt: event.target.value as 'Y' | 'N',
-              }))
-            }
-          >
-            <MenuItem value="Y">사용</MenuItem>
-            <MenuItem value="N">미사용</MenuItem>
-          </TextField>
+            onChange={(useAt) => setCreateForm((prev) => ({ ...prev, useAt }))}
+            options={USE_AT_OPTIONS}
+          />
         </Stack>
       </FormDialog>
 
@@ -411,45 +408,37 @@ export function HaccpBaseCategoryManagementPage() {
         }
       >
         <Stack spacing={2}>
-          <TextField label="분류코드" value={editForm.categoryCode} disabled />
-          <TextField
+          <AppTextField label="분류코드" value={editForm.categoryCode} disabled />
+          <AppTextField
             label="분류명"
             value={editForm.categoryName}
-            onChange={(event) =>
+            onChange={(categoryName) =>
               setEditForm((prev) => ({
                 ...prev,
-                categoryName: event.target.value,
+                categoryName,
               }))
             }
             required
             autoFocus
           />
-          <TextField
+          <AppTextField
             label="정렬순서"
             type="number"
             value={editForm.sortOrder}
-            onChange={(event) =>
+            onChange={(nextValue) =>
               setEditForm((prev) => ({
                 ...prev,
-                sortOrder: Number(event.target.value) || 0,
+                sortOrder: Number(nextValue) || 0,
               }))
             }
-            inputProps={{ min: 0 }}
+            slotProps={{ htmlInput: { min: 0 } }}
           />
-          <TextField
-            select
+          <AppSelect
             label="사용여부"
             value={editForm.useAt}
-            onChange={(event) =>
-              setEditForm((prev) => ({
-                ...prev,
-                useAt: event.target.value as 'Y' | 'N',
-              }))
-            }
-          >
-            <MenuItem value="Y">사용</MenuItem>
-            <MenuItem value="N">미사용</MenuItem>
-          </TextField>
+            onChange={(useAt) => setEditForm((prev) => ({ ...prev, useAt }))}
+            options={USE_AT_OPTIONS}
+          />
         </Stack>
       </FormDialog>
 

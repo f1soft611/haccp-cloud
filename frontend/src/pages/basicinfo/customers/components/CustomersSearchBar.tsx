@@ -1,4 +1,13 @@
-import { Button, MenuItem, Paper, Stack, TextField } from '@mui/material';
+import { Button } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+
+const ACTIVE_FILTER_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
 
 export type CustomersSearchValue = {
   keyword: string;
@@ -21,54 +30,10 @@ export function CustomersSearchBar({
   onCreate,
 }: CustomersSearchBarProps) {
   return (
-    <Paper sx={{ p: 2 }}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1}
-        alignItems={{ xs: 'stretch', md: 'flex-end' }}
-      >
-        <TextField
-          size="small"
-          fullWidth
-          label="검색어"
-          placeholder="거래처코드, 거래처명, 대표자명, 사업자번호"
-          value={value.keyword}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              keyword: event.target.value,
-            })
-          }
-        />
-
-        <TextField
-          select
-          size="small"
-          label="상태"
-          value={value.filterActive}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              filterActive: event.target
-                .value as CustomersSearchValue['filterActive'],
-            })
-          }
-          sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="all">전체</MenuItem>
-          <MenuItem value="Y">사용</MenuItem>
-          <MenuItem value="N">미사용</MenuItem>
-        </TextField>
-
-        <Button
-          variant="contained"
-          onClick={onSearch}
-          disabled={disabled}
-          sx={{ minWidth: 96 }}
-        >
-          검색
-        </Button>
-
+    <SearchFilterBar
+      onSearch={onSearch}
+      disabled={disabled}
+      actions={
         <Button
           variant="contained"
           onClick={onCreate}
@@ -77,7 +42,30 @@ export function CustomersSearchBar({
         >
           거래처 등록
         </Button>
-      </Stack>
-    </Paper>
+      }
+    >
+      <AppTextField
+        size="small"
+        fullWidth
+        label="검색어"
+        placeholder="거래처코드, 거래처명, 대표자명, 사업자번호"
+        value={value.keyword}
+        onChange={(keyword) =>
+          onChange({
+            ...value,
+            keyword,
+          })
+        }
+      />
+
+      <AppSelect
+        size="small"
+        label="상태"
+        value={value.filterActive}
+        onChange={(filterActive) => onChange({ ...value, filterActive })}
+        options={ACTIVE_FILTER_OPTIONS}
+        sx={{ minWidth: 140 }}
+      />
+    </SearchFilterBar>
   );
 }

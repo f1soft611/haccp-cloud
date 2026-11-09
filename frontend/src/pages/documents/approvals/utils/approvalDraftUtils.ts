@@ -107,6 +107,25 @@ export function toCycleStartDate(cycle: string, date: string): string {
   return date;
 }
 
+// 기안서 자동 제목. 업무 기준일이나 업무명이 없으면 빈 문자열
+export function toApprovalAutoTitle(reportDate: string, divisionName: string): string {
+  return reportDate && divisionName ? `${reportDate}_${divisionName}` : '';
+}
+
+// 다음 제목 결정. 빈 제목은 초기 제목으로 채우고, 이전 자동 제목 그대로면 기준일 변경을 따라가며, 사용자가 고친 제목은 유지
+export function resolveApprovalTitle(params: {
+  current: string;
+  initialTitle: string;
+  autoTitle: string;
+  previousAutoTitle: string;
+}): string {
+  const { current, initialTitle, autoTitle, previousAutoTitle } = params;
+  if (!current.trim()) {
+    return initialTitle;
+  }
+  return autoTitle && current === previousAutoTitle ? autoTitle : current;
+}
+
 export function renderApprovalStampLabel(role: ApprovalRole): string {
   return role === 'reviewer' ? '검토도장' : '승인도장';
 }

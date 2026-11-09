@@ -4,8 +4,9 @@ import {
   Grid,
   Stack,
   Switch,
-  TextField,
 } from '@mui/material';
+import { AppDateField } from '../../../../shared/components/forms/AppDateField';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useEffect, useState } from 'react';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
@@ -124,7 +125,7 @@ export function EquipmentFormDialog({
         <Grid container spacing={2}>
           {mode === 'edit' ? (
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
+              <AppTextField
                 label="관리코드"
                 value={equipSysCd ?? ''}
                 fullWidth
@@ -133,32 +134,32 @@ export function EquipmentFormDialog({
             </Grid>
           ) : null}
           <Grid size={{ xs: 12, sm: mode === 'edit' ? 8 : 6 }}>
-            <TextField
+            <AppTextField
               label="설비코드 *"
               value={value.equipCd}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, equipCd: e.target.value }))
+              onChange={(equipCd) =>
+                setValue((prev) => ({ ...prev, equipCd }))
               }
               slotProps={{ htmlInput: { maxLength: 20 } }}
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: mode === 'edit' ? 12 : 6 }}>
-            <TextField
+            <AppTextField
               label="설비명 *"
               value={value.equipNm}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, equipNm: e.target.value }))
+              onChange={(equipNm) =>
+                setValue((prev) => ({ ...prev, equipNm }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="설비종류"
               value={value.equipKind}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, equipKind: e.target.value }))
+              onChange={(equipKind) =>
+                setValue((prev) => ({ ...prev, equipKind }))
               }
               helperText="최대 6자"
               slotProps={{ htmlInput: { maxLength: 6 } }}
@@ -166,53 +167,51 @@ export function EquipmentFormDialog({
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppDateField
               label="구입일"
-              type="date"
               value={value.purDate}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, purDate: e.target.value }))
+              onChange={(purDate) =>
+                setValue((prev) => ({ ...prev, purDate }))
               }
-              slotProps={{ inputLabel: { shrink: true } }}
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="구입처"
               value={value.purCust}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, purCust: e.target.value }))
+              onChange={(purCust) =>
+                setValue((prev) => ({ ...prev, purCust }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="제조사"
               value={value.makCust}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, makCust: e.target.value }))
+              onChange={(makCust) =>
+                setValue((prev) => ({ ...prev, makCust }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="설비규격"
               value={value.equipSpec}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, equipSpec: e.target.value }))
+              onChange={(equipSpec) =>
+                setValue((prev) => ({ ...prev, equipSpec }))
               }
               fullWidth
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
               label="설치장소"
               value={value.location}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, location: e.target.value }))
+              onChange={(location) =>
+                setValue((prev) => ({ ...prev, location }))
               }
               fullWidth
             />
@@ -227,12 +226,12 @@ export function EquipmentFormDialog({
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
+            <AppTextField
                 label="검교정주기(개월)"
                 type="number"
                 value={value.vcCycle}
-                onChange={(e) =>
-                    setValue((prev) => ({ ...prev, vcCycle: e.target.value }))
+                onChange={(vcCycle) =>
+                    setValue((prev) => ({ ...prev, vcCycle }))
                 }
                 error={vcCycleInvalid}
                 helperText={vcCycleInvalid ? '1 이상의 정수를 입력하세요.' : undefined}
@@ -241,11 +240,11 @@ export function EquipmentFormDialog({
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <TextField
+            <AppTextField
               label="비고"
               value={value.bigo}
-              onChange={(e) =>
-                setValue((prev) => ({ ...prev, bigo: e.target.value }))
+              onChange={(bigo) =>
+                setValue((prev) => ({ ...prev, bigo }))
               }
               fullWidth
               multiline

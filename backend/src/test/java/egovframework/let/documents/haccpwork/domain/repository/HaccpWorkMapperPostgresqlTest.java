@@ -68,6 +68,18 @@ class HaccpWorkMapperPostgresqlTest {
     }
 
     @Test
+    void unwrittenCycleFrom_should_use_workdate_and_week_like_dashboard() throws Exception {
+        String xml = readMapper();
+        int start = xml.indexOf("<sql id=\"unwrittenCycleFrom\">");
+        String fragment = xml.substring(start, xml.indexOf("</sql>", start));
+        assertTrue(fragment.contains("FROM tb_workdate wd"), "일 단위는 근무일 테이블 기준이어야 한다");
+        assertTrue(fragment.contains("wd.work_type IN ('WORK', 'SPECIAL_WORK')"), "대시보드와 같은 근무 유형이어야 한다");
+        assertTrue(fragment.contains("FROM tb_week wk"), "주 단위는 주차 테이블 기준이어야 한다");
+        assertTrue(fragment.contains("wd.work_date + 1 AS cycle_end"), "주기 종료일 컬럼이 없다");
+        assertFalse(xml.contains("gs.cycle_start + cyc.cycle_step"), "주기 종료일은 gs.cycle_end 로 읽어야 한다");
+    }
+
+    @Test
     void unwrittenList_should_include_cycles_with_only_final_confirmed_rejections() throws Exception {
         String xml = readMapper();
         assertTrue(xml.contains("<sql id=\"finalOwnerConfirmPending\">"), "최종확인 대기 fragment 가 없다");

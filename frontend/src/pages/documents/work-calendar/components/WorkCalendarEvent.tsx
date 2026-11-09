@@ -1,7 +1,11 @@
 import type { KeyboardEvent } from 'react';
 import { Box, Typography } from '@mui/material';
 import type { EventProps } from 'react-big-calendar';
-import {APPROVAL_STATUS_COLORS, resolveApprovalStatusView} from '../../../../shared/utils/approvalStatus';
+import {
+    APPROVAL_STATUS_COLORS,
+    getApprovalChipPaddingX,
+    resolveApprovalStatusView,
+} from '../../../../shared/utils/approvalStatus';
 import type { WorkCalendarEvent } from '../hooks/useWorkCalendarData';
 import { SELECTED_LEGEND_SX } from '../../../dashboard/tenant/utils';
 
@@ -19,6 +23,18 @@ const STATUS_BADGES: Record<string, StatusBadge> = {
 };
 const EXPIRATION_BADGE: StatusBadge = { label: '만료', short: '만', color: 'error', outlined: true };
 
+// 범례 뱃지 공용 크기 (시안 칩과 동일)
+const LEGEND_BADGE_SX = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    boxSizing: 'border-box',
+    height: 24,
+    mr: 0,
+    borderRadius: '17px',
+    fontSize: 12,
+    lineHeight: 1,
+};
+
 type WorkCalendarStatusLegendProps = {
     selected?: string;
     onSelect?: (status: string) => void;
@@ -32,11 +48,12 @@ export function WorkCalendarStatusLegend({ selected, onSelect }: WorkCalendarSta
                     key={status}
                     {...badge}
                     status={status}
+                    legend
                     selected={selected === status}
                     onClick={onSelect ? () => onSelect(status) : undefined}
                 />
             ))}
-            <WorkCalendarStatusBadge {...EXPIRATION_BADGE} />
+            <WorkCalendarStatusBadge {...EXPIRATION_BADGE} legend />
         </>
     );
 }
@@ -56,11 +73,13 @@ export function WorkCalendarStatusBadge({
                                             status,
                                             selected,
                                             onClick,
+    legend,
                                         }: Pick<StatusBadge, 'label' | 'color' | 'outlined'> & {
     // 기존 -> 없음 / 변경 -> 공통 상태 라벨(결재진행중, 반려, 승인), 디자인 색 조회용
     status?: string;
     selected?: boolean;
     onClick?: () => void;
+    legend?: boolean;
 }) {
     return (
         <Box
@@ -101,6 +120,12 @@ export function WorkCalendarStatusBadge({
                         bgcolor: APPROVAL_STATUS_COLORS[status ?? '']?.bg ?? `${color}.main`,
                         color: APPROVAL_STATUS_COLORS[status ?? '']?.color ?? `${color}.contrastText`,
                     }),
+                ...(legend
+                    ? {
+                        ...LEGEND_BADGE_SX,
+                        px: outlined ? '9px' : getApprovalChipPaddingX(status ?? ''),
+                    }
+                    : {}),
             }}
         >
             {label}

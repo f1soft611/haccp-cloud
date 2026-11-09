@@ -4,14 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
 import type { TenantTodoCardItem } from '../hooks/useTenantDashboardData';
-import {
-    CARD_CHIP_SX,
-    DRAFT_CARD_TOP_COLOR,
-    getDDayColor,
-    getWorkCycleSx,
-    WORK_CARD_BUTTON_SX,
-    WORK_CARD_SX,
-} from '../utils';
+import { getDDayTone, getWorkCycleSx } from '../utils';
+import styles from '../tenantDashboard.module.css';
 import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 
 type TenantTodoCardProps = {
@@ -39,84 +33,60 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
 
     return (
         <>
-            <Card
-                variant="outlined"
-                sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    ...WORK_CARD_SX,
-                    borderTop: `3px solid ${DRAFT_CARD_TOP_COLOR}`,
-                }}
-            >
-                <Box sx={{ flexGrow: 1, px: 2.5, pt: 2, pb: 2 }}>
-                    {/* 기존 -> 칩 왼쪽 정렬, 아래 여백 16px / 변경 -> 시안대로 오른쪽 정렬, 아래 여백 8px */}
-                    <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="flex-end" mb={1}>
+            <Card variant="outlined" className={`${styles.workCard} ${styles.workCardDraft} ${styles.workCardFull}`}>
+                <Box className={styles.cardBody}>
+                    <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="flex-end" className={styles.chipRow}>
                         <ApprovalStatusChip label={statusLabel} />
                         <Chip
                             size="small"
                             variant="outlined"
                             label={item.cycleName || item.cycle || '-'}
-                            sx={{ ...CARD_CHIP_SX, ...getWorkCycleSx(item.cycle) }}
+                            sx={getWorkCycleSx(item.cycle)}
                         />
                         {item.dDay ? (
                             <Chip
                                 size="small"
                                 variant="outlined"
                                 label={item.dDay}
-                                sx={{ ...CARD_CHIP_SX, color: getDDayColor(item.dDay), borderColor: 'divider' }}
+                                className={`${styles.cardChip} ${styles[getDDayTone(item.dDay)]}`}
                             />
                         ) : null}
                     </Stack>
 
-                    <Typography variant="caption" color="text.secondary" noWrap component="div">
+                    <Typography variant="caption" noWrap component="div" className={styles.workCategory}>
                         {sectionLabel}
                     </Typography>
-                    <Typography variant="subtitle1" fontWeight={700} noWrap mb={0.5}>
+                    <Typography variant="subtitle1" noWrap className={`${styles.workTitle} ${styles.workTitleGap}`}>
                         {item.divisionName || item.title || '-'}
                     </Typography>
-                    {/* 기존 -> 검토:이름 / 승인:이름 | 변경 -> 시안 표기 */}
-                    <Typography variant="body2" color="text.secondary" noWrap>
+                    <Typography variant="body2" noWrap className={styles.reviewLine}>
                         {`검토 : ${item.reviewerName || '-'} | 승인 : ${item.approverName || '-'}`}
                     </Typography>
                 </Box>
 
                 <Divider />
 
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2.5, py: 1.5 }}>
-                    <Typography variant="body2" color="text.secondary" noWrap sx={{ flexGrow: 1, minWidth: 0 }}>
+                <Stack direction="row" alignItems="center" spacing={1} className={styles.cardFooter}>
+                    <Typography variant="body2" noWrap className={styles.updatedText}>
                         {`최신 : ${item.updatedAt ? item.updatedAt.slice(0, 10) : '-'} / ${item.lastWriterName || '-'}`}
                     </Typography>
-                    {/* 기존 -> 건수가 있으면 빨간색, 문서 아이콘 표시 / 변경 -> 시안대로 항상 같은 색, 아이콘 없음 */}
                     <Button
                         size="small"
                         variant="outlined"
                         color="primary"
                         aria-label={`미작성 ${item.unwrittenCount}건`}
                         onClick={handleUnwritten}
-                        sx={{
-                            ...WORK_CARD_BUTTON_SX,
-                            borderRadius: '4px',
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0,
-                            fontSize: 12,
-                            height: 30,
-                        }}
+                        className={`${styles.workCardButton} ${styles.unwrittenButton}`}
                     >
                         미작성건 :&nbsp;
-                        <Box component="span" sx={{ textDecoration: 'underline' }}>{item.unwrittenCount}</Box>
+                        <Box component="span" className={styles.underline}>{item.unwrittenCount}</Box>
                     </Button>
                     <IconButton
                         size="small"
                         color="primary"
                         aria-label="오늘 작성"
                         onClick={() => void openWorkDraft(item.id)}
-                        sx={{
-                            ...WORK_CARD_BUTTON_SX,
-                            borderRadius: '4px',
-                            flexShrink: 0,
-                            height: 30
-                        }}
+                        className={styles.workCardButton}
                     >
                         <EditOutlinedIcon fontSize="small" />
                     </IconButton>

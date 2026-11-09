@@ -1,9 +1,16 @@
-import { Button, MenuItem, Paper, Stack, TextField } from '@mui/material';
+import { Button, Paper, Stack } from '@mui/material';
+import { AppTextField } from '../../../shared/components/forms/AppTextField';
 import { type DocumentStatus } from '../../../services/documents/documentsService';
+import { AppSelect } from '../../../shared/components/forms/AppSelect';
 import {
   APP_LABELS,
   getDocumentStatusLabel,
 } from '../../../shared/constants/labels';
+
+const STATUS_OPTIONS: { value: DocumentStatus; label: string }[] = [
+  { value: 'DRAFT', label: getDocumentStatusLabel('DRAFT') },
+  { value: 'ACTIVE', label: getDocumentStatusLabel('ACTIVE') },
+];
 
 export type DocumentFormValue = {
   title: string;
@@ -23,34 +30,29 @@ export function DocumentFormSection(props: {
   return (
     <Paper sx={{ p: 2 }}>
       <Stack spacing={1}>
-        <TextField
+        <AppTextField
           label={APP_LABELS.field.title}
           value={value.title}
-          onChange={(e) => onChange({ ...value, title: e.target.value })}
+          onChange={(title) => onChange({ ...value, title })}
         />
-        <TextField
+        <AppTextField
           label={APP_LABELS.field.category}
           value={value.category}
-          onChange={(e) => onChange({ ...value, category: e.target.value })}
+          onChange={(category) => onChange({ ...value, category })}
         />
-        <TextField
+        <AppTextField
           label={APP_LABELS.field.content}
           value={value.content}
-          onChange={(e) => onChange({ ...value, content: e.target.value })}
+          onChange={(content) => onChange({ ...value, content })}
           multiline
           minRows={3}
         />
-        <TextField
-          select
+        <AppSelect
           label={APP_LABELS.field.status}
           value={value.status}
-          onChange={(e) =>
-            onChange({ ...value, status: e.target.value as DocumentStatus })
-          }
-        >
-          <MenuItem value="DRAFT">{getDocumentStatusLabel('DRAFT')}</MenuItem>
-          <MenuItem value="ACTIVE">{getDocumentStatusLabel('ACTIVE')}</MenuItem>
-        </TextField>
+          onChange={(status) => onChange({ ...value, status })}
+          options={STATUS_OPTIONS}
+        />
         <Button variant="contained" onClick={onSubmit} disabled={submitting}>
           {APP_LABELS.action.addTemplate}
         </Button>

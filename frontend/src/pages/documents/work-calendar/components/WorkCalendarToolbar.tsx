@@ -72,8 +72,6 @@ export function WorkCalendarToolbar({
                             label={cycleOptions.find((option) => option.code === code)?.name ?? code}
                             onClick={legendFilter ? () => legendFilter.onSelect('cycle', code) : undefined}
                             sx={{
-                                height: 20,
-                                fontWeight: 700,
                                 ...cycleSx,
                                 '&:hover': { bgcolor: cycleSx.bgcolor },
                                 ...(legendFilter?.cycle === code ? SELECTED_LEGEND_SX : {}),

@@ -1,14 +1,14 @@
-import {
-  Button,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  TextField,
-} from '@mui/material';
+import { Button } from '@mui/material';
+import { AppTextField } from '../../../../shared/components/forms/AppTextField';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { HaccpCategoryOption } from '../types';
+
+const USE_AT_FILTER_OPTIONS = [
+  { value: 'all', label: '전체' },
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
 
 export type HaccpBaseSearchValue = {
   categoryId: 'ALL' | string;
@@ -34,80 +34,55 @@ export function HaccpBaseSearchBar(props: {
   } = props;
 
   return (
-    <Paper sx={{ p: 2 }}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        spacing={1}
-        alignItems={{ xs: 'stretch', md: 'flex-end' }}
-      >
-        <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel id="haccp-base-category-label">업무분류</InputLabel>
-          <Select
-            labelId="haccp-base-category-label"
-            value={value.categoryId}
-            label="업무분류"
-            onChange={(event) =>
-              onChange({
-                ...value,
-                categoryId: event.target.value,
-              })
-            }
-          >
-            <MenuItem value="ALL">전체</MenuItem>
-            {categoryOptions.map((category) => (
-              <MenuItem key={category.id} value={category.id}>
-                {category.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+    <SearchFilterBar
+      onSearch={onSearch}
+      actions={
+        <>
+          <Button variant="contained" onClick={onCreate}>
+            + 업무 추가
+          </Button>
+          <Button variant="outlined" onClick={onCategorySettings}>
+            분류 설정
+          </Button>
+        </>
+      }
+    >
+      <AppSelect
+        size="small"
+        label="업무분류"
+        value={value.categoryId}
+        onChange={(categoryId) => onChange({ ...value, categoryId })}
+        options={[
+          { value: 'ALL', label: '전체' },
+          ...categoryOptions.map((category) => ({
+            value: category.id,
+            label: category.name,
+          })),
+        ]}
+        sx={{ minWidth: 180 }}
+      />
 
-        <TextField
-          size="small"
-          label="구분명, 담당자 검색"
-          value={value.keyword}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              keyword: event.target.value,
-            })
-          }
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              onSearch();
-            }
-          }}
-          sx={{ flex: 1, minWidth: 260 }}
-        />
+      <AppTextField
+        size="small"
+        label="구분명, 담당자 검색"
+        value={value.keyword}
+        onChange={(keyword) =>
+          onChange({
+            ...value,
+            keyword,
+          })
+        }
+        sx={{ flex: 1, minWidth: 260 }}
+      />
 
-        <TextField
-          select
-          size="small"
-          label="사용유무"
-          value={value.useAt}
-          onChange={(event) =>
-            onChange({
-              ...value,
-              useAt: event.target.value as HaccpBaseSearchValue['useAt'],
-            })
-          }
-          sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="all">전체</MenuItem>
-          <MenuItem value="Y">사용</MenuItem>
-          <MenuItem value="N">미사용</MenuItem>
-        </TextField>
-
-        <Button variant="contained" onClick={onSearch}>
-          조회
-        </Button>
-        <Button variant="contained" onClick={onCreate}>
-          + 업무 추가
-        </Button>
-        <Button variant="outlined" onClick={onCategorySettings}>
-          분류 설정
-        </Button>
-      </Stack>
-    </Paper>
+      <AppSelect
+        size="small"
+        label="사용유무"
+        value={value.useAt}
+        onChange={(useAt) => onChange({ ...value, useAt })}
+        options={USE_AT_FILTER_OPTIONS}
+        sx={{ minWidth: 140 }}
+      />
+    </SearchFilterBar>
   );
 }

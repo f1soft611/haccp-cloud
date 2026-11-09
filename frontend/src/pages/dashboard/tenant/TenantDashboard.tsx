@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Box, Grid, Paper, Stack, Typography, useTheme } from '@mui/material';
 import { useSessionState } from '../../../shared/hooks/useSessionState';
 import { WorkCalendarView } from '../../documents/work-calendar/components/WorkCalendarView';
 import { useWorkCalendarData } from '../../documents/work-calendar/hooks/useWorkCalendarData';
@@ -17,21 +17,14 @@ import {
     type TenantTodoFilter,
     type TenantViewMode,
 } from './todoFilter';
+import { getDashboardCssVars } from './utils';
+import styles from './tenantDashboard.module.css';
 
-// 카드 섹션 제목: 동그라미 표시 + 문서 구분명
-function DocSectionTitle({ label, color }: { label: string; color: string }) {
+function DocSectionTitle({ label, toneClassName }: { label: string; toneClassName: string }) {
     return (
-        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1 }}>
-            <Box
-                sx={{
-                    width: 10,
-                    height: 10,
-                    border: '2px solid',
-                    borderColor: color,
-                    borderRadius: '50%',
-                }}
-            />
-            <Typography variant="subtitle1" component="h2" fontWeight={700}>
+        <Stack direction="row" alignItems="center" className={`${styles.docTitleRow} ${toneClassName}`}>
+            <Box className={styles.docTitleDot} />
+            <Typography variant="subtitle1" component="h2" className={styles.docTitleText}>
                 {label}
             </Typography>
         </Stack>
@@ -42,6 +35,7 @@ function DocSectionTitle({ label, color }: { label: string; color: string }) {
 // 변경 -> 나의 담당업무: 상태바 + 라디오로 고른 기안문서, 결재할문서 카드 또는 캘린더
 export function TenantDashboard() {
     const navigate = useNavigate();
+    const theme = useTheme();
     const [viewMode, setViewMode] = useSessionState<TenantViewMode>(
         'tenantDashboard.viewMode',
         'list',
@@ -86,18 +80,16 @@ export function TenantDashboard() {
     );
 
     return (
-        <Grid container spacing={2}>
+        <Grid
+            container
+            spacing={2}
+            className={styles.scope}
+            data-mode={theme.palette.mode}
+            style={getDashboardCssVars(theme)}
+        >
             <Grid size={{ xs: 12, lg: 12 }}>
                 <Stack spacing={2}>
-                    <Paper
-                        sx={{
-                            px: 2,
-                            py: 1,
-                            bgcolor: '#EFF0F6',
-                            boxShadow: 'none',
-                            borderRadius: '7px',
-                        }}
-                    >
+                    <Paper className={styles.statusPanel}>
                         <TenantStatusCardSection
                             counts={statusCounts}
                             isLoading={isTodoLoading || isApprovalLoading}
@@ -119,7 +111,7 @@ export function TenantDashboard() {
                         <Stack spacing={3}>
                             {docScope !== 'approval' ? (
                                 <Box>
-                                    <DocSectionTitle label="기안문서" color="primary.main" />
+                                    <DocSectionTitle label="기안문서" toneClassName={styles.docTitleDraft} />
                                     <TenantTodoSection
                                         isLoading={isTodoLoading}
                                         isError={isTodoError}
@@ -130,7 +122,7 @@ export function TenantDashboard() {
                             ) : null}
                             {docScope !== 'draft' ? (
                                 <Box>
-                                    <DocSectionTitle label="결재할문서" color="text.primary" />
+                                    <DocSectionTitle label="결재할문서" toneClassName={styles.docTitleApproval} />
                                     <TenantTodoSection
                                         isLoading={isApprovalLoading}
                                         isError={isApprovalError}
@@ -141,16 +133,7 @@ export function TenantDashboard() {
                             ) : null}
                         </Stack>
                     ) : (
-                        <Paper
-                            data-testid="tenant-dashboard-calendar"
-                            sx={{
-                                p: 2,
-                                border: '1px solid',
-                                borderRadius: '4px',
-                                borderColor: 'divider',
-                            }}
-                        >
-                            {/* 기존 -> 범례 클릭 시 draft, filter 동시 세팅 / 변경 -> legendFilter 만 세팅, 적용된 값을 다시 클릭하면 해제('') */}
+                        <Paper data-testid="tenant-dashboard-calendar" className={styles.calendarPanel}>
                             <WorkCalendarView
                                 events={filteredEvents}
                                 viewDate={calendar.viewDate}
@@ -171,7 +154,8 @@ export function TenantDashboard() {
                     )}
                 </Stack>
             </Grid>
-            <Grid size={{ xs: 12, lg: 3 }} sx={{ display: 'none' }}>
+            {/* 사이드바 */}
+            <Grid size={{ xs: 12, lg: 3 }} className={styles.hiddenSidebar}>
                 <TenantSidebarSection />
             </Grid>
         </Grid>

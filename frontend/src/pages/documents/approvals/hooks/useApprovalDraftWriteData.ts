@@ -1,5 +1,4 @@
-import dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { JSONContent } from '@tiptap/core';
 import { useParams, useSearchParams } from 'react-router-dom';
@@ -12,10 +11,19 @@ import {
   resolveDocumentFieldValues,
   type DocumentFieldValues,
 } from '../../../../editor/utils/documentFieldValues';
-import { parseTemplateJson, toCycleStartDate } from '../utils/approvalDraftUtils';
+import {
+  parseTemplateJson,
+  resolveApprovalTitle,
+  toApprovalAutoTitle,
+  toCycleStartDate,
+} from '../utils/approvalDraftUtils';
 import { isDocumentOwner } from '../../../../shared/utils/ownershipUtils';
 import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
-import { EMPTY_APPROVAL_SUB, toInitialApprovalSub } from '../utils/approvalSubFields';
+import {
+  EMPTY_APPROVAL_SUB,
+  getApprovalSubFieldConfig,
+  toInitialApprovalSub,
+} from '../utils/approvalSubFields';
 
 type UseApprovalDraftWriteDataResult = {
   baseId?: string;
@@ -82,6 +90,8 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
   const [hasUserEdited, setHasUserEdited] = useState(false);
   const [reportDate, setReportDate] = useState('');
   const [sub, setSub] = useState<ApprovalSubValues>(EMPTY_APPROVAL_SUB);
+  // 직전 자동 제목. 현재 제목과 같으면 사용자가 고치지 않은 것으로 본다
+  const lastAutoTitleRef = useRef('');
 
   const workDetailQuery = useQuery({
     // 변경 -> fresh(새 문서 모드)도 키에 포함
@@ -136,20 +146,30 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
       return;
     }
 
-    // 기존 -> 서버 제목(work.title)이 있을 때만 세팅
-    // 변경 -> 서버 제목이 없으면 오늘날짜_업무명 으로 자동 세팅
-    const fetchedTitle = (work?.title || '').trim();
-    const divisionName = (work?.divisionName || '').trim();
-    const autoTitle = divisionName
-      ? `${dayjs().format('YYYY-MM-DD')}_${divisionName}`
-      : '';
-    const initialTitle = fetchedTitle || autoTitle;
-    if (!initialTitle) {
-      return;
+    // 기존 -> 서버 제목이 없으면 오늘날짜_업무명 으로 자동 세팅, 이후 날짜 변경은 따라가지 않음
+    // 변경 -> 서버 제목이 없으면 업무기준일_업무명 으로 자동 세팅, 자동 제목 상태면 기준일 변경을 따라감
+    // 만료일 관리 업무는 화면의 업무 기준일 칸처럼 검사일을 쓴다
+    const titleDate = getApprovalSubFieldConfig(work?.categoryCode)
+      ? sub.inspectedDate
+      : reportDate;
+    const autoTitle = toApprovalAutoTitle(titleDate, (work?.divisionName || '').trim());
+    const previousAutoTitle = lastAutoTitleRef.current;
+    if (autoTitle) {
+      lastAutoTitleRef.current = autoTitle;
     }
 
-    setTitle((prev) => (prev.trim() ? prev : initialTitle));
-  }, [work?.title, work?.divisionName, workDetailQuery.isFetched]);
+    const initialTitle = (work?.title || '').trim() || autoTitle;
+    setTitle((current) =>
+      resolveApprovalTitle({ current, initialTitle, autoTitle, previousAutoTitle }),
+    );
+  }, [
+    work?.title,
+    work?.divisionName,
+    work?.categoryCode,
+    reportDate,
+    sub.inspectedDate,
+    workDetailQuery.isFetched,
+  ]);
 
   useEffect(() => {
     if (!workDetailQuery.isFetched) {
