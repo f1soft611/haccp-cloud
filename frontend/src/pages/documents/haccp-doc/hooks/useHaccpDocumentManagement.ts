@@ -42,7 +42,6 @@ function toSearchValue(searchParams: URLSearchParams): HaccpDocSearchValue {
       searchParams.get('workDivisionId') ||
       searchParams.get('workDivision') ||
       '',
-    draftNumber: searchParams.get('draftNumber') || '',
     title: searchParams.get('title') || '',
     writer: searchParams.get('writer') || '',
     participantType: participantTypes,
@@ -66,7 +65,6 @@ function toSearchParams(
   const params = new URLSearchParams();
   const trimmedWorkType = value.workType.trim();
   const trimmedWorkDivision = value.workDivision.trim();
-  const trimmedDraftNumber = value.draftNumber.trim();
   const trimmedTitle = value.title.trim();
   const trimmedWriter = value.writer.trim();
   const trimmedStatus = value.status.trim();
@@ -84,10 +82,6 @@ function toSearchParams(
     } else {
       params.set('workDivision', trimmedWorkDivision);
     }
-  }
-
-  if (trimmedDraftNumber) {
-    params.set('draftNumber', trimmedDraftNumber);
   }
 
   if (trimmedTitle) {
@@ -264,7 +258,6 @@ export function useHaccpDocumentManagement() {
           isKnownDivisionId || isRequestedDivisionId
             ? undefined
             : divisionValue || undefined,
-        draftNumber: appliedFilters.draftNumber.trim() || undefined,
         title: appliedFilters.title.trim() || undefined,
         writer: appliedFilters.writer.trim() || undefined,
         participantType:
@@ -319,7 +312,7 @@ export function useHaccpDocumentManagement() {
     if (appliedFilters.title.trim()) {
       chips.push({
         key: 'title',
-        label: `제목: ${appliedFilters.title.trim()}`,
+        label: `제목/기안번호: ${appliedFilters.title.trim()}`,
       });
     }
     if (appliedFilters.status && appliedFilters.status !== '전체') {
@@ -329,12 +322,6 @@ export function useHaccpDocumentManagement() {
       chips.push({
         key: 'participantType',
         label: `참여유형: ${appliedFilters.participantType.join(', ')}`,
-      });
-    }
-    if (appliedFilters.draftNumber.trim()) {
-      chips.push({
-        key: 'draftNumber',
-        label: `기안번호: ${appliedFilters.draftNumber.trim()}`,
       });
     }
     // 기존 -> if (canViewAllDocuments && appliedFilters.writer.trim()) {
@@ -355,7 +342,6 @@ export function useHaccpDocumentManagement() {
     const resetValue: HaccpDocSearchValue = {
       workType: '전체',
       workDivision: '',
-      draftNumber: '',
       title: '',
       writer: '',
       participantType: [],

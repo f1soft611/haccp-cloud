@@ -46,6 +46,19 @@
   --side-nav-focus: #0f766e;
 
   --portal-footer-logo-opacity: 0.92;
+
+  --page-header-title: #000000;
+  --page-header-description: #596570;
+  --page-header-path: #424c55;
+
+  --search-filter-bg: #e9ecf1;
+  --search-filter-border: #d9e0eb;
+  --search-filter-label: #424c55;
+  --search-filter-input-bg: #ffffff;
+  --search-filter-input-border: #9cacb4;
+  --search-filter-submit-bg: #ffffff;
+  --search-filter-submit-text: #044d95;
+  --search-filter-placeholder: #b1b6bb;
 }
 
 .scope[data-mode='dark'] {
@@ -88,6 +101,19 @@
   --side-nav-focus: #fbbf24;
 
   --portal-footer-logo-opacity: 0.95;
+
+  --page-header-title: var(--shared-text-primary);
+  --page-header-description: var(--shared-text-secondary);
+  --page-header-path: var(--shared-text-secondary);
+
+  --search-filter-bg: var(--shared-paper);
+  --search-filter-border: var(--shared-divider);
+  --search-filter-label: var(--shared-text-secondary);
+  --search-filter-input-bg: transparent;
+  --search-filter-input-border: rgba(255, 255, 255, 0.23);
+  --search-filter-submit-bg: transparent;
+  --search-filter-submit-text: var(--shared-primary);
+  --search-filter-placeholder: var(--shared-text-disabled);
 }
 
 /* 공통 글자색 */
@@ -128,7 +154,89 @@
 
 /* SearchFilterBar */
 .scope.searchFilter {
-  padding: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--search-filter-border);
+  border-radius: 7px;
+  background-color: var(--search-filter-bg);
+  background-image: none;
+  box-shadow: none;
+}
+
+/* 라벨이 있는 칸만 라벨, 입력칸 2열로 나눈다 */
+.scope.searchFilter :global(.MuiFormControl-root:has(> .MuiInputLabel-root)) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: center;
+}
+
+.scope.searchFilter :global(.MuiInputLabel-root) {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  max-width: none;
+  padding: 0;
+  transform: none;
+  background: none;
+  color: var(--search-filter-label);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.scope.searchFilter :global(.MuiInputLabel-root)::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* 테두리가 라벨 자리만큼 끊기지 않게 한다 */
+.scope.searchFilter :global(.MuiOutlinedInput-notchedOutline legend) {
+  display: none;
+}
+
+/* MUI 기본 top -5px 은 legend 높이를 전제로 해서, legend 를 숨기면 테두리가 위로 커진다 */
+.scope.searchFilter :global(.MuiOutlinedInput-notchedOutline) {
+  top: 0;
+}
+
+.scope.searchFilter :global(.MuiFormHelperText-root) {
+  grid-column: 2;
+  margin-left: 0;
+}
+
+/* MUI 는 라벨이 내려가 있으면 placeholder 를 !important 로 숨기므로 선택자를 더 구체적으로 쓴다 */
+.scope.searchFilter :global(.MuiFormControl-root .MuiInputBase-input::placeholder) {
+  /* 기존 -> MUI 기본 placeholder 색 */
+  /* 변경 -> 시안의 #B1B6BB */
+  color: var(--search-filter-placeholder);
+  opacity: 1 !important;
+}
+
+.scope.searchFilter :global(.MuiOutlinedInput-root) {
+  height: 35px;
+  border-radius: 4px;
+  background-color: var(--search-filter-input-bg);
+}
+
+.scope.searchFilter :global(.MuiOutlinedInput-input) {
+  box-sizing: border-box;
+  height: 35px;
+  min-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 35px;
+}
+
+/* 포커스, 오류 색은 MUI 기본을 유지한다 */
+.scope.searchFilter :global(.MuiOutlinedInput-root:not(.Mui-focused):not(.Mui-error) .MuiOutlinedInput-notchedOutline) {
+  border-color: var(--search-filter-input-border);
 }
 
 .scope .searchFilterActions {
@@ -137,10 +245,28 @@
 
 .scope .searchFilterActions > * {
   flex: 1;
+  height: 35px;
 }
 
+/* 기존 -> min-width 96px, contained 버튼 */
+/* 변경 -> 흰 배경과 파란 글자의 65px 버튼 */
 .scope .searchFilterSubmit {
-  min-width: 96px;
+  min-width: 65px;
+  border-color: var(--search-filter-input-border);
+  border-radius: 4px;
+  background-color: var(--search-filter-submit-bg);
+  box-shadow: 0 1px 1px #00000029;
+  color: var(--search-filter-submit-text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.scope .searchFilterSubmit:hover {
+  background-color: var(--search-filter-bg);
+}
+
+.scope .searchFilterSubmit:disabled {
+  opacity: 0.5;
 }
 
 @media (min-width: 900px) {
@@ -151,12 +277,67 @@
   .scope .searchFilterActions > * {
     flex: none;
   }
+
+  .scope.searchFilter :global(.MuiFormControl-root:has(> .MuiInputLabel-root)) {
+    grid-template-columns: auto minmax(180px, 1fr);
+  }
+
+  .scope .searchFilterFields {
+    flex-wrap: wrap;
+  }
+
+  /* fullWidth 칸이 한 줄을 다 차지하지 않게 하고, 줄바꿈 기준은 라벨과 입력칸의 최소 너비로 맞춘다 */
+  .scope .searchFilterFields > :not(.searchFilterActions) {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: min-content;
+  }
+
+  /* 선택칸과 날짜칸을 뺀 텍스트 칸만 남은 폭을 채운다 */
+  .scope .searchFilterFields > :not(.searchFilterActions):has(:global(.MuiInputBase-input:not(.MuiSelect-select):not([type='date']))) {
+    flex: 1 1 240px;
+  }
 }
 
 /* PageHeader */
 .scope.pageHeader {
-  padding-left: 12px;
-  border-left: 3px solid var(--shared-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 900px) {
+  .scope.pageHeader {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+  }
+}
+
+.scope .pageHeaderPath {
+  flex-shrink: 0;
+  color: var(--page-header-path);
+}
+
+.scope .pageHeaderPathText {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--page-header-path);
+}
+
+.scope .pageHeaderTitle {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--page-header-title);
+}
+
+.scope .pageHeaderDescription {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--page-header-description);
 }
 
 .scope .pageHeaderPath {

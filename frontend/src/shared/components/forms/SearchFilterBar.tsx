@@ -1,6 +1,7 @@
 import { Button, Paper, Stack } from '@mui/material';
 import type { FormEvent, ReactNode } from 'react';
 import styles from '../sharedComponents.module.css';
+import { useSharedScope } from '../useSharedScope';
 
 type SearchFilterBarProps = {
   children: ReactNode;
@@ -20,16 +21,15 @@ export function SearchFilterBar({
   actions,
   detail,
 }: SearchFilterBarProps) {
+  const scope = useSharedScope();
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onSearch();
   };
 
-  // 기존 -> sx, 스타일 prop 으로 스타일 지정
-  // 변경 -> sharedComponents.module.css 클래스 사용
   return (
     // noValidate: 입력이 덜 끝난 날짜 칸이 있어도 브라우저 검증 말풍선 없이 조회한다.
-    <Paper component="form" noValidate onSubmit={handleSubmit} className={`${styles.scope} ${styles.searchFilter}`}>
+    <Paper component="form" noValidate onSubmit={handleSubmit} {...scope} className={`${scope.className} ${styles.searchFilter}`}>
       <Stack spacing={1.5}>
         {/* useFlexGap: 없으면 Stack 의 간격 규칙이 버튼 묶음의 ml auto 를 덮어쓴다. */}
         <Stack
@@ -37,6 +37,7 @@ export function SearchFilterBar({
           spacing={1}
           useFlexGap
           alignItems={{ xs: 'stretch', md: 'center' }}
+          className={styles.searchFilterFields}
         >
           {children}
           <Stack
@@ -50,7 +51,7 @@ export function SearchFilterBar({
                 초기화
               </Button>
             ) : null}
-            <Button type="submit" variant="contained" disabled={disabled} className={styles.searchFilterSubmit}>
+            <Button type="submit" variant="outlined" disabled={disabled} className={styles.searchFilterSubmit}>
               조회
             </Button>
             {actions}

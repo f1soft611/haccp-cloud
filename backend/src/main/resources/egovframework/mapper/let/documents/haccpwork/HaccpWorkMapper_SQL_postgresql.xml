@@ -418,7 +418,10 @@
             AND COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{draftNumber}, '%')
           </if>
           <if test="title != null and title != ''">
-            AND COALESCE(m.ea_title, '') ILIKE CONCAT('%', #{title}, '%')
+            AND (
+                  COALESCE(m.ea_title, '') ILIKE CONCAT('%', #{title}, '%')
+                  OR COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{title}, '%')
+            )
           </if>
           <if test="writer != null and writer != ''">
             AND COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{writer}, '%')
@@ -457,6 +460,7 @@
         </if>
     </select>
 
+    <!-- HACCP 문서현황 목록의 전체 건수를 같은 검색 조건으로 조회 -->
     <select id="HaccpWorkDAO.selectDocumentListCount"
             parameterType="egovframework.let.documents.haccpwork.domain.model.HaccpWorkSearchConditionVO"
             resultType="int">
@@ -570,7 +574,10 @@
             AND COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{draftNumber}, '%')
           </if>
           <if test="title != null and title != ''">
-            AND COALESCE(m.ea_title, '') ILIKE CONCAT('%', #{title}, '%')
+            AND (
+                  COALESCE(m.ea_title, '') ILIKE CONCAT('%', #{title}, '%')
+                  OR COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{title}, '%')
+            )
           </if>
           <if test="writer != null and writer != ''">
             AND COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{writer}, '%')

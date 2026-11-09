@@ -1,7 +1,6 @@
 export type HaccpDocSearchValue = {
   workType: string;
   workDivision: string;
-  draftNumber: string;
   title: string;
   writer: string;
   participantType: string[];

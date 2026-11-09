@@ -140,7 +140,6 @@ export async function listHaccpDocuments(params: {
   workType?: string;
   workDivisionId?: string;
   workDivision?: string;
-  draftNumber?: string;
   title?: string;
   writer?: string;
   participantType?: string;
@@ -158,7 +157,6 @@ export async function listHaccpDocuments(params: {
       workType: params.workType || undefined,
       workDivisionId: params.workDivisionId || undefined,
       workDivision: params.workDivision || undefined,
-      draftNumber: params.draftNumber || undefined,
       title: params.title || undefined,
       writer: params.writer || undefined,
       participantType: params.participantType || undefined,

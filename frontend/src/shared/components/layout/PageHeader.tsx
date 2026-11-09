@@ -1,4 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -51,10 +52,24 @@ export function PageHeader({
     ? currentMenuGroupLabel || groupLabel
     : undefined;
 
-  // 기존 -> sx, 스타일 prop 으로 스타일 지정
-  // 변경 -> sharedComponents.module.css 클래스 사용
   return (
     <Box {...scope} className={`${scope.className} ${styles.pageHeader}`}>
+      <Box>
+        <Typography
+          component="h1"
+          variant="h5"
+          className={styles.pageHeaderTitle}
+        >
+          {resolvedTitle}
+        </Typography>
+
+        {resolvedDescription ? (
+          <Typography variant="body2" className={styles.pageHeaderDescription}>
+            {resolvedDescription}
+          </Typography>
+        ) : null}
+      </Box>
+
       {resolvedGroupLabel ? (
         <Stack
           direction="row"
@@ -62,30 +77,17 @@ export function PageHeader({
           spacing={0.5}
           className={styles.pageHeaderPath}
         >
-          <Typography variant="caption" className={styles.textSecondary}>
+          <HomeOutlinedIcon fontSize="small" />
+          <Typography variant="body2" className={styles.pageHeaderPathText}>
             {resolvedGroupLabel}
           </Typography>
-          <Typography variant="caption" className={styles.textDisabled}>
-            /
+          <Typography variant="body2" className={styles.pageHeaderPathText}>
+            {'>'}
           </Typography>
-          <Typography variant="caption" className={styles.textSecondary}>
+          <Typography variant="body2" className={styles.pageHeaderPathText}>
             {resolvedTitle}
           </Typography>
         </Stack>
-      ) : null}
-
-      <Typography
-        component="h1"
-        variant="h5"
-        className={styles.pageHeaderTitle}
-      >
-        {resolvedTitle}
-      </Typography>
-
-      {resolvedDescription ? (
-        <Typography variant="body2" className={`${styles.textSecondary} ${styles.pageHeaderDescription}`}>
-          {resolvedDescription}
-        </Typography>
       ) : null}
     </Box>
   );

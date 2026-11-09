@@ -120,6 +120,8 @@ export function HaccpDocumentSearchPanel(props: {
               <Stack
                 direction={{ xs: 'column', md: 'row' }}
                 spacing={1}
+                useFlexGap
+                flexWrap="wrap"
                 alignItems={{ xs: 'stretch', md: 'flex-end' }}
               >
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -146,18 +148,6 @@ export function HaccpDocumentSearchPanel(props: {
                     }
                   />
                 </Stack>
-                <AppTextField
-                  size="small"
-                  label="기안번호"
-                  value={value.draftNumber}
-                  onChange={(draftNumber) =>
-                    onChange({
-                      ...value,
-                      draftNumber,
-                    })
-                  }
-                  sx={{ minWidth: 180 }}
-                />
 
                 <TextField
                   select
@@ -249,7 +239,8 @@ export function HaccpDocumentSearchPanel(props: {
 
       <AppTextField
         size="small"
-        label="제목"
+        placeholder="제목, 기안번호 검색"
+        slotProps={{ htmlInput: { 'aria-label': '제목, 기안번호 검색' } }}
         value={value.title}
         onChange={(title) =>
           onChange({

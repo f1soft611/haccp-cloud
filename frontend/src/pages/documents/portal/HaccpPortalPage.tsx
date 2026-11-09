@@ -51,7 +51,8 @@ export function HaccpPortalPage() {
 
         <AppTextField
           size="small"
-          label="구분명, 담당자 검색"
+          placeholder="구분명, 담당자 검색"
+          slotProps={{ htmlInput: { 'aria-label': '구분명, 담당자 검색' } }}
           value={search.keyword}
           onChange={(keyword) =>
             setSearch({ ...search, keyword })

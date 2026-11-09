@@ -3,6 +3,7 @@ package egovframework.let.platform_admin.tenants.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -461,6 +462,20 @@ class TenantSchemaScriptTest {
         method.invoke(service, connection);
 
         verify(statement).execute("SET client_encoding TO 'UTF8'");
+    }
+
+    // 신규 테넌트 전자결재 상태 컬럼이 VARCHAR(10) 으로 생성되지 않는지 검증한다.
+    @DisplayName("전자결재 상태 컬럼은 VARCHAR(30) 으로 생성한다")
+    @Test
+    void electronicApprovalScript_statusColumnsAreVarchar30() throws Exception {
+        String script = new String(Files.readAllBytes(Paths.get(
+                "src/main/resources/sql/postgresql/migrate_postgresql_add_electronic_approval_tables.sql")),
+                StandardCharsets.UTF_8);
+
+        for (String column : Arrays.asList("status_type", "end_status", "weight_status", "ea_locked_status",
+                "delete_status", "not_open_status", "main_view_status", "approval_type")) {
+            assertFalse(script.contains(" " + column + " VARCHAR(10)"), column);
+        }
     }
 
 }
