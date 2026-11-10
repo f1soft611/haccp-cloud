@@ -1,10 +1,4 @@
-import ChatBubbleOutlineRounded from '@mui/icons-material/ChatBubbleOutlineRounded';
-import FavoriteRounded from '@mui/icons-material/FavoriteRounded';
-import FavoriteBorderRounded from '@mui/icons-material/FavoriteBorderRounded';
-import MoreHorizRounded from '@mui/icons-material/MoreHorizRounded';
-import NotificationsActiveRounded from '@mui/icons-material/NotificationsActiveRounded';
-import ReplyRounded from '@mui/icons-material/ReplyRounded';
-import SendRounded from '@mui/icons-material/SendRounded';
+import { BellRing, Ellipsis, Heart, MessageSquare, Reply, Send } from 'lucide-react';
 import {
   Alert,
   Avatar,
@@ -282,7 +276,7 @@ export function ApprovalDraftCommentThread(
                 color: 'info.main',
               }}
             >
-              <ChatBubbleOutlineRounded fontSize="small" />
+              <MessageSquare  />
             </Box>
             <Box>
               <Typography variant="subtitle1" fontWeight={700}>
@@ -293,7 +287,6 @@ export function ApprovalDraftCommentThread(
               </Typography>
             </Box>
           </Stack>
-          {/* 기존 -> 의견 등록 버튼 단독 / 변경 -> 저장 전 비활성 사유를 툴팁으로 안내 (disabled 버튼은 이벤트를 받지 못해 span 으로 감쌈) */}
           <Tooltip
             title={
               canWriteComments
@@ -312,7 +305,7 @@ export function ApprovalDraftCommentThread(
             >
               <Button
                 variant="contained"
-                startIcon={<ChatBubbleOutlineRounded />}
+                startIcon={<MessageSquare />}
                 disabled={!canWriteComments}
                 onClick={() => setIsOpinionModalOpen(true)}
                 sx={{
@@ -418,9 +411,7 @@ export function ApprovalDraftCommentThread(
                                 <Chip
                                   size="small"
                                   icon={
-                                    <NotificationsActiveRounded
-                                      sx={{ fontSize: 13 }}
-                                    />
+                                    <BellRing size={13} />
                                   }
                                   label="시스템 알림"
                                   color="default"
@@ -462,7 +453,7 @@ export function ApprovalDraftCommentThread(
                                   mr: -0.35,
                                 }}
                               >
-                                <MoreHorizRounded fontSize="small" />
+                                <Ellipsis  />
                               </IconButton>
                             ) : null}
                           </Stack>
@@ -496,9 +487,9 @@ export function ApprovalDraftCommentThread(
                               aria-label={`좋아요 ${comment.likeCount ?? 0}`}
                               startIcon={
                                 comment.likedByMe ? (
-                                  <FavoriteRounded fontSize="small" />
+                                  <Heart fill="currentColor"  />
                                 ) : (
-                                  <FavoriteBorderRounded fontSize="small" />
+                                  <Heart  />
                                 )
                               }
                               sx={{
@@ -520,7 +511,7 @@ export function ApprovalDraftCommentThread(
                             <Button
                               size="small"
                               variant="text"
-                              startIcon={<ReplyRounded fontSize="small" />}
+                              startIcon={<Reply  />}
                               sx={{ minWidth: 0, px: 0.3, borderRadius: 1.5 }}
                               disabled={!canWriteComments || !canReplyToComment}
                               onClick={() => toggleReplyComposer(comment.id)}
@@ -604,9 +595,9 @@ export function ApprovalDraftCommentThread(
                                           aria-label={`좋아요 ${reply.likeCount ?? 0}`}
                                           startIcon={
                                             reply.likedByMe ? (
-                                              <FavoriteRounded fontSize="small" />
+                                              <Heart fill="currentColor"  />
                                             ) : (
-                                              <FavoriteBorderRounded fontSize="small" />
+                                              <Heart  />
                                             )
                                           }
                                           sx={{
@@ -651,7 +642,7 @@ export function ApprovalDraftCommentThread(
                                         mr: -0.25,
                                       }}
                                     >
-                                      <MoreHorizRounded fontSize="small" />
+                                      <Ellipsis  />
                                     </IconButton>
                                   ) : null}
                                 </Stack>
@@ -689,7 +680,7 @@ export function ApprovalDraftCommentThread(
                               <Button
                                 size="small"
                                 variant="outlined"
-                                startIcon={<SendRounded />}
+                                startIcon={<Send />}
                                 disabled={!canWriteComments}
                                 onClick={() => onAddReply(comment.id)}
                                 sx={{

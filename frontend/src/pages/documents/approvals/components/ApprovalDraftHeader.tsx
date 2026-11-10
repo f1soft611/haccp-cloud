@@ -1,4 +1,4 @@
-import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
+import { ArrowLeft } from 'lucide-react';
 import { Box, Button, Stack, Typography } from '@mui/material';
 
 type ApprovalDraftHeaderProps = {
@@ -144,7 +144,7 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
             ) : null}
             <Button
               variant="outlined"
-              startIcon={<ArrowBackRounded />}
+              startIcon={<ArrowLeft />}
               onClick={onBack}
             >
               돌아가기

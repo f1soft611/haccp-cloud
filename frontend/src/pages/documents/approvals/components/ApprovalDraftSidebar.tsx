@@ -1,4 +1,4 @@
-import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
+import { ChevronRight } from 'lucide-react';
 import {
   Autocomplete,
   Box,
@@ -249,7 +249,7 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
               </Stack>
 
               {index < signerLine.length - 1 ? (
-                <ChevronRightRounded sx={{ color: 'text.disabled' }} />
+                <Box component={ChevronRight} sx={{ color: 'text.disabled' }} />
               ) : null}
             </Stack>
           ))}

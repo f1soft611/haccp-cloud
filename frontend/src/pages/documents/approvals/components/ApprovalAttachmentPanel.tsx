@@ -11,13 +11,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import FileUploadIcon from '@mui/icons-material/UploadFile';
-import PreviewIcon from '@mui/icons-material/Visibility';
-import DownloadIcon from '@mui/icons-material/Download';
 import { useEffect, useMemo, useRef, useState } from 'react';
-// 기존 -> 패널 안에서 presign/complete 직접 호출, extractApiErrorMessage 사용
-// 변경 -> 업로드는 공통 유틸 호출, 불필요한 import 제거
+import { Download, Eye, FileUp, Trash } from 'lucide-react';
 import {
   deleteHaccpAttachment,
   listHaccpAttachments,
@@ -38,8 +33,6 @@ type ApprovalAttachmentPanelProps = {
 };
 
 export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
-  // 기존 -> const { tenantCode, approvalId, isReadOnly = false, onChanged } = props;
-  // 변경 -> 저장 전 대기 첨부 props 추가
   const {
     tenantCode,
     approvalId,
@@ -113,8 +106,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     };
   }, [tenantCode, normalizedApprovalId, canUseAttachmentApi]);
 
-  // 기존 -> approvalId 없으면 오류 표시, presign/PUT/complete 를 패널 안에서 직접 처리
-  // 변경 -> approvalId 없으면 대기 목록에 추가, 업로드는 공통 유틸 호출
   const handleSelectFiles = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -244,8 +235,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     }
   };
 
-  // 기존 -> attachments 기준 요약만 표시
-  // 변경 -> 대기 첨부 모드는 대기 파일 수 표시
   const attachmentSummary = useMemo(() => {
     if (isPendingMode) {
       return pendingFiles.length
@@ -294,7 +283,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     <Box
       sx={{
         borderRadius: 3,
-        // 기존 -> palette.mode 로 라이트, 다크 색 분기 / 변경 -> theme.ts 의 panel 토큰 사용
         border: '1px solid',
         borderColor: 'panel.border',
         background: (theme) => theme.palette.panel.background,
@@ -321,7 +309,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
               color: 'info.main',
             }}
           >
-            <FileUploadIcon fontSize="small" />
+            <FileUp  />
           </Box>
           <Box>
             <Typography variant="subtitle1" fontWeight={700}>
@@ -335,10 +323,8 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
         {!isReadOnly ? (
           <Button
             variant="contained"
-            startIcon={<FileUploadIcon />}
+            startIcon={<FileUp />}
             onClick={() => inputRef.current?.click()}
-            // 기존 -> disabled={loading || !canUseAttachmentApi}
-            // 변경 -> 대기 첨부 모드에서는 활성
             disabled={loading || (!canUseAttachmentApi && !isPendingMode)}
             sx={{
               borderRadius: 2,
@@ -347,7 +333,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
               alignSelf: { xs: 'stretch', sm: 'auto' },
             }}
           >
-            {/* 기존 -> !canUseAttachmentApi ? '문서 생성 후 업로드 가능' / 변경 -> 대기 첨부 모드는 파일 선택 */}
             {!canUseAttachmentApi && !isPendingMode
               ? '문서 생성 후 업로드 가능'
               : loading
@@ -378,7 +363,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
         </Alert>
       ) : null}
 
-      {/* 기존 -> 저장 후 첨부 가능 안내만 표시 / 변경 -> 대기 첨부 모드 안내 추가 */}
       {isPendingMode ? (
         <Alert severity="info" sx={{ mb: 1.5, borderRadius: 2 }}>
           선택한 파일은 임시저장 또는 결재신청 시 함께 업로드됩니다.
@@ -389,7 +373,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
         </Alert>
       ) : null}
 
-      {/* 기존 -> attachments.length 기준 목록/빈 상태 / 변경 -> 대기 첨부 모드는 대기 파일 목록 먼저 */}
       {isPendingMode && pendingFiles.length ? (
         <List dense disablePadding sx={{ display: 'grid', gap: 1 }}>
           {pendingFiles.map((file, index) => (
@@ -430,7 +413,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                       onClick={() => handleRemovePendingFile(index)}
                       sx={{ color: 'error.main' }}
                     >
-                      <DeleteOutlineIcon fontSize="small" />
+                      <Trash  />
                     </IconButton>
                   </Tooltip>
                 ) : null}
@@ -496,7 +479,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                           aria-label="preview attachment"
                           onClick={() => handlePreview(attachment)}
                         >
-                          <PreviewIcon fontSize="small" />
+                          <Eye  />
                         </IconButton>
                       </Tooltip>
                     ) : null}
@@ -506,7 +489,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                         aria-label="download attachment"
                         onClick={() => handleDownload(attachment)}
                       >
-                        <DownloadIcon fontSize="small" />
+                        <Download  />
                       </IconButton>
                     </Tooltip>
                     {!isReadOnly ? (
@@ -517,7 +500,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                           onClick={() => handleDelete(attachment)}
                           sx={{ color: 'error.main' }}
                         >
-                          <DeleteOutlineIcon fontSize="small" />
+                          <Trash  />
                         </IconButton>
                       </Tooltip>
                     ) : null}
