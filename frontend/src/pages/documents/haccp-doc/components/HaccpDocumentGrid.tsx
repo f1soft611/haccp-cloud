@@ -1,5 +1,5 @@
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
-import SearchIcon from '@mui/icons-material/Search';
+import { Search } from 'lucide-react';
 import {
   Skeleton,
   Stack,
@@ -157,7 +157,8 @@ export function HaccpDocumentGrid(props: {
                             );
                           }}
                         >
-                          <SearchIcon />
+                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                          <Search />
                         </GridIconButton>
                       </span>
                     </Tooltip>

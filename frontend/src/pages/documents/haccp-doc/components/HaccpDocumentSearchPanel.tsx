@@ -1,4 +1,4 @@
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
+import { SlidersHorizontal } from 'lucide-react';
 import {
   Button,
   Chip,
@@ -84,7 +84,8 @@ export function HaccpDocumentSearchPanel(props: {
           >
             <Button
               variant="text"
-              startIcon={<TuneRoundedIcon />}
+              /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+              startIcon={<SlidersHorizontal />}
               onClick={onToggleDetail}
               sx={{
                 width: { xs: '100%', md: 'auto' },

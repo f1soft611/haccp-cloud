@@ -1,5 +1,4 @@
-import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
-import PreviewRounded from '@mui/icons-material/PreviewRounded';
+import { ArrowLeft, Eye } from 'lucide-react';
 import {
   Alert,
   Box,
@@ -325,7 +324,8 @@ export function HaccpBaseEditorPage() {
               </Button>
               <Button
                 variant="outlined"
-                startIcon={<PreviewRounded />}
+                /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                startIcon={<Eye />}
                 onClick={() => setIsPreviewOpen(true)}
                 disabled={!baseId || !targetWork}
               >
@@ -333,7 +333,8 @@ export function HaccpBaseEditorPage() {
               </Button>
               <Button
                 variant="outlined"
-                startIcon={<ArrowBackRounded />}
+                /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                startIcon={<ArrowLeft />}
                 onClick={() => navigate('/docs/haccp-base')}
               >
                 목록으로

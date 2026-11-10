@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { AppTextField } from '../../../shared/components/forms/AppTextField';
-import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
+import { ArrowLeft } from 'lucide-react';
 import { EditPencilIcon } from '../../../shared/components/data/EditPencilIcon';
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -221,7 +221,8 @@ export function HaccpBaseCategoryManagementPage() {
       <Stack direction="row" justifyContent="flex-end" spacing={1}>
         <Button
           variant="outlined"
-          startIcon={<ArrowBackOutlinedIcon />}
+          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+          startIcon={<ArrowLeft />}
           onClick={() => navigate('/docs/haccp-base')}
         >
           양식관리로

@@ -1,4 +1,4 @@
-import SearchIcon from '@mui/icons-material/Search';
+import { Search } from 'lucide-react';
 import { Button, Grid, InputAdornment } from '@mui/material';
 import { AppDateField } from '../../../../shared/components/forms/AppDateField';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
@@ -140,7 +140,8 @@ export function WorkOrderFormDialog(props: {
                                     sx: { cursor: 'pointer' },
                                     endAdornment: (
                                         <InputAdornment position="end">
-                                            <SearchIcon fontSize="small" />
+                                            {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                                            <Search />
                                         </InputAdornment>
                                     ),
                                 },

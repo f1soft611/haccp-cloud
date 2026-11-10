@@ -10,7 +10,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import { FileText } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   getWorkCycleSx,
@@ -253,7 +253,8 @@ export function HaccpBaseGrid(props: {
                       tone={row.hasDocument ? 'document' : 'muted'}
                       onClick={() => onOpenEditorPage(row.id)}
                     >
-                      <DescriptionOutlinedIcon />
+                      {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                      <FileText />
                     </GridIconButton>
                   </Tooltip>
                 </TableCell>

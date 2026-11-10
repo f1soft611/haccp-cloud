@@ -1,4 +1,4 @@
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { Trash } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import { Stack, TableBody, TableCell, TableHead, TableRow, Tooltip } from '@mui/material';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
@@ -71,7 +71,8 @@ export function WorkOrderGrid(props: {
                                             tone="danger"
                                             onClick={() => onDelete(row)}
                                         >
-                                            <DeleteOutlineIcon />
+                                            {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                                            <Trash />
                                         </GridIconButton>
                                     </span>
                                 </Tooltip>
