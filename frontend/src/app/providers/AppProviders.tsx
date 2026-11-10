@@ -59,7 +59,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
-        <LucideProvider strokeWidth={1.4} nonScalingStroke>
+        <LucideProvider size={24} strokeWidth={1.4} nonScalingStroke>
           <FeedbackProvider>
             <CssBaseline />
             <BrowserRouter>{children}</BrowserRouter>
