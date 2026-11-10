@@ -64,8 +64,6 @@ type PlatformRoleItem = {
 const roleByUserId: Record<string, UserRole> = {
   platform_admin: 'PLATFORM_ADMIN',
   tenant_admin: 'TENANT_ADMIN',
-  // 기존 -> user_01: 'USER',
-  // 변경 -> 업체 사용자 role TENANT_USER 로 통일
   user_01: 'TENANT_USER',
 };
 
@@ -168,8 +166,6 @@ let platformMenus: PlatformMenuItem[] = [
     menuDc: '공통코드 관리 페이지',
     parentMenuId: 'PM-2',
     menuOrdr: 1,
-    // 기존 -> menuUrl: '/base/common-code',
-    // 변경 -> 실제 등록 메뉴 URL과 일치
     menuUrl: '/basicinfo/cmmnCode',
     iconNm: 'Menu',
     useAt: 'Y',
@@ -326,8 +322,6 @@ let users: UserItem[] = [
     retireDate: '2026-09-30',
     roleCode: 'TENANT_USER',
     roleCodes: ['TENANT_USER'],
-    // 기존 -> role: 'USER',
-    // 변경 -> 업체 사용자 role TENANT_USER 로 통일
     role: 'TENANT_USER',
     active: true,
   },
@@ -501,6 +495,7 @@ let departments: DepartmentItem[] = [
     sortOrder: 0,
     active: true,
     hasChildren: true,
+    hasMembers: false,
   },
   {
     id: 'D-2',
@@ -511,6 +506,7 @@ let departments: DepartmentItem[] = [
     sortOrder: 10,
     active: true,
     hasChildren: false,
+    hasMembers: false,
   },
   {
     id: 'D-3',
@@ -521,6 +517,7 @@ let departments: DepartmentItem[] = [
     sortOrder: 20,
     active: true,
     hasChildren: false,
+    hasMembers: false,
   },
   {
     id: 'D-4',
@@ -531,6 +528,7 @@ let departments: DepartmentItem[] = [
     sortOrder: 10,
     active: true,
     hasChildren: false,
+    hasMembers: true,
   },
   {
     id: 'D-5',
@@ -541,8 +539,19 @@ let departments: DepartmentItem[] = [
     sortOrder: 0,
     active: true,
     hasChildren: false,
+    hasMembers: false,
   },
 ];
+
+// mock 부서 미사용 전환 검사: 하위 부서, 배정 인원 순으로 막힌 이유를 돌려준다
+function departmentDeactivateBlockReason(target: DepartmentItem): string | null {
+  const hasChildren = departments.some(
+    (d) => d.parentId === target.id && d.tenantCode === target.tenantCode,
+  );
+  if (hasChildren) return '하위 부서가 있어 미사용으로 변경할 수 없습니다.';
+  if (target.hasMembers) return '배정된 인원이 있어 미사용으로 변경할 수 없습니다.';
+  return null;
+}
 
 let documents: DocumentTemplate[] = [
   {
@@ -993,8 +1002,6 @@ export const handlers = [
     }
 
     const normalizedUserId = payload.userId.trim().toLowerCase();
-    // 기존 -> const role = roleByUserId[normalizedUserId] ?? 'USER';
-    // 변경 -> 업체 사용자 role TENANT_USER 로 통일
     const role = roleByUserId[normalizedUserId] ?? 'TENANT_USER';
     const userCount = tenantScoped(users, payload.tenantCode).length;
     const departmentCount = tenantScoped(
@@ -1066,8 +1073,6 @@ export const handlers = [
     }
 
     const normalizedUserId = payload.id.trim().toLowerCase();
-    // 기존 -> const role = roleByUserId[normalizedUserId] ?? 'USER';
-    // 변경 -> 업체 사용자 role TENANT_USER 로 통일
     const role = roleByUserId[normalizedUserId] ?? 'TENANT_USER';
     // 변경 -> 업체번호가 있으면 목 테넌트 목록에서 업체번호로 먼저 찾음
     const tenantCode =
@@ -1120,8 +1125,6 @@ export const handlers = [
     }
 
     const normalizedUserId = payload.id.trim().toLowerCase();
-    // 기존 -> const role = roleByUserId[normalizedUserId] ?? 'USER';
-    // 변경 -> 업체 사용자 role TENANT_USER 로 통일
     const role = roleByUserId[normalizedUserId] ?? 'TENANT_USER';
 
     if (role !== 'PLATFORM_ADMIN') {
@@ -1651,8 +1654,6 @@ export const handlers = [
         normalizedRoleCode === 'TENANT_ADMIN' ||
         normalizedRoleCode === 'TENANT_USER'
           ? (normalizedRoleCode as UserRole)
-          // 기존 -> : 'USER',
-          // 변경 -> 업체 사용자 role TENANT_USER 로 통일
           : 'TENANT_USER',
       active: true,
     };
@@ -1716,8 +1717,6 @@ export const handlers = [
       normalizedRoleCode === 'TENANT_ADMIN' ||
       normalizedRoleCode === 'TENANT_USER'
         ? (normalizedRoleCode as UserRole)
-        // 기존 -> : 'USER';
-        // 변경 -> 업체 사용자 role TENANT_USER 로 통일
         : 'TENANT_USER';
     target.active = payload.active ?? target.active;
 
@@ -1770,6 +1769,7 @@ export const handlers = [
       sortOrder: payload.sortOrder ?? 0,
       active: true,
       hasChildren: false,
+      hasMembers: false,
     };
 
     if (parentDept) {
@@ -1795,6 +1795,13 @@ export const handlers = [
 
     if (!target) {
       return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    if (target.active && payload.active === false) {
+      const reason = departmentDeactivateBlockReason(target);
+      if (reason) {
+        return HttpResponse.json({ message: reason }, { status: 409 });
+      }
     }
 
     const parentDept = payload.parentId
@@ -1845,6 +1852,13 @@ export const handlers = [
 
     if (!target) {
       return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+    }
+
+    if (target.active && payload.active === false) {
+      const reason = departmentDeactivateBlockReason(target);
+      if (reason) {
+        return HttpResponse.json({ message: reason }, { status: 409 });
+      }
     }
 
     target.active = payload.active ?? target.active;
@@ -2372,8 +2386,7 @@ export const handlers = [
       tenantCode?: string;
     };
 
-    // 기존 -> 코드와 이름 둘 다 필수
-    // 변경 -> 이름만 필수, 코드가 비면 같은 테넌트 숫자 코드 최대값 + 1 로 채번
+    // 이름만 필수, 코드가 비면 같은 테넌트 숫자 코드 최대값 + 1 로 채번
     if (!payload.name) {
       return HttpResponse.json({ message: 'Invalid input' }, { status: 400 });
     }
@@ -2925,8 +2938,7 @@ export const handlers = [
           { status: 409 },
       );
     }
-    // 기존 -> 생성 결과로 연도 전체를 교체
-    // 변경 -> 실제 백엔드처럼 직접 수정(MANUAL)한 날짜는 유지
+    // 실제 백엔드처럼 직접 수정(MANUAL)한 날짜는 유지
     const manualByDate = new Map(
         (workdayStore.get(body.year) ?? [])
         .filter((item) => item.source === 'MANUAL')

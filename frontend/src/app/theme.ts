@@ -85,6 +85,7 @@ const tableComponents: ThemeOptions['components'] = {
         borderTop: tableStyleTokens.headerTopBorder,
         borderBottom: tableStyleTokens.headerBottomBorder,
         fontWeight: 700,
+        textAlign: 'center',
         color: tableStyleTokens.headerText,
         backgroundColor: tableStyleTokens.headerBackground,
       },
@@ -117,6 +118,10 @@ const tableComponents: ThemeOptions['components'] = {
         },
         '& .MuiDataGrid-columnHeaderTitle': {
           fontWeight: 700,
+        },
+        // 컬럼별 headerAlign 과 관계없이 헤더 제목을 가운데 정렬
+        '& .MuiDataGrid-columnHeaderTitleContainer': {
+          justifyContent: 'center',
         },
         '& .MuiDataGrid-row:hover': {
           backgroundColor: tableStyleTokens.rowHoverBackground,
@@ -379,7 +384,7 @@ const lightBase = createTheme({
       main: '#e57a22',
     },
     background: {
-      default: 'rgba(245, 246, 248, 0.54)',
+      default: '#F5F6F8',
       paper: '#ffffff',
     },
   },
