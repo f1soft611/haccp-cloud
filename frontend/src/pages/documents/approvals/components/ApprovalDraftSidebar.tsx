@@ -32,7 +32,6 @@ const FALLBACK_STAMP_BY_ROLE: Record<SignerRole, string> = {
 const RETURN_STAMP_IMAGE = '/return.png';
 
 type ApprovalDraftSidebarProps = {
-  isDarkMode: boolean;
   embedded?: boolean;
   work?: HaccpBaseWorkItem;
   drafterName: string;
@@ -66,7 +65,6 @@ function getStatusLabel(value: string): string {
 
 export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
   const {
-    isDarkMode,
     embedded = false,
     work,
     drafterName,
@@ -182,12 +180,8 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
                   py: 0.7,
                   borderRadius: 2,
                   border: '1px solid',
-                  borderColor: isDarkMode
-                    ? 'rgba(148,163,184,0.28)'
-                    : 'rgba(15,23,42,0.12)',
-                  bgcolor: isDarkMode
-                    ? 'rgba(30,41,59,0.35)'
-                    : 'rgba(248,250,252,0.7)',
+                  borderColor: 'panel.lineBorder',
+                  bgcolor: 'panel.signerBg',
                 }}
               >
                 <Chip
@@ -220,12 +214,8 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
                       height: 34,
                       borderRadius: 1,
                       border: '1px solid',
-                      borderColor: isDarkMode
-                        ? 'rgba(148,163,184,0.32)'
-                        : 'rgba(15,23,42,0.12)',
-                      bgcolor: isDarkMode
-                        ? 'rgba(255,255,255,0.96)'
-                        : 'rgba(255,255,255,0.9)',
+                      borderColor: 'panel.lineBorder',
+                      bgcolor: 'rgba(255,255,255,0.96)',
                       display: 'grid',
                       placeItems: 'center',
                       overflow: 'hidden',
@@ -315,9 +305,8 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
         p: { xs: 1.25, md: 1.75 },
         borderRadius: 3,
         border: '1px solid',
-        borderColor: isDarkMode
-          ? 'rgba(148,163,184,0.24)'
-          : 'rgba(15,23,42,0.12)',
+        // 기존 -> isDarkMode 로 색 분기 / 변경 -> panel.lineBorder 토큰
+        borderColor: 'panel.lineBorder',
         bgcolor: 'background.paper',
       }}
     >

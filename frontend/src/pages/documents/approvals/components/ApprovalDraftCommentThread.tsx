@@ -7,7 +7,6 @@ import ReplyRounded from '@mui/icons-material/ReplyRounded';
 import SendRounded from '@mui/icons-material/SendRounded';
 import {
   Alert,
-  alpha,
   Avatar,
   Box,
   Button,
@@ -258,18 +257,10 @@ export function ApprovalDraftCommentThread(
         p: { xs: 1.75, sm: 2.25 },
         borderRadius: 3,
         border: '1px solid',
-        borderColor: (theme) =>
-          theme.palette.mode === 'dark'
-            ? alpha(theme.palette.common.white, 0.12)
-            : alpha(theme.palette.primary.main, 0.14),
-        background: (theme) =>
-          theme.palette.mode === 'dark'
-            ? `linear-gradient(155deg, ${alpha('#0f172a', 0.96)} 0%, ${alpha('#111827', 0.96)} 100%)`
-            : `linear-gradient(155deg, ${alpha('#f8fafc', 0.96)} 0%, ${alpha('#f1f5f9', 0.9)} 100%)`,
-        boxShadow: (theme) =>
-          theme.palette.mode === 'dark'
-            ? `0 16px 36px ${alpha('#020617', 0.45)}`
-            : `0 16px 34px ${alpha('#0f172a', 0.08)}`,
+        // 기존 -> palette.mode 로 라이트, 다크 색 분기 / 변경 -> theme.ts 의 panel 토큰 사용
+        borderColor: 'panel.border',
+        background: (theme) => theme.palette.panel.background,
+        boxShadow: (theme) => theme.palette.panel.shadow,
       }}
     >
       <Stack spacing={1.75}>
@@ -287,10 +278,7 @@ export function ApprovalDraftCommentThread(
                 borderRadius: 2,
                 display: 'grid',
                 placeItems: 'center',
-                bgcolor: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? alpha(theme.palette.info.light, 0.14)
-                    : alpha(theme.palette.info.main, 0.12),
+                bgcolor: 'panel.iconBg',
                 color: 'info.main',
               }}
             >
@@ -330,10 +318,7 @@ export function ApprovalDraftCommentThread(
                 sx={{
                   borderRadius: 2,
                   px: 1.75,
-                  boxShadow: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? `0 8px 18px ${alpha(theme.palette.primary.dark, 0.45)}`
-                      : `0 10px 20px ${alpha(theme.palette.primary.main, 0.26)}`,
+                  boxShadow: (theme) => theme.palette.panel.buttonShadow,
                   width: '100%',
                 }}
               >
@@ -354,14 +339,8 @@ export function ApprovalDraftCommentThread(
             sx={{
               borderRadius: 2,
               border: '1px dashed',
-              borderColor: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? alpha(theme.palette.common.white, 0.18)
-                  : alpha(theme.palette.primary.main, 0.24),
-              bgcolor: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? alpha(theme.palette.common.white, 0.02)
-                  : alpha(theme.palette.common.white, 0.75),
+              borderColor: 'panel.emptyBorder',
+              bgcolor: 'panel.emptyBg',
               py: 2.5,
               px: 1.25,
               textAlign: 'center',
@@ -390,22 +369,13 @@ export function ApprovalDraftCommentThread(
                       py: 1.2,
                       borderRadius: 2,
                       border: '1px solid',
-                      borderColor: (theme) =>
-                        theme.palette.mode === 'dark'
-                          ? alpha(theme.palette.common.white, 0.08)
-                          : alpha(theme.palette.common.black, 0.08),
-                      bgcolor: (theme) =>
-                        theme.palette.mode === 'dark'
-                          ? alpha(theme.palette.common.white, 0.03)
-                          : alpha(theme.palette.common.white, 0.88),
+                      borderColor: 'panel.itemBorder',
+                      bgcolor: 'panel.itemBg',
                       transition: 'all 0.22s ease',
                       '&:hover': {
                         borderColor: 'primary.main',
                         transform: 'translateY(-1px)',
-                        boxShadow: (theme) =>
-                          theme.palette.mode === 'dark'
-                            ? `0 8px 16px ${alpha('#020617', 0.3)}`
-                            : `0 10px 18px ${alpha('#0f172a', 0.08)}`,
+                        boxShadow: (theme) => theme.palette.panel.itemHoverShadow,
                       },
                     }}
                   >
@@ -568,10 +538,7 @@ export function ApprovalDraftCommentThread(
                                 mt: 1.15,
                                 pl: 1.25,
                                 borderLeft: '2px solid',
-                                borderColor: (theme) =>
-                                  theme.palette.mode === 'dark'
-                                    ? alpha(theme.palette.info.light, 0.35)
-                                    : alpha(theme.palette.info.main, 0.3),
+                                borderColor: 'panel.replyBorder',
                               }}
                             >
                               {comment.replies.map((reply) => (
@@ -835,10 +802,7 @@ export function ApprovalDraftCommentThread(
             mt: 0.75,
             borderRadius: 2,
             minWidth: 120,
-            boxShadow: (theme) =>
-              theme.palette.mode === 'dark'
-                ? '0 14px 30px rgba(2, 6, 23, 0.45)'
-                : '0 14px 28px rgba(15, 23, 42, 0.16)',
+            boxShadow: (theme) => theme.palette.panel.popoverShadow,
           },
         }}
       >
@@ -876,21 +840,12 @@ export function ApprovalDraftCommentThread(
             p: 1.25,
             borderRadius: 2,
             border: '1px solid',
-            borderColor: (theme) =>
-              theme.palette.mode === 'dark'
-                ? alpha(theme.palette.common.white, 0.1)
-                : alpha(theme.palette.primary.main, 0.16),
-            background: (theme) =>
-              theme.palette.mode === 'dark'
-                ? alpha(theme.palette.common.white, 0.02)
-                : alpha(theme.palette.common.white, 0.86),
+            borderColor: 'panel.border',
+            background: (theme) => theme.palette.panel.itemBg,
           },
           '& .comment-opinion-editor .MuiOutlinedInput-root': {
             borderRadius: 2,
-            background: (theme) =>
-              theme.palette.mode === 'dark'
-                ? alpha(theme.palette.common.white, 0.02)
-                : alpha(theme.palette.common.white, 0.95),
+            background: (theme) => theme.palette.panel.itemBg,
           },
         }}
         actions={
@@ -902,10 +857,7 @@ export function ApprovalDraftCommentThread(
               sx={{
                 borderRadius: 1.75,
                 minWidth: 84,
-                boxShadow: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? `0 8px 18px ${alpha(theme.palette.primary.dark, 0.42)}`
-                    : `0 10px 20px ${alpha(theme.palette.primary.main, 0.24)}`,
+                boxShadow: (theme) => theme.palette.panel.buttonShadow,
               }}
             >
               등록

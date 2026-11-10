@@ -6,6 +6,7 @@ import { useSharedScope } from '../useSharedScope';
 export function PortalFooter() {
   const scope = useSharedScope();
   const theme = useTheme();
+  // eslint-disable-next-line no-restricted-syntax -- 로고 이미지 경로 분기 (색 아님)
   const isDarkMode = theme.palette.mode === 'dark';
   const footerLogoSrc = isDarkMode
     ? '/f1foodlink_wh.png'
@@ -16,8 +17,6 @@ export function PortalFooter() {
     'COPYRIGHT(C) F1soft CO.,LTD. ALL RIGHTS RESERVED.',
   ];
 
-    // 기존 -> sx, 스타일 prop 으로 스타일 지정
-    // 변경 -> sharedComponents.module.css 클래스 사용
     return (
         <Box
             {...scope}

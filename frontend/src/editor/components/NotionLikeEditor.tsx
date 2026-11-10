@@ -2,7 +2,7 @@ import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
 import { useEffect, useRef, useState } from 'react';
 import { Box, Menu, MenuItem, Paper } from '@mui/material';
-import { useTheme, type SxProps, type Theme } from '@mui/material/styles';
+import type { SxProps, Theme } from '@mui/material/styles';
 import StarterKit from '@tiptap/starter-kit';
 import { FontFamily, TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
@@ -181,13 +181,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       marks?: Array<Record<string, unknown>>;
     };
   } | null>(null);
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
-  const editorCanvasBg = isDarkMode ? '#f8fafc' : theme.palette.common.white;
-  const editorTextColor = isDarkMode ? '#0f172a' : theme.palette.text.primary;
-  const tableBorderColor = isDarkMode
-    ? 'rgba(15, 23, 42, 0.35)'
-    : theme.palette.divider;
+  // 기존 -> isDarkMode 로 에디터 캔버스, 글자, 표 테두리 색 계산 / 변경 -> theme.ts 의 editor 토큰을 sx 에서 직접 사용
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -609,11 +603,11 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
         sx={{
           ...(canvasMinHeight > 0 ? { minHeight: canvasMinHeight } : {}),
           p: { xs: 2, md: 3 },
-          bgcolor: editorCanvasBg,
+          bgcolor: 'editor.canvas',
           '& .tiptap': {
             outline: 'none',
             ...(editorMinHeight > 0 ? { minHeight: editorMinHeight } : {}),
-            color: editorTextColor,
+            color: 'editor.text',
             fontSize: 15,
             lineHeight: 1.7,
           },
@@ -692,7 +686,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
           },
           '& .tiptap th, & .tiptap td': {
             border: '1px solid',
-            borderColor: tableBorderColor,
+            borderColor: 'editor.tableBorder',
             p: 1,
             minWidth: '1em',
             boxSizing: 'border-box',
@@ -700,7 +694,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             position: 'relative',
           },
           '& .tiptap th': {
-            bgcolor: isDarkMode ? '#eef2f7' : 'common.white',
+            bgcolor: 'editor.tableHeaderBg',
             fontWeight: 700,
           },
           '& .tiptap td[data-pasted-style], & .tiptap th[data-pasted-style]': {
@@ -728,13 +722,10 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             mx: 0.25,
             borderRadius: 1.5,
             border: '1px solid',
-            borderColor: isDarkMode
-              ? 'rgba(96, 165, 250, 0.45)'
-              : 'primary.main',
-            bgcolor: isDarkMode
-              ? 'rgba(30, 41, 59, 0.9)'
-              : 'rgba(239, 246, 255, 0.95)',
-            color: isDarkMode ? '#e2e8f0' : 'primary.dark',
+            // 기존 -> isDarkMode 로 칩 색 분기 / 변경 -> editor 토큰
+            borderColor: 'editor.chipBorder',
+            bgcolor: 'editor.chipBg',
+            color: 'editor.chipText',
             fontSize: 13,
             lineHeight: 1.2,
             whiteSpace: 'nowrap',
@@ -747,7 +738,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             border: 'none',
             borderRadius: 0,
             backgroundColor: 'transparent',
-            color: editorTextColor,
+            color: 'editor.text',
             fontSize: 'inherit',
             lineHeight: 'inherit',
             whiteSpace: 'pre-wrap',

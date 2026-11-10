@@ -1,5 +1,4 @@
 import { Box, Chip, Paper, Skeleton, Stack, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 
 type TenantSummarySectionProps = {
   todayActionCount: number;
@@ -11,8 +10,6 @@ type TenantSummarySectionProps = {
 export function TenantSummarySection(props: TenantSummarySectionProps) {
   const { todayActionCount, approvalAlertCount, noticeCount, isLoading } =
     props;
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
 
   return (
     <Paper
@@ -20,12 +17,9 @@ export function TenantSummarySection(props: TenantSummarySectionProps) {
         p: { xs: 2, md: 2.5 },
         borderRadius: 3,
         border: '1px solid',
-        borderColor: isDarkMode
-          ? 'rgba(20,184,166,0.4)'
-          : 'rgba(20,184,166,0.28)',
-        background: isDarkMode
-          ? 'linear-gradient(135deg, rgba(6, 78, 59, 0.35), rgba(15, 23, 42, 0.35))'
-          : 'linear-gradient(135deg, rgba(15,118,110,0.1), rgba(20,184,166,0.04))',
+        // 기존 -> isDarkMode 로 색 분기 / 변경 -> dashboard 토큰
+        borderColor: 'dashboard.cardBorder',
+        background: (theme) => theme.palette.dashboard.summaryBg,
       }}
     >
       <Stack

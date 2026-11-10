@@ -1,12 +1,9 @@
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { NOTICE_ITEMS } from '../constants';
 
 // 기존 -> 결재 알림(approvalAlerts) + 공지사항 두 패널 표시
 // 변경 -> 결재 알림 패널 제거, 공지사항만 표시
 export function TenantSidebarSection() {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
 
   return (
     <Stack spacing={2}>
@@ -15,12 +12,9 @@ export function TenantSidebarSection() {
           p: 2,
           borderRadius: 2.5,
           border: '1px solid',
-          borderColor: isDarkMode
-            ? 'rgba(20,184,166,0.4)'
-            : 'rgba(20,184,166,0.24)',
-          bgcolor: isDarkMode
-            ? 'rgba(6, 30, 28, 0.9)'
-            : 'rgba(240, 253, 250, 0.9)',
+          // 기존 -> isDarkMode 로 색 분기 / 변경 -> dashboard 토큰
+          borderColor: 'dashboard.cardBorder',
+          bgcolor: 'dashboard.cardBg',
         }}
       >
         <Stack
@@ -46,12 +40,9 @@ export function TenantSidebarSection() {
                 py: 0.8,
                 borderRadius: 1.5,
                 border: '1px solid',
-                borderColor: isDarkMode
-                  ? 'rgba(148,163,184,0.24)'
-                  : 'rgba(15,23,42,0.12)',
-                bgcolor: isDarkMode
-                  ? 'rgba(15,23,42,0.88)'
-                  : 'rgba(255,255,255,0.8)',
+                // 기존 -> isDarkMode 로 색 분기 / 변경 -> dashboard 토큰
+                borderColor: 'dashboard.innerBorder',
+                bgcolor: 'dashboard.innerBg',
                 position: 'relative',
                 '&::before': {
                   content: '""',

@@ -1,5 +1,4 @@
 import { Alert, Stack } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '../../../shared/components/feedback/ConfirmDialog';
@@ -11,7 +10,6 @@ import { useApprovalDraftWriteData } from './hooks/useApprovalDraftWriteData';
 import { canDeleteDraft } from './utils/approvalDraftUtils';
 
 export function ApprovalDraftWritePage() {
-  const theme = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
@@ -20,7 +18,6 @@ export function ApprovalDraftWritePage() {
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [pendingAttachmentFiles, setPendingAttachmentFiles] = useState<File[]>([]);
-  const isDarkMode = theme.palette.mode === 'dark';
 
   const {
     baseId,
@@ -248,7 +245,6 @@ export function ApprovalDraftWritePage() {
       <ApprovalDraftContent
         baseId={baseId}
         idType={idType}
-        isDarkMode={isDarkMode}
         workDetailError={workDetailQuery.isError}
         workDetailFetched={workDetailQuery.isFetched}
         work={work}

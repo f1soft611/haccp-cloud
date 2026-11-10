@@ -15,7 +15,6 @@ import { ApprovalDraftExpirationFields } from './ApprovalDraftExpirationFields';
 type ApprovalDraftContentProps = {
   baseId?: string;
   idType: 'work' | 'approval';
-  isDarkMode: boolean;
   workDetailError: boolean;
   workDetailFetched: boolean;
   work?: HaccpBaseWorkItem;
@@ -62,7 +61,6 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
   const {
     baseId,
     idType,
-    isDarkMode,
     workDetailError,
     workDetailFetched,
     work,
@@ -141,7 +139,6 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
           showApprovalLine ? (
               <ApprovalDraftSidebar
                   embedded
-                  isDarkMode={isDarkMode}
                   work={work}
                   drafterName={drafterDisplayName || userId}
                   drafterProfile={drafterProfile}

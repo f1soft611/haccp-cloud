@@ -49,6 +49,7 @@ type TopGovBarProps = {
 export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
   const theme = useTheme();
   const scope = useSharedScope();
+  // eslint-disable-next-line no-restricted-syntax -- 테마 전환 effect 의존성 (색 아님)
   const isDarkMode = theme.palette.mode === 'dark';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const userId = useAuthStore((state) => state.userId);

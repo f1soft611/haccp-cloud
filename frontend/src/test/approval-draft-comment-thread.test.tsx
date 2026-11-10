@@ -1,8 +1,20 @@
 import userEvent from '@testing-library/user-event';
-import { render, screen } from '@testing-library/react';
+import { render as rtlRender, screen, type RenderOptions } from '@testing-library/react';
+import { ThemeProvider } from '@mui/material';
+import type { ReactElement } from 'react';
+import { appTheme } from '../app/theme';
 import { describe, expect, it } from 'vitest';
 import { ApprovalDraftCommentThread } from '../pages/documents/approvals/components/ApprovalDraftCommentThread';
 import type { DraftComment } from '../pages/documents/approvals/types';
+
+// 패널이 theme.ts 의 palette 토큰을 읽으므로 앱 테마로 감싸서 렌더링한다
+const render = (ui: ReactElement, options?: RenderOptions) =>
+  rtlRender(ui, {
+    wrapper: ({ children }) => (
+      <ThemeProvider theme={appTheme}>{children}</ThemeProvider>
+    ),
+    ...options,
+  });
 
 describe('ApprovalDraftCommentThread', () => {
   it('shows like count and toggles likes for manual comments', async () => {

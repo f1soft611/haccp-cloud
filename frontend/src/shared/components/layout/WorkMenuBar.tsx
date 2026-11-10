@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { NavLink, useLocation } from 'react-router-dom';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
@@ -47,8 +46,6 @@ type WorkMenuBarProps = {
 };
 
 export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
   const [expandedGroupKey, setExpandedGroupKey] = useState<string | null>(null);
   const [overlayTop, setOverlayTop] = useState<number>(0);
@@ -123,13 +120,12 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
       data-nav-variant="segmented"
       sx={{
         py: 0,
+      // 기존 -> isDarkMode 로 모든 색 분기 / 변경 -> theme.ts 의 workMenu 토큰 사용
         borderBottom: '1px solid',
         borderColor: isSelectedGroupExpanded
           ? 'transparent'
-          : isDarkMode
-            ? 'rgba(251,191,36,0.22)'
-            : 'divider',
-        bgcolor: isDarkMode ? '#111827' : 'common.white',
+          : 'workMenu.barBorder',
+        bgcolor: 'workMenu.barBg',
         position: 'relative',
         zIndex: 20,
       }}
@@ -170,19 +166,10 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                     whiteSpace: 'nowrap',
                     position: 'relative',
                     zIndex: isSelected && isSelectedGroupExpanded ? 35 : 2,
-                    color:
-                      isSelected && isDarkMode
-                        ? '#fef3c7'
-                        : isSelected
-                          ? '#0f5f59'
-                          : isDarkMode
-                            ? 'rgba(248,250,252,0.76)'
-                            : 'text.secondary',
-                    bgcolor: isSelected
-                      ? isDarkMode
-                        ? 'rgba(251,191,36,0.14)'
-                        : '#e7edf5'
-                      : 'transparent',
+                    color: isSelected
+                      ? 'workMenu.groupSelectedText'
+                      : 'workMenu.groupText',
+                    bgcolor: isSelected ? 'workMenu.groupSelectedBg' : 'transparent',
                     border: '1px solid transparent',
                     transition:
                       'background-color 150ms ease, color 150ms ease, border-color 150ms ease',
@@ -195,18 +182,14 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                             right: 0,
                             bottom: -10,
                             height: 10,
-                            bgcolor: isDarkMode ? '#0f172a' : '#f8fafd',
+                            bgcolor: 'workMenu.panelBg',
                           },
                         }
                       : {}),
                     '&:hover': {
                       bgcolor: isSelected
-                        ? isDarkMode
-                          ? 'rgba(251,191,36,0.14)'
-                          : '#ddfbf5'
-                        : isDarkMode
-                          ? 'rgba(251,191,36,0.08)'
-                          : 'rgba(15,23,42,0.05)',
+                        ? 'workMenu.groupSelectedHoverBg'
+                        : 'workMenu.groupHoverBg',
                     },
                   }}
                 >
@@ -228,7 +211,7 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              bgcolor: isDarkMode ? 'rgba(2,6,23,0.48)' : 'rgba(15,23,42,0.12)',
+              bgcolor: 'workMenu.backdrop',
               backdropFilter: 'blur(4px)',
               WebkitBackdropFilter: 'blur(4px)',
               zIndex: 24,
@@ -247,14 +230,10 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
             <Box
               sx={{
                 width: '100%',
-                bgcolor: isDarkMode ? '#0f172a' : '#f8fafd',
+                bgcolor: 'workMenu.panelBg',
                 borderBottom: '1px solid',
-                borderColor: isDarkMode
-                  ? 'rgba(251,191,36,0.2)'
-                  : 'rgba(15,23,42,0.14)',
-                boxShadow: isDarkMode
-                  ? '0 14px 30px rgba(2,6,23,0.52)'
-                  : '0 10px 24px rgba(15,23,42,0.10)',
+                borderColor: 'workMenu.panelBorder',
+                boxShadow: (theme) => theme.palette.workMenu.panelShadow,
               }}
             >
               <Container maxWidth="xl">
@@ -292,26 +271,20 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                           px: 2.25,
                           py: 2.1,
                           borderRadius: 0,
-                          color: isDarkMode ? '#f8fafc' : 'text.primary',
+                          color: 'workMenu.itemText',
                           borderRight: { xs: 'none', md: '1px solid' },
-                          borderColor: isDarkMode
-                            ? 'rgba(251,191,36,0.16)'
-                            : 'rgba(15,23,42,0.16)',
+                          borderColor: 'workMenu.itemDivider',
                           justifyContent: 'flex-start',
                           textAlign: 'left',
                           alignItems: 'flex-start',
                           transition:
                             'background-color 150ms ease, color 150ms ease',
                           '&.active': {
-                            bgcolor: isDarkMode
-                              ? 'rgba(251,191,36,0.14)'
-                              : 'rgba(31,79,143,0.08)',
-                            color: isDarkMode ? '#fef3c7' : '#0f5f59',
+                            bgcolor: 'workMenu.itemActiveBg',
+                            color: 'workMenu.groupSelectedText',
                           },
                           '&:hover': {
-                            bgcolor: isDarkMode
-                              ? 'rgba(251,191,36,0.08)'
-                              : 'rgba(20,184,166,0.12)',
+                            bgcolor: 'workMenu.itemHoverBg',
                           },
                         }}
                       >
@@ -332,10 +305,8 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                                 <IconComponent
                                   fontSize="small"
                                   sx={{
-                                    color: isDarkMode ? '#fbbf24' : '#0f766e',
-                                    bgcolor: isDarkMode
-                                      ? 'rgba(251,191,36,0.12)'
-                                      : 'rgba(20,184,166,0.12)',
+                                    color: 'workMenu.iconColor',
+                                    bgcolor: 'workMenu.iconBg',
                                     borderRadius: '999px',
                                     p: 0.4,
                                     boxSizing: 'content-box',
@@ -347,9 +318,8 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                                 fontWeight={700}
                                 sx={{
                                   pb: 0.4,
-                                  borderBottom: isDarkMode
-                                    ? '1px solid rgba(251,191,36,0.24)'
-                                    : '1px solid rgba(15,23,42,0.20)',
+                                  borderBottom: (theme) =>
+                                    `1px solid ${theme.palette.workMenu.titleUnderline}`,
                                   minWidth: { xs: '70%', md: '80%' },
                                 }}
                               >

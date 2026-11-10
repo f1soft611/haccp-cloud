@@ -1,4 +1,7 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render as rtlRender, screen, waitFor, type RenderOptions } from '@testing-library/react';
+import { ThemeProvider } from '@mui/material';
+import type { ReactElement } from 'react';
+import { appTheme } from '../app/theme';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ApprovalAttachmentPanel } from '../pages/documents/approvals/components/ApprovalAttachmentPanel';
@@ -25,6 +28,15 @@ vi.mock('../services/documents/haccpAttachmentService', () => ({
     .fn()
     .mockResolvedValue({ previewUrl: 'https://example.invalid/preview' }),
 }));
+
+// 패널이 theme.ts 의 palette 토큰을 읽으므로 앱 테마로 감싸서 렌더링한다
+const render = (ui: ReactElement, options?: RenderOptions) =>
+  rtlRender(ui, {
+    wrapper: ({ children }) => (
+      <ThemeProvider theme={appTheme}>{children}</ThemeProvider>
+    ),
+    ...options,
+  });
 
 describe('ApprovalAttachmentPanel', () => {
   it('uploads a file and shows it in the list', async () => {

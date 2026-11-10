@@ -33,10 +33,8 @@ export function OnboardingStepThreeComplete({
             p: 2.5,
             borderRadius: 2,
             width: '100%',
-            bgcolor: (theme) =>
-              theme.palette.mode === 'dark'
-                ? 'rgba(255, 255, 255, 0.06)'
-                : 'grey.50',
+            // 기존 -> palette.mode 로 색 분기 / 변경 -> surface.subtle 토큰
+            bgcolor: 'surface.subtle',
           }}
         >
           <Stack spacing={0.5}>

@@ -11,7 +11,6 @@ import FormatItalicRounded from '@mui/icons-material/FormatItalicRounded';
 import TableRowsRounded from '@mui/icons-material/TableRowsRounded';
 import TitleRounded from '@mui/icons-material/TitleRounded';
 import { Button, Divider, MenuItem, Select, Stack } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import type { Editor } from '@tiptap/react';
 import type { MouseEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
@@ -32,8 +31,6 @@ type ResetEditorToolbarProps = {
 
 export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
   const { editor, disabled = false } = props;
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
   const { rememberCurrentCell, ensureTableCellSelection, runCellCommand } =
     useTableSelectionGuard(editor);
 
@@ -220,22 +217,26 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
       <Stack
         direction="row"
         spacing={0.5}
-        sx={{
-          px: 1.5,
-          py: 1,
-          bgcolor: isDarkMode ? 'grey.900' : 'grey.50',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          rowGap: 0.5,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          '& .MuiSelect-select': {
-            color: isDarkMode ? 'grey.100' : 'text.primary',
+        sx={[
+          {
+            px: 1.5,
+            py: 1,
+            // 기존 -> isDarkMode 로 툴바 배경, 글자, 아이콘 색 분기 / 변경 -> editor 토큰, 아이콘 색은 다크 전용이라 applyStyles 로 분리
+            bgcolor: 'editor.toolbarBg',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            rowGap: 0.5,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '& .MuiSelect-select': {
+              color: 'editor.toolbarText',
+            },
           },
-          '& .MuiSvgIcon-root': {
-            color: isDarkMode ? 'grey.100' : undefined,
-          },
-        }}
+          (theme) =>
+            theme.applyStyles('dark', {
+              '& .MuiSvgIcon-root': { color: 'editor.toolbarText' },
+            }),
+        ]}
       >
         <Select
           size="small"
