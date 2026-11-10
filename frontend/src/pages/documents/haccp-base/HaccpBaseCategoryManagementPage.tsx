@@ -2,7 +2,6 @@ import {
   Alert,
   Button,
   Chip,
-  IconButton,
   Stack,
   TableBody,
   TableCell,
@@ -12,9 +11,8 @@ import {
 } from '@mui/material';
 import { AppTextField } from '../../../shared/components/forms/AppTextField';
 import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { EditPencilIcon } from '../../../shared/components/data/EditPencilIcon';
 import { useMemo, useState } from 'react';
-import { useTheme } from '@mui/material/styles';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { extractApiErrorMessage } from '../../../services/api/errorMessage';
@@ -32,6 +30,7 @@ import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { AppSelect } from '../../../shared/components/forms/AppSelect';
+import {GridIconButton} from "../../../shared/components/data/GridIconButton.tsx";
 
 const USE_AT_OPTIONS = [
   { value: 'Y', label: '사용' },
@@ -80,8 +79,6 @@ function toCategoryRow(
 }
 
 export function HaccpBaseCategoryManagementPage() {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showError, showSuccess } = useFeedback();
@@ -204,18 +201,6 @@ export function HaccpBaseCategoryManagementPage() {
 
   const isMutating = createMutation.isPending || updateMutation.isPending;
 
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
-
   return (
     <Stack spacing={2} data-testid="haccp-base-category-management-page">
       <PageHeader
@@ -300,14 +285,12 @@ export function HaccpBaseCategoryManagementPage() {
               <TableCell align="center">
                 <Stack direction="row" justifyContent="center">
                   <Tooltip title="분류 수정">
-                    <IconButton
-                      size="small"
+                    <GridIconButton
                       aria-label="분류 수정"
                       onClick={() => handleOpenEdit(row)}
-                      sx={actionIconSx}
                     >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
+                      <EditPencilIcon />
+                    </GridIconButton>
                   </Tooltip>
                 </Stack>
               </TableCell>

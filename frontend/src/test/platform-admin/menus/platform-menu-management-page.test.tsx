@@ -134,7 +134,8 @@ describe('PlatformMenuManagementPage', () => {
 
     await screen.findByRole('heading', { name: '메뉴 관리' });
 
-    const editIcons = await screen.findAllByTestId('EditOutlinedIcon');
+    // 기존 -> EditOutlinedIcon / 변경 -> 교체된 공통 아이콘 testId
+    const editIcons = await screen.findAllByTestId('EditPencilIcon');
     const firstEditButton = editIcons[0]?.closest('button');
 
     expect(firstEditButton).not.toBeNull();
@@ -279,7 +280,8 @@ describe('PlatformMenuManagementPage', () => {
 
     renderPage();
 
-    const editIcons = await screen.findAllByTestId('EditOutlinedIcon');
+    // 기존 -> EditOutlinedIcon / 변경 -> 교체된 공통 아이콘 testId
+    const editIcons = await screen.findAllByTestId('EditPencilIcon');
     const firstEditButton = editIcons[0]?.closest('button');
 
     expect(firstEditButton).not.toBeNull();
