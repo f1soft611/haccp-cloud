@@ -1,5 +1,5 @@
+import { Power } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
-import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
 import {
   Chip,
   Skeleton,
@@ -149,7 +149,8 @@ export function UsersGrid({
                           onClick={() => onToggle(row)}
                           tone={row.active ? 'danger' : 'success'}
                         >
-                          <PowerSettingsNewOutlinedIcon />
+                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                          <Power />
                         </GridIconButton>
                       </span>
                     </Tooltip>

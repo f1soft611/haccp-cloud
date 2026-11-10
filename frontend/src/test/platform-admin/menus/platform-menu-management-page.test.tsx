@@ -234,11 +234,10 @@ describe('PlatformMenuManagementPage', () => {
     const row = rowCell.closest('tr');
     expect(row).not.toBeNull();
 
-    const deleteIcon = within(row as HTMLTableRowElement).getByTestId(
-      'DeleteOutlineOutlinedIcon',
-    );
-    const deleteButton = deleteIcon.closest('button');
-    expect(deleteButton).not.toBeNull();
+    // 기존 -> MUI 아이콘 testId 로 삭제 버튼 찾기 / 변경 -> 버튼 aria-label 로 찾기
+    const deleteButton = within(row as HTMLTableRowElement).getByRole('button', {
+      name: '메뉴 삭제',
+    });
     expect(deleteButton).toBeDisabled();
   });
 

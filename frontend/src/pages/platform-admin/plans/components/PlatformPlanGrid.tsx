@@ -10,8 +10,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
-import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
+import { Link, SlidersHorizontal } from 'lucide-react';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import type { PlanSummary } from '../../../../services/platform-admin/planAccessService';
 
@@ -130,7 +129,8 @@ export function PlatformPlanGrid(props: {
                           onClick={() => onMenuMapping(plan)}
                           sx={actionIconSx}
                         >
-                          <LinkOutlinedIcon fontSize="small" />
+                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                          <Link />
                         </IconButton>
                       </span>
                     </Tooltip>
@@ -142,7 +142,8 @@ export function PlatformPlanGrid(props: {
                           onClick={() => onFeatureMapping(plan)}
                           sx={actionIconSx}
                         >
-                          <TuneOutlinedIcon fontSize="small" />
+                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                          <SlidersHorizontal />
                         </IconButton>
                       </span>
                     </Tooltip>

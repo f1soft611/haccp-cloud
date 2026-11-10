@@ -1,22 +1,25 @@
-import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
-import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
-import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
-import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
-import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import type { LucideIcon } from 'lucide-react';
+import {
+  BuildingComplex,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  Clock,
+  Factory,
+  LayoutDashboard,
+  Link,
+  Menu as MenuIcon,
+  Package,
+  RotateCcwClock,
+  Settings,
+  Shapes,
+  Shield,
+  ShieldCheck,
+  Trash,
+  Users,
+  Wrench,
+} from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
-import ExpandLessOutlinedIcon from '@mui/icons-material/ExpandLessOutlined';
-import ExpandMoreOutlinedIcon from '@mui/icons-material/ExpandMoreOutlined';
-import FactoryOutlinedIcon from '@mui/icons-material/FactoryOutlined';
-import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
-import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
-import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
-import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
-import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
-import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
-import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import {
   Box,
   Chip,
@@ -54,22 +57,23 @@ export const ICON_OPTIONS = [
   'AccessTime',
 ];
 
-const ICON_COMPONENTS: Record<string, typeof DashboardOutlinedIcon> = {
-  Dashboard: DashboardOutlinedIcon,
-  Settings: SettingsOutlinedIcon,
-  Menu: MenuOutlinedIcon,
-  Factory: FactoryOutlinedIcon,
-  AdminPanelSettings: AdminPanelSettingsOutlinedIcon,
-  Business: BusinessOutlinedIcon,
-  People: PeopleOutlineOutlinedIcon,
-  Assignment: AssignmentOutlinedIcon,
-  Inventory: Inventory2OutlinedIcon,
-  Build: BuildOutlinedIcon,
-  Category: CategoryOutlinedIcon,
-  Security: SecurityOutlinedIcon,
-  Link: LinkOutlinedIcon,
-  History: HistoryOutlinedIcon,
-  AccessTime: AccessTimeOutlinedIcon,
+// 기존 -> MUI Outlined 아이콘 맵 / 변경 -> lucide 아이콘 맵
+const ICON_COMPONENTS: Record<string, LucideIcon> = {
+  Dashboard: LayoutDashboard,
+  Settings: Settings,
+  Menu: MenuIcon,
+  Factory: Factory,
+  AdminPanelSettings: ShieldCheck,
+  Business: BuildingComplex,
+  People: Users,
+  Assignment: ClipboardList,
+  Inventory: Package,
+  Build: Wrench,
+  Category: Shapes,
+  Security: Shield,
+  Link: Link,
+  History: RotateCcwClock,
+  AccessTime: Clock,
 };
 
 export type MenuTreeRow = {
@@ -134,7 +138,8 @@ export function MenuGrid(props: {
         {IconComponent ? (
           <IconComponent />
         ) : (
-          <MenuOutlinedIcon fontSize="small" />
+          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+          <MenuIcon />
         )}
       </Box>
     );
@@ -240,9 +245,11 @@ export function MenuGrid(props: {
                         onClick={() => onToggleExpand(rootMenu.menuId)}
                       >
                         {expandedIds.has(rootMenu.menuId) ? (
-                          <ExpandLessOutlinedIcon fontSize="small" />
+                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                          <ChevronUp />
                         ) : (
-                          <ExpandMoreOutlinedIcon fontSize="small" />
+                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                          <ChevronDown />
                         )}
                       </IconButton>
                     ) : null}
@@ -296,7 +303,8 @@ export function MenuGrid(props: {
                               deletePending
                             }
                           >
-                            <DeleteOutlineOutlinedIcon fontSize="small" />
+                            {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                            <Trash />
                           </GridIconButton>
                         </span>
                       </Tooltip>
@@ -391,7 +399,8 @@ export function MenuGrid(props: {
                                     deletePending
                                   }
                                 >
-                                  <DeleteOutlineOutlinedIcon />
+                                  {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                                  <Trash />
                                 </GridIconButton>
                               </span>
                             </Tooltip>

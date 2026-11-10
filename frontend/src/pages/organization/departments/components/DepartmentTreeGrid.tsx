@@ -1,7 +1,5 @@
-import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
+import { ChevronDown, ChevronUp, Power } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
-import ExpandLessOutlinedIcon from '@mui/icons-material/ExpandLessOutlined';
-import ExpandMoreOutlinedIcon from '@mui/icons-material/ExpandMoreOutlined';
 import {
   Box,
   Chip,
@@ -93,7 +91,8 @@ export function DepartmentTreeGrid(props: {
             onClick={() => onToggleActive(dept)}
             disabled={statusPending || blockDeactivate}
           >
-            <PowerSettingsNewOutlinedIcon fontSize="small" />
+            {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+            <Power />
           </GridIconButton>
         </span>
       </Tooltip>
@@ -176,9 +175,11 @@ export function DepartmentTreeGrid(props: {
                         onClick={() => onToggleExpand(dept.id)}
                       >
                         {expandedIds.has(dept.id) ? (
-                          <ExpandLessOutlinedIcon />
+                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                          <ChevronUp />
                         ) : (
-                          <ExpandMoreOutlinedIcon />
+                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                          <ChevronDown />
                         )}
                       </GridIconButton>
                     ) : null}

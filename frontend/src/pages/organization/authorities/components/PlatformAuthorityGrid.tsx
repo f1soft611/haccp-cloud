@@ -1,6 +1,5 @@
+import { Link, Power } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
-import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
-import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
 import {
   Chip,
   Skeleton,
@@ -118,7 +117,8 @@ export function PlatformAuthorityGrid(props: {
                           aria-label="메뉴 매핑"
                           onClick={() => onMenuMapping(role)}
                         >
-                          <LinkOutlinedIcon />
+                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                          <Link />
                         </GridIconButton>
                       </span>
                     </Tooltip>
@@ -151,7 +151,8 @@ export function PlatformAuthorityGrid(props: {
                           tone={role.active ? 'danger' : 'success'}
                           onClick={() => onToggleActive(role)}
                         >
-                          <PowerSettingsNewOutlinedIcon />
+                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                          <Power />
                         </GridIconButton>
                       </span>
                     </Tooltip>
