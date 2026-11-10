@@ -1,5 +1,4 @@
-import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { Power, Trash } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Chip,
@@ -151,12 +150,11 @@ export function EquipmentGrid({
                             tone="danger"
                             onClick={() => onDelete(row)}
                           >
-                            <DeleteOutlineIcon />
+                            <Trash />
                           </GridIconButton>
                         </span>
                       </Tooltip>
                     ) : (
-                      // 기존 -> title="사용으로 변경" 속성 / 변경 -> Tooltip 으로 이동
                       <Tooltip title="사용으로 변경">
                         <span>
                           <GridIconButton
@@ -164,7 +162,7 @@ export function EquipmentGrid({
                             tone="success"
                             onClick={() => onRestore(row)}
                           >
-                            <PowerSettingsNewOutlinedIcon fontSize="small" />
+                            <Power fontSize="small" />
                           </GridIconButton>
                         </span>
                       </Tooltip>

@@ -1,4 +1,4 @@
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { Trash } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Skeleton,
@@ -150,7 +150,7 @@ export function MaterialsGrid({
                           tone="danger"
                           onClick={() => onDelete(row)}
                         >
-                          <DeleteOutlineIcon />
+                          <Trash />
                         </GridIconButton>
                       </span>
                     </Tooltip>

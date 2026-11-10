@@ -1,4 +1,4 @@
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { Trash } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Chip,
@@ -129,7 +129,7 @@ export function CustomersGrid({
                             tone="danger"
                             onClick={() => onDelete(row)}
                         >
-                          <DeleteOutlineIcon />
+                          <Trash />
                         </GridIconButton>
                       </span>
                     </Tooltip>
