@@ -76,9 +76,11 @@ export function DepartmentTreeGrid(props: {
   );
 
   const toggleBtn = (dept: DepartmentItem) => {
-    const blockDeactivate = dept.active && dept.hasChildren;
+    const blockDeactivate = dept.active && (dept.hasChildren || dept.hasMembers);
     const label = blockDeactivate
-      ? '하위 부서가 있어 미사용으로 변경할 수 없습니다.'
+      ? dept.hasChildren
+        ? '하위 부서가 있어 미사용으로 변경할 수 없습니다.'
+        : '배정된 인원이 있어 미사용으로 변경할 수 없습니다.'
       : dept.active
         ? '미사용으로 변경'
         : '사용으로 변경';

@@ -80,6 +80,18 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
 
         Long tenantId = resolveTenantId(tenantCode);
 
+        if (Boolean.FALSE.equals(payload.getActive())) {
+            Map<String, Object> currentParams = new HashMap<String, Object>();
+            currentParams.put("departmentId", departmentId);
+            currentParams.put("tenantId", tenantId);
+            currentParams.put("tenantCode", tenantCode);
+            DepartmentVO current = departmentDAO.selectDepartmentById(currentParams);
+            // 사용 중 부서를 미사용으로 바꿀 때만 검사
+            if (current != null && Boolean.TRUE.equals(current.isActive())) {
+                validateDeactivatable(departmentId, tenantId);
+            }
+        }
+
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("departmentId", departmentId);
         params.put("tenantId", tenantId);
@@ -125,14 +137,7 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
         Long tenantId = resolveTenantId(normalizedCode);
 
         if (!active) {
-            Map<String, Object> checkParams = new HashMap<String, Object>();
-            checkParams.put("departmentId", departmentId);
-            checkParams.put("tenantId", tenantId);
-
-            int childCount = departmentDAO.countChildDepartments(checkParams);
-            if (childCount > 0) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "하위 부서가 있어 미사용으로 변경할 수 없습니다.");
-            }
+            validateDeactivatable(departmentId, tenantId);
         }
 
         Map<String, Object> params = new HashMap<String, Object>();
@@ -149,6 +154,20 @@ public class DepartmentServiceImpl extends EgovAbstractServiceImpl implements De
     }
 
     // ── 헬퍼 ─────────────────────────────────────────
+
+    // 사용 -> 미사용 전환 가능 여부 검사. 하위 부서, 배정된 사용 중 사용자 순으로 보고 있으면 409
+    private void validateDeactivatable(Long departmentId, Long tenantId) throws Exception {
+        Map<String, Object> checkParams = new HashMap<String, Object>();
+        checkParams.put("departmentId", departmentId);
+        checkParams.put("tenantId", tenantId);
+
+        if (departmentDAO.countChildDepartments(checkParams) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "하위 부서가 있어 미사용으로 변경할 수 없습니다.");
+        }
+        if (departmentDAO.countAssignedUsers(checkParams) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "배정된 인원이 있어 미사용으로 변경할 수 없습니다.");
+        }
+    }
 
     private Long resolveTenantId(String tenantCode) throws Exception {
         Long tenantId = departmentDAO.selectTenantIdByCode(tenantCode);

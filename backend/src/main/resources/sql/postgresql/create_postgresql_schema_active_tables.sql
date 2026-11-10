@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS tb_tenant (
     business_type VARCHAR(200),
     business_category VARCHAR(200),
     registration_date DATE,
+    service_start_date DATE, -- HACCP 업무개시일 (미작성 주기 계산 기준, 없으면 created_at 사용)
     logo_image TEXT,
     onboarding_status VARCHAR(50) DEFAULT 'EMAIL_QUEUED' NOT NULL,
     use_at CHAR(1) DEFAULT 'Y' NOT NULL,

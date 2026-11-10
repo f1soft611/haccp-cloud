@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiClient } from '../services/api/apiClient';
+import { apiClient } from '../../../services/api/apiClient';
 import {
   createDepartment,
   listDepartments,
   updateDepartment,
   updateDepartmentStatus,
-} from '../services/organization/departmentsService';
+} from '../../../services/organization/departmentsService';
 
 vi.mock('../services/api/apiClient', () => ({
   apiClient: {
@@ -156,5 +156,27 @@ describe('departmentsService', () => {
       id: '401',
       active: false,
     });
+  });
+
+  it('maps hasMembers from list response', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: [
+        {
+          departmentId: 200,
+          tenantCode: 'TENANT_A',
+          name: '품질팀',
+          parentDepartmentId: null,
+          parentName: null,
+          sortOrder: 0,
+          active: true,
+          hasChildren: false,
+          hasMembers: true,
+        },
+      ],
+    });
+
+    const items = await listDepartments({ tenantCode: 'TENANT_A' });
+
+    expect(items[0].hasMembers).toBe(true);
   });
 });

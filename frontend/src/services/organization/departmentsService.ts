@@ -13,6 +13,7 @@ export type DepartmentItem = {
   sortOrder: number;
   active: boolean;
   hasChildren: boolean;
+  hasMembers: boolean;
 };
 
 export type DepartmentSearchParams = {
@@ -84,6 +85,7 @@ function normalizeDepartmentItem(
     sortOrder: normalizeNumberValue(raw.sortOrder),
     active: Boolean(raw.active),
     hasChildren: Boolean(raw.hasChildren),
+    hasMembers: Boolean(raw.hasMembers),
   };
 }
 
