@@ -1,5 +1,4 @@
 import { Box, Stack, Typography } from '@mui/material';
-import { House } from 'lucide-react';
 import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -8,6 +7,7 @@ import {
 } from './userMenuMetadataContext';
 import styles from '../sharedComponents.module.css';
 import { useSharedScope } from '../useSharedScope';
+import homeIconUrl from '../../../assets/icons/icon_home.svg';
 
 export type PageHeaderProps = {
   title: string;
@@ -77,7 +77,13 @@ export function PageHeader({
           spacing={0.5}
           className={styles.pageHeaderPath}
         >
-          <House size={14} />
+          {/* 기존 -> lucide House 아이콘 / 변경 -> 시안 icon_home.svg (SVG 전역 클래스 충돌 방지로 img 사용) */}
+          <Box
+            component="img"
+            src={homeIconUrl}
+            alt=""
+            sx={{ display: 'block', width: 14, height: 14, objectFit: 'contain' }}
+          />
           <Typography variant="body2" className={styles.pageHeaderPathText}>
             {resolvedGroupLabel}
           </Typography>

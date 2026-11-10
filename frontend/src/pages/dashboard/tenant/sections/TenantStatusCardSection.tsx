@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, ClipboardCheck, FilePen, LayoutGrid } from 'lucide-react';
+import { CalendarDays, ChevronRight, LayoutGrid } from 'lucide-react';
 import {
     Box,
     ButtonBase,
@@ -22,6 +22,20 @@ import {
     type TodoStatusCounts,
 } from '../todoFilter';
 import styles from '../tenantDashboard.module.css';
+import draftIconUrl from '../../../../assets/icons/icon_기안.svg';
+import approvalIconUrl from '../../../../assets/icons/icon_sine.svg';
+
+/** 상태바 시안 아이콘. SVG 내부 전역 클래스 충돌을 막기 위해 img 로 표시한다. */
+function StatusIcon({ src }: { src: string }) {
+    return (
+        <Box
+            component="img"
+            src={src}
+            alt=""
+            sx={{ display: 'block', width: 24, height: 20, objectFit: 'contain' }}
+        />
+    );
+}
 
 const CARD_TOOLTIPS: Record<TodoStatusCardKey, string> = {
     미작성: '내가 작성해야 할 문서',
@@ -105,7 +119,8 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                     rowGap={0.5}
                     className={styles.statusDraftGroup}
                 >
-                    <FilePen fontSize="small" className={styles.statusIcon} />
+                    {/* 기존 -> lucide FilePen 아이콘 / 변경 -> 시안 icon_기안.svg */}
+                    <StatusIcon src={draftIconUrl} />
                     <Typography className={`${styles.statusLabel} ${styles.statusLabelDraft}`}>
                         기안문서
                     </Typography>
@@ -127,7 +142,8 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                 {renderCount(
                     PENDING_APPROVAL_STATUS,
                     <>
-                        <ClipboardCheck fontSize="small" className={styles.statusIcon} />
+                        {/* 기존 -> lucide ClipboardCheck 아이콘 / 변경 -> 시안 icon_sine.svg */}
+                        <StatusIcon src={approvalIconUrl} />
                         <Typography component="span" className={`${styles.statusLabel} ${styles.statusLabelApproval}`}>
                             결재할 문서
                         </Typography>
