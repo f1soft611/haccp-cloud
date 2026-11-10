@@ -155,22 +155,22 @@ export function UserAccountMenu() {
 
         <MenuItem onClick={handleGoToMyPage} className={styles.accountMenuItem}>
           <ListItemIcon>
-            <IdCard size={20} />
+            <IdCard />
           </ListItemIcon>
           내 정보 관리
           <ListItemIcon className={styles.accountMenuEndIcon}>
-            <ChevronRight size={20} />
+            <ChevronRight />
           </ListItemIcon>
         </MenuItem>
         <MenuItem onClick={handleGoToPassword} className={styles.accountMenuItem}>
           <ListItemIcon>
-            <Shield size={20} />
+            <Shield />
           </ListItemIcon>
           보안 설정
         </MenuItem>
         <MenuItem onClick={handleLogout} className={styles.accountMenuItem}>
           <ListItemIcon>
-            <LogOut size={20} />
+            <LogOut />
           </ListItemIcon>
           로그아웃
         </MenuItem>

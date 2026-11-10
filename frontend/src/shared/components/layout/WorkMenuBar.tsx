@@ -307,7 +307,6 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                               {IconComponent ? (
                                 <Box
                                   component={IconComponent}
-                                  size={20}
                                   sx={{
                                     color: 'workMenu.iconColor',
                                     bgcolor: 'workMenu.iconBg',

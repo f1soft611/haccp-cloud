@@ -77,7 +77,7 @@ export function PageHeader({
           spacing={0.5}
           className={styles.pageHeaderPath}
         >
-          <House size={20} />
+          <House size={14} />
           <Typography variant="body2" className={styles.pageHeaderPathText}>
             {resolvedGroupLabel}
           </Typography>

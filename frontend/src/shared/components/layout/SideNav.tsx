@@ -232,9 +232,9 @@ export function SideNav({
                                     slotProps={{ primary: { className: styles.sideNavText } }}
                                 />
                                 {isOpen ? (
-                                    <ChevronUp size={20} />
+                                    <ChevronUp />
                                 ) : (
-                                    <ChevronDown size={20} />
+                                    <ChevronDown />
                                 )}
                             </ListItemButton>
 
@@ -258,7 +258,7 @@ export function SideNav({
                                                 className={styles.sideNavSubItem}
                                                 data-active={isActive}
                                             >
-                                                <ChevronRight size={20} className={styles.sideNavChevron} />
+                                                <ChevronRight className={styles.sideNavChevron} />
                                                 <ListItemText
                                                     primary={item.label}
                                                     slotProps={{ primary: { className: styles.sideNavSubText } }}
