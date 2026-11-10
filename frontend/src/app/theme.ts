@@ -124,6 +124,14 @@ const tableComponents: ThemeOptions['components'] = {
       },
     },
   },
+
+  // lucide 아이콘은 width/height 속성(24)을 쓰므로, 버튼 아이콘 자리에서는 MUI 아이콘처럼 1em 으로 맞춘다
+  MuiButton: {
+    styleOverrides: {
+      startIcon: { '& > svg.lucide': { width: '1em', height: '1em' } },
+      endIcon: { '& > svg.lucide': { width: '1em', height: '1em' } },
+    },
+  },
 };
 
 // 라이트, 다크가 같은 모양을 갖도록 의미 단위 색 토큰을 하나의 타입으로 정의한다

@@ -1,5 +1,5 @@
 import { Box, Stack, Typography } from '@mui/material';
-import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import { House } from 'lucide-react';
 import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -77,7 +77,7 @@ export function PageHeader({
           spacing={0.5}
           className={styles.pageHeaderPath}
         >
-          <HomeOutlinedIcon fontSize="small" />
+          <House size={20} />
           <Typography variant="body2" className={styles.pageHeaderPathText}>
             {resolvedGroupLabel}
           </Typography>

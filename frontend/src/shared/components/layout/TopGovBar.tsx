@@ -1,7 +1,4 @@
 import { type MouseEvent, useEffect, useMemo, useState } from 'react';
-import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
-import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import {
     Box,
     Button,
@@ -12,6 +9,7 @@ import {
     Stack,
     Typography,
 } from '@mui/material';
+import { ChevronDown, Menu as MenuIcon, RotateCcw, Search } from 'lucide-react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import { useAuthStore } from '../../store/authStore';
@@ -22,7 +20,6 @@ import {
     type ThemeModePreference,
 } from '../../theme/themePreference';
 import { UserAccountMenu } from '../account/UserAccountMenu';
-import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import styles from '../sharedComponents.module.css';
 import { useSharedScope } from '../useSharedScope';
 
@@ -151,7 +148,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         onClick={onOpenMobileNav}
                         className={styles.topGovMobileNav}
                     >
-                        <MenuRoundedIcon />
+                        <MenuIcon />
                     </IconButton>
                 ) : null}
 
@@ -187,7 +184,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        startIcon={<SearchRoundedIcon fontSize="small" />}
+                        startIcon={<Search />}
                         aria-label={APP_LABELS.header.searchAction}
                         className={`${styles.topGovButton} ${styles.topGovButtonHidden}`}
                     >
@@ -199,7 +196,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         color="inherit"
                         aria-label="테마"
                         onClick={handleThemeMenuOpen}
-                        endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
+                        endIcon={<ChevronDown />}
                         className={`${styles.topGovButton} ${styles.topGovDropdownButton}`}
                     >
                         테마
@@ -210,7 +207,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
                         color="inherit"
                         aria-label={APP_LABELS.header.fontSizeAction}
                         onClick={handleFontSizeMenuOpen}
-                        endIcon={<KeyboardArrowDownRoundedIcon fontSize="small" />}
+                        endIcon={<ChevronDown />}
                         className={`${styles.topGovButton} ${styles.topGovDropdownButton}`}
                     >
                         {APP_LABELS.header.fontSizeAction}
@@ -286,7 +283,7 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
           onClick={handleFontSizeReset}
           className={styles.topGovMenuReset}
         >
-          <RestartAltRoundedIcon fontSize="small" />
+          <RotateCcw size={20} />
           {APP_LABELS.header.fontSizeResetAction}
         </MenuItem>
       </Menu>

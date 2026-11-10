@@ -1,43 +1,46 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { NavLink, useLocation } from 'react-router-dom';
-import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
-import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
-import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
-import PrecisionManufacturingRoundedIcon from '@mui/icons-material/PrecisionManufacturingRounded';
-import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
-import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
-import PeopleRoundedIcon from '@mui/icons-material/PeopleRounded';
-import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
-import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
-import BuildRoundedIcon from '@mui/icons-material/BuildRounded';
-import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
-import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
-import LinkRoundedIcon from '@mui/icons-material/LinkRounded';
-import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
-import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import type { LucideIcon } from 'lucide-react';
+import {
+  BuildingComplex,
+  ClipboardList,
+  Clock,
+  Cog,
+  LayoutDashboard,
+  Link,
+  Menu as MenuIcon,
+  Package,
+  RotateCcwClock,
+  Settings,
+  Shapes,
+  Shield,
+  ShieldCheck,
+  Users,
+  Wrench,
+} from 'lucide-react';
 import type { UserRole } from '../../store/authStore';
 import type { MenuGroup, MenuIconName } from './workMenuConfig';
 import { prefetchRouteByPath } from '../../../app/router/routePrefetch';
 
-type MenuIconComponent = typeof DashboardRoundedIcon;
+type MenuIconComponent = LucideIcon;
 
 const MENU_ICON_MAP: Record<MenuIconName, MenuIconComponent> = {
-  Dashboard: DashboardRoundedIcon,
-  Settings: SettingsRoundedIcon,
-  Menu: MenuRoundedIcon,
-  Factory: PrecisionManufacturingRoundedIcon,
-  AdminPanelSettings: AdminPanelSettingsRoundedIcon,
-  Business: BusinessRoundedIcon,
-  People: PeopleRoundedIcon,
-  Assignment: AssignmentRoundedIcon,
-  Inventory: Inventory2RoundedIcon,
-  Build: BuildRoundedIcon,
-  Category: CategoryRoundedIcon,
-  Security: SecurityRoundedIcon,
-  Link: LinkRoundedIcon,
-  History: HistoryRoundedIcon,
-  AccessTime: AccessTimeRoundedIcon,
+  Dashboard: LayoutDashboard,
+  Settings: Settings,
+  Menu: MenuIcon,
+  Factory: Cog,
+  AdminPanelSettings: ShieldCheck,
+  Business: BuildingComplex,
+  People: Users,
+  Assignment: ClipboardList,
+  Inventory: Package,
+  Build: Wrench,
+  Category: Shapes,
+  Security: Shield,
+  Link: Link,
+  History: RotateCcwClock,
+  AccessTime: Clock,
 };
 
 type WorkMenuBarProps = {
@@ -302,8 +305,9 @@ export function WorkMenuBar({ menuGroups, role }: WorkMenuBarProps) {
                               alignItems="center"
                             >
                               {IconComponent ? (
-                                <IconComponent
-                                  fontSize="small"
+                                <Box
+                                  component={IconComponent}
+                                  size={20}
                                   sx={{
                                     color: 'workMenu.iconColor',
                                     bgcolor: 'workMenu.iconBg',
