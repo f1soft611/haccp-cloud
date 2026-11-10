@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- PWA 설치 아이콘 원본 (임시, 정식 디자인 나오면 교체). maskable 안전영역 안에 마크 배치 -->
+  <rect width="512" height="512" fill="#ffffff"/>
+  <path transform="translate(112 112) scale(9)" fill="#22A74F"
+    d="M6 0H32V5H27V8H24L22 10V12L27 13V32H14V23H19V19H14V10H19L20 8V5H9Q5 5 5 9V32H0V6Q0 0 6 0Z"/>
+</svg>
