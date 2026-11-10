@@ -1,4 +1,4 @@
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import { Box, Button, Card, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
@@ -88,7 +88,8 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
                         onClick={() => void openWorkDraft(item.id)}
                         className={styles.workCardButton}
                     >
-                        <EditOutlinedIcon fontSize="small" />
+                        {/* 기존 -> MUI EditOutlinedIcon / 변경 -> 시안 bticon_wri.svg 아이콘 */}
+                        <EditPencilIcon />
                     </IconButton>
                 </Stack>
             </Card>

@@ -1,5 +1,4 @@
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button, Chip, IconButton, Stack, Typography } from '@mui/material';
 import type { ToolbarProps } from 'react-big-calendar';
 import { useWorkCycleOptions } from '../../../../shared/hooks/useWorkCycleOptions';
@@ -39,7 +38,8 @@ export function WorkCalendarToolbar({
                     size="small"
                     onClick={() => onNavigate('PREV')}
                 >
-                    <ChevronLeftIcon />
+                    {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                    <ChevronLeft />
                 </IconButton>
                 <Typography variant="h6" fontWeight={800}>
                     {date.getFullYear()}년 {date.getMonth() + 1}월
@@ -49,7 +49,8 @@ export function WorkCalendarToolbar({
                     size="small"
                     onClick={() => onNavigate('NEXT')}
                 >
-                    <ChevronRightIcon />
+                    {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                    <ChevronRight />
                 </IconButton>
                 {/* 기존 -> 이전/다음 달 이동 버튼만 존재 */}
                 {/* 변경 -> 오른쪽 상단에 오늘 날짜로 바로 이동하는 버튼 추가 */}

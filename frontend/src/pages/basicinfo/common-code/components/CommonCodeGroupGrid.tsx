@@ -1,9 +1,7 @@
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import { Plus, Save, Trash } from 'lucide-react';
 import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import { koKR } from '@mui/x-data-grid/locales';
 import { appTheme } from '../../../../app/theme';
 import { markEdited } from '../commonCodeRows';
@@ -49,13 +47,13 @@ export function CommonCodeGroupGrid(props: {
                 </Typography>
                 {canManage ? (
                     <Stack direction="row" spacing={1}>
-                        <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<AddRoundedIcon />} aria-label="그룹 추가" onClick={onAdd}>
+                        <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<Plus />} aria-label="그룹 추가" onClick={onAdd}>
                             추가
                         </Button>
-                        <Button size="small" variant="outlined" color="error" sx={TOOLBAR_BUTTON_SX} startIcon={<DeleteOutlineRoundedIcon />} aria-label="그룹 삭제" onClick={onDelete}>
+                        <Button size="small" variant="outlined" color="error" sx={TOOLBAR_BUTTON_SX} startIcon={<Trash />} aria-label="그룹 삭제" onClick={onDelete}>
                             삭제
                         </Button>
-                        <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<SaveOutlinedIcon />} aria-label="그룹 저장" disabled={saveDisabled} onClick={onSave}>
+                        <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<Save />} aria-label="그룹 저장" disabled={saveDisabled} onClick={onSave}>
                             저장
                         </Button>
                     </Stack>

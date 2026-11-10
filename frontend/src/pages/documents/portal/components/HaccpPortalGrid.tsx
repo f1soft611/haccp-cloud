@@ -1,7 +1,6 @@
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Chip,
-  IconButton,
   Link,
   Skeleton,
   TableBody,
@@ -10,12 +9,12 @@ import {
   TableRow,
   Tooltip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getWorkCycleSx } from '../../../dashboard/tenant/utils';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
 import type { PortalRow } from '../types';
+import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
 
 export function HaccpPortalGrid({
   rows,
@@ -26,20 +25,6 @@ export function HaccpPortalGrid({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
-
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
 
   const openDocument = (row: PortalRow) => {
     const query = new URLSearchParams();
@@ -125,17 +110,14 @@ export function HaccpPortalGrid({
                       </TableCell>
                       <TableCell>{row.assigneeSummary || '-'}</TableCell>
                       <TableCell align="center">
-                        {/* 기존 -> color="primary" 만, 배경 없음, 툴팁 없음 / 변경 -> HACCP 문서현황 기준 actionIconSx, Tooltip */}
                         <Tooltip title="작성하러 가기">
                           <span>
-                            <IconButton
-                                size="small"
+                            <GridIconButton
                                 aria-label="작성하러 가기"
                                 onClick={() => openDraft(row)}
-                                sx={actionIconSx}
                             >
-                              <EditOutlinedIcon fontSize="small" />
-                            </IconButton>
+                              <EditPencilIcon />
+                            </GridIconButton>
                           </span>
                         </Tooltip>
                       </TableCell>

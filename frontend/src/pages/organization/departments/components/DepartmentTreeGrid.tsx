@@ -1,11 +1,8 @@
-import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import ExpandLessOutlinedIcon from '@mui/icons-material/ExpandLessOutlined';
-import ExpandMoreOutlinedIcon from '@mui/icons-material/ExpandMoreOutlined';
+import { ChevronDown, ChevronUp, Power } from 'lucide-react';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Box,
   Chip,
-  IconButton,
   Skeleton,
   Stack,
   TableBody,
@@ -15,10 +12,10 @@ import {
   Tooltip,
 } from '@mui/material';
 import { Fragment } from 'react';
-import { useTheme } from '@mui/material/styles';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { GridPaginationBar } from '../../../../shared/components/data/GridPaginationBar';
 import type { DepartmentItem } from '../../../../services/organization/departmentsService';
+import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
 
 export type DepartmentTreeRow = {
   dept: DepartmentItem;
@@ -28,8 +25,6 @@ export type DepartmentTreeRow = {
 export function DepartmentTreeGrid(props: {
   rows: DepartmentTreeRow[];
   loading?: boolean;
-  // 기존 -> deletePending?: boolean;
-  // 변경 -> statusPending?: boolean;
   statusPending?: boolean;
   expandedIds: Set<string>;
   pageIndex: number;
@@ -37,8 +32,6 @@ export function DepartmentTreeGrid(props: {
   totalCount: number;
   onToggleExpand: (id: string) => void;
   onEdit: (dept: DepartmentItem) => void;
-  // 기존 -> onDelete: (dept: DepartmentItem) => void;
-  // 변경 -> onToggleActive: (dept: DepartmentItem) => void;
   onToggleActive: (dept: DepartmentItem) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
@@ -58,8 +51,6 @@ export function DepartmentTreeGrid(props: {
     onPageSizeChange,
   } = props;
 
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
 
   const activeChip = (active: boolean) => (
     <Chip
@@ -70,61 +61,20 @@ export function DepartmentTreeGrid(props: {
     />
   );
 
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
-
-  const dangerIconSx = {
-    color: isDarkMode ? '#f87171' : '#c53b3b',
-    bgcolor: isDarkMode
-      ? 'rgba(248, 113, 113, 0.12)'
-      : 'rgba(197, 59, 59, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(248, 113, 113, 0.2)'
-        : 'rgba(197, 59, 59, 0.16)',
-    },
-  };
-
-  const successIconSx = {
-    color: isDarkMode ? '#86efac' : '#2e7d32',
-    bgcolor: isDarkMode
-      ? 'rgba(134, 239, 172, 0.12)'
-      : 'rgba(46, 125, 50, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(134, 239, 172, 0.2)'
-        : 'rgba(46, 125, 50, 0.16)',
-    },
-  };
-
   // 기존 -> 라이트 색만 인라인, mr 0.25 로 간격 / 변경 -> 다크모드 대응 actionIconSx, Tooltip, 간격은 Stack 에서
   const editBtn = (dept: DepartmentItem) => (
     <Tooltip title="부서 수정">
       <span>
-        <IconButton
-          size="small"
+        <GridIconButton
           aria-label="부서 수정"
           onClick={() => onEdit(dept)}
-          sx={actionIconSx}
         >
-          <EditOutlinedIcon fontSize="small" />
-        </IconButton>
+          <EditPencilIcon />
+        </GridIconButton>
       </span>
     </Tooltip>
   );
 
-  // 기존 -> deleteBtn: 휴지통 아이콘, 하위 부서 있으면 항상 disabled, 클릭 시 onDelete
-  // 변경 -> toggleBtn: 전원 아이콘, 사용↔미사용 토글, 하위 부서 있을 때는 "미사용 전환"만 disabled
-  // 기존 -> title 속성, 삼항 sx 인라인, disabled opacity 0.38 / 변경 -> Tooltip, sx 상수 (disabled 는 MUI 기본 처리)
   const toggleBtn = (dept: DepartmentItem) => {
     const blockDeactivate = dept.active && dept.hasChildren;
     const label = blockDeactivate
@@ -135,15 +85,15 @@ export function DepartmentTreeGrid(props: {
     return (
       <Tooltip title={label}>
         <span>
-          <IconButton
-            size="small"
+          <GridIconButton
             aria-label={label}
+            tone={dept.active ? 'danger' : 'success'}
             onClick={() => onToggleActive(dept)}
             disabled={statusPending || blockDeactivate}
-            sx={dept.active ? dangerIconSx : successIconSx}
           >
-            <PowerSettingsNewOutlinedIcon fontSize="small" />
-          </IconButton>
+            {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+            <Power />
+          </GridIconButton>
         </span>
       </Tooltip>
     );
@@ -188,7 +138,6 @@ export function DepartmentTreeGrid(props: {
                   <Skeleton variant="rounded" width={52} height={22} />
                 </TableCell>
                 <TableCell align="center">
-                  {/* 기존 -> 72x28 하나 / 변경 -> HACCP 문서현황 기준 32x32 두 개 */}
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Skeleton variant="rounded" width={32} height={32} />
                     <Skeleton variant="rounded" width={32} height={32} />
@@ -222,17 +171,17 @@ export function DepartmentTreeGrid(props: {
                 >
                   <TableCell align="center">
                     {children.length > 0 ? (
-                      <IconButton
-                        size="small"
+                      <GridIconButton
                         onClick={() => onToggleExpand(dept.id)}
-                        sx={{ color: isDarkMode ? '#fbbf24' : '#1f4f8f' }}
                       >
                         {expandedIds.has(dept.id) ? (
-                          <ExpandLessOutlinedIcon fontSize="small" />
+                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                          <ChevronUp />
                         ) : (
-                          <ExpandMoreOutlinedIcon fontSize="small" />
+                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                          <ChevronDown />
                         )}
-                      </IconButton>
+                      </GridIconButton>
                     ) : null}
                   </TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>{dept.name}</TableCell>
@@ -246,7 +195,6 @@ export function DepartmentTreeGrid(props: {
                     {activeChip(dept.active)}
                   </TableCell>
                   <TableCell align="center">
-                    {/* 기존 -> 버튼 두 개 바로 나열 / 변경 -> Stack spacing 0.5 */}
                     <Stack direction="row" spacing={0.5} justifyContent="center">
                       {editBtn(dept)}
                       {toggleBtn(dept)}
@@ -286,7 +234,8 @@ export function DepartmentTreeGrid(props: {
                               width: 8,
                               height: 8,
                               borderRadius: '50%',
-                              bgcolor: isDarkMode ? '#fbbf24' : '#1f4f8f',
+                              // 기존 -> isDarkMode 로 강조선 색 분기 / 변경 -> nav.accent 토큰
+                              bgcolor: 'nav.accent',
                               flexShrink: 0,
                             }}
                           />
@@ -303,7 +252,6 @@ export function DepartmentTreeGrid(props: {
                         {activeChip(child.active)}
                       </TableCell>
                       <TableCell align="center">
-                        {/* 기존 -> 버튼 두 개 바로 나열 / 변경 -> Stack spacing 0.5 */}
                         <Stack direction="row" spacing={0.5} justifyContent="center">
                           {editBtn(child)}
                           {toggleBtn(child)}

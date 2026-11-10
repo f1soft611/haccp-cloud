@@ -54,8 +54,8 @@ export function MaterialsSearchBar({
       <AppTextField
         size="small"
         fullWidth
-        label="검색어"
-        placeholder="품목코드, 품목명, 규격, 품목계정"
+        placeholder="품목코드, 품목명, 규격, 품목계정 검색"
+        slotProps={{ htmlInput: { 'aria-label': '품목코드, 품목명, 규격, 품목계정 검색' } }}
         value={value.keyword}
         onChange={(keyword) =>
           onChange({

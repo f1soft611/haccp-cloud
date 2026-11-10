@@ -1,7 +1,6 @@
 import {
   Box,
   Chip,
-  IconButton,
   Skeleton,
   Stack,
   TableBody,
@@ -11,14 +10,14 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import { useTheme } from '@mui/material/styles';
+import { FileText } from 'lucide-react';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   getWorkCycleSx,
 } from '../../../dashboard/tenant/utils';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import type { HaccpBaseRow } from '../types';
+import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
 
 export function HaccpBaseGrid(props: {
   rows: HaccpBaseRow[];
@@ -26,40 +25,7 @@ export function HaccpBaseGrid(props: {
   onEdit: (row: HaccpBaseRow) => void;
   onOpenEditorPage: (rowId: string) => void;
 }) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
   const { rows, loading, onEdit, onOpenEditorPage } = props;
-
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
-
-  const getDocumentIconSx = (hasDocument: boolean) => ({
-    fontSize: 20,
-    color: hasDocument
-      ? isDarkMode
-        ? '#e2e8f0'
-        : '#0f172a'
-      : isDarkMode
-        ? '#94a3b8'
-        : '#9ca3af',
-    bgcolor: hasDocument
-      ? isDarkMode
-        ? 'rgba(226, 232, 240, 0.18)'
-        : 'rgba(15, 23, 42, 0.1)'
-      : isDarkMode
-        ? 'rgba(148, 163, 184, 0.16)'
-        : 'rgba(156, 163, 175, 0.16)',
-    borderRadius: 1.5,
-  });
 
   return (
       <AdminGrid ariaLabel="HACCP 양식 목록" minWidth={1142}>
@@ -73,12 +39,6 @@ export function HaccpBaseGrid(props: {
           <TableCell width={120} align="center">
             작성주기
           </TableCell>
-          {/*<TableCell width={120} align="center">*/}
-          {/*  등록자*/}
-          {/*</TableCell>*/}
-          {/*<TableCell width={250} align="center">*/}
-          {/*  등록일*/}
-          {/*</TableCell>*/}
           <TableCell width={70} align="center">
             만료일
           </TableCell>
@@ -126,12 +86,6 @@ export function HaccpBaseGrid(props: {
                     sx={{ mx: 'auto' }}
                   />
                 </TableCell>
-                {/*<TableCell align="center">*/}
-                {/*  <Skeleton variant="text" width="70%" sx={{ mx: 'auto' }} />*/}
-                {/*</TableCell>*/}
-                {/*<TableCell align="center">*/}
-                {/*  <Skeleton variant="text" width="72%" sx={{ mx: 'auto' }} />*/}
-                {/*</TableCell>*/}
                 <TableCell align="center">
                   <Skeleton
                       variant="rounded"
@@ -210,8 +164,6 @@ export function HaccpBaseGrid(props: {
                       sx={getWorkCycleSx(row.cycle)}
                   />
                 </TableCell>
-                {/*<TableCell align="center">{row.createdBy}</TableCell>*/}
-                {/*<TableCell align="center">{row.createdAt}</TableCell>*/}
                 <TableCell align="center">
                   <Chip
                       size="small"
@@ -241,12 +193,9 @@ export function HaccpBaseGrid(props: {
                       py: 1,
                       borderRadius: 2,
                       border: '1px solid',
-                      borderColor: isDarkMode
-                        ? 'rgba(148, 163, 184, 0.3)'
-                        : 'rgba(148, 163, 184, 0.35)',
-                      bgcolor: isDarkMode
-                        ? 'rgba(148, 163, 184, 0.08)'
-                        : 'rgba(248, 250, 252, 0.9)',
+                      // 기존 -> isDarkMode 로 색 분기 / 변경 -> surface 토큰
+                      borderColor: 'surface.outline',
+                      bgcolor: 'surface.muted',
                     }}
                   >
                     <Box
@@ -295,34 +244,29 @@ export function HaccpBaseGrid(props: {
                         : '문서 생성 페이지로 이동'
                     }
                   >
-                    <IconButton
-                      size="small"
+                    <GridIconButton
                       aria-label={
                         row.hasDocument
                           ? '문서 내역 보기'
                           : '문서 생성 페이지 이동'
                       }
+                      tone={row.hasDocument ? 'document' : 'muted'}
                       onClick={() => onOpenEditorPage(row.id)}
-                      sx={{ p: 0 }}
                     >
-                      <DescriptionOutlinedIcon
-                        fontSize="small"
-                        sx={getDocumentIconSx(row.hasDocument)}
-                      />
-                    </IconButton>
+                      {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                      <FileText />
+                    </GridIconButton>
                   </Tooltip>
                 </TableCell>
                 <TableCell align="center">
                   <Stack direction="row" justifyContent="center">
                     <Tooltip title="업무 수정">
-                      <IconButton
-                        size="small"
+                      <GridIconButton
                         aria-label="업무 수정"
                         onClick={() => onEdit(row)}
-                        sx={actionIconSx}
                       >
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
+                        <EditPencilIcon />
+                      </GridIconButton>
                     </Tooltip>
                   </Stack>
                 </TableCell>

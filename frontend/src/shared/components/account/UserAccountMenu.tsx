@@ -1,8 +1,5 @@
 import { type MouseEvent, useMemo, useState } from 'react';
-import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
-import BadgeRoundedIcon from '@mui/icons-material/BadgeRounded';
+import { ChevronRight, IdCard, LogOut, Shield } from 'lucide-react';
 import {
   Avatar,
   Box,
@@ -84,8 +81,6 @@ export function UserAccountMenu() {
       // Force local logout even if backend call fails.
     } finally {
       clearAuth();
-      // 기존 -> resolveLoginPathWithLastDomain()
-      // 변경 -> 마지막 업체번호 기준 로그인 경로
       navigate(resolveLoginPathWithLastTenantNo(), { replace: true });
     }
   };
@@ -94,8 +89,6 @@ export function UserAccountMenu() {
     return null;
   }
 
-  // 기존 -> sx, 스타일 prop 으로 스타일 지정
-  // 변경 -> sharedComponents.module.css 클래스 사용
   return (
     <>
       <IconButton
@@ -162,22 +155,22 @@ export function UserAccountMenu() {
 
         <MenuItem onClick={handleGoToMyPage} className={styles.accountMenuItem}>
           <ListItemIcon>
-            <BadgeRoundedIcon fontSize="small" />
+            <IdCard />
           </ListItemIcon>
           내 정보 관리
           <ListItemIcon className={styles.accountMenuEndIcon}>
-            <ChevronRightRoundedIcon fontSize="small" />
+            <ChevronRight />
           </ListItemIcon>
         </MenuItem>
         <MenuItem onClick={handleGoToPassword} className={styles.accountMenuItem}>
           <ListItemIcon>
-            <SecurityRoundedIcon fontSize="small" />
+            <Shield />
           </ListItemIcon>
           보안 설정
         </MenuItem>
         <MenuItem onClick={handleLogout} className={styles.accountMenuItem}>
           <ListItemIcon>
-            <LogoutRoundedIcon fontSize="small" />
+            <LogOut />
           </ListItemIcon>
           로그아웃
         </MenuItem>

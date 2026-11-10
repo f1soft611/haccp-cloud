@@ -31,10 +31,6 @@ type TenantBrandCache = {
   logoImage?: string;
 };
 
-// function normalizeDomainCandidate(value: string): string {
-//   return normalizeLoginDomain(value);
-// }
-
 function resolveSafeLogoSrc(logoImage?: string): string {
   const value = (logoImage ?? '').trim();
   if (!value) {
@@ -154,11 +150,10 @@ type LoginPageProps = {
 
 export function LoginPage({ adminMode = false }: LoginPageProps) {
   const theme = useTheme();
+  // eslint-disable-next-line no-restricted-syntax -- 로고 이미지 경로, data 속성 분기 (색 아님)
   const isDarkMode = theme.palette.mode === 'dark';
   const navigate = useNavigate();
   const location = useLocation();
-  // 기존 -> URL 파라미터 domain
-  // 변경 -> URL 파라미터 tenantNo
   const { tenantNo: routeTenantNo } = useParams<{ tenantNo?: string }>();
   const setAuth = useAuthStore((state) => state.login);
 
@@ -168,14 +163,10 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [tenantBrand, setTenantBrand] = useState<TenantBrandCache | null>(null);
-  // 기존 -> tenantInfo / recommendedDomain / tenantCode / domain 상태
-  // 변경 -> 업체번호 화면의 확정된 업체번호(tenantNo), 3칸 화면의 업체번호 입력값(tenantNoInput)
   const [tenantNo, setTenantNo] = useState('');
   const [tenantNoInput, setTenantNoInput] = useState('');
   const userIdInputRef = useRef<HTMLInputElement | null>(null);
   const passwordInputRef = useRef<HTMLInputElement | null>(null);
-  // 기존 -> skipAutoDomainRedirect: 마지막 도메인으로 자동 이동 생략
-  // 변경 -> skipPrefill: "다른 업체번호로 로그인"으로 왔을 때 마지막 업체번호/아이디 미리 채우기 생략
   const shouldSkipPrefill =
       (location.state as { skipPrefill?: boolean } | null)?.skipPrefill === true;
   const isAdminRoute = adminMode;
@@ -190,8 +181,6 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
     }
     let mounted = true;
 
-    // 기존 -> 도메인으로 업체 조회, 도메인이 없으면 마지막 도메인 경로로 자동 이동
-    // 변경 -> 업체번호로 업체 조회(실패/형식 불일치 시 /login), /login이면 마지막 업체번호·아이디 미리 채우기
     const loadTenant = async () => {
       setTenantNo('');
       setLoginStep('password');
@@ -241,24 +230,16 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
 
 
   const logoSrc = resolveSafeLogoSrc(tenantBrand?.logoImage);
-  // 기존 -> 도메인 경로 로그인 여부(isDomainScopedLogin)
-  // 변경 -> 업체번호 경로 로그인 여부
   const isTenantScopedLogin = !!tenantNo && !isAdminRoute;
   const normalizedIdInput = userId.trim();
-  // 기존 -> 도메인 로그인이면 아이디 뒤에 @도메인을 붙여 전송(effectiveUserId)
-  // 변경 -> 아이디는 입력한 그대로 보내고 업체번호를 따로 보냄
   const effectiveTenantNo = isTenantScopedLogin
       ? tenantNo
       : normalizeTenantNo(tenantNoInput);
   const canSubmitIdStep = normalizedIdInput.length > 0;
-  // 기존 -> 아이디와 비밀번호만 확인
-  // 변경 -> 테넌트 로그인은 업체번호 6자리도 있어야 제출 가능
   const canSubmitPasswordStep =
       normalizedIdInput.length > 0 &&
       password.trim().length > 0 &&
       (isAdminRoute || effectiveTenantNo.length > 0);
-  // 기존 -> tenantBrand 또는 tenantInfo의 업체명
-  // 변경 -> tenantBrand의 업체명
   const tenantDisplayName = tenantBrand?.tenantNm?.trim() || '';
   const appLogoSrc = isDarkMode ? '/f1foodlink_wh.png' : '/f1foodlink_midd.png';
   const fallbackLogoSrc = appLogoSrc;
@@ -287,8 +268,6 @@ export function LoginPage({ adminMode = false }: LoginPageProps) {
       color: '#94a3b8',
     },
   } as const;
-  // 기존 -> 업체명이 없으면 `${domain} 오피스에 로그인`
-  // 변경 -> 업체명이 없으면 `업체번호 ${tenantNo} 로그인`
   const loginTitle = isAdminRoute
       ? '플랫폼 관리자 로그인'
       : tenantDisplayName

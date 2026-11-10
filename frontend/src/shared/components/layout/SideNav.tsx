@@ -11,9 +11,7 @@ import {
     useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
 import { Link as RouterLink, NavLink, useLocation } from 'react-router-dom';
 import type { UserRole } from '../../store/authStore';
 import type { MenuGroup } from './workMenuConfig';
@@ -234,9 +232,9 @@ export function SideNav({
                                     slotProps={{ primary: { className: styles.sideNavText } }}
                                 />
                                 {isOpen ? (
-                                    <ExpandLessRoundedIcon fontSize="small" />
+                                    <ChevronUp />
                                 ) : (
-                                    <ExpandMoreRoundedIcon fontSize="small" />
+                                    <ChevronDown />
                                 )}
                             </ListItemButton>
 
@@ -260,10 +258,7 @@ export function SideNav({
                                                 className={styles.sideNavSubItem}
                                                 data-active={isActive}
                                             >
-                                                <ChevronRightRoundedIcon
-                                                    fontSize="small"
-                                                    className={styles.sideNavChevron}
-                                                />
+                                                <ChevronRight className={styles.sideNavChevron} />
                                                 <ListItemText
                                                     primary={item.label}
                                                     slotProps={{ primary: { className: styles.sideNavSubText } }}

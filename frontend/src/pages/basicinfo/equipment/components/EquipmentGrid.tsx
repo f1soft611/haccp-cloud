@@ -1,9 +1,7 @@
-import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { Power, Trash } from 'lucide-react';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Chip,
-  IconButton,
   Skeleton,
   Stack,
   TableBody,
@@ -12,7 +10,6 @@ import {
   TableRow,
   Tooltip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import type { EquipmentItem } from '../../../../services/basicinfo/equipmentService';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
@@ -20,6 +17,7 @@ import {
   getCommonCodeName,
   useCommonCodeOptions,
 } from '../../../../shared/hooks/useCommonCodeOptions';
+import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
 
 type EquipmentGridProps = {
   rows: EquipmentItem[];
@@ -36,45 +34,7 @@ export function EquipmentGrid({
                                 onDelete,
                                 onRestore,
                               }: EquipmentGridProps) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
   const vcKindOptions = useCommonCodeOptions(COMMON_CODE_GROUP.VC_KIND);
-
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
-
-  const dangerIconSx = {
-    color: isDarkMode ? '#f87171' : '#c53b3b',
-    bgcolor: isDarkMode
-      ? 'rgba(248, 113, 113, 0.12)'
-      : 'rgba(197, 59, 59, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(248, 113, 113, 0.2)'
-        : 'rgba(197, 59, 59, 0.16)',
-    },
-  };
-
-  const successIconSx = {
-    color: isDarkMode ? '#86efac' : '#2e7d32',
-    bgcolor: isDarkMode
-      ? 'rgba(134, 239, 172, 0.12)'
-      : 'rgba(46, 125, 50, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(134, 239, 172, 0.2)'
-        : 'rgba(46, 125, 50, 0.16)',
-    },
-  };
 
   return (
     <AdminGrid ariaLabel="설비 목록">
@@ -174,41 +134,36 @@ export function EquipmentGrid({
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Tooltip title="설비 수정">
                       <span>
-                        <IconButton
-                          size="small"
+                        <GridIconButton
                           aria-label="설비 수정"
                           onClick={() => onEdit(row)}
-                          sx={actionIconSx}
                         >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
+                          <EditPencilIcon />
+                        </GridIconButton>
                       </span>
                     </Tooltip>
                     {row.active ? (
                       <Tooltip title="설비 삭제">
                         <span>
-                          <IconButton
-                            size="small"
+                          <GridIconButton
                             aria-label="설비 삭제"
+                            tone="danger"
                             onClick={() => onDelete(row)}
-                            sx={dangerIconSx}
                           >
-                            <DeleteOutlineIcon fontSize="small" />
-                          </IconButton>
+                            <Trash />
+                          </GridIconButton>
                         </span>
                       </Tooltip>
                     ) : (
-                      // 기존 -> title="사용으로 변경" 속성 / 변경 -> Tooltip 으로 이동
                       <Tooltip title="사용으로 변경">
                         <span>
-                          <IconButton
-                            size="small"
+                          <GridIconButton
                             aria-label="설비 다시 사용"
+                            tone="success"
                             onClick={() => onRestore(row)}
-                            sx={successIconSx}
                           >
-                            <PowerSettingsNewOutlinedIcon fontSize="small" />
-                          </IconButton>
+                            <Power fontSize="small" />
+                          </GridIconButton>
                         </span>
                       </Tooltip>
                     )}

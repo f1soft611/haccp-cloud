@@ -1,7 +1,6 @@
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import SearchIcon from '@mui/icons-material/Search';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
+import { Search } from 'lucide-react';
 import {
-  IconButton,
   Skeleton,
   Stack,
   TableBody,
@@ -10,7 +9,6 @@ import {
   TableRow,
   Tooltip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { GridPaginationBar } from '../../../../shared/components/data/GridPaginationBar';
@@ -18,6 +16,7 @@ import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
 import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
 import type { HaccpDocumentItem } from '../../../../services/documents/haccpDocumentService';
 import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
+import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
 
 export function HaccpDocumentGrid(props: {
   rows: HaccpDocumentItem[];
@@ -39,21 +38,7 @@ export function HaccpDocumentGrid(props: {
   } = props;
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
   const { openWorkDraft, dialog } = useOpenWorkDraft();
-
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
 
   return (
     <>
@@ -155,11 +140,9 @@ export function HaccpDocumentGrid(props: {
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Tooltip title="상세 보기">
                       <span>
-                        <IconButton
-                          size="small"
+                        <GridIconButton
                           aria-label="상세 보기"
                           disabled={!row.approvalId}
-                          sx={row.approvalId ? actionIconSx : undefined}
                           onClick={() => {
                             if (!row.approvalId) {
                               return;
@@ -174,17 +157,16 @@ export function HaccpDocumentGrid(props: {
                             );
                           }}
                         >
-                          <SearchIcon fontSize="small" />
-                        </IconButton>
+                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                          <Search />
+                        </GridIconButton>
                       </span>
                     </Tooltip>
                     <Tooltip title="작성하러 가기">
                       <span>
-                        <IconButton
-                          size="small"
+                        <GridIconButton
                           aria-label="작성하러 가기"
                           disabled={!row.workId}
-                          sx={row.workId ? actionIconSx : undefined}
                           onClick={() => {
                             const returnTo = `${location.pathname}${location.search || ''}`;
                             const cyclePath = row.cycleDate
@@ -197,8 +179,8 @@ export function HaccpDocumentGrid(props: {
                             void openWorkDraft(row.workId, returnTo);
                           }}
                         >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
+                          <EditPencilIcon />
+                        </GridIconButton>
                       </span>
                     </Tooltip>
                   </Stack>

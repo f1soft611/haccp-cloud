@@ -1,6 +1,5 @@
 import {
   Alert,
-  alpha,
   Box,
   Button,
   Chip,
@@ -12,13 +11,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import FileUploadIcon from '@mui/icons-material/UploadFile';
-import PreviewIcon from '@mui/icons-material/Visibility';
-import DownloadIcon from '@mui/icons-material/Download';
 import { useEffect, useMemo, useRef, useState } from 'react';
-// 기존 -> 패널 안에서 presign/complete 직접 호출, extractApiErrorMessage 사용
-// 변경 -> 업로드는 공통 유틸 호출, 불필요한 import 제거
+import { Download, Eye, FileUp, Trash } from 'lucide-react';
 import {
   deleteHaccpAttachment,
   listHaccpAttachments,
@@ -39,8 +33,6 @@ type ApprovalAttachmentPanelProps = {
 };
 
 export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
-  // 기존 -> const { tenantCode, approvalId, isReadOnly = false, onChanged } = props;
-  // 변경 -> 저장 전 대기 첨부 props 추가
   const {
     tenantCode,
     approvalId,
@@ -114,8 +106,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     };
   }, [tenantCode, normalizedApprovalId, canUseAttachmentApi]);
 
-  // 기존 -> approvalId 없으면 오류 표시, presign/PUT/complete 를 패널 안에서 직접 처리
-  // 변경 -> approvalId 없으면 대기 목록에 추가, 업로드는 공통 유틸 호출
   const handleSelectFiles = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -245,8 +235,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
     }
   };
 
-  // 기존 -> attachments 기준 요약만 표시
-  // 변경 -> 대기 첨부 모드는 대기 파일 수 표시
   const attachmentSummary = useMemo(() => {
     if (isPendingMode) {
       return pendingFiles.length
@@ -296,18 +284,9 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
       sx={{
         borderRadius: 3,
         border: '1px solid',
-        borderColor: (theme) =>
-          theme.palette.mode === 'dark'
-            ? alpha(theme.palette.common.white, 0.12)
-            : alpha(theme.palette.primary.main, 0.14),
-        background: (theme) =>
-          theme.palette.mode === 'dark'
-            ? `linear-gradient(145deg, ${alpha('#0f172a', 0.96)} 0%, ${alpha('#111827', 0.96)} 100%)`
-            : `linear-gradient(145deg, ${alpha('#f8fafc', 0.96)} 0%, ${alpha('#f1f5f9', 0.9)} 100%)`,
-        boxShadow: (theme) =>
-          theme.palette.mode === 'dark'
-            ? `0 16px 36px ${alpha('#020617', 0.45)}`
-            : `0 16px 34px ${alpha('#0f172a', 0.08)}`,
+        borderColor: 'panel.border',
+        background: (theme) => theme.palette.panel.background,
+        boxShadow: (theme) => theme.palette.panel.shadow,
         p: { xs: 1.75, sm: 2.25 },
       }}
     >
@@ -326,14 +305,11 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
               borderRadius: 2,
               display: 'grid',
               placeItems: 'center',
-              bgcolor: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? alpha(theme.palette.info.light, 0.14)
-                  : alpha(theme.palette.info.main, 0.12),
+              bgcolor: 'panel.iconBg',
               color: 'info.main',
             }}
           >
-            <FileUploadIcon fontSize="small" />
+            <FileUp  />
           </Box>
           <Box>
             <Typography variant="subtitle1" fontWeight={700}>
@@ -347,22 +323,16 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
         {!isReadOnly ? (
           <Button
             variant="contained"
-            startIcon={<FileUploadIcon />}
+            startIcon={<FileUp />}
             onClick={() => inputRef.current?.click()}
-            // 기존 -> disabled={loading || !canUseAttachmentApi}
-            // 변경 -> 대기 첨부 모드에서는 활성
             disabled={loading || (!canUseAttachmentApi && !isPendingMode)}
             sx={{
               borderRadius: 2,
               px: 1.75,
-              boxShadow: (theme) =>
-                theme.palette.mode === 'dark'
-                  ? `0 8px 18px ${alpha(theme.palette.primary.dark, 0.45)}`
-                  : `0 10px 20px ${alpha(theme.palette.primary.main, 0.26)}`,
+              boxShadow: (theme) => theme.palette.panel.buttonShadow,
               alignSelf: { xs: 'stretch', sm: 'auto' },
             }}
           >
-            {/* 기존 -> !canUseAttachmentApi ? '문서 생성 후 업로드 가능' / 변경 -> 대기 첨부 모드는 파일 선택 */}
             {!canUseAttachmentApi && !isPendingMode
               ? '문서 생성 후 업로드 가능'
               : loading
@@ -393,7 +363,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
         </Alert>
       ) : null}
 
-      {/* 기존 -> 저장 후 첨부 가능 안내만 표시 / 변경 -> 대기 첨부 모드 안내 추가 */}
       {isPendingMode ? (
         <Alert severity="info" sx={{ mb: 1.5, borderRadius: 2 }}>
           선택한 파일은 임시저장 또는 결재신청 시 함께 업로드됩니다.
@@ -404,7 +373,6 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
         </Alert>
       ) : null}
 
-      {/* 기존 -> attachments.length 기준 목록/빈 상태 / 변경 -> 대기 첨부 모드는 대기 파일 목록 먼저 */}
       {isPendingMode && pendingFiles.length ? (
         <List dense disablePadding sx={{ display: 'grid', gap: 1 }}>
           {pendingFiles.map((file, index) => (
@@ -416,10 +384,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                 py: 1,
                 borderRadius: 2,
                 border: '1px solid',
-                borderColor: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? alpha(theme.palette.common.white, 0.08)
-                    : alpha(theme.palette.common.black, 0.08),
+                borderColor: 'panel.itemBorder',
               }}
             >
               <Stack
@@ -448,7 +413,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                       onClick={() => handleRemovePendingFile(index)}
                       sx={{ color: 'error.main' }}
                     >
-                      <DeleteOutlineIcon fontSize="small" />
+                      <Trash  />
                     </IconButton>
                   </Tooltip>
                 ) : null}
@@ -469,22 +434,13 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                   py: 1,
                   borderRadius: 2,
                   border: '1px solid',
-                  borderColor: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.common.white, 0.08)
-                      : alpha(theme.palette.common.black, 0.08),
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.common.white, 0.03)
-                      : alpha(theme.palette.common.white, 0.88),
+                  borderColor: 'panel.itemBorder',
+                  bgcolor: 'panel.itemBg',
                   transition: 'all 0.22s ease',
                   '&:hover': {
                     borderColor: 'primary.main',
                     transform: 'translateY(-1px)',
-                    boxShadow: (theme) =>
-                      theme.palette.mode === 'dark'
-                        ? `0 8px 16px ${alpha('#020617', 0.3)}`
-                        : `0 10px 18px ${alpha('#0f172a', 0.08)}`,
+                    boxShadow: (theme) => theme.palette.panel.itemHoverShadow,
                   },
                 }}
               >
@@ -523,7 +479,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                           aria-label="preview attachment"
                           onClick={() => handlePreview(attachment)}
                         >
-                          <PreviewIcon fontSize="small" />
+                          <Eye  />
                         </IconButton>
                       </Tooltip>
                     ) : null}
@@ -533,7 +489,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                         aria-label="download attachment"
                         onClick={() => handleDownload(attachment)}
                       >
-                        <DownloadIcon fontSize="small" />
+                        <Download  />
                       </IconButton>
                     </Tooltip>
                     {!isReadOnly ? (
@@ -544,7 +500,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
                           onClick={() => handleDelete(attachment)}
                           sx={{ color: 'error.main' }}
                         >
-                          <DeleteOutlineIcon fontSize="small" />
+                          <Trash  />
                         </IconButton>
                       </Tooltip>
                     ) : null}
@@ -559,14 +515,8 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
           sx={{
             borderRadius: 2,
             border: '1px dashed',
-            borderColor: (theme) =>
-              theme.palette.mode === 'dark'
-                ? alpha(theme.palette.common.white, 0.18)
-                : alpha(theme.palette.primary.main, 0.24),
-            bgcolor: (theme) =>
-              theme.palette.mode === 'dark'
-                ? alpha(theme.palette.common.white, 0.02)
-                : alpha(theme.palette.common.white, 0.75),
+            borderColor: 'panel.emptyBorder',
+            bgcolor: 'panel.emptyBg',
             py: 2.5,
             px: 1.25,
             textAlign: 'center',

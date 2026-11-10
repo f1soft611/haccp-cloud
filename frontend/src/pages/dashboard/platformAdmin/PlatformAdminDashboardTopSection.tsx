@@ -1,5 +1,4 @@
 import { Button, Grid, Paper, Stack, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { NavLink } from 'react-router-dom';
 import type { UserRole } from '../../../shared/store/authStore';
 import { APP_LABELS } from '../../../shared/constants/labels';
@@ -60,8 +59,6 @@ type PlatformAdminDashboardTopSectionProps = {
 export function PlatformAdminDashboardTopSection({
   loginRole,
 }: PlatformAdminDashboardTopSectionProps) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
 
   return (
     <Grid container spacing={2} alignItems="stretch">
@@ -71,16 +68,15 @@ export function PlatformAdminDashboardTopSection({
             p: 2,
             borderRadius: 3,
             border: '1px solid',
-            borderColor: isDarkMode
-              ? 'rgba(45,212,191,0.36)'
-              : 'rgba(20,184,166,0.22)',
-            bgcolor: isDarkMode ? 'rgba(15,23,42,0.82)' : '#eef7ff',
+            // 기존 -> isDarkMode 로 색 분기 / 변경 -> dashboard 토큰
+            borderColor: 'dashboard.cardBorder',
+            bgcolor: 'dashboard.quickMenuBg',
           }}
         >
           <Typography
             variant="h6"
             fontWeight={800}
-            sx={{ color: isDarkMode ? '#e2e8f0' : 'text.primary' }}
+            sx={{ color: 'dashboard.quickMenuText' }}
           >
             {APP_LABELS.dashboard.platformAdmin.topbar.quickMenuLabel}
           </Typography>
@@ -94,20 +90,20 @@ export function PlatformAdminDashboardTopSection({
                   to={item.to}
                   size="small"
                   variant="outlined"
-                  sx={{
-                    borderRadius: 2,
-                    fontWeight: 700,
-                    color: isDarkMode ? '#f8fafc' : undefined,
-                    borderColor: isDarkMode
-                      ? 'rgba(251,191,36,0.72)'
-                      : undefined,
-                    '&:hover': {
-                      borderColor: isDarkMode
-                        ? 'rgba(251,191,36,0.96)'
-                        : undefined,
-                      bgcolor: isDarkMode ? 'rgba(251,191,36,0.12)' : undefined,
-                    },
-                  }}
+                  // 기존 -> color, borderColor, hover 를 isDarkMode 로 분기 (라이트는 undefined)
+                  // 변경 -> 다크 전용 덮어쓰기를 applyStyles 로 분리
+                  sx={[
+                    { borderRadius: 2, fontWeight: 700 },
+                    (theme) =>
+                      theme.applyStyles('dark', {
+                        color: '#f8fafc',
+                        borderColor: 'rgba(251,191,36,0.72)',
+                        '&:hover': {
+                          borderColor: 'rgba(251,191,36,0.96)',
+                          bgcolor: 'rgba(251,191,36,0.12)',
+                        },
+                      }),
+                  ]}
                 >
                   {item.label}
                 </Button>

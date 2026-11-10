@@ -1,8 +1,7 @@
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { Trash } from 'lucide-react';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Chip,
-  IconButton,
   Skeleton,
   Stack,
   TableBody,
@@ -11,10 +10,10 @@ import {
   TableRow,
   Tooltip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import type { CustomerItem } from '../../../../services/basicinfo/customersService';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { formatBusinessNo } from '../../../../shared/utils/businessNumberFormat';
+import { GridIconButton } from "../../../../shared/components/data/GridIconButton";
 
 type CustomersGridProps = {
   rows: CustomerItem[];
@@ -29,32 +28,6 @@ export function CustomersGrid({
   onEdit,
   onDelete,
 }: CustomersGridProps) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
-
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
-
-  const dangerIconSx = {
-    color: isDarkMode ? '#f87171' : '#c53b3b',
-    bgcolor: isDarkMode
-      ? 'rgba(248, 113, 113, 0.12)'
-      : 'rgba(197, 59, 59, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(248, 113, 113, 0.2)'
-        : 'rgba(197, 59, 59, 0.16)',
-    },
-  };
 
   return (
     <AdminGrid ariaLabel="거래처 목록">
@@ -141,26 +114,23 @@ export function CustomersGrid({
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Tooltip title="거래처 수정">
                       <span>
-                        <IconButton
-                          size="small"
+                        <GridIconButton
                           aria-label="거래처 수정"
                           onClick={() => onEdit(row)}
-                          sx={actionIconSx}
                         >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
+                          <EditPencilIcon />
+                        </GridIconButton>
                       </span>
                     </Tooltip>
                     <Tooltip title="거래처 삭제">
                       <span>
-                        <IconButton
-                          size="small"
-                          aria-label="거래처 삭제"
-                          onClick={() => onDelete(row)}
-                          sx={dangerIconSx}
+                        <GridIconButton
+                            aria-label="거래처 삭제"
+                            tone="danger"
+                            onClick={() => onDelete(row)}
                         >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
+                          <Trash />
+                        </GridIconButton>
                       </span>
                     </Tooltip>
                   </Stack>

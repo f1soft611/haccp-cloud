@@ -81,3 +81,31 @@ Production secrets (DB credentials, JWT secret, crypto keys) are never committed
 
 - `frontend/README_FOLDER_STRUCTURE.md` — detailed frontend layout and import conventions
 - `인수인계/` — Korean handover docs: DB schema, tenant setup, MinIO, deployment config
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues (`f1soft611/haccp-cloud`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-label vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout (root `GLOSSARY.md` + `docs/adr/`). See `docs/agents/domain.md`.
+
+### Skill priority (superpowers vs mattpocock 중복 시)
+
+- 디버깅: `mattpocock-skills:diagnosing-bugs` 사용 (`superpowers:systematic-debugging` 무시)
+- TDD: `mattpocock-skills:tdd` 사용 (`superpowers:test-driven-development` 무시)
+- 코드 리뷰: `mattpocock-skills:code-review` 사용 (`superpowers:requesting-code-review` 무시)
+- 브레인스토밍/계획: `superpowers:brainstorming` 먼저, 이후 `mattpocock-skills:to-spec` 순서
+- 병렬 실행, worktree, 완료 검증: superpowers 사용 (mattpocock에 대응 없음)
+
+### Recommended workflow (새 기능 작업 시)
+
+1. **무엇을 만들지** (mattpocock): `to-spec` → `to-tickets`
+2. **어떻게 실행할지** (superpowers): `writing-plans` → `dispatching-parallel-agents` / `subagent-driven-development`
+3. **마무리** (혼합): `mattpocock:code-review` → `superpowers:verification-before-completion` → `mattpocock:pr`

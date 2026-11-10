@@ -1,4 +1,4 @@
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import { Plus } from 'lucide-react';
 import { Button } from '@mui/material';
 import { AppDateField } from '../../../../shared/components/forms/AppDateField';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
@@ -19,7 +19,8 @@ export function WorkOrderSearchPanel(props: {
             onSearch={onSearch}
             onReset={onReset}
             actions={
-                <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={onCreate}>
+                /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                <Button variant="contained" startIcon={<Plus />} onClick={onCreate}>
                     신규
                 </Button>
             }

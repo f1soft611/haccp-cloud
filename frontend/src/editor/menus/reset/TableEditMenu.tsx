@@ -1,13 +1,15 @@
-import AddBoxRounded from '@mui/icons-material/AddBoxRounded';
-import BorderColorRounded from '@mui/icons-material/BorderColorRounded';
-import CallSplitRounded from '@mui/icons-material/CallSplitRounded';
-import ContentCutRounded from '@mui/icons-material/ContentCutRounded';
-import SplitscreenRounded from '@mui/icons-material/SplitscreenRounded';
-import RemoveRounded from '@mui/icons-material/RemoveRounded';
-import TableRowsRounded from '@mui/icons-material/TableRowsRounded';
-import VerticalAlignBottomRounded from '@mui/icons-material/VerticalAlignBottomRounded';
-import VerticalAlignCenterRounded from '@mui/icons-material/VerticalAlignCenterRounded';
-import VerticalAlignTopRounded from '@mui/icons-material/VerticalAlignTopRounded';
+import {
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
+  Minus,
+  PenLine,
+  Rows3,
+  Scissors,
+  Split,
+  SquarePlus,
+  SquareSplitVertical,
+} from 'lucide-react';
 import { Menu, MenuItem, Stack, Typography } from '@mui/material';
 import type { CellVerticalAlign } from '../../utils/editorTableTypes';
 
@@ -55,43 +57,43 @@ export function TableEditMenu(props: TableEditMenuProps) {
     >
       <MenuItem onClick={() => onRunTableCommand(onInsertTable, false)}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <TableRowsRounded fontSize="small" />
+          <Rows3  />
           <Typography variant="body2">표 삽입</Typography>
         </Stack>
       </MenuItem>
       <MenuItem onClick={() => onRunTableCommand(onAddRowAfter)}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <AddBoxRounded fontSize="small" />
+          <SquarePlus  />
           <Typography variant="body2">행 추가</Typography>
         </Stack>
       </MenuItem>
       <MenuItem onClick={() => onRunTableCommand(onAddColumnAfter)}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <BorderColorRounded fontSize="small" />
+          <PenLine  />
           <Typography variant="body2">열 추가</Typography>
         </Stack>
       </MenuItem>
       <MenuItem onClick={() => onRunTableCommand(onDeleteRow)}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <RemoveRounded fontSize="small" />
+          <Minus  />
           <Typography variant="body2">행 삭제</Typography>
         </Stack>
       </MenuItem>
       <MenuItem onClick={() => onRunTableCommand(onDeleteColumn)}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <ContentCutRounded fontSize="small" />
+          <Scissors  />
           <Typography variant="body2">열 삭제</Typography>
         </Stack>
       </MenuItem>
       <MenuItem onClick={() => onRunTableCommand(onMergeCells)}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <SplitscreenRounded fontSize="small" />
+          <SquareSplitVertical  />
           <Typography variant="body2">셀 병합</Typography>
         </Stack>
       </MenuItem>
       <MenuItem onClick={() => onRunTableCommand(onSplitCell)}>
         <Stack direction="row" spacing={1} alignItems="center">
-          <CallSplitRounded fontSize="small" />
+          <Split  />
           <Typography variant="body2">병합 해제</Typography>
         </Stack>
       </MenuItem>
@@ -103,7 +105,7 @@ export function TableEditMenu(props: TableEditMenuProps) {
         }
       >
         <Stack direction="row" spacing={1} alignItems="center">
-          <VerticalAlignTopRounded fontSize="small" />
+          <AlignVerticalJustifyStart  />
           <Typography variant="body2">위 정렬</Typography>
         </Stack>
       </MenuItem>
@@ -115,7 +117,7 @@ export function TableEditMenu(props: TableEditMenuProps) {
         }
       >
         <Stack direction="row" spacing={1} alignItems="center">
-          <VerticalAlignCenterRounded fontSize="small" />
+          <AlignVerticalJustifyCenter  />
           <Typography variant="body2">가운데 정렬</Typography>
         </Stack>
       </MenuItem>
@@ -127,7 +129,7 @@ export function TableEditMenu(props: TableEditMenuProps) {
         }
       >
         <Stack direction="row" spacing={1} alignItems="center">
-          <VerticalAlignBottomRounded fontSize="small" />
+          <AlignVerticalJustifyEnd  />
           <Typography variant="body2">아래 정렬</Typography>
         </Stack>
       </MenuItem>

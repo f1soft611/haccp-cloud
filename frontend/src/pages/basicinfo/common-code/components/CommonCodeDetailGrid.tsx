@@ -1,5 +1,4 @@
-import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import { Plus, Save } from 'lucide-react';
 import { Box, Button, Checkbox, Paper, Stack, Typography } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
@@ -83,10 +82,10 @@ export function CommonCodeDetailGrid(props: {
                             {`선택 그룹: ${groupName || '(그룹명 없음)'}`}
                         </Typography>
                     ) : null}
-                    <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<AddRoundedIcon />} aria-label="상세 추가" onClick={onAdd}>
+                    <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<Plus />} aria-label="상세 추가" onClick={onAdd}>
                         추가
                     </Button>
-                    <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<SaveOutlinedIcon />} aria-label="상세 저장" disabled={saveDisabled} onClick={onSave}>
+                    <Button size="small" variant="outlined" sx={TOOLBAR_BUTTON_SX} startIcon={<Save />} aria-label="상세 저장" disabled={saveDisabled} onClick={onSave}>
                         저장
                     </Button>
                 </Stack>

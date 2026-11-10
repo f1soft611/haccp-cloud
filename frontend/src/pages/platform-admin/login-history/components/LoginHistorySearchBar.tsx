@@ -33,27 +33,6 @@ export function LoginHistorySearchBar(props: {
 
   return (
     <SearchFilterBar onSearch={onSearch}>
-      {/* 기존 -> 칸 위 Typography 라벨 + Select */}
-      {/* 변경 -> 칸 안 라벨을 쓰는 TextField select */}
-      <AppSelect
-        size="small"
-        label="검색 조건"
-        value={value.searchField}
-        onChange={(searchField) => onChange({ ...value, searchField })}
-        options={SEARCH_FIELD_OPTIONS}
-        sx={{ minWidth: 120 }}
-      />
-
-      <AppTextField
-        label="검색어"
-        value={value.searchKeyword}
-        onChange={(searchKeyword) =>
-          onChange({ ...value, searchKeyword })
-        }
-        size="small"
-        sx={{ flex: 1, minWidth: 180 }}
-      />
-
       <AppSelect
         size="small"
         label="로그인 결과"
@@ -90,6 +69,26 @@ export function LoginHistorySearchBar(props: {
         value={value.filterEndDt}
         onChange={(filterEndDt) => onChange({ ...value, filterEndDt })}
         sx={{ minWidth: 160 }}
+      />
+
+      <AppSelect
+        size="small"
+        label="검색 조건"
+        value={value.searchField}
+        onChange={(searchField) => onChange({ ...value, searchField })}
+        options={SEARCH_FIELD_OPTIONS}
+        sx={{ minWidth: 120 }}
+      />
+
+      <AppTextField
+        placeholder="검색어 입력"
+        slotProps={{ htmlInput: { 'aria-label': '검색어 입력' } }}
+        value={value.searchKeyword}
+        onChange={(searchKeyword) =>
+          onChange({ ...value, searchKeyword })
+        }
+        size="small"
+        sx={{ flex: 1, minWidth: 180 }}
       />
     </SearchFilterBar>
   );

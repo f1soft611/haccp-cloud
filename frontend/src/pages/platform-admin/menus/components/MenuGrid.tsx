@@ -1,22 +1,25 @@
-import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
-import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
-import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
-import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
-import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import ExpandLessOutlinedIcon from '@mui/icons-material/ExpandLessOutlined';
-import ExpandMoreOutlinedIcon from '@mui/icons-material/ExpandMoreOutlined';
-import FactoryOutlinedIcon from '@mui/icons-material/FactoryOutlined';
-import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
-import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
-import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
-import MenuOutlinedIcon from '@mui/icons-material/MenuOutlined';
-import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
-import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
-import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import type { LucideIcon } from 'lucide-react';
+import {
+  BuildingComplex,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  Clock,
+  Factory,
+  LayoutDashboard,
+  Link,
+  Menu as MenuIcon,
+  Package,
+  RotateCcwClock,
+  Settings,
+  Shapes,
+  Shield,
+  ShieldCheck,
+  Trash,
+  Users,
+  Wrench,
+} from 'lucide-react';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Box,
   Chip,
@@ -31,10 +34,10 @@ import {
   Typography,
 } from '@mui/material';
 import { Fragment } from 'react';
-import { useTheme } from '@mui/material/styles';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { GridPaginationBar } from '../../../../shared/components/data/GridPaginationBar';
 import type { PlatformMenuItem } from '../../../../services/platform-admin/platformMenuService';
+import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
 
 export const ICON_OPTIONS = [
   'Dashboard',
@@ -54,22 +57,23 @@ export const ICON_OPTIONS = [
   'AccessTime',
 ];
 
-const ICON_COMPONENTS: Record<string, typeof DashboardOutlinedIcon> = {
-  Dashboard: DashboardOutlinedIcon,
-  Settings: SettingsOutlinedIcon,
-  Menu: MenuOutlinedIcon,
-  Factory: FactoryOutlinedIcon,
-  AdminPanelSettings: AdminPanelSettingsOutlinedIcon,
-  Business: BusinessOutlinedIcon,
-  People: PeopleOutlineOutlinedIcon,
-  Assignment: AssignmentOutlinedIcon,
-  Inventory: Inventory2OutlinedIcon,
-  Build: BuildOutlinedIcon,
-  Category: CategoryOutlinedIcon,
-  Security: SecurityOutlinedIcon,
-  Link: LinkOutlinedIcon,
-  History: HistoryOutlinedIcon,
-  AccessTime: AccessTimeOutlinedIcon,
+// 기존 -> MUI Outlined 아이콘 맵 / 변경 -> lucide 아이콘 맵
+const ICON_COMPONENTS: Record<string, LucideIcon> = {
+  Dashboard: LayoutDashboard,
+  Settings: Settings,
+  Menu: MenuIcon,
+  Factory: Factory,
+  AdminPanelSettings: ShieldCheck,
+  Business: BuildingComplex,
+  People: Users,
+  Assignment: ClipboardList,
+  Inventory: Package,
+  Build: Wrench,
+  Category: Shapes,
+  Security: Shield,
+  Link: Link,
+  History: RotateCcwClock,
+  AccessTime: Clock,
 };
 
 export type MenuTreeRow = {
@@ -109,32 +113,6 @@ export function MenuGrid(props: {
     onPageSizeChange,
   } = props;
 
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
-
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
-
-  const dangerIconSx = {
-    color: isDarkMode ? '#f87171' : '#c53b3b',
-    bgcolor: isDarkMode
-      ? 'rgba(248, 113, 113, 0.12)'
-      : 'rgba(197, 59, 59, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(248, 113, 113, 0.2)'
-        : 'rgba(197, 59, 59, 0.16)',
-    },
-  };
 
   const renderIconCell = (iconNm: string) => {
     const IconComponent = ICON_COMPONENTS[iconNm];
@@ -148,20 +126,20 @@ export function MenuGrid(props: {
           justifyContent: 'center',
           width: 30,
           height: 30,
-          borderRadius: '50%',
-          bgcolor: isDarkMode
-            ? 'rgba(251, 191, 36, 0.14)'
-            : 'rgba(31, 79, 143, 0.10)',
-          color: isDarkMode ? '#fbbf24' : '#1f4f8f',
+          borderRadius: '6px',
+          // 기존 -> isDarkMode 로 색 분기 / 변경 -> nav 토큰
+          bgcolor: 'nav.selectedBg',
+          color: 'nav.accent',
           fontSize: '0.95rem',
           fontWeight: 800,
           lineHeight: 1,
         }}
       >
         {IconComponent ? (
-          <IconComponent fontSize="small" />
+          <IconComponent />
         ) : (
-          <MenuOutlinedIcon fontSize="small" />
+          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+          <MenuIcon />
         )}
       </Box>
     );
@@ -175,10 +153,9 @@ export function MenuGrid(props: {
         px: 1,
         py: 0.25,
         borderRadius: 1,
-        bgcolor: isDarkMode
-          ? 'rgba(251, 191, 36, 0.14)'
-          : 'rgba(31, 79, 143, 0.08)',
-        color: isDarkMode ? '#fef3c7' : '#184173',
+        // 기존 -> isDarkMode 로 색 분기 / 변경 -> nav 토큰
+        bgcolor: 'nav.selectedBg',
+        color: 'nav.selectedText',
         fontFamily: 'monospace',
         fontSize: '0.8rem',
       }}
@@ -268,9 +245,11 @@ export function MenuGrid(props: {
                         onClick={() => onToggleExpand(rootMenu.menuId)}
                       >
                         {expandedIds.has(rootMenu.menuId) ? (
-                          <ExpandLessOutlinedIcon fontSize="small" />
+                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                          <ChevronUp />
                         ) : (
-                          <ExpandMoreOutlinedIcon fontSize="small" />
+                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                          <ChevronDown />
                         )}
                       </IconButton>
                     ) : null}
@@ -300,36 +279,33 @@ export function MenuGrid(props: {
                     />
                   </TableCell>
                   <TableCell align="center">
-                    {/* 기존 -> mr 0.25 간격, 툴팁 없음, sx 인라인 / 변경 -> Stack spacing 0.5, Tooltip, sx 상수 */}
                     <Stack direction="row" spacing={0.5} justifyContent="center">
                       <Tooltip title="메뉴 수정">
                         <span>
-                          <IconButton
-                            size="small"
+                          <GridIconButton
                             aria-label="메뉴 수정"
                             onClick={() => onEdit(rootMenu)}
                             disabled={!canManage}
-                            sx={actionIconSx}
                           >
-                            <EditOutlinedIcon fontSize="small" />
-                          </IconButton>
+                            <EditPencilIcon />
+                          </GridIconButton>
                         </span>
                       </Tooltip>
                       <Tooltip title="메뉴 삭제">
                         <span>
-                          <IconButton
-                            size="small"
+                          <GridIconButton
                             aria-label="메뉴 삭제"
+                            tone="danger"
                             onClick={() => onDelete(rootMenu)}
                             disabled={
                               !canManage ||
                               Boolean(rootMenu.hasChildren) ||
                               deletePending
                             }
-                            sx={dangerIconSx}
                           >
-                            <DeleteOutlineOutlinedIcon fontSize="small" />
-                          </IconButton>
+                            {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                            <Trash />
+                          </GridIconButton>
                         </span>
                       </Tooltip>
                     </Stack>
@@ -369,7 +345,7 @@ export function MenuGrid(props: {
                                 width: 8,
                                 height: 8,
                                 borderRadius: '50%',
-                                bgcolor: isDarkMode ? '#fbbf24' : '#1f4f8f',
+                                bgcolor: 'nav.accent',
                                 flexShrink: 0,
                               }}
                             />
@@ -401,32 +377,31 @@ export function MenuGrid(props: {
                           <Stack direction="row" spacing={0.5} justifyContent="center">
                             <Tooltip title="메뉴 수정">
                               <span>
-                                <IconButton
-                                  size="small"
+                                <GridIconButton
                                   aria-label="메뉴 수정"
                                   onClick={() => onEdit(childMenu)}
                                   disabled={!canManage}
-                                  sx={actionIconSx}
                                 >
-                                  <EditOutlinedIcon fontSize="small" />
-                                </IconButton>
+                                  {/* 기존 -> MUI EditOutlinedIcon / 변경 -> 시안 bticon_wri.svg 아이콘 */}
+                                  <EditPencilIcon />
+                                </GridIconButton>
                               </span>
                             </Tooltip>
                             <Tooltip title="메뉴 삭제">
                               <span>
-                                <IconButton
-                                  size="small"
+                                <GridIconButton
                                   aria-label="메뉴 삭제"
+                                  tone="danger"
                                   onClick={() => onDelete(childMenu)}
                                   disabled={
                                     !canManage ||
                                     Boolean(childMenu.hasChildren) ||
                                     deletePending
                                   }
-                                  sx={dangerIconSx}
                                 >
-                                  <DeleteOutlineOutlinedIcon fontSize="small" />
-                                </IconButton>
+                                  {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                                  <Trash />
+                                </GridIconButton>
                               </span>
                             </Tooltip>
                           </Stack>

@@ -1,8 +1,4 @@
-import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
-import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
-import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined';
+import { CalendarDays, ChevronRight, LayoutGrid } from 'lucide-react';
 import {
     Box,
     ButtonBase,
@@ -26,6 +22,20 @@ import {
     type TodoStatusCounts,
 } from '../todoFilter';
 import styles from '../tenantDashboard.module.css';
+import draftIconUrl from '../../../../assets/icons/icon_기안.svg';
+import approvalIconUrl from '../../../../assets/icons/icon_sine.svg';
+
+/** 상태바 시안 아이콘. SVG 내부 전역 클래스 충돌을 막기 위해 img 로 표시한다. */
+function StatusIcon({ src }: { src: string }) {
+    return (
+        <Box
+            component="img"
+            src={src}
+            alt=""
+            sx={{ display: 'block', width: 24, height: 20, objectFit: 'contain' }}
+        />
+    );
+}
 
 const CARD_TOOLTIPS: Record<TodoStatusCardKey, string> = {
     미작성: '내가 작성해야 할 문서',
@@ -109,14 +119,15 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                     rowGap={0.5}
                     className={styles.statusDraftGroup}
                 >
-                    <EditNoteOutlinedIcon fontSize="small" className={styles.statusIcon} />
+                    {/* 기존 -> lucide FilePen 아이콘 / 변경 -> 시안 icon_기안.svg */}
+                    <StatusIcon src={draftIconUrl} />
                     <Typography className={`${styles.statusLabel} ${styles.statusLabelDraft}`}>
                         기안문서
                     </Typography>
                     {DRAFT_STATUS_CARD_KEYS.map((status, index) => (
                         <Fragment key={status}>
                             {index > 0 ? (
-                                <ChevronRightIcon fontSize="small" className={styles.statusChevron} />
+                                <ChevronRight fontSize="small" className={styles.statusChevron} />
                             ) : null}
                             {renderCount(
                                 status,
@@ -131,7 +142,8 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                 {renderCount(
                     PENDING_APPROVAL_STATUS,
                     <>
-                        <AssignmentTurnedInOutlinedIcon fontSize="small" className={styles.statusIcon} />
+                        {/* 기존 -> lucide ClipboardCheck 아이콘 / 변경 -> 시안 icon_sine.svg */}
+                        <StatusIcon src={approvalIconUrl} />
                         <Typography component="span" className={`${styles.statusLabel} ${styles.statusLabelApproval}`}>
                             결재할 문서
                         </Typography>
@@ -187,11 +199,11 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                         className={styles.viewToggle}
                     >
                         <ToggleButton value="list" aria-label="카드형">
-                            <GridViewOutlinedIcon fontSize="small" className={styles.toggleIcon} />
+                            <LayoutGrid size={18} className={styles.toggleIcon} />
                             카드형
                         </ToggleButton>
                         <ToggleButton value="calendar" aria-label="캘린더형">
-                            <CalendarMonthOutlinedIcon fontSize="small" className={styles.toggleIcon} />
+                            <CalendarDays size={18} className={styles.toggleIcon} />
                             캘린더
                         </ToggleButton>
                     </ToggleButtonGroup>

@@ -52,16 +52,32 @@ export function PlatformTenantSearchBar({
     >
       <AppSelect
         size="small"
+        label="상태"
+        value={value.status}
+        onChange={(status) => onChange({ ...value, status })}
+        options={STATUS_OPTIONS}
+        sx={{ minWidth: 120 }}
+      />
+      <AppSelect
+        size="small"
+        label="온보딩 상태"
+        value={value.onboardingStatus}
+        onChange={(onboardingStatus) => onChange({ ...value, onboardingStatus })}
+        options={ONBOARDING_STATUS_OPTIONS}
+        sx={{ minWidth: 170 }}
+      />
+      <AppSelect
+        size="small"
         label="검색 조건"
         value={value.searchField}
         onChange={(searchField) => onChange({ ...value, searchField })}
         options={SEARCH_FIELD_OPTIONS}
         sx={{ minWidth: 130 }}
       />
-
       <AppTextField
         size="small"
-        label="검색어"
+        placeholder="검색어 입력"
+        slotProps={{ htmlInput: { 'aria-label': '검색어 입력' } }}
         fullWidth
         value={value.searchKeyword}
         onChange={(searchKeyword) =>
@@ -71,24 +87,6 @@ export function PlatformTenantSearchBar({
           })
         }
         sx={{ flex: 1 }}
-      />
-
-      <AppSelect
-        size="small"
-        label="상태"
-        value={value.status}
-        onChange={(status) => onChange({ ...value, status })}
-        options={STATUS_OPTIONS}
-        sx={{ minWidth: 120 }}
-      />
-
-      <AppSelect
-        size="small"
-        label="온보딩 상태"
-        value={value.onboardingStatus}
-        onChange={(onboardingStatus) => onChange({ ...value, onboardingStatus })}
-        options={ONBOARDING_STATUS_OPTIONS}
-        sx={{ minWidth: 170 }}
       />
     </SearchFilterBar>
   );

@@ -1,4 +1,4 @@
-import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import { alpha, createTheme, type Palette, type ThemeOptions } from '@mui/material/styles';
 import type {} from '@mui/x-data-grid/themeAugmentation';
 import type { ThemeModePreference } from '../shared/theme/themePreference';
 
@@ -124,9 +124,245 @@ const tableComponents: ThemeOptions['components'] = {
       },
     },
   },
+
+  // lucide 아이콘은 width/height 속성(24)을 쓰므로, 버튼 아이콘 자리에서는 MUI 아이콘처럼 1em 으로 맞춘다
+  MuiButton: {
+    styleOverrides: {
+      startIcon: { '& > svg.lucide': { width: '1em', height: '1em' } },
+      endIcon: { '& > svg.lucide': { width: '1em', height: '1em' } },
+    },
+  },
 };
 
-export const appTheme = createTheme({
+// 라이트, 다크가 같은 모양을 갖도록 의미 단위 색 토큰을 하나의 타입으로 정의한다
+export type AppColorTokens = {
+  surface: { subtle: string; outline: string; muted: string };
+  panel: {
+    border: string;
+    background: string;
+    shadow: string;
+    iconBg: string;
+    buttonShadow: string;
+    emptyBorder: string;
+    emptyBg: string;
+    itemBorder: string;
+    itemBg: string;
+    itemHoverShadow: string;
+    popoverShadow: string;
+    replyBorder: string;
+    lineBorder: string;
+    signerBg: string;
+  };
+  nav: { accent: string; selectedBg: string; selectedText: string };
+  workMenu: {
+    barBorder: string;
+    barBg: string;
+    groupText: string;
+    groupSelectedText: string;
+    groupSelectedBg: string;
+    groupSelectedHoverBg: string;
+    groupHoverBg: string;
+    panelBg: string;
+    panelBorder: string;
+    panelShadow: string;
+    backdrop: string;
+    itemText: string;
+    itemDivider: string;
+    itemActiveBg: string;
+    itemHoverBg: string;
+    iconColor: string;
+    iconBg: string;
+    titleUnderline: string;
+  };
+  dashboard: {
+    cardBorder: string;
+    cardBg: string;
+    summaryBg: string;
+    innerBorder: string;
+    innerBg: string;
+    quickMenuBg: string;
+    quickMenuText: string;
+  };
+  editor: {
+    canvas: string;
+    text: string;
+    tableBorder: string;
+    tableHeaderBg: string;
+    previewBg: string;
+    toolbarBg: string;
+    toolbarText: string;
+    chipBorder: string;
+    chipBg: string;
+    chipText: string;
+  };
+};
+
+declare module '@mui/material/styles' {
+  interface Palette {
+    surface: AppColorTokens['surface'];
+    panel: AppColorTokens['panel'];
+    nav: AppColorTokens['nav'];
+    workMenu: AppColorTokens['workMenu'];
+    dashboard: AppColorTokens['dashboard'];
+    editor: AppColorTokens['editor'];
+  }
+  interface PaletteOptions {
+    surface?: AppColorTokens['surface'];
+    panel?: AppColorTokens['panel'];
+    nav?: AppColorTokens['nav'];
+    workMenu?: AppColorTokens['workMenu'];
+    dashboard?: AppColorTokens['dashboard'];
+    editor?: AppColorTokens['editor'];
+  }
+}
+
+// 라이트 테마 색 토큰. 기본 palette 를 받아 기존 컴포넌트의 라이트 값을 그대로 계산한다
+function buildLightTokens(p: Palette): AppColorTokens {
+  return {
+    surface: {
+      subtle: p.grey[50],
+      outline: 'rgba(148, 163, 184, 0.35)',
+      muted: 'rgba(248, 250, 252, 0.9)',
+    },
+    panel: {
+      border: alpha(p.primary.main, 0.14),
+      background: `linear-gradient(155deg, ${alpha('#f8fafc', 0.96)} 0%, ${alpha('#f1f5f9', 0.9)} 100%)`,
+      shadow: `0 16px 34px ${alpha('#0f172a', 0.08)}`,
+      iconBg: alpha(p.info.main, 0.12),
+      buttonShadow: `0 10px 20px ${alpha(p.primary.main, 0.26)}`,
+      emptyBorder: alpha(p.primary.main, 0.24),
+      emptyBg: alpha(p.common.white, 0.75),
+      itemBorder: alpha(p.common.black, 0.08),
+      itemBg: alpha(p.common.white, 0.88),
+      itemHoverShadow: `0 10px 18px ${alpha('#0f172a', 0.08)}`,
+      popoverShadow: '0 14px 28px rgba(15, 23, 42, 0.16)',
+      replyBorder: alpha(p.info.main, 0.3),
+      lineBorder: 'rgba(15, 23, 42, 0.12)',
+      signerBg: 'rgba(248, 250, 252, 0.7)',
+    },
+    nav: {
+      accent: '#1f4f8f',
+      selectedBg: 'rgba(31, 79, 143, 0.08)',
+      selectedText: '#184173',
+    },
+    workMenu: {
+      barBorder: p.divider,
+      barBg: p.common.white,
+      groupText: p.text.secondary,
+      groupSelectedText: '#0f5f59',
+      groupSelectedBg: '#e7edf5',
+      groupSelectedHoverBg: '#ddfbf5',
+      groupHoverBg: 'rgba(15, 23, 42, 0.05)',
+      panelBg: '#f8fafd',
+      panelBorder: 'rgba(15, 23, 42, 0.14)',
+      panelShadow: '0 10px 24px rgba(15, 23, 42, 0.10)',
+      backdrop: 'rgba(15, 23, 42, 0.12)',
+      itemText: p.text.primary,
+      itemDivider: 'rgba(15, 23, 42, 0.16)',
+      itemActiveBg: 'rgba(31, 79, 143, 0.08)',
+      itemHoverBg: 'rgba(20, 184, 166, 0.12)',
+      iconColor: '#0f766e',
+      iconBg: 'rgba(20, 184, 166, 0.12)',
+      titleUnderline: 'rgba(15, 23, 42, 0.20)',
+    },
+    dashboard: {
+      cardBorder: 'rgba(20, 184, 166, 0.24)',
+      cardBg: 'rgba(240, 253, 250, 0.9)',
+      summaryBg: 'linear-gradient(135deg, rgba(15,118,110,0.1), rgba(20,184,166,0.04))',
+      innerBorder: 'rgba(15, 23, 42, 0.12)',
+      innerBg: 'rgba(255, 255, 255, 0.8)',
+      quickMenuBg: '#eef7ff',
+      quickMenuText: p.text.primary,
+    },
+    editor: {
+      canvas: p.common.white,
+      text: p.text.primary,
+      tableBorder: p.divider,
+      tableHeaderBg: p.common.white,
+      previewBg: p.background.paper,
+      toolbarBg: p.grey[50],
+      toolbarText: p.text.primary,
+      chipBorder: p.primary.main,
+      chipBg: 'rgba(239, 246, 255, 0.95)',
+      chipText: p.primary.dark,
+    },
+  };
+}
+
+// 다크 테마 색 토큰. 기본 palette 를 받아 기존 컴포넌트의 다크 값을 그대로 계산한다
+function buildDarkTokens(p: Palette): AppColorTokens {
+  return {
+    surface: {
+      subtle: 'rgba(255, 255, 255, 0.06)',
+      outline: 'rgba(148, 163, 184, 0.3)',
+      muted: 'rgba(148, 163, 184, 0.08)',
+    },
+    panel: {
+      border: alpha(p.common.white, 0.12),
+      background: `linear-gradient(155deg, ${alpha('#0f172a', 0.96)} 0%, ${alpha('#111827', 0.96)} 100%)`,
+      shadow: `0 16px 36px ${alpha('#020617', 0.45)}`,
+      iconBg: alpha(p.info.light, 0.14),
+      buttonShadow: `0 8px 18px ${alpha(p.primary.dark, 0.45)}`,
+      emptyBorder: alpha(p.common.white, 0.18),
+      emptyBg: alpha(p.common.white, 0.02),
+      itemBorder: alpha(p.common.white, 0.08),
+      itemBg: alpha(p.common.white, 0.03),
+      itemHoverShadow: `0 8px 16px ${alpha('#020617', 0.3)}`,
+      popoverShadow: '0 14px 30px rgba(2, 6, 23, 0.45)',
+      replyBorder: alpha(p.info.light, 0.35),
+      lineBorder: 'rgba(148, 163, 184, 0.28)',
+      signerBg: 'rgba(30, 41, 59, 0.35)',
+    },
+    nav: {
+      accent: '#fbbf24',
+      selectedBg: 'rgba(251, 191, 36, 0.14)',
+      selectedText: '#fef3c7',
+    },
+    workMenu: {
+      barBorder: 'rgba(251, 191, 36, 0.22)',
+      barBg: '#111827',
+      groupText: 'rgba(248, 250, 252, 0.76)',
+      groupSelectedText: '#fef3c7',
+      groupSelectedBg: 'rgba(251, 191, 36, 0.14)',
+      groupSelectedHoverBg: 'rgba(251, 191, 36, 0.14)',
+      groupHoverBg: 'rgba(251, 191, 36, 0.08)',
+      panelBg: '#0f172a',
+      panelBorder: 'rgba(251, 191, 36, 0.2)',
+      panelShadow: '0 14px 30px rgba(2, 6, 23, 0.52)',
+      backdrop: 'rgba(2, 6, 23, 0.48)',
+      itemText: '#f8fafc',
+      itemDivider: 'rgba(251, 191, 36, 0.16)',
+      itemActiveBg: 'rgba(251, 191, 36, 0.14)',
+      itemHoverBg: 'rgba(251, 191, 36, 0.08)',
+      iconColor: '#fbbf24',
+      iconBg: 'rgba(251, 191, 36, 0.12)',
+      titleUnderline: 'rgba(251, 191, 36, 0.24)',
+    },
+    dashboard: {
+      cardBorder: 'rgba(20, 184, 166, 0.4)',
+      cardBg: 'rgba(6, 30, 28, 0.9)',
+      summaryBg: 'linear-gradient(135deg, rgba(6, 78, 59, 0.35), rgba(15, 23, 42, 0.35))',
+      innerBorder: 'rgba(148, 163, 184, 0.24)',
+      innerBg: 'rgba(15, 23, 42, 0.88)',
+      quickMenuBg: 'rgba(15, 23, 42, 0.82)',
+      quickMenuText: '#e2e8f0',
+    },
+    editor: {
+      canvas: '#f8fafc',
+      text: '#0f172a',
+      tableBorder: 'rgba(15, 23, 42, 0.35)',
+      tableHeaderBg: '#eef2f7',
+      previewBg: p.grey[900],
+      toolbarBg: p.grey[900],
+      toolbarText: p.grey[100],
+      chipBorder: 'rgba(96, 165, 250, 0.45)',
+      chipBg: 'rgba(30, 41, 59, 0.9)',
+      chipText: '#e2e8f0',
+    },
+  };
+}
+
+const lightBase = createTheme({
   palette: {
     mode: 'light',
     primary: {
@@ -151,7 +387,11 @@ export const appTheme = createTheme({
   components: tableComponents,
 });
 
-export const darkTheme = createTheme({
+export const appTheme = createTheme(lightBase, {
+  palette: buildLightTokens(lightBase.palette),
+});
+
+const darkBase = createTheme({
   palette: {
     mode: 'dark',
     primary: {
@@ -175,6 +415,10 @@ export const darkTheme = createTheme({
   },
   ...sharedThemeOptions,
   components: tableComponents,
+});
+
+export const darkTheme = createTheme(darkBase, {
+  palette: buildDarkTokens(darkBase.palette),
 });
 
 export function getThemeByMode(mode: ThemeModePreference) {

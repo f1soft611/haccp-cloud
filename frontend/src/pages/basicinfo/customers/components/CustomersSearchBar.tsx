@@ -44,20 +44,6 @@ export function CustomersSearchBar({
         </Button>
       }
     >
-      <AppTextField
-        size="small"
-        fullWidth
-        label="검색어"
-        placeholder="거래처코드, 거래처명, 대표자명, 사업자번호"
-        value={value.keyword}
-        onChange={(keyword) =>
-          onChange({
-            ...value,
-            keyword,
-          })
-        }
-      />
-
       <AppSelect
         size="small"
         label="상태"
@@ -65,6 +51,19 @@ export function CustomersSearchBar({
         onChange={(filterActive) => onChange({ ...value, filterActive })}
         options={ACTIVE_FILTER_OPTIONS}
         sx={{ minWidth: 140 }}
+      />
+      <AppTextField
+        size="small"
+        fullWidth
+        placeholder="거래처코드, 거래처명, 대표자명, 사업자번호 검색"
+        slotProps={{ htmlInput: { 'aria-label': '거래처코드, 거래처명, 대표자명, 사업자번호 검색' } }}
+        value={value.keyword}
+        onChange={(keyword) =>
+          onChange({
+            ...value,
+            keyword,
+          })
+        }
       />
     </SearchFilterBar>
   );

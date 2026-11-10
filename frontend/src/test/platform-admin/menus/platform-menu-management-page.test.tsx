@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { PlatformMenuManagementPage } from '../pages/platform-admin/menus/PlatformMenuManagementPage';
-import { useAuthStore } from '../shared/store/authStore';
+import { AppProviders } from '../../../app/providers/AppProviders';
+import { PlatformMenuManagementPage } from '../../../pages/platform-admin/menus/PlatformMenuManagementPage';
+import { useAuthStore } from '../../../shared/store/authStore';
 
 const { listPlatformMenusMock } = vi.hoisted(() => ({
   listPlatformMenusMock: vi.fn(async () => [
@@ -43,7 +43,7 @@ const DEFAULT_MENUS = [
   },
 ];
 
-vi.mock('../services/platform-admin/platformMenuService', () => ({
+vi.mock('../../../services/platform-admin/platformMenuService', () => ({
   listPlatformMenus: listPlatformMenusMock,
   listPlatformMenusPaged: listPlatformMenusPagedMock,
   createPlatformMenu: createPlatformMenuMock,
@@ -134,7 +134,8 @@ describe('PlatformMenuManagementPage', () => {
 
     await screen.findByRole('heading', { name: '메뉴 관리' });
 
-    const editIcons = await screen.findAllByTestId('EditOutlinedIcon');
+    // 기존 -> EditOutlinedIcon / 변경 -> 교체된 공통 아이콘 testId
+    const editIcons = await screen.findAllByTestId('EditPencilIcon');
     const firstEditButton = editIcons[0]?.closest('button');
 
     expect(firstEditButton).not.toBeNull();
@@ -163,7 +164,7 @@ describe('PlatformMenuManagementPage', () => {
 
     await screen.findByRole('heading', { name: '메뉴 관리' });
 
-    fireEvent.change(screen.getByLabelText('검색어'), {
+    fireEvent.change(screen.getByLabelText('검색어 입력'), {
       target: { value: '관리' },
     });
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
@@ -233,11 +234,10 @@ describe('PlatformMenuManagementPage', () => {
     const row = rowCell.closest('tr');
     expect(row).not.toBeNull();
 
-    const deleteIcon = within(row as HTMLTableRowElement).getByTestId(
-      'DeleteOutlineOutlinedIcon',
-    );
-    const deleteButton = deleteIcon.closest('button');
-    expect(deleteButton).not.toBeNull();
+    // 기존 -> MUI 아이콘 testId 로 삭제 버튼 찾기 / 변경 -> 버튼 aria-label 로 찾기
+    const deleteButton = within(row as HTMLTableRowElement).getByRole('button', {
+      name: '메뉴 삭제',
+    });
     expect(deleteButton).toBeDisabled();
   });
 
@@ -279,7 +279,8 @@ describe('PlatformMenuManagementPage', () => {
 
     renderPage();
 
-    const editIcons = await screen.findAllByTestId('EditOutlinedIcon');
+    // 기존 -> EditOutlinedIcon / 변경 -> 교체된 공통 아이콘 testId
+    const editIcons = await screen.findAllByTestId('EditPencilIcon');
     const firstEditButton = editIcons[0]?.closest('button');
 
     expect(firstEditButton).not.toBeNull();

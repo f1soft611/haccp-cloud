@@ -11,6 +11,7 @@ import {
   THEME_MODE_CHANGE_EVENT,
   type ThemeModePreference,
 } from '../../shared/theme/themePreference';
+import { LucideProvider } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -58,10 +59,12 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
-        <FeedbackProvider>
-          <CssBaseline />
-          <BrowserRouter>{children}</BrowserRouter>
-        </FeedbackProvider>
+        <LucideProvider size={24} strokeWidth={1.4} nonScalingStroke>
+          <FeedbackProvider>
+            <CssBaseline />
+            <BrowserRouter>{children}</BrowserRouter>
+          </FeedbackProvider>
+        </LucideProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

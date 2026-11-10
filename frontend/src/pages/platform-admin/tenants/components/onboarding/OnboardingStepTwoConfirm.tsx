@@ -14,8 +14,8 @@ type OnboardingStepTwoConfirmProps = {
 const confirmCardSx = {
   p: 2,
   borderRadius: 2,
-  bgcolor: (theme: { palette: { mode: string } }) =>
-    theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'grey.50',
+  // 기존 -> palette.mode 로 색 분기 / 변경 -> surface.subtle 토큰
+  bgcolor: 'surface.subtle',
 };
 
 export function OnboardingStepTwoConfirm({

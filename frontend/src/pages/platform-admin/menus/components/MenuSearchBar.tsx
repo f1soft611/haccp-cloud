@@ -54,6 +54,14 @@ export function MenuSearchBar(props: {
     >
       <AppSelect
         size="small"
+        label="상태"
+        value={value.filterActive}
+        onChange={(filterActive) => onChange({ ...value, filterActive })}
+        options={ACTIVE_FILTER_OPTIONS}
+        sx={{ minWidth: 120 }}
+      />
+      <AppSelect
+        size="small"
         label="검색 조건"
         value={value.searchField}
         onChange={(searchField) => onChange({ ...value, searchField })}
@@ -62,22 +70,14 @@ export function MenuSearchBar(props: {
       />
 
       <AppTextField
-        label="검색어"
+        placeholder="검색어 입력"
+        slotProps={{ htmlInput: { 'aria-label': '검색어 입력' } }}
         value={value.searchKeyword}
         onChange={(searchKeyword) =>
           onChange({ ...value, searchKeyword })
         }
         size="small"
         sx={{ flex: 1, minWidth: 200 }}
-      />
-
-      <AppSelect
-        size="small"
-        label="사용여부"
-        value={value.filterActive}
-        onChange={(filterActive) => onChange({ ...value, filterActive })}
-        options={ACTIVE_FILTER_OPTIONS}
-        sx={{ minWidth: 120 }}
       />
     </SearchFilterBar>
   );

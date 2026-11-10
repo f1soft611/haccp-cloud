@@ -1,5 +1,4 @@
-import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded';
-import PreviewRounded from '@mui/icons-material/PreviewRounded';
+import { ArrowLeft, Eye } from 'lucide-react';
 import {
   Alert,
   Box,
@@ -12,7 +11,6 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -126,8 +124,6 @@ export function HaccpBaseEditorPage() {
   const queryClient = useQueryClient();
   const { baseId } = useParams();
   const { showSuccess } = useFeedback();
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
   const tenantCode = useAuthStore((state) => state.tenantCode || 'PLATFORM');
   const userId = useAuthStore((state) => state.userId || '');
   const displayName = useAuthStore((state) => state.displayName || '');
@@ -328,7 +324,8 @@ export function HaccpBaseEditorPage() {
               </Button>
               <Button
                 variant="outlined"
-                startIcon={<PreviewRounded />}
+                /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                startIcon={<Eye />}
                 onClick={() => setIsPreviewOpen(true)}
                 disabled={!baseId || !targetWork}
               >
@@ -336,7 +333,8 @@ export function HaccpBaseEditorPage() {
               </Button>
               <Button
                 variant="outlined"
-                startIcon={<ArrowBackRounded />}
+                /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
+                startIcon={<ArrowLeft />}
                 onClick={() => navigate('/docs/haccp-base')}
               >
                 목록으로
@@ -353,7 +351,7 @@ export function HaccpBaseEditorPage() {
         maxWidth="lg"
         PaperProps={{
           sx: {
-            bgcolor: isDarkMode ? 'grey.900' : 'background.paper',
+            bgcolor: 'editor.previewBg',
           },
         }}
       >
@@ -365,9 +363,9 @@ export function HaccpBaseEditorPage() {
                 p: { xs: 1, md: 2 },
                 border: '1px solid',
                 borderColor: 'divider',
-                bgcolor: isDarkMode ? '#f8fafc' : 'grey.50',
+                bgcolor: 'editor.canvas',
                 '& .tiptap': {
-                  color: isDarkMode ? '#0f172a' : 'text.primary',
+                  color: 'editor.text',
                   fontSize: 15,
                   lineHeight: 1.7,
                   wordBreak: 'break-word',
@@ -440,14 +438,12 @@ export function HaccpBaseEditorPage() {
                 },
                 '& .tiptap th, & .tiptap td': {
                   border: '1px solid',
-                  borderColor: isDarkMode
-                    ? 'rgba(15, 23, 42, 0.35)'
-                    : 'divider',
+                  borderColor: 'editor.tableBorder',
                   p: 1,
                   verticalAlign: 'middle',
                 },
                 '& .tiptap th': {
-                  bgcolor: isDarkMode ? '#eef2f7' : 'common.white',
+                  bgcolor: 'editor.tableHeaderBg',
                   fontWeight: 700,
                 },
               }}

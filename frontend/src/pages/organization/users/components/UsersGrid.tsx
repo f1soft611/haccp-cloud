@@ -1,8 +1,7 @@
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import PowerSettingsNewOutlinedIcon from '@mui/icons-material/PowerSettingsNewOutlined';
+import { Power } from 'lucide-react';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Chip,
-  IconButton,
   Skeleton,
   Stack,
   TableBody,
@@ -11,9 +10,9 @@ import {
   TableRow,
   Tooltip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import type { UserItem } from '../../../../services/organization/usersService';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
+import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
 
 type UsersGridProps = {
   rows: UserItem[];
@@ -44,44 +43,6 @@ export function UsersGrid({
   onEdit,
   onToggle,
 }: UsersGridProps) {
-  const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
-
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
-
-  const dangerIconSx = {
-    color: isDarkMode ? '#f87171' : '#c53b3b',
-    bgcolor: isDarkMode
-      ? 'rgba(248, 113, 113, 0.12)'
-      : 'rgba(197, 59, 59, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(248, 113, 113, 0.2)'
-        : 'rgba(197, 59, 59, 0.16)',
-    },
-  };
-
-  const successIconSx = {
-    color: isDarkMode ? '#86efac' : '#2e7d32',
-    bgcolor: isDarkMode
-      ? 'rgba(134, 239, 172, 0.12)'
-      : 'rgba(46, 125, 50, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(134, 239, 172, 0.2)'
-        : 'rgba(46, 125, 50, 0.16)',
-    },
-  };
 
   return (
     <AdminGrid ariaLabel="사용자 목록">
@@ -171,26 +132,26 @@ export function UsersGrid({
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Tooltip title="사용자 수정">
                       <span>
-                        <IconButton
-                          size="small"
+                        <GridIconButton
                           aria-label="사용자 수정"
                           onClick={() => onEdit(row)}
-                          sx={actionIconSx}
                         >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
+                          {/* 기존 -> MUI EditOutlinedIcon / 변경 -> 시안 bticon_wri.svg 아이콘 */}
+                          <EditPencilIcon />
+                        </GridIconButton>
                       </span>
                     </Tooltip>
                     <Tooltip title={row.active ? '로그인 차단' : '차단 해제'}>
                       <span>
-                        <IconButton
+                        <GridIconButton
                           size="small"
                           aria-label={row.active ? '로그인 차단' : '차단 해제'}
                           onClick={() => onToggle(row)}
-                          sx={row.active ? dangerIconSx : successIconSx}
+                          tone={row.active ? 'danger' : 'success'}
                         >
-                          <PowerSettingsNewOutlinedIcon fontSize="small" />
-                        </IconButton>
+                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
+                          <Power />
+                        </GridIconButton>
                       </span>
                     </Tooltip>
                   </Stack>

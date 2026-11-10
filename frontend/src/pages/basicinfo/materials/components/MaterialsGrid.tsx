@@ -1,7 +1,6 @@
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import { Trash } from 'lucide-react';
+import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
-  IconButton,
   Skeleton,
   Stack,
   TableBody,
@@ -10,7 +9,6 @@ import {
   TableRow,
   Tooltip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import type { MaterialItem } from '../../../../services/basicinfo/materialsService';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
@@ -18,6 +16,7 @@ import {
   getCommonCodeName,
   useCommonCodeOptions,
 } from '../../../../shared/hooks/useCommonCodeOptions';
+import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
 
 type MaterialsGridProps = {
   rows: MaterialItem[];
@@ -32,37 +31,11 @@ export function MaterialsGrid({
   onEdit,
   onDelete,
 }: MaterialsGridProps) {
-  const theme = useTheme();
   const unitOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_UNIT);
   const itemTypeOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_TYPE);
   const materialKindOptions = useCommonCodeOptions(COMMON_CODE_GROUP.MATERIAL_TYPE);
   const storeMethodOptions = useCommonCodeOptions(COMMON_CODE_GROUP.STORE_METHOD);
   const expiryStatusOptions = useCommonCodeOptions(COMMON_CODE_GROUP.EXPIRY_STATUS);
-  const isDarkMode = theme.palette.mode === 'dark';
-
-  const actionIconSx = {
-    color: isDarkMode ? '#fbbf24' : '#1f4f8f',
-    bgcolor: isDarkMode
-      ? 'rgba(251, 191, 36, 0.12)'
-      : 'rgba(31, 79, 143, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(251, 191, 36, 0.2)'
-        : 'rgba(31, 79, 143, 0.16)',
-    },
-  };
-
-  const dangerIconSx = {
-    color: isDarkMode ? '#f87171' : '#c53b3b',
-    bgcolor: isDarkMode
-      ? 'rgba(248, 113, 113, 0.12)'
-      : 'rgba(197, 59, 59, 0.08)',
-    '&:hover': {
-      bgcolor: isDarkMode
-        ? 'rgba(248, 113, 113, 0.2)'
-        : 'rgba(197, 59, 59, 0.16)',
-    },
-  };
 
   // 소비기한: 숫자 + 기준 이름 (예: 12개월), 기준이 없음이면 '-'
   const formatExpiry = (row: MaterialItem) =>
@@ -73,7 +46,6 @@ export function MaterialsGrid({
   return (
     <AdminGrid ariaLabel="품목 목록">
       <TableHead>
-        {/* 기존 -> 헤더 기본(좌측) 정렬 / 변경 -> 모든 헤더 가운데정렬 */}
         <TableRow>
           <TableCell width={100} align="center">품목코드</TableCell>
           <TableCell align="center">품목명</TableCell>
@@ -125,7 +97,6 @@ export function MaterialsGrid({
                   <Skeleton variant="text" width="70%" />
                 </TableCell>
                 <TableCell align="center">
-                  {/* 기존 -> spacing 1 / 변경 -> HACCP 문서현황 기준 spacing 0.5 */}
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Skeleton variant="rounded" width={32} height={32} />
                     <Skeleton variant="rounded" width={32} height={32} />
@@ -164,26 +135,23 @@ export function MaterialsGrid({
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Tooltip title="품목 수정">
                       <span>
-                        <IconButton
-                          size="small"
+                        <GridIconButton
                           aria-label="품목 수정"
                           onClick={() => onEdit(row)}
-                          sx={actionIconSx}
                         >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
+                          <EditPencilIcon />
+                        </GridIconButton>
                       </span>
                     </Tooltip>
                     <Tooltip title="품목 삭제">
                       <span>
-                        <IconButton
-                          size="small"
+                        <GridIconButton
                           aria-label="품목 삭제"
+                          tone="danger"
                           onClick={() => onDelete(row)}
-                          sx={dangerIconSx}
                         >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
+                          <Trash />
+                        </GridIconButton>
                       </span>
                     </Tooltip>
                   </Stack>
