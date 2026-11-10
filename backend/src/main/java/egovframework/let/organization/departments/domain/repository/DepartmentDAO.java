@@ -51,4 +51,10 @@ public class DepartmentDAO extends EgovAbstractMapper {
         Integer count = selectOne("DepartmentDAO.countChildDepartments", params);
         return count == null ? 0 : count;
     }
+
+    // 부서에 배정된 사용 중 사용자 수 (미사용 전환 차단용)
+    public int countAssignedUsers(Map<String, Object> params) throws Exception {
+        Integer count = selectOne("DepartmentDAO.countAssignedUsers", params);
+        return count == null ? 0 : count;
+    }
 }

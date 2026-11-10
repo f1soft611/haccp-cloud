@@ -42,4 +42,7 @@ public class DepartmentVO implements Serializable {
 
     @Schema(description = "하위 부서 존재 여부")
     private boolean hasChildren;
+
+    @Schema(description = "배정된 사용 중 사용자 존재 여부")
+    private boolean hasMembers;
 }

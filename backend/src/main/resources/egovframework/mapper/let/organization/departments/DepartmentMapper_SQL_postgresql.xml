@@ -13,6 +13,7 @@
         <result property="sortOrder" column="sortOrder"/>
         <result property="active" column="active"/>
         <result property="hasChildren" column="hasChildren"/>
+        <result property="hasMembers" column="hasMembers"/>
     </resultMap>
 
     <!-- 부서 목록 조회 (계층 포함) -->
@@ -30,7 +31,14 @@
             CASE WHEN EXISTS (
                 SELECT 1 FROM tb_department cd
                 WHERE cd.parent_department_id = d.department_id
-            ) THEN TRUE ELSE FALSE END          AS hasChildren
+            ) THEN TRUE ELSE FALSE END          AS hasChildren,
+            -- 부서에 배정된 사용 중 사용자 존재 여부 (미사용 전환 차단용)
+            CASE WHEN EXISTS (
+                SELECT 1 FROM tb_user u
+                WHERE u.department_id = d.department_id
+                  AND u.tenant_id     = d.tenant_id
+                  AND u.use_at        = 'Y'
+            ) THEN TRUE ELSE FALSE END          AS hasMembers
         FROM tb_department d
         LEFT JOIN tb_department pd ON pd.department_id = d.parent_department_id
         WHERE 1 = 1
@@ -71,7 +79,14 @@
             CASE WHEN EXISTS (
                 SELECT 1 FROM tb_department cd
                 WHERE cd.parent_department_id = d.department_id
-            ) THEN TRUE ELSE FALSE END          AS hasChildren
+            ) THEN TRUE ELSE FALSE END          AS hasChildren,
+            -- 부서에 배정된 사용 중 사용자 존재 여부 (미사용 전환 차단용)
+            CASE WHEN EXISTS (
+                SELECT 1 FROM tb_user u
+                WHERE u.department_id = d.department_id
+                  AND u.tenant_id     = d.tenant_id
+                  AND u.use_at        = 'Y'
+            ) THEN TRUE ELSE FALSE END          AS hasMembers
         FROM tb_department d
         LEFT JOIN tb_department pd ON pd.department_id = d.parent_department_id
         WHERE d.department_id = #{departmentId}
@@ -153,6 +168,17 @@
         FROM tb_department
         WHERE parent_department_id = #{departmentId}
           AND tenant_id            = #{tenantId}
+    </select>
+
+    <!-- 부서에 배정된 사용 중 사용자 수 (미사용 전환 차단용) -->
+    <select id="DepartmentDAO.countAssignedUsers"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM tb_user
+        WHERE department_id = #{departmentId}
+          AND tenant_id     = #{tenantId}
+          AND use_at        = 'Y'
     </select>
 
 </mapper>
