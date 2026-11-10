@@ -12,7 +12,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { GripVertical } from 'lucide-react';
 
 type BlockItem = {
   id: string;
@@ -59,7 +59,7 @@ function SortableHandle(props: SortableHandleProps) {
       {...attributes}
       {...listeners}
     >
-      <DragIndicatorIcon fontSize="small" />
+      <GripVertical />
     </button>
   );
 }

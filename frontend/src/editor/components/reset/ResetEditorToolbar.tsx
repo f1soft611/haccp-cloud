@@ -1,15 +1,17 @@
-import ArrowDropDownRounded from '@mui/icons-material/ArrowDropDownRounded';
-import BorderColorRounded from '@mui/icons-material/BorderColorRounded';
-import CheckBoxRounded from '@mui/icons-material/CheckBoxRounded';
-import FormatAlignCenterRounded from '@mui/icons-material/FormatAlignCenterRounded';
-import FormatAlignLeftRounded from '@mui/icons-material/FormatAlignLeftRounded';
-import FormatAlignRightRounded from '@mui/icons-material/FormatAlignRightRounded';
-import FormatColorFillRounded from '@mui/icons-material/FormatColorFillRounded';
-import FormatColorTextRounded from '@mui/icons-material/FormatColorTextRounded';
-import FormatBoldRounded from '@mui/icons-material/FormatBoldRounded';
-import FormatItalicRounded from '@mui/icons-material/FormatItalicRounded';
-import TableRowsRounded from '@mui/icons-material/TableRowsRounded';
-import TitleRounded from '@mui/icons-material/TitleRounded';
+import {
+  Baseline,
+  ChevronDown,
+  Italic,
+  LetterB,
+  PaintBucket,
+  PenLine,
+  Rows3,
+  SquareCheck,
+  TextAlignCenter,
+  TextAlignEnd,
+  TextAlignStart,
+  Type,
+} from 'lucide-react';
 import { Button, Divider, MenuItem, Select, Stack } from '@mui/material';
 import type { Editor } from '@tiptap/react';
 import type { MouseEvent } from 'react';
@@ -234,7 +236,7 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
           },
           (theme) =>
             theme.applyStyles('dark', {
-              '& .MuiSvgIcon-root': { color: 'editor.toolbarText' },
+              '& .MuiSvgIcon-root, & .lucide': { color: 'editor.toolbarText' },
             }),
         ]}
       >
@@ -258,14 +260,14 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
           onClick={() => editor.chain().focus().toggleBold().run()}
           disabled={disabled}
         >
-          <FormatBoldRounded fontSize="small" />
+          <LetterB fontSize="small" />
         </ToolbarButton>
         <ToolbarButton
           title="기울임"
           onClick={() => editor.chain().focus().toggleItalic().run()}
           disabled={disabled}
         >
-          <FormatItalicRounded fontSize="small" />
+          <Italic  />
         </ToolbarButton>
         <ToolbarButton
           title="제목 추가"
@@ -274,14 +276,14 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
           }
           disabled={disabled}
         >
-          <TitleRounded fontSize="small" />
+          <Type  />
         </ToolbarButton>
         <ToolbarButton
           title="체크리스트"
           onClick={() => editor.chain().focus().toggleTaskList().run()}
           disabled={disabled}
         >
-          <CheckBoxRounded fontSize="small" />
+          <SquareCheck  />
         </ToolbarButton>
         <Divider orientation="vertical" flexItem />
         <ToolbarButton
@@ -289,21 +291,21 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
           onClick={() => handleSetTextAlign('left')}
           disabled={disabled}
         >
-          <FormatAlignLeftRounded fontSize="small" />
+          <TextAlignStart  />
         </ToolbarButton>
         <ToolbarButton
           title="가운데 정렬"
           onClick={() => handleSetTextAlign('center')}
           disabled={disabled}
         >
-          <FormatAlignCenterRounded fontSize="small" />
+          <TextAlignCenter  />
         </ToolbarButton>
         <ToolbarButton
           title="우측 정렬"
           onClick={() => handleSetTextAlign('right')}
           disabled={disabled}
         >
-          <FormatAlignRightRounded fontSize="small" />
+          <TextAlignEnd  />
         </ToolbarButton>
         <Divider orientation="vertical" flexItem />
         {/* <ToolbarButton
@@ -311,13 +313,13 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
           onClick={insertBaseTable}
           disabled={disabled}
         >
-          <TableRowsRounded fontSize="small" />
+          <Rows3  />
         </ToolbarButton> */}
         <Button
           size="small"
           variant="outlined"
-          startIcon={<FormatColorTextRounded />}
-          endIcon={<ArrowDropDownRounded />}
+          startIcon={<Baseline />}
+          endIcon={<ChevronDown />}
           onClick={(event: MouseEvent<HTMLButtonElement>) => {
             rememberCurrentCell();
             setTextColorMenuAnchor(event.currentTarget);
@@ -330,8 +332,8 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
         <Button
           size="small"
           variant="outlined"
-          startIcon={<FormatColorFillRounded />}
-          endIcon={<ArrowDropDownRounded />}
+          startIcon={<PaintBucket />}
+          endIcon={<ChevronDown />}
           onClick={(event: MouseEvent<HTMLButtonElement>) => {
             rememberCurrentCell();
             setTextHighlightMenuAnchor(event.currentTarget);
@@ -348,8 +350,8 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
         <Button
           size="small"
           variant="outlined"
-          startIcon={<TableRowsRounded />}
-          endIcon={<ArrowDropDownRounded />}
+          startIcon={<Rows3 />}
+          endIcon={<ChevronDown />}
           onClick={(event: MouseEvent<HTMLButtonElement>) => {
             rememberCurrentCell();
             setTableMenuAnchor(event.currentTarget);
@@ -362,8 +364,8 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
         <Button
           size="small"
           variant="outlined"
-          startIcon={<FormatColorFillRounded />}
-          endIcon={<ArrowDropDownRounded />}
+          startIcon={<PaintBucket />}
+          endIcon={<ChevronDown />}
           onClick={(event: MouseEvent<HTMLButtonElement>) => {
             rememberCurrentCell();
             setCellColorMenuAnchor(event.currentTarget);
@@ -379,8 +381,8 @@ export function ResetEditorToolbar(props: ResetEditorToolbarProps) {
         <Button
           size="small"
           variant="outlined"
-          startIcon={<BorderColorRounded />}
-          endIcon={<ArrowDropDownRounded />}
+          startIcon={<PenLine />}
+          endIcon={<ChevronDown />}
           onClick={(event: MouseEvent<HTMLButtonElement>) => {
             rememberCurrentCell();
             setCellBorderMenuAnchor(event.currentTarget);
