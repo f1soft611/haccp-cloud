@@ -39,7 +39,7 @@ const sharedThemeOptions = {
 export const tableStyleTokens = {
   headerTopBorder: '2px solid #3263B9',
   headerBackground: '#EEF0F3',
-  headerText: '#000',
+  headerText: '#313439',
   headerBottomBorder: '1px solid #D9DCE1',
   headerHeight: 40,
   rowBackground: '#FFFFFF',
