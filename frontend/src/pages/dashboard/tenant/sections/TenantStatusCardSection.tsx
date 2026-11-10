@@ -1,8 +1,4 @@
-import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
-import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
-import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined';
+import { CalendarDays, ChevronRight, ClipboardCheck, FilePen, LayoutGrid } from 'lucide-react';
 import {
     Box,
     ButtonBase,
@@ -109,14 +105,14 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                     rowGap={0.5}
                     className={styles.statusDraftGroup}
                 >
-                    <EditNoteOutlinedIcon fontSize="small" className={styles.statusIcon} />
+                    <FilePen fontSize="small" className={styles.statusIcon} />
                     <Typography className={`${styles.statusLabel} ${styles.statusLabelDraft}`}>
                         기안문서
                     </Typography>
                     {DRAFT_STATUS_CARD_KEYS.map((status, index) => (
                         <Fragment key={status}>
                             {index > 0 ? (
-                                <ChevronRightIcon fontSize="small" className={styles.statusChevron} />
+                                <ChevronRight fontSize="small" className={styles.statusChevron} />
                             ) : null}
                             {renderCount(
                                 status,
@@ -131,7 +127,7 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                 {renderCount(
                     PENDING_APPROVAL_STATUS,
                     <>
-                        <AssignmentTurnedInOutlinedIcon fontSize="small" className={styles.statusIcon} />
+                        <ClipboardCheck fontSize="small" className={styles.statusIcon} />
                         <Typography component="span" className={`${styles.statusLabel} ${styles.statusLabelApproval}`}>
                             결재할 문서
                         </Typography>
@@ -187,11 +183,11 @@ export function TenantStatusCardSection(props: TenantStatusCardSectionProps) {
                         className={styles.viewToggle}
                     >
                         <ToggleButton value="list" aria-label="카드형">
-                            <GridViewOutlinedIcon fontSize="small" className={styles.toggleIcon} />
+                            <LayoutGrid size={18} className={styles.toggleIcon} />
                             카드형
                         </ToggleButton>
                         <ToggleButton value="calendar" aria-label="캘린더형">
-                            <CalendarMonthOutlinedIcon fontSize="small" className={styles.toggleIcon} />
+                            <CalendarDays size={18} className={styles.toggleIcon} />
                             캘린더
                         </ToggleButton>
                     </ToggleButtonGroup>

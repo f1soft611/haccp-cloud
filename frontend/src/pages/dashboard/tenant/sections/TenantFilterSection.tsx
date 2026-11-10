@@ -1,7 +1,4 @@
-import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
-import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined';
-import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
+import { CalendarDays, LayoutGrid, RotateCcw, Search } from 'lucide-react';
 import {
     Box,
     IconButton,
@@ -83,9 +80,9 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
             alignItems={{ xs: 'stretch', md: 'center' }}
             sx={{ p: 2 }}
         >
-            <SearchOutlinedIcon
-                color="primary"
-                sx={{ display: { xs: 'none', md: 'block' } }}
+            <Box
+                component={Search}
+                sx={{ color: 'primary.main', display: { xs: 'none', md: 'block' } }}
             />
             {selectField('category', '업무분류', '전체', toOptions(categoryOptions), 200)}
             {selectField(
@@ -130,7 +127,7 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                         '&:hover': { bgcolor: SEARCH_BUTTON_COLOR, opacity: 0.9 },
                     }}
                 >
-                    <SearchOutlinedIcon fontSize="small" />
+                    <Search  />
                 </IconButton>
                 <IconButton
                     aria-label="초기화"
@@ -144,11 +141,10 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                         bgcolor: 'background.paper',
                     }}
                 >
-                    <RestartAltOutlinedIcon fontSize="small" />
+                    <RotateCcw  />
                 </IconButton>
             </Stack>
 
-            {/* 기존 -> 검색조건 윗줄 오른쪽 / 변경 -> 같은 줄 오른쪽 끝: 리스트형/캘린더형 전환 */}
             <Box sx={{ ml: { md: 'auto' }, flexShrink: 0 }}>
                 <ToggleButtonGroup
                     size="small"
@@ -160,8 +156,6 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                         }
                     }}
                     aria-label="보기 형식"
-                    // 기존 -> 붙어 있는 그룹, 선택 시 MUI 기본 회색 배경
-                    // 변경 -> 떨어진 버튼, 선택 시 짙은 테두리 + 진한 글자, 미선택은 연한 테두리 + 회색 글자
                     sx={{
                         gap: 0.5,
                         '& .MuiToggleButton-root': {
@@ -192,11 +186,11 @@ export function TenantFilterSection(props: TenantFilterSectionProps) {
                     }}
                 >
                     <ToggleButton value="list" aria-label="카드형">
-                        <GridViewOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        <LayoutGrid />
                         카드형
                     </ToggleButton>
                     <ToggleButton value="calendar" aria-label="캘린더형">
-                        <CalendarMonthOutlinedIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        <CalendarDays />
                         캘린더
                     </ToggleButton>
                 </ToggleButtonGroup>
