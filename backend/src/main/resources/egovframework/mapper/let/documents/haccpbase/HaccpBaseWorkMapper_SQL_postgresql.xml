@@ -16,6 +16,8 @@
         <result property="cycleName" column="reg_term_nm"/>
         <result property="active" column="active"/>
         <result property="expirationApply" column="expiration_apply"/>
+        <result property="expirationNoticeStatus" column="expiration_notice_status"/>
+        <result property="expirationNoticeCount" column="expiration_notice_count"/>
         <result property="approvalApply" column="approval_apply"/>
         <result property="createdBy" column="created_by"/>
         <result property="createdAt" column="created_at"/>
@@ -57,6 +59,8 @@
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
+            COALESCE(w.expiration_notice_status, 'NONE') AS expiration_notice_status,
+            w.expiration_notice_count,
             CASE WHEN w.approval_apply = 'Y' THEN TRUE ELSE FALSE END AS approval_apply,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
@@ -159,6 +163,8 @@
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
+            COALESCE(w.expiration_notice_status, 'NONE') AS expiration_notice_status,
+            w.expiration_notice_count,
             CASE WHEN w.approval_apply = 'Y' THEN TRUE ELSE FALSE END AS approval_apply,
             COALESCE(NULLIF(TRIM(cu.user_nm), ''), CAST(w.created_by AS varchar)) AS created_by,
             TO_CHAR(w.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
@@ -300,6 +306,8 @@
             approver_id,
             cata_code,
             expiration_apply,
+            expiration_notice_status,
+            expiration_notice_count
             approval_apply,
             use_at,
             delete_status,
@@ -321,6 +329,8 @@
                 AND tenant_id = #{tenantId}
               LIMIT 1),
             #{expirationApply},
+            #{expirationNoticeStatus},
+            #{expirationNoticeCount, jdbcType=INTEGER},
             #{approvalApply},
             #{useAt},
             'N',
@@ -347,6 +357,8 @@
                             AND tenant_id = #{tenantId}
                           LIMIT 1),
             expiration_apply = #{expirationApply},
+            expiration_notice_status = #{expirationNoticeStatus},
+            expiration_notice_count = #{expirationNoticeCount, jdbcType=INTEGER},
             approval_apply = #{approvalApply},
             use_at = #{useAt},
             updated_by = #{updatedBy, jdbcType=BIGINT},
@@ -381,6 +393,7 @@
           AND drafting_work_category_id = #{workId}
       </delete>
 
+        <!-- 만료일 안내 기준, 계산숫자도 저장 -->
       <insert id="HaccpBaseWorkDAO.insertWorkAuthorityMapping"
           parameterType="map">
         INSERT INTO tb_drafting_work_category_authority (
