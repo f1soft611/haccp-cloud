@@ -12,8 +12,6 @@ import {
   createDepartment,
   listDepartments,
   updateDepartment,
-  // 기존 -> deleteDepartment를 import
-  // 변경 -> updateDepartmentStatus를 import
   updateDepartmentStatus,
   type DepartmentFormData,
   type DepartmentItem,
@@ -38,7 +36,7 @@ const DEFAULT_FORM: DepartmentFormData = {
 
 const DEFAULT_SEARCH: DepartmentSearchValue = {
   searchKeyword: '',
-  filterActive: 'all',
+  filterActive: 'Y',
 };
 
 export function DepartmentsPage() {
@@ -48,16 +46,12 @@ export function DepartmentsPage() {
   const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } =
     useGridPagination();
 
-  const [searchValue, setSearchValue] =
-    useState<DepartmentSearchValue>(DEFAULT_SEARCH);
-  const [appliedFilters, setAppliedFilters] =
-    useState<DepartmentSearchValue>(DEFAULT_SEARCH);
+  const [searchValue, setSearchValue] = useState<DepartmentSearchValue>(DEFAULT_SEARCH);
+  const [appliedFilters, setAppliedFilters] = useState<DepartmentSearchValue>(DEFAULT_SEARCH);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<DepartmentItem | null>(null);
   const [formData, setFormData] = useState<DepartmentFormData>(DEFAULT_FORM);
-  // 기존 -> type: 'save' | 'delete', confirmColor: 'primary' | 'error'
-  // 변경 -> type: 'save' | 'toggle', confirmColor: 'primary' | 'warning', 토글 대상 다음 상태(nextActive) 추가
   const [confirmState, setConfirmState] = useState<{
     type: 'save' | 'toggle';
     title: string;
@@ -113,8 +107,6 @@ export function DepartmentsPage() {
     },
   });
 
-  // 기존 -> deleteMutation: deleteDepartment 호출, 성공 시 "부서가 삭제되었습니다."
-  // 변경 -> statusMutation: updateDepartmentStatus 호출, 성공 시 "부서 상태가 변경되었습니다."
   const statusMutation = useMutation({
     mutationFn: updateDepartmentStatus,
     onSuccess: () => {
@@ -221,8 +213,6 @@ export function DepartmentsPage() {
     });
   };
 
-  // 기존 -> handleDelete: 삭제 확인 다이얼로그(confirmColor 'error')
-  // 변경 -> handleToggleActive: 사용/미사용 전환 확인 다이얼로그(confirmColor 'warning'/'primary')
   const handleToggleActive = (dept: DepartmentItem) => {
     setConfirmState({
       type: 'toggle',
@@ -237,8 +227,6 @@ export function DepartmentsPage() {
 
   const handleConfirmAction = () => {
     if (!confirmState) return;
-    // 기존 -> confirmState.type === 'delete'일 때 deleteMutation 호출
-    // 변경 -> confirmState.type === 'toggle'일 때 statusMutation 호출
     if (confirmState.type === 'toggle' && confirmState.targetId) {
       statusMutation.mutate({
         tenantCode,
@@ -296,8 +284,6 @@ export function DepartmentsPage() {
       <DepartmentTreeGrid
         rows={gridRows}
         loading={departmentsQuery.isLoading}
-          // 기존 -> deletePending={deleteMutation.isPending}
-          // 변경 -> statusPending={statusMutation.isPending}
         statusPending={statusMutation.isPending}
         expandedIds={expandedIds}
         pageIndex={pageIndex}
@@ -305,8 +291,6 @@ export function DepartmentsPage() {
         totalCount={totalCount}
         onToggleExpand={toggleExpanded}
         onEdit={handleOpenEditModal}
-          // 기존 -> onDelete={handleDelete}
-          // 변경 -> onToggleActive={handleToggleActive}
         onToggleActive={handleToggleActive}
         onPageChange={setPageIndex}
         onPageSizeChange={setPageSize}

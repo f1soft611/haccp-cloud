@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { HaccpBaseManagementPage } from '../pages/documents/haccp-base/HaccpBaseManagementPage';
+import { AppProviders } from '../../../app/providers/AppProviders';
+import { HaccpBaseManagementPage } from '../../../pages/documents/haccp-base/HaccpBaseManagementPage';
 
 const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, createHaccpBaseWorkMock } =
   vi.hoisted(() => ({
@@ -31,13 +31,16 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, crea
       {
         id: '1',
         tenantCode: 'PLATFORM',
-        categoryGroupId: '10',
-        categoryCode: '001',
-        categoryName: 'HACCP문서(HA)',
+        categoryGroupId: '11',
+        categoryCode: 'HCP-CALIB',
+        categoryName: '검교정 일정관리',
         divisionCode: '001',
         divisionName: '기안서',
-        cycle: 'DAY', cycleName: '일',
+        cycle: 'ANYTIME', cycleName: '수시',
         active: true,
+        expirationApply: true,
+        expirationNoticeStatus: 'DAY',
+        expirationNoticeCount: 30,
         createdBy: '고대성',
         createdAt: '2026-07-07 10:00',
         owner: '검토:금도연 / 승인:고대성',
@@ -94,6 +97,23 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, crea
     createHaccpBaseWorkMock: vi.fn<(payload: unknown) => Promise<object>>(async () => ({})),
   }));
 
+// HCP- 분류 + 수시 + 만료일 관리 해당까지 고른 업무 추가 다이얼로그 열기
+async function openExpirationCreateDialog() {
+  render(
+      <AppProviders>
+        <HaccpBaseManagementPage />
+      </AppProviders>,
+  );
+  await screen.findByText('기안서');
+  fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
+  fireEvent.mouseDown(screen.getByRole('combobox', { name: '분류' }));
+  fireEvent.click(await screen.findByRole('option', { name: '검교정 일정관리' }));
+  fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
+  fireEvent.click(await screen.findByRole('option', { name: '수시' }));
+  fireEvent.mouseDown(screen.getByRole('combobox', { name: '만료일 관리 양식' }));
+  fireEvent.click(await screen.findByRole('option', { name: '해당' }));
+}
+
 const navigateMock = vi.fn();
 
 vi.mock('react-router-dom', async () => {
@@ -107,17 +127,17 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('../services/documents/haccpBaseCategoryService', () => ({
+vi.mock('../../../services/documents/haccpBaseCategoryService', () => ({
   listHaccpBaseCategories: listHaccpBaseCategoriesMock,
 }));
 
-vi.mock('../services/documents/haccpBaseWorkService', () => ({
+vi.mock('../../../services/documents/haccpBaseWorkService', () => ({
   listHaccpBaseWorks: listHaccpBaseWorksMock,
   createHaccpBaseWork: createHaccpBaseWorkMock,
   updateHaccpBaseWork: vi.fn(),
 }));
 
-vi.mock('../services/organization/usersService', () => ({
+vi.mock('../../../services/organization/usersService', () => ({
   listUsers: listUsersMock,
 }));
 
@@ -130,7 +150,7 @@ describe('HaccpBaseManagementPage', () => {
     );
 
     expect(await screen.findByText('No')).toBeInTheDocument();
-    expect(await screen.findByText('업무구분명')).toBeInTheDocument();
+    expect(await screen.findByText('업무명')).toBeInTheDocument();
     expect(await screen.findByText('업무분류')).toBeInTheDocument();
     expect(await screen.findByText('작성주기')).toBeInTheDocument();
     expect(screen.queryByText('등록자')).not.toBeInTheDocument();
@@ -148,7 +168,7 @@ describe('HaccpBaseManagementPage', () => {
       screen.getByRole('textbox', { name: /업무코드/ }),
     ).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /업무명/ })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: '업무분류' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '분류' })).toBeInTheDocument();
     expect(
       screen.getByRole('combobox', { name: '작성주기' }),
     ).toBeInTheDocument();
@@ -217,8 +237,7 @@ describe('HaccpBaseManagementPage', () => {
     expect(createHaccpBaseWorkMock.mock.calls[0][0]).toMatchObject({ cycle: 'QUARTER' });
   });
 
-  // 기존 -> HCP- 업무분류 + 수시일 때만 노출 확인 / 변경 -> HCP- 업무분류이면 등록주기와 상관없이 노출 확인
-  it('shows expiration select only for HCP- category', async () => {
+  it('shows expiration select only for HCP- category with ANYTIME cycle', async () => {
     render(
         <AppProviders>
           <HaccpBaseManagementPage />
@@ -228,7 +247,6 @@ describe('HaccpBaseManagementPage', () => {
     await screen.findByText('기안서');
     fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
 
-    // 기본값: 업무분류 001 -> 숨김
     expect(
         screen.queryByRole('combobox', { name: '만료일 관리 양식' }),
     ).not.toBeInTheDocument();
@@ -236,26 +254,26 @@ describe('HaccpBaseManagementPage', () => {
         screen.getByRole('combobox', { name: '결재 적용 여부' }),
     ).toHaveTextContent(/^적용$/);
 
-    // 수시여도 업무분류가 HCP- 가 아니면 숨김
+    // 수시여도 HCP- 분류가 아니면 숨김
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
     fireEvent.click(await screen.findByRole('option', { name: '수시' }));
     expect(
         screen.queryByRole('combobox', { name: '만료일 관리 양식' }),
     ).not.toBeInTheDocument();
 
-    // HCP- 업무분류 -> 노출, 기본값 미해당
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: '업무분류' }));
+    // HCP- 분류 + 수시 -> 노출, 기본값 미해당
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '분류' }));
     fireEvent.click(await screen.findByRole('option', { name: '검교정 일정관리' }));
     expect(
         screen.getByRole('combobox', { name: '만료일 관리 양식' }),
     ).toHaveTextContent('미해당');
 
-    // 등록주기를 수시가 아닌 값으로 바꿔도 계속 노출
+    // 수시가 아닌 주기로 바꾸면 숨김
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
     fireEvent.click(await screen.findByRole('option', { name: '주' }));
     expect(
-        screen.getByRole('combobox', { name: '만료일 관리 양식' }),
-    ).toBeInTheDocument();
+        screen.queryByRole('combobox', { name: '만료일 관리 양식' }),
+    ).not.toBeInTheDocument();
   });
 
   it('clears and disables reviewer/approver when approval is not applied', async () => {
@@ -355,5 +373,99 @@ describe('HaccpBaseManagementPage', () => {
     fireEvent.click(within(picker).getByRole('button', { name: '확인 (2명)' }));
 
     expect(screen.getByRole('textbox', { name: '담당자' })).toHaveValue('금도연, 고대성');
+  });
+
+  it('shows expiration notice fields only when expiration form is applied', async () => {
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+    await screen.findByText('기안서');
+    fireEvent.click(screen.getByRole('button', { name: '+ 업무 추가' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '분류' }));
+    fireEvent.click(await screen.findByRole('option', { name: '검교정 일정관리' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
+    fireEvent.click(await screen.findByRole('option', { name: '수시' }));
+
+    // 미해당 -> 안내 입력칸 숨김
+    expect(screen.queryByRole('combobox', { name: '만료일 안내 기준' })).not.toBeInTheDocument();
+
+    // 해당 -> 안내 기준 없음, 계산숫자 비활성
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '만료일 관리 양식' }));
+    fireEvent.click(await screen.findByRole('option', { name: '해당' }));
+    expect(screen.getByRole('combobox', { name: '만료일 안내 기준' })).toHaveTextContent('없음');
+    expect(screen.getByLabelText(/만료일 안내 계산숫자/)).toBeDisabled();
+  });
+
+  it('requires a positive integer notice count and submits notice values', async () => {
+    createHaccpBaseWorkMock.mockClear();
+    await openExpirationCreateDialog();
+
+    fireEvent.change(screen.getByRole('textbox', { name: /업무명/ }), {
+      target: { value: '검교정 점검' },
+    });
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '결재 적용 여부' }));
+    fireEvent.click(await screen.findByRole('option', { name: '미적용' }));
+
+    fireEvent.mouseDown(await screen.findByRole('combobox', { name: '만료일 안내 기준' }));
+    fireEvent.click(await screen.findByRole('option', { name: '일' }));
+
+    const count = screen.getByLabelText(/만료일 안내 계산숫자/);
+    expect(count).toBeEnabled();
+    // 비어 있으면 등록 불가
+    expect(screen.getByRole('button', { name: '등록' })).toBeDisabled();
+
+    fireEvent.change(count, { target: { value: '0' } });
+    expect(screen.getByText('1 이상의 정수를 입력하세요.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '등록' })).toBeDisabled();
+
+    fireEvent.change(count, { target: { value: '30' } });
+    expect(screen.getByRole('button', { name: '등록' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: '등록' }));
+
+    await vi.waitFor(() => expect(createHaccpBaseWorkMock).toHaveBeenCalled());
+    expect(createHaccpBaseWorkMock.mock.calls[0][0]).toMatchObject({
+      expirationApply: true,
+      expirationNoticeStatus: 'DAY',
+      expirationNoticeCount: 30,
+    });
+  });
+
+  it('resets notice values when the expiration form is no longer applicable', async () => {
+    await openExpirationCreateDialog();
+    fireEvent.mouseDown(await screen.findByRole('combobox', { name: '만료일 안내 기준' }));
+    fireEvent.click(await screen.findByRole('option', { name: '개월' }));
+    fireEvent.change(screen.getByLabelText(/만료일 안내 계산숫자/), { target: { value: '2' } });
+
+    // 수시가 아닌 주기로 바꿨다가 다시 수시 -> 미해당, 안내 입력칸 숨김
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
+    fireEvent.click(await screen.findByRole('option', { name: '주' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
+    fireEvent.click(await screen.findByRole('option', { name: '수시' }));
+    expect(screen.getByRole('combobox', { name: '만료일 관리 양식' })).toHaveTextContent('미해당');
+    expect(screen.queryByRole('combobox', { name: '만료일 안내 기준' })).not.toBeInTheDocument();
+
+    // 다시 해당 -> 없음에서 시작
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '만료일 관리 양식' }));
+    fireEvent.click(await screen.findByRole('option', { name: '해당' }));
+    expect(screen.getByRole('combobox', { name: '만료일 안내 기준' })).toHaveTextContent('없음');
+    expect(screen.getByLabelText(/만료일 안내 계산숫자/)).toHaveValue(null);
+  });
+
+  it('shows expiration notice in the grid and fills it in the edit dialog', async () => {
+    render(
+        <AppProviders>
+          <HaccpBaseManagementPage />
+        </AppProviders>,
+    );
+
+    await screen.findByText('기안서');
+    expect(screen.getByText('만료일 안내')).toBeInTheDocument();
+    expect(await screen.findByText('30일 전')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '업무 수정' }));
+    expect(screen.getByRole('combobox', { name: '만료일 안내 기준' })).toHaveTextContent('일');
+    expect(screen.getByLabelText(/만료일 안내 계산숫자/)).toHaveValue(30);
   });
 });

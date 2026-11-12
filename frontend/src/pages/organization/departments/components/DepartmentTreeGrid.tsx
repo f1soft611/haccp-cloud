@@ -107,8 +107,8 @@ export function DepartmentTreeGrid(props: {
         <TableHead>
           <TableRow>
             <TableCell width="40">확장</TableCell>
-            <TableCell>부서명</TableCell>
-            <TableCell>상위 부서</TableCell>
+            <TableCell width="240">부서명</TableCell>
+            <TableCell width="240">상위 부서</TableCell>
             <TableCell width="80" align="center">
               순서
             </TableCell>

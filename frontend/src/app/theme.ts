@@ -135,6 +135,12 @@ const tableComponents: ThemeOptions['components'] = {
     styleOverrides: {
       startIcon: { '& > svg.lucide': { width: '1em', height: '1em' } },
       endIcon: { '& > svg.lucide': { width: '1em', height: '1em' } },
+      contained: {
+        height: 35,
+        minWidth: 82,
+        borderRadius: 4,
+        boxShadow: '0px 1px 1px #00000029',
+      },
     },
   },
 };

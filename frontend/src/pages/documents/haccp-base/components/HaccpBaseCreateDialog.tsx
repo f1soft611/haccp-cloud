@@ -15,6 +15,8 @@ import {
   type HaccpBaseCreateForm,
 } from '../types';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 
 const APPROVAL_APPLY_OPTIONS = [
   { value: 'Y', label: '적용' },
@@ -30,6 +32,13 @@ const USE_AT_OPTIONS = [
   { value: 'Y', label: '사용' },
   { value: 'N', label: '미사용' },
 ] as const;
+
+// 만료일 관리 양식이 미해당이 될 때 함께 비우는 값
+const EXPIRATION_RESET = {
+  expirationApply: 'N',
+  expirationNoticeStatus: 'NONE',
+  expirationNoticeCount: '',
+} as const;
 
 // 분류코드 HCP-XXX 이면 대상
 function isExpirationTarget(categoryCode: string) {
@@ -66,11 +75,19 @@ export function HaccpBaseCreateDialog(props: {
         .join(', ');
     // 기존 -> 검토자/승인자 항상 필수 / 변경 -> 결재 적용일 때만 필수
     const needsSigners = value.approvalApply === 'Y';
+
+    // 만료일 관리 해당 + 안내 기준이 없음이 아니면 계산숫자(1 이상 정수) 필수
+    const usesNoticeCount =
+        value.expirationApply === 'Y' && value.expirationNoticeStatus !== 'NONE';
+    const noticeCountInvalid =
+        usesNoticeCount && !/^[1-9]\d*$/.test(value.expirationNoticeCount);
+    // 기존 -> 작성주기, 업무명, 분류, 결재자만 판단 / 변경 -> 만료일 안내 계산숫자 오류도 판단
     const isSubmitDisabled =
         !value.cycle ||
         !value.divisionName.trim() ||
         !value.categoryId ||
-        (needsSigners && (!value.reviewerId || !value.approverId));
+        (needsSigners && (!value.reviewerId || !value.approverId)) ||
+        noticeCountInvalid;
 
     const findCategoryCode = (categoryId: string) =>
         categoryOptions.find((category) => category.id === categoryId)?.code ?? '';
@@ -131,14 +148,11 @@ export function HaccpBaseCreateDialog(props: {
             fullWidth
             label="분류"
             value={value.categoryId}
-              // 기존 -> 분류코드 + 등록주기로 초기화 판단 / 변경 -> HCP- 분류가 아니게 되면 N 으로 초기화
             onChange={(categoryId) =>
                 onChange({
                     ...value,
                     categoryId,
-                    expirationApply: isExpirationTarget(findCategoryCode(categoryId))
-                        ? value.expirationApply
-                        : 'N',
+                    ...(isExpirationTarget(findCategoryCode(categoryId)) ? {} : EXPIRATION_RESET),
                 })
             }
             required
@@ -152,12 +166,11 @@ export function HaccpBaseCreateDialog(props: {
               fullWidth
               label="작성주기"
               value={value.cycle}
-              // 기존 -> 등록주기만 변경 / 변경 -> 수시가 아니면 만료일 관리 N 초기화
               onChange={(cycle) =>
                   onChange({
                       ...value,
                       cycle,
-                      expirationApply: cycle === 'ANYTIME' ? value.expirationApply : 'N',
+                      ...(cycle === 'ANYTIME' ? {} : EXPIRATION_RESET),
                   })
               }
               required
@@ -271,11 +284,48 @@ export function HaccpBaseCreateDialog(props: {
                       fullWidth
                       label="만료일 관리 양식"
                       value={value.expirationApply}
-                      onChange={(expirationApply) => onChange({ ...value, expirationApply })}
+                      onChange={(expirationApply) =>
+                          onChange({ ...value, ...EXPIRATION_RESET, expirationApply })
+                      }
                       options={EXPIRATION_APPLY_OPTIONS}
                   />
               ) : null}
           </Stack>
+
+        {showExpiration && value.expirationApply === 'Y' ? (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <CommonCodeSelect
+                  groupCode={COMMON_CODE_GROUP.EXPIRY_STATUS}
+                  label="만료일 안내 기준"
+                  value={value.expirationNoticeStatus}
+                  allowEmpty={false}
+                  onChange={(expirationNoticeStatus) =>
+                      onChange({
+                        ...value,
+                        expirationNoticeStatus,
+                        expirationNoticeCount:
+                            expirationNoticeStatus === 'NONE' ? '' : value.expirationNoticeCount,
+                      })
+                  }
+                  fullWidth
+              />
+              <AppTextField
+                  label={usesNoticeCount ? '만료일 안내 계산숫자 *' : '만료일 안내 계산숫자'}
+                  type="number"
+                  value={value.expirationNoticeCount}
+                  onChange={(expirationNoticeCount) => onChange({ ...value, expirationNoticeCount })}
+                  disabled={!usesNoticeCount}
+                  error={noticeCountInvalid}
+                  helperText={
+                    noticeCountInvalid
+                        ? '1 이상의 정수를 입력하세요.'
+                        : '만료일 기준 며칠 전에 안내할지 입력합니다.'
+                  }
+                  slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                  fullWidth
+              />
+            </Stack>
+        ) : null}
 
         <AppSelect
           label="사용여부"

@@ -866,6 +866,7 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 단위' },
     { groupCode: 'ITEM_TYPE', groupName: '품목 계정', groupDesc: '품목 계정' },
     { groupCode: 'WORKDAY_TYPE', groupName: '업무일 유형', groupDesc: '업무일 관리 날짜 유형' },
+    { groupCode: 'EXPIRY_STATUS', groupName: '소비기한 기준', groupDesc: '소비기한 계산 단위' },
   ],
   details: [
     { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
@@ -900,6 +901,11 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'WORKDAY_TYPE', code: 'COMPANY_HOLIDAY', codeName: '회사 휴일', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
     { groupCode: 'WORKDAY_TYPE', code: 'SUBSTITUTE_HOLIDAY', codeName: '대체 휴일', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
     { groupCode: 'WORKDAY_TYPE', code: 'SPECIAL_WORK', codeName: '특근일', parentCodeName: '', useAt: true, sortOrder: 50, codeDesc: '' },
+
+    { groupCode: 'EXPIRY_STATUS', code: 'NONE', codeName: '없음', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'EXPIRY_STATUS', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+    { groupCode: 'EXPIRY_STATUS', code: 'MONTH', codeName: '개월', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
+    { groupCode: 'EXPIRY_STATUS', code: 'YEAR', codeName: '년', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
   ],
 };
 

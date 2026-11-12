@@ -271,7 +271,7 @@
 
 @media (min-width: 900px) {
   .scope .searchFilterActions {
-    margin-left: auto;
+    /*margin-left: auto;*/
   }
 
   .scope .searchFilterActions > * {
@@ -284,6 +284,7 @@
 
   .scope .searchFilterFields {
     flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   /* fullWidth 칸이 한 줄을 다 차지하지 않게 하고, 줄바꿈 기준은 라벨과 입력칸의 최소 너비로 맞춘다 */
@@ -295,7 +296,7 @@
 
   /* 선택칸과 날짜칸을 뺀 텍스트 칸만 남은 폭을 채운다 */
   .scope .searchFilterFields > :not(.searchFilterActions):has(:global(.MuiInputBase-input:not(.MuiSelect-select):not([type='date']))) {
-    flex: 1 1 240px;
+    flex: 0 1 240px;
   }
 }
 

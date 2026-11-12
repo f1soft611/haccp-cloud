@@ -38,11 +38,11 @@ export function UsersPage() {
 
   const [searchValue, setSearchValue] = useState<UsersSearchValue>({
     keyword: '',
-    filterActive: 'all',
+    filterActive: 'Y',
   });
   const [appliedSearch, setAppliedSearch] = useState<UsersSearchValue>({
     keyword: '',
-    filterActive: 'all',
+    filterActive: 'Y',
   });
 
   const [formOpen, setFormOpen] = useState(false);

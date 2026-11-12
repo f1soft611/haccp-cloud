@@ -307,7 +307,7 @@
             cata_code,
             expiration_apply,
             expiration_notice_status,
-            expiration_notice_count
+            expiration_notice_count,
             approval_apply,
             use_at,
             delete_status,

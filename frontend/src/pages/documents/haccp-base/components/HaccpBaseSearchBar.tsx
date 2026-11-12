@@ -2,6 +2,7 @@ import { Button } from '@mui/material';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+import styles from '../../../../shared/components/sharedComponents.module.css';
 import type { HaccpCategoryOption } from '../types';
 
 const USE_AT_FILTER_OPTIONS = [
@@ -41,7 +42,7 @@ export function HaccpBaseSearchBar(props: {
           <Button variant="contained" onClick={onCreate}>
             + 업무 추가
           </Button>
-          <Button variant="outlined" onClick={onCategorySettings}>
+          <Button variant="outlined" onClick={onCategorySettings} className={styles.searchFilterSubmit}>
             분류 설정
           </Button>
         </>
