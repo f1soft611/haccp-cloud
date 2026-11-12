@@ -26,7 +26,7 @@ export type ListEquipmentPagedParams = {
   pageIndex: number;
   pageSize: number;
   keyword?: string;
-  filterActive?: 'all' | 'Y' | 'N';
+  filterActive?: '' | 'Y' | 'N';
 };
 
 export type ListEquipmentPagedResult = {
@@ -114,10 +114,7 @@ export async function listEquipmentPaged(
         pageIndex: params.pageIndex,
         pageSize: params.pageSize,
         keyword: params.keyword || undefined,
-        filterActive:
-          params.filterActive && params.filterActive !== 'all'
-            ? params.filterActive
-            : undefined,
+        filterActive: params.filterActive || undefined,
       },
     },
   );

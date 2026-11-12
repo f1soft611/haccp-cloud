@@ -14,7 +14,8 @@ describe('usersService', () => {
       pageIndex: 1,
       pageSize: 10,
       keyword: '',
-      filterActive: 'all',
+      // 기존 -> 'all' / 변경 -> '' = 전체
+      filterActive: '',
     });
 
     expect(page.totalCount).toBeGreaterThan(0);

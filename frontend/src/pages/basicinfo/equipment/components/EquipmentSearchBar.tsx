@@ -4,14 +4,13 @@ import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 
 const ACTIVE_FILTER_OPTIONS = [
-  { value: 'all', label: '전체' },
   { value: 'Y', label: '사용' },
   { value: 'N', label: '미사용' },
 ] as const;
 
 export type EquipmentSearchValue = {
   keyword: string;
-  filterActive: 'all' | 'Y' | 'N';
+  filterActive: '' | 'Y' | 'N';
 };
 
 type EquipmentSearchBarProps = {
@@ -50,6 +49,7 @@ export function EquipmentSearchBar({
         value={value.filterActive}
         onChange={(filterActive) => onChange({ ...value, filterActive })}
         options={ACTIVE_FILTER_OPTIONS}
+        emptyLabel="전체"
         sx={{ minWidth: 140 }}
       />
       <AppTextField
