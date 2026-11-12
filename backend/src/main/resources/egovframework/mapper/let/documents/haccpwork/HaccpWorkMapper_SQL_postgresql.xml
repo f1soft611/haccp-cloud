@@ -909,13 +909,15 @@
          AND es.drafting_work_category_id = w.drafting_work_category_id
     </sql>
 
-    <!-- ponytail: 만료일과 무관하게 최신 문서가 승인이거나 최종확인된 반려면 미작성(대시보드와 같은 기준). D-N 기준이 필요하면 대시보드와 함께 AND es 에 만료일 조건 추가 -->
+    <!-- 만료일 관리 미작성 조건: 최신 문서가 승인이고 업무 안내 시작일에 도달했거나, 최종확인된 반려면 미작성(대시보드 미작성 건수와 같은 기준) -->
     <sql id="unwrittenExpirationWhere">
         <include refid="unwrittenWorkWhere"/>
         AND w.expiration_apply = 'Y'
         <!-- 기존 -> AND es.status_type = 'approved' -->
         <!-- 변경 -> 최종확인된 반려도 포함 -->
-        AND (es.status_type = 'approved' OR (es.status_type = 'rejected' AND NOT <include refid="finalOwnerConfirmPending"><property name="doc" value="es"/></include>))
+        <!-- 기존 -> es.status_type = 'approved' (만료일과 상관없이 승인이면 미작성) -->
+        <!-- 변경 -> (es.status_type = 'approved' AND es.notice_reached) (안내 시작일 도달한 승인만) -->
+        AND ((es.status_type = 'approved' AND es.notice_reached) OR (es.status_type = 'rejected' AND NOT <include refid="finalOwnerConfirmPending"><property name="doc" value="es"/></include>))
     </sql>
 
     <sql id="requestedCycleStart">
