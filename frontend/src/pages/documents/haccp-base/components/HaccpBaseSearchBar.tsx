@@ -6,15 +6,15 @@ import styles from '../../../../shared/components/sharedComponents.module.css';
 import type { HaccpCategoryOption } from '../types';
 
 const USE_AT_FILTER_OPTIONS = [
-  { value: 'all', label: '전체' },
   { value: 'Y', label: '사용' },
   { value: 'N', label: '미사용' },
 ] as const;
 
 export type HaccpBaseSearchValue = {
-  categoryId: 'ALL' | string;
+  // 기존 -> 'ALL' | string / 변경 -> '' = 전체
+  categoryId: string;
   keyword: string;
-  useAt: 'all' | 'Y' | 'N';
+  useAt: '' | 'Y' | 'N';
 };
 
 export function HaccpBaseSearchBar(props: {
@@ -55,6 +55,7 @@ export function HaccpBaseSearchBar(props: {
         value={value.useAt}
         onChange={(useAt) => onChange({ ...value, useAt })}
         options={USE_AT_FILTER_OPTIONS}
+        emptyLabel="전체"
         sx={{ minWidth: 140 }}
       />
       <AppSelect
@@ -62,13 +63,11 @@ export function HaccpBaseSearchBar(props: {
         label="업무분류"
         value={value.categoryId}
         onChange={(categoryId) => onChange({ ...value, categoryId })}
-        options={[
-          { value: 'ALL', label: '전체' },
-          ...categoryOptions.map((category) => ({
-            value: category.id,
-            label: category.name,
-          })),
-        ]}
+        emptyLabel="전체"
+        options={categoryOptions.map((category) => ({
+          value: category.id,
+          label: category.name,
+        }))}
         sx={{ minWidth: 180 }}
       />
 
