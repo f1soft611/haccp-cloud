@@ -37,6 +37,7 @@ export function MaterialsPage() {
     keyword: '',
     itemType: '',
   });
+  const [searchSeq, setSearchSeq] = useState(0);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<MaterialItem | null>(
@@ -52,6 +53,7 @@ export function MaterialsPage() {
       pageSize,
       appliedSearch.keyword,
       appliedSearch.itemType,
+      searchSeq,
     ],
     queryFn: () =>
         listMaterialsPaged({
@@ -104,6 +106,7 @@ export function MaterialsPage() {
       keyword: searchValue.keyword.trim(),
       itemType: searchValue.itemType,
     });
+    setSearchSeq((n) => n + 1);
   };
 
   const handleOpenCreate = () => {
