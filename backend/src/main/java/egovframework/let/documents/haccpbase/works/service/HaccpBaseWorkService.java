@@ -14,7 +14,8 @@ import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkVO;
  */
 public interface HaccpBaseWorkService {
 
-    public List<HaccpBaseWorkVO> listWorks(String tenantCode, String active) throws Exception;
+    // 업무분류, 키워드 조건을 서버에서 거르도록 파라미터 추가
+    public List<HaccpBaseWorkVO> listWorks(String tenantCode, String active, Long categoryId, String keyword) throws Exception;
 
     public HaccpBaseWorkVO getWorkById(Long id, String tenantCode) throws Exception;
 

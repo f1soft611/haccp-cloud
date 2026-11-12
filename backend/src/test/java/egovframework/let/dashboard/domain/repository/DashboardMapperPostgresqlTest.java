@@ -116,8 +116,14 @@ class DashboardMapperPostgresqlTest {
                     "만료일 관리 대상별 최신 문서는 뷰에서 읽는다");
             assertTrue(xml.contains("AND es.drafting_work_category_id = w.drafting_work_category_id"),
                     "뷰는 업무 단위로 걸러야 한다");
-            assertTrue(xml.contains("WHEN es.status_type = 'approved' THEN NULL"),
-                    "대상의 최신 문서가 승인이면 미작성으로 센다");
+            // 기존 -> 최신 문서가 승인이면 무조건 미작성
+            // 변경 -> 승인이어도 안내 시작일에 도달한 대상만 미작성, 도달 전은 작성 완료(confirmed)
+            assertTrue(xml.contains("WHEN es.status_type = 'approved' AND es.notice_reached THEN NULL"),
+                    "승인 문서는 안내 시작일에 도달했을 때만 미작성으로 센다");
+            assertTrue(xml.contains("WHEN es.status_type = 'approved' THEN 'confirmed'"),
+                    "안내 시작일 전 승인 문서는 작성 완료로 보고 어느 건수에도 넣지 않는다");
+            assertFalse(xml.contains("WHEN es.status_type = 'approved' THEN NULL"),
+                    "만료일과 상관없이 승인이면 미작성으로 세면 안 된다");
             assertFalse(xml.contains("DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)"),
                     "대상별 최신 문서 서브쿼리를 매퍼에 복사하지 않는다");
         }
@@ -140,6 +146,29 @@ class DashboardMapperPostgresqlTest {
                     "최종확인 대기가 아닌 반려는 상신 문서로 보지 않아 미작성이 된다");
             assertTrue(xml.contains("WHEN es.status_type = 'rejected' AND NOT <include refid=\"finalOwnerConfirmPending\"><property name=\"doc\" value=\"es\"/></include> THEN NULL"),
                     "만료일 관리 대상의 최종확인된 반려는 미작성이다");
+            assertTrue(xml.contains("WHEN es.status_type = 'approved' AND <include refid=\"finalOwnerConfirmPending\"><property name=\"doc\" value=\"es\"/></include> THEN 'approved'"),
+                    "만료일 관리 대상의 최종확인 대기 승인은 승인 건수로 센다");
+            assertTrue(xml.indexOf("WHEN es.status_type = 'approved' AND <include refid=\"finalOwnerConfirmPending\">")
+                            < xml.indexOf("WHEN es.status_type = 'approved' AND es.notice_reached THEN NULL"),
+                    "최종확인 대기 판정이 안내 시작일 판정보다 먼저 와야 한다");
+        }
+    }
+
+    // 수시 업무의 최종확인 대기 승인/반려 문서가 문서 단위로 집계되는지 매퍼 XML 로 검사
+    @Test
+    void dashboardMapper_should_count_anytime_final_confirm_pending_documents() throws Exception {
+        ClassPathResource resource = new ClassPathResource(
+                "egovframework/mapper/let/dashboard/DashboardMapper_SQL_postgresql.xml");
+
+        try (InputStream inputStream = resource.getInputStream();
+             Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name())) {
+            String xml = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+            assertTrue(xml.contains("WHERE cyc.is_anytime AND COALESCE(w.expiration_apply, 'N') != 'Y'"),
+                    "수시 업무 분기는 만료일 관리 업무를 제외한다");
+            assertTrue(xml.contains("AND am.status_type IN ('approved', 'rejected')"),
+                    "수시 업무는 승인/반려 문서만 센다");
+            assertTrue(xml.contains("AND <include refid=\"finalOwnerConfirmPending\"><property name=\"doc\" value=\"am\"/></include>"),
+                    "수시 업무도 최종확인 대기 문서만 센다");
         }
     }
 }

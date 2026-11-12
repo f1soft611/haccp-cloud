@@ -126,9 +126,12 @@ public class PlanAccessApiController {
             requiredPermissionLevel = PlanAccessLevel.READ
     )
     @GetMapping("/plans")
-    public ResultVO listPlans() {
+    public ResultVO listPlans(
+            @RequestParam(required = false) String searchField,
+            @RequestParam(required = false) String searchKeyword,
+            @RequestParam(required = false) String useAt) {
         Map<String, Object> resultMap = new HashMap<String, Object>();
-        resultMap.put("data", planAccessService.listPlans());
+        resultMap.put("data", planAccessService.listPlans(searchField, searchKeyword, useAt));
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 

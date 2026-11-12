@@ -100,6 +100,7 @@ export function HaccpBaseManagementPage() {
     useState<HaccpBaseSearchValue>(DEFAULT_SEARCH_VALUE);
   const [appliedFilters, setAppliedFilters] =
     useState<HaccpBaseSearchValue>(DEFAULT_SEARCH_VALUE);
+  const [searchSeq, setSearchSeq] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editTargetId, setEditTargetId] = useState<string | null>(null);
@@ -115,8 +116,15 @@ export function HaccpBaseManagementPage() {
   });
 
   const worksQuery = useQuery({
-    queryKey: ['haccp-base-works', tenantCode],
-    queryFn: () => listHaccpBaseWorks({ tenantCode }),
+    queryKey: ['haccp-base-works', tenantCode, appliedFilters, searchSeq],
+    queryFn: () =>
+      listHaccpBaseWorks({
+        tenantCode,
+        active: appliedFilters.useAt === 'all' ? undefined : appliedFilters.useAt,
+        categoryId:
+          appliedFilters.categoryId === 'ALL' ? undefined : appliedFilters.categoryId,
+        keyword: appliedFilters.keyword || undefined,
+      }),
     retry: false,
   });
 
@@ -165,36 +173,10 @@ export function HaccpBaseManagementPage() {
     [categoriesQuery.data],
   );
 
-  const filteredRows = useMemo(() => {
-    const keyword = appliedFilters.keyword.trim().toLowerCase();
-    const rows = (worksQuery.data ?? []).map(toRow);
-
-    return rows.filter((row) => {
-      const byCategory =
-        appliedFilters.categoryId === 'ALL' ||
-        row.categoryId === appliedFilters.categoryId;
-
-      if (!byCategory) {
-        return false;
-      }
-
-      const byUseAt =
-        appliedFilters.useAt === 'all' || row.useAt === appliedFilters.useAt;
-
-      if (!byUseAt) {
-        return false;
-      }
-
-      if (!keyword) {
-        return true;
-      }
-
-      return (
-        row.divisionName.toLowerCase().includes(keyword) ||
-        row.owner.toLowerCase().includes(keyword)
-      );
-    });
-  }, [appliedFilters, worksQuery.data]);
+  const filteredRows = useMemo(
+    () => (worksQuery.data ?? []).map(toRow),
+    [worksQuery.data],
+  );
 
   const activeUsers = useMemo(
     () => (usersQuery.data ?? []).filter((user) => user.active),
@@ -324,8 +306,7 @@ export function HaccpBaseManagementPage() {
             ...searchValue,
             keyword: searchValue.keyword.trim(),
           });
-          // 화면 필터만 하던 조회 버튼이 서버의 최신 목록도 다시 가져오게 한다
-          void worksQuery.refetch();
+          setSearchSeq((n) => n + 1);
         }}
         onCreate={() => {
           setCreateForm({

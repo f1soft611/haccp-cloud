@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { apiClient } from '../../services/api/apiClient.ts';
-import { listHaccpBaseWorks, listHaccpWorkTodoCycles } from '../../services/documents/haccpBaseWorkService.ts';
+import { apiClient } from '../../../services/api/apiClient';
+import { listHaccpBaseWorks, listHaccpWorkTodoCycles } from '../../../services/documents/haccpBaseWorkService';
 
-vi.mock('../services/api/apiClient', () => ({
+vi.mock('../../../services/api/apiClient', () => ({
   apiClient: {
     get: vi.fn(),
   },
@@ -121,5 +121,26 @@ describe('haccpBaseWorkService', () => {
       { expirationApply: false, approvalApply: true },
       { expirationApply: true, approvalApply: false },
     ]);
+  });
+
+  it('sends search conditions as query params and drops empty values', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: [] });
+
+    await listHaccpBaseWorks({
+      tenantCode: 'TENANT-A',
+      active: 'Y',
+      categoryId: '11',
+      keyword: '금도연',
+    });
+    await listHaccpBaseWorks({ tenantCode: 'TENANT-A', keyword: '' });
+
+    expect(apiClient.get).toHaveBeenNthCalledWith(1, '/v1/haccp-base/works', {
+      headers: { 'x-tenant-code': 'TENANT-A' },
+      params: { active: 'Y', categoryId: '11', keyword: '금도연' },
+    });
+    expect(apiClient.get).toHaveBeenNthCalledWith(2, '/v1/haccp-base/works', {
+      headers: { 'x-tenant-code': 'TENANT-A' },
+      params: { active: undefined, categoryId: undefined, keyword: undefined },
+    });
   });
 });

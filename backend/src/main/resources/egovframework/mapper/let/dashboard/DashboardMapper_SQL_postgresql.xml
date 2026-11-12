@@ -285,7 +285,8 @@
           LIMIT 1
         ) rpt ON TRUE
         LEFT JOIN LATERAL (
-            <!-- 주기 행(만료일 관리 업무 제외) + 만료일 관리 대상 행을 UNION ALL 로 합쳐 집계. 대상 최신 문서가 승인이면 NULL(미작성) -->
+            <!-- 기존 -> 주기 행(만료일 관리 업무 제외) + 만료일 관리 대상 행을 UNION ALL 로 합쳐 집계. 대상 최신 문서가 승인이면 NULL(미작성) -->
+            <!-- 변경 -> 주기 행(만료일 관리 업무 제외) + 만료일 관리 대상 행 + 수시 업무 최종확인 대기 문서 행을 UNION ALL 로 합쳐 집계 -->
             SELECT
                 COUNT(*) FILTER (WHERE ls.status_type IS NULL)::int AS unwritten_count,
                 COUNT(*) FILTER (WHERE ls.status_type = 'in_progress')::int AS in_progress_cycle_count,
@@ -338,7 +339,12 @@
                 UNION ALL
                 <!-- 변경 -> 최신 문서가 최종확인된 반려여도 미작성 -->
                 SELECT CASE
-                         WHEN es.status_type = 'approved' THEN NULL
+                         <!-- 기존 -> 승인이면 만료일과 상관없이 NULL(미작성) -->
+                         <!-- 변경 -> 승인은 업무 안내 기준의 안내 시작일에 도달했을 때만 미작성, 도달 전은 confirmed(작성 완료, 어느 건수에도 안 셈) -->
+                         <!-- 최종확인 대기 승인은 안내 시작일과 상관없이 승인 건수로 센다 -->
+                         WHEN es.status_type = 'approved' AND <include refid="finalOwnerConfirmPending"><property name="doc" value="es"/></include> THEN 'approved'
+                         WHEN es.status_type = 'approved' AND es.notice_reached THEN NULL
+                         WHEN es.status_type = 'approved' THEN 'confirmed'
                          WHEN es.status_type = 'rejected' AND NOT <include refid="finalOwnerConfirmPending"><property name="doc" value="es"/></include> THEN NULL
                          ELSE es.status_type
                        END
@@ -346,6 +352,16 @@
                 WHERE w.expiration_apply = 'Y'
                   AND es.tenant_id = w.tenant_id
                   AND es.drafting_work_category_id = w.drafting_work_category_id
+                UNION ALL
+                <!-- 수시 업무: 주기가 없어 문서 단위로 센다. 최종확인 대기인 승인/반려만 행을 만들어 미작성은 늘지 않는다 -->
+                SELECT am.status_type
+                FROM tb_electronic_approval_main am
+                WHERE cyc.is_anytime AND COALESCE(w.expiration_apply, 'N') != 'Y'
+                  AND am.tenant_id = w.tenant_id
+                  AND am.drafting_work_category_id = w.drafting_work_category_id
+                  AND COALESCE(am.delete_status, 'N') != 'Y'
+                  AND am.status_type IN ('approved', 'rejected')
+                  AND <include refid="finalOwnerConfirmPending"><property name="doc" value="am"/></include>
             ) ls
         ) uw ON TRUE
         WHERE w.tenant_id = #{tenantId}

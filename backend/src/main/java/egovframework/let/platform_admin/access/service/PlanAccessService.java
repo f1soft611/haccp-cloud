@@ -34,7 +34,7 @@ public interface PlanAccessService {
 
     Map<String, Boolean> resolveFeatureEnabledMap(Long tenantId);
 
-    List<PlanSummaryVO> listPlans();
+    List<PlanSummaryVO> listPlans(String searchField, String searchKeyword, String useAt);
 
     Map<String, Boolean> resolveFeatureEnabledMapByPlanCode(String planCode);
 

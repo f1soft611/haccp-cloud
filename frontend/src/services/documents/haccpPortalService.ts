@@ -63,11 +63,19 @@ function normalizeItem(
 
 export async function listHaccpPortalDocuments(params: {
   tenantCode: string;
+  categoryId?: string;
+  cycle?: string;
+  keyword?: string;
 }): Promise<HaccpPortalDocumentItem[]> {
   const { data } = await apiClient.get<
     RawHaccpPortalDocumentItem[] | ResultEnvelope<RawHaccpPortalDocumentItem>
   >('/v1/docs/portal', {
     headers: { 'x-tenant-code': params.tenantCode },
+    params: {
+      categoryId: params.categoryId || undefined,
+      cycle: params.cycle || undefined,
+      keyword: params.keyword || undefined,
+    },
   });
 
   const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);

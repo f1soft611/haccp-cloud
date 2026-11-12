@@ -53,7 +53,13 @@ class HaccpWorkMapperPostgresqlTest {
         assertFalse(xml.contains("DISTINCT ON (s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)"),
                 "대상별 최신 문서 서브쿼리를 매퍼에 복사하지 않는다");
         // 변경 -> 최종확인된 반려도 미작성이라 OR 조건
-        assertTrue(xml.contains("es.status_type = 'approved'"), "대상의 최신 문서가 승인이면 미작성이다");
+        // 기존 -> 승인이면 무조건 미작성 / 변경 -> 승인이어도 안내 시작일에 도달한 대상만
+        int start = xml.indexOf("<sql id=\"unwrittenExpirationWhere\">");
+        String expirationWhere = xml.substring(start, xml.indexOf("</sql>", start));
+        assertTrue(expirationWhere.contains("(es.status_type = 'approved' AND es.notice_reached)"),
+                "승인 문서는 안내 시작일에 도달했을 때만 미작성 목록에 나온다");
+        assertFalse(expirationWhere.contains("ponytail:"),
+                "D-N 기준이 반영됐으므로 나중에 하자는 주석은 없어야 한다");
         assertEquals(2, xml.split("<include refid=\"unwrittenExpirationFrom\"/>", -1).length - 1,
                 "목록과 건수 쿼리 모두 만료일 관리 대상 분기를 써야 한다");
     }
@@ -87,7 +93,7 @@ class HaccpWorkMapperPostgresqlTest {
                 "확인 완료 문서는 대기가 아니다");
         assertTrue(xml.contains("AND (COALESCE(em.status_type, '') != 'rejected' OR <include refid=\"finalOwnerConfirmPending\"><property name=\"doc\" value=\"em\"/></include>)"),
                 "주기 행은 대시보드 cs 와 같은 조건이어야 한다");
-        assertTrue(xml.contains("AND (es.status_type = 'approved' OR (es.status_type = 'rejected' AND NOT <include refid=\"finalOwnerConfirmPending\"><property name=\"doc\" value=\"es\"/></include>))"),
+        assertTrue(xml.contains("AND ((es.status_type = 'approved' AND es.notice_reached) OR (es.status_type = 'rejected' AND NOT <include refid=\"finalOwnerConfirmPending\"><property name=\"doc\" value=\"es\"/></include>))"),
                 "만료일 관리 대상의 최종확인된 반려도 미작성 목록에 나와야 한다");
     }
 }

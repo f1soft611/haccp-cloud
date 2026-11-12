@@ -274,10 +274,22 @@ export async function getCurrentPlanAccess(
   };
 }
 
-export async function listPlanSummaries(): Promise<PlanSummary[]> {
+export async function listPlanSummaries(
+  params: {
+    searchField?: 'code' | 'name';
+    searchKeyword?: string;
+    useAt?: 'Y' | 'N';
+  } = {},
+): Promise<PlanSummary[]> {
   const { data } = await apiClient.get<
     RawPlanSummary[] | ResultEnvelope<RawPlanSummary[]>
-  >('/v1/platform-admin/plan-access/plans');
+  >('/v1/platform-admin/plan-access/plans', {
+    params: {
+      searchField: params.searchField,
+      searchKeyword: params.searchKeyword || undefined,
+      useAt: params.useAt,
+    },
+  });
   const normalized = unwrapResultData(data) ?? [];
 
   return normalized.map((item) => ({

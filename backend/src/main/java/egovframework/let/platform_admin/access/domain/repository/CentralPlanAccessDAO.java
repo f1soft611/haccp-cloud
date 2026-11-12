@@ -68,8 +68,8 @@ public class CentralPlanAccessDAO extends EgovAbstractMapper {
         return selectList("PlanAccessDAO.selectFeatureEnabledListByTenantId", param);
     }
 
-    public List<PlanSummaryVO> selectPlanList() throws Exception {
-        return selectList("PlanAccessDAO.selectPlanList");
+    public List<PlanSummaryVO> selectPlanList(Map<String, Object> params) throws Exception {
+        return selectList("PlanAccessDAO.selectPlanList", params);
     }
 
     public List<PlanFeatureStatusVO> selectFeatureEnabledListByPlanCode(String planCode) throws Exception {

@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProviders } from '../app/providers/AppProviders';
-import { HaccpPortalPage } from '../pages/documents/portal/HaccpPortalPage';
-import { useAuthStore } from '../shared/store/authStore';
+import { AppProviders } from '../../../app/providers/AppProviders';
+import { HaccpPortalPage } from '../../../pages/documents/portal/HaccpPortalPage';
+import { useAuthStore } from '../../../shared/store/authStore';
 
 const navigateMock = vi.fn();
 
@@ -18,7 +18,8 @@ vi.mock('react-router-dom', async () => {
 });
 
 const { listHaccpPortalDocumentsMock } = vi.hoisted(() => ({
-  listHaccpPortalDocumentsMock: vi.fn(async () => [
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  listHaccpPortalDocumentsMock: vi.fn(async (_params?: { categoryId?: string; cycle?: string; keyword?: string }) => [
     {
       id: '1',
       categoryName: 'HACCP(선행)',
@@ -50,18 +51,29 @@ const { listHaccpPortalDocumentsMock } = vi.hoisted(() => ({
   ]),
 }));
 
-vi.mock('../services/documents/haccpPortalService', () => ({
+vi.mock('../../../services/documents/haccpPortalService', () => ({
   listHaccpPortalDocuments: listHaccpPortalDocumentsMock,
+}));
+
+const { listHaccpBaseCategoriesMock } = vi.hoisted(() => ({
+  listHaccpBaseCategoriesMock: vi.fn(async () => [
+    { id: '10', tenantCode: 'TENANT-A', categoryCode: '001', categoryName: 'HACCP(HA)', sortOrder: 1, active: true, createdBy: '', createdAt: '' },
+    { id: '12', tenantCode: 'TENANT-A', categoryCode: '003', categoryName: '미사용분류', sortOrder: 3, active: false, createdBy: '', createdAt: '' },
+  ]),
+}));
+
+vi.mock('../../../services/documents/haccpBaseCategoryService', () => ({
+  listHaccpBaseCategories: listHaccpBaseCategoriesMock,
 }));
 
 const { getHaccpWorkDraftTemplateMock } = vi.hoisted(() => ({
   getHaccpWorkDraftTemplateMock: vi.fn(),
 }));
 
-vi.mock('../services/documents/haccpBaseWorkService', async () => {
+vi.mock('../../../services/documents/haccpBaseWorkService', async () => {
   const actual = await vi.importActual<
-      typeof import('../services/documents/haccpBaseWorkService')
-  >('../services/documents/haccpBaseWorkService');
+      typeof import('../../../services/documents/haccpBaseWorkService')
+  >('../../../services/documents/haccpBaseWorkService');
   return {
     ...actual,
     getHaccpWorkDraftTemplate: getHaccpWorkDraftTemplateMock,
@@ -165,7 +177,7 @@ describe('HaccpPortalPage', () => {
     expect(screen.getByText('생산일지 점검표')).toBeInTheDocument();
   });
 
-  it('filters rows by keyword on search', async () => {
+  it('sends keyword to the server and shows the response as-is', async () => {
     render(
       <AppProviders>
         <HaccpPortalPage />
@@ -174,28 +186,67 @@ describe('HaccpPortalPage', () => {
 
     expect(await screen.findByText('기안서')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('구분명, 담당자 검색'), {
-      target: { value: 'CCP' },
+      target: { value: ' CCP ' },
     });
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
 
+    await waitFor(() =>
+      expect(listHaccpPortalDocumentsMock.mock.calls.at(-1)?.[0]).toMatchObject({ keyword: 'CCP' }),
+    );
+    // mock 은 키워드를 무시하고 4건을 돌려주므로 화면 필터가 없으면 그대로 보인다
+    expect(await screen.findByText('기안서')).toBeInTheDocument();
     expect(screen.getByText('CCP-1B 검증기록')).toBeInTheDocument();
-    expect(screen.queryByText('기안서')).not.toBeInTheDocument();
   });
 
-  it('filters rows by cycle code from common codes', async () => {
+  it('sends cycle and category id to the server', async () => {
     render(
-        <AppProviders>
-          <HaccpPortalPage />
-        </AppProviders>,
+      <AppProviders>
+        <HaccpPortalPage />
+      </AppProviders>,
     );
 
     expect(await screen.findByText('기안서')).toBeInTheDocument();
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '작성주기' }));
     fireEvent.click(await screen.findByRole('option', { name: '주' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '업무분류' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'HACCP(HA)' }));
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
 
-    expect(screen.getByText('생산일지 점검표')).toBeInTheDocument();
-    expect(screen.queryByText('기안서')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(listHaccpPortalDocumentsMock.mock.calls.at(-1)?.[0]).toMatchObject({
+        cycle: 'WEEK',
+        categoryId: '10',
+      }),
+    );
+
+    const before = listHaccpPortalDocumentsMock.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    await waitFor(() =>
+      expect(listHaccpPortalDocumentsMock.mock.calls.length).toBeGreaterThan(before),
+    );
+  });
+
+  it('lists active categories from the category API plus 기타문서, unaffected by search results', async () => {
+    render(
+      <AppProviders>
+        <HaccpPortalPage />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByText('기안서')).toBeInTheDocument();
+    vi.mocked(listHaccpPortalDocumentsMock).mockResolvedValue([]);
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    await waitFor(() => expect(screen.queryByText('기안서')).not.toBeInTheDocument());
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '업무분류' }));
+    expect(await screen.findByRole('option', { name: 'HACCP(HA)' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '미사용분류' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('option', { name: '기타문서' }));
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+
+    await waitFor(() =>
+      expect(listHaccpPortalDocumentsMock.mock.calls.at(-1)?.[0]).toMatchObject({ categoryId: 'NONE' }),
+    );
   });
 
   it('navigates to draft write page when write button is clicked', async () => {

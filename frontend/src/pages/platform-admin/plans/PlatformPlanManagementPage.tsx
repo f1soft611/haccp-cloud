@@ -35,6 +35,7 @@ export function PlatformPlanManagementPage() {
     searchKeyword: '',
     filterActive: 'all',
   });
+  const [searchSeq, setSearchSeq] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState<PlanSummary | null>(null);
   const [menuMappingOpen, setMenuMappingOpen] = useState(false);
   const [featureMappingOpen, setFeatureMappingOpen] = useState(false);
@@ -44,8 +45,13 @@ export function PlatformPlanManagementPage() {
   );
 
   const plansQuery = useQuery({
-    queryKey: ['platform-admin', 'plan-summaries'],
-    queryFn: listPlanSummaries,
+    queryKey: ['platform-admin', 'plan-summaries', appliedFilters, searchSeq],
+    queryFn: () =>
+      listPlanSummaries({
+        searchField: appliedFilters.searchField,
+        searchKeyword: appliedFilters.searchKeyword || undefined,
+        useAt: appliedFilters.filterActive === 'all' ? undefined : appliedFilters.filterActive,
+      }),
     retry: false,
   });
 
@@ -56,26 +62,6 @@ export function PlatformPlanManagementPage() {
   });
 
   const effectivePlanCode = selectedPlan?.planCode || '';
-
-  const filteredPlans = useMemo(() => {
-    const keyword = appliedFilters.searchKeyword.trim().toLowerCase();
-    return (plansQuery.data ?? []).filter((plan) => {
-      if (
-        appliedFilters.filterActive !== 'all' &&
-        plan.useAt !== appliedFilters.filterActive
-      ) {
-        return false;
-      }
-
-      if (!keyword) {
-        return true;
-      }
-
-      const target =
-        appliedFilters.searchField === 'code' ? plan.planCode : plan.planName;
-      return target.toLowerCase().includes(keyword);
-    });
-  }, [plansQuery.data, appliedFilters]);
 
   const planFeaturesQuery = useQuery({
     queryKey: ['platform-admin', 'plan-features', effectivePlanCode],
@@ -136,13 +122,8 @@ export function PlatformPlanManagementPage() {
     };
 
     setAppliedFilters(normalized);
-    setSelectedPlan((prev) =>
-      prev && filteredPlans.some((plan) => plan.planCode === prev.planCode)
-        ? prev
-        : null,
-    );
-    // 화면 필터만 하던 조회 버튼이 서버의 최신 목록도 다시 가져오게 한다
-    void plansQuery.refetch();
+    setSelectedPlan(null);
+    setSearchSeq((n) => n + 1);
   };
 
   const handleOpenMenuMapping = (plan: PlanSummary) => {
@@ -267,7 +248,7 @@ export function PlatformPlanManagementPage() {
       />
 
       <PlatformPlanGrid
-        rows={filteredPlans}
+        rows={plansQuery.data ?? []}
         loading={plansQuery.isLoading}
         onMenuMapping={handleOpenMenuMapping}
         onFeatureMapping={handleOpenFeatureMapping}

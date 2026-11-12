@@ -33,4 +33,16 @@ public class HaccpPortalDocumentSearchConditionVO implements Serializable {
 
     @Schema(description = "로그인 코드")
     private String actorLoginCode;
+
+    @Schema(description = "업무분류 ID")
+    private Long categoryId;
+
+    @Schema(description = "분류 미지정(기타문서) 업무만 조회 여부")
+    private boolean uncategorized;
+
+    @Schema(description = "등록주기 코드")
+    private String cycle;
+
+    @Schema(description = "검색 키워드(업무명, 담당자명)")
+    private String keyword;
 }

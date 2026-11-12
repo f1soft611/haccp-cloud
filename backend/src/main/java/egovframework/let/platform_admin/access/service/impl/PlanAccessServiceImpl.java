@@ -1,6 +1,7 @@
 package egovframework.let.platform_admin.access.service.impl;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -223,13 +224,19 @@ public class PlanAccessServiceImpl implements PlanAccessService {
     }
 
     @Override
-    public List<PlanSummaryVO> listPlans() {
+    public List<PlanSummaryVO> listPlans(String searchField, String searchKeyword, String useAt) {
         if (!isPlanSchemaReady()) {
             return Collections.emptyList();
         }
 
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("searchField", "code".equalsIgnoreCase(trimToEmpty(searchField)) ? "code" : "name");
+        params.put("searchKeyword", StringUtils.hasText(searchKeyword) ? searchKeyword.trim() : null);
+        String normalizedUseAt = trimToEmpty(useAt).toUpperCase();
+        params.put("useAt", ("Y".equals(normalizedUseAt) || "N".equals(normalizedUseAt)) ? normalizedUseAt : null);
+
         try {
-            return centralPlanAccessDAO.selectPlanList();
+            return centralPlanAccessDAO.selectPlanList(params);
         } catch (DataAccessException ex) {
             log.warn("Failed to list plans. reason={}", ex.getMessage());
             return Collections.emptyList();
@@ -237,6 +244,11 @@ public class PlanAccessServiceImpl implements PlanAccessService {
             log.warn("Failed to list plans. reason={}", ex.getMessage());
             return Collections.emptyList();
         }
+    }
+
+    // null 을 빈 문자열로 바꾸고 앞뒤 공백을 지운다
+    private String trimToEmpty(String value) {
+        return value == null ? "" : value.trim();
     }
 
     @Override

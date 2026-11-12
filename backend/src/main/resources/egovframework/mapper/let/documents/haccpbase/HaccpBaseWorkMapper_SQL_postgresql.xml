@@ -135,6 +135,18 @@
         <if test='active != null and active == "N"'>
             AND w.use_at = 'N'
         </if>
+        <!-- 업무분류 조건 -->
+        <if test="categoryId != null">
+            AND w.drafting_work_category_group_id = #{categoryId}
+        </if>
+        <!-- 키워드 조건: 업무명, 검토자명, 승인자명 부분일치(대소문자 무시) -->
+        <if test="keyword != null and keyword != ''">
+            AND (
+                COALESCE(w.code_name, '') ILIKE CONCAT('%', #{keyword}, '%')
+             OR COALESCE(ru.user_nm, '') ILIKE CONCAT('%', #{keyword}, '%')
+             OR COALESCE(au.user_nm, '') ILIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
         ORDER BY
           CASE
             WHEN COALESCE(TRIM(w.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(w.view_seq::varchar) AS integer)

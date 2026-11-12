@@ -44,7 +44,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
     }
 
     @Override
-    public List<HaccpBaseWorkVO> listWorks(String tenantCode, String active) throws Exception {
+    public List<HaccpBaseWorkVO> listWorks(String tenantCode, String active, Long categoryId, String keyword) throws Exception {
         String normalizedTenantCode = normalizeTenantCode(tenantCode);
         Long tenantId = resolveTenantId(normalizedTenantCode);
 
@@ -52,6 +52,8 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         condition.setTenantId(tenantId);
         condition.setTenantCode(normalizedTenantCode);
         condition.setActive(normalizeActive(active));
+        condition.setCategoryId(categoryId);
+        condition.setKeyword(normalizeKeyword(keyword));
         return haccpBaseWorkDAO.selectWorkList(condition);
     }
 
@@ -355,6 +357,11 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         }
         String normalized = active.trim().toUpperCase();
         return ("Y".equals(normalized) || "N".equals(normalized)) ? normalized : null;
+    }
+
+    // 검색 키워드 앞뒤 공백을 지우고 빈 값이면 조건을 걸지 않도록 null 로 만든다
+    private String normalizeKeyword(String keyword) {
+        return StringUtils.hasText(keyword) ? keyword.trim() : null;
     }
 
     private String normalizeCycle(String cycle) {
