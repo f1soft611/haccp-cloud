@@ -142,6 +142,24 @@ describe('HaccpDocumentManagementPage', () => {
     });
   });
 
+  it('예전 URL 의 workType=전체, status=전체 는 조건 없음으로 본다', async () => {
+    window.history.pushState(
+      {},
+      '',
+      `/docs/haccp-doc?workType=${encodeURIComponent('전체')}&status=${encodeURIComponent('전체')}`,
+    );
+    render(
+      <AppProviders>
+        <HaccpDocumentManagementPage />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByRole('combobox', { name: /업무분류/ })).toHaveTextContent('전체');
+    expect(screen.getByRole('combobox', { name: /결재상태/ })).toHaveTextContent('전체');
+    expect(screen.queryByText(/^업무분류: /)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^상태: /)).not.toBeInTheDocument();
+  });
+
   it('applies query parameters to initial filters', async () => {
     window.history.pushState(
       {},

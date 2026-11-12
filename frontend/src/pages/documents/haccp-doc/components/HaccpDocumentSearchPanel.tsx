@@ -22,7 +22,7 @@ import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilte
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 import { TODO_STATUS_OPTIONS } from '../../../dashboard/tenant/todoFilter';
 
-const STATUS_OPTIONS = ['전체', ...TODO_STATUS_OPTIONS];
+const STATUS_OPTIONS = [...TODO_STATUS_OPTIONS];
 const PARTICIPANT_OPTIONS = ['담당자', '기안자', '검토자', '결재자'];
 
 export function HaccpDocumentSearchPanel(props: {
@@ -50,9 +50,10 @@ export function HaccpDocumentSearchPanel(props: {
     onSearch,
   } = props;
 
+  // 기존 -> value.workType && value.workType !== '전체' && ...
+  // 변경 -> '' = 전체라 앞의 value.workType 검사로 충분
   const workTypeOptions =
     value.workType &&
-    value.workType !== '전체' &&
     !categoryOptions.some((option) => option.name === value.workType)
       ? [
           { id: `selected-${value.workType}`, name: value.workType },
@@ -225,10 +226,8 @@ export function HaccpDocumentSearchPanel(props: {
         label="업무분류"
         value={value.workType}
         onChange={(workType) => onChange({ ...value, workType })}
-        options={[
-          { value: '전체', label: '전체' },
-          ...workTypeOptions.map((cat) => ({ value: cat.name, label: cat.name })),
-        ]}
+        options={workTypeOptions.map((cat) => ({ value: cat.name, label: cat.name }))}
+        emptyLabel="전체"
         sx={{ minWidth: 180 }}
       />
 
@@ -251,6 +250,7 @@ export function HaccpDocumentSearchPanel(props: {
         value={value.status}
         onChange={(status) => onChange({ ...value, status })}
         options={STATUS_OPTIONS.map((option) => ({ value: option, label: option }))}
+        emptyLabel="전체"
         sx={{ minWidth: 140 }}
       />
 
