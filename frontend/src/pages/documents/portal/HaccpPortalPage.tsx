@@ -32,7 +32,7 @@ export function HaccpPortalPage() {
           onChange={(category) => setSearch({ ...search, category })}
           options={[
             { value: 'ALL', label: '전체' },
-            ...categoryOptions.map((category) => ({ value: category, label: category })),
+            ...categoryOptions,
           ]}
           sx={{ minWidth: 180 }}
         />
