@@ -39,7 +39,7 @@ const sharedThemeOptions = {
 export const tableStyleTokens = {
   headerTopBorder: '2px solid #3263B9',
   headerBackground: '#EEF0F3',
-  headerText: '#000',
+  headerText: '#313439',
   headerBottomBorder: '1px solid #D9DCE1',
   headerHeight: 40,
   rowBackground: '#FFFFFF',
@@ -135,6 +135,12 @@ const tableComponents: ThemeOptions['components'] = {
     styleOverrides: {
       startIcon: { '& > svg.lucide': { width: '1em', height: '1em' } },
       endIcon: { '& > svg.lucide': { width: '1em', height: '1em' } },
+      contained: {
+        height: 35,
+        minWidth: 82,
+        borderRadius: 4,
+        boxShadow: '0px 1px 1px #00000029',
+      },
     },
   },
 };

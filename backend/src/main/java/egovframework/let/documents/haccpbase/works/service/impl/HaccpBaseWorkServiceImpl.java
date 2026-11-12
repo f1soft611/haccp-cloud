@@ -1,11 +1,6 @@
 package egovframework.let.documents.haccpbase.works.service.impl;
 
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.Resource;
 
@@ -34,6 +29,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Service("haccpBaseWorkService")
 public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements HaccpBaseWorkService {
 
+    private static final String EXPIRATION_NOTICE_NONE = "NONE";
+    private static final Set<String> EXPIRATION_NOTICE_STATUSES =
+            new HashSet<String>(Arrays.asList(EXPIRATION_NOTICE_NONE, "DAY", "MONTH", "YEAR"));
     private final HaccpBaseWorkDAO haccpBaseWorkDAO;
 
     @Resource(name = "haccpBaseWorkCodeIdGnrService")
@@ -99,9 +97,9 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         params.put("cycle", normalizeCycle(payload.getCycle()));
         params.put("useAt", Boolean.FALSE.equals(payload.getActive()) ? "N" : "Y");
         // 등록주기와 상관없이 요청 값 저장, 값이 없으면 N (HCP- 분류 판단은 화면에서 처리)
-        params.put("expirationApply", Boolean.TRUE.equals(payload.getExpirationApply()) ? "Y" : "N");
-        // 기존 -> 결재 적용 여부는 값이 없으면 Y, 검토자/승인자는 요청 값 그대로 저장
-        // 변경 -> 결재 적용 여부는 값이 없으면 Y, 미적용이면 검토자/승인자는 null (기안 시 기안자가 대신 결재)
+        boolean expirationApply = Boolean.TRUE.equals(payload.getExpirationApply());
+        params.put("expirationApply", expirationApply ? "Y" : "N");
+        putExpirationNotice(params, payload, expirationApply);
         boolean approvalApply = !Boolean.FALSE.equals(payload.getApprovalApply());
         params.put("approvalApply", approvalApply ? "Y" : "N");
         params.put("reviewerId", approvalApply ? payload.getReviewerId() : null);
@@ -150,9 +148,9 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         params.put("cycle", normalizeCycle(payload.getCycle()));
         params.put("useAt", Boolean.FALSE.equals(payload.getActive()) ? "N" : "Y");
         // 등록주기와 상관없이 요청 값 저장, 값이 없으면 N (HCP- 분류 판단은 화면에서 처리)
-        params.put("expirationApply", Boolean.TRUE.equals(payload.getExpirationApply()) ? "Y" : "N");
-        // 기존 -> 결재 적용 여부는 값이 없으면 Y, 검토자/승인자는 요청 값 그대로 저장
-        // 변경 -> 결재 적용 여부는 값이 없으면 Y, 미적용이면 검토자/승인자는 null (기안 시 기안자가 대신 결재)
+         boolean expirationApply = Boolean.TRUE.equals(payload.getExpirationApply());
+        params.put("expirationApply", expirationApply ? "Y" : "N");
+        putExpirationNotice(params, payload, expirationApply);
         boolean approvalApply = !Boolean.FALSE.equals(payload.getApprovalApply());
         params.put("approvalApply", approvalApply ? "Y" : "N");
         params.put("reviewerId", approvalApply ? payload.getReviewerId() : null);
@@ -213,6 +211,26 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         }
 
         return item;
+    }
+
+    // 만료일 안내 기준/계산숫자 정리와 검증 (품목 소비기한 기준/계산숫자와 같은 규칙)
+    // 만료일 관리 양식이 아니면 NONE/null, 기준이 NONE 이면 계산숫자 null, 그 외에는 1 이상 필수
+    private void putExpirationNotice(Map<String, Object> params, HaccpBaseWorkSaveRequestVO payload, boolean expirationApply) {
+        String status = expirationApply && StringUtils.hasText(payload.getExpirationNoticeStatus())
+                ? payload.getExpirationNoticeStatus().trim()
+                : EXPIRATION_NOTICE_NONE;
+        if (!EXPIRATION_NOTICE_STATUSES.contains(status)) {
+            throw new IllegalArgumentException("만료일 안내 기준이 올바르지 않습니다.");
+        }
+        Integer count = null;
+        if (!EXPIRATION_NOTICE_NONE.equals(status)) {
+            count = payload.getExpirationNoticeCount();
+            if (count == null || count < 1) {
+                throw new IllegalArgumentException("만료일 안내 계산숫자는 1 이상이어야 합니다.");
+            }
+        }
+        params.put("expirationNoticeStatus", status);
+        params.put("expirationNoticeCount", count);
     }
 
     private void validatePayload(HaccpBaseWorkSaveRequestVO payload) {

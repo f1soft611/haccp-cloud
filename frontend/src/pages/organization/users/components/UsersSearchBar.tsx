@@ -2,6 +2,7 @@ import { Button } from '@mui/material';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+import {Plus} from "lucide-react";
 
 const ACTIVE_FILTER_OPTIONS = [
   { value: 'all', label: '전체' },
@@ -36,11 +37,11 @@ export function UsersSearchBar({
       actions={
         <Button
           variant="contained"
+          startIcon={<Plus />}
           onClick={onCreate}
           disabled={disabled}
-          sx={{ minWidth: 120 }}
         >
-          사용자 등록
+          신규
         </Button>
       }
     >
@@ -54,7 +55,6 @@ export function UsersSearchBar({
       />
       <AppTextField
         size="small"
-        fullWidth
         placeholder="이름, 이메일, 부서 검색"
         slotProps={{ htmlInput: { 'aria-label': '이름, 이메일, 부서 검색' } }}
         value={value.keyword}

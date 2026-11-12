@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
     cata_code VARCHAR(50),
     expiration_apply CHAR(1) NOT NULL DEFAULT 'N',
     approval_apply CHAR(1) NOT NULL DEFAULT 'Y',
+    expiration_notice_status VARCHAR(10) NOT NULL DEFAULT 'NONE',
+    expiration_notice_count INT4,
     use_at CHAR(1) NOT NULL DEFAULT 'Y',
     delete_status VARCHAR(10) DEFAULT 'N',
     created_by BIGINT,
@@ -89,7 +91,9 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
         REFERENCES tb_login_account(login_id)
         ON DELETE SET NULL,
     CONSTRAINT ck_drafting_work_category_expiration_apply CHECK (expiration_apply IN ('Y', 'N')),
-    CONSTRAINT ck_drafting_work_category_approval_apply CHECK (approval_apply IN ('Y', 'N'))
+    CONSTRAINT ck_drafting_work_category_approval_apply CHECK (approval_apply IN ('Y', 'N')),
+    CONSTRAINT ck_drafting_work_category_expiration_notice_status CHECK (expiration_notice_status IN ('NONE', 'DAY', 'MONTH', 'YEAR')),
+    CONSTRAINT ck_drafting_work_category_expiration_notice_count CHECK (expiration_notice_count IS NULL OR expiration_notice_count > 0)
 );
 
 CREATE TABLE IF NOT EXISTS tb_drafting_work_category_authority (

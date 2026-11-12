@@ -27,6 +27,8 @@ export type HaccpBaseRow = {
   assigneeMapped: boolean;
   hasDocument: boolean;
   expirationApply: 'Y' | 'N';
+  expirationNoticeStatus: string;
+  expirationNoticeCount: number | null;
   approvalApply: 'Y' | 'N';
   useAt: 'Y' | 'N';
 };
@@ -40,6 +42,8 @@ export type HaccpBaseCreateForm = {
   approverId: string;
   assigneeIds: string[];
   expirationApply: 'Y' | 'N';
+  expirationNoticeStatus: string;
+  expirationNoticeCount: string;
   approvalApply: 'Y' | 'N';
   useAt: 'Y' | 'N';
 };

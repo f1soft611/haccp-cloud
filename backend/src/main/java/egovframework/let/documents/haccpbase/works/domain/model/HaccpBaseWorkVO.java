@@ -59,6 +59,12 @@ public class HaccpBaseWorkVO implements Serializable {
     @Schema(description = "만료일 관리 양식 여부")
     private boolean expirationApply;
 
+    @Schema(description = "만료일 안내 기준(공통코드 EXPIRY_STATUS: NONE/DAY/MONTH/YEAR)")
+    private String expirationNoticeStatus;
+
+    @Schema(description = "만료일 안내 계산숫자")
+    private Integer expirationNoticeCount;
+
     @Schema(description = "결재 적용 여부")
     private boolean approvalApply;
 

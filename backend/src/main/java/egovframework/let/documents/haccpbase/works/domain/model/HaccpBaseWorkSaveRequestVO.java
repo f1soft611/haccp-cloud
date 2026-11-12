@@ -41,6 +41,12 @@ public class HaccpBaseWorkSaveRequestVO implements Serializable {
     @Schema(description = "만료일 관리 양식 여부(수시 등록주기만 true 허용)")
     private Boolean expirationApply;
 
+    @Schema(description = "만료일 안내 기준(공통코드 EXPIRY_STATUS: NONE/DAY/MONTH/YEAR, 만료일 관리 양식만 사용)")
+    private String expirationNoticeStatus;
+
+    @Schema(description = "만료일 안내 계산숫자(만료일 N일/개월/년 전)")
+    private Integer expirationNoticeCount;
+
     @Schema(description = "결재 적용 여부")
     private Boolean approvalApply;
 

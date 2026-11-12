@@ -1,5 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Button, Stack } from '@mui/material';
+import { PageHeader } from '../../../../shared/components/layout/PageHeader';
+import { APP_LABELS } from '../../../../shared/constants/labels';
 
 type ApprovalDraftHeaderProps = {
   onBack: () => void;
@@ -41,42 +43,21 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
   } = props;
 
   return (
-    <Box
-      sx={{
-        pl: 1.5,
-        borderLeft: '3px solid',
-        borderColor: 'primary.main',
-      }}
-    >
-      <Stack spacing={0.5}>
-        <Stack direction="row" alignItems="center" spacing={0.5}>
-          <Typography variant="caption" color="text.secondary">
-            문서 관리
-          </Typography>
-          <Typography variant="caption" color="text.disabled">
-            /
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            기안서 작성/결재
-          </Typography>
-        </Stack>
+    <Stack spacing={1.5}>
+      <PageHeader
+        groupLabel={APP_LABELS.menu.documentGroup}
+        title="기안서 작성/결재"
+        description="템플릿 기반 기안을 작성하고, 결재선을 확인한 뒤 참조자와 결재의견을 남기고 결재를 진행할 수 있습니다."
+        useMenuMetadata={false}
+      />
 
-        <Typography component="h1" variant="h5" fontWeight={700}>
-          기안서 작성/결재
-        </Typography>
-
-        <Stack
-          direction={{ xs: 'column', lg: 'row' }}
-          justifyContent="space-between"
-          spacing={1}
-          alignItems={{ xs: 'flex-start', lg: 'flex-end' }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            템플릿 기반 기안을 작성하고, 결재선을 확인한 뒤 참조자와 결재의견을
-            남기고 결재를 진행할 수 있습니다.
-          </Typography>
-
-          <Stack direction="row" spacing={1}>
+      <Stack
+        direction="row"
+        spacing={1}
+        justifyContent="flex-end"
+        flexWrap="wrap"
+        useFlexGap
+      >
             {onApprove ? (
               <Button
                 variant="contained"
@@ -149,9 +130,7 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
             >
               돌아가기
             </Button>
-          </Stack>
-        </Stack>
       </Stack>
-    </Box>
+    </Stack>
   );
 }

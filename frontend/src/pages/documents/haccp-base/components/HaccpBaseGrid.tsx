@@ -18,6 +18,24 @@ import {
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import type { HaccpBaseRow } from '../types';
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
+import {
+  getCommonCodeName,
+  useCommonCodeOptions,
+  type CommonCodeOption,
+} from '../../../../shared/hooks/useCommonCodeOptions';
+import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+
+// 만료일 안내 시점 표시 문구(예: 30일 전). 만료일 관리 업무가 아니거나 기준이 없음이면 -
+function formatExpirationNotice(row: HaccpBaseRow, options: CommonCodeOption[]) {
+  if (
+      row.expirationApply !== 'Y' ||
+      row.expirationNoticeStatus === 'NONE' ||
+      row.expirationNoticeCount == null
+  ) {
+    return '-';
+  }
+  return `${row.expirationNoticeCount}${getCommonCodeName(options, row.expirationNoticeStatus)} 전`;
+}
 
 export function HaccpBaseGrid(props: {
   rows: HaccpBaseRow[];
@@ -26,6 +44,7 @@ export function HaccpBaseGrid(props: {
   onOpenEditorPage: (rowId: string) => void;
 }) {
   const { rows, loading, onEdit, onOpenEditorPage } = props;
+  const expiryStatusOptions = useCommonCodeOptions(COMMON_CODE_GROUP.EXPIRY_STATUS);
 
   return (
       <AdminGrid ariaLabel="HACCP 양식 목록" minWidth={1142}>
@@ -34,13 +53,16 @@ export function HaccpBaseGrid(props: {
           <TableCell width={72} align="center">
             No
           </TableCell>
-          <TableCell sx={{ minWidth: 200 }} align="center">업무명</TableCell>
-          <TableCell width={200} align="center">업무분류</TableCell>
+          <TableCell sx={{ minWidth: 180 }} align="center">업무명</TableCell>
+          <TableCell width={150} align="center">업무분류</TableCell>
           <TableCell width={120} align="center">
             작성주기
           </TableCell>
           <TableCell width={70} align="center">
             만료일
+          </TableCell>
+          <TableCell width={80} align="center">
+            만료일<br/>안내
           </TableCell>
           <TableCell width={70} align="center">
             결재
@@ -48,10 +70,10 @@ export function HaccpBaseGrid(props: {
           <TableCell width={70} align="center">
             사용
           </TableCell>
-          <TableCell width={110} align="center">
+          <TableCell width={120} align="center">
             검토/승인
           </TableCell>
-          <TableCell width={90} align="center">
+          <TableCell width={120} align="center">
             담당자
           </TableCell>
           <TableCell width={70} align="center">
@@ -103,6 +125,9 @@ export function HaccpBaseGrid(props: {
                   />
                 </TableCell>
                 <TableCell align="center">
+                  <Skeleton variant="text" width="60%" sx={{ mx: 'auto' }} />
+                </TableCell>
+                <TableCell align="center">
                   <Skeleton
                     variant="rounded"
                     width={52}
@@ -143,7 +168,7 @@ export function HaccpBaseGrid(props: {
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={11} align="center">
+            <TableCell colSpan={12} align="center">
               조회된 양식이 없습니다.
             </TableCell>
           </TableRow>
@@ -172,6 +197,9 @@ export function HaccpBaseGrid(props: {
                   />
                 </TableCell>
                 <TableCell align="center">
+                  {formatExpirationNotice(row, expiryStatusOptions)}
+                </TableCell>
+                <TableCell align="center">
                   <Chip
                       size="small"
                       label={row.approvalApply === 'Y' ? '적용' : '미적용'}
@@ -193,7 +221,6 @@ export function HaccpBaseGrid(props: {
                       py: 1,
                       borderRadius: 2,
                       border: '1px solid',
-                      // 기존 -> isDarkMode 로 색 분기 / 변경 -> surface 토큰
                       borderColor: 'surface.outline',
                       bgcolor: 'surface.muted',
                     }}

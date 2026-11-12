@@ -166,6 +166,104 @@ class HaccpBaseWorkServiceImplTest {
         assertEquals(1002L, params.get("approverId"));
     }
 
+    @DisplayName("만료일 관리 양식이면 만료일 안내 기준과 계산숫자가 그대로 저장된다")
+    @Test
+    void createWork_savesExpirationNoticeWhenExpirationApply() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        HaccpBaseWorkSaveRequestVO payload = stubCreate(dao, "ANYTIME");
+        payload.setExpirationApply(true);
+        payload.setExpirationNoticeStatus("DAY");
+        payload.setExpirationNoticeCount(30);
+
+        new HaccpBaseWorkServiceImpl(dao, mock(EgovIdGnrService.class)).createWork(payload, "3001");
+
+        Map<String, Object> params = captureInsertParams(dao);
+        assertEquals("DAY", params.get("expirationNoticeStatus"));
+        assertEquals(30, params.get("expirationNoticeCount"));
+    }
+
+    @DisplayName("만료일 관리 양식이 아니면 안내 값을 보내도 NONE, null 로 저장된다")
+    @Test
+    void createWork_clearsExpirationNoticeWhenNotExpirationApply() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        HaccpBaseWorkSaveRequestVO payload = stubCreate(dao, "ANYTIME");
+        payload.setExpirationApply(false);
+        payload.setExpirationNoticeStatus("DAY");
+        payload.setExpirationNoticeCount(30);
+
+        new HaccpBaseWorkServiceImpl(dao, mock(EgovIdGnrService.class)).createWork(payload, "3001");
+
+        Map<String, Object> params = captureInsertParams(dao);
+        assertEquals("NONE", params.get("expirationNoticeStatus"));
+        assertNull(params.get("expirationNoticeCount"));
+    }
+
+    @DisplayName("안내 기준이 없음이면 계산숫자를 보내도 null 로 저장된다")
+    @Test
+    void createWork_dropsNoticeCountWhenStatusNone() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        HaccpBaseWorkSaveRequestVO payload = stubCreate(dao, "ANYTIME");
+        payload.setExpirationApply(true);
+        payload.setExpirationNoticeStatus("NONE");
+        payload.setExpirationNoticeCount(5);
+
+        new HaccpBaseWorkServiceImpl(dao, mock(EgovIdGnrService.class)).createWork(payload, "3001");
+
+        Map<String, Object> params = captureInsertParams(dao);
+        assertEquals("NONE", params.get("expirationNoticeStatus"));
+        assertNull(params.get("expirationNoticeCount"));
+    }
+
+    @DisplayName("안내 값 없이 보낸 요청은 NONE, null 로 저장된다")
+    @Test
+    void createWork_defaultsExpirationNoticeToNone() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        HaccpBaseWorkSaveRequestVO payload = stubCreate(dao, "ANYTIME");
+        payload.setExpirationApply(true);
+
+        new HaccpBaseWorkServiceImpl(dao, mock(EgovIdGnrService.class)).createWork(payload, "3001");
+
+        Map<String, Object> params = captureInsertParams(dao);
+        assertEquals("NONE", params.get("expirationNoticeStatus"));
+        assertNull(params.get("expirationNoticeCount"));
+    }
+
+    @DisplayName("허용되지 않은 안내 기준이면 오류가 난다")
+    @Test
+    void createWork_throwsWhenNoticeStatusInvalid() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        HaccpBaseWorkSaveRequestVO payload = stubCreate(dao, "ANYTIME");
+        payload.setExpirationApply(true);
+        payload.setExpirationNoticeStatus("WEEK");
+        payload.setExpirationNoticeCount(1);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new HaccpBaseWorkServiceImpl(dao, mock(EgovIdGnrService.class)).createWork(payload, "3001")
+        );
+
+        assertEquals("만료일 안내 기준이 올바르지 않습니다.", ex.getMessage());
+    }
+
+    @DisplayName("안내 기준이 일/개월/년인데 계산숫자가 없거나 1 미만이면 오류가 난다")
+    @Test
+    void createWork_throwsWhenNoticeCountMissingOrZero() throws Exception {
+        for (Integer count : new Integer[] {null, 0}) {
+            HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+            HaccpBaseWorkSaveRequestVO payload = stubCreate(dao, "ANYTIME");
+            payload.setExpirationApply(true);
+            payload.setExpirationNoticeStatus("MONTH");
+            payload.setExpirationNoticeCount(count);
+
+            IllegalArgumentException ex = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new HaccpBaseWorkServiceImpl(dao, mock(EgovIdGnrService.class)).createWork(payload, "3001")
+            );
+
+            assertEquals("만료일 안내 계산숫자는 1 이상이어야 합니다.", ex.getMessage());
+        }
+    }
+
     private HaccpBaseWorkSaveRequestVO stubCreate(HaccpBaseWorkDAO dao, String cycle) throws Exception {
         when(dao.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
         when(dao.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(3001L);
