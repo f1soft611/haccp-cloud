@@ -44,6 +44,7 @@ export function UsersPage() {
     keyword: '',
     filterActive: 'Y',
   });
+  const [searchSeq, setSearchSeq] = useState(0);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
@@ -60,6 +61,7 @@ export function UsersPage() {
       pageSize,
       appliedSearch.keyword,
       appliedSearch.filterActive,
+      searchSeq,
     ],
     queryFn: () =>
       listUsersPaged({
@@ -177,6 +179,7 @@ export function UsersPage() {
       keyword: searchValue.keyword.trim(),
       filterActive: searchValue.filterActive,
     });
+    setSearchSeq((n) => n + 1);
   };
 
   const handleOpenCreate = () => {

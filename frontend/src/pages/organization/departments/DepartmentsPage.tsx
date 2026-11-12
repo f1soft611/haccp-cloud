@@ -48,6 +48,7 @@ export function DepartmentsPage() {
 
   const [searchValue, setSearchValue] = useState<DepartmentSearchValue>(DEFAULT_SEARCH);
   const [appliedFilters, setAppliedFilters] = useState<DepartmentSearchValue>(DEFAULT_SEARCH);
+  const [searchSeq, setSearchSeq] = useState(0);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<DepartmentItem | null>(null);
@@ -63,7 +64,7 @@ export function DepartmentsPage() {
   } | null>(null);
 
   const departmentsQuery = useQuery({
-    queryKey: ['departments', tenantCode, appliedFilters],
+    queryKey: ['departments', tenantCode, appliedFilters, searchSeq],
     queryFn: () =>
       listDepartments({
         tenantCode,
@@ -274,6 +275,7 @@ export function DepartmentsPage() {
         onSearch={() => {
           resetPage();
           setAppliedFilters({ ...searchValue });
+          setSearchSeq((n) => n + 1);
         }}
         onAdd={() => {
           resetForm();
