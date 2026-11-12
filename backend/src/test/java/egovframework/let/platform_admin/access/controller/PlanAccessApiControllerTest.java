@@ -56,12 +56,25 @@ class PlanAccessApiControllerTest {
     void listPlans_usesV1Path_andResultVoEnvelope() throws Exception {
         PlanSummaryVO planSummaryVO = new PlanSummaryVO();
         planSummaryVO.setPlanCode("A");
-        when(planAccessService.listPlans()).thenReturn(Arrays.asList(planSummaryVO));
+        when(planAccessService.listPlans(null, null, null)).thenReturn(Arrays.asList(planSummaryVO));
 
         mockMvc.perform(get("/api/v1/platform-admin/plan-access/plans"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.resultCode").value(200))
             .andExpect(jsonPath("$.result.data[0].planCode").value("A"));
+    }
+
+    @Test
+    void listPlans_passesSearchParams() throws Exception {
+        when(planAccessService.listPlans("code", "B", "Y")).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/v1/platform-admin/plan-access/plans")
+                .param("searchField", "code")
+                .param("searchKeyword", "B")
+                .param("useAt", "Y"))
+            .andExpect(status().isOk());
+
+        org.mockito.Mockito.verify(planAccessService).listPlans("code", "B", "Y");
     }
 
     @Test

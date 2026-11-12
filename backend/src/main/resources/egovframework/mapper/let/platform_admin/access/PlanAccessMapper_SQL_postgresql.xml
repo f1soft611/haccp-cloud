@@ -74,8 +74,9 @@
         ORDER BY pf.feature_code
     </select>
 
-    <!-- 플랜 목록/기능수/메뉴수 조회 -->
-    <select id="PlanAccessDAO.selectPlanList" resultType="egovframework.let.platform_admin.access.domain.model.PlanSummaryVO">
+    <!-- 플랜 목록을 검색항목(코드/이름), 키워드, 사용여부 조건으로 조회 -->
+    <!-- 기존 -> 조건 없이 전체 조회 / 변경 -> 선택 검색조건 추가 -->
+    <select id="PlanAccessDAO.selectPlanList" parameterType="map" resultType="egovframework.let.platform_admin.access.domain.model.PlanSummaryVO">
         SELECT p.plan_code AS planCode,
                p.plan_nm AS planName,
                p.plan_desc AS planDesc,
@@ -85,6 +86,21 @@
         FROM tb_plan p
             LEFT JOIN tb_plan_feature pf ON pf.plan_id = p.plan_id
             LEFT JOIN tb_plan_menu pm ON pm.plan_id = p.plan_id AND pm.use_at = 'Y'
+        <where>
+            <if test="useAt != null">
+                p.use_at = #{useAt}
+            </if>
+            <if test="searchKeyword != null">
+                <choose>
+                    <when test='searchField == "code"'>
+                        AND p.plan_code ILIKE CONCAT('%', #{searchKeyword}, '%')
+                    </when>
+                    <otherwise>
+                        AND p.plan_nm ILIKE CONCAT('%', #{searchKeyword}, '%')
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
         GROUP BY p.plan_code, p.plan_nm, p.plan_desc, p.use_at
         ORDER BY p.plan_code
     </select>
