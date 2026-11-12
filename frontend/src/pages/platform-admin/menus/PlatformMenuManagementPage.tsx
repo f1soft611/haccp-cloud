@@ -62,6 +62,7 @@ export function PlatformMenuManagementPage() {
     searchKeyword: '',
     filterActive: 'all',
   });
+  const [searchSeq, setSearchSeq] = useState(0);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<PlatformMenuItem | null>(null);
@@ -89,6 +90,7 @@ export function PlatformMenuManagementPage() {
       appliedFilters.searchField,
       appliedFilters.searchKeyword,
       appliedFilters.filterActive,
+      searchSeq,
     ],
     queryFn: () =>
       listPlatformMenusPaged({
@@ -357,6 +359,7 @@ export function PlatformMenuManagementPage() {
             searchKeyword: searchValue.searchKeyword.trim(),
             filterActive: searchValue.filterActive,
           });
+          setSearchSeq((n) => n + 1);
         }}
         onAdd={() => {
           resetForm();

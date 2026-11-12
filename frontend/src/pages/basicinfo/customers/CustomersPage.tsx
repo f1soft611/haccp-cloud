@@ -37,6 +37,7 @@ export function CustomersPage() {
     keyword: '',
     filterActive: 'all',
   });
+  const [searchSeq, setSearchSeq] = useState(0);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<CustomerItem | null>(
@@ -52,6 +53,7 @@ export function CustomersPage() {
       pageSize,
       appliedSearch.keyword,
       appliedSearch.filterActive,
+      searchSeq,
     ],
     queryFn: () =>
       listCustomersPaged({
@@ -104,6 +106,7 @@ export function CustomersPage() {
       keyword: searchValue.keyword.trim(),
       filterActive: searchValue.filterActive,
     });
+    setSearchSeq((n) => n + 1); // 조회 버튼을 누를 때마다 key 를 바꿔 같은 조건이어도 서버에서 다시 가져온다
   };
 
   const handleOpenCreate = () => {

@@ -4,8 +4,6 @@ import { AppProviders } from '../../../app/providers/AppProviders.tsx';
 import { WorkOrderPage } from '../../../pages/documents/work-order/WorkOrderPage.tsx';
 import { useAuthStore } from '../../../shared/store/authStore.ts';
 
-// 기존 -> 화면 state 샘플 데이터로 동작 검증
-// 변경 -> 서비스 모킹 후 API 호출 인자와 화면 반영 검증
 const {
     listWorkOrdersPagedMock,
     createWorkOrderMock,
@@ -276,5 +274,30 @@ describe('WorkOrderPage', () => {
                 expect.objectContaining({ keyword: '깍두기', pageIndex: 1 }),
             ),
         );
+    });
+
+    it('검색 조건이 같아도 조회 버튼을 누를 때마다 서버에서 다시 가져온다', async () => {
+        renderPage();
+        await screen.findByText('202610150001');
+        const before = listWorkOrdersPagedMock.mock.calls.length;
+
+        fireEvent.click(screen.getByRole('button', { name: '조회' }));
+        await vi.waitFor(() => expect(listWorkOrdersPagedMock).toHaveBeenCalledTimes(before + 1));
+
+        fireEvent.click(screen.getByRole('button', { name: '조회' }));
+        await vi.waitFor(() => expect(listWorkOrdersPagedMock).toHaveBeenCalledTimes(before + 2));
+    });
+
+    it('검색 조건을 바꿔 조회하면 서버 요청은 한 번만 나간다', async () => {
+        renderPage();
+        await screen.findByText('202610150001');
+        const before = listWorkOrdersPagedMock.mock.calls.length;
+
+        fireEvent.change(screen.getByRole('textbox', { name: '품명' }), { target: { value: '배추' } });
+        fireEvent.click(screen.getByRole('button', { name: '조회' }));
+        await vi.waitFor(() => expect(listWorkOrdersPagedMock).toHaveBeenCalledTimes(before + 1));
+        // 중복 요청이 뒤늦게 나가지 않는지 한 틱 더 기다린 뒤 확인
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(listWorkOrdersPagedMock).toHaveBeenCalledTimes(before + 1);
     });
 });

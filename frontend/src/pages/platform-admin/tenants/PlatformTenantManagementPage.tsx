@@ -22,10 +22,9 @@ export function PlatformTenantManagementPage() {
   const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } =
     useGridPagination();
 
-  const [searchValue, setSearchValue] =
-    useState<PlatformTenantSearchValue>(DEFAULT_SEARCH_VALUE);
-  const [appliedFilter, setAppliedFilter] =
-    useState<PlatformTenantSearchValue>(DEFAULT_SEARCH_VALUE);
+  const [searchValue, setSearchValue] = useState<PlatformTenantSearchValue>(DEFAULT_SEARCH_VALUE);
+  const [appliedFilter, setAppliedFilter] = useState<PlatformTenantSearchValue>(DEFAULT_SEARCH_VALUE);
+  const [searchSeq, setSearchSeq] = useState(0);
 
   const tenantQuery = useQuery({
     queryKey: [
@@ -37,6 +36,7 @@ export function PlatformTenantManagementPage() {
       appliedFilter.searchKeyword,
       appliedFilter.status,
       appliedFilter.onboardingStatus,
+      searchSeq,
     ],
     queryFn: () =>
       listPlatformTenants({
@@ -58,6 +58,7 @@ export function PlatformTenantManagementPage() {
       ...searchValue,
       searchKeyword: searchValue.searchKeyword.trim(),
     });
+    setSearchSeq((n) => n + 1);
   };
 
   return (

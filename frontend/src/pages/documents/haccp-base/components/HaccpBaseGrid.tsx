@@ -181,7 +181,7 @@ export function HaccpBaseGrid(props: {
                 <TableCell>
                   {row.divisionName}
                 </TableCell>
-                <TableCell>{row.categoryName}</TableCell>
+                <TableCell align="center">{row.categoryName}</TableCell>
                 <TableCell align="center">
                   <Chip
                       size="small"

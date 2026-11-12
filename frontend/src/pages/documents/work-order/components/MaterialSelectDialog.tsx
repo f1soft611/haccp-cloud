@@ -53,6 +53,7 @@ export function MaterialSelectDialog(props: {
     const [draft, setDraft] = useState<MaterialFilter>(EMPTY_FILTER);
     const [applied, setApplied] = useState<MaterialFilter>(EMPTY_FILTER);
     const [page, setPage] = useState(0);
+    const [searchSeq, setSearchSeq] = useState(0);
 
     useEffect(() => {
         if (!open) return;
@@ -62,7 +63,7 @@ export function MaterialSelectDialog(props: {
     }, [open]);
 
     const materialsQuery = useQuery({
-        queryKey: ['work-order-material-select', tenantCode || 'self', applied, page],
+        queryKey: ['work-order-material-select', tenantCode || 'self', applied, page, searchSeq],
         queryFn: () =>
             listMaterialsPaged({
                 tenantCode: tenantCode || undefined,
@@ -80,6 +81,7 @@ export function MaterialSelectDialog(props: {
     const handleSearch = () => {
         setApplied({ ...draft, keyword: draft.keyword.trim() });
         setPage(0);
+        setSearchSeq((n) => n + 1);
     };
 
     return (

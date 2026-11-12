@@ -129,10 +129,9 @@ export function useHaccpDocumentManagement() {
     [searchParams],
   );
 
-  const [searchValue, setSearchValue] =
-    useState<HaccpDocSearchValue>(initialValue);
-  const [appliedFilters, setAppliedFilters] =
-    useState<HaccpDocSearchValue>(initialValue);
+  const [searchValue, setSearchValue] = useState<HaccpDocSearchValue>(initialValue);
+  const [appliedFilters, setAppliedFilters] = useState<HaccpDocSearchValue>(initialValue);
+  const [searchSeq, setSearchSeq] = useState(0);
   // 참여유형은 상세조건 안의 필드이므로 URL 에 값이 있으면 펼친 상태로 시작
   const [detailOpen, setDetailOpen] = useState(
     initialValue.participantType.length > 0,
@@ -231,6 +230,7 @@ export function useHaccpDocumentManagement() {
       pageIndex,
       pageSize,
       appliedFilters,
+      searchSeq,
     ],
     queryFn: () => {
       // 미작성은 업무개시일부터 전체 주기를 보므로 기안일 조건을 보내지 않음
@@ -370,6 +370,7 @@ export function useHaccpDocumentManagement() {
         divisionOptions,
       }),
     );
+    setSearchSeq((n) => n + 1);
   };
 
   return {

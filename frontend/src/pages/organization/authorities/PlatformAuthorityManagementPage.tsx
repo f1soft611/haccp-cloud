@@ -53,6 +53,7 @@ export function PlatformAuthorityManagementPage() {
     searchKeyword: '',
     filterActive: 'all',
   });
+  const [searchSeq, setSearchSeq] = useState(0);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [mappingModalOpen, setMappingModalOpen] = useState(false);
@@ -92,6 +93,7 @@ export function PlatformAuthorityManagementPage() {
       appliedFilters.searchField,
       appliedFilters.searchKeyword,
       appliedFilters.filterActive,
+      searchSeq,
     ],
     queryFn: () =>
       listPlatformRolesPaged({
@@ -273,6 +275,7 @@ export function PlatformAuthorityManagementPage() {
       ...searchValue,
       searchKeyword: searchValue.searchKeyword.trim(),
     });
+    setSearchSeq((n) => n + 1);
   };
 
   const handleOpenCreateModal = () => {

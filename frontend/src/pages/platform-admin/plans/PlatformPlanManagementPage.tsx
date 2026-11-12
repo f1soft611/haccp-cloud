@@ -141,6 +141,8 @@ export function PlatformPlanManagementPage() {
         ? prev
         : null,
     );
+    // 화면 필터만 하던 조회 버튼이 서버의 최신 목록도 다시 가져오게 한다
+    void plansQuery.refetch();
   };
 
   const handleOpenMenuMapping = (plan: PlanSummary) => {

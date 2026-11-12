@@ -38,6 +38,7 @@ export function EquipmentPage() {
     keyword: '',
     filterActive: 'all',
   });
+  const [searchSeq, setSearchSeq] = useState(0);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<EquipmentItem | null>(
@@ -54,6 +55,7 @@ export function EquipmentPage() {
       pageSize,
       appliedSearch.keyword,
       appliedSearch.filterActive,
+      searchSeq,
     ],
     queryFn: () =>
       listEquipmentPaged({
@@ -116,6 +118,7 @@ export function EquipmentPage() {
       keyword: searchValue.keyword.trim(),
       filterActive: searchValue.filterActive,
     });
+    setSearchSeq((n) => n + 1);
   };
 
   const handleOpenCreate = () => {
