@@ -338,7 +338,10 @@
                 UNION ALL
                 <!-- 변경 -> 최신 문서가 최종확인된 반려여도 미작성 -->
                 SELECT CASE
-                         WHEN es.status_type = 'approved' THEN NULL
+                         <!-- 기존 -> 승인이면 만료일과 상관없이 NULL(미작성) -->
+                         <!-- 변경 -> 승인은 업무 안내 기준의 안내 시작일에 도달했을 때만 미작성, 도달 전은 confirmed(작성 완료, 어느 건수에도 안 셈) -->
+                         WHEN es.status_type = 'approved' AND es.notice_reached THEN NULL
+                         WHEN es.status_type = 'approved' THEN 'confirmed'
                          WHEN es.status_type = 'rejected' AND NOT <include refid="finalOwnerConfirmPending"><property name="doc" value="es"/></include> THEN NULL
                          ELSE es.status_type
                        END
