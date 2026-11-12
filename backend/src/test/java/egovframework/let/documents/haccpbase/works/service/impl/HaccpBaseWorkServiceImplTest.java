@@ -15,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkSaveRequestVO;
+import egovframework.let.documents.haccpbase.works.domain.model.HaccpBaseWorkSearchConditionVO;
 import egovframework.let.documents.haccpbase.works.domain.repository.HaccpBaseWorkDAO;
 
 class HaccpBaseWorkServiceImplTest {
@@ -282,6 +283,45 @@ class HaccpBaseWorkServiceImplTest {
         payload.setReviewerId(1001L);
         payload.setApproverId(1002L);
         return payload;
+    }
+
+    @DisplayName("업무 목록 조회 시 분류 ID와 공백 제거한 키워드를 조회조건으로 전달한다")
+    @Test
+    void listWorks_passesCategoryAndTrimmedKeyword() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        EgovIdGnrService idGnrService = mock(EgovIdGnrService.class);
+        HaccpBaseWorkServiceImpl service = new HaccpBaseWorkServiceImpl(dao, idGnrService);
+        when(dao.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+
+        service.listWorks("tenant_001", "y", 11L, "  금도연 ");
+
+        ArgumentCaptor<HaccpBaseWorkSearchConditionVO> captor =
+                ArgumentCaptor.forClass(HaccpBaseWorkSearchConditionVO.class);
+        verify(dao).selectWorkList(captor.capture());
+        HaccpBaseWorkSearchConditionVO condition = captor.getValue();
+        assertEquals(10L, condition.getTenantId());
+        assertEquals("Y", condition.getActive());
+        assertEquals(11L, condition.getCategoryId());
+        assertEquals("금도연", condition.getKeyword());
+    }
+
+    @DisplayName("업무 목록 조회 시 빈 키워드와 분류 미지정은 조건을 걸지 않는다")
+    @Test
+    void listWorks_ignoresBlankKeywordAndNullCategory() throws Exception {
+        HaccpBaseWorkDAO dao = mock(HaccpBaseWorkDAO.class);
+        EgovIdGnrService idGnrService = mock(EgovIdGnrService.class);
+        HaccpBaseWorkServiceImpl service = new HaccpBaseWorkServiceImpl(dao, idGnrService);
+        when(dao.selectTenantIdByCode("TENANT_001")).thenReturn(10L);
+
+        service.listWorks("TENANT_001", null, null, "   ");
+
+        ArgumentCaptor<HaccpBaseWorkSearchConditionVO> captor =
+                ArgumentCaptor.forClass(HaccpBaseWorkSearchConditionVO.class);
+        verify(dao).selectWorkList(captor.capture());
+        HaccpBaseWorkSearchConditionVO condition = captor.getValue();
+        assertNull(condition.getActive());
+        assertNull(condition.getCategoryId());
+        assertNull(condition.getKeyword());
     }
 
     @SuppressWarnings("unchecked")

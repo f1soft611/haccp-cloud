@@ -67,10 +67,12 @@ public class HaccpBaseWorkApiController {
     public ResultVO listWorks(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
             @RequestParam(required = false) String active,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String keyword,
             @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
             HttpServletRequest request) throws Exception {
         String tenantCode = resolveTenantCode(tenantHeader, request);
-        List<HaccpBaseWorkVO> resultList = haccpBaseWorkService.listWorks(tenantCode, active);
+        List<HaccpBaseWorkVO> resultList = haccpBaseWorkService.listWorks(tenantCode, active, categoryId, keyword);
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
         resultMap.put("resultList", resultList);
