@@ -2609,8 +2609,12 @@ export const handlers = [
     });
   }),
 
-  http.get('/api/v1/platform-admin/plan-access/plans', () => {
-    return HttpResponse.json([
+  http.get('/api/v1/platform-admin/plan-access/plans', ({ request }) => {
+    const url = new URL(request.url);
+    const searchField = url.searchParams.get('searchField') === 'code' ? 'code' : 'name';
+    const keyword = (url.searchParams.get('searchKeyword') ?? '').trim().toLowerCase();
+    const useAt = url.searchParams.get('useAt');
+    const plans = [
       {
         planCode: 'A',
         planName: 'Basic',
@@ -2643,7 +2647,18 @@ export const handlers = [
         featureCount: 6,
         menuCount: platformMenus.length,
       },
-    ]);
+    ];
+
+    return HttpResponse.json(
+      plans.filter(
+        (plan) =>
+          (!useAt || plan.useAt === useAt) &&
+          (!keyword ||
+            (searchField === 'code' ? plan.planCode : plan.planName)
+              .toLowerCase()
+              .includes(keyword)),
+      ),
+    );
   }),
 
   http.get(

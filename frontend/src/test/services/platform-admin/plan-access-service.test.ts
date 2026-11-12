@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiClient } from '../services/api/apiClient';
-import { getCurrentPlanAccess } from '../services/platform-admin/planAccessService';
+import { apiClient } from '../../../services/api/apiClient';
+import { getCurrentPlanAccess, listPlanSummaries } from '../../../services/platform-admin/planAccessService';
 
-vi.mock('../services/api/apiClient', () => ({
+vi.mock('../../../services/api/apiClient', () => ({
   apiClient: {
     get: vi.fn(),
   },
@@ -40,5 +40,19 @@ describe('planAccessService', () => {
       },
     );
     expect(result.planCode).toBe('P');
+  });
+
+  it('sends plan search conditions as query params', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: [] });
+
+    await listPlanSummaries({ searchField: 'code', searchKeyword: 'B', useAt: 'Y' });
+    await listPlanSummaries();
+
+    expect(apiClient.get).toHaveBeenNthCalledWith(1, '/v1/platform-admin/plan-access/plans', {
+      params: { searchField: 'code', searchKeyword: 'B', useAt: 'Y' },
+    });
+    expect(apiClient.get).toHaveBeenNthCalledWith(2, '/v1/platform-admin/plan-access/plans', {
+      params: { searchField: undefined, searchKeyword: undefined, useAt: undefined },
+    });
   });
 });

@@ -96,7 +96,7 @@ export function OnboardingPage() {
 
   const planSummariesQuery = useQuery({
     queryKey: ['platform-admin', 'plans', 'summaries'],
-    queryFn: listPlanSummaries,
+    queryFn: () => listPlanSummaries(),
   });
 
   const mutation = useMutation({

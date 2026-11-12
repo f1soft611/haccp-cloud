@@ -269,26 +269,51 @@ describe('PlatformPlanManagementPage', () => {
     });
   });
 
-  it('applies search filters when 조회 button is clicked', async () => {
+  it('sends search conditions to the server and shows the response as-is', async () => {
     renderPage();
 
     await screen.findByText('Basic');
+    expect(listPlanSummariesMock.mock.calls.at(-1)?.[0]).toMatchObject({
+      searchField: 'name',
+      searchKeyword: undefined,
+      useAt: undefined,
+    });
 
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '검색 조건' }));
     fireEvent.click(screen.getByRole('option', { name: '플랜 코드' }));
-
     fireEvent.change(screen.getByLabelText('검색어 입력'), {
-      target: { value: 'B' },
+      target: { value: ' B ' },
     });
-
     fireEvent.mouseDown(screen.getByRole('combobox', { name: '상태' }));
     fireEvent.click(screen.getByRole('option', { name: '활성' }));
 
+    // 서버가 Standard 만 돌려준다고 가정
+    listPlanSummariesMock.mockResolvedValue([
+      {
+        planCode: 'B',
+        planName: 'Standard',
+        planDesc: '표준 플랜',
+        useAt: 'Y',
+        featureCount: 4,
+        menuCount: 5,
+      },
+    ]);
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
 
     await waitFor(() => {
+      expect(listPlanSummariesMock.mock.calls.at(-1)?.[0]).toMatchObject({
+        searchField: 'code',
+        searchKeyword: 'B',
+        useAt: 'Y',
+      });
       expect(screen.queryByText('Basic')).not.toBeInTheDocument();
       expect(screen.getByText('Standard')).toBeInTheDocument();
     });
+
+    const before = listPlanSummariesMock.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    await waitFor(() =>
+      expect(listPlanSummariesMock.mock.calls.length).toBeGreaterThan(before),
+    );
   });
 });
