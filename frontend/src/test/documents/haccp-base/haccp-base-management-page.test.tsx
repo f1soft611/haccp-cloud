@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../../../app/providers/AppProviders';
 import { HaccpBaseManagementPage } from '../../../pages/documents/haccp-base/HaccpBaseManagementPage';
@@ -27,7 +27,8 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, crea
         createdAt: '2026-07-07 10:00',
       },
     ]),
-    listHaccpBaseWorksMock: vi.fn(async () => [
+    // 서버 조회를 흉내 내 사용여부 조건만 반영한다(분류, 키워드는 무시해 화면 필터 부재를 확인)
+    listHaccpBaseWorksMock: vi.fn(async (params?: { active?: 'Y' | 'N'; categoryId?: string; keyword?: string }) => [
       {
         id: '1',
         tenantCode: 'PLATFORM',
@@ -69,7 +70,7 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, crea
         approverName: '고대성',
         assigneeMapped: true,
       },
-    ]),
+    ].filter((work) => !params?.active || work.active === (params.active === 'Y'))),
     listUsersMock: vi.fn(async () => [
       {
         id: '101',
@@ -467,5 +468,50 @@ describe('HaccpBaseManagementPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '업무 수정' }));
     expect(screen.getByRole('combobox', { name: '만료일 안내 기준' })).toHaveTextContent('일');
     expect(screen.getByLabelText(/만료일 안내 계산숫자/)).toHaveValue(30);
+  });
+
+  it('sends applied search conditions to the server and shows the response as-is', async () => {
+    render(
+      <AppProviders>
+        <HaccpBaseManagementPage />
+      </AppProviders>,
+    );
+
+    await screen.findByText('기안서');
+    expect(listHaccpBaseWorksMock.mock.calls.at(-1)?.[0]).toMatchObject({ active: 'Y' });
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '업무분류' }));
+    fireEvent.click(await screen.findByRole('option', { name: '검교정 일정관리' }));
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: '사용유무' }));
+    fireEvent.click(await screen.findByRole('option', { name: '전체' }));
+    fireEvent.change(screen.getByLabelText('구분명, 담당자 검색'), {
+      target: { value: '  없는키워드 ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+
+    await waitFor(() => {
+      const params = listHaccpBaseWorksMock.mock.calls.at(-1)?.[0];
+      expect(params?.categoryId).toBe('11');
+      expect(params?.keyword).toBe('없는키워드');
+      expect(params?.active).toBeUndefined();
+    });
+    // 서버가 돌려준 두 행이 화면 필터 없이 그대로 보인다
+    expect(await screen.findByText('폐기 양식')).toBeInTheDocument();
+    expect(screen.getByText('기안서')).toBeInTheDocument();
+  });
+
+  it('refetches from the server when 조회 is clicked with the same conditions', async () => {
+    render(
+      <AppProviders>
+        <HaccpBaseManagementPage />
+      </AppProviders>,
+    );
+
+    await screen.findByText('기안서');
+    const before = listHaccpBaseWorksMock.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    await waitFor(() =>
+      expect(listHaccpBaseWorksMock.mock.calls.length).toBeGreaterThan(before),
+    );
   });
 });
