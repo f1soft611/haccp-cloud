@@ -330,6 +330,11 @@
     grid-template-columns: auto minmax(180px, 1fr);
   }
 
+  /* 날짜칸은 YYYY-MM-DD 와 달력 아이콘만 들어가면 되므로 최소 폭을 줄인다 */
+  .scope.searchFilter :global(.MuiFormControl-root:has(> .MuiInputLabel-root):has(input[type='date'])) {
+    grid-template-columns: auto minmax(140px, 1fr);
+  }
+
   /* 검색필터 셀렉트 라벨 색. 포커스, 오류 색은 MUI 기본을 유지한다 */
   .scope.searchFilter :global(.MuiFormControl-root:has(.MuiSelect-select) > .MuiInputLabel-root:not(.Mui-focused):not(.Mui-error)) {
     color: var(--search-filter-label);

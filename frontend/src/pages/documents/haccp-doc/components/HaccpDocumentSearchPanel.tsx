@@ -12,7 +12,12 @@ import {
 } from '@mui/material';
 import { AppDateField } from '../../../../shared/components/forms/AppDateField';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
-import { AppSelect, appSelectMenuProps } from '../../../../shared/components/forms/AppSelect';
+import {
+  AppSelect,
+  appSelectMenuProps,
+  SelectAllLabel,
+  SelectAllValue,
+} from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 import { TODO_STATUS_OPTIONS } from '../../../dashboard/tenant/todoFilter';
@@ -153,15 +158,25 @@ export function HaccpDocumentSearchPanel(props: {
                 <TextField
                   select
                   size="small"
-                  label="참여유형"
+                  label={
+                    value.participantType.length === 0 ? (
+                      <SelectAllLabel label="참여유형" />
+                    ) : (
+                      '참여유형'
+                    )
+                  }
                   value={value.participantType}
+                  InputLabelProps={
+                    value.participantType.length === 0 ? { shrink: false } : undefined
+                  }
                   SelectProps={{
                     multiple: true,
+                    displayEmpty: true,
                     MenuProps: appSelectMenuProps,
                     renderValue: (selected) =>
                       Array.isArray(selected) && selected.length > 0
                         ? selected.join(', ')
-                        : '전체',
+                        : <SelectAllValue />,
                   }}
                   onChange={(event) =>
                     onChange({
@@ -232,7 +247,7 @@ export function HaccpDocumentSearchPanel(props: {
 
       <AppSelect
         size="small"
-        label="상태"
+        label="결재상태"
         value={value.status}
         onChange={(status) => onChange({ ...value, status })}
         options={STATUS_OPTIONS.map((option) => ({ value: option, label: option }))}

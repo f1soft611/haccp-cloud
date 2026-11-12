@@ -10,15 +10,25 @@ const OPTIONS = [
     { value: 'N', label: '미사용' },
 ];
 
-function Harness({ initial = 'Y', emptyLabel }: { initial?: string; emptyLabel?: string }) {
+function Harness({
+    initial = 'Y',
+    emptyLabel,
+    options = OPTIONS,
+    label = '사용여부',
+}: {
+    initial?: string;
+    emptyLabel?: string;
+    options?: { value: string; label: string }[];
+    label?: string;
+}) {
     const [value, setValue] = useState(initial);
     return (
         <>
             <AppSelect
-                label="사용여부"
+                label={label}
                 value={value}
                 onChange={setValue}
-                options={OPTIONS}
+                options={options}
                 emptyLabel={emptyLabel}
             />
             <span data-testid="value">{value}</span>
@@ -95,5 +105,52 @@ describe('AppSelect', () => {
             borderTopStyle: 'solid',
             borderTopColor: 'rgb(42, 91, 184)',
         });
+    });
+
+    it('emptyLabel 이 전체이고 빈 값이면 칸을 비우고 라벨을 칸 안에 "라벨 (전체)" 로 보여준다', () => {
+        render(<Harness initial="" emptyLabel="전체" />);
+        const label = screen.getByText('사용여부 (전체)');
+        expect(label).not.toHaveClass('MuiInputLabel-shrink');
+
+        // 접근성 이름은 원래 라벨 그대로, 값 '전체'는 화면에서만 숨김
+        const combobox = screen.getByRole('combobox', { name: '사용여부' });
+        const hiddenValue = within(combobox).getByText('전체');
+        expect(hiddenValue).toHaveStyle({ position: 'absolute', width: '1px', height: '1px' });
+    });
+
+    it('선택된 옵션 문구가 전체이면 값과 상관없이 같은 표시를 한다', () => {
+        render(
+            <Harness
+                initial="all"
+                options={[
+                    { value: 'all', label: '전체' },
+                    { value: 'Y', label: '사용' },
+                ]}
+            />,
+        );
+        expect(screen.getByText('사용여부 (전체)')).not.toHaveClass('MuiInputLabel-shrink');
+    });
+
+    it('전체가 아닌 값을 고르면 라벨이 원래대로 뜨고 선택값을 보여준다', async () => {
+        render(<Harness initial="" emptyLabel="전체" />);
+        fireEvent.mouseDown(screen.getByRole('combobox', { name: '사용여부' }));
+        const listbox = await screen.findByRole('listbox');
+        fireEvent.click(within(listbox).getByRole('option', { name: '사용' }));
+
+        expect(screen.queryByText('사용여부 (전체)')).not.toBeInTheDocument();
+        expect(screen.getByText('사용여부')).toHaveClass('MuiInputLabel-shrink');
+        expect(screen.getByRole('combobox', { name: '사용여부' })).toHaveTextContent('사용');
+    });
+
+    it('문구가 정확히 전체가 아니면(예: 전체(수시제외)) 적용하지 않는다', () => {
+        render(
+            <Harness
+                initial="all"
+                label="주기"
+                options={[{ value: 'all', label: '전체(수시제외)' }]}
+            />,
+        );
+        expect(screen.queryByText('주기 (전체)')).not.toBeInTheDocument();
+        expect(screen.getByRole('combobox', { name: '주기' })).toHaveTextContent('전체(수시제외)');
     });
 });

@@ -276,6 +276,19 @@ describe('HaccpDocumentManagementPage', () => {
     });
   });
 
+  it('참여유형을 아무것도 안 고르면 칸 안에 "참여유형 (전체)" 를 보여준다', async () => {
+    window.history.pushState({}, '', '/docs/haccp-doc');
+    render(
+        <AppProviders>
+          <HaccpDocumentManagementPage />
+        </AppProviders>,
+    );
+    // 상세검색 열기: 271행 기존 테스트와 같은 코드
+
+    expect(screen.getByText('참여유형 (전체)')).not.toHaveClass('MuiInputLabel-shrink');
+    expect(screen.getByRole('combobox', { name: /참여유형/ })).toHaveTextContent('전체');
+  });
+
   it('keeps detail conditions closed when the query has no participant type', () => {
     window.history.pushState({}, '', `/docs/haccp-doc?status=${encodeURIComponent('반려')}`);
 
