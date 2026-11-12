@@ -28,12 +28,12 @@ export function PlatformPlanManagementPage() {
   const [searchValue, setSearchValue] = useState<PlanSearchBarValue>({
     searchField: 'name',
     searchKeyword: '',
-    filterActive: 'all',
+    filterActive: '',
   });
   const [appliedFilters, setAppliedFilters] = useState<PlanSearchBarValue>({
     searchField: 'name',
     searchKeyword: '',
-    filterActive: 'all',
+    filterActive: '',
   });
   const [searchSeq, setSearchSeq] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState<PlanSummary | null>(null);
@@ -50,7 +50,7 @@ export function PlatformPlanManagementPage() {
       listPlanSummaries({
         searchField: appliedFilters.searchField,
         searchKeyword: appliedFilters.searchKeyword || undefined,
-        useAt: appliedFilters.filterActive === 'all' ? undefined : appliedFilters.filterActive,
+        useAt: appliedFilters.filterActive || undefined,
       }),
     retry: false,
   });

@@ -71,7 +71,7 @@ export type ListPlatformRolesPagedParams = {
   tenantCode?: string;
   searchField?: 'code' | 'name' | 'description';
   searchKeyword?: string;
-  useAt?: 'Y' | 'N' | 'all';
+  useAt?: 'Y' | 'N';
 };
 
 type PlatformRolesPagedResponse = {

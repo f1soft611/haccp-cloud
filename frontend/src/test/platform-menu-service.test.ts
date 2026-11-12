@@ -70,6 +70,16 @@ describe('platformMenuService', () => {
     expect(response.items[0].parentMenuId).toBeNull();
   });
 
+  it('useAt 이 빈 값(전체)이면 파라미터를 보내지 않는다', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({
+      data: { result: { menuList: [] } },
+    });
+
+    await listPlatformMenusPaged({ pageIndex: 1, pageSize: 10, useAt: '' });
+
+    expect(vi.mocked(apiClient.get).mock.calls[0][1]?.params?.useAt).toBeUndefined();
+  });
+
   it('normalizes numeric menu ids from backend list response', async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce({
       data: [

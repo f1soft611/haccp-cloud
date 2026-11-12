@@ -8,7 +8,6 @@ const SEARCH_FIELD_OPTIONS = [
 ] as const;
 
 const ACTIVE_FILTER_OPTIONS = [
-  { value: 'all', label: '전체' },
   { value: 'Y', label: '활성' },
   { value: 'N', label: '비활성' },
 ] as const;
@@ -16,7 +15,7 @@ const ACTIVE_FILTER_OPTIONS = [
 export type PlanSearchBarValue = {
   searchField: 'code' | 'name';
   searchKeyword: string;
-  filterActive: 'all' | 'Y' | 'N';
+  filterActive: '' | 'Y' | 'N';
 };
 
 export function PlatformPlanSearchBar(props: {
@@ -35,6 +34,7 @@ export function PlatformPlanSearchBar(props: {
         value={value.filterActive}
         onChange={(filterActive) => onChange({ ...value, filterActive })}
         options={ACTIVE_FILTER_OPTIONS}
+        emptyLabel="전체"
         sx={{ minWidth: 120 }}
       />
       <AppSelect

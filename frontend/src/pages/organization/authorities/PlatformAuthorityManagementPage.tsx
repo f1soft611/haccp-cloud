@@ -46,12 +46,12 @@ export function PlatformAuthorityManagementPage() {
   const [searchValue, setSearchValue] = useState<AuthoritySearchValue>({
     searchField: 'name',
     searchKeyword: '',
-    filterActive: 'all',
+    filterActive: '',
   });
   const [appliedFilters, setAppliedFilters] = useState<AuthoritySearchValue>({
     searchField: 'name',
     searchKeyword: '',
-    filterActive: 'all',
+    filterActive: '',
   });
   const [searchSeq, setSearchSeq] = useState(0);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -101,7 +101,7 @@ export function PlatformAuthorityManagementPage() {
         pageSize,
         searchField: appliedFilters.searchField,
         searchKeyword: appliedFilters.searchKeyword || undefined,
-        useAt: appliedFilters.filterActive,
+        useAt: appliedFilters.filterActive || undefined,
       }),
     retry: false,
   });

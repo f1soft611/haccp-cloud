@@ -55,12 +55,12 @@ export function PlatformMenuManagementPage() {
   const [searchValue, setSearchValue] = useState<MenuSearchValue>({
     searchField: 'menuNm',
     searchKeyword: '',
-    filterActive: 'all',
+    filterActive: '',
   });
   const [appliedFilters, setAppliedFilters] = useState<MenuSearchValue>({
     searchField: 'menuNm',
     searchKeyword: '',
-    filterActive: 'all',
+    filterActive: '',
   });
   const [searchSeq, setSearchSeq] = useState(0);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -101,7 +101,7 @@ export function PlatformMenuManagementPage() {
           | 'menuDc'
           | 'menuUrl',
         searchKeyword: appliedFilters.searchKeyword || undefined,
-        useAt: appliedFilters.filterActive as 'Y' | 'N' | 'all',
+        useAt: (appliedFilters.filterActive || undefined) as 'Y' | 'N' | undefined,
       }),
   });
 

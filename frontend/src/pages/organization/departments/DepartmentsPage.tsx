@@ -69,10 +69,7 @@ export function DepartmentsPage() {
       listDepartments({
         tenantCode,
         name: appliedFilters.searchKeyword || undefined,
-        active:
-          appliedFilters.filterActive !== 'all'
-            ? (appliedFilters.filterActive as 'Y' | 'N')
-            : undefined,
+        active: (appliedFilters.filterActive || undefined) as 'Y' | 'N' | undefined,
       }),
   });
 
