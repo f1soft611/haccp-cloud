@@ -34,9 +34,9 @@ export type ListPlatformTenantsParams = {
   pageSize: number;
   searchField?: 'tenantCode' | 'companyName' | 'adminName';
   searchKeyword?: string;
-  status?: 'all' | 'ACTIVE' | 'INACTIVE';
+  status?: '' | 'ACTIVE' | 'INACTIVE';
   onboardingStatus?:
-    | 'all'
+    | ''
     | 'EMAIL_QUEUED'
     | 'EMAIL_SENT'
     | 'EMAIL_VERIFIED'
@@ -99,9 +99,8 @@ export async function listPlatformTenants(
       pageSize: params.pageSize,
       searchField: params.searchField,
       searchKeyword: params.searchKeyword,
-      status: params.status === 'all' ? undefined : params.status,
-      onboardingStatus:
-        params.onboardingStatus === 'all' ? undefined : params.onboardingStatus,
+      status: params.status || undefined,
+      onboardingStatus: params.onboardingStatus || undefined,
     },
   });
 

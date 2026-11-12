@@ -1,9 +1,9 @@
 export type SearchField = 'tenantCode' | 'companyName' | 'adminName';
 
-export type StatusFilter = 'all' | 'ACTIVE' | 'INACTIVE';
+export type StatusFilter = '' | 'ACTIVE' | 'INACTIVE';
 
 export type OnboardingStatusFilter =
-  | 'all'
+  | ''
   | 'EMAIL_QUEUED'
   | 'EMAIL_SENT'
   | 'EMAIL_VERIFIED'
