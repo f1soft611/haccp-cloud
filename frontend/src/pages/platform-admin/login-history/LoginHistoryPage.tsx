@@ -34,6 +34,7 @@ export function LoginHistoryPage() {
       filterEndDt: '',
     },
   );
+  const [searchSeq, setSearchSeq] = useState(0);
 
   const effectiveSearchUserId =
     appliedFilters.searchField === 'userId'
@@ -56,6 +57,7 @@ export function LoginHistoryPage() {
       appliedFilters.filterLoginResult,
       appliedFilters.filterStartDt,
       appliedFilters.filterEndDt,
+      searchSeq,
     ],
     queryFn: () =>
       getLoginHistoryList({
@@ -73,6 +75,7 @@ export function LoginHistoryPage() {
   const handleSearch = () => {
     resetPage();
     setAppliedFilters(searchValue);
+    setSearchSeq((n) => n + 1);
   };
 
   return (
