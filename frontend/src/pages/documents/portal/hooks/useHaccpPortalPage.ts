@@ -4,8 +4,6 @@ import { listHaccpPortalDocuments } from '../../../../services/documents/haccpPo
 import { useAuthStore } from '../../../../shared/store/authStore';
 import type { PortalRow, PortalSearchValue } from '../types';
 
-// 기존 -> 분류별 섹션(PortalSection[])으로 그룹핑
-// 변경 -> 검색필터(업무분류/등록주기/키워드) + 단일 그리드 행(PortalRow[])
 const INITIAL_SEARCH: PortalSearchValue = {
   category: 'ALL',
   cycle: 'ALL',
@@ -20,8 +18,6 @@ export function useHaccpPortalPage() {
     useState<PortalSearchValue>(INITIAL_SEARCH);
 
   const documentsQuery = useQuery({
-    // 기존 -> ['haccp-portal-documents', tenantCode]
-    // 변경 -> 역할별로 조회 범위가 달라 계정 전환 시 캐시가 섞이지 않도록 userId 포함
     queryKey: ['haccp-portal-documents', tenantCode, userId],
     queryFn: () => listHaccpPortalDocuments({ tenantCode }),
     retry: false,
@@ -63,7 +59,10 @@ export function useHaccpPortalPage() {
     documentsQuery,
     search,
     setSearch,
-    onSearch: () => setAppliedSearch(search),
+    onSearch: () => {
+      setAppliedSearch(search);
+      void documentsQuery.refetch();
+    },
     categoryOptions,
     rows,
   };
