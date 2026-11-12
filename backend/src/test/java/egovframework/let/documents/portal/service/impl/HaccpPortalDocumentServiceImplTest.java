@@ -49,7 +49,7 @@ class HaccpPortalDocumentServiceImplTest {
     void listPortalDocuments_normalizesTenantCodeAndIncludesTenantId() throws Exception {
         stubTenant();
 
-        service.listPortalDocuments("tenant-a", "admin01", "TENANT_ADMIN");
+        service.listPortalDocuments("tenant-a", "admin01", "TENANT_ADMIN", null, null, null);
 
         HaccpPortalDocumentSearchConditionVO condition = captureCondition();
         assertEquals("TENANT-A", condition.getTenantCode());
@@ -61,8 +61,8 @@ class HaccpPortalDocumentServiceImplTest {
     void listPortalDocuments_adminRolesSeeAll() throws Exception {
         stubTenant();
 
-        service.listPortalDocuments("tenant-a", "admin01", "tenant_admin");
-        service.listPortalDocuments("tenant-a", "platform_admin", "PLATFORM_ADMIN");
+        service.listPortalDocuments("tenant-a", "admin01", "tenant_admin", null, null, null);
+        service.listPortalDocuments("tenant-a", "platform_admin", "PLATFORM_ADMIN", null, null, null);
 
         ArgumentCaptor<HaccpPortalDocumentSearchConditionVO> captor = ArgumentCaptor
                 .forClass(HaccpPortalDocumentSearchConditionVO.class);
@@ -81,7 +81,7 @@ class HaccpPortalDocumentServiceImplTest {
         when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(7L);
         when(haccpWorkDAO.selectUserIdByTenantAndLoginId(anyMap())).thenReturn(9L);
 
-        service.listPortalDocuments("tenant-a", " user01 ", "TENANT_USER");
+        service.listPortalDocuments("tenant-a", " user01 ", "TENANT_USER", null, null, null);
 
         HaccpPortalDocumentSearchConditionVO condition = captureCondition();
         assertTrue(condition.isOnlyAssigned());
@@ -95,12 +95,66 @@ class HaccpPortalDocumentServiceImplTest {
     void listPortalDocuments_blankRoleIsFailClosed() throws Exception {
         stubTenant();
 
-        service.listPortalDocuments("tenant-a", null, "");
+        service.listPortalDocuments("tenant-a", null, "", null, null, null);
 
         HaccpPortalDocumentSearchConditionVO condition = captureCondition();
         assertTrue(condition.isOnlyAssigned());
         assertNull(condition.getActorLoginId());
         assertNull(condition.getActorUserId());
         assertNull(condition.getActorLoginCode());
+    }
+
+    @DisplayName("업무분류 ID, 등록주기, 키워드를 정규화해 조회조건으로 전달한다")
+    @Test
+    void listPortalDocuments_passesSearchConditions() throws Exception {
+        stubTenant();
+
+        service.listPortalDocuments("tenant-a", "admin01", "TENANT_ADMIN", " 10 ", " DAY ", "  CCP ");
+
+        HaccpPortalDocumentSearchConditionVO condition = captureCondition();
+        assertEquals(10L, condition.getCategoryId());
+        assertFalse(condition.isUncategorized());
+        assertEquals("DAY", condition.getCycle());
+        assertEquals("CCP", condition.getKeyword());
+    }
+
+    @DisplayName("업무분류 NONE 은 분류 미지정(기타문서) 업무만 조회하도록 전달한다")
+    @Test
+    void listPortalDocuments_noneCategoryMeansUncategorized() throws Exception {
+        stubTenant();
+
+        service.listPortalDocuments("tenant-a", "admin01", "TENANT_ADMIN", "none", null, null);
+
+        HaccpPortalDocumentSearchConditionVO condition = captureCondition();
+        assertNull(condition.getCategoryId());
+        assertTrue(condition.isUncategorized());
+    }
+
+    @DisplayName("빈 값, ALL, 숫자가 아닌 업무분류는 조건을 걸지 않는다")
+    @Test
+    void listPortalDocuments_ignoresBlankOrInvalidConditions() throws Exception {
+        stubTenant();
+
+        service.listPortalDocuments("tenant-a", "admin01", "TENANT_ADMIN", "ALL", " ", "");
+
+        HaccpPortalDocumentSearchConditionVO condition = captureCondition();
+        assertNull(condition.getCategoryId());
+        assertFalse(condition.isUncategorized());
+        assertNull(condition.getCycle());
+        assertNull(condition.getKeyword());
+    }
+
+    @DisplayName("일반 사용자는 검색조건이 있어도 본인 담당 업무 범위가 유지된다")
+    @Test
+    void listPortalDocuments_keepsAssignedScopeWithSearch() throws Exception {
+        stubTenant();
+        when(haccpWorkDAO.selectLoginIdByTenantAndLoginCode(anyMap())).thenReturn(7L);
+
+        service.listPortalDocuments("tenant-a", "user01", "TENANT_USER", "10", null, "CCP");
+
+        HaccpPortalDocumentSearchConditionVO condition = captureCondition();
+        assertTrue(condition.isOnlyAssigned());
+        assertEquals(7L, condition.getActorLoginId());
+        assertEquals("CCP", condition.getKeyword());
     }
 }

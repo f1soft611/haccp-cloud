@@ -76,6 +76,39 @@
               )
           )
         </if>
+        <!-- 분류 미지정(기타문서) 조건: 화면 표시명 산정 기준과 동일 -->
+        <if test="uncategorized">
+          AND NULLIF(TRIM(g.cata_name), '') IS NULL
+        </if>
+        <!-- 업무분류 조건 -->
+        <if test="categoryId != null">
+          AND w.drafting_work_category_group_id = #{categoryId}
+        </if>
+        <!-- 등록주기 조건: 비어 있으면 ANYTIME 으로 보는 표시 기준과 동일 -->
+        <if test="cycle != null and cycle != ''">
+          AND COALESCE(NULLIF(TRIM(w.reg_term), ''), 'ANYTIME') = #{cycle}
+        </if>
+        <!-- 키워드 조건: 업무명 또는 담당자 이름 부분일치(대소문자 무시) -->
+        <if test="keyword != null and keyword != ''">
+          AND (
+                COALESCE(w.code_name, '') ILIKE CONCAT('%', #{keyword}, '%')
+             OR EXISTS (
+                  SELECT 1
+                  FROM tb_drafting_work_category_authority a3
+                  LEFT JOIN tb_user u3
+                    ON u3.tenant_id = a3.tenant_id
+                   AND (
+                     CAST(u3.user_id AS varchar) = a3.employee_no
+                     OR CAST(u3.login_id AS varchar) = a3.employee_no
+                   )
+                  WHERE a3.tenant_id = w.tenant_id
+                    AND a3.drafting_work_category_id = w.drafting_work_category_id
+                    AND a3.use_at = 'Y'
+                    AND COALESCE(a3.delete_status, 'N') != 'Y'
+                    AND COALESCE(NULLIF(TRIM(u3.user_nm), ''), a3.employee_no) ILIKE CONCAT('%', #{keyword}, '%')
+                )
+          )
+        </if>
         ORDER BY
           CASE
             WHEN COALESCE(TRIM(g.view_seq::varchar), '') ~ '^[0-9]+$' THEN CAST(TRIM(g.view_seq::varchar) AS integer)

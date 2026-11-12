@@ -9,7 +9,7 @@ import egovframework.let.documents.portal.domain.model.HaccpPortalDocumentVO;
  */
 public interface HaccpPortalDocumentService {
 
-    // 기존 -> listPortalDocuments(String tenantCode)
-    // 변경 -> 로그인 코드와 역할 코드를 받아 관리자 외 역할은 본인 담당 업무만 조회
-    public List<HaccpPortalDocumentVO> listPortalDocuments(String tenantCode, String actorLoginCode, String roleCode) throws Exception;
+    // 업무분류(ID 또는 NONE), 등록주기, 키워드 검색조건 추가
+    public List<HaccpPortalDocumentVO> listPortalDocuments(String tenantCode, String actorLoginCode, String roleCode,
+            String categoryId, String cycle, String keyword) throws Exception;
 }

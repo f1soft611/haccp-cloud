@@ -10,6 +10,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import egovframework.com.cmm.LoginVO;
@@ -53,15 +54,16 @@ public class HaccpPortalDocumentApiController {
     @GetMapping
     public ResultVO listPortalDocuments(
             @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            @RequestParam(required = false) String categoryId,
+            @RequestParam(required = false) String cycle,
+            @RequestParam(required = false) String keyword,
             @Parameter(hidden = true) @AuthenticationPrincipal LoginVO user,
             HttpServletRequest request) throws Exception {
         String tenantCode = resolveTenantCode(tenantHeader, request);
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
-        // 기존 -> haccpPortalDocumentService.listPortalDocuments(tenantCode)
-        // 변경 -> 로그인 코드와 역할 코드를 넘겨 역할별 조회 범위 적용
         resultMap.put("resultList", haccpPortalDocumentService.listPortalDocuments(
-                tenantCode, resolveLoginCode(user), resolveRoleCode(user)));
+                tenantCode, resolveLoginCode(user), resolveRoleCode(user), categoryId, cycle, keyword));
         resultMap.put("user", user);
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
