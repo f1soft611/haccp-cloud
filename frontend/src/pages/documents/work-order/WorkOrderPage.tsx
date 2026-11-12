@@ -26,12 +26,11 @@ import {
 } from './types';
 
 export function WorkOrderPage() {
-    // 기존 -> useState(SAMPLE_WORK_ORDERS) 화면 state 보관 + filterWorkOrderRows/slice 클라이언트 페이징
-    // 변경 -> tb_workdirect API 를 React Query 로 서버 페이징 조회/저장
     const queryClient = useQueryClient();
     const tenantCode = useAuthStore((state) => state.tenantCode);
     const [searchValue, setSearchValue] = useState<WorkOrderSearchValue>(EMPTY_WORK_ORDER_SEARCH);
     const [appliedSearch, setAppliedSearch] = useState<WorkOrderSearchValue>(EMPTY_WORK_ORDER_SEARCH);
+    const [searchSeq, setSearchSeq] = useState(0);
     const { pageIndex, pageSize, setPageIndex, setPageSize, resetPage } = useGridPagination();
     const { showSuccess, showError } = useFeedback();
 
@@ -42,7 +41,7 @@ export function WorkOrderPage() {
     const queryKeyBase = ['documents-work-orders', tenantCode || 'self'];
 
     const workOrdersQuery = useQuery({
-        queryKey: [...queryKeyBase, pageIndex, pageSize, appliedSearch],
+        queryKey: [...queryKeyBase, pageIndex, pageSize, appliedSearch, searchSeq],
         queryFn: () =>
             listWorkOrdersPaged({
                 tenantCode: tenantCode || undefined,
@@ -89,7 +88,6 @@ export function WorkOrderPage() {
         mutationFn: deleteWorkOrder,
         onSuccess: () => {
             setDeleteTarget(null);
-            // 기존 -> 마지막 페이지가 비면 이전 페이지로 이동 / 변경 -> 서버 페이징이므로 1페이지로 이동
             resetPage();
             refreshList();
             showSuccess('삭제되었습니다.');
@@ -102,6 +100,7 @@ export function WorkOrderPage() {
     const handleSearch = () => {
         resetPage();
         setAppliedSearch(searchValue);
+        setSearchSeq((n) => n + 1); // 조회 버튼을 누를 때마다 key 를 바꿔 같은 조건이어도 서버에서 다시 가져온다
     };
 
     const handleReset = () => {
