@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import styles from '../sharedComponents.module.css';
 import { useSharedScope } from '../useSharedScope';
+import { appSelectMenuProps } from '../forms/AppSelect';
 
 type GridPaginationBarProps = {
   pageIndex: number;
@@ -56,6 +57,7 @@ export function GridPaginationBar({
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
             fullWidth
             inputProps={{ 'aria-label': '페이지 크기 선택' }}
+            MenuProps={appSelectMenuProps}
           >
             {pageSizeOptions.map((option) => (
               <MenuItem key={option} value={option}>

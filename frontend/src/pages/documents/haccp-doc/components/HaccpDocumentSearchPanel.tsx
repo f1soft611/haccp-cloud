@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { AppDateField } from '../../../../shared/components/forms/AppDateField';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
-import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+import { AppSelect, appSelectMenuProps } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 import { TODO_STATUS_OPTIONS } from '../../../dashboard/tenant/todoFilter';
@@ -157,6 +157,7 @@ export function HaccpDocumentSearchPanel(props: {
                   value={value.participantType}
                   SelectProps={{
                     multiple: true,
+                    MenuProps: appSelectMenuProps,
                     renderValue: (selected) =>
                       Array.isArray(selected) && selected.length > 0
                         ? selected.join(', ')
