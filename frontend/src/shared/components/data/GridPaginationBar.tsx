@@ -3,7 +3,6 @@ import {
   MenuItem,
   Pagination,
   Select,
-  Stack,
   Typography,
 } from '@mui/material';
 import styles from '../sharedComponents.module.css';
@@ -19,6 +18,7 @@ type GridPaginationBarProps = {
   pageSizeOptions?: readonly number[];
 };
 
+// 그리드 하단 페이징 바: 총 건수(왼쪽), 페이지 번호(가운데), 페이지 크기(오른쪽)
 export function GridPaginationBar({
   pageIndex,
   pageSize,
@@ -30,51 +30,37 @@ export function GridPaginationBar({
   const scope = useSharedScope();
   const totalPages = Math.max(1, Math.ceil((totalCount || 0) / pageSize));
 
-  // 기존 -> sx, 스타일 prop 으로 스타일 지정
-  // 변경 -> sharedComponents.module.css 클래스 사용
   return (
-    <Stack
-      {...scope}
-      direction={{ xs: 'column', md: 'row' }}
-      spacing={1.5}
-      alignItems={{ xs: 'stretch', md: 'center' }}
-      justifyContent="space-between"
-    >
+    <Box {...scope} className={`${scope.className} ${styles.gridPaginationBar}`}>
       <Typography variant="body2" className={styles.textSecondary}>
         총 {totalCount}건
       </Typography>
 
-      <Stack
-        direction="row"
-        spacing={1.5}
-        alignItems="center"
-        justifyContent="flex-end"
-      >
-        <Box className={styles.gridPaginationSize}>
-          <Select
-            size="small"
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            fullWidth
-            inputProps={{ 'aria-label': '페이지 크기 선택' }}
-            MenuProps={appSelectMenuProps}
-          >
-            {pageSizeOptions.map((option) => (
-              <MenuItem key={option} value={option}>
-                {option}개
-              </MenuItem>
-            ))}
-          </Select>
-        </Box>
+      <Pagination
+        page={pageIndex}
+        count={totalPages}
+        onChange={(_, page) => onPageChange(page)}
+        shape="rounded"
+        color="primary"
+      />
 
-        <Pagination
-          page={pageIndex}
-          count={totalPages}
-          onChange={(_, page) => onPageChange(page)}
-          shape="rounded"
-          color="primary"
-        />
-      </Stack>
-    </Stack>
+      <Box className={styles.gridPaginationSize}>
+        <Select
+          size="small"
+          value={pageSize}
+          onChange={(event) => onPageSizeChange(Number(event.target.value))}
+          fullWidth
+          inputProps={{ 'aria-label': '페이지 크기 선택' }}
+          MenuProps={appSelectMenuProps}
+        >
+          {pageSizeOptions.map((option) => (
+            <MenuItem key={option} value={option}>
+              {option}개씩
+            </MenuItem>
+          ))}
+        </Select>
+      </Box>
+    </Box>
+
   );
 }

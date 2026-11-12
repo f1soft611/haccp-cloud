@@ -148,8 +148,39 @@
 }
 
 /* GridPaginationBar */
+/* 기존 -> 셀렉트 최소 너비만 지정 / 변경 -> 3칸 배치, 셀렉트 radius, 테두리 색 추가 */
+.scope.gridPaginationBar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
 .scope .gridPaginationSize {
   min-width: 100px;
+}
+
+.scope .gridPaginationSize :global(.MuiOutlinedInput-root) {
+  border-radius: 4px;
+}
+
+.scope .gridPaginationSize :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: #BEC9CF;
+}
+
+@media (min-width: 900px) {
+  .scope.gridPaginationBar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+  }
+
+  .scope.gridPaginationBar > :first-child {
+    justify-self: start;
+  }
+
+  .scope .gridPaginationSize {
+    justify-self: end;
+  }
 }
 
 /* SearchFilterBar */
@@ -163,14 +194,16 @@
 }
 
 /* 라벨이 있는 칸만 라벨, 입력칸 2열로 나눈다 */
-.scope.searchFilter :global(.MuiFormControl-root:has(> .MuiInputLabel-root)) {
+/* 기존 -> 라벨이 있는 모든 칸 */
+/* 변경 -> 셀렉트는 플로팅 라벨을 쓰므로 제외 */
+.scope.searchFilter :global(.MuiFormControl-root:has(> .MuiInputLabel-root):not(:has(.MuiSelect-select))) {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   column-gap: 8px;
   align-items: center;
 }
 
-.scope.searchFilter :global(.MuiInputLabel-root) {
+.scope.searchFilter :global(.MuiFormControl-root:not(:has(.MuiSelect-select)) > .MuiInputLabel-root) {
   position: static;
   display: inline-flex;
   align-items: center;
@@ -185,7 +218,7 @@
   pointer-events: auto;
 }
 
-.scope.searchFilter :global(.MuiInputLabel-root)::before {
+.scope.searchFilter :global(.MuiFormControl-root:not(:has(.MuiSelect-select)) > .MuiInputLabel-root)::before {
   content: '';
   width: 6px;
   height: 6px;
@@ -195,16 +228,16 @@
 }
 
 /* 테두리가 라벨 자리만큼 끊기지 않게 한다 */
-.scope.searchFilter :global(.MuiOutlinedInput-notchedOutline legend) {
+.scope.searchFilter :global(.MuiFormControl-root:not(:has(.MuiSelect-select)) .MuiOutlinedInput-notchedOutline legend) {
   display: none;
 }
 
 /* MUI 기본 top -5px 은 legend 높이를 전제로 해서, legend 를 숨기면 테두리가 위로 커진다 */
-.scope.searchFilter :global(.MuiOutlinedInput-notchedOutline) {
+.scope.searchFilter :global(.MuiFormControl-root:not(:has(.MuiSelect-select)) .MuiOutlinedInput-notchedOutline) {
   top: 0;
 }
 
-.scope.searchFilter :global(.MuiFormHelperText-root) {
+.scope.searchFilter :global(.MuiFormControl-root:not(:has(.MuiSelect-select)) > .MuiFormHelperText-root) {
   grid-column: 2;
   margin-left: 0;
 }
@@ -293,8 +326,18 @@
     flex: none;
   }
 
-  .scope.searchFilter :global(.MuiFormControl-root:has(> .MuiInputLabel-root)) {
+  .scope.searchFilter :global(.MuiFormControl-root:has(> .MuiInputLabel-root):not(:has(.MuiSelect-select))) {
     grid-template-columns: auto minmax(180px, 1fr);
+  }
+
+  /* 검색필터 셀렉트 라벨 색. 포커스, 오류 색은 MUI 기본을 유지한다 */
+  .scope.searchFilter :global(.MuiFormControl-root:has(.MuiSelect-select) > .MuiInputLabel-root:not(.Mui-focused):not(.Mui-error)) {
+    color: var(--search-filter-label);
+  }
+
+  /* 35px 칸 높이에 맞춘 셀렉트 라벨의 내려간 위치. 줄높이 약 23px 기준 (35 - 23) / 2 */
+  .scope.searchFilter :global(.MuiFormControl-root:has(.MuiSelect-select) > .MuiInputLabel-root:not(.MuiInputLabel-shrink)) {
+    transform: translate(14px, 6px) scale(1);
   }
 
   .scope .searchFilterFields {
@@ -307,6 +350,11 @@
     flex: 0 0 auto;
     width: auto;
     min-width: min-content;
+  }
+
+  /* 라벨 열이 없어진 셀렉트 칸이 min-content 로 좁아지지 않게 기존 입력칸 최소 폭에 맞춘다 */
+  .scope .searchFilterFields > :not(.searchFilterActions):has(:global(.MuiSelect-select)) {
+    min-width: 180px;
   }
 
   /* 선택칸과 날짜칸을 뺀 텍스트 칸만 남은 폭을 채운다 */
