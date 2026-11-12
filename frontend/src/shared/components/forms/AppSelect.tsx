@@ -17,6 +17,19 @@ type AppSelectProps<T extends string> = Pick<
     selectProps?: Pick<SelectProps, 'renderValue' | 'SelectDisplayProps'>;
 };
 
+// 셀렉트 펼침 목록 보더를 포커스된 칸 테두리색(primary)과 맞추는 공용 MenuProps
+export const appSelectMenuProps: SelectProps['MenuProps'] = {
+    slotProps: {
+        paper: {
+            sx: {
+                border: '1px solid',
+                borderColor: 'primary.main',
+                borderRadius: '4px',
+            },
+        },
+    },
+};
+
 // 공통 단일 선택 셀렉트박스. 옵션 렌더링과 빈 값 표시를 맡는다.
 export function AppSelect<T extends string = string>({
     onChange,
@@ -33,7 +46,7 @@ export function AppSelect<T extends string = string>({
             select
             onChange={(event) => onChange(event.target.value as T)}
             slotProps={{
-                select: { displayEmpty: hasEmptyOption, ...selectProps },
+                select: { displayEmpty: hasEmptyOption, MenuProps: appSelectMenuProps, ...selectProps },
                 inputLabel: hasEmptyOption ? { shrink: true } : undefined,
             }}
         >

@@ -2,6 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+import { ThemeProvider } from '@mui/material/styles';
+import { appTheme } from '../../../../app/theme';
 
 const OPTIONS = [
     { value: 'Y', label: '사용' },
@@ -75,5 +77,23 @@ describe('AppSelect', () => {
             />,
         );
         expect(screen.getByRole('combobox', { name: '활성 상태' })).toHaveTextContent('사용');
+    });
+
+    it('펼친 목록에 포커스 테두리와 같은 primary 색 1px 보더를 준다', async () => {
+        render(
+            <ThemeProvider theme={appTheme}>
+                <Harness />
+            </ThemeProvider>,
+        );
+        fireEvent.mouseDown(screen.getByRole('combobox', { name: '사용여부' }));
+        const listbox = await screen.findByRole('listbox');
+        const paper = listbox.closest('.MuiPaper-root');
+
+        expect(paper).not.toBeNull();
+        expect(paper).toHaveStyle({
+            borderTopWidth: '1px',
+            borderTopStyle: 'solid',
+            borderTopColor: 'rgb(42, 91, 184)',
+        });
     });
 });
