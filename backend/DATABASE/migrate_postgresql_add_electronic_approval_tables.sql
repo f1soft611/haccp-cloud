@@ -325,6 +325,7 @@ COMMENT ON COLUMN tb_electronic_approval_sub.updated_by IS '변경자';
 COMMENT ON COLUMN tb_electronic_approval_sub.updated_at IS '변경일시';
 
 -- 만료일 관리 업무: 업무 + 대상(설비, 품목유형, 증명서 소유자)별 최신 문서 (삭제, 임시저장 제외)
+-- 기존 -> 대상별 최신 문서 컬럼만 / 변경 -> 업무 안내 기준으로 계산한 안내 시작일 도달 여부(notice_reached) 추가
 CREATE OR REPLACE VIEW v_expiration_target_latest AS
 SELECT DISTINCT ON (m.tenant_id, m.drafting_work_category_id,
                     s.equipment_id, COALESCE(s.material_type, ''), s.certification_user_id)
@@ -338,11 +339,24 @@ SELECT DISTINCT ON (m.tenant_id, m.drafting_work_category_id,
        s.certification_user_id,
        s.inspected_date,
        s.expiration_date,
-       COALESCE(e.equip_nm, u.user_nm, '') AS target_name
+       COALESCE(e.equip_nm, u.user_nm, '') AS target_name,
+       CASE
+         WHEN COALESCE(s.expiration_date, '') !~ '^[0-9]{8}$' THEN TRUE
+         ELSE CURRENT_DATE >= TO_DATE(s.expiration_date, 'YYYYMMDD')
+                - CASE COALESCE(w.expiration_notice_status, 'NONE')
+                    WHEN 'DAY' THEN make_interval(days => COALESCE(w.expiration_notice_count, 0))
+                    WHEN 'MONTH' THEN make_interval(months => COALESCE(w.expiration_notice_count, 0))
+                    WHEN 'YEAR' THEN make_interval(years => COALESCE(w.expiration_notice_count, 0))
+                    ELSE INTERVAL '0 day'
+                  END
+       END AS notice_reached
 FROM tb_electronic_approval_sub s
 JOIN tb_electronic_approval_main m
   ON m.tenant_id = s.tenant_id
  AND m.electronic_approval_id = s.electronic_approval_id
+LEFT JOIN tb_drafting_work_category w
+  ON w.tenant_id = m.tenant_id
+ AND w.drafting_work_category_id = m.drafting_work_category_id
 LEFT JOIN tb_equipment_info e
   ON e.tenant_id = s.tenant_id
  AND e.equipment_id = s.equipment_id
