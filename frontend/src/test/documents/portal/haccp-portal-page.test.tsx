@@ -18,6 +18,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 const { listHaccpPortalDocumentsMock } = vi.hoisted(() => ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   listHaccpPortalDocumentsMock: vi.fn(async (_params?: { categoryId?: string; cycle?: string; keyword?: string }) => [
     {
       id: '1',
