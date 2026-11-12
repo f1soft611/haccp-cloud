@@ -1,7 +1,8 @@
-import { Button, Paper, Stack } from '@mui/material';
+import { Button, Paper, Stack, IconButton } from '@mui/material';
 import type { FormEvent, ReactNode } from 'react';
 import styles from '../sharedComponents.module.css';
 import { useSharedScope } from '../useSharedScope';
+import {RotateCcw} from "lucide-react";
 
 type SearchFilterBarProps = {
   children: ReactNode;
@@ -46,14 +47,14 @@ export function SearchFilterBar({
             useFlexGap
             className={styles.searchFilterActions}
           >
-            {onReset ? (
-              <Button variant="outlined" onClick={onReset}>
-                초기화
-              </Button>
-            ) : null}
             <Button type="submit" variant="outlined" disabled={disabled} className={styles.searchFilterSubmit}>
               조회
             </Button>
+            {onReset ? (
+              <IconButton aria-label="초기화" onClick={onReset} className={styles.searchFilterReset}>
+                <RotateCcw size={18} />
+              </IconButton>
+            ) : null}
             {actions}
           </Stack>
         </Stack>

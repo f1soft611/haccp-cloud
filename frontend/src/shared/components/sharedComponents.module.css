@@ -269,6 +269,21 @@
   opacity: 0.5;
 }
 
+/* 검색필터 초기화 아이콘 버튼, 조회 오른쪽에 붙는 35px 정사각형 */
+.scope .searchFilterReset {
+  flex: none;
+  width: 35px;
+  padding: 0;
+  border: 1px solid var(--search-filter-input-border);
+  border-radius: 4px;
+  background-color: var(--search-filter-submit-bg);
+  color: var(--search-filter-submit-text);
+}
+
+.scope .searchFilterReset:hover {
+  background-color: var(--search-filter-bg);
+}
+
 @media (min-width: 900px) {
   .scope .searchFilterActions {
     /*margin-left: auto;*/
