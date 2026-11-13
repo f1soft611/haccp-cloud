@@ -1,3 +1,4 @@
+import { ChevronDown, type LucideProps } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import { MenuItem, TextField, type SelectProps, type TextFieldProps } from '@mui/material';
 
@@ -30,6 +31,11 @@ export const appSelectMenuProps: SelectProps['MenuProps'] = {
         },
     },
 };
+
+// 셀렉트 펼침 화살표. MUI 기본 채움 삼각형 대신 얇은 선 화살표를 쓰고, 색은 CSS(.MuiSelect-icon)에서 상태별로 준다
+export function AppSelectIcon(props: LucideProps) {
+    return <ChevronDown size={16} strokeWidth={1.5} {...props} />;
+}
 
 const ALL_LABEL = '전체';
 
@@ -75,6 +81,8 @@ export function AppSelect<T extends string = string>({
     const selectedLabel =
         hasEmptyOption && value === '' ? emptyLabel : options.find((option) => option.value === value)?.label;
     const isAll = Boolean(label) && selectedLabel === ALL_LABEL;
+    // 미선택(빈 값 또는 '전체') 여부. 테두리, 글자, 화살표 색을 CSS 에서 나누는 기준
+    const isEmpty = (hasEmptyOption && value === '') || isAll;
 
     // 전체면 라벨을 칸 안에 두고(노치 없음), 그 외에는 기존처럼 빈 항목이 있을 때만 라벨을 띄운다.
     const inputLabelProps = isAll ? { shrink: false } : hasEmptyOption ? { shrink: true } : undefined;
@@ -82,6 +90,7 @@ export function AppSelect<T extends string = string>({
     return (
         <TextField
             {...textFieldProps}
+            data-select-state={isEmpty ? 'empty' : 'selected'}
             value={value}
             label={isAll ? <SelectAllLabel label={label} /> : label}
             select
@@ -90,6 +99,7 @@ export function AppSelect<T extends string = string>({
                 select: {
                     displayEmpty: hasEmptyOption,
                     MenuProps: appSelectMenuProps,
+                    IconComponent: AppSelectIcon,
                     ...selectProps,
                     ...(isAll ? { displayEmpty: true, notched: false, renderValue: () => <SelectAllValue /> } : {}),
                 },
