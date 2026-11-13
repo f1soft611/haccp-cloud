@@ -6,7 +6,7 @@ import { listHaccpBaseWorks } from '../../../../services/documents/haccpBaseWork
 import { listHaccpDocuments } from '../../../../services/documents/haccpDocumentService';
 import { useGridPagination } from '../../../../shared/hooks/useGridPagination';
 import { useAuthStore } from '../../../../shared/store/authStore';
-import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
+import type { HaccpDocSearchValue } from '../types';
 
 function formatDate(date: Date): string {
   const year = date.getFullYear();
@@ -43,16 +43,13 @@ function toSearchValue(searchParams: URLSearchParams): HaccpDocSearchValue {
       : [];
 
   return {
-    // 기존 -> searchParams.get('workType') || '전체' / 변경 -> '' = 전체
     workType: readFilterParam(searchParams, 'workType'),
     workDivision:
       searchParams.get('workDivisionId') ||
       searchParams.get('workDivision') ||
       '',
     title: searchParams.get('title') || '',
-    writer: searchParams.get('writer') || '',
     participantType: participantTypes,
-    // 기존 -> searchParams.get('status') || '전체' / 변경 -> '' = 전체
     status: readFilterParam(searchParams, 'status'),
     startDate: searchParams.has('startDate')
       ? (searchParams.get('startDate') ?? '')
@@ -74,7 +71,6 @@ function toSearchParams(
   const trimmedWorkType = value.workType.trim();
   const trimmedWorkDivision = value.workDivision.trim();
   const trimmedTitle = value.title.trim();
-  const trimmedWriter = value.writer.trim();
   const trimmedStatus = value.status.trim();
   const hasKnownDivisionId = options.divisionOptions.some(
     (option) => option.id === trimmedWorkDivision,
@@ -97,17 +93,10 @@ function toSearchParams(
     params.set('title', trimmedTitle);
   }
 
-  // 기존 -> if (options.canViewAllDocuments && trimmedWriter) {
-  // 변경 -> 권한과 무관하게 작성자 조건 유지
-  if (trimmedWriter) {
-    params.set('writer', trimmedWriter);
-  }
-
   if (value.participantType.length > 0) {
     params.set('participantType', value.participantType.join(','));
   }
 
-  // 기존 -> trimmedStatus && trimmedStatus !== '전체' / 변경 -> '' = 전체
   if (trimmedStatus) {
     params.set('status', trimmedStatus);
   }
@@ -122,7 +111,7 @@ function isDocumentViewerAdmin(role: string): boolean {
   return role === 'PLATFORM_ADMIN' || role === 'TENANT_ADMIN';
 }
 
-// 문서현황 페이지의 검색 조건, 상세조건 펼침, 목록 조회 상태를 관리
+// 문서현황 페이지의 검색 조건, 목록 조회 상태를 관리
 export function useHaccpDocumentManagement() {
   const role = useAuthStore((state) => state.role);
   const tenantCode = useAuthStore((state) => state.tenantCode || 'PLATFORM');
@@ -132,8 +121,6 @@ export function useHaccpDocumentManagement() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedDivisionId = (searchParams.get('workDivisionId') || '').trim();
-  // 기존 -> 관리자가 아니면 writer 를 '' 로 비움
-  // 변경 -> URL 의 writer 를 그대로 사용
   const initialValue = useMemo(
     () => toSearchValue(searchParams),
     [searchParams],
@@ -142,10 +129,6 @@ export function useHaccpDocumentManagement() {
   const [searchValue, setSearchValue] = useState<HaccpDocSearchValue>(initialValue);
   const [appliedFilters, setAppliedFilters] = useState<HaccpDocSearchValue>(initialValue);
   const [searchSeq, setSearchSeq] = useState(0);
-  // 참여유형은 상세조건 안의 필드이므로 URL 에 값이 있으면 펼친 상태로 시작
-  const [detailOpen, setDetailOpen] = useState(
-    initialValue.participantType.length > 0,
-  );
 
   const categoriesQuery = useQuery({
     queryKey: ['haccp-base-categories', tenantCode],
@@ -170,7 +153,6 @@ export function useHaccpDocumentManagement() {
 
   const divisionOptions = useMemo(() => {
     const selectedWorkType = searchValue.workType.trim();
-    // 기존 -> selectedWorkType.length > 0 && selectedWorkType !== '전체' / 변경 -> '' = 전체
     const onlySpecificType = selectedWorkType.length > 0;
 
     const activeWorks = (baseWorksQuery.data ?? []).filter((item) => {
@@ -256,7 +238,6 @@ export function useHaccpDocumentManagement() {
         tenantCode,
         pageIndex,
         pageSize,
-        // 기존 -> workType.trim() && workType !== '전체' ? workType.trim() : undefined / 변경 -> '' = 전체
         workType: appliedFilters.workType.trim() || undefined,
         workDivisionId:
           isKnownDivisionId || isRequestedDivisionId
@@ -267,12 +248,10 @@ export function useHaccpDocumentManagement() {
             ? undefined
             : divisionValue || undefined,
         title: appliedFilters.title.trim() || undefined,
-        writer: appliedFilters.writer.trim() || undefined,
         participantType:
           appliedFilters.participantType.length > 0
             ? appliedFilters.participantType.join(',')
             : undefined,
-        // 기존 -> status.trim() && status !== '전체' ? status.trim() : undefined / 변경 -> '' = 전체
         status: appliedFilters.status.trim() || undefined,
         startDate: isUnwritten ? undefined : appliedFilters.startDate || undefined,
         endDate: isUnwritten ? undefined : appliedFilters.endDate || undefined,
@@ -285,76 +264,13 @@ export function useHaccpDocumentManagement() {
     refetchOnWindowFocus: true,
   });
 
-  const activeFilterChips = useMemo<HaccpDocFilterChip[]>(() => {
-    const chips: HaccpDocFilterChip[] = [];
-
-    if (appliedFilters.status !== '미작성') {
-      chips.push({
-        key: 'dateRange',
-        // 변경 -> 시작일, 종료일이 모두 비면 '기안일: 전체'
-        label:
-          !appliedFilters.startDate && !appliedFilters.endDate
-            ? '기안일: 전체'
-            : `기안일: ${appliedFilters.startDate || '-'} ~ ${appliedFilters.endDate || '-'}`,
-      });
-    }
-
-    // 기존 -> appliedFilters.workType && appliedFilters.workType !== '전체' / 변경 -> '' = 전체
-    if (appliedFilters.workType) {
-      chips.push({
-        key: 'workType',
-        label: `업무분류: ${appliedFilters.workType}`,
-      });
-    }
-    if (appliedFilters.workDivision.trim()) {
-      const selectedDivisionName =
-        divisionOptions.find(
-          (option) => option.id === appliedFilters.workDivision.trim(),
-        )?.name ?? appliedFilters.workDivision.trim();
-      chips.push({
-        key: 'workDivision',
-        label: `업무구분: ${selectedDivisionName}`,
-      });
-    }
-    if (appliedFilters.title.trim()) {
-      chips.push({
-        key: 'title',
-        label: `제목/기안번호: ${appliedFilters.title.trim()}`,
-      });
-    }
-    // 기존 -> appliedFilters.status && appliedFilters.status !== '전체' / 변경 -> '' = 전체
-    if (appliedFilters.status) {
-      chips.push({ key: 'status', label: `상태: ${appliedFilters.status}` });
-    }
-    if (appliedFilters.participantType.length > 0) {
-      chips.push({
-        key: 'participantType',
-        label: `참여유형: ${appliedFilters.participantType.join(', ')}`,
-      });
-    }
-    // 기존 -> if (canViewAllDocuments && appliedFilters.writer.trim()) {
-    // 변경 -> 권한과 무관하게 작성자 칩 표시
-    if (appliedFilters.writer.trim()) {
-      chips.push({
-        key: 'writer',
-        label: `작성자: ${appliedFilters.writer.trim()}`,
-      });
-    }
-    return chips;
-    // 기존 -> [appliedFilters, canViewAllDocuments, divisionOptions]
-    // 변경 -> canViewAllDocuments 의존성 제거
-  }, [appliedFilters, divisionOptions]);
-
   const handleReset = () => {
     const monthRange = getCurrentMonthRange();
     const resetValue: HaccpDocSearchValue = {
-      // 기존 -> '전체' / 변경 -> '' = 전체
       workType: '',
       workDivision: '',
       title: '',
-      writer: '',
       participantType: [],
-      // 기존 -> '전체' / 변경 -> '' = 전체
       status: '',
       startDate: monthRange.startDate,
       endDate: monthRange.endDate,
@@ -388,9 +304,6 @@ export function useHaccpDocumentManagement() {
     searchValue,
     setSearchValue,
     appliedFilters,
-    detailOpen,
-    setDetailOpen,
-    activeFilterChips,
     categoryOptions,
     divisionOptions,
     documentsQuery,

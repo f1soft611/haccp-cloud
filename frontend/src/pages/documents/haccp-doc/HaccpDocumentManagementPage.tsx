@@ -12,9 +12,6 @@ export function HaccpDocumentManagementPage() {
     searchValue,
     setSearchValue,
     appliedFilters,
-    detailOpen,
-    setDetailOpen,
-    activeFilterChips,
     categoryOptions,
     divisionOptions,
     documentsQuery,
@@ -49,12 +46,9 @@ export function HaccpDocumentManagementPage() {
         value={searchValue}
         appliedFilters={appliedFilters}
         canViewAllDocuments={canViewAllDocuments}
-        detailOpen={detailOpen}
-        activeFilterChips={activeFilterChips}
         categoryOptions={categoryOptions}
         divisionOptions={divisionOptions}
         onChange={setSearchValue}
-        onToggleDetail={() => setDetailOpen((prev) => !prev)}
         onReset={handleReset}
         onSearch={handleSearch}
       />

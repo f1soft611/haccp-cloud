@@ -53,9 +53,6 @@ public class HaccpWorkSearchConditionVO implements Serializable {
     @Schema(description = "제목")
     private String title;
 
-    @Schema(description = "작성자")
-    private String writer;
-
     @Schema(description = "참여유형(DRAFTER/APPROVER/REFERENCE)")
     private String participantType;
 

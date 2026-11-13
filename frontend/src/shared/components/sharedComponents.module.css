@@ -241,6 +241,20 @@
   background-color: currentColor;
 }
 
+/* 날짜칸 라벨은 점 없이 글자만 둔다 */
+.scope.searchFilter :global(.MuiFormControl-root:has(input[type='date']) > .MuiInputLabel-root)::before {
+  content: none;
+}
+
+/* 날짜 미선택이면 "연-월-일" 을 흐린 색, 선택하면 라벨과 같은 색 */
+.scope.searchFilter :global([data-date-state='empty'] input[type='date']) {
+  color: var(--app-select-empty-text);
+}
+
+.scope.searchFilter :global([data-date-state='selected'] input[type='date']) {
+  color: var(--search-filter-label);
+}
+
 /* 테두리가 라벨 자리만큼 끊기지 않게 한다 */
 .scope.searchFilter :global(.MuiFormControl-root:not(:has(.MuiSelect-select)) .MuiOutlinedInput-notchedOutline legend) {
   display: none;
