@@ -1,7 +1,7 @@
 import {
+    Box,
     Button,
     CircularProgress,
-    Stack,
     Table,
     TableBody,
     TableCell,
@@ -9,6 +9,7 @@ import {
     TablePagination,
     TableRow,
 } from '@mui/material';
+import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { useQuery } from '@tanstack/react-query';
@@ -84,6 +85,14 @@ export function MaterialSelectDialog(props: {
         setSearchSeq((n) => n + 1);
     };
 
+    // 초기화: 입력 중 필터와 적용된 필터를 모두 비우고 1페이지부터 다시 조회
+    const handleReset = () => {
+        setDraft(EMPTY_FILTER);
+        setApplied(EMPTY_FILTER);
+        setPage(0);
+        setSearchSeq((n) => n + 1);
+    };
+
     return (
         <FormDialog
             open={open}
@@ -97,34 +106,32 @@ export function MaterialSelectDialog(props: {
                 </Button>
             }
         >
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }}>
-                <AppSelect
-                    size="small"
-                    label="품목계정"
-                    value={draft.itemType}
-                    onChange={(itemType) => setDraft((prev) => ({ ...prev, itemType }))}
-                    options={WORK_ORDER_ITEM_TYPES.map((code) => ({
-                        value: code,
-                        label: getCommonCodeName(itemTypeOptions, code),
-                    }))}
-                    emptyLabel="전체"
-                    sx={{ minWidth: 140 }}
-                />
-                <AppTextField
-                    size="small"
-                    fullWidth
-                    label="검색어"
-                    placeholder="품목코드, 품목명, 규격"
-                    value={draft.keyword}
-                    onChange={(keyword) => setDraft((prev) => ({ ...prev, keyword }))}
-                    onKeyDown={(event) => {
-                        if (event.key === 'Enter') handleSearch();
-                    }}
-                />
-                <Button variant="contained" onClick={handleSearch} sx={{ minWidth: 80 }}>
-                    검색
-                </Button>
-            </Stack>
+            <Box sx={{ mb: 2 }}>
+                <SearchFilterBar onSearch={handleSearch} onReset={handleReset}>
+                    <Box sx={{ minWidth: { md: 180 } }}>
+                        <AppSelect
+                            size="small"
+                            fullWidth
+                            label="품목계정"
+                            value={draft.itemType}
+                            onChange={(itemType) => setDraft((prev) => ({ ...prev, itemType }))}
+                            options={WORK_ORDER_ITEM_TYPES.map((code) => ({
+                                value: code,
+                                label: getCommonCodeName(itemTypeOptions, code),
+                            }))}
+                            emptyLabel="전체"
+                        />
+                    </Box>
+                    <AppTextField
+                        size="small"
+                        fullWidth
+                        placeholder="품목코드, 품목명, 규격 검색"
+                        slotProps={{ htmlInput: { 'aria-label': '품목코드, 품목명, 규격 검색' } }}
+                        value={draft.keyword}
+                        onChange={(keyword) => setDraft((prev) => ({ ...prev, keyword }))}
+                    />
+                </SearchFilterBar>
+            </Box>
             <Table size="small" aria-label="품목 목록">
                 <TableHead>
                     <TableRow>

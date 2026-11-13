@@ -6,25 +6,25 @@
   --form-dialog-shadow: 0 20px 56px rgba(15, 36, 64, 0.16);
   --form-dialog-bg: #ffffff;
   --form-dialog-text: #111827;
-  --form-dialog-title: #115e59;
-  --form-dialog-title-border: rgba(20, 184, 166, 0.14);
-  --form-dialog-close: rgba(17, 94, 89, 0.72);
-  --form-dialog-close-bg: rgba(20, 184, 166, 0.08);
-  --form-dialog-close-hover: rgba(20, 184, 166, 0.16);
+  --form-dialog-title: #1e3a6e;
+  --form-dialog-title-border: rgba(42, 91, 184, 0.14);
+  --form-dialog-close: rgba(30, 58, 110, 0.72);
+  --form-dialog-close-bg: rgba(42, 91, 184, 0.08);
+  --form-dialog-close-hover: rgba(42, 91, 184, 0.16);
   --form-dialog-label-bg: rgba(255, 255, 255, 0.92);
   --form-dialog-input-bg: #ffffff;
-  --form-dialog-outline: rgba(20, 184, 166, 0.2);
-  --form-dialog-description: rgba(17, 94, 89, 0.72);
-  --form-dialog-actions-border: rgba(66, 111, 106, 0.16);
+  --form-dialog-outline: #c7ced9;
+  --form-dialog-description: rgba(30, 58, 110, 0.72);
+  --form-dialog-actions-border: rgba(42, 91, 184, 0.14);
   --form-dialog-actions-bg: #ffffff;
 
   --confirm-shadow: 0 18px 48px rgba(15, 36, 64, 0.16);
   --confirm-bg: #ffffff;
   --confirm-icon-bg: rgba(229, 122, 34, 0.12);
   --confirm-icon: #c76b1f;
-  --confirm-title: #115e59;
-  --confirm-description: rgba(17, 94, 89, 0.8);
-  --confirm-actions-border: rgba(66, 111, 106, 0.16);
+  --confirm-title: #1e3a6e;
+  --confirm-description: rgba(30, 58, 110, 0.8);
+  --confirm-actions-border: rgba(42, 91, 184, 0.14);
   --confirm-actions-bg: #ffffff;
 
   --top-gov-bg: #1b2a4e;
@@ -35,15 +35,11 @@
   --top-gov-button-hover-border: #ffffff;
 
   --side-nav-bg: var(--shared-white);
-  /* 기존 -> --side-nav-text: var(--shared-text-primary); */
-  /* 변경 -> 메뉴 글자, 우측 화살표 색상 #637080 */
   --side-nav-text: #637080;
   --side-nav-sub-text: #637080;
   --side-nav-accent: var(--shared-primary);
-  /* 기존 -> --side-nav-divider: var(--shared-divider); */
-  /* 변경 -> 메뉴 라인 색상 #E8ECF3 */
   --side-nav-divider: #e8ecf3;
-  --side-nav-focus: #0f766e;
+  --side-nav-focus: #1f4f8f;
 
   --portal-footer-logo-opacity: 0.92;
 
@@ -162,7 +158,6 @@
 }
 
 /* GridPaginationBar */
-/* 기존 -> 셀렉트 최소 너비만 지정 / 변경 -> 3칸 배치, 셀렉트 radius, 테두리 색 추가 */
 .scope.gridPaginationBar {
   display: flex;
   flex-direction: column;
@@ -208,8 +203,6 @@
 }
 
 /* 라벨이 있는 칸만 라벨, 입력칸 2열로 나눈다 */
-/* 기존 -> 라벨이 있는 모든 칸 */
-/* 변경 -> 셀렉트는 플로팅 라벨을 쓰므로 제외 */
 .scope.searchFilter :global(.MuiFormControl-root:has(> .MuiInputLabel-root):not(:has(.MuiSelect-select))) {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -246,12 +239,17 @@
   content: none;
 }
 
-/* 날짜 미선택이면 "연-월-일" 을 흐린 색, 선택하면 라벨과 같은 색 */
-.scope.searchFilter :global([data-date-state='empty'] input[type='date']) {
+/* 날짜 미선택이면 "연-월-일" 을 흐린 색, 선택하면 일반 입력 글자색. 검색바, 등록폼 공통. 비활성은 MUI 기본 */
+.scope :global([data-date-state='empty'] input[type='date']:not(:disabled)) {
   color: var(--app-select-empty-text);
 }
 
-.scope.searchFilter :global([data-date-state='selected'] input[type='date']) {
+.scope :global([data-date-state='selected'] input[type='date']:not(:disabled)) {
+  color: var(--app-select-selected-text);
+}
+
+/* 검색바는 선택한 날짜를 라벨과 같은 색으로 둔다 */
+.scope.searchFilter :global([data-date-state='selected'] input[type='date']:not(:disabled)) {
   color: var(--search-filter-label);
 }
 
@@ -272,8 +270,6 @@
 
 /* MUI 는 라벨이 내려가 있으면 placeholder 를 !important 로 숨기므로 선택자를 더 구체적으로 쓴다 */
 .scope.searchFilter :global(.MuiFormControl-root .MuiInputBase-input::placeholder) {
-  /* 기존 -> MUI 기본 placeholder 색 */
-  /* 변경 -> 시안의 #B1B6BB */
   color: var(--search-filter-placeholder);
   opacity: 1 !important;
 }
@@ -309,8 +305,6 @@
   height: 35px;
 }
 
-/* 기존 -> min-width 96px, contained 버튼 */
-/* 변경 -> 흰 배경과 파란 글자의 65px 버튼 */
 .scope .searchFilterSubmit {
   min-width: 65px;
   border-color: var(--search-filter-input-border);
@@ -665,22 +659,81 @@
   width: 100%;
 }
 
-.formDialogContent :global(.MuiInputLabel-root) {
-  padding-left: 4px;
-  padding-right: 4px;
-  background-color: var(--form-dialog-label-bg);
+/* 라벨을 칸 위에 고정한다. 검색바는 칸 왼쪽이지만 등록폼은 한 줄에 2~3칸이라 위에 둔다.
+   색은 아래 규칙에서 평소 상태에만 준다(포커스, 오류, 비활성은 MUI 색).
+   다이얼로그 안 검색바(.searchFilter)는 검색바 라벨 규칙을 따르게 제외한다 */
+.formDialogContent :global(.MuiFormControl-root):not(.searchFilter *) > :global(.MuiInputLabel-root) {
+  position: static;
+  max-width: none;
+  margin-bottom: 4px;
+  padding: 0;
+  transform: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: auto;
 }
 
+/* 평소 라벨 색. 포커스, 오류, 비활성일 때는 MUI 색을 쓴다 */
+.formDialogContent :global(.MuiFormControl-root):not(.searchFilter *) > :global(.MuiInputLabel-root:not(.Mui-focused):not(.Mui-error):not(.Mui-disabled)) {
+  color: var(--search-filter-label);
+}
+
+/* 높이 35px, 모서리 4px. 여러 줄 입력칸(비고 등)은 높이를 고정하지 않는다 */
 .formDialogContent :global(.MuiOutlinedInput-root) {
+  border-radius: 4px;
   background-color: var(--form-dialog-input-bg);
 }
 
-.formDialogContent :global(.MuiOutlinedInput-notchedOutline) {
+.formDialogContent :global(.MuiOutlinedInput-root:not(.MuiInputBase-multiline)) {
+  height: 35px;
+}
+
+.formDialogContent :global(.MuiOutlinedInput-input:not(.MuiInputBase-inputMultiline)) {
+  box-sizing: border-box;
+  height: 35px;
+  min-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 35px;
+}
+
+.formDialogContent :global(.MuiInputBase-input) {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.formDialogContent :global(.MuiInputBase-multiline) {
+  padding: 8px 14px;
+}
+
+/* Autocomplete small 은 루트에 padding 6px, 입력에 2.5px 를 줘서 35px 칸을 넘친다 */
+.formDialogContent :global(.MuiAutocomplete-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.formDialogContent :global(.MuiAutocomplete-root .MuiOutlinedInput-root.MuiInputBase-sizeSmall .MuiAutocomplete-input) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* 테두리가 라벨 자리만큼 끊기지 않게 한다. legend 를 숨기면 MUI 기본 top -5px 때문에 테두리가 위로 커지므로 top 0.
+   검색바는 셀렉트 라벨이 테두리에 걸쳐 뜨므로 제외한다 */
+.formDialogContent :global(.MuiOutlinedInput-notchedOutline):not(.searchFilter *) {
+  top: 0;
   border-color: var(--form-dialog-outline);
 }
 
-:where([data-mode='dark']) .formDialogContent :global(.MuiInputLabel-root) {
-  color: rgba(248, 250, 252, 0.78);
+.formDialogContent :global(.MuiOutlinedInput-notchedOutline):not(.searchFilter *) :global(legend) {
+  display: none;
+}
+
+/* MUI 는 라벨이 내려가 있으면 placeholder 를 !important 로 숨기므로 선택자를 더 구체적으로 쓴다 */
+.formDialogContent :global(.MuiFormControl-root .MuiInputBase-root .MuiInputBase-input::placeholder) {
+  color: var(--search-filter-placeholder);
+  opacity: 1 !important;
 }
 
 :where([data-mode='dark']) .formDialogContent :global(.MuiInputBase-input),
@@ -983,8 +1036,6 @@
 }
 
 .scope .sideNavBrand {
-  /* 기존 -> padding: 28px 24px; */
-  /* 변경 -> 좌측 여백 15px 추가 */
   padding: 28px 24px 28px 39px;
 }
 
@@ -1019,8 +1070,6 @@
 }
 
 .scope .sideNavItem {
-  /* 기존 -> padding: 12px 24px; */
-  /* 변경 -> 좌측 여백 15px 추가 */
   padding: 12px 24px 12px 39px;
 }
 
@@ -1046,8 +1095,6 @@
 }
 
 .scope .sideNavSubItem {
-  /* 기존 -> padding: 6px 16px 6px 24px; color: var(--shared-text-secondary); */
-  /* 변경 -> 좌측 여백 15px 추가, 글자색 #637080 (다크 모드는 기존 색 유지) */
   padding: 6px 16px 6px 39px;
   color: var(--side-nav-sub-text);
 }
@@ -1098,10 +1145,18 @@
   color: var(--app-select-selected-text);
 }
 
-.scope :global(.MuiFormControl-root)[data-select-state='empty'] :global(.MuiSelect-icon:not(.Mui-disabled)) {
+.scope :global(.MuiFormControl-root)[data-select-state='empty'] :global(.MuiSelect-icon:not(.Mui-disabled)),
+.scope :global(.MuiFormControl-root)[data-select-state='empty'] :global(.MuiAutocomplete-popupIndicator:not(.Mui-disabled)) {
   color: var(--app-select-empty-icon);
 }
 
-.scope :global(.MuiFormControl-root)[data-select-state='selected'] :global(.MuiSelect-icon:not(.Mui-disabled)) {
+.scope :global(.MuiFormControl-root)[data-select-state='selected'] :global(.MuiSelect-icon:not(.Mui-disabled)),
+.scope :global(.MuiFormControl-root)[data-select-state='selected'] :global(.MuiAutocomplete-popupIndicator:not(.Mui-disabled)) {
   color: var(--app-select-selected-icon);
+}
+
+/* 등록폼은 라벨이 늘 칸 위에 있어 미선택 셀렉트 라벨도 다른 라벨과 같은 색으로 둔다.
+   위 미선택 라벨 규칙과 명시도가 같거나 높으므로 반드시 그 뒤에 둔다. 검색바 안은 검색바 규칙(흐린 라벨)을 따른다 */
+.scope .formDialogContent :global(.MuiFormControl-root)[data-select-state]:not(.searchFilter *) > :global(.MuiInputLabel-root:not(.Mui-focused):not(.Mui-error):not(.Mui-disabled)) {
+  color: var(--search-filter-label);
 }

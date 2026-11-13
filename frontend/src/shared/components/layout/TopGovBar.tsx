@@ -128,8 +128,6 @@ export function TopGovBar({ onOpenMobileNav }: TopGovBarProps = {}) {
     handleThemeMenuClose();
   };
 
-    // 기존 -> sx, 스타일 prop 으로 스타일 지정
-    // 변경 -> sharedComponents.module.css 클래스 사용
     return (
         <Box
             {...scope}
