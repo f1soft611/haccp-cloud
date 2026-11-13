@@ -32,11 +32,13 @@ export function EquipmentPage() {
 
   const [searchValue, setSearchValue] = useState<EquipmentSearchValue>({
     keyword: '',
-    filterActive: 'all',
+    // 기존 -> 'all' / 변경 -> '' = 전체
+    filterActive: '',
   });
   const [appliedSearch, setAppliedSearch] = useState<EquipmentSearchValue>({
     keyword: '',
-    filterActive: 'all',
+    // 기존 -> 'all' / 변경 -> '' = 전체
+    filterActive: '',
   });
   const [searchSeq, setSearchSeq] = useState(0);
 

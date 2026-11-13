@@ -5,14 +5,13 @@ import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilte
 import {Plus} from "lucide-react";
 
 const ACTIVE_FILTER_OPTIONS = [
-  { value: 'all', label: '전체' },
   { value: 'Y', label: '활성' },
   { value: 'N', label: '비활성' },
 ] as const;
 
 export type UsersSearchValue = {
   keyword: string;
-  filterActive: 'all' | 'Y' | 'N';
+  filterActive: '' | 'Y' | 'N';
 };
 
 type UsersSearchBarProps = {
@@ -41,7 +40,7 @@ export function UsersSearchBar({
           onClick={onCreate}
           disabled={disabled}
         >
-          신규
+          사용자 추가
         </Button>
       }
     >
@@ -51,6 +50,7 @@ export function UsersSearchBar({
         value={value.filterActive}
         onChange={(filterActive) => onChange({ ...value, filterActive })}
         options={ACTIVE_FILTER_OPTIONS}
+        emptyLabel="전체"
         sx={{ minWidth: 140 }}
       />
       <AppTextField

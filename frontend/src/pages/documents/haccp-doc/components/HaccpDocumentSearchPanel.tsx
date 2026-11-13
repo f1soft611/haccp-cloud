@@ -12,12 +12,18 @@ import {
 } from '@mui/material';
 import { AppDateField } from '../../../../shared/components/forms/AppDateField';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
-import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+import {
+  AppSelect,
+  AppSelectIcon,
+  appSelectMenuProps,
+  SelectAllLabel,
+  SelectAllValue,
+} from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import type { HaccpDocFilterChip, HaccpDocSearchValue } from '../types';
 import { TODO_STATUS_OPTIONS } from '../../../dashboard/tenant/todoFilter';
 
-const STATUS_OPTIONS = ['전체', ...TODO_STATUS_OPTIONS];
+const STATUS_OPTIONS = [...TODO_STATUS_OPTIONS];
 const PARTICIPANT_OPTIONS = ['담당자', '기안자', '검토자', '결재자'];
 
 export function HaccpDocumentSearchPanel(props: {
@@ -45,9 +51,10 @@ export function HaccpDocumentSearchPanel(props: {
     onSearch,
   } = props;
 
+  // 기존 -> value.workType && value.workType !== '전체' && ...
+  // 변경 -> '' = 전체라 앞의 value.workType 검사로 충분
   const workTypeOptions =
     value.workType &&
-    value.workType !== '전체' &&
     !categoryOptions.some((option) => option.name === value.workType)
       ? [
           { id: `selected-${value.workType}`, name: value.workType },
@@ -153,14 +160,28 @@ export function HaccpDocumentSearchPanel(props: {
                 <TextField
                   select
                   size="small"
-                  label="참여유형"
+                  data-select-state={value.participantType.length === 0 ? 'empty' : 'selected'}
+                  label={
+                    value.participantType.length === 0 ? (
+                      <SelectAllLabel label="참여유형" />
+                    ) : (
+                      '참여유형'
+                    )
+                  }
                   value={value.participantType}
+                  InputLabelProps={
+                    value.participantType.length === 0 ? { shrink: false } : undefined
+                  }
                   SelectProps={{
                     multiple: true,
+                    displayEmpty: true,
+                    notched: value.participantType.length > 0,
+                    MenuProps: appSelectMenuProps,
+                    IconComponent: AppSelectIcon,
                     renderValue: (selected) =>
                       Array.isArray(selected) && selected.length > 0
                         ? selected.join(', ')
-                        : '전체',
+                        : <SelectAllValue />,
                   }}
                   onChange={(event) =>
                     onChange({
@@ -209,10 +230,8 @@ export function HaccpDocumentSearchPanel(props: {
         label="업무분류"
         value={value.workType}
         onChange={(workType) => onChange({ ...value, workType })}
-        options={[
-          { value: '전체', label: '전체' },
-          ...workTypeOptions.map((cat) => ({ value: cat.name, label: cat.name })),
-        ]}
+        options={workTypeOptions.map((cat) => ({ value: cat.name, label: cat.name }))}
+        emptyLabel="전체"
         sx={{ minWidth: 180 }}
       />
 
@@ -231,10 +250,11 @@ export function HaccpDocumentSearchPanel(props: {
 
       <AppSelect
         size="small"
-        label="상태"
+        label="결재상태"
         value={value.status}
         onChange={(status) => onChange({ ...value, status })}
         options={STATUS_OPTIONS.map((option) => ({ value: option, label: option }))}
+        emptyLabel="전체"
         sx={{ minWidth: 140 }}
       />
 

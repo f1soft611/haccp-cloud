@@ -56,7 +56,7 @@ export type ListPlatformMenusPagedParams = {
   pageSize: number;
   searchField?: 'menuNm' | 'menuDc' | 'menuUrl';
   searchKeyword?: string;
-  useAt?: 'Y' | 'N' | 'all';
+  useAt?: '' | 'Y' | 'N';
 };
 
 type MenuPagedApiResponse = {
@@ -214,7 +214,7 @@ export async function listPlatformMenusPaged(
 }> {
   const { data } = await apiClient.get<MenuPagedApiResponse>(
     '/v1/platform-admin/menus/paged',
-    { params },
+    { params: { ...params, useAt: params.useAt || undefined } },
   );
 
   return {

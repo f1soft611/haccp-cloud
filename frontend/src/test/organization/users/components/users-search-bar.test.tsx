@@ -10,7 +10,7 @@ describe('UsersSearchBar', () => {
 
     render(
       <UsersSearchBar
-        value={{ keyword: '', filterActive: 'all' }}
+        value={{ keyword: '', filterActive: '' }}
         onChange={() => {}}
         onSearch={onSearch}
         onCreate={() => {}}

@@ -5,7 +5,8 @@ import type { HaccpPortalDocumentItem } from '../../../services/documents/haccpP
 export type PortalRow = HaccpPortalDocumentItem;
 
 export type PortalSearchValue = {
-  category: 'ALL' | string;
-  cycle: 'ALL' | string;
+  // 기존 -> 'ALL' | string / 변경 -> '' = 전체
+  category: string;
+  cycle: string;
   keyword: string;
 };

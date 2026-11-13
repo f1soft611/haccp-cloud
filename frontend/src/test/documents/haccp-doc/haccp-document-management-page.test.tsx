@@ -142,6 +142,24 @@ describe('HaccpDocumentManagementPage', () => {
     });
   });
 
+  it('예전 URL 의 workType=전체, status=전체 는 조건 없음으로 본다', async () => {
+    window.history.pushState(
+      {},
+      '',
+      `/docs/haccp-doc?workType=${encodeURIComponent('전체')}&status=${encodeURIComponent('전체')}`,
+    );
+    render(
+      <AppProviders>
+        <HaccpDocumentManagementPage />
+      </AppProviders>,
+    );
+
+    expect(await screen.findByRole('combobox', { name: /업무분류/ })).toHaveTextContent('전체');
+    expect(screen.getByRole('combobox', { name: /결재상태/ })).toHaveTextContent('전체');
+    expect(screen.queryByText(/^업무분류: /)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^상태: /)).not.toBeInTheDocument();
+  });
+
   it('applies query parameters to initial filters', async () => {
     window.history.pushState(
       {},
@@ -274,6 +292,19 @@ describe('HaccpDocumentManagementPage', () => {
         expect.objectContaining({ status: '반려', participantType: '담당자' }),
       );
     });
+  });
+
+  it('참여유형을 아무것도 안 고르면 칸 안에 "참여유형 (전체)" 를 보여준다', async () => {
+    window.history.pushState({}, '', '/docs/haccp-doc');
+    render(
+        <AppProviders>
+          <HaccpDocumentManagementPage />
+        </AppProviders>,
+    );
+    // 상세검색 열기: 271행 기존 테스트와 같은 코드
+
+    expect(screen.getByText('참여유형 (전체)')).not.toHaveClass('MuiInputLabel-shrink');
+    expect(screen.getByRole('combobox', { name: /참여유형/ })).toHaveTextContent('전체');
   });
 
   it('keeps detail conditions closed when the query has no participant type', () => {

@@ -6,8 +6,8 @@ import { useAuthStore } from '../../../../shared/store/authStore';
 import type { PortalRow, PortalSearchValue } from '../types';
 
 const INITIAL_SEARCH: PortalSearchValue = {
-  category: 'ALL',
-  cycle: 'ALL',
+  category: '',
+  cycle: '',
   keyword: '',
 };
 
@@ -35,8 +35,8 @@ export function useHaccpPortalPage() {
     queryFn: () =>
       listHaccpPortalDocuments({
         tenantCode,
-        categoryId: appliedSearch.category === 'ALL' ? undefined : appliedSearch.category,
-        cycle: appliedSearch.cycle === 'ALL' ? undefined : appliedSearch.cycle,
+        categoryId: appliedSearch.category || undefined,
+        cycle: appliedSearch.cycle || undefined,
         keyword: appliedSearch.keyword.trim() || undefined,
       }),
     retry: false,

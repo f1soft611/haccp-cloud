@@ -13,8 +13,8 @@ import { type PlatformTenantSearchValue } from './types';
 const DEFAULT_SEARCH_VALUE: PlatformTenantSearchValue = {
   searchField: 'companyName',
   searchKeyword: '',
-  status: 'all',
-  onboardingStatus: 'all',
+  status: '',
+  onboardingStatus: '',
 };
 
 export function PlatformTenantManagementPage() {

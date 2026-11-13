@@ -27,7 +27,7 @@ export type ListCustomersPagedParams = {
   pageIndex: number;
   pageSize: number;
   keyword?: string;
-  filterActive?: 'all' | 'Y' | 'N';
+  filterActive?: '' | 'Y' | 'N';
 };
 
 export type ListCustomersPagedResult = {
@@ -118,10 +118,7 @@ export async function listCustomersPaged(
         pageIndex: params.pageIndex,
         pageSize: params.pageSize,
         keyword: params.keyword || undefined,
-        filterActive:
-          params.filterActive && params.filterActive !== 'all'
-            ? params.filterActive
-            : undefined,
+        filterActive: params.filterActive || undefined,
       },
     },
   );

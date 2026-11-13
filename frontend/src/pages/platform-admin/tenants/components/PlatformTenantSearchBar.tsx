@@ -11,13 +11,11 @@ const SEARCH_FIELD_OPTIONS = [
 ] as const;
 
 const STATUS_OPTIONS = [
-  { value: 'all', label: '전체' },
   { value: 'ACTIVE', label: '활성' },
   { value: 'INACTIVE', label: '비활성' },
 ] as const;
 
 const ONBOARDING_STATUS_OPTIONS = [
-  { value: 'all', label: '전체' },
   { value: 'EMAIL_QUEUED', label: '메일 발송 대기' },
   { value: 'EMAIL_SENT', label: '메일 발송 완료' },
   { value: 'EMAIL_VERIFIED', label: '메일 인증 완료' },
@@ -56,6 +54,7 @@ export function PlatformTenantSearchBar({
         value={value.status}
         onChange={(status) => onChange({ ...value, status })}
         options={STATUS_OPTIONS}
+        emptyLabel="전체"
         sx={{ minWidth: 120 }}
       />
       <AppSelect
@@ -64,6 +63,7 @@ export function PlatformTenantSearchBar({
         value={value.onboardingStatus}
         onChange={(onboardingStatus) => onChange({ ...value, onboardingStatus })}
         options={ONBOARDING_STATUS_OPTIONS}
+        emptyLabel="전체"
         sx={{ minWidth: 170 }}
       />
       <AppSelect

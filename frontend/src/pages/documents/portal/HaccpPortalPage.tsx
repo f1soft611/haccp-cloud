@@ -30,10 +30,8 @@ export function HaccpPortalPage() {
           label="업무분류"
           value={search.category}
           onChange={(category) => setSearch({ ...search, category })}
-          options={[
-            { value: 'ALL', label: '전체' },
-            ...categoryOptions,
-          ]}
+          options={categoryOptions}
+          emptyLabel="전체"
           sx={{ minWidth: 180 }}
         />
 
@@ -42,10 +40,8 @@ export function HaccpPortalPage() {
           label="작성주기"
           value={search.cycle}
           onChange={(cycle) => setSearch({ ...search, cycle })}
-          options={[
-            { value: 'ALL', label: '전체' },
-            ...cycleOptions.map((option) => ({ value: option.code, label: option.name })),
-          ]}
+          options={cycleOptions.map((option) => ({ value: option.code, label: option.name }))}
+          emptyLabel="전체"
           sx={{ minWidth: 180 }}
         />
 

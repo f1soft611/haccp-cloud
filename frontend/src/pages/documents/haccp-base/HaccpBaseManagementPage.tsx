@@ -32,7 +32,7 @@ import type {
 } from './types';
 
 const DEFAULT_SEARCH_VALUE: HaccpBaseSearchValue = {
-  categoryId: 'ALL',
+  categoryId: '',
   keyword: '',
   useAt: 'Y',
 };
@@ -120,9 +120,8 @@ export function HaccpBaseManagementPage() {
     queryFn: () =>
       listHaccpBaseWorks({
         tenantCode,
-        active: appliedFilters.useAt === 'all' ? undefined : appliedFilters.useAt,
-        categoryId:
-          appliedFilters.categoryId === 'ALL' ? undefined : appliedFilters.categoryId,
+        active: appliedFilters.useAt || undefined,
+        categoryId: appliedFilters.categoryId || undefined,
         keyword: appliedFilters.keyword || undefined,
       }),
     retry: false,

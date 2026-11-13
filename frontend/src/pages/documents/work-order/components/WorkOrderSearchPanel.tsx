@@ -39,7 +39,7 @@ export function WorkOrderSearchPanel(props: {
             />
             <AppTextField
                 size="small"
-                label="품명"
+                placeholder="작업지시번호, 품명 검색"
                 value={value.itemName}
                 onChange={(itemName) => onChange({ ...value, itemName })}
             />

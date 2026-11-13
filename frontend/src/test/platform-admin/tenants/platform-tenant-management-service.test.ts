@@ -42,7 +42,7 @@ describe('platformTenantManagementService', () => {
       pageSize: 10,
       searchField: 'companyName',
       searchKeyword: '',
-      status: 'all',
+      status: '',
     });
 
     const first: PlatformTenantManagementItem = result.items[0];
