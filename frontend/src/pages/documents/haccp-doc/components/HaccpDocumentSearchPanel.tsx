@@ -75,7 +75,7 @@ export function HaccpDocumentSearchPanel(props: {
         onChange={(workType) => onChange({ ...value, workType })}
         options={workTypeOptions.map((cat) => ({ value: cat.name, label: cat.name }))}
         emptyLabel="전체"
-        sx={{ minWidth: 180 }}
+        sx={{ minWidth: 140 }}
       />
 
       <AppSelect
@@ -103,7 +103,7 @@ export function HaccpDocumentSearchPanel(props: {
 
       <AppDateField
         size="small"
-        label="기안일 시작"
+        label="기안일"
         value={value.startDate}
         onChange={(startDate) =>
           onChange({
@@ -115,7 +115,7 @@ export function HaccpDocumentSearchPanel(props: {
 
       <AppDateField
         size="small"
-        label="기안일 종료"
+        label="~"
         value={value.endDate}
         onChange={(endDate) =>
           onChange({
@@ -177,8 +177,8 @@ export function HaccpDocumentSearchPanel(props: {
 
       <AppTextField
         size="small"
-        placeholder="제목, 기안번호 검색"
-        slotProps={{ htmlInput: { 'aria-label': '제목, 기안번호 검색' } }}
+        placeholder="제목, 기안번호, 작성자 검색"
+        slotProps={{ htmlInput: { 'aria-label': '제목, 기안번호, 작성자 검색' } }}
         value={value.title}
         onChange={(title) =>
           onChange({

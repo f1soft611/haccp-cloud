@@ -19,15 +19,18 @@ type AppSelectProps<T extends string> = Pick<
     selectProps?: Pick<SelectProps, 'renderValue' | 'SelectDisplayProps'>;
 };
 
+// 셀렉트, Autocomplete 펼침 목록 보더를 포커스된 칸 테두리색(primary)과 맞추는 공용 Paper sx
+export const appSelectPaperSx = {
+    border: '1px solid',
+    borderColor: 'primary.main',
+    borderRadius: '4px',
+} as const;
+
 // 셀렉트 펼침 목록 보더를 포커스된 칸 테두리색(primary)과 맞추는 공용 MenuProps
 export const appSelectMenuProps: SelectProps['MenuProps'] = {
     slotProps: {
         paper: {
-            sx: {
-                border: '1px solid',
-                borderColor: 'primary.main',
-                borderRadius: '4px',
-            },
+            sx: appSelectPaperSx,
         },
     },
 };
