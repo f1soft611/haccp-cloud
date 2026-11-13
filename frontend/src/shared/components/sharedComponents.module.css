@@ -364,7 +364,8 @@
 
   /* 35px 칸 높이에 맞춘 셀렉트 라벨의 내려간 위치. 줄높이 약 23px 기준 (35 - 23) / 2 */
   .scope.searchFilter :global(.MuiFormControl-root:has(.MuiSelect-select) > .MuiInputLabel-root:not(.MuiInputLabel-shrink)) {
-    transform: translate(14px, 6px) scale(1);
+    font-size: 14px;
+    transform: translate(14px, 7.5px) scale(1);
   }
 
   .scope .searchFilterFields {
@@ -381,7 +382,7 @@
 
   /* 라벨 열이 없어진 셀렉트 칸이 min-content 로 좁아지지 않게 기존 입력칸 최소 폭에 맞춘다 */
   .scope .searchFilterFields > :not(.searchFilterActions):has(:global(.MuiSelect-select)) {
-    min-width: 180px;
+    min-width: 150px;
   }
 
   /* 선택칸과 날짜칸을 뺀 텍스트 칸만 남은 폭을 채운다 */
@@ -657,10 +658,11 @@
 /* 등록 다이얼로그 취소 버튼, 검색바 조회 버튼과 같은 모양 (서로 독립) */
 .scope .formDialogCancel {
   min-width: 65px;
-  border-color: var(--search-filter-input-border);
+  border: none;
+  padding: 6px 16px;
   border-radius: 4px;
   background-color: var(--search-filter-submit-bg);
-  box-shadow: 0 1px 1px #00000029;
+  /*box-shadow: 0 1px 1px #00000029;*/
   color: var(--search-filter-submit-text);
   font-size: 14px;
   font-weight: 800;
