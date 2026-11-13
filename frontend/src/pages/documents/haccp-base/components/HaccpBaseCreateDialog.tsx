@@ -17,6 +17,7 @@ import {
 import { AppSelect, appSelectPaperSx } from '../../../../shared/components/forms/AppSelect';
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import {CancelButton} from "../../../../shared/components/forms/CancelButton.tsx";
 
 const APPROVAL_APPLY_OPTIONS = [
   { value: 'Y', label: '적용' },
@@ -113,7 +114,7 @@ export function HaccpBaseCreateDialog(props: {
           >
             {mode === 'create' ? '등록' : '저장'}
           </Button>
-          <Button onClick={onClose}>취소</Button>
+          <CancelButton onClick={onClose} />
         </>
       }
     >

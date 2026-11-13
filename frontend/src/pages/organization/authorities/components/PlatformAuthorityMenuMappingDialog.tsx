@@ -16,6 +16,7 @@ import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import type { PlatformMenuItem } from '../../../../services/platform-admin/platformMenuService';
 import type { PlatformRoleItem } from '../../../../services/platform-admin/platformRoleService';
+import { CancelButton } from "../../../../shared/components/forms/CancelButton";
 
 export function PlatformAuthorityMenuMappingDialog(props: {
   open: boolean;
@@ -161,7 +162,7 @@ export function PlatformAuthorityMenuMappingDialog(props: {
           >
             저장
           </Button>
-          <Button onClick={onClose}>취소</Button>
+          <CancelButton onClick={onClose} />
         </>
       }
     >

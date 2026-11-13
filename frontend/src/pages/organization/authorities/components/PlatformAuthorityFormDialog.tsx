@@ -2,6 +2,7 @@ import { Button, Stack } from '@mui/material';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
+import {CancelButton} from "../../../../shared/components/forms/CancelButton.tsx";
 
 const USE_AT_OPTIONS = [
   { value: 'Y', label: '활성' },
@@ -39,8 +40,6 @@ export function PlatformAuthorityFormDialog(props: {
     ? '새 권한을 등록하면 메뉴 매핑 모달에서 메뉴 접근 권한을 연결할 수 있습니다.'
     : '권한 정보를 수정하고 저장하세요.';
   const submitLabel = isCreateMode ? '등록' : '저장';
-  // 기존 -> 등록 시 코드와 권한명 둘 다 필수
-  // 변경 -> 코드는 서버 자동 채번이라 권한명만 필수
   const canSubmit = value.name.trim().length > 0;
 
   return (
@@ -72,13 +71,11 @@ export function PlatformAuthorityFormDialog(props: {
           >
             {submitLabel}
           </Button>
-          <Button onClick={onClose}>취소</Button>
+          <CancelButton onClick={onClose} />
         </>
       }
     >
       <Stack spacing={2}>
-        {/* 기존 -> 등록 시 권한 코드 직접 입력 */}
-        {/* 변경 -> 항상 비활성, 등록 시 자동 채번 안내 */}
         <AppTextField
           value={value.code}
           label="권한 코드"

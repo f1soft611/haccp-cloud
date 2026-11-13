@@ -13,6 +13,7 @@ import {
   formatJuridNo,
   toDigitsOnly,
 } from '../../../../shared/utils/businessNumberFormat';
+import {CancelButton} from "../../../../shared/components/forms/CancelButton.tsx";
 
 export type CustomerFormValue = {
   customerName: string;
@@ -131,9 +132,7 @@ export function CustomerFormDialog({
           >
             저장
           </Button>
-          <Button onClick={onClose} disabled={saving}>
-            취소
-          </Button>
+          <CancelButton onClick={onClose} disabled={saving} />
         </>
       }
     >

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import { CancelButton } from "../../../../shared/components/forms/CancelButton";
 
 export type MaterialFormValue = {
   materialName: string;
@@ -100,9 +101,7 @@ export function MaterialFormDialog({
               >
                 저장
               </Button>
-              <Button onClick={onClose} disabled={saving}>
-                취소
-              </Button>
+              <CancelButton onClick={onClose} disabled={saving} />
             </>
           }
       >

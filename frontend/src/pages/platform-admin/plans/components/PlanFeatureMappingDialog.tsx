@@ -15,6 +15,7 @@ import type {
   PlanFeatureItem,
   PlanSummary,
 } from '../../../../services/platform-admin/planAccessService';
+import { CancelButton } from "../../../../shared/components/forms/CancelButton";
 
 export function PlanFeatureMappingDialog(props: {
   open: boolean;
@@ -61,7 +62,7 @@ export function PlanFeatureMappingDialog(props: {
           >
             저장
           </Button>
-          <Button onClick={onClose}>취소</Button>
+          <CancelButton onClick={onClose} />
         </>
       }
     >

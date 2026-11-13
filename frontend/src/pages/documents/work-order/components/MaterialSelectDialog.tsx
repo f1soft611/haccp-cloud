@@ -1,6 +1,5 @@
 import {
     Box,
-    Button,
     CircularProgress,
     Table,
     TableBody,
@@ -25,6 +24,7 @@ import {
     useCommonCodeOptions,
 } from '../../../../shared/hooks/useCommonCodeOptions';
 import { useAuthStore } from '../../../../shared/store/authStore';
+import {CancelButton} from "../../../../shared/components/forms/CancelButton.tsx";
 
 // 작업지시 대상 품목계정: 제품, 반제품 (모든 테넌트 공통 코드)
 const WORK_ORDER_ITEM_TYPES = ['PRODUCT', 'SEMI'];
@@ -50,7 +50,6 @@ export function MaterialSelectDialog(props: {
     const tenantCode = useAuthStore((state) => state.tenantCode);
     const itemTypeOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_TYPE);
     const unitOptions = useCommonCodeOptions(COMMON_CODE_GROUP.ITEM_UNIT);
-    // draft = 입력 중인 필터, applied = [검색] 시 반영된 필터
     const [draft, setDraft] = useState<MaterialFilter>(EMPTY_FILTER);
     const [applied, setApplied] = useState<MaterialFilter>(EMPTY_FILTER);
     const [page, setPage] = useState(0);
@@ -101,9 +100,7 @@ export function MaterialSelectDialog(props: {
             contentSx={{ flex: `0 1 ${DIALOG_CONTENT_HEIGHT}px` }}
             onClose={onClose}
             actions={
-                <Button variant="outlined" onClick={onClose}>
-                    취소
-                </Button>
+                <CancelButton onClick={onClose} />
             }
         >
             <Box sx={{ mb: 2 }}>
