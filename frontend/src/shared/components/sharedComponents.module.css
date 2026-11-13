@@ -654,6 +654,26 @@
   background-color: var(--form-dialog-actions-bg);
 }
 
+/* 등록 다이얼로그 취소 버튼, 검색바 조회 버튼과 같은 모양 (서로 독립) */
+.scope .formDialogCancel {
+  min-width: 65px;
+  border-color: var(--search-filter-input-border);
+  border-radius: 4px;
+  background-color: var(--search-filter-submit-bg);
+  box-shadow: 0 1px 1px #00000029;
+  color: var(--search-filter-submit-text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.scope .formDialogCancel:hover {
+  background-color: var(--search-filter-bg);
+}
+
+.scope .formDialogCancel:disabled {
+  opacity: 0.5;
+}
+
 /* 입력칸 규칙은 MUI 상태 규칙과 contentSx 가 이기도록 .scope 를 붙이지 않는다 */
 .formDialogContent :global(.MuiFormControl-root) {
   width: 100%;
