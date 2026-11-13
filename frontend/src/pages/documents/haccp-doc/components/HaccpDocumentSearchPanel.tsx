@@ -14,6 +14,7 @@ import { AppDateField } from '../../../../shared/components/forms/AppDateField';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import {
   AppSelect,
+  AppSelectIcon,
   appSelectMenuProps,
   SelectAllLabel,
   SelectAllValue,
@@ -159,6 +160,7 @@ export function HaccpDocumentSearchPanel(props: {
                 <TextField
                   select
                   size="small"
+                  data-select-state={value.participantType.length === 0 ? 'empty' : 'selected'}
                   label={
                     value.participantType.length === 0 ? (
                       <SelectAllLabel label="참여유형" />
@@ -175,6 +177,7 @@ export function HaccpDocumentSearchPanel(props: {
                     displayEmpty: true,
                     notched: value.participantType.length > 0,
                     MenuProps: appSelectMenuProps,
+                    IconComponent: AppSelectIcon,
                     renderValue: (selected) =>
                       Array.isArray(selected) && selected.length > 0
                         ? selected.join(', ')
