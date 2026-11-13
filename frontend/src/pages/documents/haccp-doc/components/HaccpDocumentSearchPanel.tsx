@@ -173,6 +173,7 @@ export function HaccpDocumentSearchPanel(props: {
                   SelectProps={{
                     multiple: true,
                     displayEmpty: true,
+                    notched: value.participantType.length > 0,
                     MenuProps: appSelectMenuProps,
                     renderValue: (selected) =>
                       Array.isArray(selected) && selected.length > 0

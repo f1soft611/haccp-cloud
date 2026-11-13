@@ -2,6 +2,7 @@ import { Button } from '@mui/material';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+import {Plus} from "lucide-react";
 
 const SEARCH_FIELD_OPTIONS = [
   { value: 'code', label: '권한 코드' },
@@ -43,8 +44,12 @@ export function PlatformAuthoritySearchBar(props: {
       disabled={disabled}
       actions={
         showCreateButton ? (
-          <Button variant="contained" onClick={onCreate} disabled={disabled}>
-            + 권한 추가
+          <Button
+              variant="contained"
+              startIcon={<Plus />}
+              onClick={onCreate}
+              disabled={disabled}>
+            권한 추가
           </Button>
         ) : null
       }

@@ -40,7 +40,7 @@ export function UsersSearchBar({
           onClick={onCreate}
           disabled={disabled}
         >
-          신규
+          사용자 추가
         </Button>
       }
     >

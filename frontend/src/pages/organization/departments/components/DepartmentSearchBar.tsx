@@ -2,6 +2,7 @@ import { Button } from '@mui/material';
 import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
+import {Plus} from "lucide-react";
 
 const ACTIVE_FILTER_OPTIONS = [
   { value: 'Y', label: '사용' },
@@ -27,8 +28,12 @@ export function DepartmentSearchBar(props: {
       onSearch={onSearch}
       disabled={loading}
       actions={
-        <Button variant="contained" onClick={onAdd} disabled={loading}>
-          + 부서 추가
+        <Button
+            variant="contained"
+            startIcon={<Plus />}
+            onClick={onAdd}
+            disabled={loading}>
+          부서 추가
         </Button>
       }
     >
