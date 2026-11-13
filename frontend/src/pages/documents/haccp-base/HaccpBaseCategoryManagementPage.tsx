@@ -31,6 +31,7 @@ import { APP_LABELS } from '../../../shared/constants/labels';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { AppSelect } from '../../../shared/components/forms/AppSelect';
 import {GridIconButton} from "../../../shared/components/data/GridIconButton.tsx";
+import {CancelButton} from "../../../shared/components/forms/CancelButton.tsx";
 
 const USE_AT_OPTIONS = [
   { value: 'Y', label: '사용' },
@@ -316,7 +317,7 @@ export function HaccpBaseCategoryManagementPage() {
             >
               등록
             </Button>
-            <Button onClick={() => setCreateOpen(false)}>취소</Button>
+            <CancelButton onClick={() => setCreateOpen(false)} />
           </>
         }
       >
@@ -380,14 +381,12 @@ export function HaccpBaseCategoryManagementPage() {
             >
               저장
             </Button>
-            <Button
+            <CancelButton
               onClick={() => {
                 setEditOpen(false);
                 setEditTargetId(null);
               }}
-            >
-              취소
-            </Button>
+            />
           </>
         }
       >

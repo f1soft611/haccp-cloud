@@ -17,6 +17,7 @@ import {
     useCommonCodeOptions,
 } from '../../../../shared/hooks/useCommonCodeOptions';
 import { MaterialSelectDialog } from './MaterialSelectDialog';
+import {CancelButton} from "../../../../shared/components/forms/CancelButton.tsx";
 
 // 기존 -> itemName 만 직접 입력 / 변경 -> materialId 추가(품목 선택)
 const EMPTY_VALUE: WorkOrderFormValue = {
@@ -105,12 +106,10 @@ export function WorkOrderFormDialog(props: {
                 onClose={onClose}
                 actions={
                     <>
-                        <Button variant="outlined" onClick={onClose} disabled={saving}>
-                            취소
-                        </Button>
                         <Button variant="contained" onClick={handleSubmit} disabled={saving}>
                             저장
                         </Button>
+                        <CancelButton onClick={onClose} disabled={saving} />
                     </>
                 }
             >

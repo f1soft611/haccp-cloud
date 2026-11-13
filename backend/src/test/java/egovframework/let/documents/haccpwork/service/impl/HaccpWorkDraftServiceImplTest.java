@@ -40,7 +40,6 @@ class HaccpWorkDraftServiceImplTest {
                 "",
                 "",
                 "",
-                "",
                 "결재자",
                 "전체",
                 "2026-07-01",
@@ -76,7 +75,6 @@ class HaccpWorkDraftServiceImplTest {
                 "",
                 "",
                 "",
-                "",
                 "아무거나",
                 "전체",
                 "2026-07-01",
@@ -107,7 +105,6 @@ class HaccpWorkDraftServiceImplTest {
                 "3001",
                 "tenant_user",
                 "전체",
-                "",
                 "",
                 "",
                 "",
@@ -147,7 +144,6 @@ class HaccpWorkDraftServiceImplTest {
                 "",
                 "",
                 "",
-                "",
                 "결재진행중",
                 "2026-07-01",
                 "2026-07-21"
@@ -178,7 +174,6 @@ class HaccpWorkDraftServiceImplTest {
                             "3001",
                             "tenant_user",
                             "전체",
-                            "",
                             "",
                             "",
                             "",
@@ -239,7 +234,7 @@ class HaccpWorkDraftServiceImplTest {
 
         Map<String, Object> result = service.listDocumentsPaged(
                 "tenant_001", "3001", "tenant_user",
-                "전체", "101", "", "", "", "", "",
+                "전체", "101", "", "", "", "",
                 "미작성", "", "",
                 1, 10
         );
@@ -267,7 +262,7 @@ class HaccpWorkDraftServiceImplTest {
 
         service.listDocuments(
                 "tenant_001", "3001", "tenant_user",
-                "전체", "", "", "", "", "", "",
+                "전체", "", "", "", "", "",
                 "결재할문서", "2026-07-01", "2026-07-21"
         );
 

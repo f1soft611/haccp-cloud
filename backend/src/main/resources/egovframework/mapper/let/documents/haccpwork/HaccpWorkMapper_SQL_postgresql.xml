@@ -421,10 +421,8 @@
             AND (
                   COALESCE(m.ea_title, '') ILIKE CONCAT('%', #{title}, '%')
                   OR COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{title}, '%')
+                  OR COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{title}, '%')
             )
-          </if>
-          <if test="writer != null and writer != ''">
-            AND COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{writer}, '%')
           </if>
             <include refid="documentStatusCondition"/>
           <if test="startDate != null and startDate != ''">
@@ -577,10 +575,8 @@
             AND (
                   COALESCE(m.ea_title, '') ILIKE CONCAT('%', #{title}, '%')
                   OR COALESCE(m.ea_exe_id, '') ILIKE CONCAT('%', #{title}, '%')
+                  OR COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{title}, '%')
             )
-          </if>
-          <if test="writer != null and writer != ''">
-            AND COALESCE(NULLIF(TRIM(du.user_nm), ''), NULLIF(TRIM(la.login_code), ''), '') ILIKE CONCAT('%', #{writer}, '%')
           </if>
             <include refid="documentStatusCondition"/>
           <if test="startDate != null and startDate != ''">

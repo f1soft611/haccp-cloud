@@ -11,6 +11,7 @@ import {
 import type { HaccpBaseWorkItem } from '../../../../services/documents/haccpBaseWorkService';
 import type { UserItem } from '../../../../services/organization/usersService';
 import { ApprovalStatusChip } from '../../../../shared/components/data/ApprovalStatusChip';
+import { AppSelectIcon, appSelectPaperSx } from '../../../../shared/components/forms/AppSelect';
 
 type SignerRole = 'drafter' | 'reviewer' | 'approver';
 
@@ -282,11 +283,14 @@ export function ApprovalDraftSidebar(props: ApprovalDraftSidebarProps) {
             onChange={(_, selected) => {
               onChangeReferences?.(selected.map((item) => item.id));
             }}
+            popupIcon={<AppSelectIcon />}
+            slotProps={{ paper: { sx: appSelectPaperSx } }}
             renderInput={(params) => (
               <TextField
                 {...params}
                 placeholder="참조자 이름으로 검색"
                 size="small"
+                data-select-state={selectedReferences.length ? 'selected' : 'empty'}
               />
             )}
           />

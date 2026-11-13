@@ -14,9 +14,10 @@ import {
   type HaccpCategoryOption,
   type HaccpBaseCreateForm,
 } from '../types';
-import { AppSelect } from '../../../../shared/components/forms/AppSelect';
+import { AppSelect, appSelectPaperSx } from '../../../../shared/components/forms/AppSelect';
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import {CancelButton} from "../../../../shared/components/forms/CancelButton.tsx";
 
 const APPROVAL_APPLY_OPTIONS = [
   { value: 'Y', label: '적용' },
@@ -113,7 +114,7 @@ export function HaccpBaseCreateDialog(props: {
           >
             {mode === 'create' ? '등록' : '저장'}
           </Button>
-          <Button onClick={onClose}>취소</Button>
+          <CancelButton onClick={onClose} />
         </>
       }
     >
@@ -218,6 +219,7 @@ export function HaccpBaseCreateDialog(props: {
             }
             openOnFocus={false}
             forcePopupIcon={false}
+            slotProps={{ paper: { sx: appSelectPaperSx } }}
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, selected) =>
               option.id === selected.id
@@ -228,6 +230,7 @@ export function HaccpBaseCreateDialog(props: {
                 label="검토자"
                 placeholder="이름으로 검색"
                 required={needsSigners} // 기존 -> required / 변경 -> 결재 적용일 때만 필수
+                data-select-state={value.reviewerId ? 'selected' : 'empty'}
               />
             )}
           />
@@ -247,6 +250,7 @@ export function HaccpBaseCreateDialog(props: {
             }
             openOnFocus={false}
             forcePopupIcon={false}
+            slotProps={{ paper: { sx: appSelectPaperSx } }}
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, selected) =>
               option.id === selected.id
@@ -257,6 +261,7 @@ export function HaccpBaseCreateDialog(props: {
                 label="승인자"
                 placeholder="이름으로 검색"
                 required={needsSigners} // 기존 -> required / 변경 -> 결재 적용일 때만 필수
+                data-select-state={value.approverId ? 'selected' : 'empty'}
               />
             )}
           />

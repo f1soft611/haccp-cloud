@@ -14,6 +14,7 @@ import {
     getApprovalSubTargetKey,
     type ApprovalSubFieldConfig,
 } from '../utils/approvalSubFields';
+import { AppSelectIcon, appSelectPaperSx } from '../../../../shared/components/forms/AppSelect';
 
 type ApprovalDraftExpirationFieldsProps = {
     tenantCode: string;
@@ -162,8 +163,15 @@ export function ApprovalDraftExpirationFields(
                     loadingText="불러오는 중..."
                     disabled={isReadOnly}
                     sx={{ minWidth: 0 }}
+                    popupIcon={<AppSelectIcon />}
+                    slotProps={{ paper: { sx: appSelectPaperSx } }}
                     renderInput={(params) => (
-                        <TextField {...params} required label={config.targetLabel} />
+                        <TextField
+                            {...params}
+                            required
+                            label={config.targetLabel}
+                            data-select-state={value[targetKey] ? 'selected' : 'empty'}
+                        />
                     )}
                 />
             )}

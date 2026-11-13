@@ -6,6 +6,7 @@ import type {
   DepartmentItem,
   DepartmentFormData,
 } from '../../../../services/organization/departmentsService';
+import { CancelButton } from "../../../../shared/components/forms/CancelButton";
 
 const ACTIVE_OPTIONS = [
   { value: 'Y', label: '사용' },
@@ -56,7 +57,7 @@ export function DepartmentFormModal(props: {
           >
             {isEdit ? '저장' : '추가'}
           </Button>
-          <Button onClick={onClose}>취소</Button>
+          <CancelButton onClick={onClose} />
         </>
       }
     >

@@ -9,6 +9,7 @@ import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { useEffect, useMemo, useState } from 'react';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
+import { CancelButton } from "../../../../shared/components/forms/CancelButton";
 
 export type UserFormValue = {
   name: string;
@@ -158,9 +159,7 @@ export function UserFormDialog({
           >
             저장
           </Button>
-          <Button onClick={onClose} disabled={saving}>
-            취소
-          </Button>
+          <CancelButton onClick={onClose} disabled={saving} />
         </>
       }
     >

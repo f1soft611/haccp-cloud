@@ -60,7 +60,6 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
             String workDivision,
             String draftNumber,
             String title,
-            String writer,
             String participantType,
             String status,
             String startDate,
@@ -75,7 +74,6 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
                 workDivision,
                 draftNumber,
                 title,
-                writer,
                 participantType,
                 status,
                 startDate,
@@ -100,7 +98,6 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
             String workDivision,
             String draftNumber,
             String title,
-            String writer,
             String participantType,
             String status,
             String startDate,
@@ -117,7 +114,6 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
                 workDivision,
                 draftNumber,
                 title,
-                writer,
                 participantType,
                 status,
                 startDate,
@@ -165,7 +161,6 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
             String workDivision,
             String draftNumber,
             String title,
-            String writer,
             String participantType,
             String status,
             String startDate,
@@ -187,7 +182,6 @@ public class HaccpWorkDraftServiceImpl extends EgovAbstractServiceImpl implement
         condition.setWorkDivision(normalizeText(workDivision));
         condition.setDraftNumber(normalizeText(draftNumber));
         condition.setTitle(normalizeText(title));
-        condition.setWriter(normalizeText(writer));
         List<String> normalizedParticipantTypes = normalizeParticipantTypes(participantType);
         condition.setParticipantTypes(normalizedParticipantTypes);
         condition.setParticipantType(

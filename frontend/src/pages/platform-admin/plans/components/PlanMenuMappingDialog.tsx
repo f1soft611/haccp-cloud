@@ -15,6 +15,7 @@ import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import type { PlanSummary } from '../../../../services/platform-admin/planAccessService';
 import type { PlatformMenuItem } from '../../../../services/platform-admin/platformMenuService';
+import { CancelButton } from "../../../../shared/components/forms/CancelButton";
 
 export function PlanMenuMappingDialog(props: {
   open: boolean;
@@ -160,7 +161,7 @@ export function PlanMenuMappingDialog(props: {
           >
             저장
           </Button>
-          <Button onClick={onClose}>취소</Button>
+          <CancelButton onClick={onClose} />
         </>
       }
     >

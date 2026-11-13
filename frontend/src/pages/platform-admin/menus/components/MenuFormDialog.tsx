@@ -3,6 +3,7 @@ import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 import { FormDialog } from '../../../../shared/components/forms/FormDialog';
 import { ICON_OPTIONS } from './MenuGrid';
+import {CancelButton} from "../../../../shared/components/forms/CancelButton.tsx";
 
 const USE_AT_OPTIONS = [
   { value: 'Y', label: '사용' },
@@ -69,7 +70,7 @@ export function MenuFormDialog(props: {
           >
             {isEdit ? '저장' : '추가'}
           </Button>
-          <Button onClick={onClose}>취소</Button>
+          <CancelButton onClick={onClose} />
         </>
       }
     >
