@@ -59,6 +59,13 @@
   --search-filter-submit-bg: #ffffff;
   --search-filter-submit-text: #044d95;
   --search-filter-placeholder: #b1b6bb;
+
+  --app-select-empty-border: #c7ced9;
+  --app-select-empty-text: #abb3bf;
+  --app-select-empty-icon: #bec9cf;
+  --app-select-selected-border: #687697;
+  --app-select-selected-text: #242424;
+  --app-select-selected-icon: #688697;
 }
 
 .scope[data-mode='dark'] {
@@ -114,6 +121,13 @@
   --search-filter-submit-bg: transparent;
   --search-filter-submit-text: var(--shared-primary);
   --search-filter-placeholder: var(--shared-text-disabled);
+
+  --app-select-empty-border: rgba(255, 255, 255, 0.23);
+  --app-select-empty-text: var(--shared-text-disabled);
+  --app-select-empty-icon: var(--shared-text-disabled);
+  --app-select-selected-border: var(--shared-text-secondary);
+  --app-select-selected-text: var(--shared-text-primary);
+  --app-select-selected-icon: var(--shared-text-secondary);
 }
 
 /* 공통 글자색 */
@@ -1044,4 +1058,36 @@
 
 .scope [data-active='true'] .sideNavSubText {
   font-weight: 700;
+}
+
+/* AppSelect, 다중 선택 셀렉트의 미선택(empty)/선택(selected) 상태별 색.
+   검색필터 테두리(클래스 6개), 라벨(7개) 규칙보다 명시도를 높게 둔다. 포커스, 오류, 비활성은 MUI 기본 유지 */
+.scope :global(.MuiFormControl-root)[data-select-state='empty'] :global(.MuiOutlinedInput-root:not(.Mui-focused):not(.Mui-error):not(.Mui-disabled) .MuiOutlinedInput-notchedOutline) {
+  border-color: var(--app-select-empty-border);
+}
+
+.scope :global(.MuiFormControl-root)[data-select-state='selected'] :global(.MuiOutlinedInput-root:not(.Mui-focused):not(.Mui-error):not(.Mui-disabled) .MuiOutlinedInput-notchedOutline) {
+  border-color: var(--app-select-selected-border);
+}
+
+/* 미선택일 때 칸 안에 내려와 있는 "라벨 (전체)" */
+.scope :global(.MuiFormControl-root)[data-select-state='empty'] > :global(.MuiInputLabel-root:not(.MuiInputLabel-shrink):not(.Mui-focused):not(.Mui-error):not(.Mui-disabled)) {
+  color: var(--app-select-empty-text);
+}
+
+/* 칸 안 값 문구 (emptyLabel 이 '선택' 처럼 전체가 아닌 경우의 빈 값 문구 포함) */
+.scope :global(.MuiFormControl-root)[data-select-state='empty'] :global(.MuiSelect-select:not(.Mui-disabled)) {
+  color: var(--app-select-empty-text);
+}
+
+.scope :global(.MuiFormControl-root)[data-select-state='selected'] :global(.MuiSelect-select:not(.Mui-disabled)) {
+  color: var(--app-select-selected-text);
+}
+
+.scope :global(.MuiFormControl-root)[data-select-state='empty'] :global(.MuiSelect-icon:not(.Mui-disabled)) {
+  color: var(--app-select-empty-icon);
+}
+
+.scope :global(.MuiFormControl-root)[data-select-state='selected'] :global(.MuiSelect-icon:not(.Mui-disabled)) {
+  color: var(--app-select-selected-icon);
 }
