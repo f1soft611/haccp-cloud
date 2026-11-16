@@ -5,6 +5,8 @@ import {
     COMBO_STYLE,
     normalizeComboAttrs,
 } from '../utils/documentFieldCombo';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import { DocumentFieldComboNodeView } from '../components/DocumentFieldComboNodeView';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -69,5 +71,9 @@ export const DocumentFieldComboExtension = Node.create({
                             attrs: { groupCode: '', value: '', valueName: '' },
                         }),
         };
+    },
+
+    addNodeView() {
+        return ReactNodeViewRenderer(DocumentFieldComboNodeView);
     },
 });
