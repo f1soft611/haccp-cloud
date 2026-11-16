@@ -147,6 +147,7 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
             params.put("code", detail.getCode());
             params.put("codeName", detail.getCodeName());
             params.put("codeDesc", normalizeNullable(detail.getCodeDesc()));
+            params.put("parentCode", normalizeNullable(detail.getParentCode()));
             // sort_order는 NOT NULL 컬럼, 화면에서 비우면 0
             params.put("sortOrder", detail.getSortOrder() != null ? detail.getSortOrder() : 0);
             params.put("useAt", detail.isUseAt() ? "Y" : "N");
