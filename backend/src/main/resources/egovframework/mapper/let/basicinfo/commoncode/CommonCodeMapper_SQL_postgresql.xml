@@ -20,17 +20,19 @@
             LIMIT 1
     </select>
 
-    <!-- 그룹 목록 -->
+    <!-- 그룹 목록 (상위그룹코드는 self join, 최상위는 빈 값) -->
     <select id="CommonCodeDAO.selectGroupList"
             parameterType="long"
             resultType="egovframework.let.basicinfo.commoncode.domain.model.CommonCodeGroupVO">
         SELECT
-            group_code               AS groupCode,
-            group_nm                 AS groupName,
-            COALESCE(group_dc, '')   AS groupDesc
-        FROM tb_common_code_group
-        WHERE tenant_id = #{value}
-        ORDER BY sort_order, group_code
+            g.group_code               AS groupCode,
+            g.group_nm                 AS groupName,
+            COALESCE(g.group_dc, '')   AS groupDesc,
+            COALESCE(p.group_code, '') AS parentGroupCode
+        FROM tb_common_code_group g
+                 LEFT JOIN tb_common_code_group p ON p.common_code_group_id = g.parent_group_id
+        WHERE g.tenant_id = #{value}
+        ORDER BY g.sort_order, g.group_code
     </select>
 
     <!-- 상세 목록 (상위코드명은 self join, 표시 전용) -->
@@ -73,6 +75,19 @@
                                                        updated_by = EXCLUDED.updated_by
                                                        RETURNING common_code_group_id
     </select>
+
+    <!-- 그룹의 상위그룹을 그룹코드로 연결 (parentGroupCode 가 null 이면 최상위) -->
+    <update id="CommonCodeDAO.updateGroupParent" parameterType="map">
+        UPDATE tb_common_code_group
+        SET parent_group_id = (
+            SELECT p.common_code_group_id
+            FROM tb_common_code_group p
+            WHERE p.tenant_id = #{tenantId}
+              AND p.group_code = #{parentGroupCode, jdbcType=VARCHAR}
+        )
+        WHERE tenant_id = #{tenantId}
+          AND group_code = #{groupCode}
+    </update>
 
     <!-- 상세 upsert -->
     <insert id="CommonCodeDAO.upsertItem" parameterType="map">

@@ -106,6 +106,15 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
             commonCodeDAO.upsertGroup(params);
         }
 
+        // 같은 요청의 신규 상위그룹도 위 upsert 로 행이 생긴 뒤라 그룹코드로 연결할 수 있다
+        for (CommonCodeGroupVO group : groups) {
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put("tenantId", tenantId);
+            params.put("groupCode", group.getGroupCode());
+            params.put("parentGroupCode", normalizeNullable(group.getParentGroupCode()));
+            commonCodeDAO.updateGroupParent(params);
+        }
+
         Map<String, Object> disableParams = new HashMap<String, Object>();
         disableParams.put("tenantId", tenantId);
         disableParams.put("userId", userId);
