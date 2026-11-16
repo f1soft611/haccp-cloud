@@ -175,4 +175,20 @@ class CommonCodeServiceImplTest {
         CommonCodeServiceImpl.validateItems(Arrays.asList(kg), ACTIVE, UNIT2_PARENTS);
         assertEquals("", kg.getParentCode());
     }
+
+    @Test
+    void 상위그룹에_사용중_상세가_없으면_상위코드_검증_대상이_아니다() {
+        Map<String, String> parentGroupByGroup = new HashMap<String, String>();
+        parentGroupByGroup.put("COMBO_OK_NG", "EDITOR_COMBO");
+        parentGroupByGroup.put("UNIT2", "ITEM");
+        // item() 헬퍼는 useAt 을 안 넣으므로(boolean 기본 false) 직접 켠다
+        CommonCodeItemVO weight = item("ITEM", "WEIGHT", "중량형");
+        weight.setUseAt(true);
+
+        Map<String, Set<String>> result =
+                CommonCodeServiceImpl.buildParentCodesByGroup(parentGroupByGroup, Arrays.asList(weight));
+
+        assertEquals(false, result.containsKey("COMBO_OK_NG"));
+        assertEquals(new HashSet<String>(Arrays.asList("WEIGHT")), result.get("UNIT2"));
+    }
 }

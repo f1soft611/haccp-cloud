@@ -182,8 +182,9 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
     }
 
     // 상위그룹이 있는 그룹코드 -> 상위그룹의 사용 중 상세코드 집합 (상세 상위코드 검증용)
-    private static Map<String, Set<String>> buildParentCodesByGroup(Map<String, String> parentGroupByGroup,
-                                                                    List<CommonCodeItemVO> items) {
+    // 상위그룹에 사용 중 상세가 없으면(묶음용 상위그룹, 예: EDITOR_COMBO) 검증 대상에서 뺀다
+    static Map<String, Set<String>> buildParentCodesByGroup(Map<String, String> parentGroupByGroup,
+                                                            List<CommonCodeItemVO> items) {
         Map<String, Set<String>> activeCodesByGroup = new HashMap<String, Set<String>>();
         for (CommonCodeItemVO item : items) {
             if (!item.isUseAt()) {
@@ -199,7 +200,9 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
         Map<String, Set<String>> result = new HashMap<String, Set<String>>();
         for (Map.Entry<String, String> entry : parentGroupByGroup.entrySet()) {
             Set<String> codes = activeCodesByGroup.get(entry.getValue());
-            result.put(entry.getKey(), codes != null ? codes : new HashSet<String>());
+            if (codes != null) {
+                result.put(entry.getKey(), codes);
+            }
         }
         return result;
     }
