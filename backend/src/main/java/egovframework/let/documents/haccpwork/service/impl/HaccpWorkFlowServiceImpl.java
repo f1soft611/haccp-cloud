@@ -659,6 +659,11 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             Map<String, Object> referenceLineInfo = haccpWorkDAO.selectApprovalReferenceLineForHistoryByLogin(referenceOwnerParams);
             isFinalOwnerReference = "Y".equalsIgnoreCase(resolveMapValueIgnoreCase(referenceLineInfo, "lastOwnerStatus"));
             if (isFinalOwnerReference) {
+                // 기안자 최종확인은 최종승인 또는 반려 후에만 허용 (can_confirm 쿼리와 같은 조건)
+                String currentStatus = trimToEmpty(resolveMapValueIgnoreCase(approvalMain, "statusType", "status_type"));
+                if (!"approved".equals(currentStatus) && !"rejected".equals(currentStatus)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "최종 결재 승인 또는 반려 후에 확인할 수 있습니다.");
+                }
                 lineOption = "최종확인";
             }
         } else {
