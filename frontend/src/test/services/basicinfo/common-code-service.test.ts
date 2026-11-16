@@ -14,6 +14,7 @@ describe('commonCodeService', () => {
             'ITEM_TYPE',
             'WORKDAY_TYPE',
             'EXPIRY_STATUS',
+            'ITEM',
         ]);
         expect(
             data.details.filter((detail) => detail.groupCode === 'WF_FORM_CYCLE').map((detail) => detail.code),
@@ -31,7 +32,7 @@ describe('commonCodeService', () => {
     });
 
     it('그룹 저장은 보낸 그룹만 남긴다', async () => {
-        await saveCommonCodeGroups([{ groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '' }]);
+        await saveCommonCodeGroups([{ groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '', parentGroupCode: '' }]);
         expect((await getCommonCodes()).groups.map((group) => group.groupCode)).toEqual(['ITEM_UNIT']);
     });
 });

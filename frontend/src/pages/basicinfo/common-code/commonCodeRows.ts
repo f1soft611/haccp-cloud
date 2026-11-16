@@ -2,13 +2,18 @@ import type {
     CommonCodeDetailItem,
     CommonCodeGroupItem,
 } from '../../../services/basicinfo/commonCodeService';
-import type { CommonCodeDetailRow, CommonCodeGroupRow, CommonCodeRowState } from './types';
+import type { CommonCodeDetailRow, CommonCodeGroupRow, CommonCodeGroupTreeRow, CommonCodeRowState } from './types';
 
 let newRowSeq = 0;
 const newRowId = (prefix: string) => `${prefix}-new-${Date.now()}-${++newRowSeq}`;
 
 export function toGroupRows(items: CommonCodeGroupItem[]): CommonCodeGroupRow[] {
-    return items.map((item) => ({ ...item, id: item.groupCode, rowState: 'saved' }));
+    return items.map(({ parentGroupCode, ...item }) => ({
+        ...item,
+        id: item.groupCode,
+        parentId: parentGroupCode,
+        rowState: 'saved',
+    }));
 }
 
 export function toDetailRows(items: CommonCodeDetailItem[]): CommonCodeDetailRow[] {
@@ -20,8 +25,9 @@ export function toDetailRows(items: CommonCodeDetailItem[]): CommonCodeDetailRow
     }));
 }
 
-export function createEmptyGroupRow(): CommonCodeGroupRow {
-    return { id: newRowId('group'), groupCode: '', groupName: '', groupDesc: '', rowState: 'new' };
+// 신규 그룹 행, parentId 를 주면 그 그룹의 하위로 만든다
+export function createEmptyGroupRow(parentId = ''): CommonCodeGroupRow {
+    return { id: newRowId('group'), groupCode: '', groupName: '', groupDesc: '', parentId, rowState: 'new' };
 }
 
 export function createEmptyDetailRow(groupId: string, details: CommonCodeDetailRow[]): CommonCodeDetailRow {
@@ -41,12 +47,48 @@ export function createEmptyDetailRow(groupId: string, details: CommonCodeDetailR
     };
 }
 
-export function filterGroupRows(rows: CommonCodeGroupRow[], keyword: string): CommonCodeGroupRow[] {
+// 그룹을 트리 순서로 평탄화한다. 형제는 입력(서버 조회) 순서를 유지하고, 부모를 못 찾으면 최상위로 둔다.
+// 검색어가 있으면 일치 행과 그 조상만 남기고 접힘은 무시한다.
+export function toGroupTreeRows(
+    rows: CommonCodeGroupRow[],
+    collapsedIds: ReadonlySet<string>,
+    keyword: string,
+): CommonCodeGroupTreeRow[] {
+    const ids = new Set(rows.map((row) => row.id));
+    const childrenOf = new Map<string, CommonCodeGroupRow[]>();
+    for (const row of rows) {
+        const key = ids.has(row.parentId) ? row.parentId : '';
+        childrenOf.set(key, [...(childrenOf.get(key) ?? []), row]);
+    }
     const needle = keyword.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((row) =>
-        [row.groupCode, row.groupName, row.groupDesc].some((value) => value.toLowerCase().includes(needle)),
-    );
+    const matches = (row: CommonCodeGroupRow) =>
+        [row.groupCode, row.groupName, row.groupDesc].some((value) => value.toLowerCase().includes(needle));
+
+    const visit = (row: CommonCodeGroupRow, depth: number): CommonCodeGroupTreeRow[] => {
+        const children = childrenOf.get(row.id) ?? [];
+        const childRows = children.flatMap((child) => visit(child, depth + 1));
+        if (needle && !matches(row) && childRows.length === 0) return [];
+        const showChildren = needle !== '' || !collapsedIds.has(row.id);
+        return [{ ...row, depth, hasChildren: children.length > 0 }, ...(showChildren ? childRows : [])];
+    };
+    return (childrenOf.get('') ?? []).flatMap((row) => visit(row, 0));
+}
+
+// 그룹 id와 그 모든 하위 그룹 id. 상위그룹 선택지에서 빼서 순환을 막는 용도
+export function collectDescendantIds(rows: CommonCodeGroupRow[], id: string): Set<string> {
+    const result = new Set([id]);
+    // ponytail: 행 수 x 깊이 만큼 반복, 그룹이 수십 건이라 충분. 수천 건이 되면 childrenOf 맵으로 바꿀 것
+    let grew = true;
+    while (grew) {
+        grew = false;
+        for (const row of rows) {
+            if (!result.has(row.id) && result.has(row.parentId)) {
+                result.add(row.id);
+                grew = true;
+            }
+        }
+    }
+    return result;
 }
 
 // DataGrid processRowUpdate 공통 처리: 변경 없으면 기존 행, 신규는 new 유지, 그 외 modified
@@ -91,11 +133,14 @@ export function validateDetailRows(groups: CommonCodeGroupRow[], details: Common
     return null;
 }
 
+// 그룹 저장 payload, 상위그룹은 부모 행의 현재 그룹코드로 변환
 export function toGroupPayload(groups: CommonCodeGroupRow[]): CommonCodeGroupItem[] {
+    const groupCodeById = new Map(groups.map((group) => [group.id, group.groupCode.trim()]));
     return groups.map((group) => ({
         groupCode: group.groupCode.trim(),
         groupName: group.groupName.trim(),
         groupDesc: group.groupDesc,
+        parentGroupCode: groupCodeById.get(group.parentId) ?? '',
     }));
 }
 

@@ -1,39 +1,92 @@
-import { Plus, Save, Trash } from 'lucide-react';
-import { Box, Button, Paper, Stack, Typography } from '@mui/material';
+import { ChevronDown, ChevronRight, Plus, Save, Trash } from 'lucide-react';
+import { useMemo } from 'react';
+import { Box, Button, IconButton, Paper, Stack, Typography } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { koKR } from '@mui/x-data-grid/locales';
 import { appTheme } from '../../../../app/theme';
-import { markEdited } from '../commonCodeRows';
-import type { CommonCodeGroupRow } from '../types';
+import { collectDescendantIds, markEdited } from '../commonCodeRows';
+import type { CommonCodeGroupRow, CommonCodeGroupTreeRow } from '../types';
 import { centerColumns, COMMON_CODE_GRID_SX, TOOLBAR_BUTTON_SX } from './gridStyles';
 
-const EDITABLE_FIELDS = ['groupCode', 'groupName', 'groupDesc'] as const;
+const EDITABLE_FIELDS = ['groupCode', 'groupName', 'groupDesc', 'parentId'] as const;
 
-// 기존 -> const COLUMNS: GridColDef<CommonCodeGroupRow>[] = [ ... ];  (컬럼별 기본 정렬)
-// 변경 -> 모든 컬럼 헤더/데이터 가운데 정렬
-const COLUMNS: GridColDef<CommonCodeGroupRow>[] = centerColumns<CommonCodeGroupRow>([
-    { field: 'groupName', headerName: '그룹명 *', editable: true, flex: 1, minWidth: 120 },
-    { field: 'groupCode', headerName: '그룹코드 *', editable: true, flex: 1.2, minWidth: 150 },
-    { field: 'groupDesc', headerName: '그룹 설명', editable: true, flex: 1.6, minWidth: 160 },
-]);
-
-// 기존 -> props: rows, selectedId, onSelect, onRowUpdate, onAdd, onDelete (모든 사용자 편집 가능)
-// 변경 -> canManage(플랫폼관리자)일 때만 추가/삭제/저장 버튼과 셀 편집 허용
 export function CommonCodeGroupGrid(props: {
-    rows: CommonCodeGroupRow[];
+    rows: CommonCodeGroupTreeRow[];
+    allRows: CommonCodeGroupRow[];
+    collapsedIds: ReadonlySet<string>;
     selectedId: string | null;
     canManage: boolean;
     saveDisabled: boolean;
+    onToggle: (id: string) => void;
     onSelect: (id: string) => void;
     onRowUpdate: (row: CommonCodeGroupRow) => void;
     onAdd: () => void;
     onDelete: () => void;
     onSave: () => void;
 }) {
-    const { rows, selectedId, canManage, saveDisabled, onSelect, onRowUpdate, onAdd, onDelete, onSave } = props;
+    const { rows, allRows, collapsedIds, selectedId, canManage, saveDisabled, onToggle, onSelect, onRowUpdate, onAdd, onDelete, onSave } = props;
 
-    const processRowUpdate = (newRow: CommonCodeGroupRow, oldRow: CommonCodeGroupRow) => {
+    const columns = useMemo<GridColDef<CommonCodeGroupTreeRow>[]>(
+        () => [
+            {
+                field: 'groupName',
+                headerName: '그룹명 *',
+                headerAlign: 'center',
+                editable: true,
+                flex: 1.4,
+                minWidth: 160,
+                // 트리 표시: 깊이만큼 들여쓰고, 하위 그룹이 있으면 접기/펼치기 버튼
+                renderCell: ({ row }) => {
+                    const collapsed = collapsedIds.has(row.id);
+                    return (
+                        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', pl: row.depth * 2 }}>
+                            {row.hasChildren ? (
+                                <IconButton
+                                    size="small"
+                                    aria-label={`${row.groupName} ${collapsed ? '펼치기' : '접기'}`}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        onToggle(row.id);
+                                    }}
+                                >
+                                    {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                                </IconButton>
+                            ) : (
+                                <Box component="span" sx={{ width: 28, flexShrink: 0 }} />
+                            )}
+                            <span>{row.groupName}</span>
+                        </Box>
+                    );
+                },
+            },
+            ...centerColumns<CommonCodeGroupTreeRow>([
+                { field: 'groupCode', headerName: '그룹코드 *', editable: true, flex: 1.2, minWidth: 150 },
+                {
+                    field: 'parentId',
+                    headerName: '상위그룹',
+                    type: 'singleSelect',
+                    editable: true,
+                    flex: 1,
+                    minWidth: 140,
+                    // 자기 자신과 하위 그룹은 상위로 고를 수 없게 해 순환을 막는다
+                    valueOptions: ({ row }) => {
+                        const excluded = row ? collectDescendantIds(allRows, row.id) : new Set<string>();
+                        return [
+                            { value: '', label: '(없음)' },
+                            ...allRows
+                            .filter((group) => !excluded.has(group.id))
+                            .map((group) => ({ value: group.id, label: group.groupName || group.groupCode || '신규 그룹' })),
+                        ];
+                    },
+                },
+                { field: 'groupDesc', headerName: '그룹 설명', editable: true, flex: 1.6, minWidth: 160 },
+            ]),
+        ],
+        [allRows, collapsedIds, onToggle],
+    );
+
+    const processRowUpdate = (newRow: CommonCodeGroupTreeRow, oldRow: CommonCodeGroupTreeRow) => {
         const updated = markEdited(newRow, oldRow, EDITABLE_FIELDS);
         if (updated !== oldRow) onRowUpdate(updated);
         return updated;
@@ -63,7 +116,7 @@ export function CommonCodeGroupGrid(props: {
                 <ThemeProvider theme={appTheme}>
                     <DataGrid
                         rows={rows}
-                        columns={COLUMNS}
+                        columns={columns}
                         editMode="cell"
                         processRowUpdate={processRowUpdate}
                         isCellEditable={(params) =>

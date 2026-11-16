@@ -862,11 +862,12 @@ const attachmentStore = {
 // ponytail: PUT이 통째로 교체하는 메모리 저장소. 테스트 간 공유되므로 성공 저장 테스트를 추가하면 초기화 필요
 let commonCodeStore: CommonCodeData = {
   groups: [
-    { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '업무 등록주기' },
-    { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 수량 단위' },
-    { groupCode: 'ITEM_TYPE', groupName: '품목 계정', groupDesc: '품목 계정 구분' },
-    { groupCode: 'WORKDAY_TYPE', groupName: '업무일 유형', groupDesc: '업무일 관리 날짜 유형' },
-    { groupCode: 'EXPIRY_STATUS', groupName: '소비기한 기준', groupDesc: '소비기한 계산 단위' },
+    { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '업무 등록주기', parentGroupCode: '' },
+    { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 수량 단위', parentGroupCode: 'ITEM' },
+    { groupCode: 'ITEM_TYPE', groupName: '품목 계정', groupDesc: '품목 계정 구분', parentGroupCode: 'ITEM' },
+    { groupCode: 'WORKDAY_TYPE', groupName: '업무일 유형', groupDesc: '업무일 관리 날짜 유형', parentGroupCode: '' },
+    { groupCode: 'EXPIRY_STATUS', groupName: '소비기한 기준', groupDesc: '소비기한 계산 단위', parentGroupCode: '' },
+    { groupCode: 'ITEM', groupName: '품목', groupDesc: '품목 관련 코드 묶음', parentGroupCode: '' },
   ],
   details: [
     { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },

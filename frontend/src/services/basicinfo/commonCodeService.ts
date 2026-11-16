@@ -4,6 +4,8 @@ export type CommonCodeGroupItem = {
     groupCode: string;
     groupName: string;
     groupDesc: string;
+    // 상위 그룹코드, 최상위는 ''
+    parentGroupCode: string;
 };
 
 export type CommonCodeDetailItem = {

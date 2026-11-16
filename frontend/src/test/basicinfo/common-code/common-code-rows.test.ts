@@ -1,22 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import {
+    collectDescendantIds,
     createEmptyDetailRow,
     createEmptyGroupRow,
-    filterGroupRows,
-    markEdited,
     markEdited,
     toDetailRows,
     toGroupRows,
+    toGroupTreeRows,
     validateGroupRows,
     validateDetailRows,
     toGroupPayload,
     toDetailPayload,
 } from '../../../pages/basicinfo/common-code/commonCodeRows';
+import type { CommonCodeGroupTreeRow } from '../../../pages/basicinfo/common-code/types';
 
 const groups = toGroupRows([
-    { groupCode: 'CURRENCY', groupName: '통화', groupDesc: '통화 공통코드' },
-    { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '' },
+    { groupCode: 'CURRENCY', groupName: '통화', groupDesc: '통화 공통코드', parentGroupCode: '' },
+    { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '', parentGroupCode: '' },
 ]);
+const tree = toGroupRows([
+    { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '', parentGroupCode: 'ITEM' },
+    { groupCode: 'CURRENCY', groupName: '통화', groupDesc: '', parentGroupCode: '' },
+    { groupCode: 'ITEM', groupName: '품목', groupDesc: '', parentGroupCode: '' },
+    { groupCode: 'ITEM_UNIT_SUB', groupName: '세부 단위', groupDesc: '', parentGroupCode: 'ITEM_UNIT' },
+    { groupCode: 'ORPHAN', groupName: '고아', groupDesc: '', parentGroupCode: 'GONE' },
+]);
+const shape = (rows: CommonCodeGroupTreeRow[]) => rows.map((row) => `${row.depth}:${row.groupCode}`);
 const details = toDetailRows([
     { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
     { groupCode: 'WF_FORM_CYCLE', code: 'WEEK', codeName: '주', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
@@ -24,14 +33,34 @@ const details = toDetailRows([
 
 describe('commonCodeRows', () => {
     it('조회 데이터를 saved 행으로 변환한다', () => {
-        expect(groups[0]).toMatchObject({ id: 'CURRENCY', rowState: 'saved' });
+        expect(groups[0]).toMatchObject({ id: 'CURRENCY', parentId: '', rowState: 'saved' });
         expect(details[0]).toMatchObject({ id: 'WF_FORM_CYCLE:DAY', groupId: 'WF_FORM_CYCLE', rowState: 'saved' });
     });
 
-    it('그룹을 코드/명/설명으로 대소문자 무시 검색한다', () => {
-        expect(filterGroupRows(groups, 'wf_form').map((g) => g.groupCode)).toEqual(['WF_FORM_CYCLE']);
-        expect(filterGroupRows(groups, '통화 공통').map((g) => g.groupCode)).toEqual(['CURRENCY']);
-        expect(filterGroupRows(groups, '  ')).toHaveLength(2);
+    it('부모 아래에 자식을 depth와 함께 평탄화하고, 부모를 못 찾으면 최상위로 둔다', () => {
+        const rows = toGroupTreeRows(tree, new Set(), '');
+        expect(shape(rows)).toEqual(['0:CURRENCY', '0:ITEM', '1:ITEM_UNIT', '2:ITEM_UNIT_SUB', '0:ORPHAN']);
+        expect(rows.find((row) => row.groupCode === 'ITEM')?.hasChildren).toBe(true);
+        expect(rows.find((row) => row.groupCode === 'CURRENCY')?.hasChildren).toBe(false);
+    });
+
+    it('접힌 그룹의 자손은 숨긴다', () => {
+        expect(shape(toGroupTreeRows(tree, new Set(['ITEM']), ''))).toEqual(['0:CURRENCY', '0:ITEM', '0:ORPHAN']);
+    });
+
+    it('검색 시 일치 행과 그 조상만 남기고 접힘은 무시한다', () => {
+        expect(shape(toGroupTreeRows(tree, new Set(['ITEM']), '세부'))).toEqual([
+            '0:ITEM',
+            '1:ITEM_UNIT',
+            '2:ITEM_UNIT_SUB',
+        ]);
+        expect(shape(toGroupTreeRows(tree, new Set(), 'currency'))).toEqual(['0:CURRENCY']);
+        expect(toGroupTreeRows(tree, new Set(), '  ')).toHaveLength(5);
+    });
+
+    it('자기 자신과 모든 하위 그룹 id를 모은다', () => {
+        expect([...collectDescendantIds(tree, 'ITEM')].sort()).toEqual(['ITEM', 'ITEM_UNIT', 'ITEM_UNIT_SUB']);
+        expect([...collectDescendantIds(tree, 'CURRENCY')]).toEqual(['CURRENCY']);
     });
 
     it('신규 상세의 정렬순서는 같은 그룹 최대값 + 10', () => {
@@ -77,7 +106,15 @@ describe('commonCodeRows', () => {
 
     it('그룹 payload는 trim 하고 rowState를 뺀다', () => {
         const fresh = { ...createEmptyGroupRow(), groupCode: ' NEW_G ', groupName: ' 신규 ' };
-        expect(toGroupPayload([fresh])).toEqual([{ groupCode: 'NEW_G', groupName: '신규', groupDesc: '' }]);
+        expect(toGroupPayload([fresh])).toEqual([
+            { groupCode: 'NEW_G', groupName: '신규', groupDesc: '', parentGroupCode: '' },
+        ]);
+    });
+
+    it('그룹 payload의 상위그룹은 부모 행의 현재 그룹코드로 보낸다', () => {
+        const parent = { ...createEmptyGroupRow(), groupCode: ' NEW_P ', groupName: '부모' };
+        const child = { ...createEmptyGroupRow(parent.id), groupCode: 'NEW_C', groupName: '자식' };
+        expect(toGroupPayload([parent, child]).map((group) => group.parentGroupCode)).toEqual(['', 'NEW_P']);
     });
 
     it('상세 payload는 변경된 행만, groupId를 그룹코드로 바꾼다', () => {
