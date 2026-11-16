@@ -2,20 +2,21 @@ import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { getCommonCodes } from '../../services/basicinfo/commonCodeService';
+import { COMMON_CODE_GROUP } from '../../shared/constants/commonCodeGroups';
 import { toCommonCodeOptions } from '../../shared/hooks/useCommonCodeOptions';
 import {
-    COMBO_NO_GROUP_TEXT,
+    COMBO_EMPTY_KIND_TEXT,
     COMBO_PLACEHOLDER_TEXT,
     COMBO_STYLE,
-    getComboGroups,
+    getComboItemOptions,
     normalizeComboAttrs,
 } from '../utils/documentFieldCombo';
 
 const SELECT_STYLE = { fontSize: 13, border: 'none', background: 'transparent' };
 
-// 편집 가능하면 그룹 선택 후 값 선택, 읽기 전용이면 선택된 코드명만 표시
+// 편집 가능하면 종류 선택 후 값 선택, 읽기 전용이면 선택된 코드명만 표시
 export function DocumentFieldComboNodeView({ node, editor, updateAttributes }: NodeViewProps) {
-    const { groupCode, value, valueName } = normalizeComboAttrs(node.attrs);
+    const { comboCode, value, valueName } = normalizeComboAttrs(node.attrs);
     const editable = editor.isEditable;
     // ponytail: useCommonCodeOptions 와 같은 queryKey 를 공유해 공통코드 조회는 화면당 1회
     const { data, isLoading } = useQuery({
@@ -24,8 +25,14 @@ export function DocumentFieldComboNodeView({ node, editor, updateAttributes }: N
         retry: false,
         enabled: editable,
     });
-    const groups = useMemo(() => getComboGroups(data?.groups ?? []), [data]);
-    const options = useMemo(() => toCommonCodeOptions(data?.details ?? [], groupCode), [data, groupCode]);
+    const kinds = useMemo(
+        () => toCommonCodeOptions(data?.details ?? [], COMMON_CODE_GROUP.EDITOR_COMBO),
+        [data],
+    );
+    const options = useMemo(
+        () => getComboItemOptions(data?.groups ?? [], data?.details ?? [], comboCode),
+        [data, comboCode],
+    );
 
     if (!editable) {
         return (
@@ -35,21 +42,29 @@ export function DocumentFieldComboNodeView({ node, editor, updateAttributes }: N
         );
     }
 
-    if (!groupCode) {
+    if (!comboCode) {
         return (
             <NodeViewWrapper as="span" contentEditable={false} style={COMBO_STYLE}>
                 <select
-                    aria-label="콤보박스 코드그룹"
+                    aria-label="콤보박스 종류"
                     style={SELECT_STYLE}
                     value=""
-                    disabled={isLoading || groups.length === 0}
-                    onChange={(event) => updateAttributes({ groupCode: event.target.value, value: '', valueName: '' })}
+                    disabled={isLoading || kinds.length === 0}
+                    onChange={(event) => {
+                        const kind = kinds.find((option) => option.code === event.target.value);
+                        updateAttributes({
+                            comboCode: kind?.code ?? '',
+                            comboName: kind?.name ?? '',
+                            value: '',
+                            valueName: '',
+                        });
+                    }}
                 >
                     <option value="">
-                        {!isLoading && groups.length === 0 ? COMBO_NO_GROUP_TEXT : COMBO_PLACEHOLDER_TEXT}
+                        {!isLoading && kinds.length === 0 ? COMBO_EMPTY_KIND_TEXT : COMBO_PLACEHOLDER_TEXT}
                     </option>
-                    {groups.map((group) => (
-                        <option key={group.code} value={group.code}>{group.name}</option>
+                    {kinds.map((kind) => (
+                        <option key={kind.code} value={kind.code}>{kind.name}</option>
                     ))}
                 </select>
             </NodeViewWrapper>
