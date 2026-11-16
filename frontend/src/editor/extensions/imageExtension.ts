@@ -196,7 +196,6 @@ function ImageNodeView(props: NodeViewProps) {
             width: '100%',
             maxWidth: '100%',
             height: 'auto',
-            borderRadius: '6px',
             margin: '0 auto',
           },
         }),

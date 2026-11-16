@@ -17,7 +17,10 @@ import {
   DocumentFieldExtension,
   type DocumentFieldDisplayMode,
 } from '../extensions/documentFieldExtension';
-import { DocumentFieldImageExtension } from '../extensions/documentFieldImageExtension';
+import {
+  DocumentFieldImageExtension,
+  validateDocumentImageFile,
+} from '../extensions/documentFieldImageExtension';
 import { DocumentFieldAttendeesExtension } from '../extensions/documentFieldAttendeesExtension';
 import { DocumentFieldComboExtension } from '../extensions/documentFieldComboExtension';
 import { EditorImageExtension } from '../extensions/imageExtension';
@@ -34,6 +37,8 @@ import {
   normalizeClipboardTextForEditor,
   normalizeClipboardTextGridForEditor,
 } from '../utils/clipboardPaste';
+import { getPastedImageFile } from '../utils/clipboardImage';
+import { addRowBelowWithCopy } from '../utils/tableRowInsert';
 import { ResetEditorToolbar } from './reset/ResetEditorToolbar';
 import './slashCommand.css';
 
@@ -76,81 +81,6 @@ function getFirstCellSelectionPosFromRow(
   return selection.from;
 }
 
-function findLeadingColumnAnchor(
-  tableNode: any,
-  targetRowIndex: number,
-): { rowIndex: number; cellIndex: number } | null {
-  const occupancy: number[] = [];
-  const anchors: Array<{ rowIndex: number; cellIndex: number } | null> = [];
-
-  for (let rowIndex = 0; rowIndex < tableNode.childCount; rowIndex += 1) {
-    if (rowIndex === targetRowIndex) {
-      const anchor = anchors[0];
-      if ((occupancy[0] ?? 0) > 0 && anchor && anchor.rowIndex < rowIndex) {
-        return anchor;
-      }
-      return null;
-    }
-
-    const row = tableNode.child(rowIndex);
-    let col = 0;
-
-    for (let cellIndex = 0; cellIndex < row.childCount; cellIndex += 1) {
-      while ((occupancy[col] ?? 0) > 0) {
-        col += 1;
-      }
-
-      const cell = row.child(cellIndex);
-      const colspan = Math.max(1, Number(cell.attrs.colspan ?? 1));
-      const rowspan = Math.max(1, Number(cell.attrs.rowspan ?? 1));
-
-      for (let offset = 0; offset < colspan; offset += 1) {
-        occupancy[col + offset] = Math.max(
-          occupancy[col + offset] ?? 0,
-          rowspan,
-        );
-        anchors[col + offset] = { rowIndex, cellIndex };
-      }
-
-      col += colspan;
-    }
-
-    for (let index = 0; index < occupancy.length; index += 1) {
-      occupancy[index] = Math.max(0, (occupancy[index] ?? 0) - 1);
-    }
-  }
-
-  return null;
-}
-
-function getCellPosInRow(
-  tableNode: any,
-  tablePos: number,
-  rowIndex: number,
-  cellIndex: number,
-): number | null {
-  if (
-    rowIndex < 0 ||
-    rowIndex >= tableNode.childCount ||
-    cellIndex < 0 ||
-    cellIndex >= tableNode.child(rowIndex).childCount
-  ) {
-    return null;
-  }
-
-  let rowStartPos = tablePos + 1;
-  for (let index = 0; index < rowIndex; index += 1) {
-    rowStartPos += tableNode.child(index).nodeSize;
-  }
-
-  let cellPos = rowStartPos + 1;
-  for (let index = 0; index < cellIndex; index += 1) {
-    cellPos += tableNode.child(rowIndex).child(index).nodeSize;
-  }
-
-  return cellPos;
-}
-
 export function NotionLikeEditor(props: NotionLikeEditorProps) {
   const {
     content,
@@ -172,15 +102,8 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
     top: number;
   } | null>(null);
   const tableContextRef = useRef<{
-    anchorPos: number;
     tablePos: number;
     rowIndex: number;
-    referenceRow: {
-      type: string;
-      attrs?: Record<string, unknown>;
-      content?: JSONContent[];
-      marks?: Array<Record<string, unknown>>;
-    };
   } | null>(null);
   // 기존 -> isDarkMode 로 에디터 캔버스, 글자, 표 테두리 색 계산 / 변경 -> theme.ts 의 editor 토큰을 sx 에서 직접 사용
 
@@ -231,14 +154,31 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
               : normalizeClipboardHtmlForEditor(html),
       transformPastedText: normalizeClipboardTextForEditor,
       // 표는 엑셀 표시값을 맞추려면 plain text 가 필요해서 여기서 직접 넣는다
+      // 이미지 파일만 있는 클립보드(캡처, 이미지 복사)는 base64 이미지 노드로 넣는다
       handlePaste: (view, event) => {
         const data = event.clipboardData;
         const html = data?.getData('text/html') ?? '';
-        if (
-            !data ||
-            html.includes('data-pm-slice') ||
-            !hasSpreadsheetClipboardContent(data)
-        ) {
+        if (!data || html.includes('data-pm-slice')) {
+          return false;
+        }
+
+        if (hasSpreadsheetClipboardContent(data)) {
+          if (!view.editable) {
+            return true;
+          }
+
+          const text = data.getData('text/plain') ?? '';
+          const normalized = html
+              ? normalizeClipboardHtmlForEditor(html, text)
+              : normalizeClipboardTextGridForEditor(text);
+          if (normalized) {
+            editorRef.current?.commands.insertContent(normalized);
+          }
+          return true;
+        }
+
+        const imageFile = getPastedImageFile(data);
+        if (!imageFile) {
           return false;
         }
 
@@ -246,13 +186,31 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
           return true;
         }
 
-        const text = data.getData('text/plain') ?? '';
-        const normalized = html
-            ? normalizeClipboardHtmlForEditor(html, text)
-            : normalizeClipboardTextGridForEditor(text);
-        if (normalized) {
-          editorRef.current?.commands.insertContent(normalized);
+        const validationResult = validateDocumentImageFile(imageFile);
+        if (!validationResult.ok) {
+          window.alert(validationResult.message);
+          return true;
         }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const src = typeof reader.result === 'string' ? reader.result : '';
+          const currentEditor = editorRef.current;
+          if (!src || !currentEditor || currentEditor.isDestroyed) {
+            return;
+          }
+
+          // 선택된 이미지박스가 있으면 선택 영역째 교체된다
+          currentEditor
+              .chain()
+              .focus()
+              .insertContent({
+                type: 'image',
+                attrs: { src, alt: '붙여넣은 이미지' },
+              })
+              .run();
+        };
+        reader.readAsDataURL(imageFile);
         return true;
       },
     },
@@ -342,126 +300,6 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
     };
   };
 
-  const copyPreviousRowToInsertedRow = (
-    tablePos: number,
-    insertedRowIndex: number,
-    sourceRowJson: {
-      type: string;
-      attrs?: Record<string, unknown>;
-      content?: JSONContent[];
-      marks?: Array<Record<string, unknown>>;
-    },
-  ) => {
-    if (!editor) {
-      return;
-    }
-
-    const tableNode = editor.state.doc.nodeAt(tablePos);
-    if (
-      !tableNode ||
-      insertedRowIndex < 0 ||
-      insertedRowIndex >= tableNode.childCount
-    ) {
-      return;
-    }
-
-    const insertedRow = tableNode.child(insertedRowIndex);
-    if (!insertedRow) {
-      return;
-    }
-
-    let rowStartPos = tablePos + 1;
-    for (let index = 0; index < insertedRowIndex; index += 1) {
-      rowStartPos += tableNode.child(index).nodeSize;
-    }
-
-    const replacementRow = editor.schema.nodeFromJSON(sourceRowJson as any);
-
-    const tr = editor.state.tr.replaceWith(
-      rowStartPos,
-      rowStartPos + insertedRow.nodeSize,
-      replacementRow,
-    );
-
-    queueMicrotask(() => {
-      if (!editor || editor.isDestroyed) {
-        return;
-      }
-
-      editor.view.dispatch(tr);
-    });
-  };
-
-  const normalizeLeadingMergedCell = (
-    tablePos: number,
-    sourceRowIndex: number,
-    insertedRowIndex: number,
-  ) => {
-    if (!editor || editor.isDestroyed) {
-      return;
-    }
-
-    const tableNode = editor.state.doc.nodeAt(tablePos);
-    if (!tableNode) {
-      return;
-    }
-
-    const sourceRow = tableNode.child(sourceRowIndex);
-    const insertedRow = tableNode.child(insertedRowIndex);
-    if (!sourceRow || !insertedRow) {
-      return;
-    }
-
-    if (insertedRow.childCount <= sourceRow.childCount) {
-      return;
-    }
-
-    const anchor = findLeadingColumnAnchor(tableNode, sourceRowIndex);
-    if (!anchor) {
-      return;
-    }
-
-    const anchorCellPos = getCellPosInRow(
-      tableNode,
-      tablePos,
-      anchor.rowIndex,
-      anchor.cellIndex,
-    );
-    const insertedFirstCellPos = getCellPosInRow(
-      tableNode,
-      tablePos,
-      insertedRowIndex,
-      0,
-    );
-
-    if (anchorCellPos === null || insertedFirstCellPos === null) {
-      return;
-    }
-
-    const anchorCell = editor.state.doc.nodeAt(anchorCellPos);
-    const firstCell = editor.state.doc.nodeAt(insertedFirstCellPos);
-    if (!anchorCell || !firstCell) {
-      return;
-    }
-
-    const currentRowspan = Math.max(1, Number(anchorCell.attrs.rowspan ?? 1));
-    let tr = editor.state.tr.setNodeMarkup(
-      anchorCellPos,
-      anchorCell.type,
-      {
-        ...anchorCell.attrs,
-        rowspan: currentRowspan + 1,
-      },
-      anchorCell.marks,
-    );
-
-    tr = tr.delete(
-      insertedFirstCellPos,
-      insertedFirstCellPos + firstCell.nodeSize,
-    );
-    editor.view.dispatch(tr);
-  };
-
   const focusTableRowForCommand = (tablePos: number, rowIndex: number) => {
     if (!editor) {
       return false;
@@ -481,6 +319,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
     return true;
   };
 
+  // 우클릭한 행 바로 아래에 같은 내용의 행 추가 (병합 셀 유지)
   const handleAddRowFromContextMenu = () => {
     if (!editor || !editable) {
       return;
@@ -491,26 +330,11 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       return;
     }
 
-    if (!focusTableRowForCommand(rowContext.tablePos, rowContext.rowIndex)) {
-      return;
+    const tr = addRowBelowWithCopy(editor.state.tr, rowContext.tablePos, rowContext.rowIndex);
+    if (tr) {
+      editor.view.dispatch(tr);
+      editor.commands.focus();
     }
-
-    const inserted = editor.chain().focus().addRowAfter().run();
-    if (!inserted) {
-      return;
-    }
-
-    normalizeLeadingMergedCell(
-      rowContext.tablePos,
-      rowContext.rowIndex,
-      rowContext.rowIndex + 1,
-    );
-
-    copyPreviousRowToInsertedRow(
-      rowContext.tablePos,
-      rowContext.rowIndex + 1,
-      rowContext.referenceRow,
-    );
   };
 
   const handleDeleteRowFromContextMenu = () => {
