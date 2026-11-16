@@ -17,7 +17,10 @@ import {
   DocumentFieldExtension,
   type DocumentFieldDisplayMode,
 } from '../extensions/documentFieldExtension';
-import { DocumentFieldImageExtension } from '../extensions/documentFieldImageExtension';
+import {
+  DocumentFieldImageExtension,
+  validateDocumentImageFile,
+} from '../extensions/documentFieldImageExtension';
 import { DocumentFieldAttendeesExtension } from '../extensions/documentFieldAttendeesExtension';
 import { DocumentFieldComboExtension } from '../extensions/documentFieldComboExtension';
 import { EditorImageExtension } from '../extensions/imageExtension';
@@ -34,6 +37,7 @@ import {
   normalizeClipboardTextForEditor,
   normalizeClipboardTextGridForEditor,
 } from '../utils/clipboardPaste';
+import { getPastedImageFile } from '../utils/clipboardImage';
 import { addRowBelowWithCopy } from '../utils/tableRowInsert';
 import { ResetEditorToolbar } from './reset/ResetEditorToolbar';
 import './slashCommand.css';
@@ -150,14 +154,31 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
               : normalizeClipboardHtmlForEditor(html),
       transformPastedText: normalizeClipboardTextForEditor,
       // 표는 엑셀 표시값을 맞추려면 plain text 가 필요해서 여기서 직접 넣는다
+      // 이미지 파일만 있는 클립보드(캡처, 이미지 복사)는 base64 이미지 노드로 넣는다
       handlePaste: (view, event) => {
         const data = event.clipboardData;
         const html = data?.getData('text/html') ?? '';
-        if (
-            !data ||
-            html.includes('data-pm-slice') ||
-            !hasSpreadsheetClipboardContent(data)
-        ) {
+        if (!data || html.includes('data-pm-slice')) {
+          return false;
+        }
+
+        if (hasSpreadsheetClipboardContent(data)) {
+          if (!view.editable) {
+            return true;
+          }
+
+          const text = data.getData('text/plain') ?? '';
+          const normalized = html
+              ? normalizeClipboardHtmlForEditor(html, text)
+              : normalizeClipboardTextGridForEditor(text);
+          if (normalized) {
+            editorRef.current?.commands.insertContent(normalized);
+          }
+          return true;
+        }
+
+        const imageFile = getPastedImageFile(data);
+        if (!imageFile) {
           return false;
         }
 
@@ -165,13 +186,31 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
           return true;
         }
 
-        const text = data.getData('text/plain') ?? '';
-        const normalized = html
-            ? normalizeClipboardHtmlForEditor(html, text)
-            : normalizeClipboardTextGridForEditor(text);
-        if (normalized) {
-          editorRef.current?.commands.insertContent(normalized);
+        const validationResult = validateDocumentImageFile(imageFile);
+        if (!validationResult.ok) {
+          window.alert(validationResult.message);
+          return true;
         }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const src = typeof reader.result === 'string' ? reader.result : '';
+          const currentEditor = editorRef.current;
+          if (!src || !currentEditor || currentEditor.isDestroyed) {
+            return;
+          }
+
+          // 선택된 이미지박스가 있으면 선택 영역째 교체된다
+          currentEditor
+              .chain()
+              .focus()
+              .insertContent({
+                type: 'image',
+                attrs: { src, alt: '붙여넣은 이미지' },
+              })
+              .run();
+        };
+        reader.readAsDataURL(imageFile);
         return true;
       },
     },
