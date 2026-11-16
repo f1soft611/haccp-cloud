@@ -16,8 +16,10 @@ export type CommonCodeGroupTreeRow = CommonCodeGroupRow & {
 };
 
 // 상세는 그룹을 행 id로 참조한다. 신규 그룹의 그룹코드가 바뀌어도 연결이 유지되고, 저장 시 groupCode로 변환한다.
-export type CommonCodeDetailRow = Omit<CommonCodeDetailItem, 'groupCode'> & {
+// parentCode 는 상위그룹 상세의 코드 (없으면 '')
+export type CommonCodeDetailRow = Omit<CommonCodeDetailItem, 'groupCode' | 'parentCode'> & {
     id: string;
     groupId: string;
+    parentCode: string;
     rowState: CommonCodeRowState;
 };

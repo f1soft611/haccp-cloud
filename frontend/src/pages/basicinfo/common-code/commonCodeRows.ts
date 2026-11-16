@@ -17,10 +17,11 @@ export function toGroupRows(items: CommonCodeGroupItem[]): CommonCodeGroupRow[] 
 }
 
 export function toDetailRows(items: CommonCodeDetailItem[]): CommonCodeDetailRow[] {
-    return items.map(({ groupCode, ...rest }) => ({
+    return items.map(({ groupCode, parentCode, ...rest }) => ({
         ...rest,
         id: `${groupCode}:${rest.code}`,
         groupId: groupCode,
+        parentCode: parentCode ?? '',
         rowState: 'saved',
     }));
 }
@@ -39,6 +40,7 @@ export function createEmptyDetailRow(groupId: string, details: CommonCodeDetailR
         groupId,
         code: '',
         codeName: '',
+        parentCode: '',
         parentCodeName: '',
         useAt: true,
         sortOrder: maxSortOrder + 10,
@@ -91,6 +93,22 @@ export function collectDescendantIds(rows: CommonCodeGroupRow[], id: string): Se
     return result;
 }
 
+export type ParentCodeOption = { value: string; label: string };
+
+// 상세의 상위코드 선택지: 상위그룹 상세 중 사용 중이고 DB 에 저장된 코드.
+// 그룹이 없거나 상위그룹이 없으면 null (상위코드를 편집할 수 없음)
+export function getParentCodeOptions(
+    groups: CommonCodeGroupRow[],
+    details: CommonCodeDetailRow[],
+    groupId: string | null,
+): ParentCodeOption[] | null {
+    const group = groups.find((row) => row.id === groupId);
+    if (!group || !groups.some((row) => row.id === group.parentId)) return null;
+    return details
+    .filter((detail) => detail.groupId === group.parentId && detail.useAt && detail.rowState !== 'new')
+    .map((detail) => ({ value: detail.code, label: detail.codeName }));
+}
+
 // DataGrid processRowUpdate 공통 처리: 변경 없으면 기존 행, 신규는 new 유지, 그 외 modified
 export function markEdited<T extends { rowState: CommonCodeRowState }>(
     newRow: T,
@@ -126,6 +144,16 @@ export function validateDetailRows(groups: CommonCodeGroupRow[], details: Common
         const code = detail.code.trim();
         if (!code) return `${label}: 상세코드를 입력하세요.`;
         if (!detail.codeName.trim()) return `${label}: 상세코드명을 입력하세요.`;
+        // 상위그룹이 있으면 변경된 행만 상위코드 필수 (저장된 기존 행은 다른 상세 저장을 막지 않게 건너뜀)
+        if (detail.rowState !== 'saved') {
+            const parentOptions = getParentCodeOptions(groups, details, detail.groupId);
+            if (parentOptions) {
+                if (!detail.parentCode) return `${label}: 상위코드를 선택하세요.`;
+                if (!parentOptions.some((option) => option.value === detail.parentCode)) {
+                    return `${label}: 사용 중인 상위코드가 아닙니다.`;
+                }
+            }
+        }
         const key = `${detail.groupId}:${code}`;
         if (seenDetailKeys.has(key)) return `${label}: 상세코드가 중복됩니다.`;
         seenDetailKeys.add(key);
@@ -153,6 +181,7 @@ export function toDetailPayload(groups: CommonCodeGroupRow[], details: CommonCod
         groupCode: groupCodeById.get(detail.groupId) ?? '',
         code: detail.code.trim(),
         codeName: detail.codeName.trim(),
+        parentCode: detail.parentCode,
         parentCodeName: detail.parentCodeName,
         useAt: detail.useAt,
         sortOrder: detail.sortOrder,

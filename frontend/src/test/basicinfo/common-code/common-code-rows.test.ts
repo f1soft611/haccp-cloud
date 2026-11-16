@@ -3,6 +3,7 @@ import {
     collectDescendantIds,
     createEmptyDetailRow,
     createEmptyGroupRow,
+    getParentCodeOptions,
     markEdited,
     toDetailRows,
     toGroupRows,
@@ -31,10 +32,29 @@ const details = toDetailRows([
     { groupCode: 'WF_FORM_CYCLE', code: 'WEEK', codeName: '주', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
 ]);
 
+// COMBO_ITEM 의 상위그룹은 COMBO. COMBO 상세 중 OK 만 사용 중
+const comboGroups = toGroupRows([
+    { groupCode: 'COMBO', groupName: '콤보', groupDesc: '', parentGroupCode: '' },
+    { groupCode: 'COMBO_ITEM', groupName: '콤보 하위', groupDesc: '', parentGroupCode: 'COMBO' },
+]);
+const comboDetails = toDetailRows([
+    { groupCode: 'COMBO', code: 'OK', codeName: '적합', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'COMBO', code: 'OLD', codeName: '폐기', parentCodeName: '', useAt: false, sortOrder: 20, codeDesc: '' },
+    { groupCode: 'COMBO_ITEM', code: 'A', codeName: '에이', parentCode: 'OK', parentCodeName: '적합', useAt: true, sortOrder: 10, codeDesc: '' },
+    // 상위코드 없이 저장돼 있던 기존 행
+    { groupCode: 'COMBO_ITEM', code: 'LEGACY', codeName: '옛값', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+]);
+const newComboItem = (parentCode: string) => ({
+    ...createEmptyDetailRow('COMBO_ITEM', comboDetails),
+    code: 'B',
+    codeName: '비',
+    parentCode,
+});
+
 describe('commonCodeRows', () => {
     it('조회 데이터를 saved 행으로 변환한다', () => {
         expect(groups[0]).toMatchObject({ id: 'CURRENCY', parentId: '', rowState: 'saved' });
-        expect(details[0]).toMatchObject({ id: 'WF_FORM_CYCLE:DAY', groupId: 'WF_FORM_CYCLE', rowState: 'saved' });
+        expect(details[0]).toMatchObject({ id: 'WF_FORM_CYCLE:DAY', groupId: 'WF_FORM_CYCLE', parentCode: '', rowState: 'saved' });
     });
 
     it('부모 아래에 자식을 depth와 함께 평탄화하고, 부모를 못 찾으면 최상위로 둔다', () => {
@@ -104,6 +124,26 @@ describe('commonCodeRows', () => {
         ).toBe('NEW_G: 그룹을 먼저 저장하세요.');
     });
 
+    it('상위코드 선택지는 상위그룹의 사용 중이고 저장된 상세만, 상위그룹이 없으면 null', () => {
+        const unsavedParent = { ...createEmptyDetailRow('COMBO', comboDetails), code: 'NEW', codeName: '신규' };
+        expect(getParentCodeOptions(comboGroups, [...comboDetails, unsavedParent], 'COMBO_ITEM')).toEqual([
+            { value: 'OK', label: '적합' },
+        ]);
+        expect(getParentCodeOptions(comboGroups, comboDetails, 'COMBO')).toBeNull();
+        expect(getParentCodeOptions(comboGroups, comboDetails, null)).toBeNull();
+    });
+
+    it('상위그룹이 있는 그룹의 변경된 상세는 사용 중인 상위코드가 필수', () => {
+        expect(validateDetailRows(comboGroups, comboDetails)).toBeNull();
+        expect(validateDetailRows(comboGroups, [...comboDetails, newComboItem('')])).toBe(
+            'COMBO_ITEM: 상위코드를 선택하세요.',
+        );
+        expect(validateDetailRows(comboGroups, [...comboDetails, newComboItem('OLD')])).toBe(
+            'COMBO_ITEM: 사용 중인 상위코드가 아닙니다.',
+        );
+        expect(validateDetailRows(comboGroups, [...comboDetails, newComboItem('OK')])).toBeNull();
+    });
+
     it('그룹 payload는 trim 하고 rowState를 뺀다', () => {
         const fresh = { ...createEmptyGroupRow(), groupCode: ' NEW_G ', groupName: ' 신규 ' };
         expect(toGroupPayload([fresh])).toEqual([
@@ -120,7 +160,13 @@ describe('commonCodeRows', () => {
     it('상세 payload는 변경된 행만, groupId를 그룹코드로 바꾼다', () => {
         const added = { ...createEmptyDetailRow('WF_FORM_CYCLE', details), code: ' A ', codeName: '에이' };
         expect(toDetailPayload(groups, [...details, added])).toEqual([
-            { groupCode: 'WF_FORM_CYCLE', code: 'A', codeName: '에이', parentCodeName: '', useAt: true, sortOrder: added.sortOrder, codeDesc: '' },
+            { groupCode: 'WF_FORM_CYCLE', code: 'A', codeName: '에이', parentCode: '', parentCodeName: '', useAt: true, sortOrder: added.sortOrder, codeDesc: '' },
+        ]);
+    });
+
+    it('상세 payload에 상위코드를 담는다', () => {
+        expect(toDetailPayload(comboGroups, [...comboDetails, newComboItem('OK')])).toMatchObject([
+            { groupCode: 'COMBO_ITEM', code: 'B', parentCode: 'OK' },
         ]);
     });
 });
