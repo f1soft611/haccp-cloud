@@ -1,9 +1,35 @@
+import { getSchema } from '@tiptap/core';
+import { DOMParser, DOMSerializer, Node as PMNode } from '@tiptap/pm/model';
+import StarterKit from '@tiptap/starter-kit';
 import { describe, expect, it } from 'vitest';
 import type {
     CommonCodeDetailItem,
     CommonCodeGroupItem,
 } from '../../services/basicinfo/commonCodeService';
-import { getComboItemOptions, normalizeComboAttrs } from '../../editor/utils/documentFieldCombo';
+import { DocumentFieldComboExtension } from '../../editor/extensions/documentFieldComboExtension';
+import {
+    COMBO_PLACEHOLDER_TEXT,
+    getComboItemOptions,
+    normalizeComboAttrs,
+} from '../../editor/utils/documentFieldCombo';
+
+const schema = getSchema([StarterKit, DocumentFieldComboExtension]);
+
+function toHtml(attrs: Record<string, string>): string {
+    const doc = PMNode.fromJSON(schema, {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'documentFieldCombo', attrs }] }],
+    });
+    const container = document.createElement('div');
+    container.appendChild(DOMSerializer.fromSchema(schema).serializeFragment(doc.content));
+    return container.innerHTML;
+}
+
+function fromHtml(html: string) {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    return DOMParser.fromSchema(schema).parse(container).toJSON();
+}
 
 const groups: CommonCodeGroupItem[] = [
     { groupCode: 'EDITOR_COMBO', groupName: '에디터 콤보박스', groupDesc: '', parentGroupCode: '' },
@@ -58,5 +84,29 @@ describe('getComboItemOptions', () => {
 
     it('종류가 비어 있으면 빈 배열', () => {
         expect(getComboItemOptions(groups, details, '')).toEqual([]);
+    });
+});
+
+describe('DocumentFieldComboExtension HTML', () => {
+    const selected = { comboCode: 'OK_NG', comboName: '적합부적합', value: 'OK', valueName: '적합' };
+
+    it('값이 없으면 플레이스홀더 문구를 렌더한다', () => {
+        const html = toHtml({ comboCode: '', comboName: '', value: '', valueName: '' });
+        expect(html).toContain('data-document-field-combo');
+        expect(html).toContain(COMBO_PLACEHOLDER_TEXT);
+    });
+
+    it('선택된 값은 코드명을 텍스트로, 코드는 data 속성으로 렌더한다', () => {
+        const html = toHtml(selected);
+        expect(html).toContain('data-combo-code="OK_NG"');
+        expect(html).toContain('data-combo-name="적합부적합"');
+        expect(html).toContain('data-value="OK"');
+        expect(html).toContain('data-value-name="적합"');
+        expect(html).toContain('적합</span>');
+    });
+
+    it('HTML 을 다시 파싱하면 attrs 가 복원된다', () => {
+        const json = fromHtml(toHtml(selected));
+        expect(json.content?.[0].content?.[0]).toEqual({ type: 'documentFieldCombo', attrs: selected });
     });
 });

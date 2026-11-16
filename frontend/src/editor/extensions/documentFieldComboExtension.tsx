@@ -4,9 +4,8 @@ import {
     COMBO_PLACEHOLDER_TEXT,
     COMBO_STYLE,
     normalizeComboAttrs,
+    type DocumentFieldComboAttrs,
 } from '../utils/documentFieldCombo';
-import { ReactNodeViewRenderer } from '@tiptap/react';
-import { DocumentFieldComboNodeView } from '../components/DocumentFieldComboNodeView';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -16,8 +15,8 @@ declare module '@tiptap/core' {
     }
 }
 
-// data-* 속성 하나를 attr 하나로 매핑 (빈 값이면 속성 생략)
-function dataAttribute(attrName: 'groupCode' | 'value' | 'valueName', htmlName: string) {
+// attr 하나를 data-* 속성 하나로 매핑 (빈 값이면 속성 생략)
+function dataAttribute(attrName: keyof DocumentFieldComboAttrs, htmlName: string) {
     return {
         default: '',
         parseHTML: (element: HTMLElement) => element.getAttribute(htmlName) ?? '',
@@ -28,7 +27,7 @@ function dataAttribute(attrName: 'groupCode' | 'value' | 'valueName', htmlName: 
     };
 }
 
-// 공통코드 EDITOR_COMBO 하위 그룹 선택지로 값을 고르는 인라인 문서필드
+// 공통코드 EDITOR_COMBO 종류를 고른 뒤 그 하위 코드 중 하나를 값으로 고르는 인라인 문서필드
 export const DocumentFieldComboExtension = Node.create({
     name: 'documentFieldCombo',
     group: 'inline',
@@ -39,7 +38,8 @@ export const DocumentFieldComboExtension = Node.create({
 
     addAttributes() {
         return {
-            groupCode: dataAttribute('groupCode', 'data-group-code'),
+            comboCode: dataAttribute('comboCode', 'data-combo-code'),
+            comboName: dataAttribute('comboName', 'data-combo-name'),
             value: dataAttribute('value', 'data-value'),
             valueName: dataAttribute('valueName', 'data-value-name'),
         };
@@ -68,12 +68,8 @@ export const DocumentFieldComboExtension = Node.create({
                     ({ commands }) =>
                         commands.insertContent({
                             type: this.name,
-                            attrs: { groupCode: '', value: '', valueName: '' },
+                            attrs: { comboCode: '', comboName: '', value: '', valueName: '' },
                         }),
         };
-    },
-
-    addNodeView() {
-        return ReactNodeViewRenderer(DocumentFieldComboNodeView);
     },
 });
