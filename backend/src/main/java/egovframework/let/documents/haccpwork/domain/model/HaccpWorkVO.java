@@ -72,6 +72,9 @@ public class HaccpWorkVO implements Serializable {
     @Schema(description = "결재 적용 여부 (null 이면 결재 적용)")
     private Boolean approvalApply;
 
+    @Schema(description = "만료일 관리 양식 해당 여부")
+    private Boolean expirationApply;
+
     @Schema(description = "HCP 업무 sub 값. 저장된 sub 가 없으면 null")
     private HaccpWorkApprovalSubVO sub;
 
@@ -158,6 +161,9 @@ public class HaccpWorkVO implements Serializable {
 
     @Schema(description = "주기 잠금 여부 (같은 주기에 결재진행중/승인 문서 존재)")
     private boolean cycleLocked;
+
+    @Schema(description = "주기 잠금 문서 ID (같은 주기의 결재진행중/승인 문서, 없으면 null)")
+    private Long lockedApprovalId;
 
     @Schema(description = "결재취소 가능 여부")
     private boolean canSubmitCancel;
