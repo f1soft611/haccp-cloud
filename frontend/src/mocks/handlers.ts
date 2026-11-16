@@ -868,6 +868,9 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'WORKDAY_TYPE', groupName: '업무일 유형', groupDesc: '업무일 관리 날짜 유형', parentGroupCode: '' },
     { groupCode: 'EXPIRY_STATUS', groupName: '소비기한 기준', groupDesc: '소비기한 계산 단위', parentGroupCode: '' },
     { groupCode: 'ITEM', groupName: '품목', groupDesc: '품목 관련 코드 묶음', parentGroupCode: '' },
+    { groupCode: 'EDITOR_COMBO', groupName: '에디터 콤보', groupDesc: '에디터 콤보박스 선택지 묶음', parentGroupCode: '' },
+    { groupCode: 'COMBO_OK_NG', groupName: '적합여부', groupDesc: '', parentGroupCode: 'EDITOR_COMBO' },
+    { groupCode: 'COMBO_OX', groupName: 'O/X', groupDesc: '', parentGroupCode: 'EDITOR_COMBO' },
   ],
   details: [
     { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
@@ -910,6 +913,11 @@ let commonCodeStore: CommonCodeData = {
 
     { groupCode: 'ITEM', code: 'WEIGHT', codeName: '중량형', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
     { groupCode: 'ITEM', code: 'COUNT', codeName: '수량형', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+
+    { groupCode: 'COMBO_OK_NG', code: 'OK', codeName: '적합', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'COMBO_OK_NG', code: 'NG', codeName: '부적합', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+    { groupCode: 'COMBO_OX', code: 'O', codeName: 'O', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'COMBO_OX', code: 'X', codeName: 'X', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
   ],
 };
 
