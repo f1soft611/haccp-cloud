@@ -3,12 +3,18 @@ import {
     getCommonCodes,
     saveCommonCodeGroups,
     saveCommonCodeItems,
-} from '../../services/basicinfo/commonCodeService';
+} from '../../../services/basicinfo/commonCodeService';
 
 describe('commonCodeService', () => {
     it('그룹과 상세 목록을 조회한다', async () => {
         const data = await getCommonCodes();
-        expect(data.groups.map((group) => group.groupCode)).toEqual(['WF_FORM_CYCLE', 'ITEM_UNIT']);
+        expect(data.groups.map((group) => group.groupCode)).toEqual([
+            'WF_FORM_CYCLE',
+            'ITEM_UNIT',
+            'ITEM_TYPE',
+            'WORKDAY_TYPE',
+            'EXPIRY_STATUS',
+        ]);
         expect(
             data.details.filter((detail) => detail.groupCode === 'WF_FORM_CYCLE').map((detail) => detail.code),
         ).toEqual(['DAY', 'WEEK', 'MONTH', 'QUARTER', 'HALF', 'YEAR', 'ANYTIME']);

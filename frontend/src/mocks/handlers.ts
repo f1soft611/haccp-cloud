@@ -863,8 +863,8 @@ const attachmentStore = {
 let commonCodeStore: CommonCodeData = {
   groups: [
     { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '업무 등록주기' },
-    { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 단위' },
-    { groupCode: 'ITEM_TYPE', groupName: '품목 계정', groupDesc: '품목 계정' },
+    { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 수량 단위' },
+    { groupCode: 'ITEM_TYPE', groupName: '품목 계정', groupDesc: '품목 계정 구분' },
     { groupCode: 'WORKDAY_TYPE', groupName: '업무일 유형', groupDesc: '업무일 관리 날짜 유형' },
     { groupCode: 'EXPIRY_STATUS', groupName: '소비기한 기준', groupDesc: '소비기한 계산 단위' },
   ],

@@ -4,13 +4,14 @@ import {
     createEmptyGroupRow,
     filterGroupRows,
     markEdited,
+    markEdited,
     toDetailRows,
     toGroupRows,
     validateGroupRows,
     validateDetailRows,
     toGroupPayload,
     toDetailPayload,
-} from '../../pages/basicinfo/common-code/commonCodeRows';
+} from '../../../pages/basicinfo/common-code/commonCodeRows';
 
 const groups = toGroupRows([
     { groupCode: 'CURRENCY', groupName: '통화', groupDesc: '통화 공통코드' },
