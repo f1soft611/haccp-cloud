@@ -133,6 +133,13 @@ describe('commonCodeRows', () => {
         expect(getParentCodeOptions(comboGroups, comboDetails, null)).toBeNull();
     });
 
+    it('상위그룹에 사용 중인 저장된 상세가 없으면 상위코드 선택지는 null 이고 상위코드 없이 저장된다', () => {
+        // 상위그룹 COMBO 의 상세(OK, OLD)를 모두 뺀 상태 = 묶음용 상위그룹
+        const emptyParentDetails = comboDetails.filter((detail) => detail.groupId !== 'COMBO');
+        expect(getParentCodeOptions(comboGroups, emptyParentDetails, 'COMBO_ITEM')).toBeNull();
+        expect(validateDetailRows(comboGroups, [...emptyParentDetails, newComboItem('')])).toBeNull();
+    });
+
     it('상위그룹이 있는 그룹의 변경된 상세는 사용 중인 상위코드가 필수', () => {
         expect(validateDetailRows(comboGroups, comboDetails)).toBeNull();
         expect(validateDetailRows(comboGroups, [...comboDetails, newComboItem('')])).toBe(

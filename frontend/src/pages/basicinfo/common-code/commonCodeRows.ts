@@ -95,8 +95,7 @@ export function collectDescendantIds(rows: CommonCodeGroupRow[], id: string): Se
 
 export type ParentCodeOption = { value: string; label: string };
 
-// 상세의 상위코드 선택지: 상위그룹 상세 중 사용 중이고 DB 에 저장된 코드.
-// 그룹이 없거나 상위그룹이 없으면 null (상위코드를 편집할 수 없음)
+// 상세의 상위코드 선택지. 상위그룹이 없거나, 상위그룹에 사용 중인 저장된 상세가 없으면(묶음용 상위그룹) null
 export function getParentCodeOptions(
     groups: CommonCodeGroupRow[],
     details: CommonCodeDetailRow[],
@@ -104,9 +103,10 @@ export function getParentCodeOptions(
 ): ParentCodeOption[] | null {
     const group = groups.find((row) => row.id === groupId);
     if (!group || !groups.some((row) => row.id === group.parentId)) return null;
-    return details
+    const options = details
     .filter((detail) => detail.groupId === group.parentId && detail.useAt && detail.rowState !== 'new')
     .map((detail) => ({ value: detail.code, label: detail.codeName }));
+    return options.length > 0 ? options : null;
 }
 
 // DataGrid processRowUpdate 공통 처리: 변경 없으면 기존 행, 신규는 new 유지, 그 외 modified
