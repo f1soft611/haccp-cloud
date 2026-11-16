@@ -141,6 +141,15 @@ const tableComponents: ThemeOptions['components'] = {
         borderRadius: 4,
         boxShadow: '0px 1px 1px #00000029',
       },
+      // 기본 크기 outlined 버튼을 contained 와 같은 높이, 모서리로 맞춰 한 줄에 섞여도 어긋나지 않게 한다
+      root: {
+        variants: [
+          {
+            props: { variant: 'outlined', size: 'medium' },
+            style: { height: 35, minWidth: 82, borderRadius: 4 },
+          },
+        ],
+      },
     },
   },
 };
