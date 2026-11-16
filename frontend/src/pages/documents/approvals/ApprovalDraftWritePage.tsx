@@ -142,6 +142,7 @@ export function ApprovalDraftWritePage() {
     rejectEventType,
     approvalApply,
     categoryCode: work?.categoryCode,
+    expirationApply: work?.expirationApply,
     sub,
     pendingAttachmentFiles,
     onPendingAttachmentsSynced: () => setPendingAttachmentFiles([]),

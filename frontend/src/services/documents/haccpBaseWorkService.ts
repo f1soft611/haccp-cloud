@@ -56,6 +56,7 @@ export type HaccpBaseWorkItem = {
   canTempSave?: boolean;
   canSubmit?: boolean;
   cycleLocked?: boolean;
+  lockedApprovalId?: string;
   canSubmitCancel?: boolean;
   canApprove?: boolean;
   canConfirm?: boolean;
@@ -170,6 +171,8 @@ type RawHaccpBaseWorkItem = {
   can_submit?: boolean | string | null;
   cycleLocked?: boolean | string | null;
   cycle_locked?: boolean | string | null;
+  lockedApprovalId?: number | string | null;
+  locked_approval_id?: number | string | null;
   canSubmitCancel?: boolean | string | null;
   can_submit_cancel?: boolean | string | null;
   canApprove?: boolean | string | null;
@@ -454,6 +457,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     canTempSave: normalizeBoolean(raw.canTempSave ?? raw.can_temp_save),
     canSubmit: normalizeBoolean(raw.canSubmit ?? raw.can_submit),
     cycleLocked: normalizeBoolean(raw.cycleLocked ?? raw.cycle_locked),
+    lockedApprovalId: normalizeText(raw.lockedApprovalId ?? raw.locked_approval_id),
     canSubmitCancel: normalizeBoolean(
       raw.canSubmitCancel ?? raw.can_submit_cancel,
     ),

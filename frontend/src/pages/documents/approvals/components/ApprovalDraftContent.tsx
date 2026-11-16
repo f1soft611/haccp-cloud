@@ -103,7 +103,7 @@ export function ApprovalDraftContent(props: ApprovalDraftContentProps) {
     showApprovalLine = true,
   } = props;
 
-  const subFieldConfig = getApprovalSubFieldConfig(work?.categoryCode);
+  const subFieldConfig = getApprovalSubFieldConfig(work?.categoryCode, work?.expirationApply);
 
   return (
     <>

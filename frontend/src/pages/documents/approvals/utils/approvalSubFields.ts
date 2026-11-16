@@ -51,10 +51,14 @@ const TARGET_KEY: Record<ApprovalSubTarget, keyof ApprovalSubValues> = {
     user: 'certificationUserId',
 };
 
-// sub 입력 대상 분류코드가 아니면 undefined
+// 만료일 관리 양식 업무의 sub 입력 설정. 양식 미해당이거나 sub 대상 분류코드가 아니면 undefined
 export function getApprovalSubFieldConfig(
     categoryCode?: string,
+    expirationApply?: boolean,
 ): ApprovalSubFieldConfig | undefined {
+    if (!expirationApply) {
+        return undefined;
+    }
     return APPROVAL_SUB_FIELD_CONFIG[(categoryCode ?? '').trim()];
 }
 
