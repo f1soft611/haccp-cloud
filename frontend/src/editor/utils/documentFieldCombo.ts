@@ -13,17 +13,22 @@ export type DocumentFieldComboAttrs = {
     valueName: string;
 };
 
-export const COMBO_PLACEHOLDER_TEXT = '콤보박스: 종류를 선택하세요';
+export const COMBO_PLACEHOLDER_TEXT = '종류를 선택하세요';
 export const COMBO_EMPTY_KIND_TEXT = 'EDITOR_COMBO 상세코드가 없습니다';
 
 // 노드 표시와 HTML 렌더가 같이 쓰는 스타일 (HTML 은 toStyleText 로 문자열화)
 export const COMBO_STYLE: CSSProperties = {
     display: 'inline-block',
     minWidth: 64,
+    maxWidth: 'calc(100% - 8px)',
     padding: '0 4px',
     border: '1px dashed #94a3b8',
     borderRadius: 4,
     fontSize: 13,
+    verticalAlign: 'middle',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
 };
 
 function toText(value: unknown): string {

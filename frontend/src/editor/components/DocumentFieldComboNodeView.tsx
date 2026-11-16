@@ -12,7 +12,7 @@ import {
     normalizeComboAttrs,
 } from '../utils/documentFieldCombo';
 
-const SELECT_STYLE = { fontSize: 13, border: 'none', background: 'transparent' };
+const SELECT_STYLE = { fontSize: 13, border: 'none', background: 'transparent', maxWidth: '100%', cursor: 'pointer', };
 
 // 편집 가능하면 종류 선택 후 값 선택, 읽기 전용이면 선택된 코드명만 표시
 export function DocumentFieldComboNodeView({ node, editor, updateAttributes }: NodeViewProps) {
