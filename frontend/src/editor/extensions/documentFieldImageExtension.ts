@@ -4,6 +4,7 @@ import {
   ReactNodeViewRenderer,
   type NodeViewProps,
 } from '@tiptap/react';
+import { TextSelection } from '@tiptap/pm/state';
 import { createElement } from 'react';
 
 export type DocumentFieldImageAttributes = {
@@ -136,12 +137,22 @@ function DocumentFieldImageNodeView(props: NodeViewProps) {
         align: attrs.align || 'center',
       });
 
-      // 플레이스홀더 박스를 실제 이미지로 교체한다(빈 문단은 추가하지 않음).
+      const paragraphType = editor.schema.nodes.paragraph;
       const tr = editor.state.tr.replaceRangeWith(
         pos,
         pos + node.nodeSize,
         imageNode,
       );
+
+      if (paragraphType) {
+        const paragraphPos = pos + imageNode.nodeSize;
+        tr.insert(paragraphPos, paragraphType.create());
+        const selectionPos = Math.min(
+          paragraphPos + 1,
+          Math.max(1, tr.doc.content.size),
+        );
+        tr.setSelection(TextSelection.near(tr.doc.resolve(selectionPos), 1));
+      }
 
       editor.view.dispatch(tr);
       editor.commands.focus();
@@ -237,25 +248,18 @@ export const DocumentFieldImageExtension = Node.create({
     return {
       insertDocumentFieldImage:
         (attrs = createDefaultDocumentFieldImageAttributes()) =>
-        ({ tr, dispatch, commands }) => {
-          const { $from } = tr.selection;
-          // 빈 문단(슬래시 입력 후 남은 문단)에서 호출되면 문단 자체를 박스로 교체한다.
-          // 그냥 insertContent 하면 문단이 쪼개져 박스 아래에 빈 줄이 남는다.
-          if (
-            $from.depth > 0 &&
-            $from.parent.isTextblock &&
-            $from.parent.content.size === 0
-          ) {
-            if (dispatch) {
-              tr.replaceWith(
-                $from.before(),
-                $from.after(),
-                tr.doc.type.schema.nodes[this.name].create(attrs),
-              );
-            }
-            return true;
-          }
-          return commands.insertContent({ type: this.name, attrs });
+        ({ chain }) => {
+          return chain()
+            .insertContent([
+              {
+                type: this.name,
+                attrs,
+              },
+              {
+                type: 'paragraph',
+              },
+            ])
+            .run();
         },
     };
   },
