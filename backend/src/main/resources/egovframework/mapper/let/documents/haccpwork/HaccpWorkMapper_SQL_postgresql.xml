@@ -1409,6 +1409,11 @@
                    AND COALESCE(turn_line.muldec_status, '') = 'cooperated'
                    AND turn_line.arrival_at IS NOT NULL
                    AND turn_line.exe_at IS NULL
+                   -- 참조 확인 가능 여부. 기안자 최종확인 라인은 최종승인 또는 반려 후에만 연다
+                   AND (
+                     COALESCE(turn_line.last_owner_status, '') &lt;&gt; 'Y'
+                     OR COALESCE(m.status_type, '') IN ('approved', 'rejected')
+                   )
                ) THEN TRUE
               ELSE FALSE
             END AS can_confirm
