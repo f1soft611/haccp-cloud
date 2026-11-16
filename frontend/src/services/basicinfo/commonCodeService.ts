@@ -4,12 +4,16 @@ export type CommonCodeGroupItem = {
     groupCode: string;
     groupName: string;
     groupDesc: string;
+    // 상위 그룹코드, 최상위는 ''
+    parentGroupCode: string;
 };
 
 export type CommonCodeDetailItem = {
     groupCode: string;
     code: string;
     codeName: string;
+    // 상위 상세코드 (상위그룹이 없으면 ''). ponytail: 다른 화면 테스트 목 픽스처를 안 건드리려고 선택 필드
+    parentCode?: string;
     parentCodeName: string;
     useAt: boolean;
     sortOrder: number | null;

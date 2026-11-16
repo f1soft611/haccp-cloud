@@ -8,6 +8,7 @@ export const COMMON_CODE_GROUP = {
     EXPIRY_STATUS: 'EXPIRY_STATUS',
     VC_KIND: 'VC_KIND',
     WORKDAY_TYPE: 'WORKDAY_TYPE',
+    EDITOR_COMBO: 'EDITOR_COMBO',
 } as const;
 
 export type CommonCodeGroupCode = (typeof COMMON_CODE_GROUP)[keyof typeof COMMON_CODE_GROUP];

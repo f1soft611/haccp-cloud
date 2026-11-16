@@ -20,20 +20,22 @@
             LIMIT 1
     </select>
 
-    <!-- 그룹 목록 -->
+    <!-- 그룹 목록 (상위그룹코드는 self join, 최상위는 빈 값) -->
     <select id="CommonCodeDAO.selectGroupList"
             parameterType="long"
             resultType="egovframework.let.basicinfo.commoncode.domain.model.CommonCodeGroupVO">
         SELECT
-            group_code               AS groupCode,
-            group_nm                 AS groupName,
-            COALESCE(group_dc, '')   AS groupDesc
-        FROM tb_common_code_group
-        WHERE tenant_id = #{value}
-        ORDER BY sort_order, group_code
+            g.group_code               AS groupCode,
+            g.group_nm                 AS groupName,
+            COALESCE(g.group_dc, '')   AS groupDesc,
+            COALESCE(p.group_code, '') AS parentGroupCode
+        FROM tb_common_code_group g
+                 LEFT JOIN tb_common_code_group p ON p.common_code_group_id = g.parent_group_id
+        WHERE g.tenant_id = #{value}
+        ORDER BY g.sort_order, g.group_code
     </select>
 
-    <!-- 상세 목록 (상위코드명은 self join, 표시 전용) -->
+    <!-- 상세 목록 (상위코드/상위코드명은 self join) -->
     <select id="CommonCodeDAO.selectItemList"
             parameterType="long"
             resultType="egovframework.let.basicinfo.commoncode.domain.model.CommonCodeItemVO">
@@ -41,6 +43,7 @@
             g.group_code             AS groupCode,
             i.item_code              AS code,
             i.item_nm                AS codeName,
+            COALESCE(p.item_code, '') AS parentCode,
             COALESCE(p.item_nm, '')  AS parentCodeName,
             (i.use_at = 'Y')         AS useAt,
             i.sort_order             AS sortOrder,
@@ -74,31 +77,49 @@
                                                        RETURNING common_code_group_id
     </select>
 
-    <!-- 상세 upsert -->
+    <!-- 그룹의 상위그룹을 그룹코드로 연결 (parentGroupCode 가 null 이면 최상위) -->
+    <update id="CommonCodeDAO.updateGroupParent" parameterType="map">
+        UPDATE tb_common_code_group
+        SET parent_group_id = (
+            SELECT p.common_code_group_id
+            FROM tb_common_code_group p
+            WHERE p.tenant_id = #{tenantId}
+              AND p.group_code = #{parentGroupCode, jdbcType=VARCHAR}
+        )
+        WHERE tenant_id = #{tenantId}
+          AND group_code = #{groupCode}
+    </update>
+
+    <!-- 상세 upsert. 상위코드는 이 상세 그룹의 상위그룹에 속한 상세 중 item_code 로 연결 (parentCode 가 null 이면 해제) -->
     <insert id="CommonCodeDAO.upsertItem" parameterType="map">
         INSERT INTO tb_common_code_item (
-            tenant_id, group_id, item_code, item_nm, item_dc, sort_order, use_at, created_by, updated_by
+            tenant_id, group_id, item_code, item_nm, item_dc, parent_item_id, sort_order, use_at, created_by, updated_by
         ) VALUES (
                      #{tenantId},
-                     <!-- 기존 -> #{groupId}, -->
-                     <!-- 변경 -> 그룹 저장과 분리되어 그룹 PK를 모르므로 사용 중인 그룹코드로 조회 -->
                      (SELECT common_code_group_id FROM tb_common_code_group
                      WHERE tenant_id = #{tenantId} AND group_code = #{groupCode} AND use_at = 'Y'),
                      #{code},
                      #{codeName},
                      #{codeDesc, jdbcType=VARCHAR},
+                     (SELECT pi.common_code_item_id
+                      FROM tb_common_code_group cg
+                               JOIN tb_common_code_item pi ON pi.group_id = cg.parent_group_id
+                      WHERE cg.tenant_id = #{tenantId}
+                        AND cg.group_code = #{groupCode}
+                        AND pi.item_code = #{parentCode, jdbcType=VARCHAR}),
                      #{sortOrder},
                      #{useAt},
                      #{userId, jdbcType=BIGINT},
                      #{userId, jdbcType=BIGINT}
                  )
             ON CONFLICT (group_id, item_code) DO UPDATE SET
-            item_nm    = EXCLUDED.item_nm,
-                                                     item_dc    = EXCLUDED.item_dc,
-                                                     sort_order = EXCLUDED.sort_order,
-                                                     use_at     = EXCLUDED.use_at,
-                                                     updated_at = CURRENT_TIMESTAMP,
-                                                     updated_by = EXCLUDED.updated_by
+            item_nm        = EXCLUDED.item_nm,
+            item_dc        = EXCLUDED.item_dc,
+            parent_item_id = EXCLUDED.parent_item_id,
+            sort_order     = EXCLUDED.sort_order,
+            use_at         = EXCLUDED.use_at,
+            updated_at     = CURRENT_TIMESTAMP,
+            updated_by     = EXCLUDED.updated_by
     </insert>
 
 

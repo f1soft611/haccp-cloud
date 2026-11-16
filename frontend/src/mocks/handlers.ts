@@ -862,11 +862,16 @@ const attachmentStore = {
 // ponytail: PUT이 통째로 교체하는 메모리 저장소. 테스트 간 공유되므로 성공 저장 테스트를 추가하면 초기화 필요
 let commonCodeStore: CommonCodeData = {
   groups: [
-    { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '업무 등록주기' },
-    { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 단위' },
-    { groupCode: 'ITEM_TYPE', groupName: '품목 계정', groupDesc: '품목 계정' },
-    { groupCode: 'WORKDAY_TYPE', groupName: '업무일 유형', groupDesc: '업무일 관리 날짜 유형' },
-    { groupCode: 'EXPIRY_STATUS', groupName: '소비기한 기준', groupDesc: '소비기한 계산 단위' },
+    { groupCode: 'WF_FORM_CYCLE', groupName: '기안양식 등록주기', groupDesc: '업무 등록주기', parentGroupCode: '' },
+    { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '품목 수량 단위', parentGroupCode: 'ITEM' },
+    { groupCode: 'ITEM_TYPE', groupName: '품목 계정', groupDesc: '품목 계정 구분', parentGroupCode: 'ITEM' },
+    { groupCode: 'WORKDAY_TYPE', groupName: '업무일 유형', groupDesc: '업무일 관리 날짜 유형', parentGroupCode: '' },
+    { groupCode: 'EXPIRY_STATUS', groupName: '소비기한 기준', groupDesc: '소비기한 계산 단위', parentGroupCode: '' },
+    { groupCode: 'ITEM', groupName: '품목', groupDesc: '품목 관련 코드 묶음', parentGroupCode: '' },
+    { groupCode: 'EDITOR_COMBO', groupName: '에디터 콤보박스', groupDesc: '에디터 콤보박스 종류', parentGroupCode: '' },
+    { groupCode: 'EDITOR_COMBO_ITEM', groupName: '에디터 콤보 하위목록', groupDesc: '에디터 콤보박스 선택지', parentGroupCode: 'EDITOR_COMBO' },
+    { groupCode: 'COMBO_OK_NG', groupName: '적합여부', groupDesc: '', parentGroupCode: 'EDITOR_COMBO' },
+    { groupCode: 'COMBO_OX', groupName: 'O/X', groupDesc: '', parentGroupCode: 'EDITOR_COMBO' },
   ],
   details: [
     { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
@@ -877,7 +882,7 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'WF_FORM_CYCLE', code: 'YEAR', codeName: '연간', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '' },
     { groupCode: 'WF_FORM_CYCLE', code: 'ANYTIME', codeName: '수시', parentCodeName: '', useAt: true, sortOrder: 70, codeDesc: '' },
 
-    { groupCode: 'ITEM_UNIT', code: 'KG', codeName: 'kg', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '킬로그램' },
+    { groupCode: 'ITEM_UNIT', code: 'KG', codeName: 'kg', parentCode: 'WEIGHT', parentCodeName: '중량형', useAt: true, sortOrder: 10, codeDesc: '킬로그램' },
     { groupCode: 'ITEM_UNIT', code: 'G', codeName: 'g', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '그램' },
     { groupCode: 'ITEM_UNIT', code: 'TON', codeName: '톤', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '톤' },
     { groupCode: 'ITEM_UNIT', code: 'L', codeName: 'L', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '리터' },
@@ -906,6 +911,17 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'EXPIRY_STATUS', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
     { groupCode: 'EXPIRY_STATUS', code: 'MONTH', codeName: '개월', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
     { groupCode: 'EXPIRY_STATUS', code: 'YEAR', codeName: '년', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
+
+    { groupCode: 'ITEM', code: 'WEIGHT', codeName: '중량형', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'ITEM', code: 'COUNT', codeName: '수량형', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+
+    { groupCode: 'EDITOR_COMBO', code: 'OK_NG', codeName: '적합부적합', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'EDITOR_COMBO', code: 'USE_YN', codeName: '사용미사용', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+
+    { groupCode: 'EDITOR_COMBO_ITEM', code: 'code01', codeName: '적합', parentCode: 'OK_NG', parentCodeName: '적합부적합', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'EDITOR_COMBO_ITEM', code: 'code02', codeName: '부적합', parentCode: 'OK_NG', parentCodeName: '적합부적합', useAt: true, sortOrder: 20, codeDesc: '' },
+    { groupCode: 'EDITOR_COMBO_ITEM', code: 'code03', codeName: '사용', parentCode: 'USE_YN', parentCodeName: '사용미사용', useAt: true, sortOrder: 30, codeDesc: '' },
+    { groupCode: 'EDITOR_COMBO_ITEM', code: 'code04', codeName: '미사용', parentCode: 'USE_YN', parentCodeName: '사용미사용', useAt: true, sortOrder: 40, codeDesc: '' },
   ],
 };
 

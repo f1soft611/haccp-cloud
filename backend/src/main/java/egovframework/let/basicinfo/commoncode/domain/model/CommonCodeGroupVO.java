@@ -27,4 +27,7 @@ public class CommonCodeGroupVO implements Serializable {
 
     @Schema(description = "그룹 설명")
     private String groupDesc;
+
+    @Schema(description = "상위 그룹코드 (최상위는 빈 값)")
+    private String parentGroupCode;
 }

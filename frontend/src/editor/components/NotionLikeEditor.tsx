@@ -19,6 +19,7 @@ import {
 } from '../extensions/documentFieldExtension';
 import { DocumentFieldImageExtension } from '../extensions/documentFieldImageExtension';
 import { DocumentFieldAttendeesExtension } from '../extensions/documentFieldAttendeesExtension';
+import { DocumentFieldComboExtension } from '../extensions/documentFieldComboExtension';
 import { EditorImageExtension } from '../extensions/imageExtension';
 import { SlashCommandExtension } from '../extensions/slashCommandExtension';
 import {
@@ -204,6 +205,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       }),
       DocumentFieldImageExtension,
       DocumentFieldAttendeesExtension,
+      DocumentFieldComboExtension,
       EditorImageExtension,
       TaskList,
       TaskItem.configure({
@@ -222,8 +224,6 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       StyledTableCell,
     ],
     content,
-    // 기존 -> transformPastedHTML 에서 엑셀 체크박스 이미지만 taskList 로 변환
-    // 변경 -> 외부(엑셀/한글) 붙여넣기는 서식 정규화(체크박스 변환 포함), 에디터 내부 복사본(data-pm-slice)은 그대로
     editorProps: {
       transformPastedHTML: (html) =>
           html.includes('data-pm-slice')
@@ -632,7 +632,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
           },
           '& .tiptap ul[data-type="taskList"] li': {
             display: 'flex',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             gap: 0,
             my: 0,
           },
@@ -664,12 +664,11 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             height: 14,
             margin: 0,
           },
+          // 기존 -> 라벨 영역 너비/높이 0 으로 숨김 / 변경 -> 라벨 텍스트를 체크박스 옆에 표시
           '& .tiptap ul[data-type="taskList"] li > div': {
-            flex: '0 0 0',
-            width: 0,
-            height: 0,
-            overflow: 'hidden',
+            flex: '1 1 auto',
             minWidth: 0,
+            pl: 0.5,
           },
           '& .tiptap ul[data-type="taskList"] li > div > p, & .tiptap ul[data-type="taskList"] li > p':
             {

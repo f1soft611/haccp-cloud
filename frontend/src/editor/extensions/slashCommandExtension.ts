@@ -25,7 +25,8 @@ type SlashCommandKey =
   | 'documentFieldCreatedAt'
   | 'documentFieldDepartment'
     | 'documentFieldAuthor'
-    | 'documentFieldAttendees';
+    | 'documentFieldAttendees'
+    | 'documentFieldCombo';
 
 type SlashCommandOption = {
   key: SlashCommandKey;
@@ -107,6 +108,12 @@ const SLASH_OPTIONS: SlashCommandOption[] = [
     title: '문서필드: 참석자',
     description: '클릭해서 참석자를 고르면 이름과 서명칸을 표시합니다.',
     searchTerms: ['문서필드', '참석자', '서명', 'attendee', 'signature'],
+  },
+  {
+    key: 'documentFieldCombo',
+    title: '콤보박스',
+    description: '공통코드(EDITOR_COMBO) 선택지로 된 콤보박스를 추가합니다.',
+    searchTerms: ['콤보', 'combo', 'select', '선택', '문서필드'],
   },
 ];
 
@@ -201,6 +208,11 @@ function runSlashCommand(editor: Editor, range: Range, key: SlashCommandKey) {
     .deleteRange(range)
     .insertDocumentFieldAttendees()
     .run();
+    return;
+  }
+
+  if (key === 'documentFieldCombo') {
+    editor.chain().focus().deleteRange(range).insertDocumentFieldCombo().run();
     return;
   }
 

@@ -24,22 +24,22 @@ function renderPage(role: UserRole) {
 describe('CommonCodePage', () => {
     it('그룹 목록을 보여주고 첫 그룹을 선택한다', async () => {
         renderPage('TENANT_ADMIN');
-        expect(await screen.findByText('단위')).toBeInTheDocument();
+        expect(await screen.findByText('품목 단위')).toBeInTheDocument();
         expect(screen.getByText('선택 그룹: 기안양식 등록주기')).toBeInTheDocument();
         expect(screen.getByText('DAY')).toBeInTheDocument();
     });
 
     it('그룹을 클릭하면 상세가 바뀐다', async () => {
         renderPage('TENANT_ADMIN');
-        fireEvent.click(await screen.findByText('단위'));
-        expect(screen.getByText('선택 그룹: 단위')).toBeInTheDocument();
+        fireEvent.click(await screen.findByText('품목 단위'));
+        expect(screen.getByText('선택 그룹: 품목 단위')).toBeInTheDocument();
         expect(screen.getByText('KG')).toBeInTheDocument();
         expect(screen.queryByText('DAY')).not.toBeInTheDocument();
     });
 
     it('업체 사용자에게는 그룹 관리 버튼이 없다', async () => {
         renderPage('TENANT_ADMIN');
-        await screen.findByText('단위');
+        await screen.findByText('품목 단위');
         expect(screen.queryByRole('button', { name: '그룹 추가' })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: '그룹 삭제' })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: '그룹 저장' })).not.toBeInTheDocument();
@@ -47,7 +47,7 @@ describe('CommonCodePage', () => {
 
     it('플랫폼관리자는 그룹 추가 후 저장하면 필수값 오류를 본다', async () => {
         renderPage('PLATFORM_ADMIN');
-        await screen.findByText('단위');
+        await screen.findByText('품목 단위');
         fireEvent.click(screen.getByRole('button', { name: '그룹 추가' }));
         fireEvent.click(screen.getByRole('button', { name: '그룹 저장' }));
         expect(await screen.findByText('신규 그룹: 그룹코드를 입력하세요.')).toBeInTheDocument();
@@ -69,7 +69,17 @@ describe('CommonCodePage', () => {
         fireEvent.change(screen.getByRole('textbox', { name: '그룹 코드/명/설명 검색' }), {
             target: { value: 'unit' },
         });
-        expect(screen.getByText('단위')).toBeInTheDocument();
+        expect(screen.getByText('품목 단위')).toBeInTheDocument();
         expect(screen.queryByText('기안양식 등록주기')).not.toBeInTheDocument();
+    });
+
+    it('상위그룹이 있는 그룹의 상세는 상위코드명이 필수로 표시된다', async () => {
+        renderPage('TENANT_ADMIN');
+        await screen.findByText('DAY');
+        expect(screen.getByText('상위코드명')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('품목 단위'));
+        expect(screen.getByText('상위코드명 *')).toBeInTheDocument();
+        // KG 의 상위코드 WEIGHT 가 선택지 라벨(상위 상세코드명)로 보인다
+        expect(screen.getByText('중량형')).toBeInTheDocument();
     });
 });

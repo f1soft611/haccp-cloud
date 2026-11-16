@@ -12,11 +12,12 @@ import { useFeedback } from '../../../shared/hooks/useFeedback';
 import {
     createEmptyDetailRow,
     createEmptyGroupRow,
-    filterGroupRows,
+    getParentCodeOptions,
     toDetailPayload,
     toGroupPayload,
     toDetailRows,
     toGroupRows,
+    toGroupTreeRows,
     validateDetailRows,
     validateGroupRows,
 } from './commonCodeRows';
@@ -41,6 +42,8 @@ export function CommonCodePage() {
     const [details, setDetails] = useState<CommonCodeDetailRow[]>([]);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [keyword, setKeyword] = useState('');
+    // 접힌 그룹 id (기본은 전체 펼침)
+    const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(new Set());
     const canManageGroups = useAuthStore((state) => state.role === 'PLATFORM_ADMIN');
     // 그룹 삭제는 행이 사라져 rowState로 추적할 수 없으므로 별도 플래그
     const [hasDeletedGroup, setHasDeletedGroup] = useState(false);
@@ -51,11 +54,20 @@ export function CommonCodePage() {
     const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
     const [saving, setSaving] = useState(false);
 
-    const visibleGroups = useMemo(() => filterGroupRows(groups, keyword), [groups, keyword]);
+    const visibleGroups = useMemo(
+        () => toGroupTreeRows(groups, collapsedIds, keyword),
+        [groups, collapsedIds, keyword],
+    );
     const selectedGroup = groups.find((group) => group.id === selectedGroupId) ?? null;
     const visibleDetails = useMemo(
         () => details.filter((detail) => detail.groupId === selectedGroupId),
         [details, selectedGroupId],
+    );
+
+    // 선택 그룹에 상위그룹이 있으면 상위그룹의 사용 중 상세가 상위코드 선택지 (없으면 null)
+    const parentCodeOptions = useMemo(
+        () => getParentCodeOptions(groups, details, selectedGroupId),
+        [groups, details, selectedGroupId],
     );
 
     const load = useCallback(async () => {
@@ -77,6 +89,16 @@ export function CommonCodePage() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
+
+    // 그룹 접기/펼치기 토글
+    const handleToggleGroup = useCallback((id: string) => {
+        setCollapsedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
 
     const handleSearch = () => {
         if (!hasChanges) {
@@ -137,8 +159,15 @@ export function CommonCodePage() {
     };
 
     const handleAddGroup = () => {
-        const row = createEmptyGroupRow();
+        const parentId = selectedGroupId ?? '';
+        const row = createEmptyGroupRow(parentId);
         setGroups((prev) => [row, ...prev]);
+        setCollapsedIds((prev) => {
+            if (!prev.has(parentId)) return prev;
+            const next = new Set(prev);
+            next.delete(parentId);
+            return next;
+        });
         setSelectedGroupId(row.id);
     };
 
@@ -147,6 +176,13 @@ export function CommonCodePage() {
             showInfo('삭제할 그룹을 선택하세요.');
             return;
         }
+
+        // 하위 그룹이 남으면 서버가 최상위로 끌어올리므로 화면에서 먼저 막는다
+        if (groups.some((group) => group.parentId === selectedGroup.id)) {
+            showInfo('하위 그룹이 있어 삭제할 수 없습니다.');
+            return;
+        }
+
         setConfirmState({
             title: '그룹 미사용',
             description: `'${selectedGroup.groupName || '신규 그룹'}' 그룹을 미사용 처리하시겠습니까? 저장해야 반영됩니다.`,
@@ -192,9 +228,12 @@ export function CommonCodePage() {
                 left={
                     <CommonCodeGroupGrid
                         rows={visibleGroups}
+                        allRows={groups}
+                        collapsedIds={collapsedIds}
                         selectedId={selectedGroupId}
                         canManage={canManageGroups}
                         saveDisabled={!groupsChanged || saving}
+                        onToggle={handleToggleGroup}
                         onSelect={setSelectedGroupId}
                         onRowUpdate={(row) => setGroups((prev) => prev.map((group) => (group.id === row.id ? row : group)))}
                         onAdd={handleAddGroup}
@@ -206,6 +245,7 @@ export function CommonCodePage() {
                     <CommonCodeDetailGrid
                         rows={visibleDetails}
                         groupName={selectedGroup ? selectedGroup.groupName : null}
+                        parentOptions={parentCodeOptions}
                         saveDisabled={!detailsChanged || saving}
                         onRowUpdate={(row) => setDetails((prev) => prev.map((detail) => (detail.id === row.id ? row : detail)))}
                         onToggleAllUse={handleToggleAllUse}

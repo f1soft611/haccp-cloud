@@ -106,6 +106,15 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
             commonCodeDAO.upsertGroup(params);
         }
 
+        // 같은 요청의 신규 상위그룹도 위 upsert 로 행이 생긴 뒤라 그룹코드로 연결할 수 있다
+        for (CommonCodeGroupVO group : groups) {
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put("tenantId", tenantId);
+            params.put("groupCode", group.getGroupCode());
+            params.put("parentGroupCode", normalizeNullable(group.getParentGroupCode()));
+            commonCodeDAO.updateGroupParent(params);
+        }
+
         Map<String, Object> disableParams = new HashMap<String, Object>();
         disableParams.put("tenantId", tenantId);
         disableParams.put("userId", userId);
@@ -120,10 +129,15 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
         Long tenantId = resolveTenantId(payload.getTenantCode());
 
         Set<String> activeGroupCodes = new HashSet<String>();
+        Map<String, String> parentGroupByGroup = new HashMap<String, String>();
         for (CommonCodeGroupVO group : commonCodeDAO.selectGroupList(tenantId)) {
             activeGroupCodes.add(group.getGroupCode());
+            if (StringUtils.hasText(group.getParentGroupCode())) {
+                parentGroupByGroup.put(group.getGroupCode(), group.getParentGroupCode());
+            }
         }
-        validateItems(details, activeGroupCodes);
+        validateItems(details, activeGroupCodes,
+                buildParentCodesByGroup(parentGroupByGroup, commonCodeDAO.selectItemList(tenantId)));
 
         Long userId = resolveOperatorUserId(payload);
         for (CommonCodeItemVO detail : details) {
@@ -133,6 +147,7 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
             params.put("code", detail.getCode());
             params.put("codeName", detail.getCodeName());
             params.put("codeDesc", normalizeNullable(detail.getCodeDesc()));
+            params.put("parentCode", normalizeNullable(detail.getParentCode()));
             // sort_order는 NOT NULL 컬럼, 화면에서 비우면 0
             params.put("sortOrder", detail.getSortOrder() != null ? detail.getSortOrder() : 0);
             params.put("useAt", detail.isUseAt() ? "Y" : "N");
@@ -166,16 +181,40 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
         return StringUtils.hasText(value) ? value.trim() : null;
     }
 
+    // 상위그룹이 있는 그룹코드 -> 상위그룹의 사용 중 상세코드 집합 (상세 상위코드 검증용)
+    // 상위그룹에 사용 중 상세가 없으면(묶음용 상위그룹, 예: EDITOR_COMBO) 검증 대상에서 뺀다
+    static Map<String, Set<String>> buildParentCodesByGroup(Map<String, String> parentGroupByGroup,
+                                                            List<CommonCodeItemVO> items) {
+        Map<String, Set<String>> activeCodesByGroup = new HashMap<String, Set<String>>();
+        for (CommonCodeItemVO item : items) {
+            if (!item.isUseAt()) {
+                continue;
+            }
+            Set<String> codes = activeCodesByGroup.get(item.getGroupCode());
+            if (codes == null) {
+                codes = new HashSet<String>();
+                activeCodesByGroup.put(item.getGroupCode(), codes);
+            }
+            codes.add(item.getCode());
+        }
+        Map<String, Set<String>> result = new HashMap<String, Set<String>>();
+        for (Map.Entry<String, String> entry : parentGroupByGroup.entrySet()) {
+            Set<String> codes = activeCodesByGroup.get(entry.getValue());
+            if (codes != null) {
+                result.put(entry.getKey(), codes);
+            }
+        }
+        return result;
+    }
+
     // ── 검증 ─────────────────────────────────────────
 
-    // 기존 -> validate(groups, details): 그룹/상세를 한 번에 검증 (상세 그룹은 payload 그룹에 있어야 함)
-    // 변경 -> 그룹 저장/상세 저장이 분리되어 검증도 분리. 상세 그룹은 DB의 사용 중(use_at='Y') 그룹이어야 함.
-    // 화면 검증과 같은 문구. 코드/명은 trim 해서 VO에 다시 넣는다.
     static void validateGroups(List<CommonCodeGroupVO> groups) {
         Set<String> groupCodes = new HashSet<String>();
         for (CommonCodeGroupVO group : groups) {
             group.setGroupCode(trim(group.getGroupCode()));
             group.setGroupName(trim(group.getGroupName()));
+            group.setParentGroupCode(trim(group.getParentGroupCode()));
             String label = labelOf(group.getGroupCode());
             if (group.getGroupCode().isEmpty()) {
                 throw new IllegalArgumentException(label + ": 그룹코드를 입력하세요.");
@@ -190,14 +229,32 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
                 throw new IllegalArgumentException(label + ": 그룹코드가 중복됩니다.");
             }
         }
+        // 상위그룹은 같은 저장 목록 안의 다른 그룹이어야 한다 (빈 값은 최상위)
+        // ponytail: 다단계 순환(A->B->A)은 화면 선택지에서 막으므로 서버는 자기참조만 검사
+        for (CommonCodeGroupVO group : groups) {
+            String parentCode = group.getParentGroupCode();
+            if (parentCode.isEmpty()) {
+                continue;
+            }
+            String label = labelOf(group.getGroupCode());
+            if (parentCode.equals(group.getGroupCode())) {
+                throw new IllegalArgumentException(label + ": 상위그룹으로 자기 자신을 지정할 수 없습니다.");
+            }
+            if (!groupCodes.contains(parentCode)) {
+                throw new IllegalArgumentException(label + ": 상위그룹이 목록에 없습니다.");
+            }
+        }
     }
 
-    static void validateItems(List<CommonCodeItemVO> details, Set<String> activeGroupCodes) {
+    // 상세 검증. parentCodesByGroup: 상위그룹이 있는 그룹코드 -> 그 상위그룹의 사용 중 상세코드
+    static void validateItems(List<CommonCodeItemVO> details, Set<String> activeGroupCodes,
+                              Map<String, Set<String>> parentCodesByGroup) {
         Set<String> itemKeys = new HashSet<String>();
         for (CommonCodeItemVO detail : details) {
             detail.setGroupCode(trim(detail.getGroupCode()));
             detail.setCode(trim(detail.getCode()));
             detail.setCodeName(trim(detail.getCodeName()));
+            detail.setParentCode(trim(detail.getParentCode()));
             String label = labelOf(detail.getGroupCode());
             if (!activeGroupCodes.contains(detail.getGroupCode())) {
                 throw new IllegalArgumentException(label + ": 사용 중인 그룹이 아닙니다.");
@@ -211,6 +268,14 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
             checkLength(label, "상세코드", detail.getCode(), MAX_CODE_LENGTH);
             checkLength(label, "상세코드명", detail.getCodeName(), MAX_NAME_LENGTH);
             checkLength(label, "설명", detail.getCodeDesc(), MAX_DESC_LENGTH);
+            Set<String> parentCodes = parentCodesByGroup.get(detail.getGroupCode());
+            if (parentCodes == null) {
+                detail.setParentCode("");
+            } else if (detail.getParentCode().isEmpty()) {
+                throw new IllegalArgumentException(label + ": 상위코드를 선택하세요.");
+            } else if (!parentCodes.contains(detail.getParentCode())) {
+                throw new IllegalArgumentException(label + ": 사용 중인 상위코드가 아닙니다.");
+            }
             if (!itemKeys.add(detail.getGroupCode() + ":" + detail.getCode())) {
                 throw new IllegalArgumentException(label + ": 상세코드가 중복됩니다.");
             }
