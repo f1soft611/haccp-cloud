@@ -168,14 +168,12 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
 
     // ── 검증 ─────────────────────────────────────────
 
-    // 기존 -> validate(groups, details): 그룹/상세를 한 번에 검증 (상세 그룹은 payload 그룹에 있어야 함)
-    // 변경 -> 그룹 저장/상세 저장이 분리되어 검증도 분리. 상세 그룹은 DB의 사용 중(use_at='Y') 그룹이어야 함.
-    // 화면 검증과 같은 문구. 코드/명은 trim 해서 VO에 다시 넣는다.
     static void validateGroups(List<CommonCodeGroupVO> groups) {
         Set<String> groupCodes = new HashSet<String>();
         for (CommonCodeGroupVO group : groups) {
             group.setGroupCode(trim(group.getGroupCode()));
             group.setGroupName(trim(group.getGroupName()));
+            group.setParentGroupCode(trim(group.getParentGroupCode()));
             String label = labelOf(group.getGroupCode());
             if (group.getGroupCode().isEmpty()) {
                 throw new IllegalArgumentException(label + ": 그룹코드를 입력하세요.");
@@ -188,6 +186,21 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
             checkLength(label, "그룹 설명", group.getGroupDesc(), MAX_DESC_LENGTH);
             if (!groupCodes.add(group.getGroupCode())) {
                 throw new IllegalArgumentException(label + ": 그룹코드가 중복됩니다.");
+            }
+        }
+        // 상위그룹은 같은 저장 목록 안의 다른 그룹이어야 한다 (빈 값은 최상위)
+        // ponytail: 다단계 순환(A->B->A)은 화면 선택지에서 막으므로 서버는 자기참조만 검사
+        for (CommonCodeGroupVO group : groups) {
+            String parentCode = group.getParentGroupCode();
+            if (parentCode.isEmpty()) {
+                continue;
+            }
+            String label = labelOf(group.getGroupCode());
+            if (parentCode.equals(group.getGroupCode())) {
+                throw new IllegalArgumentException(label + ": 상위그룹으로 자기 자신을 지정할 수 없습니다.");
+            }
+            if (!groupCodes.contains(parentCode)) {
+                throw new IllegalArgumentException(label + ": 상위그룹이 목록에 없습니다.");
             }
         }
     }

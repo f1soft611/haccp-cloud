@@ -26,6 +26,12 @@ class CommonCodeServiceImplTest {
         return group;
     }
 
+    private static CommonCodeGroupVO group(String code, String name, String parentGroupCode) {
+        CommonCodeGroupVO group = group(code, name);
+        group.setParentGroupCode(parentGroupCode);
+        return group;
+    }
+
     private static CommonCodeItemVO item(String groupCode, String code, String name) {
         CommonCodeItemVO item = new CommonCodeItemVO();
         item.setGroupCode(groupCode);
@@ -112,5 +118,24 @@ class CommonCodeServiceImplTest {
     void 다른_그룹이면_같은_상세코드_허용() {
         CommonCodeServiceImpl.validateItems(
                 Arrays.asList(item("UNIT", "KG", "킬로그램"), item("UNIT2", "KG", "킬로그램")), ACTIVE);
+    }
+
+    @Test
+    void 상위그룹은_공백을_제거하고_뒤에_나오는_그룹도_참조할_수_있다() {
+        CommonCodeGroupVO child = group("ITEM_UNIT", "품목 단위", " ITEM ");
+        CommonCodeServiceImpl.validateGroups(Arrays.asList(child, group("ITEM", "품목", "")));
+        assertEquals("ITEM", child.getParentGroupCode());
+    }
+
+    @Test
+    void 상위그룹_자기참조() {
+        assertEquals("ITEM: 상위그룹으로 자기 자신을 지정할 수 없습니다.",
+                groupError(Arrays.asList(group("ITEM", "품목", "ITEM"))));
+    }
+
+    @Test
+    void 상위그룹이_목록에_없음() {
+        assertEquals("ITEM_UNIT: 상위그룹이 목록에 없습니다.",
+                groupError(Arrays.asList(group("ITEM_UNIT", "품목 단위", "ITEM"))));
     }
 }
