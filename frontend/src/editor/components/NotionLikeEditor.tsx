@@ -632,7 +632,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
           },
           '& .tiptap ul[data-type="taskList"] li': {
             display: 'flex',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             gap: 0,
             my: 0,
           },
@@ -664,12 +664,11 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
             height: 14,
             margin: 0,
           },
+          // 기존 -> 라벨 영역 너비/높이 0 으로 숨김 / 변경 -> 라벨 텍스트를 체크박스 옆에 표시
           '& .tiptap ul[data-type="taskList"] li > div': {
-            flex: '0 0 0',
-            width: 0,
-            height: 0,
-            overflow: 'hidden',
+            flex: '1 1 auto',
             minWidth: 0,
+            pl: 0.5,
           },
           '& .tiptap ul[data-type="taskList"] li > div > p, & .tiptap ul[data-type="taskList"] li > p':
             {
