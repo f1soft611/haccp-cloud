@@ -129,10 +129,15 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
         Long tenantId = resolveTenantId(payload.getTenantCode());
 
         Set<String> activeGroupCodes = new HashSet<String>();
+        Map<String, String> parentGroupByGroup = new HashMap<String, String>();
         for (CommonCodeGroupVO group : commonCodeDAO.selectGroupList(tenantId)) {
             activeGroupCodes.add(group.getGroupCode());
+            if (StringUtils.hasText(group.getParentGroupCode())) {
+                parentGroupByGroup.put(group.getGroupCode(), group.getParentGroupCode());
+            }
         }
-        validateItems(details, activeGroupCodes);
+        validateItems(details, activeGroupCodes,
+                buildParentCodesByGroup(parentGroupByGroup, commonCodeDAO.selectItemList(tenantId)));
 
         Long userId = resolveOperatorUserId(payload);
         for (CommonCodeItemVO detail : details) {
@@ -175,6 +180,29 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
         return StringUtils.hasText(value) ? value.trim() : null;
     }
 
+    // 상위그룹이 있는 그룹코드 -> 상위그룹의 사용 중 상세코드 집합 (상세 상위코드 검증용)
+    private static Map<String, Set<String>> buildParentCodesByGroup(Map<String, String> parentGroupByGroup,
+                                                                    List<CommonCodeItemVO> items) {
+        Map<String, Set<String>> activeCodesByGroup = new HashMap<String, Set<String>>();
+        for (CommonCodeItemVO item : items) {
+            if (!item.isUseAt()) {
+                continue;
+            }
+            Set<String> codes = activeCodesByGroup.get(item.getGroupCode());
+            if (codes == null) {
+                codes = new HashSet<String>();
+                activeCodesByGroup.put(item.getGroupCode(), codes);
+            }
+            codes.add(item.getCode());
+        }
+        Map<String, Set<String>> result = new HashMap<String, Set<String>>();
+        for (Map.Entry<String, String> entry : parentGroupByGroup.entrySet()) {
+            Set<String> codes = activeCodesByGroup.get(entry.getValue());
+            result.put(entry.getKey(), codes != null ? codes : new HashSet<String>());
+        }
+        return result;
+    }
+
     // ── 검증 ─────────────────────────────────────────
 
     static void validateGroups(List<CommonCodeGroupVO> groups) {
@@ -214,12 +242,15 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
         }
     }
 
-    static void validateItems(List<CommonCodeItemVO> details, Set<String> activeGroupCodes) {
+    // 상세 검증. parentCodesByGroup: 상위그룹이 있는 그룹코드 -> 그 상위그룹의 사용 중 상세코드
+    static void validateItems(List<CommonCodeItemVO> details, Set<String> activeGroupCodes,
+                              Map<String, Set<String>> parentCodesByGroup) {
         Set<String> itemKeys = new HashSet<String>();
         for (CommonCodeItemVO detail : details) {
             detail.setGroupCode(trim(detail.getGroupCode()));
             detail.setCode(trim(detail.getCode()));
             detail.setCodeName(trim(detail.getCodeName()));
+            detail.setParentCode(trim(detail.getParentCode()));
             String label = labelOf(detail.getGroupCode());
             if (!activeGroupCodes.contains(detail.getGroupCode())) {
                 throw new IllegalArgumentException(label + ": 사용 중인 그룹이 아닙니다.");
@@ -233,6 +264,14 @@ public class CommonCodeServiceImpl extends EgovAbstractServiceImpl implements Co
             checkLength(label, "상세코드", detail.getCode(), MAX_CODE_LENGTH);
             checkLength(label, "상세코드명", detail.getCodeName(), MAX_NAME_LENGTH);
             checkLength(label, "설명", detail.getCodeDesc(), MAX_DESC_LENGTH);
+            Set<String> parentCodes = parentCodesByGroup.get(detail.getGroupCode());
+            if (parentCodes == null) {
+                detail.setParentCode("");
+            } else if (detail.getParentCode().isEmpty()) {
+                throw new IllegalArgumentException(label + ": 상위코드를 선택하세요.");
+            } else if (!parentCodes.contains(detail.getParentCode())) {
+                throw new IllegalArgumentException(label + ": 사용 중인 상위코드가 아닙니다.");
+            }
             if (!itemKeys.add(detail.getGroupCode() + ":" + detail.getCode())) {
                 throw new IllegalArgumentException(label + ": 상세코드가 중복됩니다.");
             }

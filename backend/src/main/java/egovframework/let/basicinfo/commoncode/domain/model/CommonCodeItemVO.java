@@ -28,6 +28,9 @@ public class CommonCodeItemVO implements Serializable {
     @Schema(description = "상세코드명")
     private String codeName;
 
+    @Schema(description = "상위 상세코드 (상위그룹이 없으면 빈 값)")
+    private String parentCode;
+
     @Schema(description = "상위코드명 (조회 전용)")
     private String parentCodeName;
 
