@@ -12,6 +12,7 @@ import { useFeedback } from '../../../shared/hooks/useFeedback';
 import {
     createEmptyDetailRow,
     createEmptyGroupRow,
+    getParentCodeOptions,
     toDetailPayload,
     toGroupPayload,
     toDetailRows,
@@ -61,6 +62,12 @@ export function CommonCodePage() {
     const visibleDetails = useMemo(
         () => details.filter((detail) => detail.groupId === selectedGroupId),
         [details, selectedGroupId],
+    );
+
+    // 선택 그룹에 상위그룹이 있으면 상위그룹의 사용 중 상세가 상위코드 선택지 (없으면 null)
+    const parentCodeOptions = useMemo(
+        () => getParentCodeOptions(groups, details, selectedGroupId),
+        [groups, details, selectedGroupId],
     );
 
     const load = useCallback(async () => {
@@ -238,6 +245,7 @@ export function CommonCodePage() {
                     <CommonCodeDetailGrid
                         rows={visibleDetails}
                         groupName={selectedGroup ? selectedGroup.groupName : null}
+                        parentOptions={parentCodeOptions}
                         saveDisabled={!detailsChanged || saving}
                         onRowUpdate={(row) => setDetails((prev) => prev.map((detail) => (detail.id === row.id ? row : detail)))}
                         onToggleAllUse={handleToggleAllUse}

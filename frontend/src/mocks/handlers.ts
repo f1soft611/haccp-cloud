@@ -878,7 +878,7 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'WF_FORM_CYCLE', code: 'YEAR', codeName: '연간', parentCodeName: '', useAt: true, sortOrder: 60, codeDesc: '' },
     { groupCode: 'WF_FORM_CYCLE', code: 'ANYTIME', codeName: '수시', parentCodeName: '', useAt: true, sortOrder: 70, codeDesc: '' },
 
-    { groupCode: 'ITEM_UNIT', code: 'KG', codeName: 'kg', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '킬로그램' },
+    { groupCode: 'ITEM_UNIT', code: 'KG', codeName: 'kg', parentCode: 'WEIGHT', parentCodeName: '중량형', useAt: true, sortOrder: 10, codeDesc: '킬로그램' },
     { groupCode: 'ITEM_UNIT', code: 'G', codeName: 'g', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '그램' },
     { groupCode: 'ITEM_UNIT', code: 'TON', codeName: '톤', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '톤' },
     { groupCode: 'ITEM_UNIT', code: 'L', codeName: 'L', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '리터' },
@@ -907,6 +907,9 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'EXPIRY_STATUS', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
     { groupCode: 'EXPIRY_STATUS', code: 'MONTH', codeName: '개월', parentCodeName: '', useAt: true, sortOrder: 30, codeDesc: '' },
     { groupCode: 'EXPIRY_STATUS', code: 'YEAR', codeName: '년', parentCodeName: '', useAt: true, sortOrder: 40, codeDesc: '' },
+
+    { groupCode: 'ITEM', code: 'WEIGHT', codeName: '중량형', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'ITEM', code: 'COUNT', codeName: '수량형', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
   ],
 };
 

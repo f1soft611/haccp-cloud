@@ -4,26 +4,25 @@ import { ThemeProvider } from '@mui/material/styles';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { koKR } from '@mui/x-data-grid/locales';
 import { appTheme } from '../../../../app/theme';
-import { markEdited } from '../commonCodeRows';
+import { markEdited, type ParentCodeOption } from '../commonCodeRows';
 import type { CommonCodeDetailRow } from '../types';
 import { centerColumns, COMMON_CODE_GRID_SX, TOOLBAR_BUTTON_SX } from './gridStyles';
 
-const EDITABLE_FIELDS = ['code', 'codeName', 'useAt', 'sortOrder', 'codeDesc'] as const;
+const EDITABLE_FIELDS = ['code', 'codeName', 'parentCode', 'useAt', 'sortOrder', 'codeDesc'] as const;
 
 export function CommonCodeDetailGrid(props: {
     rows: CommonCodeDetailRow[];
     groupName: string | null;
+    parentOptions: ParentCodeOption[] | null;
     saveDisabled: boolean;
     onRowUpdate: (row: CommonCodeDetailRow) => void;
     onToggleAllUse: (useAt: boolean) => void;
     onAdd: () => void;
     onSave: () => void;
 }) {
-    const { rows, groupName, saveDisabled, onRowUpdate, onToggleAllUse, onAdd, onSave } = props;
+    const { rows, groupName, parentOptions, saveDisabled, onRowUpdate, onToggleAllUse, onAdd, onSave } = props;
     const allUsed = rows.length > 0 && rows.every((row) => row.useAt);
 
-    // 기존 -> const columns: GridColDef<CommonCodeDetailRow>[] = [ ... ];  (컬럼별 기본 정렬)
-    // 변경 -> 모든 컬럼 헤더/데이터 가운데 정렬
     const columns: GridColDef<CommonCodeDetailRow>[] = centerColumns<CommonCodeDetailRow>([
         {
             field: 'seq',
@@ -36,7 +35,16 @@ export function CommonCodeDetailGrid(props: {
         },
         { field: 'code', headerName: '상세코드 *', editable: true, minWidth: 120, flex: 1 },
         { field: 'codeName', headerName: '상세코드명 *', editable: true, minWidth: 140, flex: 1.4 },
-        { field: 'parentCodeName', headerName: '상위코드명', minWidth: 120, flex: 1 },
+        {
+            field: 'parentCode',
+            headerName: parentOptions ? '상위코드명 *' : '상위코드명',
+            type: 'singleSelect',
+            editable: true,
+            minWidth: 120,
+            flex: 1,
+            // 화면에는 선택지 라벨(상위 상세코드명)이 보인다. 선택지에서 빠진(미사용) 코드는 코드값 그대로 보인다
+            valueOptions: parentOptions ?? [],
+        },
         {
             field: 'useAt',
             headerName: '사용여부',
@@ -97,8 +105,10 @@ export function CommonCodeDetailGrid(props: {
                         columns={columns}
                         editMode="cell"
                         processRowUpdate={processRowUpdate}
-                        isCellEditable={(params) => params.field !== 'code' || params.row.rowState === 'new'}
-                        disableRowSelectionOnClick
+                        isCellEditable={(params) =>
+                            (params.field !== 'code' || params.row.rowState === 'new') &&
+                            (params.field !== 'parentCode' || parentOptions !== null)
+                        }                        disableRowSelectionOnClick
                         // ponytail: 그룹당 상세 수십 건 수준이라 가상화/페이지 불필요, jsdom 테스트에서도 행이 렌더됨
                         disableVirtualization
                         hideFooter

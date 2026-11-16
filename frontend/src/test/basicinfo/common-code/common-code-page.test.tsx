@@ -72,4 +72,14 @@ describe('CommonCodePage', () => {
         expect(screen.getByText('품목 단위')).toBeInTheDocument();
         expect(screen.queryByText('기안양식 등록주기')).not.toBeInTheDocument();
     });
+
+    it('상위그룹이 있는 그룹의 상세는 상위코드명이 필수로 표시된다', async () => {
+        renderPage('TENANT_ADMIN');
+        await screen.findByText('DAY');
+        expect(screen.getByText('상위코드명')).toBeInTheDocument();
+        fireEvent.click(screen.getByText('품목 단위'));
+        expect(screen.getByText('상위코드명 *')).toBeInTheDocument();
+        // KG 의 상위코드 WEIGHT 가 선택지 라벨(상위 상세코드명)로 보인다
+        expect(screen.getByText('중량형')).toBeInTheDocument();
+    });
 });
