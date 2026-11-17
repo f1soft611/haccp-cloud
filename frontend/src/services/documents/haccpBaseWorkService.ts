@@ -526,6 +526,17 @@ export async function listHaccpBaseWorks(params: {
     },
   });
 
+// 업무 추가 시 업무 시작일 기본값으로 쓸 테넌트 서비스 시작일(YYYY-MM-DD, 없으면 '')
+export async function getTenantServiceStartDate(params: {
+  tenantCode: string;
+}): Promise<string> {
+  const { data } = await apiClient.get<{ result?: { serviceStartDate?: string | null } }>(
+    '/v1/haccp-base/works/service-start-date',
+    { headers: { 'x-tenant-code': params.tenantCode } },
+  );
+  return data?.result?.serviceStartDate ?? '';
+}
+
   const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
   return items.map(normalizeItem);
 }
