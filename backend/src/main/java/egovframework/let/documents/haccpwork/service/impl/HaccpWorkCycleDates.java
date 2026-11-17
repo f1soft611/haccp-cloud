@@ -25,7 +25,7 @@ public class HaccpWorkCycleDates {
     private HaccpWorkCycleDates() {
     }
 
-    /** 업무 주기 기준(업무 시작일, 반복 방식). 시작일이 없는 업무는 null 로 다룬다(기존 달력 기준). */
+    /** 업무 주기 기준(업무 기준일 = 첫 주기 마감일, 반복 방식). 기준일이 없는 업무는 null 로 다룬다(기존 달력 기준). */
     public static final class Anchor {
         final LocalDate startDate;
         final boolean byWeekday;
@@ -117,12 +117,12 @@ public class HaccpWorkCycleDates {
         return date;
     }
 
-    /** date 가 속한 주기의 시작일. 기준이 없으면 기존 달력 기준, date 가 업무 시작일 이전이면 null */
+    /** date 가 속한 주기의 시작일. 기준이 없으면 기존 달력 기준, date 가 첫 주기 이전이면 null */
     static LocalDate cycleStart(String regTerm, Anchor anchor, LocalDate date) {
         if (anchor == null) {
             return cycleStart(regTerm, date);
         }
-        if (date.isBefore(anchor.startDate)) {
+        if (date.isBefore(firstCycleStart(regTerm, anchor))) {
             return null;
         }
         String code = code(regTerm);
@@ -132,7 +132,7 @@ public class HaccpWorkCycleDates {
         return boundary(code, anchor, index(code, anchor, date));
     }
 
-    /** date 가 속한 주기의 다음 주기 시작일 (주기 끝 = 이 값 - 1일). date 가 업무 시작일 이전이면 null */
+    /** date 가 속한 주기의 다음 주기 시작일 (주기 끝 = 이 값 - 1일). date 가 첫 주기 이전이면 null */
     static LocalDate nextCycleStart(String regTerm, Anchor anchor, LocalDate date) {
         String code = code(regTerm);
         if (anchor == null) {
@@ -142,7 +142,7 @@ public class HaccpWorkCycleDates {
             }
             return months(code) == 0 ? start.plusDays(1) : start.plusMonths(months(code));
         }
-        if (date.isBefore(anchor.startDate)) {
+        if (date.isBefore(firstCycleStart(regTerm, anchor))) {
             return null;
         }
         if (!"WEEK".equals(code) && months(code) == 0) {
@@ -164,8 +164,8 @@ public class HaccpWorkCycleDates {
         return YearMonth.from(date.with(DayOfWeek.MONDAY).plusDays(3));
     }
 
-    /** 업무 시작일 기준 n번째 주기 시작일. 월 단위는 매번 시작일에서 다시 더해 말일 보정이 누적되지 않게 한다 */
-    private static LocalDate boundary(String code, Anchor anchor, long n) {
+    /** 업무 기준일 기준 n번째 마감일. 월 단위는 매번 기준일에서 다시 더해 말일 보정이 누적되지 않게 한다 */
+    private static LocalDate deadline(String code, Anchor anchor, long n) {
         if ("WEEK".equals(code)) {
             return anchor.startDate.plusWeeks(n);
         }
@@ -176,10 +176,24 @@ public class HaccpWorkCycleDates {
         return anchor.startDate.plusMonths(step);
     }
 
+    /** n번째 주기 시작일 = (n-1)번째 마감일 다음 날 (기준일은 첫 주기의 마감일) */
+    private static LocalDate boundary(String code, Anchor anchor, long n) {
+        return deadline(code, anchor, n - 1).plusDays(1);
+    }
+
+    /** 첫 주기 시작일(작성 하한). 기준일에서 거꾸로 한 주기, 주기 칸이 없는 일, 수시는 기준일 그대로 */
+    public static LocalDate firstCycleStart(String regTerm, Anchor anchor) {
+        String code = code(regTerm);
+        if (!"WEEK".equals(code) && months(code) == 0) {
+            return anchor.startDate;
+        }
+        return boundary(code, anchor, 0);
+    }
+
     /** date 가 속한 주기 번호(0부터). 주차 기준은 경계가 앞뒤 달로 넘어가므로 양쪽 모두 맞춘다 */
     private static long index(String code, Anchor anchor, LocalDate date) {
         if ("WEEK".equals(code)) {
-            return ChronoUnit.DAYS.between(anchor.startDate, date) / 7;
+            return ChronoUnit.DAYS.between(boundary(code, anchor, 0), date) / 7;
         }
         YearMonth base = anchor.byWeekday ? anchorMonthOf(anchor.startDate) : YearMonth.from(anchor.startDate);
         long n = Math.max(0L, Math.floorDiv(ChronoUnit.MONTHS.between(base, YearMonth.from(date)), (long) months(code)));
@@ -197,12 +211,12 @@ public class HaccpWorkCycleDates {
         return resolve(regTerm, null, requestedDate, today);
     }
 
-    /** 업무 기준을 반영한 주기 기준일. 업무 시작일 이전이면 400, 현재 주기보다 뒤면 400. */
+    /** 업무 기준을 반영한 주기 기준일. 첫 주기 이전이면 400, 현재 주기보다 뒤면 400. */
     static LocalDate resolve(String regTerm, Anchor anchor, String requestedDate, LocalDate today) {
         LocalDate requested = parseOrNull(requestedDate);
         LocalDate target = requested == null ? today : requested;
-        if (anchor != null && target.isBefore(anchor.startDate)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "업무 시작일 이전에는 작성할 수 없습니다.");
+        if (anchor != null && target.isBefore(firstCycleStart(regTerm, anchor))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "업무 기준일의 첫 주기 이전에는 작성할 수 없습니다.");
         }
         LocalDate cycleDate = cycleStart(regTerm, anchor, target);
         LocalDate currentCycleDate = cycleStart(regTerm, anchor, today);
