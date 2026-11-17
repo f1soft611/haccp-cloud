@@ -7,6 +7,7 @@ import { useFeedback } from '../../../shared/hooks/useFeedback';
 import { useAuthStore } from '../../../shared/store/authStore';
 import { PageHeader } from '../../../shared/components/layout/PageHeader';
 import { APP_LABELS } from '../../../shared/constants/labels';
+import { anchorMonthOf } from '../../../shared/utils/workCycleDates';
 import {
   listHaccpBaseCategories,
   type HaccpBaseCategoryItem,
@@ -48,6 +49,11 @@ const DEFAULT_CREATE_FORM: HaccpBaseCreateForm = {
   expirationApply: 'N',
   expirationNoticeStatus: 'NONE',
   expirationNoticeCount: '',
+  cycleAnchorType: 'DATE',
+  workStartDate: '',
+  workStartMonth: '',
+  cycleAnchorWeek: '',
+  cycleAnchorWeekday: '',
   approvalApply: 'Y',
   useAt: 'Y',
 };
@@ -84,9 +90,37 @@ function toRow(item: HaccpBaseWorkItem, index: number): HaccpBaseRow {
     expirationApply: item.expirationApply ? 'Y' : 'N',
     expirationNoticeStatus: item.expirationNoticeStatus ?? 'NONE',
     expirationNoticeCount: item.expirationNoticeCount ?? null,
+    workStartDate: item.workStartDate ?? '',
+    cycleAnchorType: item.cycleAnchorType ?? '',
+    cycleAnchorWeek: item.cycleAnchorWeek ?? null,
+    cycleAnchorWeekday: item.cycleAnchorWeekday ?? null,
     approvalApply: item.approvalApply ? 'Y' : 'N',
     useAt: item.active ? 'Y' : 'N',
   };
+}
+
+// 폼의 업무 시작일 입력을 저장 요청 값으로 (주차 기준이면 서버가 시작일 계산)
+function toCycleAnchorPayload(form: HaccpBaseCreateForm) {
+  const byWeekday = form.cycleAnchorType === 'WEEKDAY';
+  return {
+    cycleAnchorType: form.cycleAnchorType,
+    workStartDate: byWeekday ? '' : form.workStartDate,
+    workStartMonth: byWeekday ? form.workStartMonth : '',
+    cycleAnchorWeek: byWeekday && form.cycleAnchorWeek ? Number(form.cycleAnchorWeek) : null,
+    cycleAnchorWeekday: byWeekday && form.cycleAnchorWeekday ? Number(form.cycleAnchorWeekday) : null,
+  };
+}
+
+// 저장된 업무 시작일을 수정 폼 값으로. 주차 기준은 시작일이 전 달일 수 있어 목요일 기준 달로 연월을 만든다
+function toCycleAnchorForm(row: HaccpBaseRow) {
+  const byWeekday = row.cycleAnchorType === 'WEEKDAY' && Boolean(row.workStartDate);
+  return {
+    cycleAnchorType: byWeekday ? 'WEEKDAY' : 'DATE',
+    workStartDate: byWeekday ? '' : row.workStartDate,
+    workStartMonth: byWeekday ? anchorMonthOf(row.workStartDate).slice(0, 7) : '',
+    cycleAnchorWeek: byWeekday && row.cycleAnchorWeek != null ? String(row.cycleAnchorWeek) : '',
+    cycleAnchorWeekday: byWeekday && row.cycleAnchorWeekday != null ? String(row.cycleAnchorWeekday) : '',
+  } as const;
 }
 
 export function HaccpBaseManagementPage() {
@@ -204,6 +238,7 @@ export function HaccpBaseManagementPage() {
       expirationApply: createForm.expirationApply === 'Y',
       expirationNoticeStatus: createForm.expirationNoticeStatus,
       expirationNoticeCount: createForm.expirationNoticeCount ? Number(createForm.expirationNoticeCount) : null,
+      ...toCycleAnchorPayload(createForm),
       approvalApply: createForm.approvalApply === 'Y',
       reviewerId: createForm.reviewerId,
       approverId: createForm.approverId,
@@ -224,6 +259,7 @@ export function HaccpBaseManagementPage() {
       expirationApply: row.expirationApply,
       expirationNoticeStatus: row.expirationNoticeStatus,
       expirationNoticeCount: row.expirationNoticeCount == null ? '' : String(row.expirationNoticeCount),
+      ...toCycleAnchorForm(row),
       approvalApply: row.approvalApply,
       useAt: row.useAt,
     });
@@ -254,6 +290,7 @@ export function HaccpBaseManagementPage() {
       expirationApply: editForm.expirationApply === 'Y',
       expirationNoticeStatus: editForm.expirationNoticeStatus,
       expirationNoticeCount: editForm.expirationNoticeCount ? Number(editForm.expirationNoticeCount) : null,
+      ...toCycleAnchorPayload(editForm),
       approvalApply: editForm.approvalApply === 'Y',
       reviewerId: editForm.reviewerId,
       approverId: editForm.approverId,

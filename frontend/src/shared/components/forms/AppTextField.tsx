@@ -6,7 +6,7 @@ type AppTextFieldProps = Pick<
     | 'error' | 'helperText' | 'placeholder' | 'autoComplete' | 'autoFocus'
     | 'multiline' | 'rows' | 'minRows' | 'slotProps' | 'onKeyDown' | 'onClick'
 > & {
-    type?: 'text' | 'number' | 'password' | 'email';
+    type?: 'text' | 'number' | 'password' | 'email' | 'date' | 'month';
     onChange?: (value: string) => void;
 };
 

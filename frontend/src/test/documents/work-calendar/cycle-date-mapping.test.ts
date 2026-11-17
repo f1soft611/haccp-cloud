@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
     mapExpirationsToCalendarEvents,
     mapTodosToCalendarEvents,
-} from '../pages/documents/work-calendar/cycleDateMapping';
-import type { TenantTodoCardItem } from '../pages/dashboard/tenant/hooks/useTenantDashboardData';
+} from '../../../pages/documents/work-calendar/cycleDateMapping';;
+import type { TenantTodoCardItem } from '../../../pages/dashboard/tenant/hooks/useTenantDashboardData';
 import type {
     HaccpWorkCycleInstance,
     HaccpWorkExpiration,
-} from '../services/documents/haccpBaseWorkService';
+} from '../../../services/documents/haccpBaseWorkService';
 
 // 2026-10-08 목요일 (이번 주 월요일 10-05, 이번 달 1일 10-01)
 const TODAY = new Date(2026, 9, 8);

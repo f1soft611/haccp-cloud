@@ -29,6 +29,10 @@ export type HaccpBaseRow = {
   expirationApply: 'Y' | 'N';
   expirationNoticeStatus: string;
   expirationNoticeCount: number | null;
+  workStartDate: string;
+  cycleAnchorType: string;
+  cycleAnchorWeek: number | null;
+  cycleAnchorWeekday: number | null;
   approvalApply: 'Y' | 'N';
   useAt: 'Y' | 'N';
 };
@@ -44,6 +48,12 @@ export type HaccpBaseCreateForm = {
   expirationApply: 'Y' | 'N';
   expirationNoticeStatus: string;
   expirationNoticeCount: string;
+  // 업무 시작일. 일자 기준은 workStartDate, 주기 기준은 workStartMonth + 주차 + 요일 (서버가 시작일 계산)
+  cycleAnchorType: 'DATE' | 'WEEKDAY';
+  workStartDate: string;
+  workStartMonth: string;
+  cycleAnchorWeek: string;
+  cycleAnchorWeekday: string;
   approvalApply: 'Y' | 'N';
   useAt: 'Y' | 'N';
 };

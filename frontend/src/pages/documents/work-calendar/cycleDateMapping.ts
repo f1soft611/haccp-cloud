@@ -1,7 +1,12 @@
 import type { TenantTodoCardItem } from '../../dashboard/tenant/hooks/useTenantDashboardData';
 import type { HaccpWorkCycleInstance, HaccpWorkExpiration } from '../../../services/documents/haccpBaseWorkService';
 import { resolveApprovalStatusView } from '../../../shared/utils/approvalStatus';
-import { toCycleStartDate } from '../approvals/utils/approvalDraftUtils';
+import {
+    nextCycleStart,
+    toCycleStartDate,
+    toWorkCycleAnchor,
+    type WorkCycleAnchor,
+} from '../../../shared/utils/workCycleDates';
 
 export type CalendarWorkEvent = {
     date: string;
@@ -32,25 +37,40 @@ function parseLocalDate(value: string): Date {
     return new Date(year, month - 1, day);
 }
 
-const CYCLE_MONTHS: Record<string, number> = { MONTH: 1, QUARTER: 3, HALF: 6, YEAR: 12 };
-
 // 주기 시작일 ~ 다음 주기 시작일 전날 중 첫 근무일, 없으면 시작일 (백엔드는 주기 업무를 업무일과 무관하게 셈)
 function firstWorkDate(
     cycle: string,
     cycleDate: string,
     isWorkDate: (date: string) => boolean,
+    anchor?: WorkCycleAnchor,
 ): string {
-    const start = parseLocalDate(cycleDate);
-    const end = cycle === 'WEEK'
-        ? new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7)
-        : new Date(start.getFullYear(), start.getMonth() + (CYCLE_MONTHS[cycle] ?? 0), start.getDate());
-    for (const cursor = new Date(start); cursor < end; cursor.setDate(cursor.getDate() + 1)) {
+    const end = nextCycleStart(cycle, cycleDate, anchor);
+    for (const cursor = parseLocalDate(cycleDate); toLocalDateString(cursor) < end; cursor.setDate(cursor.getDate() + 1)) {
         const date = toLocalDateString(cursor);
         if (isWorkDate(date)) {
             return date;
         }
     }
     return cycleDate;
+}
+
+// [rangeStart, rangeEnd] 안에서 시작하는 주기 시작일 (기준 업무는 업무 시작일부터)
+function cycleStartsInRange(
+    cycle: string,
+    rangeStart: string,
+    rangeEnd: string,
+    anchor?: WorkCycleAnchor,
+): string[] {
+    const starts: string[] = [];
+    let cursor = toCycleStartDate(cycle, rangeStart, anchor) || anchor?.startDate || '';
+    if (cursor && cursor < rangeStart) {
+        cursor = nextCycleStart(cycle, cursor, anchor);
+    }
+    while (cursor && cursor <= rangeEnd) {
+        starts.push(cursor);
+        cursor = nextCycleStart(cycle, cursor, anchor);
+    }
+    return starts;
 }
 
 // 인스턴스가 없으면 미작성(상태값 비움, 업무 경로)
@@ -85,36 +105,18 @@ export function mapTodosToCalendarEvents(
     isWorkDate: (date: string) => boolean = () => true,
 ): CalendarWorkEvent[] {
     const todayString = toLocalDateString(today);
-    const currentWeekMonday = toLocalDateString(
-        new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate() - ((today.getDay() + 6) % 7),
-        ),
-    );
-    const currentMonthFirst = toDateString(today.getFullYear(), today.getMonth(), 1);
-    const currentYearFirst = toDateString(today.getFullYear(), 0, 1);
-    const currentQuarterFirst = toDateString(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
-    const currentHalfFirst = toDateString(today.getFullYear(), today.getMonth() < 6 ? 0 : 6, 1);
-    // 표시 시작일이 속한 주기의 기준일 (이보다 이른 주기는 표시하지 않음, '' 이면 하한 없음)
-    const displayStart = displayStartDate ? parseLocalDate(displayStartDate) : null;
-    const minCycleDates: Record<string, string> = displayStart
-        ? {
-            DAY: displayStartDate,
-            ANYTIME: displayStartDate,
-            WEEK: toLocalDateString(
-                new Date(
-                    displayStart.getFullYear(),
-                    displayStart.getMonth(),
-                    displayStart.getDate() - ((displayStart.getDay() + 6) % 7),
-                ),
-            ),
-            MONTH: toDateString(displayStart.getFullYear(), displayStart.getMonth(), 1),
-            QUARTER: toDateString(displayStart.getFullYear(), Math.floor(displayStart.getMonth() / 3) * 3, 1),
-            HALF: toDateString(displayStart.getFullYear(), displayStart.getMonth() < 6 ? 0 : 6, 1),
-            YEAR: toDateString(displayStart.getFullYear(), 0, 1),
+
+    // 업무별 주기 기준 (업무 시작일이 없으면 undefined = 기존 달력 기준)
+    const anchorByWorkId = new Map(items.map((item) => [item.id, toWorkCycleAnchor(item)]));
+    // 표시 하한: 업무 시작일이 있으면 그 날(첫 주기), 없으면 표시 시작일이 속한 주기 ('' 이면 하한 없음)
+    const minCycleDate = (item: TenantTodoCardItem) => {
+        const anchor = anchorByWorkId.get(item.id);
+        if (anchor) {
+            return anchor.startDate;
         }
-        : {};
+        return displayStartDate ? toCycleStartDate(item.cycle, displayStartDate) : '';
+    };
+
     // report_date 는 표시일이라 업무 주기 시작일로 바꿔 키를 만든다. 같은 주기 여러 건이면 표시일이 늦은 문서가 남는다
     const cycleByWorkId = new Map(items.map((item) => [item.id, item.cycle]));
     // 만료일관리 업무 문서는 문서마다 따로 그리므로 주기 키에서 뺀다
@@ -123,27 +125,19 @@ export function mapTodosToCalendarEvents(
         cycleInstances
         .filter((instance) => !expirationWorkIds.has(instance.workId))
         .map((instance) => [
-            `${instance.workId}|${toCycleStartDate(cycleByWorkId.get(instance.workId) ?? '', instance.cycleDate)}`,
+            `${instance.workId}|${toCycleStartDate(cycleByWorkId.get(instance.workId) ?? '', instance.cycleDate, anchorByWorkId.get(instance.workId))}`,
             instance,
         ]),
     );
 
     const days: string[] = [];
-    const mondays: string[] = [];
     for (
         const cursor = parseLocalDate(rangeStart);
         toLocalDateString(cursor) <= rangeEnd;
         cursor.setDate(cursor.getDate() + 1)
     ) {
         days.push(toLocalDateString(cursor));
-        if (cursor.getDay() === 1) {
-            mondays.push(toLocalDateString(cursor));
-        }
     }
-    const monthFirsts = days.filter((date) => date.endsWith('-01'));
-    const yearFirsts = days.filter((date) => date.endsWith('-01-01'));
-    const quarterFirsts = monthFirsts.filter((date) => ['01', '04', '07', '10'].includes(date.slice(5, 7)));
-    const halfFirsts = monthFirsts.filter((date) => ['01', '07'].includes(date.slice(5, 7)));
 
     const events: CalendarWorkEvent[] = [];
     const push = (
@@ -157,7 +151,7 @@ export function mapTodosToCalendarEvents(
             return;
         }
         // 작성 문서가 있는 주기는 입사일 이전이어도 표시, 빈 주기 칸만 숨김
-        if (cycleDate < (minCycleDates[item.cycle] ?? '') && !instances.has(`${item.id}|${cycleDate}`)) {
+        if (cycleDate < minCycleDate(item) && !instances.has(`${item.id}|${cycleDate}`)) {
             return;
         }
         events.push({
@@ -182,7 +176,7 @@ export function mapTodosToCalendarEvents(
         const instance = instances.get(`${item.id}|${cycleDate}`);
         if (cycleDate !== currentCycleDate) {
             // 기존 -> return instance?.cycleDate ?? cycleDate; / 변경 -> 문서 없으면 주기 안의 첫 근무일 칸
-            return instance?.cycleDate ?? firstWorkDate(item.cycle, cycleDate, isWorkDate);
+            return instance?.cycleDate ?? firstWorkDate(item.cycle, cycleDate, isWorkDate, anchorByWorkId.get(item.id));
         }
         // 상신 이후 문서는 문서 표시일 칸
         if (instance && !followsToday(instance.statusType)) {
@@ -197,10 +191,12 @@ export function mapTodosToCalendarEvents(
         cycleDates: string[],
         currentCycleDate: string,
     ) => {
+        const anchor = anchorByWorkId.get(item.id);
         const instanceCycleDates = cycleInstances
         .filter((instance) => instance.workId === item.id)
-        .map((instance) => toCycleStartDate(item.cycle, instance.cycleDate));
-        new Set([...cycleDates, ...instanceCycleDates, currentCycleDate]).forEach((cycleDate) => {
+        .map((instance) => toCycleStartDate(item.cycle, instance.cycleDate, anchor));
+        // 업무 시작일 이전(현재 주기 없음)이면 '' 가 섞이므로 뺀다
+        new Set([...cycleDates, ...instanceCycleDates, currentCycleDate].filter(Boolean)).forEach((cycleDate) => {
             push(displayDate(item, cycleDate, currentCycleDate), item, cycleDate, currentCycleDate);
         });
     };
@@ -259,28 +255,10 @@ export function mapTodosToCalendarEvents(
             return;
         }
 
-        if (cycle === 'WEEK') {
-            pushCycles(item, mondays, currentWeekMonday);
-            return;
-        }
-
-        if (cycle === 'MONTH') {
-            pushCycles(item, monthFirsts, currentMonthFirst);
-            return;
-        }
-
-        if (cycle === 'YEAR') {
-            pushCycles(item, yearFirsts, currentYearFirst);
-            return;
-        }
-
-        if (cycle === 'QUARTER') {
-            pushCycles(item, quarterFirsts, currentQuarterFirst);
-            return;
-        }
-
-        if (cycle === 'HALF') {
-            pushCycles(item, halfFirsts, currentHalfFirst);
+        // 기존 -> WEEK/MONTH/YEAR/QUARTER/HALF 마다 달력 고정 시작일 목록 / 변경 -> 업무 시작일 기준까지 반영해 주기 시작일 생성
+        if (['WEEK', 'MONTH', 'QUARTER', 'HALF', 'YEAR'].includes(cycle)) {
+            const anchor = anchorByWorkId.get(item.id);
+            pushCycles(item, cycleStartsInRange(cycle, rangeStart, rangeEnd, anchor), toCycleStartDate(cycle, todayString, anchor));
             return;
         }
 
@@ -291,8 +269,6 @@ export function mapTodosToCalendarEvents(
             .forEach((instance) => push(instance.cycleDate, item, instance.cycleDate, instance.cycleDate));
             return;
         }
-
-        // QUARTER(1, 4, 7, 10월 1일), HALF(1, 7월 1일)도 위에서 표시한다.
     });
 
     return events;

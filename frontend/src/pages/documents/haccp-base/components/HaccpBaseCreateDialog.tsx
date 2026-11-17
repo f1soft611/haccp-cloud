@@ -18,6 +18,8 @@ import { AppSelect, appSelectPaperSx } from '../../../../shared/components/forms
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 import {CancelButton} from "../../../../shared/components/forms/CancelButton.tsx";
+import { isMonthlyOrLongerCycle } from '../../../../shared/utils/workCycleDates';
+import { isWorkStartIncomplete, WEEKDAY_ANCHOR_RESET, WorkStartDateFields } from './WorkStartDateFields';
 
 const APPROVAL_APPLY_OPTIONS = [
   { value: 'Y', label: '적용' },
@@ -88,7 +90,8 @@ export function HaccpBaseCreateDialog(props: {
         !value.divisionName.trim() ||
         !value.categoryId ||
         (needsSigners && (!value.reviewerId || !value.approverId)) ||
-        noticeCountInvalid;
+        noticeCountInvalid ||
+        isWorkStartIncomplete(value);
 
     const findCategoryCode = (categoryId: string) =>
         categoryOptions.find((category) => category.id === categoryId)?.code ?? '';
@@ -172,6 +175,8 @@ export function HaccpBaseCreateDialog(props: {
                       ...value,
                       cycle,
                       ...(cycle === 'ANYTIME' ? {} : EXPIRATION_RESET),
+                      // 주차 기준은 월 이상 주기만
+                      ...(isMonthlyOrLongerCycle(cycle) ? {} : WEEKDAY_ANCHOR_RESET),
                   })
               }
               required
@@ -186,9 +191,9 @@ export function HaccpBaseCreateDialog(props: {
               }))}
           />
         </Stack>
+          
+        <WorkStartDateFields value={value} onChange={onChange} />
 
-        {/* 기존 -> Autocomplete multiple 로 이름 검색 후 다중 선택 */}
-        {/* 변경 -> 읽기 전용 칸 클릭 시 공용 UserMultiSelectDialog 로 다중 선택 */}
         <AppTextField
           label="담당자"
           value={assigneeNames}
