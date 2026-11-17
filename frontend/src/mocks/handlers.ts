@@ -989,10 +989,11 @@ function buildMockWorkdays(
         source: 'API',
       });
     } else {
+      const isOffDay = weeklyOffDays.includes(date.getDay());
       items.push({
         workdayDate,
-        dayType: weeklyOffDays.includes(date.getDay()) ? 'COMPANY_HOLIDAY' : 'WORK',
-        dayName: '',
+        dayType: isOffDay ? 'COMPANY_HOLIDAY' : 'WORK',
+        dayName: isOffDay ? '회사휴일' : '',
         memo: '',
         source: 'PATTERN',
       });

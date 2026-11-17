@@ -88,7 +88,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         // 기존 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
         // 변경 -> 수정 대상 검증은 그대로, reportDate 확정 후 ensureCycleNotLocked 로 주기당 결재신청 1건 잠금 (만료일 관리 업무 제외)
         Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "임시저장");
-        boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
+        // 기존 -> isSubCategory(분류코드만) / 변경 -> 만료일 관리 양식 Y 인 HCP 업무만 sub, 검사일 보고일자, 잠금 제외
+        boolean subCategory = HaccpWorkApprovalSubs.isExpirationWork(work.getExpirationApply(), work.getCategoryCode());
         if (subCategory) {
             HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
         }
@@ -97,7 +98,7 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         String reportDate = subCategory
                 ? resolveInspectedReportDate(work.getCycle(), payload.getSub().getInspectedDate())
                 : resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
-        ensureCycleNotLocked(tenantId, workId, work.getCategoryCode(), reportDate);
+        ensureCycleNotLocked(tenantId, workId, subCategory, reportDate);
         String responseCycleDate = LocalDate.parse(reportDate, DATE_FORMATTER).toString();
 
         LocalDateTime now = LocalDateTime.now();
@@ -235,24 +236,19 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "결재신청 사용자 정보를 확인할 수 없습니다.");
         }
 
-        // 기존 -> 현재 주기 기준으로 결재 상태 확인 후 템플릿 조회
-        // 변경 -> 요청 주기 템플릿 조회 후 주기 기준일 확정(미래면 400), 같은 주기 기준으로 결재 상태 확인
         String requestedCycleDate = payload.getCycleDate();
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
         String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
-        // 기존 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
-        // 변경 -> 수정 대상 검증은 그대로, reportDate 확정 후 ensureCycleNotLocked 로 주기당 결재신청 1건 잠금 (만료일 관리 업무 제외)
         Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "결재신청");
-        boolean subCategory = HaccpWorkApprovalSubs.isSubCategory(work.getCategoryCode());
+        // 기존 -> isSubCategory(분류코드만) / 변경 -> 만료일 관리 양식 Y 인 HCP 업무만 sub, 검사일 보고일자, 잠금 제외
+        boolean subCategory = HaccpWorkApprovalSubs.isExpirationWork(work.getExpirationApply(), work.getCategoryCode());
         if (subCategory) {
             HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
         }
-        // 기존 -> resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate())
-        // 변경 -> 만료일 관리 업무는 검사일 그대로(달력 표시일), 일반 업무는 기존처럼 주기 시작일
         String reportDate = subCategory
                 ? resolveInspectedReportDate(work.getCycle(), payload.getSub().getInspectedDate())
                 : resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate());
-        ensureCycleNotLocked(tenantId, workId, work.getCategoryCode(), reportDate);
+        ensureCycleNotLocked(tenantId, workId, subCategory, reportDate);
 
         // 결재 미적용 문서는 결재선 없이 바로 완료되므로 검토자/승인자 검사 생략 추가
         boolean approvalApply = !Boolean.FALSE.equals(work.getApprovalApply());
@@ -272,16 +268,12 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
         LocalDateTime now = LocalDateTime.now();
         String regDate = now.format(DATE_FORMATTER);
         String twfTime = now.format(TIME_FORMATTER);
-        // 기존 -> String eaExeId = buildEaExeId(now.toLocalDate()); (임시저장 문서 상신 시에도 채번돼 번호 유실)
-        // 변경 -> 새 문서 INSERT 또는 기존 기안번호가 없을 때만 채번
         String eaExeId;
 
         Map<String, Object> actorProfile = selectApprovalActorProfile(tenantId, actorLoginId);
         Map<String, Object> reviewerProfile = selectApprovalActorProfile(tenantId, work.getReviewerId());
         Map<String, Object> approverProfile = selectApprovalActorProfile(tenantId, work.getApproverId());
 
-        // 기존 -> Long preApplyApprovalId = findLatestPreApplyApprovalId(tenantId, workId, actorLoginId, cycleDate);
-        // 변경 -> 위에서 요청 approvalId 로 결정 (null 이면 INSERT)
         Long electronicApprovalId;
         if (preApplyApprovalId == null) {
             eaExeId = buildEaExeId(now.toLocalDate());
@@ -667,6 +659,11 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             Map<String, Object> referenceLineInfo = haccpWorkDAO.selectApprovalReferenceLineForHistoryByLogin(referenceOwnerParams);
             isFinalOwnerReference = "Y".equalsIgnoreCase(resolveMapValueIgnoreCase(referenceLineInfo, "lastOwnerStatus"));
             if (isFinalOwnerReference) {
+                // 기안자 최종확인은 최종승인 또는 반려 후에만 허용 (can_confirm 쿼리와 같은 조건)
+                String currentStatus = trimToEmpty(resolveMapValueIgnoreCase(approvalMain, "statusType", "status_type"));
+                if (!"approved".equals(currentStatus) && !"rejected".equals(currentStatus)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "최종 결재 승인 또는 반려 후에 확인할 수 있습니다.");
+                }
                 lineOption = "최종확인";
             }
         } else {
@@ -1466,8 +1463,9 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 //        return haccpWorkDAO.selectLatestPreApplyApprovalIdByWorkAndLogin(params);
 //    }
 
-    private void ensureCycleNotLocked(Long tenantId, Long workId, String categoryCode, String reportDate) throws Exception {
-        if (HaccpWorkApprovalSubs.isSubCategory(categoryCode)) {
+    // 같은 주기에 결재진행중/승인 문서가 있으면 409. 만료일 관리 업무는 주기 잠금 없음
+    private void ensureCycleNotLocked(Long tenantId, Long workId, boolean expirationWork, String reportDate) throws Exception {
+        if (expirationWork) {
             return;
         }
 

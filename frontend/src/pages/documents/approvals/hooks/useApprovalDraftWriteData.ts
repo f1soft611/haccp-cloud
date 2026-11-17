@@ -149,7 +149,7 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     // 기존 -> 서버 제목이 없으면 오늘날짜_업무명 으로 자동 세팅, 이후 날짜 변경은 따라가지 않음
     // 변경 -> 서버 제목이 없으면 업무기준일_업무명 으로 자동 세팅, 자동 제목 상태면 기준일 변경을 따라감
     // 만료일 관리 업무는 화면의 업무 기준일 칸처럼 검사일을 쓴다
-    const titleDate = getApprovalSubFieldConfig(work?.categoryCode)
+    const titleDate = getApprovalSubFieldConfig(work?.categoryCode, work?.expirationApply)
       ? sub.inspectedDate
       : reportDate;
     const autoTitle = toApprovalAutoTitle(titleDate, (work?.divisionName || '').trim());

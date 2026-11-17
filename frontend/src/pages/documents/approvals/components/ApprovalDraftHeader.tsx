@@ -58,78 +58,72 @@ export function ApprovalDraftHeader(props: ApprovalDraftHeaderProps) {
         flexWrap="wrap"
         useFlexGap
       >
-            {onApprove ? (
-              <Button
-                variant="contained"
-                color="success"
-                disableElevation
-                disabled={approveDisabled || isSubmitting}
-                onClick={onApprove}
-              >
-                {approveLabel}
-              </Button>
-            ) : null}
-            {onReject ? (
-              <Button
-                variant="outlined"
-                color="error"
-                disableElevation
-                disabled={rejectDisabled || isSubmitting}
-                onClick={onReject}
-              >
-                반려
-              </Button>
-            ) : null}
-            {onCancelSubmit ? (
-              <Button
-                variant="outlined"
-                color="error"
-                disableElevation
-                disabled={cancelSubmitDisabled || isSubmitting}
-                onClick={onCancelSubmit}
-              >
-                결재 취소
-              </Button>
-            ) : null}
-            {onDelete ? (
-                <Button
-                    variant="contained"
-                    color="error"
-                    disableElevation
-                    disabled={deleteDisabled || isSubmitting}
-                    onClick={onDelete}
-                >
-                  삭제
-                </Button>
-            ) : null}
-            {onTempSave ? (
-              <Button
-                variant="contained"
-                disableElevation
-                disabled={tempSaveDisabled || isSubmitting}
-                onClick={onTempSave}
-              >
-                저장
-              </Button>
-            ) : null}
-            {onSubmitApproval ? (
-              <Button
-                variant="contained"
-                color="warning"
-                disableElevation
-                disabled={submitDisabled || isSubmitting}
-                onClick={onSubmitApproval}
-              >
-                {submitLabel}
-              </Button>
-            ) : null}
-            <Button
-              variant="outlined"
-              startIcon={<ArrowLeft />}
-              onClick={onBack}
-            >
-              돌아가기
-            </Button>
+        {/* 주 동작은 파랑 채움, 저장은 파랑 테두리, 되돌리는 동작은 빨강 테두리, 돌아가기는 회색 테두리 */}
+        {onApprove ? (
+          <Button
+            variant="contained"
+            disabled={approveDisabled || isSubmitting}
+            onClick={onApprove}
+          >
+            {approveLabel}
+          </Button>
+        ) : null}
+        {onReject ? (
+          <Button
+            variant="outlined"
+            color="error"
+            disabled={rejectDisabled || isSubmitting}
+            onClick={onReject}
+          >
+            반려
+          </Button>
+        ) : null}
+        {onCancelSubmit ? (
+          <Button
+            variant="outlined"
+            color="error"
+            disabled={cancelSubmitDisabled || isSubmitting}
+            onClick={onCancelSubmit}
+          >
+            결재 취소
+          </Button>
+        ) : null}
+        {onDelete ? (
+          <Button
+            variant="outlined"
+            color="error"
+            disabled={deleteDisabled || isSubmitting}
+            onClick={onDelete}
+          >
+            삭제
+          </Button>
+        ) : null}
+        {onTempSave ? (
+          <Button
+            variant="outlined"
+            disabled={tempSaveDisabled || isSubmitting}
+            onClick={onTempSave}
+          >
+            저장
+          </Button>
+        ) : null}
+        {onSubmitApproval ? (
+          <Button
+            variant="contained"
+            disabled={submitDisabled || isSubmitting}
+            onClick={onSubmitApproval}
+          >
+            {submitLabel}
+          </Button>
+        ) : null}
+        <Button
+          variant="outlined"
+          color="inherit"
+          startIcon={<ArrowLeft />}
+          onClick={onBack}
+        >
+          돌아가기
+        </Button>
       </Stack>
     </Stack>
   );

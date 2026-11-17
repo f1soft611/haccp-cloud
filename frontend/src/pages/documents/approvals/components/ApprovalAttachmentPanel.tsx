@@ -326,12 +326,7 @@ export function ApprovalAttachmentPanel(props: ApprovalAttachmentPanelProps) {
             startIcon={<FileUp />}
             onClick={() => inputRef.current?.click()}
             disabled={loading || (!canUseAttachmentApi && !isPendingMode)}
-            sx={{
-              borderRadius: 2,
-              px: 1.75,
-              boxShadow: (theme) => theme.palette.panel.buttonShadow,
-              alignSelf: { xs: 'stretch', sm: 'auto' },
-            }}
+            sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
           >
             {!canUseAttachmentApi && !isPendingMode
               ? '문서 생성 후 업로드 가능'

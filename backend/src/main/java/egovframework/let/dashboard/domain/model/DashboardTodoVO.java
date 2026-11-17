@@ -95,8 +95,11 @@ public class DashboardTodoVO implements Serializable {
     @Schema(description = "결재 알림 도착 일시")
     private String pendingArrivalAt;
 
-    @Schema(description = "업무 최근 보고일자(본인 작성 문서 MAX report_date)")
+    @Schema(description = "업무 최근 보고일자(결재진행중/승인 문서 MAX report_date)")
     private String lastReportDate;
+
+    @Schema(description = "최근 보고일자 문서 ID(대시보드 '최신' 클릭 시 이동 대상)")
+    private String lastReportApprovalId;
 
     @Schema(description = "검토자명")
     private String reviewerName;

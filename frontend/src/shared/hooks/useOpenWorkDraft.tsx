@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 
 type PendingDraft = { approvalPath: string; freshPath: string };
 
-// 업무 작성 진입: 이번 주기 본인 임시저장이 있으면 불러올지 묻고, 없으면 바로 작성 화면
+// 업무 작성 진입: 이번 주기에 결재진행중/승인 문서가 있으면 그 문서, 본인 임시저장이 있으면 불러올지 묻고, 없으면 바로 작성 화면
 export function useOpenWorkDraft() {
     const navigate = useNavigate();
     const tenantCode = useAuthStore((state) => state.tenantCode || '');
@@ -20,6 +20,12 @@ export function useOpenWorkDraft() {
                 id: workId,
                 idType: 'work',
             });
+            // 주기 잠금 문서가 먼저: 잠긴 주기의 임시저장은 결재신청할 수 없다
+            const lockedApprovalId = (template.lockedApprovalId || '').trim();
+            if (lockedApprovalId) {
+                navigate(`/approvals/draft/${lockedApprovalId}?idType=approval${suffix}`);
+                return;
+            }
             const approvalId = (template.approvalId || '').trim();
             const isTempSaved =
                 String(template.approvalStatusType ?? '').trim().toLowerCase() === 'pre_apply';

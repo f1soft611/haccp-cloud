@@ -34,6 +34,11 @@ public class HaccpWorkApprovalSubs {
         return categoryCode != null && SUB_CODES.contains(categoryCode.trim());
     }
 
+    /** 만료일 관리 업무인지. 업무의 만료일 관리 양식이 Y 이고 sub 대상 분류코드일 때만 true. */
+    static boolean isExpirationWork(Boolean expirationApply, String categoryCode) {
+        return Boolean.TRUE.equals(expirationApply) && isSubCategory(categoryCode);
+    }
+
     /** 분류코드별 대상, 검사일, 만료일 필수와 날짜 순서를 검증한다. 오류면 400. */
     static void validate(String categoryCode, HaccpWorkApprovalSubVO sub) {
         String code = categoryCode.trim();

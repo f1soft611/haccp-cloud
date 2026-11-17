@@ -56,6 +56,7 @@ export type HaccpBaseWorkItem = {
   canTempSave?: boolean;
   canSubmit?: boolean;
   cycleLocked?: boolean;
+  lockedApprovalId?: string;
   canSubmitCancel?: boolean;
   canApprove?: boolean;
   canConfirm?: boolean;
@@ -65,6 +66,7 @@ export type HaccpBaseWorkItem = {
   pendingArrivalAt?: string;
   lastReportDate?: string;
   lastWriterName?: string;
+  lastReportApprovalId?: string;
   cycleEndDate?: string;
   approvalRequestLabel?: string;
   submittedAt?: string;
@@ -170,6 +172,8 @@ type RawHaccpBaseWorkItem = {
   can_submit?: boolean | string | null;
   cycleLocked?: boolean | string | null;
   cycle_locked?: boolean | string | null;
+  lockedApprovalId?: number | string | null;
+  locked_approval_id?: number | string | null;
   canSubmitCancel?: boolean | string | null;
   can_submit_cancel?: boolean | string | null;
   canApprove?: boolean | string | null;
@@ -188,6 +192,8 @@ type RawHaccpBaseWorkItem = {
   last_report_date?: string | null;
   lastWriterName?: string | null;
   last_writer_name?: string | null;
+  lastReportApprovalId?: string | number | null;
+  last_report_approval_id?: string | number | null;
   cycleEndDate?: string | null;
   cycle_end_date?: string | null;
   approvalRequestLabel?: string | null;
@@ -454,6 +460,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     canTempSave: normalizeBoolean(raw.canTempSave ?? raw.can_temp_save),
     canSubmit: normalizeBoolean(raw.canSubmit ?? raw.can_submit),
     cycleLocked: normalizeBoolean(raw.cycleLocked ?? raw.cycle_locked),
+    lockedApprovalId: normalizeText(raw.lockedApprovalId ?? raw.locked_approval_id),
     canSubmitCancel: normalizeBoolean(
       raw.canSubmitCancel ?? raw.can_submit_cancel,
     ),
@@ -473,6 +480,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     ),
     lastReportDate: normalizeText(raw.lastReportDate ?? raw.last_report_date),
     lastWriterName: normalizeText(raw.lastWriterName ?? raw.last_writer_name),
+    lastReportApprovalId: normalizeText(raw.lastReportApprovalId ?? raw.last_report_approval_id),
     cycleEndDate: normalizeText(raw.cycleEndDate ?? raw.cycle_end_date),
     approvalRequestLabel: normalizeText(raw.approvalRequestLabel ?? raw.approval_request_label),
     submittedAt: normalizeText(raw.submittedAt ?? raw.submitted_at),

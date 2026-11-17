@@ -32,8 +32,8 @@ export function WorkdaySidePanel({ year, month, items, onSelectDate }: WorkdaySi
         (item) =>
             item.workdayDate.startsWith(prefix) &&
             (item.dayType !== 'WORK') &&
-            // 주말 정기휴무(이름 없음)는 목록에서 제외
-            !(item.dayType === 'COMPANY_HOLIDAY' && !item.dayName),
+            // 요일 규칙으로 자동 생성된 정기휴무는 목록에서 제외
+            !(item.dayType === 'COMPANY_HOLIDAY' && item.source === 'PATTERN'),
     );
 
     const legend = [

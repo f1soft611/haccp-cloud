@@ -308,12 +308,7 @@ export function ApprovalDraftCommentThread(
                 startIcon={<MessageSquare />}
                 disabled={!canWriteComments}
                 onClick={() => setIsOpinionModalOpen(true)}
-                sx={{
-                  borderRadius: 2,
-                  px: 1.75,
-                  boxShadow: (theme) => theme.palette.panel.buttonShadow,
-                  width: '100%',
-                }}
+                sx={{ width: '100%' }}
               >
                 의견 등록
               </Button>
@@ -687,7 +682,6 @@ export function ApprovalDraftCommentThread(
                                   minWidth: 88,
                                   whiteSpace: 'nowrap',
                                   flexShrink: 0,
-                                  borderRadius: 1.75,
                                 }}
                               >
                                 등록
@@ -720,7 +714,7 @@ export function ApprovalDraftCommentThread(
               variant="contained"
               onClick={submitEdit}
               disabled={!editDraft.trim()}
-              sx={{ borderRadius: 1.75, minWidth: 84 }}
+              sx={{ minWidth: 84 }}
             >
               수정
             </Button>
@@ -731,7 +725,7 @@ export function ApprovalDraftCommentThread(
                 setEditTargetCommentId('');
                 setEditDraft('');
               }}
-              sx={{ borderRadius: 1.75, minWidth: 84 }}
+              sx={{ minWidth: 84 }}
             >
               취소
             </Button>
@@ -762,7 +756,7 @@ export function ApprovalDraftCommentThread(
               variant="contained"
               color="error"
               onClick={confirmDelete}
-              sx={{ borderRadius: 1.75, minWidth: 84 }}
+              sx={{ minWidth: 84 }}
             >
               삭제
             </Button>
@@ -772,7 +766,7 @@ export function ApprovalDraftCommentThread(
                 setIsDeleteConfirmOpen(false);
                 setDeleteTargetCommentId('');
               }}
-              sx={{ borderRadius: 1.75, minWidth: 84 }}
+              sx={{ minWidth: 84 }}
             >
               취소
             </Button>
@@ -845,11 +839,7 @@ export function ApprovalDraftCommentThread(
               variant="contained"
               onClick={handleSubmitOpinion}
               disabled={!canWriteComments}
-              sx={{
-                borderRadius: 1.75,
-                minWidth: 84,
-                boxShadow: (theme) => theme.palette.panel.buttonShadow,
-              }}
+              sx={{ minWidth: 84 }}
             >
               등록
             </Button>
@@ -858,7 +848,7 @@ export function ApprovalDraftCommentThread(
               onClick={() => {
                 setIsOpinionModalOpen(false);
               }}
-              sx={{ borderRadius: 1.75, minWidth: 84 }}
+              sx={{ minWidth: 84 }}
             >
               취소
             </Button>

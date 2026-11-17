@@ -31,6 +31,7 @@
         <result property="pendingApprovalAlert" column="pending_approval_alert"/>
         <result property="pendingArrivalAt" column="pending_arrival_at"/>
         <result property="lastReportDate" column="last_report_date"/>
+        <result property="lastReportApprovalId" column="last_report_approval_id"/>
         <result property="reviewerName" column="reviewer_name"/>
         <result property="approverName" column="approver_name"/>
         <result property="lastWriterName" column="last_writer_name"/>
@@ -119,6 +120,7 @@
             COALESCE(pending.pending_alert, FALSE) AS pending_approval_alert,
             TO_CHAR(pending.pending_arrival_at, 'YYYY-MM-DD HH24:MI') AS pending_arrival_at,
             TO_CHAR(TO_DATE(rpt.max_report_date, 'YYYYMMDD'), 'YYYY-MM-DD') AS last_report_date,
+            CAST(rpt.last_report_approval_id AS varchar) AS last_report_approval_id,
             COALESCE(NULLIF(TRIM(rev_u.user_nm), ''), '-') AS reviewer_name,
             COALESCE(NULLIF(TRIM(apr_u.user_nm), ''), '-') AS approver_name,
             COALESCE(rpt.last_writer_name, '-') AS last_writer_name,
@@ -268,7 +270,9 @@
             AND m.report_date &lt; TO_CHAR(cb.cycle_end, 'YYYYMMDD')
         ) appr ON TRUE
         LEFT JOIN LATERAL (
+          <!-- 기존 -> 상태 무관 report_date 최대 문서 / 변경 -> 결재진행중, 결재자 승인 문서 중 report_date 최대 문서 (임시저장, 반려 제외. 기안자 최종확인 여부는 무관) -->
           SELECT m.report_date AS max_report_date,
+                 m.electronic_approval_id AS last_report_approval_id,
                  COALESCE(NULLIF(TRIM(wu.user_nm), ''), NULLIF(TRIM(wla.login_code), ''), '-') AS last_writer_name
           FROM tb_electronic_approval_main m
           LEFT JOIN tb_user wu
@@ -281,6 +285,7 @@
             AND m.drafting_work_category_id = w.drafting_work_category_id
             AND COALESCE(m.delete_status, 'N') != 'Y'
             AND m.report_date ~ '^[0-9]{8}$'
+            AND COALESCE(m.status_type, '') IN ('in_progress', 'approved')
           ORDER BY m.report_date DESC, COALESCE(m.updated_at, m.created_at) DESC, m.electronic_approval_id DESC
           LIMIT 1
         ) rpt ON TRUE

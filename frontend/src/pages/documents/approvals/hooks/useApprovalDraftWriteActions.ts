@@ -52,6 +52,7 @@ type UseApprovalDraftWriteActionsParams = {
   rejectEventType?: 'review_return' | 'final_return';
   approvalApply?: boolean;
   categoryCode?: string;
+  expirationApply?: boolean;
   sub?: ApprovalSubValues;
   pendingAttachmentFiles?: File[];
   onPendingAttachmentsSynced?: () => void;
@@ -109,6 +110,7 @@ export function useApprovalDraftWriteActions(
     rejectEventType,
     approvalApply = true,
     categoryCode,
+    expirationApply,
     sub,
     pendingAttachmentFiles = [],
     onPendingAttachmentsSynced,
@@ -130,7 +132,7 @@ export function useApprovalDraftWriteActions(
     tenantCode,
     baseId ?? '',
   ];
-  const subFieldConfig = getApprovalSubFieldConfig(categoryCode);
+  const subFieldConfig = getApprovalSubFieldConfig(categoryCode, expirationApply);
   // HCP 업무가 아니면 undefined, 필수값이 비면 오류를 던져 onError 로 보낸다
   const resolveSubPayload = () => {
     if (!subFieldConfig) {

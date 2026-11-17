@@ -171,7 +171,12 @@ public class WorkdayServiceImpl extends EgovAbstractServiceImpl implements Workd
                 day.setSource("API");
             } else {
                 // DayOfWeek: 월=1 ~ 일=7 → %7 로 일=0 ~ 토=6
-                day.setDayType(weeklyOffDays.contains(date.getDayOfWeek().getValue() % 7) ? "COMPANY_HOLIDAY" : "WORK");
+                if (weeklyOffDays.contains(date.getDayOfWeek().getValue() % 7)) {
+                    day.setDayType("COMPANY_HOLIDAY");
+                    day.setDayName("회사휴일");
+                } else {
+                    day.setDayType("WORK");
+                }
                 day.setSource("PATTERN");
             }
             days.add(day);
