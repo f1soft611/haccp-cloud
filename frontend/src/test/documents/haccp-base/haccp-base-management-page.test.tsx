@@ -166,8 +166,8 @@ describe('HaccpBaseManagementPage', () => {
       screen.getByRole('dialog', { name: /업무 추가/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('textbox', { name: /업무코드/ }),
-    ).toBeInTheDocument();
+      screen.queryByRole('textbox', { name: /업무코드/ }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /업무명/ })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: '분류' })).toBeInTheDocument();
     expect(

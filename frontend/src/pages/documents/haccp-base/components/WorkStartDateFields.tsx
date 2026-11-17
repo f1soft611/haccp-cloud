@@ -10,7 +10,8 @@ import {
 } from '../../../../shared/utils/workCycleDates';
 import type { HaccpBaseCreateForm } from '../types';
 
-const ANCHOR_TYPE_OPTIONS = [
+// 시작일 기준 셀렉트 옵션. 주차 기준은 월 이상 주기만
+export const ANCHOR_TYPE_OPTIONS = [
     { value: 'DATE', label: '일자 기준' },
     { value: 'WEEKDAY', label: '주차 기준' },
 ] as const;
@@ -54,28 +55,18 @@ export function isWorkStartIncomplete(form: HaccpBaseCreateForm): boolean {
     return form.cycleAnchorType === 'WEEKDAY' && !toFormCycleAnchor(form);
 }
 
-// 양식관리 업무 시작일 입력. 월 이상 주기만 주차 기준을 고를 수 있다
+// 양식관리 업무 시작일 입력칸과 안내 문구. 시작일 기준 선택은 다이얼로그의 셀렉트가 맡는다
 export function WorkStartDateFields(props: {
     value: HaccpBaseCreateForm;
     onChange: (next: HaccpBaseCreateForm) => void;
 }) {
     const { value, onChange } = props;
-    const canUseWeekday = isMonthlyOrLongerCycle(value.cycle);
-    const byWeekday = canUseWeekday && value.cycleAnchorType === 'WEEKDAY';
+    const byWeekday = isMonthlyOrLongerCycle(value.cycle) && value.cycleAnchorType === 'WEEKDAY';
     const anchor = toFormCycleAnchor(value);
 
     return (
         <Stack spacing={1}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                {canUseWeekday && (
-                    <AppSelect
-                        fullWidth
-                        label="시작일 기준"
-                        value={value.cycleAnchorType}
-                        onChange={(cycleAnchorType) => onChange({ ...value, cycleAnchorType })}
-                        options={ANCHOR_TYPE_OPTIONS}
-                    />
-                )}
                 {byWeekday ? (
                     <>
                         <AppTextField
