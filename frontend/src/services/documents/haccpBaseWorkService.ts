@@ -66,6 +66,7 @@ export type HaccpBaseWorkItem = {
   pendingArrivalAt?: string;
   lastReportDate?: string;
   lastWriterName?: string;
+  lastReportApprovalId?: string;
   cycleEndDate?: string;
   approvalRequestLabel?: string;
   submittedAt?: string;
@@ -191,6 +192,8 @@ type RawHaccpBaseWorkItem = {
   last_report_date?: string | null;
   lastWriterName?: string | null;
   last_writer_name?: string | null;
+  lastReportApprovalId?: string | number | null;
+  last_report_approval_id?: string | number | null;
   cycleEndDate?: string | null;
   cycle_end_date?: string | null;
   approvalRequestLabel?: string | null;
@@ -477,6 +480,7 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     ),
     lastReportDate: normalizeText(raw.lastReportDate ?? raw.last_report_date),
     lastWriterName: normalizeText(raw.lastWriterName ?? raw.last_writer_name),
+    lastReportApprovalId: normalizeText(raw.lastReportApprovalId ?? raw.last_report_approval_id),
     cycleEndDate: normalizeText(raw.cycleEndDate ?? raw.cycle_end_date),
     approvalRequestLabel: normalizeText(raw.approvalRequestLabel ?? raw.approval_request_label),
     submittedAt: normalizeText(raw.submittedAt ?? raw.submitted_at),

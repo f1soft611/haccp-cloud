@@ -309,6 +309,16 @@
   color: #8a8a8a;
 }
 
+.scope .updatedLink {
+  text-align: left;
+  color: #8a8a8a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  text-decoration-color: currentColor;
+}
+
 .scope .footerLabel {
   min-width: 0;
   font-size: 14px;

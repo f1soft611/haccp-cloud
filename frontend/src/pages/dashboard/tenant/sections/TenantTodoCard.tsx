@@ -1,5 +1,5 @@
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
-import { Box, Button, Card, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
+import { Box, Button, Card, Chip, Divider, IconButton, Link, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { resolveApprovalStatusView } from '../../../../shared/utils/approvalStatus';
 import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
@@ -25,6 +25,8 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
         todoStatus: item.status,
         writtenInCycle: item.writtenInCycle,
     }).label;
+
+    const latestText = `최신 : ${item.updatedAt ? item.updatedAt.slice(0, 10) : '-'} / ${item.lastWriterName || '-'}`;
 
     const handleUnwritten = () => {
         const query = new URLSearchParams({ workType: sectionLabel, workDivisionId: item.id, status: '미작성' });
@@ -67,9 +69,22 @@ export function TenantTodoCard({ item, sectionLabel }: TenantTodoCardProps) {
                 <Divider />
 
                 <Stack direction="row" alignItems="center" spacing={1} className={styles.cardFooter}>
-                    <Typography variant="body2" noWrap className={styles.updatedText}>
-                        {`최신 : ${item.updatedAt ? item.updatedAt.slice(0, 10) : '-'} / ${item.lastWriterName || '-'}`}
-                    </Typography>
+                    {item.lastReportApprovalId ? (
+                        <Link
+                            component="button"
+                            type="button"
+                            underline="always"
+                            aria-label="최신 문서 열기"
+                            onClick={() => navigate(`/approvals/draft/${item.lastReportApprovalId}?idType=approval`)}
+                            className={`${styles.updatedText} ${styles.updatedLink}`}
+                        >
+                            {latestText}
+                        </Link>
+                    ) : (
+                        <Typography variant="body2" noWrap className={styles.updatedText}>
+                            {latestText}
+                        </Typography>
+                    )}
                     <Button
                         size="small"
                         variant="outlined"
