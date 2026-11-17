@@ -16,6 +16,10 @@
         <result property="divisionName" column="code_name"/>
         <result property="cycle" column="reg_term"/>
         <result property="cycleName" column="reg_term_nm"/>
+        <result property="workStartDate" column="work_start_date"/>
+        <result property="cycleAnchorType" column="cycle_anchor_type"/>
+        <result property="cycleAnchorWeek" column="cycle_anchor_week"/>
+        <result property="cycleAnchorWeekday" column="cycle_anchor_weekday"/>
         <result property="cycleDate" column="cycle_date"/>
         <result property="active" column="active"/>
         <result property="approvalApply" column="approval_apply"/>
@@ -998,6 +1002,10 @@
             w.reg_term,
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
+            TO_CHAR(w.work_start_date, 'YYYY-MM-DD') AS work_start_date,
+            w.cycle_anchor_type,
+            w.cycle_anchor_week,
+            w.cycle_anchor_weekday,
             TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYY-MM-DD') AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             CASE WHEN w.approval_apply = 'N' THEN FALSE ELSE TRUE END AS approval_apply,
@@ -1241,6 +1249,10 @@
             w.reg_term,
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
+            TO_CHAR(w.work_start_date, 'YYYY-MM-DD') AS work_start_date,
+            w.cycle_anchor_type,
+            w.cycle_anchor_week,
+            w.cycle_anchor_weekday,
             CASE
                 WHEN NULLIF(TRIM(m.report_date), '') ~ '^[0-9]{8}$' THEN TO_CHAR(TO_DATE(m.report_date, 'YYYYMMDD'), 'YYYY-MM-DD')
                 ELSE NULL

@@ -869,6 +869,7 @@ class HaccpWorkFlowServiceImplTest {
     void submitDraft_hcpSkipsCycleLock() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setExpirationApply(Boolean.TRUE);
         when(serviceHaccpWorkDAO.selectCycleLockedApprovalCount(anyMap())).thenReturn(1);
 
         HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
@@ -938,6 +939,7 @@ class HaccpWorkFlowServiceImplTest {
     void submitDraft_hcpWithoutSub_rejectsBeforeSave() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setExpirationApply(Boolean.TRUE);
 
         HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
         payload.setTitle("검교정 기안");
@@ -958,6 +960,7 @@ class HaccpWorkFlowServiceImplTest {
     void submitDraft_hcpUpdatesExistingSub() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setExpirationApply(Boolean.TRUE);
         when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(1);
 
         HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
@@ -982,6 +985,7 @@ class HaccpWorkFlowServiceImplTest {
     void submitDraft_hcpSavesInspectedDateAsReportDate() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setExpirationApply(Boolean.TRUE);
         serviceDraftWork.setCycle("HALF");
         when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(1);
 
@@ -1002,6 +1006,7 @@ class HaccpWorkFlowServiceImplTest {
     void saveTempDraft_hcpSavesInspectedDateAsReportDate() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setExpirationApply(Boolean.TRUE);
         serviceDraftWork.setCycle("HALF");
         when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(1);
         doAnswer(invocation -> {
@@ -1026,6 +1031,7 @@ class HaccpWorkFlowServiceImplTest {
     void saveTempDraft_hcpRejectsFutureInspectedDate() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setExpirationApply(Boolean.TRUE);
         serviceDraftWork.setCycle("HALF");
         HaccpWorkApprovalSubVO sub = calibSub();
         sub.setInspectedDate(LocalDate.now().plusYears(1).toString());
@@ -1048,6 +1054,7 @@ class HaccpWorkFlowServiceImplTest {
     void saveTempDraft_hcpInsertsSubWhenMissing() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setExpirationApply(Boolean.TRUE);
         when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(0);
 
         HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
@@ -1067,6 +1074,7 @@ class HaccpWorkFlowServiceImplTest {
     void saveTempDraft_hcpWithoutSub_rejects() throws Exception {
         HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
         serviceDraftWork.setCategoryCode("HCP-HCERT");
+        serviceDraftWork.setExpirationApply(Boolean.TRUE);
 
         HaccpWorkDraftTempSaveRequestVO payload = new HaccpWorkDraftTempSaveRequestVO();
         payload.setTitle("보건증 임시저장");
@@ -1088,6 +1096,7 @@ class HaccpWorkFlowServiceImplTest {
         serviceDraftWork.setReviewerId(null);
         serviceDraftWork.setApproverId(null);
         serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setExpirationApply(Boolean.TRUE);
         when(serviceHaccpWorkDAO.updateElectronicApprovalSub(anyMap())).thenReturn(1);
 
         HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
@@ -1111,6 +1120,23 @@ class HaccpWorkFlowServiceImplTest {
 
         service.submitDraft(77L, "tenant_001", payload, "3001");
 
+        verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalSub(anyMap());
+        verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalSub(anyMap());
+    }
+
+    @DisplayName("만료일 관리 양식이 N 인 HCP 업무는 일반 업무처럼 sub 를 저장하지 않고 주기 잠금을 검사한다")
+    @Test
+    void submitDraft_hcpWithoutExpirationApply_actsAsNormalWork() throws Exception {
+        HaccpWorkFlowServiceImpl service = createServiceForSubmitChainTest(3001L, 4001L);
+        serviceDraftWork.setCategoryCode("HCP-CALIB");
+        serviceDraftWork.setExpirationApply(Boolean.FALSE);
+
+        HaccpWorkDraftSubmitRequestVO payload = new HaccpWorkDraftSubmitRequestVO();
+        payload.setTitle("검교정 일반 기안");
+
+        service.submitDraft(77L, "tenant_001", payload, "3001");
+
+        verify(serviceHaccpWorkDAO).selectCycleLockedApprovalCount(anyMap());
         verify(serviceHaccpWorkDAO, never()).updateElectronicApprovalSub(anyMap());
         verify(serviceHaccpWorkDAO, never()).insertElectronicApprovalSub(anyMap());
     }

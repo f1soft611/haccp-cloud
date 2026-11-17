@@ -16,6 +16,10 @@
         <result property="divisionName" column="code_name"/>
         <result property="cycle" column="reg_term"/>
         <result property="cycleName" column="reg_term_nm"/>
+        <result property="workStartDate" column="work_start_date"/>
+        <result property="cycleAnchorType" column="cycle_anchor_type"/>
+        <result property="cycleAnchorWeek" column="cycle_anchor_week"/>
+        <result property="cycleAnchorWeekday" column="cycle_anchor_weekday"/>
         <result property="createdBy" column="created_by"/>
         <result property="owner" column="owner"/>
         <result property="todoStatus" column="todo_status"/>
@@ -78,6 +82,10 @@
             w.code_name,
             w.reg_term,
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
+            TO_CHAR(w.work_start_date, 'YYYY-MM-DD') AS work_start_date,
+            w.cycle_anchor_type,
+            w.cycle_anchor_week,
+            w.cycle_anchor_weekday,
             CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             COALESCE(pending.pending_drafter_name, pending.pending_login_code, CAST(pending.pending_login_id AS varchar), '-') AS created_by,
@@ -344,8 +352,6 @@
                 UNION ALL
                 <!-- 변경 -> 최신 문서가 최종확인된 반려여도 미작성 -->
                 SELECT CASE
-                         <!-- 기존 -> 승인이면 만료일과 상관없이 NULL(미작성) -->
-                         <!-- 변경 -> 승인은 업무 안내 기준의 안내 시작일에 도달했을 때만 미작성, 도달 전은 confirmed(작성 완료, 어느 건수에도 안 셈) -->
                          <!-- 최종확인 대기 승인은 안내 시작일과 상관없이 승인 건수로 센다 -->
                          WHEN es.status_type = 'approved' AND <include refid="finalOwnerConfirmPending"><property name="doc" value="es"/></include> THEN 'approved'
                          WHEN es.status_type = 'approved' AND es.notice_reached THEN NULL
