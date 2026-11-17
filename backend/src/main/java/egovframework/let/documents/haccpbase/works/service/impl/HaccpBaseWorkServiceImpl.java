@@ -1,9 +1,13 @@
 package egovframework.let.documents.haccpbase.works.service.impl;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 import javax.annotation.Resource;
 
+import egovframework.let.documents.haccpwork.service.impl.HaccpWorkCycleDates;
 import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.egovframe.rte.fdl.idgnr.EgovIdGnrService;
 import org.springframework.http.HttpStatus;
@@ -30,9 +34,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements HaccpBaseWorkService {
 
     private static final String EXPIRATION_NOTICE_NONE = "NONE";
-    private static final Set<String> EXPIRATION_NOTICE_STATUSES =
-            new HashSet<String>(Arrays.asList(EXPIRATION_NOTICE_NONE, "DAY", "MONTH", "YEAR"));
+    private static final Set<String> EXPIRATION_NOTICE_STATUSES = new HashSet<String>(Arrays.asList(EXPIRATION_NOTICE_NONE, "DAY", "MONTH", "YEAR"));
     private final HaccpBaseWorkDAO haccpBaseWorkDAO;
+    private static final Set<String> WEEKDAY_ANCHOR_CYCLES = new HashSet<String>(Arrays.asList("MONTH", "QUARTER", "HALF", "YEAR"));
+    private static final Set<Integer> ANCHOR_WEEKS = new HashSet<Integer>(Arrays.asList(1, 2, 3, 4, HaccpWorkCycleDates.LAST_WEEK));
 
     @Resource(name = "haccpBaseWorkCodeIdGnrService")
     private EgovIdGnrService haccpBaseWorkCodeIdGnrService;
@@ -102,6 +107,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         boolean expirationApply = Boolean.TRUE.equals(payload.getExpirationApply());
         params.put("expirationApply", expirationApply ? "Y" : "N");
         putExpirationNotice(params, payload, expirationApply);
+        putCycleAnchor(params, payload);
         boolean approvalApply = !Boolean.FALSE.equals(payload.getApprovalApply());
         params.put("approvalApply", approvalApply ? "Y" : "N");
         params.put("reviewerId", approvalApply ? payload.getReviewerId() : null);
@@ -153,11 +159,13 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
          boolean expirationApply = Boolean.TRUE.equals(payload.getExpirationApply());
         params.put("expirationApply", expirationApply ? "Y" : "N");
         putExpirationNotice(params, payload, expirationApply);
+        putCycleAnchor(params, payload);
         boolean approvalApply = !Boolean.FALSE.equals(payload.getApprovalApply());
         params.put("approvalApply", approvalApply ? "Y" : "N");
         params.put("reviewerId", approvalApply ? payload.getReviewerId() : null);
         params.put("approverId", approvalApply ? payload.getApproverId() : null);
         params.put("updatedBy", actorLoginId);
+        ensureCycleAnchorUnchangedWhenWritten(tenantId, tenantCode, id, params);
         haccpBaseWorkDAO.updateWork(params);
 
         saveWorkAuthorityMappings(
@@ -233,6 +241,83 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         }
         params.put("expirationNoticeStatus", status);
         params.put("expirationNoticeCount", count);
+    }
+
+    // 업무 시작일, 반복 기준 정리와 검증. 시작일이 비면 4개 모두 null (기존 달력 기준)
+    // 주차 기준은 월 이상 주기만, 시작일은 시작 연월 + 주차 + 요일로 서버가 계산한다
+    private void putCycleAnchor(Map<String, Object> params, HaccpBaseWorkSaveRequestVO payload) {
+        String type = StringUtils.hasText(payload.getCycleAnchorType()) ? payload.getCycleAnchorType().trim() : "DATE";
+        LocalDate startDate;
+        Integer week = null;
+        Integer weekday = null;
+        if ("WEEKDAY".equals(type)) {
+            if (!WEEKDAY_ANCHOR_CYCLES.contains(HaccpWorkCycleDates.code(payload.getCycle()))) {
+                throw new IllegalArgumentException("주차 기준은 월, 분기, 반기, 연간 주기에서만 쓸 수 있습니다.");
+            }
+            week = payload.getCycleAnchorWeek();
+            weekday = payload.getCycleAnchorWeekday();
+            if (week == null || !ANCHOR_WEEKS.contains(week)) {
+                throw new IllegalArgumentException("시작 주차가 올바르지 않습니다.");
+            }
+            if (weekday == null || weekday < 1 || weekday > 7) {
+                throw new IllegalArgumentException("시작 요일이 올바르지 않습니다.");
+            }
+            startDate = HaccpWorkCycleDates.monthWeekDate(parseStartMonth(payload.getWorkStartMonth()), week, weekday);
+        } else if ("DATE".equals(type)) {
+            startDate = parseStartDate(payload.getWorkStartDate());
+        } else {
+            throw new IllegalArgumentException("업무 시작일 기준이 올바르지 않습니다.");
+        }
+        params.put("workStartDate", startDate == null ? null : startDate.toString());
+        params.put("cycleAnchorType", startDate == null ? null : type);
+        params.put("cycleAnchorWeek", week);
+        params.put("cycleAnchorWeekday", weekday);
+    }
+
+    // 일자 기준 업무 시작일(yyyy-MM-dd). 비면 null
+    private LocalDate parseStartDate(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("업무 시작일 형식이 올바르지 않습니다.");
+        }
+    }
+
+    // 주차 기준 시작 연월(yyyy-MM). 필수
+    private YearMonth parseStartMonth(String value) {
+        if (!StringUtils.hasText(value)) {
+            throw new IllegalArgumentException("시작 연월은 필수입니다.");
+        }
+        try {
+            return YearMonth.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("시작 연월 형식이 올바르지 않습니다.");
+        }
+    }
+
+    // 작성 문서가 있는 업무는 업무 시작일, 반복 기준을 바꿀 수 없다 (기존 문서의 주기 소속이 바뀌기 때문)
+    private void ensureCycleAnchorUnchangedWhenWritten(Long tenantId, String tenantCode, Long id, Map<String, Object> params) throws Exception {
+        if (haccpBaseWorkDAO.countWorkDocuments(tenantId, id) == 0) {
+            return;
+        }
+        Map<String, Object> lookupParams = new HashMap<String, Object>();
+        lookupParams.put("id", id);
+        lookupParams.put("tenantId", tenantId);
+        lookupParams.put("tenantCode", tenantCode);
+        HaccpBaseWorkVO current = haccpBaseWorkDAO.selectWorkById(lookupParams);
+        if (current == null) {
+            return;
+        }
+        boolean changed = !Objects.equals(current.getWorkStartDate(), params.get("workStartDate"))
+                || !Objects.equals(current.getCycleAnchorType(), params.get("cycleAnchorType"))
+                || !Objects.equals(current.getCycleAnchorWeek(), params.get("cycleAnchorWeek"))
+                || !Objects.equals(current.getCycleAnchorWeekday(), params.get("cycleAnchorWeekday"));
+        if (changed) {
+            throw new IllegalArgumentException("작성된 문서가 있어 업무 시작일을 바꿀 수 없습니다.");
+        }
     }
 
     private void validatePayload(HaccpBaseWorkSaveRequestVO payload) {

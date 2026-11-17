@@ -316,6 +316,17 @@
           AND cci.use_at = 'Y'
     </select>
 
+    <!-- 업무에 작성된 결재문서 수(삭제 제외, 임시저장 포함). 업무 시작일 변경 가능 여부 판단용 -->
+    <select id="HaccpBaseWorkDAO.countWorkDocuments"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_electronic_approval_main m
+        WHERE m.tenant_id = #{tenantId}
+          AND m.drafting_work_category_id = #{workId}
+          AND COALESCE(m.delete_status, 'N') != 'Y'
+    </select>
+
     <select id="HaccpBaseWorkDAO.insertWork"
             parameterType="map"
             resultType="long">

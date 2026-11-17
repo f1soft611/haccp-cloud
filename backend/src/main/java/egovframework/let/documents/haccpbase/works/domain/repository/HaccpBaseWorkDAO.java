@@ -56,6 +56,15 @@ public class HaccpBaseWorkDAO extends EgovAbstractMapper {
         return count == null ? 0 : count;
     }
 
+    // 업무에 작성된 결재문서 수(삭제 제외, 임시저장 포함). 업무 시작일 변경 가능 여부 판단용
+    public int countWorkDocuments(Long tenantId, Long workId) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("workId", workId);
+        Integer count = selectOne("HaccpBaseWorkDAO.countWorkDocuments", params);
+        return count == null ? 0 : count;
+    }
+
     public Long insertWork(Map<String, Object> payload) throws Exception {
         return selectOne("HaccpBaseWorkDAO.insertWork", payload);
     }
