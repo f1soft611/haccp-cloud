@@ -2,7 +2,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 
 // 업무 주기 기준. 백엔드 HaccpWorkCycleDates, DB fn_work_cycle_* 와 같은 규칙
 export type WorkCycleAnchor = {
-    startDate: string; // yyyy-MM-dd, 첫 주기 시작일
+    startDate: string; // yyyy-MM-dd, 업무 기준일(첫 주기 마감일)
     type: 'DATE' | 'WEEKDAY';
     week: number | null; // 1~4, 9 = 마지막 주 (WEEKDAY 만)
     weekday: number | null; // 1(월)~7(일) (WEEKDAY 만)
@@ -50,8 +50,8 @@ export function monthWeekDate(month: string, week: number, weekday: number): str
     return thursday.subtract(3, 'day').add(weekday - 1, 'day').format(FORMAT);
 }
 
-// 업무 시작일 기준 n번째 주기 시작일. 월 단위는 매번 시작일에서 다시 더해 말일 보정이 누적되지 않게 한다
-function boundary(cycle: string, anchor: WorkCycleAnchor, n: number): string {
+// 업무 기준일 기준 n번째 마감일. 월 단위는 매번 기준일에서 다시 더해 말일 보정이 누적되지 않게 한다
+function deadline(cycle: string, anchor: WorkCycleAnchor, n: number): string {
     const start = dayjs(anchor.startDate);
     if (cycle === 'WEEK') {
         return start.add(7 * n, 'day').format(FORMAT);
@@ -67,11 +67,21 @@ function boundary(cycle: string, anchor: WorkCycleAnchor, n: number): string {
     return start.add(months * n, 'month').format(FORMAT);
 }
 
+// n번째 주기 시작일 = (n-1)번째 마감일 다음 날 (기준일은 첫 주기의 마감일)
+function boundary(cycle: string, anchor: WorkCycleAnchor, n: number): string {
+    return dayjs(deadline(cycle, anchor, n - 1)).add(1, 'day').format(FORMAT);
+}
+
+// 첫 주기 시작일(작성 하한). 기준일에서 거꾸로 한 주기, 주기 칸이 없는 일, 수시는 기준일 그대로
+export function firstCycleStart(cycle: string, anchor: WorkCycleAnchor): string {
+    return hasCycleBoundary(cycle) ? boundary(cycle, anchor, 0) : anchor.startDate;
+}
+
 // date 가 속한 주기 번호(0부터). 주차 기준은 경계가 앞뒤 달로 넘어가므로 양쪽 모두 맞춘다
 function cycleIndex(cycle: string, anchor: WorkCycleAnchor, date: string): number {
     const target = dayjs(date);
     if (cycle === 'WEEK') {
-        return Math.floor(target.diff(dayjs(anchor.startDate), 'day') / 7);
+        return Math.floor(target.diff(dayjs(boundary(cycle, anchor, 0)), 'day') / 7);
     }
     const months = CYCLE_MONTHS[cycle];
     const base = dayjs(anchor.type === 'WEEKDAY' ? anchorMonthOf(anchor.startDate) : anchor.startDate);
@@ -91,14 +101,14 @@ function hasCycleBoundary(cycle: string): boolean {
 
 // 업무 주기 기준 보고일자(yyyy-MM-dd).
 // 기준 없음: WEEK 는 그 주 월요일, MONTH 는 1일, QUARTER 는 분기 첫날, HALF 는 1월 1일 또는 7월 1일, YEAR 는 1월 1일, 그 외는 고른 날짜
-// 기준 있음: 업무 시작일부터 센 주기 시작일, 시작일 이전이면 ''
+// 기준 있음: 업무 시작일부터 센 주기 시작일, 첫 주기 이전이면 ''
 export function toCycleStartDate(cycle: string, date: string, anchor?: WorkCycleAnchor): string {
     const value = dayjs(date);
     if (!date || !value.isValid()) {
         return date;
     }
     if (anchor) {
-        if (date < anchor.startDate) {
+        if (date < firstCycleStart(cycle, anchor)) {
             return '';
         }
         return hasCycleBoundary(cycle) ? boundary(cycle, anchor, cycleIndex(cycle, anchor, date)) : date;
@@ -121,10 +131,10 @@ export function toCycleStartDate(cycle: string, date: string, anchor?: WorkCycle
     return date;
 }
 
-// date 가 속한 주기의 다음 주기 시작일 (주기 끝 = 이 값 - 1일). 기준이 있고 시작일 이전이면 ''
+// date 가 속한 주기의 다음 주기 시작일 (주기 끝 = 마감일 = 이 값 - 1일). 기준이 있고 첫 주기 이전이면 ''
 export function nextCycleStart(cycle: string, date: string, anchor?: WorkCycleAnchor): string {
     if (anchor) {
-        if (date < anchor.startDate) {
+        if (date < firstCycleStart(cycle, anchor)) {
             return '';
         }
         return hasCycleBoundary(cycle)
@@ -139,7 +149,7 @@ export function nextCycleStart(cycle: string, date: string, anchor?: WorkCycleAn
     return (months ? start.add(months, 'month') : start.add(1, 'day')).format(FORMAT);
 }
 
-// 업무 응답의 시작일 필드를 기준으로. 시작일이 없으면 undefined (기존 달력 기준)
+// 업무 응답의 업무 기준일 필드를 기준으로. 기준일이 없으면 undefined (기존 달력 기준)
 export function toWorkCycleAnchor(work: {
     workStartDate?: string;
     cycleAnchorType?: string;
@@ -158,7 +168,7 @@ export function toWorkCycleAnchor(work: {
     };
 }
 
-// 양식관리 미리보기 문구. 예) 매월 3째주 화요일, 첫 주기 2026-04-14 ~ 2026-05-18
+// 양식관리 미리보기 문구. 예) 매월 3째주 화요일까지, 첫 주기 2026-03-18 ~ 2026-04-14
 export function describeCycleAnchor(cycle: string, anchor: WorkCycleAnchor): string {
     const prefix = CYCLE_PREFIX[cycle];
     if (!prefix) {
@@ -177,6 +187,5 @@ export function describeCycleAnchor(cycle: string, anchor: WorkCycleAnchor): str
     const month = cycle === 'YEAR'
         ? `${dayjs(anchor.type === 'WEEKDAY' ? anchorMonthOf(anchor.startDate) : anchor.startDate).month() + 1}월 `
         : '';
-    const end = dayjs(nextCycleStart(cycle, anchor.startDate, anchor)).subtract(1, 'day').format(FORMAT);
-    return `${prefix} ${month}${rule}, 첫 주기 ${anchor.startDate} ~ ${end}`;
+    return `${prefix} ${month}${rule}까지, 첫 주기 ${firstCycleStart(cycle, anchor)} ~ ${anchor.startDate}`;
 }
