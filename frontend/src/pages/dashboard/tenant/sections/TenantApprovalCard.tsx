@@ -47,7 +47,7 @@ export function TenantApprovalCard({ item, sectionLabel }: TenantApprovalCardPro
                     {[sectionLabel, item.approvalRequestLabel].filter(Boolean).join(' | ')}
                 </Typography>
                 <Typography variant="subtitle1" noWrap className={styles.workTitle}>
-                    {item.divisionName || item.title || '-'}
+                    {item.title || item.divisionName || '-'}
                 </Typography>
             </Box>
 
