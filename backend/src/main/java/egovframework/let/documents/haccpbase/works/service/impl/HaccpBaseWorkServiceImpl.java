@@ -272,7 +272,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         } else if ("DATE".equals(type)) {
             startDate = parseStartDate(payload.getWorkStartDate());
         } else {
-            throw new IllegalArgumentException("업무 시작일 기준이 올바르지 않습니다.");
+            throw new IllegalArgumentException("업무 기준일 설정이 올바르지 않습니다.");
         }
         params.put("workStartDate", startDate == null ? null : startDate.toString());
         params.put("cycleAnchorType", startDate == null ? null : type);
@@ -288,7 +288,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         try {
             return LocalDate.parse(value.trim());
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("업무 시작일 형식이 올바르지 않습니다.");
+            throw new IllegalArgumentException("업무 기준일 형식이 올바르지 않습니다.");
         }
     }
 
@@ -304,7 +304,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         }
     }
 
-    // 작성 문서가 있는 업무는 업무 시작일, 반복 기준을 바꿀 수 없다 (기존 문서의 주기 소속이 바뀌기 때문)
+    // 작성 문서가 있는 업무는 업무 기준일, 반복 기준을 바꿀 수 없다 (기존 문서의 주기 소속이 바뀌기 때문)
     private void ensureCycleAnchorUnchangedWhenWritten(Long tenantId, String tenantCode, Long id, Map<String, Object> params) throws Exception {
         if (haccpBaseWorkDAO.countWorkDocuments(tenantId, id) == 0) {
             return;
@@ -322,7 +322,7 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
                 || !Objects.equals(current.getCycleAnchorWeek(), params.get("cycleAnchorWeek"))
                 || !Objects.equals(current.getCycleAnchorWeekday(), params.get("cycleAnchorWeekday"));
         if (changed) {
-            throw new IllegalArgumentException("작성된 문서가 있어 업무 시작일을 바꿀 수 없습니다.");
+            throw new IllegalArgumentException("작성된 문서가 있어 업무 기준일을 바꿀 수 없습니다.");
         }
     }
 

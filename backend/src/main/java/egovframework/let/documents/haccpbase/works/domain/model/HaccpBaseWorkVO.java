@@ -53,7 +53,7 @@ public class HaccpBaseWorkVO implements Serializable {
     @Schema(description = "등록주기명")
     private String cycleName;
 
-    @Schema(description = "업무 시작일(yyyy-MM-dd). 없으면 기존 달력 기준")
+    @Schema(description = "업무 기준일(yyyy-MM-dd). 없으면 기존 달력 기준")
     private String workStartDate;
 
     @Schema(description = "주기 반복 기준(DATE/WEEKDAY)")

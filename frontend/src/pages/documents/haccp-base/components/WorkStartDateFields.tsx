@@ -10,7 +10,7 @@ import {
 } from '../../../../shared/utils/workCycleDates';
 import type { HaccpBaseCreateForm } from '../types';
 
-// 시작일 기준 셀렉트 옵션. 주차 기준은 월 이상 주기만
+// 기준일 기준 셀렉트 옵션. 주차 기준은 월 이상 주기만
 export const ANCHOR_TYPE_OPTIONS = [
     { value: 'DATE', label: '일자 기준' },
     { value: 'WEEKDAY', label: '주차 기준' },
@@ -55,7 +55,7 @@ export function isWorkStartIncomplete(form: HaccpBaseCreateForm): boolean {
     return form.cycleAnchorType === 'WEEKDAY' && !toFormCycleAnchor(form);
 }
 
-// 양식관리 업무 시작일 입력칸과 안내 문구. 시작일 기준 선택은 다이얼로그의 셀렉트가 맡는다
+// 양식관리 업무 기준일 입력칸과 안내 문구. 기준일 선택은 다이얼로그의 셀렉트가 맡는다
 export function WorkStartDateFields(props: {
     value: HaccpBaseCreateForm;
     onChange: (next: HaccpBaseCreateForm) => void;
@@ -72,7 +72,7 @@ export function WorkStartDateFields(props: {
                         <AppTextField
                             fullWidth
                             type="month"
-                            label="시작 연월"
+                            label="기준 연월"
                             value={value.workStartMonth}
                             onChange={(workStartMonth) => onChange({ ...value, workStartMonth })}
                             slotProps={{ inputLabel: { shrink: true } }}
@@ -96,7 +96,7 @@ export function WorkStartDateFields(props: {
                     <AppTextField
                         fullWidth
                         type="date"
-                        label="업무 시작일"
+                        label="업무 기준일"
                         value={value.workStartDate}
                         onChange={(workStartDate) => onChange({ ...value, workStartDate })}
                         slotProps={{ inputLabel: { shrink: true } }}

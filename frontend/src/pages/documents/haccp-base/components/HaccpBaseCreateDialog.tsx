@@ -110,11 +110,11 @@ export function HaccpBaseCreateDialog(props: {
       open={open}
       onClose={onClose}
       title={mode === 'create' ? '업무 추가' : '업무 수정'}
-      description={
-        mode === 'create'
-          ? '업무 기본 정보를 등록합니다.'
-          : '업무 기본 정보를 수정합니다.'
-      }
+      // description={
+      //   mode === 'create'
+      //     ? '업무 기본 정보를 등록합니다.'
+      //     : '업무 기본 정보를 수정합니다.'
+      // }
       actions={
         <>
           <Button
@@ -189,10 +189,9 @@ export function HaccpBaseCreateDialog(props: {
               }))}
           />
 
-          {/* 기존 -> 시작일 입력칸 위 토글 / 변경 -> 작성주기 옆 셀렉트 */}
           <AppSelect
               fullWidth
-              label="시작일 기준"
+              label="기준일 방식"
               value={canUseWeekday ? value.cycleAnchorType : 'DATE'}
               onChange={(cycleAnchorType) => onChange({ ...value, cycleAnchorType })}
               disabled={!canUseWeekday}

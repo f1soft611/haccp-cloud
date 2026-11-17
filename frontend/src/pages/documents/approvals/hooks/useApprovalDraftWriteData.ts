@@ -126,7 +126,7 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     setReportDate(work?.cycleDate ?? '');
   }, [work?.cycleDate]);
 
-  // 업무 시작일 기준까지 반영해 주기 시작일로. 시작일 이전 날짜는 그대로 두고 저장 시 서버가 400 으로 알린다
+  // 업무 기준일까지 반영해 주기 시작일로. 첫 주기 이전 날짜는 그대로 두고 저장 시 서버가 400 으로 알린다
   const changeReportDate = (next: string) => {
     setReportDate(toCycleStartDate(work?.cycle ?? '', next, work ? toWorkCycleAnchor(work) : undefined) || next);
   };
