@@ -62,6 +62,12 @@ public class HaccpBaseWorkServiceImpl extends EgovAbstractServiceImpl implements
         return haccpBaseWorkDAO.selectWorkList(condition);
     }
 
+    // 업무 추가 시 업무 시작일 기본값으로 쓸 테넌트 서비스 시작일(YYYY-MM-DD, 없으면 null)
+    @Override
+    public String getServiceStartDate(String tenantCode) throws Exception {
+        return haccpBaseWorkDAO.selectServiceStartDateByCode(normalizeTenantCode(tenantCode));
+    }
+
     @Override
     public HaccpBaseWorkVO getWorkById(Long id, String tenantCode) throws Exception {
         String normalizedTenantCode = normalizeTenantCode(tenantCode);

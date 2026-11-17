@@ -31,6 +31,11 @@ public class HaccpBaseWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpBaseWorkDAO.selectTenantIdByCode", tenantCode);
     }
 
+    // 업무 추가 시 업무 시작일 기본값으로 쓸 테넌트 서비스 시작일(YYYY-MM-DD, 없으면 null)
+    public String selectServiceStartDateByCode(String tenantCode) throws Exception {
+        return selectOne("HaccpBaseWorkDAO.selectServiceStartDateByCode", tenantCode);
+    }
+
     public Long selectLoginIdByTenantAndLoginCode(Map<String, Object> params) throws Exception {
         return selectOne("HaccpBaseWorkDAO.selectLoginIdByTenantAndLoginCode", params);
     }
