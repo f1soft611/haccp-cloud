@@ -59,6 +59,10 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
     approval_apply CHAR(1) NOT NULL DEFAULT 'Y',
     expiration_notice_status VARCHAR(10) NOT NULL DEFAULT 'NONE',
     expiration_notice_count INT4,
+    work_start_date DATE,
+    cycle_anchor_type VARCHAR(10),
+    cycle_anchor_week INT2,
+    cycle_anchor_weekday INT2,
     use_at CHAR(1) NOT NULL DEFAULT 'Y',
     delete_status VARCHAR(10) DEFAULT 'N',
     created_by BIGINT,
@@ -93,7 +97,13 @@ CREATE TABLE IF NOT EXISTS tb_drafting_work_category (
     CONSTRAINT ck_drafting_work_category_expiration_apply CHECK (expiration_apply IN ('Y', 'N')),
     CONSTRAINT ck_drafting_work_category_approval_apply CHECK (approval_apply IN ('Y', 'N')),
     CONSTRAINT ck_drafting_work_category_expiration_notice_status CHECK (expiration_notice_status IN ('NONE', 'DAY', 'MONTH', 'YEAR')),
-    CONSTRAINT ck_drafting_work_category_expiration_notice_count CHECK (expiration_notice_count IS NULL OR expiration_notice_count > 0)
+    CONSTRAINT ck_drafting_work_category_expiration_notice_count CHECK (expiration_notice_count IS NULL OR expiration_notice_count > 0),
+    CONSTRAINT ck_drafting_work_category_cycle_anchor CHECK (
+        (work_start_date IS NULL AND cycle_anchor_type IS NULL AND cycle_anchor_week IS NULL AND cycle_anchor_weekday IS NULL)
+     OR (work_start_date IS NOT NULL AND cycle_anchor_type = 'DATE' AND cycle_anchor_week IS NULL AND cycle_anchor_weekday IS NULL)
+     OR (work_start_date IS NOT NULL AND cycle_anchor_type = 'WEEKDAY'
+         AND cycle_anchor_week IN (1, 2, 3, 4, 9) AND cycle_anchor_weekday BETWEEN 1 AND 7)
+    )
 );
 
 CREATE TABLE IF NOT EXISTS tb_drafting_work_category_authority (
