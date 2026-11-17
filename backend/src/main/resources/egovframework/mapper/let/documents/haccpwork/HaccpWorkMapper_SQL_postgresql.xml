@@ -627,7 +627,9 @@
         COALESCE(tmp.ea_exe_id, '') AS ea_exe_id,
         CASE
         WHEN tmp.electronic_approval_id IS NOT NULL THEN COALESCE(tmp.ea_title, '')
-        ELSE CONCAT(COALESCE(w.code_name, ''), ' - ', TO_CHAR(gs.cycle_start, 'YYYY-MM-DD'))
+        <!-- 기존 -> 업무명 - 주기 시작일 / 변경 -> 기안 자동 제목과 같은 날짜_업무명, 업무 기준일 업무는 주기 마감일 -->
+        ELSE CONCAT(TO_CHAR(CASE WHEN cyc.anchored THEN gs.cycle_end - 1 ELSE gs.cycle_start END, 'YYYY-MM-DD'),
+                    '_', COALESCE(w.code_name, ''))
         END AS title,
         t.tenant_code,
         w.drafting_work_category_group_id,
@@ -952,6 +954,12 @@
         fn_work_cycle_next(<include refid="workCycleArgs"/>, COALESCE(CAST(#{cycleDate, jdbcType=VARCHAR} AS date), CURRENT_DATE))
     </sql>
 
+    <!-- 요청 일자가 속한 주기의 기안 보고일자. 업무 기준일이 있으면 주기 마감일(다음 주기 시작일 - 1일), 없으면 주기 시작일 -->
+    <sql id="requestedCycleReportDate">
+        CASE WHEN w.work_start_date IS NULL THEN <include refid="requestedCycleStart"/>
+             ELSE <include refid="requestedCycleNext"/> - 1 END
+    </sql>
+
     <!-- 결재신청 주기 잠금: 동시 신청 직렬화를 위해 업무 행을 잠근다 -->
     <select id="HaccpWorkDAO.lockWorkCategoryRow"
             parameterType="map"
@@ -1006,7 +1014,8 @@
             w.cycle_anchor_type,
             w.cycle_anchor_week,
             w.cycle_anchor_weekday,
-            TO_CHAR(<include refid="requestedCycleStart"/>, 'YYYY-MM-DD') AS cycle_date,
+            <!-- 기존 -> 주기 시작일 / 변경 -> 업무 기준일 업무는 주기 마감일 (기안 업무 기준일, 제목 초기값) -->
+            TO_CHAR(<include refid="requestedCycleReportDate"/>, 'YYYY-MM-DD') AS cycle_date,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             CASE WHEN w.approval_apply = 'N' THEN FALSE ELSE TRUE END AS approval_apply,
             CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,

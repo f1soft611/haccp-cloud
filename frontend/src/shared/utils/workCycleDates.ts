@@ -149,6 +149,15 @@ export function nextCycleStart(cycle: string, date: string, anchor?: WorkCycleAn
     return (months ? start.add(months, 'month') : start.add(1, 'day')).format(FORMAT);
 }
 
+// 기안 보고일자(업무 기준일 칸). 기준 있음 = 그 주기 마감일(첫 주기는 기준일), 첫 주기 이전이면 ''. 기준 없음 = 주기 시작일
+export function toCycleReportDate(cycle: string, date: string, anchor?: WorkCycleAnchor): string {
+    if (!anchor) {
+        return toCycleStartDate(cycle, date);
+    }
+    const next = nextCycleStart(cycle, date, anchor);
+    return next ? dayjs(next).subtract(1, 'day').format(FORMAT) : '';
+}
+
 // 업무 응답의 업무 기준일 필드를 기준으로. 기준일이 없으면 undefined (기존 달력 기준)
 export function toWorkCycleAnchor(work: {
     workStartDate?: string;

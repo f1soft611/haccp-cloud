@@ -80,21 +80,18 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "임시저장 사용자 정보를 확인할 수 없습니다.");
         }
 
-        // 기존 -> 현재 주기 기준으로 결재 상태 확인 후 템플릿 조회
-        // 변경 -> 요청 주기 템플릿 조회 후 주기 기준일 확정(미래면 400), 같은 주기 기준으로 결재 상태 확인
+        // 요청 주기 템플릿 조회 후 주기 기준일 확정(미래면 400), 같은 주기 기준으로 결재 상태 확인
         String requestedCycleDate = payload.getCycleDate();
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
-        String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), anchorOf(work), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
-        // 기존 -> 같은 주기 여러 건 허용. 수정 대상(approvalId)이 본인 임시저장인지만 검증, 없으면 새 문서
-        // 변경 -> 수정 대상 검증은 그대로, reportDate 확정 후 ensureCycleNotLocked 로 주기당 결재신청 1건 잠금 (만료일 관리 업무 제외)
+        // 기존 -> resolve(주기 시작일) / 변경 -> 업무 기준일 업무는 주기 마감일
+        String cycleDate = HaccpWorkCycleDates.resolveReportDate(work.getCycle(), anchorOf(work), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);        // reportDate 확정 후 ensureCycleNotLocked 로 주기당 결재신청 1건 잠금 (만료일 관리 업무 제외)
         Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "임시저장");
-        // 기존 -> isSubCategory(분류코드만) / 변경 -> 만료일 관리 양식 Y 인 HCP 업무만 sub, 검사일 보고일자, 잠금 제외
+        // 만료일 관리 양식 Y 인 HCP 업무만 sub, 검사일 보고일자, 잠금 제외
         boolean subCategory = HaccpWorkApprovalSubs.isExpirationWork(work.getExpirationApply(), work.getCategoryCode());
         if (subCategory) {
             HaccpWorkApprovalSubs.validate(work.getCategoryCode(), payload.getSub());
         }
-        // 기존 -> resolveReportDate(work.getCycle(), cycleDate, payload.getReportDate())
-        // 변경 -> 만료일 관리 업무는 검사일 그대로(달력 표시일), 일반 업무는 기존처럼 주기 시작일
+        // 만료일 관리 업무는 검사일 그대로(달력 표시일), 일반 업무는 기존처럼 주기
         String reportDate = subCategory
                 ? resolveInspectedReportDate(work.getCycle(), anchorOf(work), payload.getSub().getInspectedDate())
                 : resolveReportDate(work.getCycle(), anchorOf(work), cycleDate, payload.getReportDate());
@@ -238,8 +235,8 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
 
         String requestedCycleDate = payload.getCycleDate();
         HaccpWorkVO work = haccpWorkDraftService.getDraftTemplate(normalizedTenantCode, workId, "work", actorLoginCode, requestedCycleDate);
-        String cycleDate = HaccpWorkCycleDates.resolve(work.getCycle(), anchorOf(work), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);
-        Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "결재신청");
+        // 기존 -> resolve(주기 시작일) / 변경 -> 업무 기준일 업무는 주기 마감일
+        String cycleDate = HaccpWorkCycleDates.resolveReportDate(work.getCycle(), anchorOf(work), requestedCycleDate, LocalDate.now()).format(DATE_FORMATTER);        Long preApplyApprovalId = resolveEditableApprovalId(tenantId, workId, actorLoginId, payload.getApprovalId(), "결재신청");
         // 기존 -> isSubCategory(분류코드만) / 변경 -> 만료일 관리 양식 Y 인 HCP 업무만 sub, 검사일 보고일자, 잠금 제외
         boolean subCategory = HaccpWorkApprovalSubs.isExpirationWork(work.getExpirationApply(), work.getCategoryCode());
         if (subCategory) {
@@ -2065,14 +2062,13 @@ public class HaccpWorkFlowServiceImpl extends EgovAbstractServiceImpl implements
                 work.getWorkStartDate(), work.getCycleAnchorType(), work.getCycleAnchorWeek(), work.getCycleAnchorWeekday());
     }
 
-    /** 보고일자(reportDate)의 주기 시작일(yyyyMMdd). 비었으면 원래 주기. */
-    // 기존 -> 대상 주기가 원래 주기와 다르면 그 주기의 결재중/승인, 임시저장 문서를 검사해 409
-    // 변경 -> 같은 주기 여러 건 허용이라 충돌 검사 없이 주기 시작일만 계산
+    /** 보고일자(reportDate)의 보고일자(yyyyMMdd). 기준일 업무는 주기 마감일, 아니면 주기 시작일. 비었으면 원래 주기. */
+    // resolve(주기 시작일) 대신 resolveReportDate(기준일 업무는 마감일)
     private String resolveReportDate(String regTerm, HaccpWorkCycleDates.Anchor anchor, String cycleDate, String requestedReportDate) {
         if (!StringUtils.hasText(requestedReportDate)) {
             return cycleDate;
         }
-        return HaccpWorkCycleDates.resolve(regTerm, anchor, requestedReportDate, LocalDate.now()).format(DATE_FORMATTER);
+        return HaccpWorkCycleDates.resolveReportDate(regTerm, anchor, requestedReportDate, LocalDate.now()).format(DATE_FORMATTER);
     }
 
     /** 만료일 관리 업무의 보고일자 = 검사일(yyyyMMdd). 주기 시작일로 바로잡지 않고, 시작일 이전이거나 미래 주기면 400. */

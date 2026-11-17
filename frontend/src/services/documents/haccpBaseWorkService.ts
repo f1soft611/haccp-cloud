@@ -226,12 +226,28 @@ type RawHaccpBaseWorkItem = {
 };
 
 type ResultEnvelope<T> = {
+  resultCode?: number | string;
+  resultMessage?: string;
   result?: {
     resultList?: T[];
     item?: T;
     message?: string;
   };
 };
+
+// 저장 응답 확인. 백엔드가 입력 오류를 HTTP 200 + resultCode 900 으로 주는 경우를 실패로 바꾼다
+function assertSuccess(data: unknown): void {
+  if (!data || Array.isArray(data) || typeof data !== 'object') {
+    return;
+  }
+  const envelope = data as ResultEnvelope<unknown>;
+  const resultCode = Number(envelope.resultCode);
+  if (envelope.resultCode !== undefined && Number.isFinite(resultCode) && resultCode !== 200) {
+    const message =
+      envelope.result?.message || envelope.resultMessage || '요청 처리 중 오류가 발생했습니다.';
+    throw { response: { data: { message } }, message };
+  }
+}
 
 type RawHaccpApprovalCommentItem = {
   commentId?: number | string | null;
@@ -769,6 +785,7 @@ export async function createHaccpBaseWork(payload: {
     },
     { headers: { 'x-tenant-code': payload.tenantCode } },
   );
+  assertSuccess(data);
 
   const item = Array.isArray(data)
     ? data[0]
@@ -824,6 +841,7 @@ export async function updateHaccpBaseWork(payload: {
     },
     { headers: { 'x-tenant-code': payload.tenantCode } },
   );
+  assertSuccess(data);
 
   const item = Array.isArray(data)
     ? data[0]
@@ -851,6 +869,7 @@ export async function saveHaccpBaseWorkTemplate(payload: {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
   );
+  assertSuccess(data);
 
   const envelope = data as ResultEnvelope<RawHaccpBaseWorkItem>;
   const item = Array.isArray(data)
@@ -866,9 +885,10 @@ export async function deleteHaccpWorkDraft(payload: {
   tenantCode: string;
   approvalId: string;
 }): Promise<void> {
-  await apiClient.delete(`/v1/haccp-work/drafts/${payload.approvalId}`, {
+  const { data } = await apiClient.delete(`/v1/haccp-work/drafts/${payload.approvalId}`, {
     headers: { 'x-tenant-code': payload.tenantCode },
   });
+  assertSuccess(data);
 }
 
 export async function saveHaccpWorkTempDraft(payload: {
@@ -901,6 +921,7 @@ export async function saveHaccpWorkTempDraft(payload: {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
   );
+  assertSuccess(data);
 
   const envelope = data as ResultEnvelope<RawHaccpBaseWorkItem>;
   const item = Array.isArray(data)
@@ -948,6 +969,7 @@ export async function submitHaccpWorkDraft(payload: {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
   );
+  assertSuccess(data);
 
   const envelope = data as ResultEnvelope<{
     message?: string;
@@ -999,6 +1021,7 @@ export async function updateHaccpWorkApprovalStatus(payload: {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
   );
+  assertSuccess(data);
 
   const envelope = data as ResultEnvelope<RawHaccpBaseWorkItem>;
   const item = Array.isArray(data)
@@ -1035,7 +1058,7 @@ export async function createHaccpWorkApprovalComment(payload: {
   parentCommentId?: string;
 }): Promise<void> {
   const trimmedParentCommentId = normalizeText(payload.parentCommentId);
-  await apiClient.post(
+  const { data } = await apiClient.post(
     `/v1/haccp-work/approvals/${payload.approvalId}/comments`,
     {
       comment: payload.comment,
@@ -1045,6 +1068,7 @@ export async function createHaccpWorkApprovalComment(payload: {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
   );
+  assertSuccess(data);
 }
 
 export async function updateHaccpWorkApprovalComment(payload: {
@@ -1053,13 +1077,14 @@ export async function updateHaccpWorkApprovalComment(payload: {
   commentId: string;
   comment: string;
 }): Promise<void> {
-  await apiClient.patch(
+  const { data } = await apiClient.patch(
     `/v1/haccp-work/approvals/${payload.approvalId}/comments/${payload.commentId}`,
     { comment: payload.comment },
     {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
   );
+  assertSuccess(data);
 }
 
 export async function deleteHaccpWorkApprovalComment(payload: {
@@ -1067,12 +1092,13 @@ export async function deleteHaccpWorkApprovalComment(payload: {
   approvalId: string;
   commentId: string;
 }): Promise<void> {
-  await apiClient.delete(
+  const { data } = await apiClient.delete(
     `/v1/haccp-work/approvals/${payload.approvalId}/comments/${payload.commentId}`,
     {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
   );
+  assertSuccess(data);
 }
 
 export async function toggleHaccpWorkApprovalCommentLike(payload: {
@@ -1080,11 +1106,12 @@ export async function toggleHaccpWorkApprovalCommentLike(payload: {
   approvalId: string;
   commentId: string;
 }): Promise<void> {
-  await apiClient.post(
+  const { data } = await apiClient.post(
     `/v1/haccp-work/approvals/${payload.approvalId}/comments/${payload.commentId}/likes`,
     {},
     {
       headers: { 'x-tenant-code': payload.tenantCode },
     },
   );
+  assertSuccess(data);
 }
