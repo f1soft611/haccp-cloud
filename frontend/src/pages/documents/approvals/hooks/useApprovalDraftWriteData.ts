@@ -15,10 +15,9 @@ import {
   parseTemplateJson,
   resolveApprovalTitle,
   toApprovalAutoTitle,
-  toCycleStartDate,
 } from '../utils/approvalDraftUtils';
 import { isDocumentOwner } from '../../../../shared/utils/ownershipUtils';
-import { toWorkCycleAnchor } from '../../../../shared/utils/workCycleDates';
+import { toCycleReportDate, toWorkCycleAnchor } from '../../../../shared/utils/workCycleDates';
 import type { ApprovalSubValues } from '../../../../services/documents/haccpBaseWorkService';
 import {
   EMPTY_APPROVAL_SUB,
@@ -126,9 +125,10 @@ export function useApprovalDraftWriteData(): UseApprovalDraftWriteDataResult {
     setReportDate(work?.cycleDate ?? '');
   }, [work?.cycleDate]);
 
-  // 업무 기준일까지 반영해 주기 시작일로. 첫 주기 이전 날짜는 그대로 두고 저장 시 서버가 400 으로 알린다
+  // 기존 -> 주기 시작일로 맞춤 / 변경 -> 업무 기준일 업무는 주기 마감일로 (기준일 없으면 주기 시작일)
+  // 첫 주기 이전 날짜는 그대로 두고 저장 시 서버가 400 으로 알린다
   const changeReportDate = (next: string) => {
-    setReportDate(toCycleStartDate(work?.cycle ?? '', next, work ? toWorkCycleAnchor(work) : undefined) || next);
+    setReportDate(toCycleReportDate(work?.cycle ?? '', next, work ? toWorkCycleAnchor(work) : undefined) || next);
   };
 
   useEffect(() => {
