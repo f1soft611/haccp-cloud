@@ -14,6 +14,10 @@
         <result property="divisionName" column="code_name"/>
         <result property="cycle" column="reg_term"/>
         <result property="cycleName" column="reg_term_nm"/>
+        <result property="workStartDate" column="work_start_date"/>
+        <result property="cycleAnchorType" column="cycle_anchor_type"/>
+        <result property="cycleAnchorWeek" column="cycle_anchor_week"/>
+        <result property="cycleAnchorWeekday" column="cycle_anchor_weekday"/>
         <result property="active" column="active"/>
         <result property="expirationApply" column="expiration_apply"/>
         <result property="expirationNoticeStatus" column="expiration_notice_status"/>
@@ -57,6 +61,10 @@
             w.reg_term,
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
+            TO_CHAR(w.work_start_date, 'YYYY-MM-DD') AS work_start_date,
+            w.cycle_anchor_type,
+            w.cycle_anchor_week,
+            w.cycle_anchor_weekday,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
             COALESCE(w.expiration_notice_status, 'NONE') AS expiration_notice_status,
@@ -173,6 +181,10 @@
             w.reg_term,
             <!-- 기존 -> CYCLE_NAME_COL(플레이스홀더) / 변경 -> 등록주기 공통코드명 -->
             COALESCE(cci.item_nm, w.reg_term) AS reg_term_nm,
+            TO_CHAR(w.work_start_date, 'YYYY-MM-DD') AS work_start_date,
+            w.cycle_anchor_type,
+            w.cycle_anchor_week,
+            w.cycle_anchor_weekday,
             CASE WHEN w.use_at = 'Y' THEN TRUE ELSE FALSE END AS active,
             CASE WHEN w.expiration_apply = 'Y' THEN TRUE ELSE FALSE END AS expiration_apply,
             COALESCE(w.expiration_notice_status, 'NONE') AS expiration_notice_status,
@@ -258,6 +270,16 @@
         LIMIT 1
     </select>
 
+    <!-- 업무 추가 시 업무 시작일 기본값으로 쓸 테넌트 서비스 시작일 (없으면 NULL) -->
+    <select id="HaccpBaseWorkDAO.selectServiceStartDateByCode"
+            parameterType="string"
+            resultType="string">
+        SELECT TO_CHAR(service_start_date, 'YYYY-MM-DD')
+        FROM tb_tenant
+        WHERE tenant_code = #{value}
+        LIMIT 1
+    </select>
+
     <select id="HaccpBaseWorkDAO.selectLoginIdByTenantAndLoginCode"
             parameterType="map"
             resultType="long">
@@ -304,6 +326,17 @@
           AND cci.use_at = 'Y'
     </select>
 
+    <!-- 업무에 작성된 결재문서 수(삭제 제외, 임시저장 포함). 업무 시작일 변경 가능 여부 판단용 -->
+    <select id="HaccpBaseWorkDAO.countWorkDocuments"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(1)
+        FROM tb_electronic_approval_main m
+        WHERE m.tenant_id = #{tenantId}
+          AND m.drafting_work_category_id = #{workId}
+          AND COALESCE(m.delete_status, 'N') != 'Y'
+    </select>
+
     <select id="HaccpBaseWorkDAO.insertWork"
             parameterType="map"
             resultType="long">
@@ -320,6 +353,10 @@
             expiration_apply,
             expiration_notice_status,
             expiration_notice_count,
+            work_start_date,
+            cycle_anchor_type,
+            cycle_anchor_week,
+            cycle_anchor_weekday,
             approval_apply,
             use_at,
             delete_status,
@@ -343,6 +380,10 @@
             #{expirationApply},
             #{expirationNoticeStatus},
             #{expirationNoticeCount, jdbcType=INTEGER},
+            CAST(#{workStartDate, jdbcType=VARCHAR} AS date),
+            #{cycleAnchorType, jdbcType=VARCHAR},
+            #{cycleAnchorWeek, jdbcType=SMALLINT},
+            #{cycleAnchorWeekday, jdbcType=SMALLINT},
             #{approvalApply},
             #{useAt},
             'N',
@@ -371,6 +412,10 @@
             expiration_apply = #{expirationApply},
             expiration_notice_status = #{expirationNoticeStatus},
             expiration_notice_count = #{expirationNoticeCount, jdbcType=INTEGER},
+            work_start_date = CAST(#{workStartDate, jdbcType=VARCHAR} AS date),
+            cycle_anchor_type = #{cycleAnchorType, jdbcType=VARCHAR},
+            cycle_anchor_week = #{cycleAnchorWeek, jdbcType=SMALLINT},
+            cycle_anchor_weekday = #{cycleAnchorWeekday, jdbcType=SMALLINT},
             approval_apply = #{approvalApply},
             use_at = #{useAt},
             updated_by = #{updatedBy, jdbcType=BIGINT},

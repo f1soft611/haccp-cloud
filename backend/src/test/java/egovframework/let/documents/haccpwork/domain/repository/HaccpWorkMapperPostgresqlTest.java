@@ -36,7 +36,7 @@ class HaccpWorkMapperPostgresqlTest {
         String xml = readMapper();
         assertTrue(xml.contains("id=\"HaccpWorkDAO.selectUnwrittenCycleList\""), "미작성 목록 쿼리가 없다");
         assertTrue(xml.contains("id=\"HaccpWorkDAO.selectUnwrittenCycleListCount\""), "미작성 건수 쿼리가 없다");
-        assertTrue(xml.contains("COALESCE(t.service_start_date, DATE(t.created_at))"), "업무개시일 기준이 아니다");
+        assertTrue(xml.contains("COALESCE(w.work_start_date, t.service_start_date, DATE(t.created_at))"), "업무 시작일, 업무개시일 기준이 아니다");
         assertTrue(xml.contains("generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step)"), "주기 생성이 없다");
         assertTrue(xml.contains("TO_CHAR(gs.cycle_start, 'YYYY-MM-DD') AS cycle_date"), "cycle_date 형식이 다르다");
     }

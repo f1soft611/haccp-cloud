@@ -82,6 +82,28 @@ public class HaccpBaseWorkApiController {
     }
 
     @Operation(
+            summary = "테넌트 서비스 시작일 조회",
+            description = "업무 추가 시 업무 시작일 기본값으로 쓸 테넌트 서비스 시작일을 조회한다",
+            security = { @SecurityRequirement(name = "Authorization") },
+            tags = { "HaccpBaseWorkApiController" }
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "403", description = "인가된 사용자가 아님")
+    })
+    @GetMapping("/service-start-date")
+    public ResultVO getServiceStartDate(
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("serviceStartDate", haccpBaseWorkService.getServiceStartDate(tenantCode));
+
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    @Operation(
             summary = "업무 단건 조회",
             description = "HACCP 양식 업무 단건을 조회한다",
             security = { @SecurityRequirement(name = "Authorization") },

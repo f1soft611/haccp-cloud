@@ -53,6 +53,18 @@ public class DashboardTodoVO implements Serializable {
     @Schema(description = "등록주기명")
     private String cycleName;
 
+    @Schema(description = "업무 기준일(yyyy-MM-dd). 없으면 기존 달력 기준")
+    private String workStartDate;
+
+    @Schema(description = "주기 반복 기준(DATE/WEEKDAY)")
+    private String cycleAnchorType;
+
+    @Schema(description = "주차 기준 주차(1~4, 9=마지막 주)")
+    private Integer cycleAnchorWeek;
+
+    @Schema(description = "주차 기준 요일(1=월~7=일)")
+    private Integer cycleAnchorWeekday;
+
     @Schema(description = "기안자")
     private String createdBy;
 

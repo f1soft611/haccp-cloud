@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../../../services/api/apiClient';
-import { listHaccpBaseWorks, listHaccpWorkTodoCycles } from '../../../services/documents/haccpBaseWorkService';
+import {
+  getTenantServiceStartDate,
+  listHaccpBaseWorks,
+  listHaccpWorkTodoCycles
+} from '../../../services/documents/haccpBaseWorkService';
 
 vi.mock('../../../services/api/apiClient', () => ({
   apiClient: {
@@ -142,5 +146,24 @@ describe('haccpBaseWorkService', () => {
       headers: { 'x-tenant-code': 'TENANT-A' },
       params: { active: undefined, categoryId: undefined, keyword: undefined },
     });
+  });
+
+  it('reads serviceStartDate from the result envelope', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { result: { serviceStartDate: '2026-03-15' } },
+    });
+
+    await expect(getTenantServiceStartDate({ tenantCode: 'TENANT-A' })).resolves.toBe('2026-03-15');
+    expect(apiClient.get).toHaveBeenCalledWith('/v1/haccp-base/works/service-start-date', {
+      headers: { 'x-tenant-code': 'TENANT-A' },
+    });
+  });
+
+  it('returns empty string when the tenant has no service start date', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: { result: { serviceStartDate: null } },
+    });
+
+    await expect(getTenantServiceStartDate({ tenantCode: 'TENANT-A' })).resolves.toBe('');
   });
 });

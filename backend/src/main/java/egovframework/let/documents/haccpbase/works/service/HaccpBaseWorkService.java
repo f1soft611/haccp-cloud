@@ -17,6 +17,9 @@ public interface HaccpBaseWorkService {
     // 업무분류, 키워드 조건을 서버에서 거르도록 파라미터 추가
     public List<HaccpBaseWorkVO> listWorks(String tenantCode, String active, Long categoryId, String keyword) throws Exception;
 
+    // 업무 추가 시 업무 시작일 기본값으로 쓸 테넌트 서비스 시작일(YYYY-MM-DD, 없으면 null)
+    public String getServiceStartDate(String tenantCode) throws Exception;
+
     public HaccpBaseWorkVO getWorkById(Long id, String tenantCode) throws Exception;
 
     public HaccpBaseWorkVO createWork(HaccpBaseWorkSaveRequestVO payload, String actorLoginCode) throws Exception;

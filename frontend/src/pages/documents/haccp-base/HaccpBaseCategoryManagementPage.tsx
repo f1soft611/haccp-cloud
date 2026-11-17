@@ -305,7 +305,7 @@ export function HaccpBaseCategoryManagementPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         title="분류 추가"
-        description="업무 등록 시 선택할 분류를 추가합니다."
+        // description="업무 등록 시 선택할 분류를 추가합니다."
         actions={
           <>
             <Button

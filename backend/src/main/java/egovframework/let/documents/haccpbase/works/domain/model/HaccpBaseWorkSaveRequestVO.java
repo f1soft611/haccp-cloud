@@ -35,6 +35,21 @@ public class HaccpBaseWorkSaveRequestVO implements Serializable {
     @Schema(description = "등록주기")
     private String cycle;
 
+    @Schema(description = "주기 반복 기준(DATE/WEEKDAY), 비면 DATE")
+    private String cycleAnchorType;
+
+    @Schema(description = "업무 기준일(yyyy-MM-dd), 일자 기준일 때. 비면 기준 없음")
+    private String workStartDate;
+
+    @Schema(description = "시작 연월(yyyy-MM), 주차 기준일 때. 서버가 시작일을 계산한다")
+    private String workStartMonth;
+
+    @Schema(description = "주차 기준 주차(1~4, 9=마지막 주)")
+    private Integer cycleAnchorWeek;
+
+    @Schema(description = "주차 기준 요일(1=월~7=일)")
+    private Integer cycleAnchorWeekday;
+
     @Schema(description = "사용 여부")
     private Boolean active;
 

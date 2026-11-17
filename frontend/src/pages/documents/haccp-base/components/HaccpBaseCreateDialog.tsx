@@ -18,6 +18,13 @@ import { AppSelect, appSelectPaperSx } from '../../../../shared/components/forms
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
 import {CancelButton} from "../../../../shared/components/forms/CancelButton.tsx";
+import { isMonthlyOrLongerCycle } from '../../../../shared/utils/workCycleDates';
+import {
+  ANCHOR_TYPE_OPTIONS,
+  isWorkStartIncomplete,
+  WEEKDAY_ANCHOR_RESET,
+  WorkStartDateFields,
+} from './WorkStartDateFields';
 
 const APPROVAL_APPLY_OPTIONS = [
   { value: 'Y', label: '적용' },
@@ -88,23 +95,26 @@ export function HaccpBaseCreateDialog(props: {
         !value.divisionName.trim() ||
         !value.categoryId ||
         (needsSigners && (!value.reviewerId || !value.approverId)) ||
-        noticeCountInvalid;
+        noticeCountInvalid ||
+        isWorkStartIncomplete(value);
 
     const findCategoryCode = (categoryId: string) =>
         categoryOptions.find((category) => category.id === categoryId)?.code ?? '';
     // 기존 -> 분류코드로만 판단 / 변경 -> HCP- 분류코드 + 수시 주기일 때만 만료일 관리 표시
     const showExpiration = isExpirationTarget(findCategoryCode(value.categoryId)) && value.cycle === 'ANYTIME';
+    // 월 이상 주기만 주차 기준 선택 가능. 아니면 일자 기준 고정 + 비활성
+    const canUseWeekday = isMonthlyOrLongerCycle(value.cycle);
 
   return (
     <FormDialog
       open={open}
       onClose={onClose}
       title={mode === 'create' ? '업무 추가' : '업무 수정'}
-      description={
-        mode === 'create'
-          ? '업무 기본 정보를 등록합니다.'
-          : '업무 기본 정보를 수정합니다.'
-      }
+      // description={
+      //   mode === 'create'
+      //     ? '업무 기본 정보를 등록합니다.'
+      //     : '업무 기본 정보를 수정합니다.'
+      // }
       actions={
         <>
           <Button
@@ -119,14 +129,23 @@ export function HaccpBaseCreateDialog(props: {
       }
     >
       <Stack spacing={2}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <AppTextField
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <AppSelect
             fullWidth
-            label="업무코드"
-            value={value.divisionCode}
-            placeholder="자동 채번됩니다"
-            disabled
-            helperText="업무코드는 자동으로 채번됩니다."
+            label="분류"
+            value={value.categoryId}
+            onChange={(categoryId) =>
+                onChange({
+                    ...value,
+                    categoryId,
+                    ...(isExpirationTarget(findCategoryCode(categoryId)) ? {} : EXPIRATION_RESET),
+                })
+            }
+            required
+            options={categoryOptions.map((category) => ({
+              value: category.id,
+              label: category.name,
+            }))}
           />
 
           <AppTextField
@@ -146,24 +165,6 @@ export function HaccpBaseCreateDialog(props: {
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <AppSelect
-            fullWidth
-            label="분류"
-            value={value.categoryId}
-            onChange={(categoryId) =>
-                onChange({
-                    ...value,
-                    categoryId,
-                    ...(isExpirationTarget(findCategoryCode(categoryId)) ? {} : EXPIRATION_RESET),
-                })
-            }
-            required
-            options={categoryOptions.map((category) => ({
-              value: category.id,
-              label: category.name,
-            }))}
-          />
-
-          <AppSelect
               fullWidth
               label="작성주기"
               value={value.cycle}
@@ -172,6 +173,8 @@ export function HaccpBaseCreateDialog(props: {
                       ...value,
                       cycle,
                       ...(cycle === 'ANYTIME' ? {} : EXPIRATION_RESET),
+                      // 주차 기준은 월 이상 주기만
+                      ...(isMonthlyOrLongerCycle(cycle) ? {} : WEEKDAY_ANCHOR_RESET),
                   })
               }
               required
@@ -185,10 +188,19 @@ export function HaccpBaseCreateDialog(props: {
                 label: option.name,
               }))}
           />
+
+          <AppSelect
+              fullWidth
+              label="기준일 방식"
+              value={canUseWeekday ? value.cycleAnchorType : 'DATE'}
+              onChange={(cycleAnchorType) => onChange({ ...value, cycleAnchorType })}
+              disabled={!canUseWeekday}
+              options={ANCHOR_TYPE_OPTIONS}
+          />
         </Stack>
 
-        {/* 기존 -> Autocomplete multiple 로 이름 검색 후 다중 선택 */}
-        {/* 변경 -> 읽기 전용 칸 클릭 시 공용 UserMultiSelectDialog 로 다중 선택 */}
+        <WorkStartDateFields value={value} onChange={onChange} />
+
         <AppTextField
           label="담당자"
           value={assigneeNames}

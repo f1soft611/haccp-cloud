@@ -31,6 +31,11 @@ public class HaccpBaseWorkDAO extends EgovAbstractMapper {
         return selectOne("HaccpBaseWorkDAO.selectTenantIdByCode", tenantCode);
     }
 
+    // 업무 추가 시 업무 시작일 기본값으로 쓸 테넌트 서비스 시작일(YYYY-MM-DD, 없으면 null)
+    public String selectServiceStartDateByCode(String tenantCode) throws Exception {
+        return selectOne("HaccpBaseWorkDAO.selectServiceStartDateByCode", tenantCode);
+    }
+
     public Long selectLoginIdByTenantAndLoginCode(Map<String, Object> params) throws Exception {
         return selectOne("HaccpBaseWorkDAO.selectLoginIdByTenantAndLoginCode", params);
     }
@@ -53,6 +58,15 @@ public class HaccpBaseWorkDAO extends EgovAbstractMapper {
         params.put("tenantId", tenantId);
         params.put("cycleCode", cycleCode);
         Integer count = selectOne("HaccpBaseWorkDAO.countWorkCycleCode", params);
+        return count == null ? 0 : count;
+    }
+
+    // 업무에 작성된 결재문서 수(삭제 제외, 임시저장 포함). 업무 시작일 변경 가능 여부 판단용
+    public int countWorkDocuments(Long tenantId, Long workId) throws Exception {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("tenantId", tenantId);
+        params.put("workId", workId);
+        Integer count = selectOne("HaccpBaseWorkDAO.countWorkDocuments", params);
         return count == null ? 0 : count;
     }
 

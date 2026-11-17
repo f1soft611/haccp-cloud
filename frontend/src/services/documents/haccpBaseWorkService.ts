@@ -24,6 +24,10 @@ export type HaccpBaseWorkItem = {
   cycle: string;
   cycleName: string;
   cycleDate?: string;
+  workStartDate?: string;
+  cycleAnchorType?: string;
+  cycleAnchorWeek?: number | null;
+  cycleAnchorWeekday?: number | null;
   active: boolean;
   expirationApply: boolean;
   expirationNoticeStatus?: string;
@@ -122,6 +126,10 @@ type RawHaccpBaseWorkItem = {
   cycleName?: string | null;
   cycleDate?: string | null;
   cycle_date?: string | null;
+  workStartDate?: string | null;
+  cycleAnchorType?: string | null;
+  cycleAnchorWeek?: number | string | null;
+  cycleAnchorWeekday?: number | string | null;
   active?: boolean | string | null;
   useAt?: string | null;
   expirationApply?: boolean | string | null;
@@ -275,6 +283,11 @@ function normalizeBoolean(value: unknown): boolean {
   return normalized === 'Y' || normalized === 'TRUE' || normalized === '1';
 }
 
+// 비어 있으면 null, 아니면 숫자
+function normalizeNullableNumber(value: unknown): number | null {
+  return value == null || value === '' ? null : Number(value);
+}
+
 function normalizeStringArrayFromCsv(value: unknown): string[] {
   const csv = normalizeText(value);
   if (!csv) {
@@ -409,6 +422,10 @@ function normalizeItem(raw: RawHaccpBaseWorkItem): HaccpBaseWorkItem {
     cycle: normalizeText(raw.cycle ?? raw.regTerm),
     cycleName: normalizeText(raw.cycleName) || normalizeText(raw.cycle ?? raw.regTerm),
     cycleDate: normalizeText(raw.cycleDate ?? raw.cycle_date),
+    workStartDate: normalizeText(raw.workStartDate),
+    cycleAnchorType: normalizeText(raw.cycleAnchorType),
+    cycleAnchorWeek: normalizeNullableNumber(raw.cycleAnchorWeek),
+    cycleAnchorWeekday: normalizeNullableNumber(raw.cycleAnchorWeekday),
     active: normalizeBoolean(raw.active ?? raw.useAt),
     expirationApply: normalizeBoolean(raw.expirationApply),
     expirationNoticeStatus: normalizeText(raw.expirationNoticeStatus) || 'NONE',
@@ -511,6 +528,17 @@ export async function listHaccpBaseWorks(params: {
 
   const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
   return items.map(normalizeItem);
+}
+
+// 업무 추가 시 업무 시작일 기본값으로 쓸 테넌트 서비스 시작일(YYYY-MM-DD, 없으면 '')
+export async function getTenantServiceStartDate(params: {
+  tenantCode: string;
+}): Promise<string> {
+  const { data } = await apiClient.get<{ result?: { serviceStartDate?: string | null } }>(
+    '/v1/haccp-base/works/service-start-date',
+    { headers: { 'x-tenant-code': params.tenantCode } },
+  );
+  return data?.result?.serviceStartDate ?? '';
 }
 
 export async function listHaccpWorkTodos(params: {
@@ -706,6 +734,11 @@ export async function createHaccpBaseWork(payload: {
   expirationApply: boolean;
   expirationNoticeStatus: string;
   expirationNoticeCount: number | null;
+  cycleAnchorType: string;
+  workStartDate: string;
+  workStartMonth: string;
+  cycleAnchorWeek: number | null;
+  cycleAnchorWeekday: number | null;
   approvalApply: boolean;
   reviewerId?: string;
   approverId?: string;
@@ -724,6 +757,11 @@ export async function createHaccpBaseWork(payload: {
       expirationApply: payload.expirationApply,
       expirationNoticeStatus: payload.expirationNoticeStatus,
       expirationNoticeCount: payload.expirationNoticeCount,
+      cycleAnchorType: payload.cycleAnchorType,
+      workStartDate: payload.workStartDate,
+      workStartMonth: payload.workStartMonth,
+      cycleAnchorWeek: payload.cycleAnchorWeek,
+      cycleAnchorWeekday: payload.cycleAnchorWeekday,
       approvalApply: payload.approvalApply,
       reviewerId: payload.reviewerId ? Number(payload.reviewerId) : null,
       approverId: payload.approverId ? Number(payload.approverId) : null,
@@ -751,6 +789,11 @@ export async function updateHaccpBaseWork(payload: {
   expirationApply: boolean;
   expirationNoticeStatus: string;
   expirationNoticeCount: number | null;
+  cycleAnchorType: string;
+  workStartDate: string;
+  workStartMonth: string;
+  cycleAnchorWeek: number | null;
+  cycleAnchorWeekday: number | null;
   approvalApply: boolean;
   reviewerId?: string;
   approverId?: string;
@@ -769,6 +812,11 @@ export async function updateHaccpBaseWork(payload: {
       expirationApply: payload.expirationApply,
       expirationNoticeStatus: payload.expirationNoticeStatus,
       expirationNoticeCount: payload.expirationNoticeCount,
+      cycleAnchorType: payload.cycleAnchorType,
+      workStartDate: payload.workStartDate,
+      workStartMonth: payload.workStartMonth,
+      cycleAnchorWeek: payload.cycleAnchorWeek,
+      cycleAnchorWeekday: payload.cycleAnchorWeekday,
       approvalApply: payload.approvalApply,
       reviewerId: payload.reviewerId ? Number(payload.reviewerId) : null,
       approverId: payload.approverId ? Number(payload.approverId) : null,
