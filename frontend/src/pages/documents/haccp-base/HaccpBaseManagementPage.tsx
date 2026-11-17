@@ -15,6 +15,7 @@ import {
 import {
   createHaccpBaseWork,
   listHaccpBaseWorks,
+  getTenantServiceStartDate,
   updateHaccpBaseWork,
   type HaccpBaseWorkItem,
 } from '../../../services/documents/haccpBaseWorkService';
@@ -164,6 +165,13 @@ export function HaccpBaseManagementPage() {
   const usersQuery = useQuery({
     queryKey: ['users', tenantCode, 'haccp-base-management'],
     queryFn: () => listUsers(tenantCode),
+    retry: false,
+  });
+
+  // 업무 추가 시 업무 시작일 기본값
+  const serviceStartDateQuery = useQuery({
+    queryKey: ['tenant-service-start-date', tenantCode],
+    queryFn: () => getTenantServiceStartDate({ tenantCode }),
     retry: false,
   });
 
@@ -351,7 +359,7 @@ export function HaccpBaseManagementPage() {
             categoryId: categoryOptions[0]?.id ?? '',
             reviewerId: '',
             approverId: '',
-
+            workStartDate: serviceStartDateQuery.data ?? '',
           });
           setCreateOpen(true);
         }}

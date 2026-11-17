@@ -526,6 +526,10 @@ export async function listHaccpBaseWorks(params: {
     },
   });
 
+  const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
+  return items.map(normalizeItem);
+}
+
 // 업무 추가 시 업무 시작일 기본값으로 쓸 테넌트 서비스 시작일(YYYY-MM-DD, 없으면 '')
 export async function getTenantServiceStartDate(params: {
   tenantCode: string;
@@ -535,10 +539,6 @@ export async function getTenantServiceStartDate(params: {
     { headers: { 'x-tenant-code': params.tenantCode } },
   );
   return data?.result?.serviceStartDate ?? '';
-}
-
-  const items = Array.isArray(data) ? data : (data?.result?.resultList ?? []);
-  return items.map(normalizeItem);
 }
 
 export async function listHaccpWorkTodos(params: {
