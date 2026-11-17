@@ -225,4 +225,10 @@ public class HaccpWorkCycleDates {
         }
         return cycleDate;
     }
+
+    /** 기안 보고일자. 검증은 resolve 와 같고, 기준일이 있으면 그 주기 마감일(첫 주기는 기준일), 없으면 주기 시작일 */
+    static LocalDate resolveReportDate(String regTerm, Anchor anchor, String requestedDate, LocalDate today) {
+        LocalDate cycleDate = resolve(regTerm, anchor, requestedDate, today);
+        return anchor == null ? cycleDate : nextCycleStart(regTerm, anchor, cycleDate).minusDays(1);
+    }
 }
