@@ -627,7 +627,9 @@
         COALESCE(tmp.ea_exe_id, '') AS ea_exe_id,
         CASE
         WHEN tmp.electronic_approval_id IS NOT NULL THEN COALESCE(tmp.ea_title, '')
-        ELSE CONCAT(COALESCE(w.code_name, ''), ' - ', TO_CHAR(gs.cycle_start, 'YYYY-MM-DD'))
+        <!-- 기존 -> 업무명 - 주기 시작일 / 변경 -> 기안 자동 제목과 같은 날짜_업무명, 업무 기준일 업무는 주기 마감일 -->
+        ELSE CONCAT(TO_CHAR(CASE WHEN cyc.anchored THEN gs.cycle_end - 1 ELSE gs.cycle_start END, 'YYYY-MM-DD'),
+                    '_', COALESCE(w.code_name, ''))
         END AS title,
         t.tenant_code,
         w.drafting_work_category_group_id,
