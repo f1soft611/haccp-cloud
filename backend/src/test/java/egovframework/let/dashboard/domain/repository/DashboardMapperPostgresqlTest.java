@@ -171,4 +171,23 @@ class DashboardMapperPostgresqlTest {
                     "수시 업무도 최종확인 대기 문서만 센다");
         }
     }
+
+    @Test
+    void dashboardMapper_should_use_work_start_date_for_cycles() throws Exception {
+        ClassPathResource resource = new ClassPathResource(
+                "egovframework/mapper/let/dashboard/DashboardMapper_SQL_postgresql.xml");
+
+        try (InputStream inputStream = resource.getInputStream();
+             Scanner scanner = new Scanner(inputStream, StandardCharsets.UTF_8.name())) {
+            String xml = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+            assertTrue(xml.contains("<sql id=\"workCycleArgs\">"), "업무 주기 함수 인자 fragment 가 없다");
+            assertTrue(xml.contains("COALESCE(w.work_start_date, t.service_start_date, DATE(t.created_at))"),
+                    "미작성 하한은 업무 시작일 우선이다");
+            assertTrue(xml.contains("AS cur_end"), "현재 주기 끝은 cur_end 로 계산한다");
+            assertFalse(xml.contains("cyc.cur_start + cyc.cycle_step"), "현재 주기 끝을 interval 로 더하지 않는다");
+            assertTrue(xml.contains("fn_work_cycle_boundary("), "기준 업무 미작성 주기는 n번째 경계로 만든다");
+            assertTrue(xml.contains("TO_CHAR(fn_work_cycle_next(<include refid=\"workCycleArgs\"/>, TO_DATE(m.report_date, 'YYYYMMDD')) - 1, 'YYYYMMDD')"),
+                    "문서 주기 끝은 함수로 계산한다");
+        }
+    }
 }

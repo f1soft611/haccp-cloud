@@ -2,6 +2,9 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="DashboardDAO">
 
+    <!-- 업무 주기 함수(fn_work_cycle_*) 공통 인자: 주기, 업무 시작일, 반복 기준 -->
+    <sql id="workCycleArgs">w.reg_term, w.work_start_date, w.cycle_anchor_type, w.cycle_anchor_week, w.cycle_anchor_weekday</sql>
+
     <resultMap id="dashboardTodoResult"
                type="egovframework.let.dashboard.domain.model.DashboardTodoVO">
         <result property="draftingWorkCategoryId" column="drafting_work_category_id"/>
@@ -133,7 +136,7 @@
             COALESCE(NULLIF(TRIM(apr_u.user_nm), ''), '-') AS approver_name,
             COALESCE(rpt.last_writer_name, '-') AS last_writer_name,
             CASE WHEN cyc.is_anytime THEN NULL
-                 ELSE TO_CHAR(cyc.cur_start + cyc.cycle_step - INTERVAL '1 day', 'YYYYMMDD')
+                 ELSE TO_CHAR(cyc.cur_end - INTERVAL '1 day', 'YYYYMMDD')
             END AS cycle_end_date,
             COALESCE(uw.unwritten_count, 0) AS unwritten_count,
             COALESCE(uw.in_progress_cycle_count, 0) AS in_progress_cycle_count,
@@ -160,15 +163,20 @@
           SELECT u.cycle_unit,
                  u.is_anytime,
                  u.cycle_step,
-                 CASE WHEN u.cycle_unit = 'half'
+                 w.work_start_date IS NOT NULL AS anchored,
+                 <!-- 기존 -> 달력 기준 현재 주기 / 변경 -> 업무 시작일이 있으면 그 기준 (시작일이 미래면 NULL) -->
+                 CASE WHEN w.work_start_date IS NOT NULL
+                      THEN CAST(fn_work_cycle_start(<include refid="workCycleArgs"/>, CURRENT_DATE) AS timestamp)
+                      WHEN u.cycle_unit = 'half'
                       THEN date_trunc('year', LOCALTIMESTAMP)
                            + CASE WHEN EXTRACT(MONTH FROM LOCALTIMESTAMP) &gt;= 7 THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
                       ELSE date_trunc(u.cycle_unit, LOCALTIMESTAMP)
                  END AS cur_start,
+                 CAST(fn_work_cycle_next(<include refid="workCycleArgs"/>, CURRENT_DATE) AS timestamp) AS cur_end,
                  CASE WHEN u.cycle_unit = 'half'
-                        THEN date_trunc('year', CAST(COALESCE(t.service_start_date, DATE(t.created_at)) AS timestamp))
-                            + CASE WHEN EXTRACT(MONTH FROM COALESCE(t.service_start_date, DATE(t.created_at))) &gt;= 7 THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
-                        ELSE date_trunc(u.cycle_unit, CAST(COALESCE(t.service_start_date, DATE(t.created_at)) AS timestamp))
+                        THEN date_trunc('year', CAST(COALESCE(w.work_start_date, t.service_start_date, DATE(t.created_at)) AS timestamp))
+                            + CASE WHEN EXTRACT(MONTH FROM COALESCE(w.work_start_date, t.service_start_date, DATE(t.created_at))) &gt;= 7 THEN INTERVAL '6 months' ELSE INTERVAL '0 months' END
+                        ELSE date_trunc(u.cycle_unit, CAST(COALESCE(w.work_start_date, t.service_start_date, DATE(t.created_at)) AS timestamp))
                  END AS first_start
           FROM (
             SELECT k.cycle_unit,
@@ -250,7 +258,7 @@
           <!-- 기존 -> cycle_base 안에서 reg_term 별 주기 시작/종료를 직접 계산 / 변경 -> cyc 에서 계산한 현재 주기를 그대로 사용 (미작성 건수와 같은 기준) -->
           WITH cycle_base AS (
             SELECT cyc.cur_start AS cycle_start,
-                   cyc.cur_start + cyc.cycle_step AS cycle_end
+                   cyc.cur_end AS cycle_end
           )
           SELECT
               COUNT(*) AS total_count,
@@ -321,6 +329,7 @@
                             wk.to_date + 1
                     FROM tb_week wk
                     WHERE cyc.cycle_unit = 'week'
+                    AND NOT cyc.anchored
                     AND wk.tenant_id = w.tenant_id
                     AND wk.to_date &gt;= CAST(cyc.first_start AS date)
                     AND wk.from_date &lt;= CURRENT_DATE
@@ -329,6 +338,20 @@
                             CAST(gs.cycle_start + cyc.cycle_step AS date)
                     FROM generate_series(cyc.first_start, cyc.cur_start, cyc.cycle_step) AS gs(cycle_start)
                     WHERE cyc.cycle_unit NOT IN ('day', 'week')
+                    AND NOT cyc.anchored
+                    UNION ALL
+                    <!-- 업무 시작일이 있는 주, 월 이상 업무: 시작일부터 현재 주기까지 n번째 경계 -->
+                    SELECT b.p_start,
+                            fn_work_cycle_next(<include refid="workCycleArgs"/>, b.p_start)
+                    FROM generate_series(0, fn_work_cycle_index(fn_work_cycle_code(w.reg_term), w.work_start_date, w.cycle_anchor_type,
+                                                                w.cycle_anchor_week, w.cycle_anchor_weekday, CURRENT_DATE)) AS s(n)
+                    CROSS JOIN LATERAL (
+                      SELECT fn_work_cycle_boundary(fn_work_cycle_code(w.reg_term), w.work_start_date, w.cycle_anchor_type,
+                                                    w.cycle_anchor_week, w.cycle_anchor_weekday, s.n) AS p_start
+                    ) b
+                    WHERE cyc.anchored
+                    AND cyc.cycle_unit != 'day'
+                    AND NOT cyc.is_anytime
                 ) p
                 LEFT JOIN LATERAL (
                 <!-- 기존 -> SELECT COALESCE(em.status_type, '') AS status_type -->
@@ -673,42 +696,12 @@
           ON dl.tenant_id = m.tenant_id
          AND dl.electronic_approval_id = m.electronic_approval_id
          AND dl.exe_seq = 1
-        <!-- 문서 보고일자가 속한 주기의 마지막 날. reg_term 변환은 selectMyTodoList 의 cyc 와 같은 규칙, 수시와 형식 오류는 NULL -->
+        <!-- 문서 보고일자가 속한 주기의 마지막 날. 기존 -> reg_term CASE + date_trunc / 변경 -> 업무 시작일까지 반영하는 함수, 수시와 형식 오류는 NULL -->
         LEFT JOIN LATERAL (
           SELECT CASE
-                   WHEN k.is_anytime OR k.report_start IS NULL THEN NULL
-                   WHEN k.cycle_unit = 'half' THEN TO_CHAR(
-                     date_trunc('year', k.report_start)
-                       + CASE WHEN EXTRACT(MONTH FROM k.report_start) &gt;= 7 THEN INTERVAL '1 year' ELSE INTERVAL '6 months' END
-                       - INTERVAL '1 day',
-                     'YYYYMMDD')
-                   ELSE TO_CHAR(date_trunc(k.cycle_unit, k.report_start) + k.cycle_step - INTERVAL '1 day', 'YYYYMMDD')
+                   WHEN fn_work_cycle_code(w.reg_term) = 'ANYTIME' OR COALESCE(m.report_date, '') !~ '^[0-9]{8}$' THEN NULL
+                   ELSE TO_CHAR(fn_work_cycle_next(<include refid="workCycleArgs"/>, TO_DATE(m.report_date, 'YYYYMMDD')) - 1, 'YYYYMMDD')
                  END AS cycle_end_date
-          FROM (
-            SELECT u.cycle_unit,
-                   u.is_anytime,
-                   CASE u.cycle_unit
-                     WHEN 'month' THEN INTERVAL '1 month'
-                     WHEN 'week' THEN INTERVAL '1 week'
-                     WHEN 'quarter' THEN INTERVAL '3 months'
-                     WHEN 'year' THEN INTERVAL '1 year'
-                     ELSE INTERVAL '1 day'
-                   END AS cycle_step,
-                   CASE WHEN m.report_date ~ '^[0-9]{8}$'
-                        THEN CAST(TO_DATE(m.report_date, 'YYYYMMDD') AS timestamp)
-                   END AS report_start
-            FROM (
-              SELECT CASE
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('월', '매월', 'month', 'MONTH', 'monthly', 'MONTHLY') THEN 'month'
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('주', '매주', 'week', 'WEEK', 'weekly', 'WEEKLY') THEN 'week'
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'QUARTER' THEN 'quarter'
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'HALF' THEN 'half'
-                       WHEN COALESCE(NULLIF(TRIM(w.reg_term), ''), '') = 'YEAR' THEN 'year'
-                       ELSE 'day'
-                     END AS cycle_unit,
-                     COALESCE(NULLIF(TRIM(w.reg_term), ''), '') IN ('수시', 'ANYTIME', 'anytime') AS is_anytime
-            ) u
-          ) k
         ) cycle_end ON TRUE
         WHERE w.tenant_id = #{tenantId}
           AND #{actorLoginId, jdbcType=BIGINT} IS NOT NULL
