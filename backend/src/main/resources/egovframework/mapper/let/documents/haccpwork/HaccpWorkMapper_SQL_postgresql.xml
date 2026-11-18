@@ -21,6 +21,11 @@
         <result property="cycleAnchorWeek" column="cycle_anchor_week"/>
         <result property="cycleAnchorWeekday" column="cycle_anchor_weekday"/>
         <result property="cycleDate" column="cycle_date"/>
+        <!-- 만료일 관리 미작성 행의 대상(작성 화면에서 미리 선택용) -->
+        <result property="equipmentId" column="target_equipment_id"/>
+        <result property="materialType" column="target_material_type"/>
+        <result property="certificationUserId" column="target_certification_user_id"/>
+        <!-- 만료일 관리 미작성 행의 대상(작성 화면에서 미리 선택용) -->
         <result property="active" column="active"/>
         <result property="approvalApply" column="approval_apply"/>
         <result property="createdBy" column="created_by"/>
@@ -643,6 +648,10 @@
         w.code_name,
         w.reg_term,
         TO_CHAR(gs.cycle_start, 'YYYY-MM-DD') AS cycle_date,
+        <!-- 주기 업무 행은 대상 없음. 아래 만료일 분기와 UNION ALL 컬럼 맞춤 -->
+        CAST(NULL AS bigint) AS target_equipment_id,
+        CAST(NULL AS varchar) AS target_material_type,
+        CAST(NULL AS bigint) AS target_certification_user_id,
         TRUE AS active,
         CASE
         WHEN tmp.electronic_approval_id IS NOT NULL
@@ -686,7 +695,14 @@
         es.electronic_approval_id,
         '' AS ea_exe_id,
         CONCAT(COALESCE(w.code_name, ''), ' - ', es.target_name,
-               CASE WHEN es.material_type != '' THEN CONCAT(' (', es.material_type, ')') ELSE '' END) AS title,
+               CASE WHEN es.material_type != '' THEN CONCAT(' (', COALESCE(
+                   (SELECT ci.item_nm
+                      FROM tb_common_code_item ci
+                      JOIN tb_common_code_group cg ON cg.common_code_group_id = ci.group_id
+                     WHERE cg.tenant_id = w.tenant_id
+                       AND cg.group_code = 'MATERIAL_TYPE'
+                       AND ci.item_code = es.material_type),
+                   es.material_type), ')') ELSE '' END) AS title,
         t.tenant_code,
         w.drafting_work_category_group_id,
         g.cata_code,
@@ -699,6 +715,10 @@
         w.code_name,
         w.reg_term,
         '' AS cycle_date,
+        <!-- 만료일 관리 대상: 작성 화면에서 같은 대상을 미리 선택하도록 내려줌 -->
+        es.equipment_id AS target_equipment_id,
+        NULLIF(es.material_type, '') AS target_material_type,
+        es.certification_user_id AS target_certification_user_id,
         TRUE AS active,
         '' AS created_by,
         '' AS created_at,

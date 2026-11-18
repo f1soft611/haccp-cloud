@@ -13,7 +13,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { GridPaginationBar } from '../../../../shared/components/data/GridPaginationBar';
 import { useOpenWorkDraft } from '../../../../shared/hooks/useOpenWorkDraft';
-import { resolveDraftRoute } from '../../../../shared/utils/workDraftRoute';
+import { resolveDraftRoute, resolveExpirationDraftRoute } from '../../../../shared/utils/workDraftRoute';
 import type { HaccpDocumentItem } from '../../../../services/documents/haccpDocumentService';
 import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
@@ -169,11 +169,21 @@ export function HaccpDocumentGrid(props: {
                           disabled={!row.workId}
                           onClick={() => {
                             const returnTo = `${location.pathname}${location.search || ''}`;
-                            const cyclePath = row.cycleDate
+                            const hasExpirationTarget = Boolean(
+                              row.equipmentId || row.materialType || row.certificationUserId,
+                            );
+                            const draftPath = hasExpirationTarget
+                              ? resolveExpirationDraftRoute({
+                                  workId: row.workId,
+                                  equipmentId: row.equipmentId ?? '',
+                                  materialType: row.materialType ?? '',
+                                  certificationUserId: row.certificationUserId ?? '',
+                                })
+                              : row.cycleDate
                                 ? resolveDraftRoute({ id: row.workId }, row.cycleDate)
                                 : null;
-                            if (cyclePath) {
-                              navigate(`${cyclePath}&returnTo=${encodeURIComponent(returnTo)}`);
+                            if (draftPath) {
+                              navigate(`${draftPath}&returnTo=${encodeURIComponent(returnTo)}`);
                               return;
                             }
                             void openWorkDraft(row.workId, returnTo);
