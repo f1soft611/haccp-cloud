@@ -13,6 +13,11 @@ export type HaccpDocumentItem = {
   draftedAt: string;
   updatedAt: string;
   cycleDate?: string;
+  // 만료일 관리 미작성 행의 대상. 작성 화면에서 같은 대상을 미리 선택하는 데 사용 (그 외 행은 '')
+  equipmentId?: string;
+  materialType?: string;
+  certificationUserId?: string;
+  // 만료일 관리 미작성 행의 대상. 작성 화면에서 같은 대상을 미리 선택하는 데 사용 (그 외 행은 '')
 };
 
 export type ListHaccpDocumentsResult = {
@@ -51,6 +56,9 @@ type RawHaccpDocumentItem = {
   approval_status_type_name?: string | null;
   cycleDate?: string | null;
   cycle_date?: string | null;
+  equipmentId?: number | string | null;
+  materialType?: string | null;
+  certificationUserId?: number | string | null;
 };
 
 type ResultEnvelope<T> = {
@@ -130,6 +138,9 @@ function normalizeItem(raw: RawHaccpDocumentItem): HaccpDocumentItem {
     draftedAt: normalizeText(raw.createdAt ?? raw.created_at),
     updatedAt: latestStatusAt,
     cycleDate,
+    equipmentId: normalizeText(raw.equipmentId),
+    materialType: normalizeText(raw.materialType),
+    certificationUserId: normalizeText(raw.certificationUserId),
   };
 }
 
