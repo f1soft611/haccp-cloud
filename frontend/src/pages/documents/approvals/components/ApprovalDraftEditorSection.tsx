@@ -12,9 +12,9 @@ import { formatNow } from '../utils/approvalDraftUtils';
 import {ApprovalStatusChip} from "../../../../shared/components/data/ApprovalStatusChip.tsx";
 
 const REPORT_DATE_HELPER_TEXT: Record<string, string> = {
-  WEEK: '주간 업무는 해당 주 월요일로 저장됩니다',
-  MONTH: '월간 업무는 해당 월 1일로 저장됩니다',
-  YEAR: '연간 업무는 해당 연도 1월 1일로 저장됩니다',
+  WEEK: '업무 기준일 업무는 해당 주기 마감일로 저장됩니다',
+  MONTH: '업무 기준일 업무는 해당 주기 마감일로 저장됩니다',
+  YEAR: '업무 기준일 업무는 해당 주기 마감일로 저장됩니다',
 };
 type ApprovalDraftEditorSectionProps = {
   baseId?: string;
@@ -128,8 +128,6 @@ export function ApprovalDraftEditorSection(
           }}
         >
           <AppTextField
-              // 기존 -> label="구분"
-              // 변경 -> 업무분류
               label="업무분류"
               value={work?.categoryName || '-'}
               slotProps={{ input: { readOnly: true } }}
@@ -149,16 +147,12 @@ export function ApprovalDraftEditorSection(
               label="업무 기준일"
               value={reportDate}
               onChange={(nextValue) => onReportDateChange?.(nextValue)}
-              // 기존 -> disabled={isReadOnly}
-              // 변경 -> 변경 핸들러가 없으면(만료일 관리 업무) 수정 불가
               disabled={isReadOnly || !onReportDateChange}
               helperText={REPORT_DATE_HELPER_TEXT[work?.cycle ?? '']}
               max={dayjs().format('YYYY-MM-DD')}
               sx={{ minWidth: 0 }}
           />
           <AppTextField
-            // 기존 -> label="기안 제목", placeholder="예: 2026-07-16 품질 점검 기안"
-            // 변경 -> 제목, 자동 세팅 형식과 같은 예시
             label="제목"
             placeholder="예: 2026-07-16_품질 점검"
             required
