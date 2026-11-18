@@ -78,6 +78,15 @@ public class HaccpWorkVO implements Serializable {
     @Schema(description = "주기 기준일(yyyy-MM-dd)")
     private String cycleDate;
 
+    @Schema(description = "만료일 관리 미작성 행의 대상 설비 ID (그 외 행은 null)")
+    private Long equipmentId;
+
+    @Schema(description = "만료일 관리 미작성 행의 대상 품목유형 공통코드 MATERIAL_TYPE item_code (그 외 행은 null)")
+    private String materialType;
+
+    @Schema(description = "만료일 관리 미작성 행의 대상 증명서 사원 ID (그 외 행은 null)")
+    private Long certificationUserId;
+
     @Schema(description = "사용 여부")
     private boolean active;
 
