@@ -686,7 +686,14 @@
         es.electronic_approval_id,
         '' AS ea_exe_id,
         CONCAT(COALESCE(w.code_name, ''), ' - ', es.target_name,
-               CASE WHEN es.material_type != '' THEN CONCAT(' (', es.material_type, ')') ELSE '' END) AS title,
+               CASE WHEN es.material_type != '' THEN CONCAT(' (', COALESCE(
+                   (SELECT ci.item_nm
+                      FROM tb_common_code_item ci
+                      JOIN tb_common_code_group cg ON cg.common_code_group_id = ci.group_id
+                     WHERE cg.tenant_id = w.tenant_id
+                       AND cg.group_code = 'MATERIAL_TYPE'
+                       AND ci.item_code = es.material_type),
+                   es.material_type), ')') ELSE '' END) AS title,
         t.tenant_code,
         w.drafting_work_category_group_id,
         g.cata_code,
