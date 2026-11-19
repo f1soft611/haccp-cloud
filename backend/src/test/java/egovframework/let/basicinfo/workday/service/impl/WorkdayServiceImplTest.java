@@ -33,15 +33,17 @@ class WorkdayServiceImplTest {
 
     @Test
     void 연간_생성은_윤년이면_366일이다() {
-        assertEquals(366, WorkdayServiceImpl.buildYear(2028, SAT_SUN, Collections.<LocalDate, String>emptyMap()).size());
-        assertEquals(365, WorkdayServiceImpl.buildYear(2027, SAT_SUN, Collections.<LocalDate, String>emptyMap()).size());
+        assertEquals(366, WorkdayServiceImpl.buildYear(2028, SAT_SUN, Collections.<LocalDate, String>emptyMap(), "회사 휴일").size());
+        assertEquals(365, WorkdayServiceImpl.buildYear(2027, SAT_SUN, Collections.<LocalDate, String>emptyMap(), "회사 휴일").size());
     }
 
     @Test
     void 휴무요일은_회사휴일_평일은_근무일이다() {
-        List<WorkdayVO> days = WorkdayServiceImpl.buildYear(2026, SAT_SUN, Collections.<LocalDate, String>emptyMap());
+        List<WorkdayVO> days = WorkdayServiceImpl.buildYear(2026, SAT_SUN, Collections.<LocalDate, String>emptyMap(), "회사 휴일");
         // 2026-01-03 토, 2026-01-04 일, 2026-01-05 월
-        assertEquals("COMPANY_HOLIDAY", find(days, "2026-01-03").getDayType());
+        WorkdayVO saturday = find(days, "2026-01-03");
+        assertEquals("COMPANY_HOLIDAY", saturday.getDayType());
+        assertEquals("회사 휴일", saturday.getDayName());
         assertEquals("COMPANY_HOLIDAY", find(days, "2026-01-04").getDayType());
         WorkdayVO monday = find(days, "2026-01-05");
         assertEquals("WORK", monday.getDayType());
@@ -50,11 +52,19 @@ class WorkdayServiceImplTest {
     }
 
     @Test
+    void 회사휴일_공통코드가_없으면_휴일명은_비운다() {
+        List<WorkdayVO> days = WorkdayServiceImpl.buildYear(2026, SAT_SUN, Collections.<LocalDate, String>emptyMap(), null);
+        WorkdayVO saturday = find(days, "2026-01-03");
+        assertEquals("COMPANY_HOLIDAY", saturday.getDayType());
+        assertNull(saturday.getDayName());
+    }
+
+    @Test
     void 공휴일이_휴무요일보다_우선하고_대체는_대체휴일이다() {
         Map<LocalDate, String> holidays = new HashMap<LocalDate, String>();
         holidays.put(LocalDate.of(2026, 3, 1), "삼일절");          // 일요일
         holidays.put(LocalDate.of(2026, 3, 2), "대체공휴일(삼일절)"); // 월요일
-        List<WorkdayVO> days = WorkdayServiceImpl.buildYear(2026, SAT_SUN, holidays);
+        List<WorkdayVO> days = WorkdayServiceImpl.buildYear(2026, SAT_SUN, holidays, "회사 휴일");
 
         WorkdayVO march1 = find(days, "2026-03-01");
         assertEquals("PUBLIC_HOLIDAY", march1.getDayType());

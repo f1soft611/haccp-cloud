@@ -43,6 +43,11 @@ public class WorkdayDAO extends EgovAbstractMapper {
         return selectList("WorkdayDAO.selectWeekList", params);
     }
 
+    // 업무일 생성 시 휴무요일에 넣을 회사휴일 공통코드 명칭 (없으면 null)
+    public String selectCompanyHolidayName(Long tenantId) throws Exception {
+        return selectOne("WorkdayDAO.selectCompanyHolidayName", tenantId);
+    }
+
     public Long selectTenantIdByCode(String tenantCode) throws Exception {
         return selectOne("WorkdayDAO.selectTenantIdByCode", tenantCode);
     }
