@@ -977,6 +977,13 @@ function buildMockWorkdays(
     includePublicHolidays: boolean,
 ): WorkdayItem[] {
   const items: WorkdayItem[] = [];
+
+  // 휴무요일 휴일명: 목 공통코드 WORKDAY_TYPE/COMPANY_HOLIDAY 코드명 (없으면 빈 값)
+  const companyHolidayName =
+      commonCodeStore.details.find(
+          (detail) => detail.groupCode === 'WORKDAY_TYPE' && detail.code === 'COMPANY_HOLIDAY' && detail.useAt,
+      )?.codeName ?? '';
+
   for (const date = new Date(year, 0, 1); date.getFullYear() === year; date.setDate(date.getDate() + 1)) {
     const workdayDate = `${year}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const holidayName = includePublicHolidays ? mockPublicHolidays[workdayDate] : undefined;
@@ -993,7 +1000,7 @@ function buildMockWorkdays(
       items.push({
         workdayDate,
         dayType: isOffDay ? 'COMPANY_HOLIDAY' : 'WORK',
-        dayName: isOffDay ? '회사휴일' : '',
+        dayName: isOffDay ? companyHolidayName : '',
         memo: '',
         source: 'PATTERN',
       });
