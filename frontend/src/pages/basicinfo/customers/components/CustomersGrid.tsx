@@ -1,9 +1,7 @@
-import { Trash } from 'lucide-react';
+import { ToggleLeft, ToggleRight } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
-  Chip,
   Skeleton,
-  Stack,
   TableBody,
   TableCell,
   TableHead,
@@ -20,31 +18,29 @@ type CustomersGridProps = {
   rows: CustomerItem[];
   loading?: boolean;
   onEdit: (customer: CustomerItem) => void;
-  onDelete: (customer: CustomerItem) => void;
+  onToggleActive: (customer: CustomerItem) => void;
 };
 
 export function CustomersGrid({
   rows,
   loading,
   onEdit,
-  onDelete,
+  onToggleActive,
 }: CustomersGridProps) {
 
   return (
     <AdminGrid ariaLabel="거래처 목록">
       <TableHead>
         <TableRow>
+          {/* 데이터 컬럼에 고정 너비를 줘야 빈 칸이 남는 폭을 차지함 (사용자관리와 동일) */}
           <TableCell width={100}>거래처코드</TableCell>
-          <TableCell>거래처명</TableCell>
-          <TableCell>대표자명</TableCell>
-          <TableCell>사업자번호</TableCell>
-          <TableCell>전화번호</TableCell>
-          <TableCell width={90} align="center">
-            상태
-          </TableCell>
-          <TableCell width={120} align="center">
-            작업
-          </TableCell>
+          <TableCell width={200}>거래처명</TableCell>
+          <TableCell width={120}>대표자명</TableCell>
+          <TableCell width={150}>사업자번호</TableCell>
+          <TableCell width={150}>전화번호</TableCell>
+          <TableCell aria-hidden />
+          <TableCell width={80}>작업</TableCell>
+          <TableCell width={90}>활성상태</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -66,20 +62,12 @@ export function CustomersGrid({
                 <TableCell>
                   <Skeleton variant="text" width="64%" />
                 </TableCell>
+                <TableCell aria-hidden />
                 <TableCell align="center">
-                  <Skeleton
-                    variant="rounded"
-                    width={48}
-                    height={24}
-                    sx={{ mx: 'auto' }}
-                  />
+                  <Skeleton variant="rounded" width={32} height={32} sx={{ mx: 'auto' }} />
                 </TableCell>
                 <TableCell align="center">
-                  {/* 기존 -> spacing 1 / 변경 -> HACCP 문서현황 기준 spacing 0.5 */}
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <Skeleton variant="rounded" width={32} height={32} />
-                    <Skeleton variant="rounded" width={32} height={32} />
-                  </Stack>
+                  <Skeleton variant="rounded" width={32} height={32} sx={{ mx: 'auto' }} />
                 </TableCell>
               </TableRow>
             ))
@@ -87,57 +75,58 @@ export function CustomersGrid({
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={7} align="center">
+            <TableCell colSpan={8} align="center">
               조회된 거래처가 없습니다.
             </TableCell>
           </TableRow>
         ) : null}
 
         {!loading
-          ? rows.map((row) => (
-              <TableRow key={row.id} hover className={row.active ? undefined : INACTIVE_ROW_CLASS}>
-                <TableCell>{row.customerCode}</TableCell>
-                <TableCell>{row.customerName}</TableCell>
-                <TableCell>{row.presidentName || '-'}</TableCell>
-                <TableCell>
-                  {row.businessNo ? formatBusinessNo(row.businessNo) : '-'}
-                </TableCell>
-                <TableCell>{row.telephoneNo || '-'}</TableCell>
-                <TableCell align="center">
-                  <Chip
-                    size="small"
-                    color={row.active ? 'success' : 'default'}
-                    label={row.active ? '사용' : '미사용'}
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  {/* 기존 -> spacing 1, 툴팁 없음, sx 인라인 / 변경 -> HACCP 문서현황 기준 spacing 0.5, Tooltip, sx 상수 */}
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <Tooltip title="거래처 수정">
+          ? rows.map((row) => {
+              const toggleLabel = row.active ? '비활성화' : '활성화';
+              return (
+                <TableRow key={row.id} hover className={row.active ? undefined : INACTIVE_ROW_CLASS}>
+                  <TableCell align="center">{row.customerCode}</TableCell>
+                  <TableCell align="center">{row.customerName}</TableCell>
+                  <TableCell align="center">{row.presidentName || '-'}</TableCell>
+                  <TableCell align="center">
+                    {row.businessNo ? formatBusinessNo(row.businessNo) : '-'}
+                  </TableCell>
+                  <TableCell align="center">{row.telephoneNo || '-'}</TableCell>
+                  <TableCell aria-hidden />
+                  <TableCell align="center">
+                    {/* 비활성 거래처는 수정 불가, 셀은 남겨 정렬 유지 (사용자관리와 동일) */}
+                    {row.active ? (
+                      <Tooltip title="거래처 수정">
+                        <span>
+                          <GridIconButton
+                            aria-label="거래처 수정"
+                            onClick={() => onEdit(row)}
+                          >
+                            <EditPencilIcon />
+                          </GridIconButton>
+                        </span>
+                      </Tooltip>
+                    ) : null}
+                  </TableCell>
+                  <TableCell align="center">
+                    {/* 상태 칩 + 삭제 버튼을 하나로: 모양은 현재 상태, 툴팁은 누르면 할 동작 */}
+                    <Tooltip title={toggleLabel}>
                       <span>
                         <GridIconButton
-                          aria-label="거래처 수정"
-                          onClick={() => onEdit(row)}
+                          aria-label={toggleLabel}
+                          aria-pressed={row.active}
+                          onClick={() => onToggleActive(row)}
+                          sx={{ color: row.active ? 'primary.main' : 'grey.400' }}
                         >
-                          <EditPencilIcon />
+                          {row.active ? <ToggleRight /> : <ToggleLeft />}
                         </GridIconButton>
                       </span>
                     </Tooltip>
-                    <Tooltip title="거래처 삭제">
-                      <span>
-                        <GridIconButton
-                            aria-label="거래처 삭제"
-                            tone="danger"
-                            onClick={() => onDelete(row)}
-                        >
-                          <Trash />
-                        </GridIconButton>
-                      </span>
-                    </Tooltip>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))
+                  </TableCell>
+                </TableRow>
+              );
+            })
           : null}
       </TableBody>
     </AdminGrid>
