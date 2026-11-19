@@ -24,6 +24,7 @@ import {
   type CommonCodeOption,
 } from '../../../../shared/hooks/useCommonCodeOptions';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import {INACTIVE_ROW_CLASS} from "../../../../app/theme.ts";
 
 // 만료일 안내 시점 표시 문구(예: 30일 전). 만료일 관리 업무가 아니거나 기준이 없음이면 -
 function formatExpirationNotice(row: HaccpBaseRow, options: CommonCodeOption[]) {
@@ -176,7 +177,7 @@ export function HaccpBaseGrid(props: {
 
         {!loading
           ? rows.map((row) => (
-              <TableRow key={row.id} hover>
+              <TableRow key={row.id} hover className={row.useAt === 'Y' ? undefined : INACTIVE_ROW_CLASS}>
                 <TableCell align="center">{row.no}</TableCell>
                 <TableCell>
                   {row.divisionName}

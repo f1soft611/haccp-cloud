@@ -16,6 +16,7 @@ import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { GridPaginationBar } from '../../../../shared/components/data/GridPaginationBar';
 import type { DepartmentItem } from '../../../../services/organization/departmentsService';
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
+import {INACTIVE_ROW_CLASS} from "../../../../app/theme.ts";
 
 export type DepartmentTreeRow = {
   dept: DepartmentItem;
@@ -162,6 +163,7 @@ export function DepartmentTreeGrid(props: {
               <Fragment key={dept.id}>
                 {/* 루트 부서 행 */}
                 <TableRow
+                  className={dept.active ? undefined : INACTIVE_ROW_CLASS}
                   sx={{
                     '& .MuiTableCell-root': {
                       backgroundColor: '#f0f7ff',
@@ -177,10 +179,8 @@ export function DepartmentTreeGrid(props: {
                         onClick={() => onToggleExpand(dept.id)}
                       >
                         {expandedIds.has(dept.id) ? (
-                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
                           <ChevronUp />
                         ) : (
-                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
                           <ChevronDown />
                         )}
                       </GridIconButton>
@@ -209,6 +209,7 @@ export function DepartmentTreeGrid(props: {
                   children.map((child) => (
                     <TableRow
                       key={child.id}
+                      className={child.active ? undefined : INACTIVE_ROW_CLASS}
                       sx={{
                         '& .MuiTableCell-root': {
                           backgroundColor: '#f8fbff',

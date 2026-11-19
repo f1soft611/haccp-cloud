@@ -18,6 +18,7 @@ import {
   useCommonCodeOptions,
 } from '../../../../shared/hooks/useCommonCodeOptions';
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
+import { INACTIVE_ROW_CLASS } from '../../../../app/theme';
 
 type EquipmentGridProps = {
   rows: EquipmentItem[];
@@ -113,7 +114,7 @@ export function EquipmentGrid({
 
         {!loading
           ? rows.map((row) => (
-              <TableRow key={row.id} hover>
+              <TableRow key={row.id} hover className={row.active ? undefined : INACTIVE_ROW_CLASS}>
                 <TableCell>{row.equipSysCd}</TableCell>
                 <TableCell>{row.equipCd}</TableCell>
                 <TableCell>{row.equipNm}</TableCell>

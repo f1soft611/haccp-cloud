@@ -47,7 +47,12 @@ export const tableStyleTokens = {
   rowHeight: 47,
   bodyText: '#333333',
   borderColor: '#E5E7EB',
+  inactiveRowBackground: '#F9F9F9',
+  inactiveRowText: '#D5D5D5',
 } as const;
+
+// 용도: 비활성(미사용) 데이터 행에 붙이는 클래스. 스타일은 아래 MuiTableRow, MuiDataGrid 에서 정의
+export const INACTIVE_ROW_CLASS = 'row-inactive';
 
 // MUI Table 과 DataGrid 의 공통 스타일 정의. appTheme, darkTheme 이 함께 쓴다.
 const tableComponents: ThemeOptions['components'] = {
@@ -74,6 +79,14 @@ const tableComponents: ThemeOptions['components'] = {
         // hover prop 행은 MUI 기본 선택자의 우선순위가 더 높아 함께 지정한다.
         '&:hover, &.MuiTableRow-hover:hover': {
           backgroundColor: tableStyleTokens.rowHoverBackground,
+        },
+        // 비활성 행: 셀 배경을 직접 칠하는 그리드(부서, 메뉴)의 sx 보다 우선하도록 셀에 지정, hover 도 유지
+        [`&.${INACTIVE_ROW_CLASS} .MuiTableCell-root, &.${INACTIVE_ROW_CLASS}:hover .MuiTableCell-root`]: {
+          backgroundColor: tableStyleTokens.inactiveRowBackground,
+        },
+        // 아이콘 버튼이 든 셀은 제외해 버튼 색(상속색 포함)을 유지
+        [`&.${INACTIVE_ROW_CLASS} .MuiTableCell-body:not(:has(.MuiIconButton-root))`]: {
+          color: tableStyleTokens.inactiveRowText,
         },
       },
     },
@@ -125,6 +138,11 @@ const tableComponents: ThemeOptions['components'] = {
         },
         '& .MuiDataGrid-row:hover': {
           backgroundColor: tableStyleTokens.rowHoverBackground,
+        },
+        // 비활성 행 (Table 의 row-inactive 와 같은 색)
+        [`& .MuiDataGrid-row.${INACTIVE_ROW_CLASS}, & .MuiDataGrid-row.${INACTIVE_ROW_CLASS}:hover`]: {
+          backgroundColor: tableStyleTokens.inactiveRowBackground,
+          color: tableStyleTokens.inactiveRowText,
         },
       },
     },

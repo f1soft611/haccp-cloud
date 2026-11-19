@@ -17,6 +17,7 @@ import {
 } from '../../../../shared/constants/labels';
 import type { PlatformRoleItem } from '../../../../services/platform-admin/platformRoleService';
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
+import {INACTIVE_ROW_CLASS} from "../../../../app/theme.ts";
 
 export function PlatformAuthorityGrid(props: {
   rows: PlatformRoleItem[];
@@ -91,7 +92,7 @@ export function PlatformAuthorityGrid(props: {
 
         {!loading
           ? rows.map((role) => (
-              <TableRow key={role.id} hover>
+              <TableRow key={role.id} hover className={role.active ? undefined : INACTIVE_ROW_CLASS}>
                 <TableCell>{role.code}</TableCell>
                 <TableCell>
                   <Stack direction="row" spacing={0.75} alignItems="center">

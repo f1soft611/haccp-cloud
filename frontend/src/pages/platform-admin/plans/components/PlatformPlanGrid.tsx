@@ -13,6 +13,7 @@ import { useTheme } from '@mui/material/styles';
 import { Link, SlidersHorizontal } from 'lucide-react';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import type { PlanSummary } from '../../../../services/platform-admin/planAccessService';
+import {INACTIVE_ROW_CLASS} from "../../../../app/theme.ts";
 
 export function PlatformPlanGrid(props: {
   rows: PlanSummary[];
@@ -105,7 +106,7 @@ export function PlatformPlanGrid(props: {
 
         {!loading
           ? rows.map((plan) => (
-              <TableRow key={plan.planCode} hover>
+              <TableRow key={plan.planCode} hover className={plan.useAt === 'Y' ? undefined : INACTIVE_ROW_CLASS}>
                 <TableCell>{plan.planCode}</TableCell>
                 <TableCell>{plan.planName || '-'}</TableCell>
                 <TableCell>{plan.planDesc || '-'}</TableCell>

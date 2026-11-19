@@ -13,6 +13,7 @@ import {
 import type { UserItem } from '../../../../services/organization/usersService';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
+import { INACTIVE_ROW_CLASS } from '../../../../app/theme';
 
 type UsersGridProps = {
   rows: UserItem[];
@@ -65,7 +66,7 @@ export function UsersGrid({
           <TableCell aria-hidden />
           <TableCell width={120}>권한</TableCell>
           <TableCell width={80}>작업</TableCell>
-          <TableCell width={100}>활성상태</TableCell>
+          <TableCell width={90}>활성상태</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -114,7 +115,7 @@ export function UsersGrid({
 
         {!loading
           ? rows.map((row) => (
-              <TableRow key={row.id} hover>
+              <TableRow key={row.id} hover className={row.active ? undefined : INACTIVE_ROW_CLASS}>
                 <TableCell align="center">
                   {/* 프로필 이미지 없거나 로드 실패 시 MUI Avatar 기본 Person 아이콘으로 폴백 */}
                   <Stack direction="row" alignItems="center" justifyContent="center" spacing={2}>
@@ -133,16 +134,19 @@ export function UsersGrid({
                 <TableCell aria-hidden />
                 <TableCell align="center" >{roleLabel(row.roleCode, roleNameByCode)}</TableCell>
                 <TableCell align="center">
-                  <Tooltip title="사용자 수정">
-                    <span>
-                      <GridIconButton
-                        aria-label="사용자 수정"
-                        onClick={() => onEdit(row)}
-                      >
-                        <EditPencilIcon />
-                      </GridIconButton>
-                    </span>
-                  </Tooltip>
+                  {/* 비활성 사용자는 수정 불가, 셀은 남겨 정렬 유지 */}
+                  {row.active ? (
+                    <Tooltip title="사용자 수정">
+                      <span>
+                        <GridIconButton
+                          aria-label="사용자 수정"
+                          onClick={() => onEdit(row)}
+                        >
+                          <EditPencilIcon />
+                        </GridIconButton>
+                      </span>
+                    </Tooltip>
+                  ) : null}
                 </TableCell>
                 <TableCell align="center">
                   {/* 상태 칩 + 로그인 차단 버튼을 하나로: 모양은 현재 상태, 툴팁은 누르면 할 동작 */}

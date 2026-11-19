@@ -14,6 +14,7 @@ import type { CustomerItem } from '../../../../services/basicinfo/customersServi
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { formatBusinessNo } from '../../../../shared/utils/businessNumberFormat';
 import { GridIconButton } from "../../../../shared/components/data/GridIconButton";
+import { INACTIVE_ROW_CLASS } from '../../../../app/theme';
 
 type CustomersGridProps = {
   rows: CustomerItem[];
@@ -94,7 +95,7 @@ export function CustomersGrid({
 
         {!loading
           ? rows.map((row) => (
-              <TableRow key={row.id} hover>
+              <TableRow key={row.id} hover className={row.active ? undefined : INACTIVE_ROW_CLASS}>
                 <TableCell>{row.customerCode}</TableCell>
                 <TableCell>{row.customerName}</TableCell>
                 <TableCell>{row.presidentName || '-'}</TableCell>
