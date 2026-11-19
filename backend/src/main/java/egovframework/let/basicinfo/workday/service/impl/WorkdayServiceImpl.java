@@ -102,8 +102,10 @@ public class WorkdayServiceImpl extends EgovAbstractServiceImpl implements Workd
                 ? Collections.<Integer>emptySet()
                 : new HashSet<Integer>(payload.getWeeklyOffDays());
 
+        String companyHolidayName = workdayDAO.selectCompanyHolidayName(tenantId);
+
         // ponytail: 365건 행 단위 upsert. 연 1회 관리자 작업이라 배치 insert 는 불필요
-        for (WorkdayVO day : buildYear(payload.getYear(), offDays, holidays)) {
+        for (WorkdayVO day : buildYear(payload.getYear(), offDays, holidays, companyHolidayName)) {
             Map<String, Object> params = new HashMap<String, Object>();
             params.put("tenantId", tenantId);
             params.put("workdayDate", day.getWorkdayDate());
@@ -159,7 +161,9 @@ public class WorkdayServiceImpl extends EgovAbstractServiceImpl implements Workd
     // ── 헬퍼 ─────────────────────────────────────────
 
     // weeklyOffDays: 0=일 ~ 6=토. 공휴일이 휴무요일보다 우선한다.
-    static List<WorkdayVO> buildYear(int year, Set<Integer> weeklyOffDays, Map<LocalDate, String> holidays) {
+    // companyHolidayName: 공통코드 WORKDAY_TYPE/COMPANY_HOLIDAY 코드명. 없으면 null 로 휴일명을 비운다.
+    static List<WorkdayVO> buildYear(int year, Set<Integer> weeklyOffDays, Map<LocalDate, String> holidays,
+                                     String companyHolidayName) {
         List<WorkdayVO> days = new ArrayList<WorkdayVO>();
         for (LocalDate date = LocalDate.of(year, 1, 1); date.getYear() == year; date = date.plusDays(1)) {
             WorkdayVO day = new WorkdayVO();
@@ -173,7 +177,7 @@ public class WorkdayServiceImpl extends EgovAbstractServiceImpl implements Workd
                 // DayOfWeek: 월=1 ~ 일=7 → %7 로 일=0 ~ 토=6
                 if (weeklyOffDays.contains(date.getDayOfWeek().getValue() % 7)) {
                     day.setDayType("COMPANY_HOLIDAY");
-                    day.setDayName("회사휴일");
+                    day.setDayName(companyHolidayName);
                 } else {
                     day.setDayType("WORK");
                 }

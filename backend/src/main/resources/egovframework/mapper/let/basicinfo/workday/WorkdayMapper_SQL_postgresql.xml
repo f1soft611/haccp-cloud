@@ -62,6 +62,21 @@
           AND work_date = CAST(#{workdayDate} AS DATE)
     </update>
 
+    <!-- 연간 생성 시 휴무요일 휴일명: 공통코드 WORKDAY_TYPE/COMPANY_HOLIDAY 코드명 (없거나 미사용이면 null) -->
+    <select id="WorkdayDAO.selectCompanyHolidayName"
+            parameterType="long"
+            resultType="string">
+        SELECT ci.item_nm
+        FROM tb_common_code_item ci
+        JOIN tb_common_code_group cg ON cg.common_code_group_id = ci.group_id
+        WHERE cg.tenant_id = #{tenantId}
+          AND cg.group_code = 'WORKDAY_TYPE'
+          AND cg.use_at = 'Y'
+          AND ci.item_code = 'COMPANY_HOLIDAY'
+          AND ci.use_at = 'Y'
+        LIMIT 1
+    </select>
+
     <!-- 연간 생성: 사용자 수정(MANUAL) 행은 그대로, 나머지는 유형/출처/휴일명만 갱신 (메모 유지) -->
     <insert id="WorkdayDAO.upsertGeneratedWorkday"
             parameterType="map">
