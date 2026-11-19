@@ -214,7 +214,7 @@ describe('MaterialsPage 품목 활성토글', () => {
         renderPage();
         await vi.waitFor(() =>
             expect(listMaterialsPagedMock).toHaveBeenLastCalledWith(
-                expect.objectContaining({ filterActive: '' }),
+                expect.objectContaining({ filterActive: 'Y' }),
             ),
         );
 

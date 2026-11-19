@@ -33,12 +33,12 @@ export function MaterialsPage() {
   const [searchValue, setSearchValue] = useState<MaterialsSearchValue>({
     keyword: '',
     itemType: '',
-    filterActive: '',
+    filterActive: 'Y',
   });
   const [appliedSearch, setAppliedSearch] = useState<MaterialsSearchValue>({
     keyword: '',
     itemType: '',
-    filterActive: '',
+    filterActive: 'Y',
   });
   const [searchSeq, setSearchSeq] = useState(0);
 

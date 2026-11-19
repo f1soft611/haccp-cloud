@@ -30,13 +30,11 @@ export function CustomersPage() {
 
   const [searchValue, setSearchValue] = useState<CustomersSearchValue>({
     keyword: '',
-    // 기존 -> 'all' / 변경 -> '' = 전체
-    filterActive: '',
+    filterActive: 'Y',
   });
   const [appliedSearch, setAppliedSearch] = useState<CustomersSearchValue>({
     keyword: '',
-    // 기존 -> 'all' / 변경 -> '' = 전체
-    filterActive: '',
+    filterActive: 'Y',
   });
   const [searchSeq, setSearchSeq] = useState(0);
 
