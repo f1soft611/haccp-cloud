@@ -1,7 +1,7 @@
-import { Power } from 'lucide-react';
+import { ToggleLeft, ToggleRight } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
-  Chip,
+  Avatar,
   Skeleton,
   Stack,
   TableBody,
@@ -20,6 +20,15 @@ type UsersGridProps = {
   loading?: boolean;
   onEdit: (user: UserItem) => void;
   onToggle: (user: UserItem) => void;
+};
+
+// 용도: 이름 셀 프로필 아바타 크기/기본 아이콘 색 (이미지 없을 때 회색 사람 아이콘)
+const AVATAR_SIZE = 28;
+const avatarSx = {
+  width: AVATAR_SIZE,
+  height: AVATAR_SIZE,
+  bgcolor: 'grey.200',
+  color: 'grey.400',
 };
 
 function roleLabel(roleCode: string, roleNameByCode?: Record<string, string>) {
@@ -48,18 +57,15 @@ export function UsersGrid({
     <AdminGrid ariaLabel="사용자 목록">
       <TableHead>
         <TableRow>
-          <TableCell>이름</TableCell>
-          <TableCell>이메일</TableCell>
-          <TableCell>부서</TableCell>
+          <TableCell width={180} >이름</TableCell>
+          <TableCell width={200} >이메일</TableCell>
+          <TableCell width={150} >부서</TableCell>
           <TableCell width={120}>입사일</TableCell>
           <TableCell width={120}>퇴사일</TableCell>
-          <TableCell>권한</TableCell>
-          <TableCell width={100} align="center">
-            상태
-          </TableCell>
-          <TableCell width={160} align="center">
-            작업
-          </TableCell>
+          <TableCell aria-hidden />
+          <TableCell width={120}>권한</TableCell>
+          <TableCell width={80}>작업</TableCell>
+          <TableCell width={100}>활성상태</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -67,7 +73,10 @@ export function UsersGrid({
           ? Array.from({ length: 5 }).map((_, index) => (
               <TableRow key={`users-grid-skeleton-${index}`}>
                 <TableCell>
-                  <Skeleton variant="text" width="58%" />
+                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Skeleton variant="circular" width={AVATAR_SIZE} height={AVATAR_SIZE} />
+                    <Skeleton variant="text" width="50%" />
+                  </Stack>
                 </TableCell>
                 <TableCell>
                   <Skeleton variant="text" width="78%" />
@@ -81,23 +90,15 @@ export function UsersGrid({
                 <TableCell>
                   <Skeleton variant="text" width="80%" />
                 </TableCell>
+                <TableCell aria-hidden />
                 <TableCell>
                   <Skeleton variant="text" width="52%" />
                 </TableCell>
                 <TableCell align="center">
-                  <Skeleton
-                    variant="rounded"
-                    width={48}
-                    height={24}
-                    sx={{ mx: 'auto' }}
-                  />
+                  <Skeleton variant="rounded" width={32} height={32} sx={{ mx: 'auto' }} />
                 </TableCell>
                 <TableCell align="center">
-                  {/* 기존 -> spacing 1 / 변경 -> HACCP 문서현황 기준 spacing 0.5 */}
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <Skeleton variant="rounded" width={32} height={32} />
-                    <Skeleton variant="rounded" width={32} height={32} />
-                  </Stack>
+                  <Skeleton variant="rounded" width={32} height={32} sx={{ mx: 'auto' }} />
                 </TableCell>
               </TableRow>
             ))
@@ -105,7 +106,7 @@ export function UsersGrid({
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={8} align="center">
+            <TableCell colSpan={9} align="center">
               조회된 사용자가 없습니다.
             </TableCell>
           </TableRow>
@@ -114,47 +115,49 @@ export function UsersGrid({
         {!loading
           ? rows.map((row) => (
               <TableRow key={row.id} hover>
-                <TableCell>{row.name}</TableCell>
-                <TableCell>{row.email}</TableCell>
-                <TableCell>{row.department || '-'}</TableCell>
-                <TableCell>{row.joinDate || '-'}</TableCell>
-                <TableCell>{row.retireDate || '-'}</TableCell>
-                <TableCell>{roleLabel(row.roleCode, roleNameByCode)}</TableCell>
                 <TableCell align="center">
-                  <Chip
-                    size="small"
-                    color={row.active ? 'success' : 'default'}
-                    label={row.active ? '활성' : '비활성'}
-                  />
+                  {/* 프로필 이미지 없거나 로드 실패 시 MUI Avatar 기본 Person 아이콘으로 폴백 */}
+                  <Stack direction="row" alignItems="center" justifyContent="center" spacing={2}>
+                    <Avatar
+                      src={row.profileImage}
+                      alt={row.profileImage ? `${row.name} 프로필` : undefined}
+                      sx={avatarSx}
+                    />
+                    <span>{row.name}</span>
+                  </Stack>
+                </TableCell>
+                <TableCell>{row.email}</TableCell>
+                <TableCell align="center" >{row.department || '-'}</TableCell>
+                <TableCell align="center" >{row.joinDate || '-'}</TableCell>
+                <TableCell align="center" >{row.retireDate || '-'}</TableCell>
+                <TableCell aria-hidden />
+                <TableCell align="center" >{roleLabel(row.roleCode, roleNameByCode)}</TableCell>
+                <TableCell align="center">
+                  <Tooltip title="사용자 수정">
+                    <span>
+                      <GridIconButton
+                        aria-label="사용자 수정"
+                        onClick={() => onEdit(row)}
+                      >
+                        <EditPencilIcon />
+                      </GridIconButton>
+                    </span>
+                  </Tooltip>
                 </TableCell>
                 <TableCell align="center">
-                  {/* 기존 -> spacing 1, 툴팁 없음, sx 인라인 / 변경 -> HACCP 문서현황 기준 spacing 0.5, Tooltip, sx 상수 */}
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <Tooltip title="사용자 수정">
-                      <span>
-                        <GridIconButton
-                          aria-label="사용자 수정"
-                          onClick={() => onEdit(row)}
-                        >
-                          {/* 기존 -> MUI EditOutlinedIcon / 변경 -> 시안 bticon_wri.svg 아이콘 */}
-                          <EditPencilIcon />
-                        </GridIconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title={row.active ? '로그인 차단' : '차단 해제'}>
-                      <span>
-                        <GridIconButton
-                          size="small"
-                          aria-label={row.active ? '로그인 차단' : '차단 해제'}
-                          onClick={() => onToggle(row)}
-                          tone={row.active ? 'danger' : 'success'}
-                        >
-                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
-                          <Power />
-                        </GridIconButton>
-                      </span>
-                    </Tooltip>
-                  </Stack>
+                  {/* 상태 칩 + 로그인 차단 버튼을 하나로: 모양은 현재 상태, 툴팁은 누르면 할 동작 */}
+                  <Tooltip title={row.active ? '비활성화' : '활성화'}>
+                    <span>
+                      <GridIconButton
+                        aria-label={row.active ? '비활성화' : '활성화'}
+                        aria-pressed={row.active}
+                        onClick={() => onToggle(row)}
+                        sx={{ color: row.active ? 'primary.main' : 'grey.400' }}
+                      >
+                        {row.active ? <ToggleRight /> : <ToggleLeft />}
+                      </GridIconButton>
+                    </span>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))
