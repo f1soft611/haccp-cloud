@@ -97,7 +97,6 @@ export function EquipmentPage() {
     mutationFn: deleteEquipment,
     onSuccess: () => {
       setDeleteTarget(null);
-      resetPage();
       void queryClient.invalidateQueries({
         queryKey: ['basicinfo-equipment', tenantCode || 'self'],
       });
@@ -245,13 +244,13 @@ export function EquipmentPage() {
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title="설비 삭제"
+        title="설비 비활성화"
         description={
             deleteTarget
-                ? `'${deleteTarget.equipNm}' 미사용으로 처리하시겠습니까?`
-                : '설비를 삭제하시겠습니까?'
+                ? `'${deleteTarget.equipNm}' 설비를 비활성화하시겠습니까?`
+                : '설비를 비활성화하시겠습니까?'
         }
-        confirmText="미사용"
+        confirmText="비활성화"
         confirmColor="error"
         loading={deleteMutation.isPending}
         onClose={() => {
@@ -265,13 +264,13 @@ export function EquipmentPage() {
 
         <ConfirmDialog
             open={Boolean(restoreTarget)}
-            title="설비 다시 사용"
+            title="설비 활성화"
             description={
                 restoreTarget
-                    ? `'${restoreTarget.equipNm}' 설비를 다시 사용하시겠습니까?`
-                    : '설비를 다시 사용하시겠습니까?'
+                    ? `'${restoreTarget.equipNm}' 설비를 활성화하시겠습니까?`
+                    : '설비를 활성화하시겠습니까?'
             }
-            confirmText="사용"
+            confirmText="활성화"
             confirmColor="primary"
             loading={restoreMutation.isPending}
             onClose={() => {
