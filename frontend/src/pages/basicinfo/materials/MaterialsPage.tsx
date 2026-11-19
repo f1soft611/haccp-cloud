@@ -10,6 +10,7 @@ import {
   createMaterial,
   deleteMaterial,
   listMaterialsPaged,
+  restoreMaterial,
   updateMaterial,
   type MaterialItem,
 } from '../../../services/basicinfo/materialsService';
@@ -32,10 +33,12 @@ export function MaterialsPage() {
   const [searchValue, setSearchValue] = useState<MaterialsSearchValue>({
     keyword: '',
     itemType: '',
+    filterActive: '',
   });
   const [appliedSearch, setAppliedSearch] = useState<MaterialsSearchValue>({
     keyword: '',
     itemType: '',
+    filterActive: '',
   });
   const [searchSeq, setSearchSeq] = useState(0);
 
@@ -44,6 +47,7 @@ export function MaterialsPage() {
     null,
   );
   const [deleteTarget, setDeleteTarget] = useState<MaterialItem | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<MaterialItem | null>(null);
 
   const materialsQuery = useQuery({
     queryKey: [
@@ -53,6 +57,7 @@ export function MaterialsPage() {
       pageSize,
       appliedSearch.keyword,
       appliedSearch.itemType,
+      appliedSearch.filterActive,
       searchSeq,
     ],
     queryFn: () =>
@@ -62,6 +67,7 @@ export function MaterialsPage() {
           pageSize,
           keyword: appliedSearch.keyword || undefined,
           itemTypes: appliedSearch.itemType ? [appliedSearch.itemType] : undefined,
+          filterActive: appliedSearch.filterActive,
         }),
     retry: false,
   });
@@ -93,7 +99,17 @@ export function MaterialsPage() {
     mutationFn: deleteMaterial,
     onSuccess: () => {
       setDeleteTarget(null);
-      resetPage();
+      void queryClient.invalidateQueries({
+        queryKey: ['basicinfo-materials', tenantCode || 'self'],
+      });
+    },
+  });
+
+  // 비활성 품목 다시 활성화
+  const restoreMutation = useMutation({
+    mutationFn: restoreMaterial,
+    onSuccess: () => {
+      setRestoreTarget(null);
       void queryClient.invalidateQueries({
         queryKey: ['basicinfo-materials', tenantCode || 'self'],
       });
@@ -105,6 +121,7 @@ export function MaterialsPage() {
     setAppliedSearch({
       keyword: searchValue.keyword.trim(),
       itemType: searchValue.itemType,
+      filterActive: searchValue.filterActive,
     });
     setSearchSeq((n) => n + 1);
   };
@@ -160,6 +177,17 @@ export function MaterialsPage() {
     });
   };
 
+  // 활성화 확인 시 복구 API 호출
+  const handleConfirmRestore = () => {
+    if (!restoreTarget) {
+      return;
+    }
+    restoreMutation.mutate({
+      tenantCode: tenantCode || undefined,
+      id: restoreTarget.id,
+    });
+  };
+
   return (
     <Stack spacing={2} data-testid="basicinfo-materials-page">
       <PageHeader
@@ -185,6 +213,7 @@ export function MaterialsPage() {
         loading={materialsQuery.isLoading}
         onEdit={handleOpenEdit}
         onDelete={(material) => setDeleteTarget(material)}
+        onRestore={(material) => setRestoreTarget(material)}
       />
 
       <GridPaginationBar
@@ -235,13 +264,13 @@ export function MaterialsPage() {
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        title="품목 삭제"
+        title="품목 비활성화"
         description={
           deleteTarget
-            ? `'${deleteTarget.materialName}' 품목을 삭제하시겠습니까? 삭제 후에는 목록에서 보이지 않습니다.`
-            : '품목을 삭제하시겠습니까?'
+            ? `'${deleteTarget.materialName}' 품목을 비활성화하시겠습니까?`
+            : '품목을 비활성화하시겠습니까?'
         }
-        confirmText="삭제"
+        confirmText="비활성화"
         confirmColor="error"
         loading={deleteMutation.isPending}
         onClose={() => {
@@ -251,6 +280,26 @@ export function MaterialsPage() {
           setDeleteTarget(null);
         }}
         onConfirm={handleConfirmDelete}
+      />
+
+      <ConfirmDialog
+        open={Boolean(restoreTarget)}
+        title="품목 활성화"
+        description={
+          restoreTarget
+            ? `'${restoreTarget.materialName}' 품목을 활성화하시겠습니까?`
+            : '품목을 활성화하시겠습니까?'
+        }
+        confirmText="활성화"
+        confirmColor="primary"
+        loading={restoreMutation.isPending}
+        onClose={() => {
+          if (restoreMutation.isPending) {
+            return;
+          }
+          setRestoreTarget(null);
+        }}
+        onConfirm={handleConfirmRestore}
       />
     </Stack>
   );

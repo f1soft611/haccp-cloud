@@ -5,19 +5,23 @@ import { MaterialsPage } from '../../../pages/basicinfo/materials/MaterialsPage.
 import type {
     CreateMaterialRequest,
     ListMaterialsPagedResult,
+    MaterialItem,
 } from '../../../services/basicinfo/materialsService';
 import { useAuthStore } from '../../../shared/store/authStore.ts';
 
-const { listMaterialsPagedMock, createMaterialMock } = vi.hoisted(() => ({
+const { listMaterialsPagedMock, createMaterialMock, deleteMaterialMock, restoreMaterialMock } = vi.hoisted(() => ({
     listMaterialsPagedMock: vi.fn(async (): Promise<ListMaterialsPagedResult> => ({ items: [], totalCount: 0 })),
     createMaterialMock: vi.fn<(payload: CreateMaterialRequest) => Promise<unknown>>(async () => ({})),
+    deleteMaterialMock: vi.fn<(payload: { tenantCode?: string; id: string }) => Promise<void>>(async () => undefined),
+    restoreMaterialMock: vi.fn<(payload: { tenantCode?: string; id: string }) => Promise<void>>(async () => undefined),
 }));
 
 vi.mock('../../../services/basicinfo/materialsService', () => ({
     listMaterialsPaged: listMaterialsPagedMock,
     createMaterial: createMaterialMock,
     updateMaterial: vi.fn(),
-    deleteMaterial: vi.fn(),
+    deleteMaterial: deleteMaterialMock,
+    restoreMaterial: restoreMaterialMock,
 }));
 
 vi.mock('../../../services/basicinfo/commonCodeService', () => ({
@@ -170,6 +174,7 @@ describe('MaterialsPage 품목 목록', () => {
                     expiryedCount: 12,
                     kfdaReportNo: '2026-0001',
                     etc: '',
+                    active: true,
                 },
             ],
             totalCount: 1,
@@ -181,5 +186,102 @@ describe('MaterialsPage 품목 목록', () => {
         expect(within(row).getByText('냉장')).toBeInTheDocument();
         expect(within(row).getByText('12개월')).toBeInTheDocument();
         expect(within(row).getByText('2026-0001')).toBeInTheDocument();
+    });
+});
+
+function materialRow(overrides: Partial<MaterialItem>): MaterialItem {
+    return {
+        id: '1',
+        materialCode: '000001',
+        materialName: '밀가루',
+        itemType: 'RAW',
+        materialSpec: '',
+        materialWeight: null,
+        unit: '',
+        materialKind: '',
+        storeMethod: '',
+        expiryedStatus: 'NONE',
+        expiryedCount: null,
+        kfdaReportNo: '',
+        etc: '',
+        active: true,
+        ...overrides,
+    };
+}
+
+describe('MaterialsPage 품목 활성토글', () => {
+    it('상태 필터를 고르고 조회하면 filterActive로 조회한다', async () => {
+        renderPage();
+        await vi.waitFor(() =>
+            expect(listMaterialsPagedMock).toHaveBeenLastCalledWith(
+                expect.objectContaining({ filterActive: '' }),
+            ),
+        );
+
+        fireEvent.mouseDown(screen.getByRole('combobox', { name: '상태' }));
+        const listbox = await screen.findByRole('listbox');
+        fireEvent.click(within(listbox).getByRole('option', { name: '미사용' }));
+        fireEvent.click(screen.getByRole('button', { name: '조회' }));
+
+        await vi.waitFor(() =>
+            expect(listMaterialsPagedMock).toHaveBeenLastCalledWith(
+                expect.objectContaining({ filterActive: 'N', pageIndex: 1 }),
+            ),
+        );
+    });
+
+    it('활성 행은 수정 버튼과 비활성화 토글, 비활성 행은 활성화 토글만 보여 준다', async () => {
+        listMaterialsPagedMock.mockResolvedValueOnce({
+            items: [
+                materialRow({ id: '1', materialName: '밀가루', active: true }),
+                materialRow({ id: '2', materialCode: '000002', materialName: '설탕', active: false }),
+            ],
+            totalCount: 2,
+        });
+        renderPage();
+
+        const activeRow = (await screen.findByText('밀가루')).closest('tr') as HTMLElement;
+        const inactiveRow = screen.getByText('설탕').closest('tr') as HTMLElement;
+
+        expect(within(activeRow).getByRole('button', { name: '품목 수정' })).toBeInTheDocument();
+        expect(within(activeRow).getByRole('button', { name: '비활성화' })).toBeInTheDocument();
+        expect(within(inactiveRow).queryByRole('button', { name: '품목 수정' })).not.toBeInTheDocument();
+        expect(within(inactiveRow).getByRole('button', { name: '활성화' })).toBeInTheDocument();
+    });
+
+    it('비활성화를 확인하면 deleteMaterial을 호출한다', async () => {
+        listMaterialsPagedMock.mockResolvedValueOnce({
+            items: [materialRow({ id: '1', materialName: '밀가루', active: true })],
+            totalCount: 1,
+        });
+        renderPage();
+
+        const row = (await screen.findByText('밀가루')).closest('tr') as HTMLElement;
+        fireEvent.click(within(row).getByRole('button', { name: '비활성화' }));
+
+        const dialog = await screen.findByRole('dialog');
+        expect(within(dialog).getByText("'밀가루' 품목을 비활성화하시겠습니까?")).toBeInTheDocument();
+        fireEvent.click(within(dialog).getByRole('button', { name: '비활성화' }));
+
+        await waitFor(() => expect(deleteMaterialMock).toHaveBeenCalled());
+        expect(deleteMaterialMock.mock.calls[0][0]).toEqual({ tenantCode: 'TENANT-A', id: '1' });
+    });
+
+    it('활성화를 확인하면 restoreMaterial을 호출한다', async () => {
+        listMaterialsPagedMock.mockResolvedValueOnce({
+            items: [materialRow({ id: '2', materialName: '설탕', active: false })],
+            totalCount: 1,
+        });
+        renderPage();
+
+        const row = (await screen.findByText('설탕')).closest('tr') as HTMLElement;
+        fireEvent.click(within(row).getByRole('button', { name: '활성화' }));
+
+        const dialog = await screen.findByRole('dialog');
+        expect(within(dialog).getByText("'설탕' 품목을 활성화하시겠습니까?")).toBeInTheDocument();
+        fireEvent.click(within(dialog).getByRole('button', { name: '활성화' }));
+
+        await waitFor(() => expect(restoreMaterialMock).toHaveBeenCalled());
+        expect(restoreMaterialMock.mock.calls[0][0]).toEqual({ tenantCode: 'TENANT-A', id: '2' });
     });
 });

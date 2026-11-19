@@ -3,11 +3,17 @@ import { AppTextField } from '../../../../shared/components/forms/AppTextField';
 import { SearchFilterBar } from '../../../../shared/components/forms/SearchFilterBar';
 import { CommonCodeSelect } from '../../../../shared/components/forms/CommonCodeSelect';
 import { COMMON_CODE_GROUP } from '../../../../shared/constants/commonCodeGroups';
+import { AppSelect } from '../../../../shared/components/forms/AppSelect';
 
-// 기존 -> 검색어만 / 변경 -> 품목계정(공통코드 ITEM_TYPE, '' = 전체) 추가
+const ACTIVE_FILTER_OPTIONS = [
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '미사용' },
+] as const;
+
 export type MaterialsSearchValue = {
   keyword: string;
   itemType: string;
+  filterActive: '' | 'Y' | 'N';
 };
 
 type MaterialsSearchBarProps = {
@@ -40,6 +46,15 @@ export function MaterialsSearchBar({
         </Button>
       }
     >
+      <AppSelect
+        size="small"
+        label="상태"
+        value={value.filterActive}
+        onChange={(filterActive) => onChange({ ...value, filterActive })}
+        options={ACTIVE_FILTER_OPTIONS}
+        emptyLabel="전체"
+        sx={{ minWidth: 140 }}
+      />
       <Box sx={{ minWidth: { md: 180 } }}>
         <CommonCodeSelect
           groupCode={COMMON_CODE_GROUP.ITEM_TYPE}
