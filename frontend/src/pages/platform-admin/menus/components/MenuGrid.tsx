@@ -38,6 +38,7 @@ import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { GridPaginationBar } from '../../../../shared/components/data/GridPaginationBar';
 import type { PlatformMenuItem } from '../../../../services/platform-admin/platformMenuService';
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
+import {INACTIVE_ROW_CLASS} from "../../../../app/theme.ts";
 
 export const ICON_OPTIONS = [
   'Dashboard',
@@ -237,7 +238,7 @@ export function MenuGrid(props: {
           ) : (
             rows.map(({ menu: rootMenu, children, orphanParentLabel }) => (
               <Fragment key={rootMenu.menuId}>
-                <TableRow>
+                <TableRow className={rootMenu.useAt === 'Y' ? undefined : INACTIVE_ROW_CLASS}>
                   <TableCell align="center">
                     {children.length > 0 ? (
                       <IconButton
@@ -245,10 +246,8 @@ export function MenuGrid(props: {
                         onClick={() => onToggleExpand(rootMenu.menuId)}
                       >
                         {expandedIds.has(rootMenu.menuId) ? (
-                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
                           <ChevronUp />
                         ) : (
-                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
                           <ChevronDown />
                         )}
                       </IconButton>
@@ -316,8 +315,7 @@ export function MenuGrid(props: {
                   ? children.map((childMenu) => (
                       <TableRow
                         key={childMenu.menuId}
-                        // 기존 -> 배경, 강조선, hover 를 isDarkMode 로 분기
-                        // 변경 -> 다크모드도 흰 테이블이라 라이트 값 고정
+                        className={childMenu.useAt === 'Y' ? undefined : INACTIVE_ROW_CLASS}
                         sx={{
                           '& .MuiTableCell-root': {
                             backgroundColor: '#f8fbff',

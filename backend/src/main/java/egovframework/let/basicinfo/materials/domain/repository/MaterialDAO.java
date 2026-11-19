@@ -58,4 +58,9 @@ public class MaterialDAO extends EgovAbstractMapper {
     public void softDeleteMaterial(Map<String, Object> params) throws Exception {
         update("MaterialDAO.softDeleteMaterial", params);
     }
+
+    // 소프트 삭제된 품목 복구 (delete_status 'N')
+    public void restoreMaterial(Map<String, Object> params) throws Exception {
+        update("MaterialDAO.restoreMaterial", params);
+    }
 }

@@ -1,4 +1,4 @@
-import { Link, Power } from 'lucide-react';
+import { Link, ToggleLeft, ToggleRight } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Chip,
@@ -11,12 +11,10 @@ import {
   Tooltip,
 } from '@mui/material';
 import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
-import {
-  APP_LABELS,
-  getActiveLabel,
-} from '../../../../shared/constants/labels';
+import { APP_LABELS } from '../../../../shared/constants/labels';
 import type { PlatformRoleItem } from '../../../../services/platform-admin/platformRoleService';
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
+import {INACTIVE_ROW_CLASS} from "../../../../app/theme.ts";
 
 export function PlatformAuthorityGrid(props: {
   rows: PlatformRoleItem[];
@@ -37,14 +35,16 @@ export function PlatformAuthorityGrid(props: {
     <AdminGrid ariaLabel="권한 목록">
       <TableHead>
         <TableRow>
-          <TableCell>권한 코드</TableCell>
-          <TableCell>권한명</TableCell>
-          <TableCell>설명</TableCell>
-          <TableCell width={100} align="center">
-            상태
-          </TableCell>
-          <TableCell width={220} align="center">
+          {/* 데이터 컬럼에 고정 너비를 줘야 빈 칸이 남는 폭을 차지함 (사용자관리와 동일) */}
+          <TableCell width={160}>권한 코드</TableCell>
+          <TableCell width={200}>권한명</TableCell>
+          <TableCell width={320}>설명</TableCell>
+          <TableCell aria-hidden />
+          <TableCell width={120}>
             작업
+          </TableCell>
+          <TableCell width={90}>
+            활성상태
           </TableCell>
         </TableRow>
       </TableHead>
@@ -61,21 +61,15 @@ export function PlatformAuthorityGrid(props: {
                 <TableCell>
                   <Skeleton variant="text" width="82%" />
                 </TableCell>
+                <TableCell aria-hidden />
                 <TableCell align="center">
-                  <Skeleton
-                    variant="rounded"
-                    width={48}
-                    height={24}
-                    sx={{ mx: 'auto' }}
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  {/* 기존 -> spacing 1 / 변경 -> HACCP 문서현황 기준 spacing 0.5 */}
                   <Stack direction="row" spacing={0.5} justifyContent="center">
                     <Skeleton variant="rounded" width={32} height={32} />
                     <Skeleton variant="rounded" width={32} height={32} />
-                    <Skeleton variant="rounded" width={32} height={32} />
                   </Stack>
+                </TableCell>
+                <TableCell align="center">
+                  <Skeleton variant="rounded" width={32} height={32} sx={{ mx: 'auto' }} />
                 </TableCell>
               </TableRow>
             ))
@@ -83,83 +77,79 @@ export function PlatformAuthorityGrid(props: {
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={5} align="center">
+            <TableCell colSpan={6} align="center">
               권한 데이터가 없습니다.
             </TableCell>
           </TableRow>
         ) : null}
 
         {!loading
-          ? rows.map((role) => (
-              <TableRow key={role.id} hover>
-                <TableCell>{role.code}</TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={0.75} alignItems="center">
-                    <span>{role.name || '-'}</span>
-                    {role.systemRole ? (
-                      <Chip size="small" color="warning" label="시스템" />
-                    ) : null}
-                  </Stack>
-                </TableCell>
-                <TableCell>{role.description || '-'}</TableCell>
-                <TableCell align="center">
-                  <Chip
-                    label={getActiveLabel(role.active)}
-                    size="small"
-                    color={role.active ? 'success' : 'default'}
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <Tooltip title="메뉴 매핑">
+          ? rows.map((role) => {
+              const toggleLabel = role.active
+                ? APP_LABELS.action.deactivate
+                : APP_LABELS.action.activate;
+              return (
+                <TableRow key={role.id} hover className={role.active ? undefined : INACTIVE_ROW_CLASS}>
+                  <TableCell align="center">{role.code}</TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={0.75} alignItems="center">
+                      <span>{role.name || '-'}</span>
+                      {role.systemRole ? (
+                        <Chip size="small" color="warning" label="시스템" />
+                      ) : null}
+                    </Stack>
+                  </TableCell>
+                  <TableCell>{role.description || '-'}</TableCell>
+                  <TableCell aria-hidden />
+                  <TableCell align="center">
+                    <Stack direction="row" spacing={0.5} justifyContent="center">
+                      {/* 비활성 권한은 수정 불가 (사용자관리와 동일) */}
+                      {role.active ? (
+                        <>
+                          <Tooltip title="메뉴 매핑">
+                            <span>
+                              <GridIconButton
+                                aria-label="메뉴 매핑"
+                                onClick={() => onMenuMapping(role)}
+                              >
+                                <Link />
+                              </GridIconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="권한 수정">
+                            <span>
+                              <GridIconButton
+                                aria-label="권한 수정"
+                                disabled={role.systemRole}
+                                onClick={() => onEdit(role)}
+                              >
+                                <EditPencilIcon />
+                              </GridIconButton>
+                            </span>
+                          </Tooltip>
+                        </>
+                      ) : null}
+                    </Stack>
+                  </TableCell>
+                  <TableCell align="center">
+                    {/* 상태 칩 + 비활성화 버튼을 하나로: 모양은 현재 상태, 툴팁은 누르면 할 동작 */}
+                    <Tooltip title={toggleLabel}>
                       <span>
                         <GridIconButton
-                          aria-label="메뉴 매핑"
-                          onClick={() => onMenuMapping(role)}
-                        >
-                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
-                          <Link />
-                        </GridIconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title="권한 수정">
-                      <span>
-                        <GridIconButton
-                          aria-label="권한 수정"
+                          aria-label={toggleLabel}
+                          aria-pressed={role.active}
                           disabled={role.systemRole}
-                          onClick={() => onEdit(role)}
-                        >
-                          <EditPencilIcon />
-                        </GridIconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip
-                      title={
-                        role.active
-                          ? APP_LABELS.action.deactivate
-                          : APP_LABELS.action.activate
-                      }
-                    >
-                      <span>
-                        <GridIconButton
-                          disabled={role.systemRole}
-                          aria-label={
-                            role.active
-                              ? APP_LABELS.action.deactivate
-                              : APP_LABELS.action.activate
-                          }
-                          tone={role.active ? 'danger' : 'success'}
                           onClick={() => onToggleActive(role)}
+                          sx={{ color: role.active ? 'primary.main' : 'grey.400' }}
                         >
-                          {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
-                          <Power />
+                          {role.active ? <ToggleRight /> : <ToggleLeft />}
                         </GridIconButton>
                       </span>
                     </Tooltip>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))
+                  </TableCell>
+                </TableRow>
+              );
+            })
           : null}
       </TableBody>
     </AdminGrid>

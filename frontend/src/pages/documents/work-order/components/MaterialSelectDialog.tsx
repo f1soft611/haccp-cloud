@@ -71,6 +71,8 @@ export function MaterialSelectDialog(props: {
                 pageSize: PAGE_SIZE,
                 keyword: applied.keyword || undefined,
                 itemTypes: applied.itemType ? [applied.itemType] : WORK_ORDER_ITEM_TYPES,
+                // 비활성 품목은 작업지시서에서 고를 수 없음
+                filterActive: 'Y',
             }),
         enabled: open,
         retry: false,

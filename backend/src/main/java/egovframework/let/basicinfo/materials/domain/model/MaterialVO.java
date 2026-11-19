@@ -60,4 +60,7 @@ public class MaterialVO implements Serializable {
 
     @Schema(description = "품목보고번호")
     private String kfdaReportNo;
+
+    @Schema(description = "활성 여부(delete_status = 'N')")
+    private Boolean active;
 }

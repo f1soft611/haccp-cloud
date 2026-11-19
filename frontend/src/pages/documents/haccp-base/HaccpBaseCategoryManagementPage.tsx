@@ -32,6 +32,7 @@ import { useAuthStore } from '../../../shared/store/authStore';
 import { AppSelect } from '../../../shared/components/forms/AppSelect';
 import {GridIconButton} from "../../../shared/components/data/GridIconButton.tsx";
 import {CancelButton} from "../../../shared/components/forms/CancelButton.tsx";
+import {INACTIVE_ROW_CLASS} from "../../../app/theme.ts";
 
 const USE_AT_OPTIONS = [
   { value: 'Y', label: '사용' },
@@ -270,7 +271,7 @@ export function HaccpBaseCategoryManagementPage() {
           ) : null}
 
           {sortedRows.map((row) => (
-            <TableRow key={row.id} hover>
+            <TableRow key={row.id} hover className={row.useAt === 'Y' ? undefined : INACTIVE_ROW_CLASS}>
               <TableCell>{row.no}</TableCell>
               <TableCell>{row.categoryCode}</TableCell>
               <TableCell>{row.categoryName}</TableCell>

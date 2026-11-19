@@ -1,10 +1,8 @@
-import { ChevronDown, ChevronUp, Power } from 'lucide-react';
+import { ChevronDown, ChevronUp, ToggleLeft, ToggleRight } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
   Box,
-  Chip,
   Skeleton,
-  Stack,
   TableBody,
   TableCell,
   TableHead,
@@ -16,6 +14,7 @@ import { AdminGrid } from '../../../../shared/components/data/AdminGrid';
 import { GridPaginationBar } from '../../../../shared/components/data/GridPaginationBar';
 import type { DepartmentItem } from '../../../../services/organization/departmentsService';
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
+import {INACTIVE_ROW_CLASS} from "../../../../app/theme.ts";
 
 export type DepartmentTreeRow = {
   dept: DepartmentItem;
@@ -51,29 +50,20 @@ export function DepartmentTreeGrid(props: {
     onPageSizeChange,
   } = props;
 
-
-  const activeChip = (active: boolean) => (
-    <Chip
-      label={active ? '사용' : '미사용'}
-      size="small"
-      color={active ? 'success' : 'default'}
-      variant="filled"
-    />
-  );
-
-  // 기존 -> 라이트 색만 인라인, mr 0.25 로 간격 / 변경 -> 다크모드 대응 actionIconSx, Tooltip, 간격은 Stack 에서
-  const editBtn = (dept: DepartmentItem) => (
-    <Tooltip title="부서 수정">
-      <span>
-        <GridIconButton
-          aria-label="부서 수정"
-          onClick={() => onEdit(dept)}
-        >
-          <EditPencilIcon />
-        </GridIconButton>
-      </span>
-    </Tooltip>
-  );
+  // 비활성 부서는 수정 불가 (사용자관리와 동일), 셀은 남겨 정렬 유지
+  const editBtn = (dept: DepartmentItem) =>
+    dept.active ? (
+      <Tooltip title="부서 수정">
+        <span>
+          <GridIconButton
+            aria-label="부서 수정"
+            onClick={() => onEdit(dept)}
+          >
+            <EditPencilIcon />
+          </GridIconButton>
+        </span>
+      </Tooltip>
+    ) : null;
 
   const toggleBtn = (dept: DepartmentItem) => {
     const blockDeactivate = dept.active && (dept.hasChildren || dept.hasMembers);
@@ -84,17 +74,18 @@ export function DepartmentTreeGrid(props: {
       : dept.active
         ? '미사용으로 변경'
         : '사용으로 변경';
+    // 사용여부 칩 + 전원 버튼을 하나로: 모양은 현재 상태, 툴팁은 누르면 할 동작
     return (
       <Tooltip title={label}>
         <span>
           <GridIconButton
             aria-label={label}
-            tone={dept.active ? 'danger' : 'success'}
+            aria-pressed={dept.active}
             onClick={() => onToggleActive(dept)}
             disabled={statusPending || blockDeactivate}
+            sx={{ color: dept.active ? 'primary.main' : 'grey.400' }}
           >
-            {/* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */}
-            <Power />
+            {dept.active ? <ToggleRight /> : <ToggleLeft />}
           </GridIconButton>
         </span>
       </Tooltip>
@@ -109,15 +100,10 @@ export function DepartmentTreeGrid(props: {
             <TableCell width="40">확장</TableCell>
             <TableCell width="240">부서명</TableCell>
             <TableCell width="240">상위 부서</TableCell>
-            <TableCell width="80" align="center">
-              순서
-            </TableCell>
-            <TableCell width="90" align="center">
-              사용여부
-            </TableCell>
-            <TableCell width="100" align="center">
-              작업
-            </TableCell>
+            <TableCell width="80" >순서</TableCell>
+            <TableCell aria-hidden />
+            <TableCell width="80" >작업</TableCell>
+            <TableCell width="90" >사용여부</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -136,21 +122,19 @@ export function DepartmentTreeGrid(props: {
                 <TableCell align="center">
                   <Skeleton variant="text" width="30%" />
                 </TableCell>
+                <TableCell aria-hidden />
                 <TableCell align="center">
-                  <Skeleton variant="rounded" width={52} height={22} />
+                  <Skeleton variant="rounded" width={32} height={32} sx={{ mx: 'auto' }} />
                 </TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <Skeleton variant="rounded" width={32} height={32} />
-                    <Skeleton variant="rounded" width={32} height={32} />
-                  </Stack>
+                  <Skeleton variant="rounded" width={32} height={32} sx={{ mx: 'auto' }} />
                 </TableCell>
               </TableRow>
             ))
           ) : rows.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={7}
                 align="center"
                 sx={{ py: 4, color: 'text.secondary' }}
               >
@@ -162,6 +146,7 @@ export function DepartmentTreeGrid(props: {
               <Fragment key={dept.id}>
                 {/* 루트 부서 행 */}
                 <TableRow
+                  className={dept.active ? undefined : INACTIVE_ROW_CLASS}
                   sx={{
                     '& .MuiTableCell-root': {
                       backgroundColor: '#f0f7ff',
@@ -177,10 +162,8 @@ export function DepartmentTreeGrid(props: {
                         onClick={() => onToggleExpand(dept.id)}
                       >
                         {expandedIds.has(dept.id) ? (
-                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
                           <ChevronUp />
                         ) : (
-                          /* 기존 -> MUI 아이콘 / 변경 -> lucide 아이콘 */
                           <ChevronDown />
                         )}
                       </GridIconButton>
@@ -193,15 +176,9 @@ export function DepartmentTreeGrid(props: {
                     {dept.parentName ?? '—'}
                   </TableCell>
                   <TableCell align="center">{dept.sortOrder}</TableCell>
-                  <TableCell align="center">
-                    {activeChip(dept.active)}
-                  </TableCell>
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={0.5} justifyContent="center">
-                      {editBtn(dept)}
-                      {toggleBtn(dept)}
-                    </Stack>
-                  </TableCell>
+                  <TableCell aria-hidden />
+                  <TableCell align="center">{editBtn(dept)}</TableCell>
+                  <TableCell align="center">{toggleBtn(dept)}</TableCell>
                 </TableRow>
 
                 {/* 자식 부서 행 (확장 시) */}
@@ -209,6 +186,7 @@ export function DepartmentTreeGrid(props: {
                   children.map((child) => (
                     <TableRow
                       key={child.id}
+                      className={child.active ? undefined : INACTIVE_ROW_CLASS}
                       sx={{
                         '& .MuiTableCell-root': {
                           backgroundColor: '#f8fbff',
@@ -250,15 +228,9 @@ export function DepartmentTreeGrid(props: {
                         {child.parentName ?? dept.name}
                       </TableCell>
                       <TableCell align="center">{child.sortOrder}</TableCell>
-                      <TableCell align="center">
-                        {activeChip(child.active)}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Stack direction="row" spacing={0.5} justifyContent="center">
-                          {editBtn(child)}
-                          {toggleBtn(child)}
-                        </Stack>
-                      </TableCell>
+                      <TableCell aria-hidden />
+                      <TableCell align="center">{editBtn(child)}</TableCell>
+                      <TableCell align="center">{toggleBtn(child)}</TableCell>
                     </TableRow>
                   ))}
               </Fragment>

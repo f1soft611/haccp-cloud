@@ -56,14 +56,6 @@ export function PlatformAuthorityFormDialog(props: {
       }}
       actions={
         <>
-          <AppSelect
-            size="small"
-            value={value.useAt}
-            onChange={(useAt) => onChange({ ...value, useAt })}
-            options={USE_AT_OPTIONS}
-            selectProps={{ SelectDisplayProps: { 'aria-label': '활성 상태' } }}
-            sx={{ minWidth: 120, mr: 'auto' }}
-          />
           <Button
             variant="contained"
             onClick={onSubmit}
@@ -79,7 +71,8 @@ export function PlatformAuthorityFormDialog(props: {
         <AppTextField
           value={value.code}
           label="권한 코드"
-          helperText={isCreateMode ? '저장 시 자동 채번됩니다 (001부터)' : undefined}
+          placeholder={isCreateMode ? '저장 시 자동 채번됩니다 (001부터)' : undefined}
+          slotProps={{ inputLabel: { shrink: true } }}
           size="small"
           disabled
           fullWidth
@@ -111,6 +104,16 @@ export function PlatformAuthorityFormDialog(props: {
           minRows={3}
           fullWidth
         />
+        {!isCreateMode && (
+          <AppSelect
+            label="활성상태"
+            value={value.useAt}
+            onChange={(useAt) => onChange({ ...value, useAt })}
+            options={USE_AT_OPTIONS}
+            size="small"
+            fullWidth
+          />
+        )}
       </Stack>
     </FormDialog>
   );

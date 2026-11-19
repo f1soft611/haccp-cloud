@@ -16,7 +16,8 @@ export function UserStatusDialog({
   onClose,
   onConfirm,
 }: UserStatusDialogProps) {
-  const nextAction = target?.active ? '로그인 차단' : '차단 해제';
+  // 목록 활성상태 토글 툴팁과 같은 단어로 확인 문구 구성
+  const nextAction = target?.active ? '비활성화' : '활성화';
 
   return (
     <ConfirmDialog
@@ -24,7 +25,7 @@ export function UserStatusDialog({
       title="사용자 상태 변경"
       description={
         target
-          ? `${target.name} 사용자를 ${nextAction} 하시겠습니까?`
+          ? `${target.name} 사용자를 ${nextAction}하시겠습니까?`
           : '상태를 변경하시겠습니까?'
       }
       confirmText="확인"

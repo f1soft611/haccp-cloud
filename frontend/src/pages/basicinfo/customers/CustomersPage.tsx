@@ -8,7 +8,6 @@ import { useGridPagination } from '../../../shared/hooks/useGridPagination';
 import { useAuthStore } from '../../../shared/store/authStore';
 import {
   createCustomer,
-  deleteCustomer,
   listCustomersPaged,
   updateCustomer,
   type CustomerItem,
@@ -31,13 +30,11 @@ export function CustomersPage() {
 
   const [searchValue, setSearchValue] = useState<CustomersSearchValue>({
     keyword: '',
-    // 기존 -> 'all' / 변경 -> '' = 전체
-    filterActive: '',
+    filterActive: 'Y',
   });
   const [appliedSearch, setAppliedSearch] = useState<CustomersSearchValue>({
     keyword: '',
-    // 기존 -> 'all' / 변경 -> '' = 전체
-    filterActive: '',
+    filterActive: 'Y',
   });
   const [searchSeq, setSearchSeq] = useState(0);
 
@@ -45,7 +42,7 @@ export function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<CustomerItem | null>(
     null,
   );
-  const [deleteTarget, setDeleteTarget] = useState<CustomerItem | null>(null);
+  const [toggleTarget, setToggleTarget] = useState<CustomerItem | null>(null);
 
   const customersQuery = useQuery({
     queryKey: [
@@ -91,11 +88,11 @@ export function CustomersPage() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteCustomer,
+  // 목록 활성토글, 하드삭제 대신 기존 수정 API로 active 만 반전
+  const toggleMutation = useMutation({
+    mutationFn: updateCustomer,
     onSuccess: () => {
-      setDeleteTarget(null);
-      resetPage();
+      setToggleTarget(null);
       void queryClient.invalidateQueries({
         queryKey: ['basicinfo-customers', tenantCode || 'self'],
       });
@@ -138,13 +135,15 @@ export function CustomersPage() {
     createMutation.mutate(payload);
   };
 
-  const handleConfirmDelete = () => {
-    if (!deleteTarget) {
+  // 토글 확인 시 현재 거래처 값 그대로 active 만 반대로 저장
+  const handleConfirmToggle = () => {
+    if (!toggleTarget) {
       return;
     }
-    deleteMutation.mutate({
+    toggleMutation.mutate({
+      ...toggleTarget,
       tenantCode: tenantCode || undefined,
-      id: deleteTarget.id,
+      active: !toggleTarget.active,
     });
   };
 
@@ -172,7 +171,7 @@ export function CustomersPage() {
         rows={customersQuery.data?.items ?? []}
         loading={customersQuery.isLoading}
         onEdit={handleOpenEdit}
-        onDelete={(customer) => setDeleteTarget(customer)}
+        onToggleActive={(customer) => setToggleTarget(customer)}
       />
 
       <GridPaginationBar
@@ -218,23 +217,23 @@ export function CustomersPage() {
       />
 
       <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        title="거래처 삭제"
+        open={Boolean(toggleTarget)}
+        title={toggleTarget?.active === false ? '거래처 활성화' : '거래처 비활성화'}
         description={
-          deleteTarget
-            ? `'${deleteTarget.customerName}' 거래처를 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.`
-            : '거래처를 삭제하시겠습니까?'
+          toggleTarget
+            ? `'${toggleTarget.customerName}' 거래처를 ${toggleTarget.active ? '비활성화' : '활성화'}하시겠습니까?`
+            : ''
         }
-        confirmText="삭제"
-        confirmColor="error"
-        loading={deleteMutation.isPending}
+        confirmText={toggleTarget?.active === false ? '활성화' : '비활성화'}
+        confirmColor={toggleTarget?.active === false ? 'primary' : 'error'}
+        loading={toggleMutation.isPending}
         onClose={() => {
-          if (deleteMutation.isPending) {
+          if (toggleMutation.isPending) {
             return;
           }
-          setDeleteTarget(null);
+          setToggleTarget(null);
         }}
-        onConfirm={handleConfirmDelete}
+        onConfirm={handleConfirmToggle}
       />
     </Stack>
   );

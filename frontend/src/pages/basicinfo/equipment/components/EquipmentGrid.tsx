@@ -1,9 +1,7 @@
-import { Power, Trash } from 'lucide-react';
+import { ToggleLeft, ToggleRight } from 'lucide-react';
 import { EditPencilIcon } from '../../../../shared/components/data/EditPencilIcon';
 import {
-  Chip,
   Skeleton,
-  Stack,
   TableBody,
   TableCell,
   TableHead,
@@ -18,6 +16,7 @@ import {
   useCommonCodeOptions,
 } from '../../../../shared/hooks/useCommonCodeOptions';
 import {GridIconButton} from "../../../../shared/components/data/GridIconButton.tsx";
+import { INACTIVE_ROW_CLASS } from '../../../../app/theme';
 
 type EquipmentGridProps = {
   rows: EquipmentItem[];
@@ -40,20 +39,18 @@ export function EquipmentGrid({
     <AdminGrid ariaLabel="설비 목록">
       <TableHead>
         <TableRow>
+          {/* 데이터 컬럼에 고정 너비를 줘야 빈 칸이 남는 폭을 차지함 (사용자관리와 동일) */}
           <TableCell width={100}>관리코드</TableCell>
           <TableCell width={120}>설비코드</TableCell>
-          <TableCell>설비명</TableCell>
+          <TableCell width={200}>설비명</TableCell>
           <TableCell width={100}>설비종류</TableCell>
-          <TableCell width={110}>구입일</TableCell>
-          <TableCell>설치장소</TableCell>
+          <TableCell width={120}>구입일</TableCell>
+          <TableCell width={160}>설치장소</TableCell>
           <TableCell width={110}>검교정구분</TableCell>
           <TableCell width={100}>검교정주기</TableCell>
-          <TableCell width={90} align="center">
-            상태
-          </TableCell>
-          <TableCell width={120} align="center">
-            작업
-          </TableCell>
+          <TableCell aria-hidden />
+          <TableCell width={80}>작업</TableCell>
+          <TableCell width={90}>활성상태</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
@@ -84,20 +81,12 @@ export function EquipmentGrid({
                 <TableCell>
                   <Skeleton variant="text" width="50%" />
                 </TableCell>
+                <TableCell aria-hidden />
                 <TableCell align="center">
-                  <Skeleton
-                    variant="rounded"
-                    width={48}
-                    height={24}
-                    sx={{ mx: 'auto' }}
-                  />
+                  <Skeleton variant="rounded" width={32} height={32} sx={{ mx: 'auto' }} />
                 </TableCell>
                 <TableCell align="center">
-                  {/* 기존 -> spacing 1 / 변경 -> HACCP 문서현황 기준 spacing 0.5 */}
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <Skeleton variant="rounded" width={32} height={32} />
-                    <Skeleton variant="rounded" width={32} height={32} />
-                  </Stack>
+                  <Skeleton variant="rounded" width={32} height={32} sx={{ mx: 'auto' }} />
                 </TableCell>
               </TableRow>
             ))
@@ -105,72 +94,59 @@ export function EquipmentGrid({
 
         {!loading && rows.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={10} align="center">
+            <TableCell colSpan={11} align="center">
               조회된 설비가 없습니다.
             </TableCell>
           </TableRow>
         ) : null}
 
         {!loading
-          ? rows.map((row) => (
-              <TableRow key={row.id} hover>
-                <TableCell>{row.equipSysCd}</TableCell>
-                <TableCell>{row.equipCd}</TableCell>
-                <TableCell>{row.equipNm}</TableCell>
-                <TableCell>{row.equipKind || '-'}</TableCell>
-                <TableCell>{row.purDate || '-'}</TableCell>
-                <TableCell>{row.location || '-'}</TableCell>
-                <TableCell>{getCommonCodeName(vcKindOptions, row.vcKind) || '-'}</TableCell>
-                <TableCell>{row.vcCycle !== null ? `${row.vcCycle}개월` : '-'}</TableCell>
-                <TableCell align="center">
-                  <Chip
-                    size="small"
-                    color={row.active ? 'success' : 'default'}
-                    label={row.active ? '사용' : '미사용'}
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  {/* 기존 -> spacing 1, 툴팁 없음, sx 인라인 / 변경 -> HACCP 문서현황 기준 spacing 0.5, Tooltip, sx 상수 */}
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
-                    <Tooltip title="설비 수정">
+          ? rows.map((row) => {
+              const toggleLabel = row.active ? '비활성화' : '활성화';
+              return (
+                <TableRow key={row.id} hover className={row.active ? undefined : INACTIVE_ROW_CLASS}>
+                  <TableCell align="center">{row.equipSysCd}</TableCell>
+                  <TableCell align="center">{row.equipCd}</TableCell>
+                  <TableCell>{row.equipNm}</TableCell>
+                  <TableCell align="center">{row.equipKind || '-'}</TableCell>
+                  <TableCell align="center">{row.purDate || '-'}</TableCell>
+                  <TableCell align="center">{row.location || '-'}</TableCell>
+                  <TableCell align="center">{getCommonCodeName(vcKindOptions, row.vcKind) || '-'}</TableCell>
+                  <TableCell align="center">{row.vcCycle !== null ? `${row.vcCycle}개월` : '-'}</TableCell>
+                  <TableCell aria-hidden />
+                  <TableCell align="center">
+                    {/* 비활성 설비는 수정 불가, 셀은 남겨 정렬 유지 (사용자관리와 동일) */}
+                    {row.active ? (
+                      <Tooltip title="설비 수정">
+                        <span>
+                          <GridIconButton
+                            aria-label="설비 수정"
+                            onClick={() => onEdit(row)}
+                          >
+                            <EditPencilIcon />
+                          </GridIconButton>
+                        </span>
+                      </Tooltip>
+                    ) : null}
+                  </TableCell>
+                  <TableCell align="center">
+                    {/* 상태 칩 + 삭제/다시사용 버튼을 하나로: 모양은 현재 상태, 툴팁은 누르면 할 동작 */}
+                    <Tooltip title={toggleLabel}>
                       <span>
                         <GridIconButton
-                          aria-label="설비 수정"
-                          onClick={() => onEdit(row)}
+                          aria-label={toggleLabel}
+                          aria-pressed={row.active}
+                          onClick={() => (row.active ? onDelete(row) : onRestore(row))}
+                          sx={{ color: row.active ? 'primary.main' : 'grey.400' }}
                         >
-                          <EditPencilIcon />
+                          {row.active ? <ToggleRight /> : <ToggleLeft />}
                         </GridIconButton>
                       </span>
                     </Tooltip>
-                    {row.active ? (
-                      <Tooltip title="설비 삭제">
-                        <span>
-                          <GridIconButton
-                            aria-label="설비 삭제"
-                            tone="danger"
-                            onClick={() => onDelete(row)}
-                          >
-                            <Trash />
-                          </GridIconButton>
-                        </span>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip title="사용으로 변경">
-                        <span>
-                          <GridIconButton
-                            aria-label="설비 다시 사용"
-                            tone="success"
-                            onClick={() => onRestore(row)}
-                          >
-                            <Power fontSize="small" />
-                          </GridIconButton>
-                        </span>
-                      </Tooltip>
-                    )}
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))
+                  </TableCell>
+                </TableRow>
+              );
+            })
           : null}
       </TableBody>
     </AdminGrid>

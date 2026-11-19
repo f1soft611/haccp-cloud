@@ -18,6 +18,7 @@ export type MaterialItem = {
   expiryedCount: number | null;
   kfdaReportNo: string;
   etc: string;
+  active: boolean;
 };
 
 export type ListMaterialsPagedParams = {
@@ -26,6 +27,7 @@ export type ListMaterialsPagedParams = {
   pageSize: number;
   keyword?: string;
   itemTypes?: string[];
+  filterActive?: '' | 'Y' | 'N';
 };
 
 export type ListMaterialsPagedResult = {
@@ -66,6 +68,7 @@ type RawMaterialItem = Partial<{
   expiryedCount: number | string | null;
   kfdaReportNo: string;
   etc: string;
+  active: boolean;
 }>;
 
 type MaterialsPagedResult = {
@@ -100,6 +103,7 @@ function normalizeMaterialItem(raw: RawMaterialItem): MaterialItem {
     expiryedCount: toNullableNumber(raw.expiryedCount),
     kfdaReportNo: String(raw.kfdaReportNo ?? ''),
     etc: String(raw.etc ?? ''),
+    active: Boolean(raw.active),
   };
 }
 
@@ -119,6 +123,7 @@ export async function listMaterialsPaged(
         pageSize: params.pageSize,
         keyword: params.keyword || undefined,
         itemTypes: params.itemTypes?.length ? params.itemTypes.join(',') : undefined,
+        filterActive: params.filterActive || undefined,
       },
     },
   );
@@ -192,6 +197,20 @@ export async function deleteMaterial(payload: {
     : undefined;
 
   await apiClient.delete(`/v1/basicinfo/materials/${payload.id}`, {
+    headers,
+  });
+}
+
+// 용도: 비활성 품목을 다시 활성으로 변경
+export async function restoreMaterial(payload: {
+  tenantCode?: string;
+  id: string;
+}): Promise<void> {
+  const headers = payload.tenantCode
+    ? { 'x-tenant-code': payload.tenantCode }
+    : undefined;
+
+  await apiClient.patch(`/v1/basicinfo/materials/${payload.id}/restore`, null, {
     headers,
   });
 }

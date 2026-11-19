@@ -3,7 +3,7 @@ import { Box, Button, Checkbox, Paper, Stack, Typography } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { koKR } from '@mui/x-data-grid/locales';
-import { appTheme } from '../../../../app/theme';
+import {appTheme, INACTIVE_ROW_CLASS} from '../../../../app/theme';
 import { markEdited, type ParentCodeOption } from '../commonCodeRows';
 import type { CommonCodeDetailRow } from '../types';
 import { centerColumns, COMMON_CODE_GRID_SX, TOOLBAR_BUTTON_SX } from './gridStyles';
@@ -114,7 +114,10 @@ export function CommonCodeDetailGrid(props: {
                         hideFooter
                         initialState={{ sorting: { sortModel: [{ field: 'sortOrder', sort: 'asc' }] } }}
                         localeText={koKR.components.MuiDataGrid.defaultProps.localeText}
-                        getRowClassName={(params) => (params.row.rowState === 'saved' ? '' : `row-${params.row.rowState}`)}
+                        getRowClassName={(params) => {
+                            if (params.row.rowState !== 'saved') return `row-${params.row.rowState}`;
+                            return params.row.useAt ? '' : INACTIVE_ROW_CLASS;
+                        }}
                         sx={COMMON_CODE_GRID_SX}
                     />
                 </ThemeProvider>

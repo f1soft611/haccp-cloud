@@ -164,8 +164,8 @@ function equipmentRow(overrides: Partial<EquipmentItem>): EquipmentItem {
     };
 }
 
-describe('EquipmentPage 설비 삭제와 다시 사용', () => {
-    it('사용 행에는 삭제 버튼, 미사용 행에는 다시 사용 버튼을 보여 준다', async () => {
+describe('EquipmentPage 설비 활성토글', () => {
+    it('활성 행은 비활성화 토글과 수정 버튼, 비활성 행은 활성화 토글만 보여 준다', async () => {
         listEquipmentPagedMock.mockResolvedValueOnce({
             items: [
                 equipmentRow({ id: '1', equipNm: '온도계', active: true }),
@@ -178,13 +178,14 @@ describe('EquipmentPage 설비 삭제와 다시 사용', () => {
         const activeRow = (await screen.findByText('온도계')).closest('tr') as HTMLElement;
         const inactiveRow = screen.getByText('저울').closest('tr') as HTMLElement;
 
-        expect(within(activeRow).getByRole('button', { name: '설비 삭제' })).toBeInTheDocument();
-        expect(within(activeRow).queryByRole('button', { name: '설비 다시 사용' })).not.toBeInTheDocument();
-        expect(within(inactiveRow).getByRole('button', { name: '설비 다시 사용' })).toBeInTheDocument();
-        expect(within(inactiveRow).queryByRole('button', { name: '설비 삭제' })).not.toBeInTheDocument();
+        expect(within(activeRow).getByRole('button', { name: '비활성화' })).toHaveAttribute('aria-pressed', 'true');
+        expect(within(activeRow).getByRole('button', { name: '설비 수정' })).toBeInTheDocument();
+        expect(within(inactiveRow).getByRole('button', { name: '활성화' })).toHaveAttribute('aria-pressed', 'false');
+        expect(within(inactiveRow).queryByRole('button', { name: '설비 수정' })).not.toBeInTheDocument();
+        expect(screen.queryByText('사용')).not.toBeInTheDocument();
     });
 
-    it('삭제 확인 창은 미사용 처리를 안내하고, 확인하면 deleteEquipment를 호출한다', async () => {
+    it('비활성화를 확인하면 deleteEquipment를 호출한다', async () => {
         listEquipmentPagedMock.mockResolvedValueOnce({
             items: [equipmentRow({ id: '1', equipNm: '온도계', active: true })],
             totalCount: 1,
@@ -192,19 +193,17 @@ describe('EquipmentPage 설비 삭제와 다시 사용', () => {
         renderPage();
 
         const row = (await screen.findByText('온도계')).closest('tr') as HTMLElement;
-        fireEvent.click(within(row).getByRole('button', { name: '설비 삭제' }));
+        fireEvent.click(within(row).getByRole('button', { name: '비활성화' }));
 
         const dialog = await screen.findByRole('dialog');
-        expect(
-            within(dialog).getByText("'온도계' 설비를 삭제하시겠습니까? 삭제하면 미사용으로 처리됩니다."),
-        ).toBeInTheDocument();
-        fireEvent.click(within(dialog).getByRole('button', { name: '삭제' }));
+        expect(within(dialog).getByText("'온도계' 설비를 비활성화하시겠습니까?")).toBeInTheDocument();
+        fireEvent.click(within(dialog).getByRole('button', { name: '비활성화' }));
 
         await waitFor(() => expect(deleteEquipmentMock).toHaveBeenCalled());
         expect(deleteEquipmentMock.mock.calls[0][0]).toEqual({ tenantCode: 'TENANT-A', id: '1' });
     });
 
-    it('다시 사용을 확인하면 restoreEquipment를 해당 id로 호출한다', async () => {
+    it('활성화를 확인하면 restoreEquipment를 해당 id로 호출한다', async () => {
         listEquipmentPagedMock.mockResolvedValueOnce({
             items: [equipmentRow({ id: '2', equipNm: '저울', active: false })],
             totalCount: 1,
@@ -212,11 +211,11 @@ describe('EquipmentPage 설비 삭제와 다시 사용', () => {
         renderPage();
 
         const row = (await screen.findByText('저울')).closest('tr') as HTMLElement;
-        fireEvent.click(within(row).getByRole('button', { name: '설비 다시 사용' }));
+        fireEvent.click(within(row).getByRole('button', { name: '활성화' }));
 
         const dialog = await screen.findByRole('dialog');
-        expect(within(dialog).getByText("'저울' 설비를 다시 사용하시겠습니까?")).toBeInTheDocument();
-        fireEvent.click(within(dialog).getByRole('button', { name: '사용' }));
+        expect(within(dialog).getByText("'저울' 설비를 활성화하시겠습니까?")).toBeInTheDocument();
+        fireEvent.click(within(dialog).getByRole('button', { name: '활성화' }));
 
         await waitFor(() => expect(restoreEquipmentMock).toHaveBeenCalled());
         expect(restoreEquipmentMock.mock.calls[0][0]).toEqual({ tenantCode: 'TENANT-A', id: '2' });
