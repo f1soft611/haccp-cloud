@@ -10,16 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import egovframework.com.cmm.LoginVO;
@@ -58,10 +49,11 @@ public class MaterialApiController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) List<String> itemTypes,
+            @RequestParam(required = false) String filterActive,
             HttpServletRequest request) throws Exception {
         validatePage(pageIndex, pageSize);
         String tenantCode = resolveTenantCode(tenantHeader, request);
-        Map<String, Object> result = materialService.listMaterialsPaged(pageIndex, pageSize, keyword, itemTypes, tenantCode);
+        Map<String, Object> result = materialService.listMaterialsPaged(pageIndex, pageSize, keyword, itemTypes, filterActive, tenantCode);
 
         Map<String, Object> response = new LinkedHashMap<String, Object>();
         response.put("items", result.get("materialList"));
@@ -121,6 +113,20 @@ public class MaterialApiController {
 
         Map<String, Object> resultMap = new HashMap<String, Object>();
         resultMap.put("message", "품목이 성공적으로 삭제되었습니다.");
+        return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
+    }
+
+    // 비활성 품목을 다시 활성으로 변경
+    @PatchMapping("/{id}/restore")
+    public ResultVO restoreMaterial(
+            @PathVariable Long id,
+            @RequestHeader(value = "x-tenant-code", required = false) String tenantHeader,
+            HttpServletRequest request) throws Exception {
+        String tenantCode = resolveTenantCode(tenantHeader, request);
+        materialService.restoreMaterial(id, tenantCode);
+
+        Map<String, Object> resultMap = new HashMap<String, Object>();
+        resultMap.put("message", "품목이 활성 상태로 변경되었습니다.");
         return resultVoHelper.buildFromMap(resultMap, ResponseCode.SUCCESS);
     }
 

@@ -28,4 +28,7 @@ public class MaterialSearchConditionVO extends ComDefaultVO {
 
     @Schema(description = "품목계정 코드 목록")
     private List<String> itemTypes;
+
+    @Schema(description = "활성상태 필터(all/Y/N), 삭제되지 않은 품목이 활성")
+    private String filterActive = "all";
 }

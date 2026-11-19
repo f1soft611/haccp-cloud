@@ -41,13 +41,14 @@ public class MaterialServiceImpl extends EgovAbstractServiceImpl implements Mate
     private MaterialDAO materialDAO;
 
     @Override
-    public Map<String, Object> listMaterialsPaged(int pageIndex, int pageSize, String keyword, List<String> itemTypes, String tenantCode) throws Exception {
+    public Map<String, Object> listMaterialsPaged(int pageIndex, int pageSize, String keyword, List<String> itemTypes, String filterActive, String tenantCode) throws Exception {
         MaterialSearchConditionVO condition = new MaterialSearchConditionVO();
         condition.setPageIndex(pageIndex);
         condition.setPageSize(pageSize);
         condition.setKeyword(normalizeNullable(keyword));
         condition.setItemTypes(itemTypes == null || itemTypes.isEmpty() ? null : itemTypes);
         condition.setTenantCode(normalizeTenantCode(tenantCode));
+        condition.setFilterActive(normalizeFilterActive(filterActive));
 
         PaginationInfo paginationInfo = new PaginationInfo();
         paginationInfo.setCurrentPageNo(condition.getPageIndex());
@@ -134,6 +135,27 @@ public class MaterialServiceImpl extends EgovAbstractServiceImpl implements Mate
         params.put("materialId", materialId);
         params.put("tenantId", tenantId);
         materialDAO.softDeleteMaterial(params);
+    }
+
+    // 비활성(소프트 삭제)된 품목을 다시 활성으로 되돌림
+    @Override
+    @Transactional
+    public void restoreMaterial(Long materialId, String tenantCode) throws Exception {
+        Long tenantId = resolveTenantId(normalizeTenantCode(tenantCode));
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("materialId", materialId);
+        params.put("tenantId", tenantId);
+        materialDAO.restoreMaterial(params);
+    }
+
+    // 활성상태 필터 값 정규화 (Y/N 외에는 전체), 테스트에서 쓰므로 package-private static
+    static String normalizeFilterActive(String filterActive) {
+        if (!StringUtils.hasText(filterActive)) {
+            return "all";
+        }
+        String upper = filterActive.trim().toUpperCase();
+        return ("Y".equals(upper) || "N".equals(upper)) ? upper : "all";
     }
 
     // ── 헬퍼 ─────────────────────────────────────────

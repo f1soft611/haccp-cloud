@@ -19,9 +19,10 @@
         <result property="expiryedCount" column="expiryedCount"/>
         <result property="kfdaReportNo" column="kfdaReportNo"/>
         <result property="etc" column="etc"/>
+        <result property="active" column="active"/>
     </resultMap>
 
-    <!-- 품목 페이징 목록 조회 (삭제되지 않은 품목만) -->
+    <!-- 품목 페이징 목록 조회 (filterActive: all/Y=활성(삭제 안 됨)/N=비활성) -->
     <select id="MaterialDAO.selectMaterialPagedList"
             parameterType="egovframework.let.basicinfo.materials.domain.model.MaterialSearchConditionVO"
             resultMap="materialResult">
@@ -42,10 +43,17 @@
                 m.expiryed_status                    AS expiryedStatus,
                 m.expiryed_count                     AS expiryedCount,
                 m.kfda_report_no                     AS kfdaReportNo,
+                (m.delete_status = 'N')              AS active,
                 ROW_NUMBER() OVER (ORDER BY m.material_code) AS rn
             FROM tb_material_info m
             JOIN tb_tenant t ON t.tenant_id = m.tenant_id
-            WHERE m.delete_status = 'N'
+            WHERE 1 = 1
+            <if test='filterActive == "Y"'>
+                AND m.delete_status = 'N'
+            </if>
+            <if test='filterActive == "N"'>
+                AND m.delete_status = 'Y'
+            </if>
             <if test="tenantCode != null and tenantCode != ''">
                 AND t.tenant_code = #{tenantCode}
             </if>
@@ -83,7 +91,13 @@
         SELECT COUNT(1)
         FROM tb_material_info m
         JOIN tb_tenant t ON t.tenant_id = m.tenant_id
-        WHERE m.delete_status = 'N'
+        WHERE 1 = 1
+        <if test='filterActive == "Y"'>
+            AND m.delete_status = 'N'
+        </if>
+        <if test='filterActive == "N"'>
+            AND m.delete_status = 'Y'
+        </if>
         <if test="tenantCode != null and tenantCode != ''">
             AND t.tenant_code = #{tenantCode}
         </if>
@@ -129,7 +143,8 @@
             m.store_method                       AS storeMethod,
             m.expiryed_status                    AS expiryedStatus,
             m.expiryed_count                     AS expiryedCount,
-            m.kfda_report_no                     AS kfdaReportNo
+            m.kfda_report_no                     AS kfdaReportNo,
+            (m.delete_status = 'N')              AS active
         FROM tb_material_info m
         JOIN tb_tenant t ON t.tenant_id = m.tenant_id
         WHERE m.material_id = #{materialId}
@@ -255,6 +270,18 @@
         SET
             delete_status = 'Y',
             deleted_at    = CURRENT_TIMESTAMP,
+            updated_at    = CURRENT_TIMESTAMP
+        WHERE material_id = #{materialId}
+          AND tenant_id   = #{tenantId}
+    </update>
+
+    <!-- 품목 복구 (소프트 삭제 해제, 비활성 -> 활성) -->
+    <update id="MaterialDAO.restoreMaterial"
+            parameterType="map">
+        UPDATE tb_material_info
+        SET
+            delete_status = 'N',
+            deleted_at    = NULL,
             updated_at    = CURRENT_TIMESTAMP
         WHERE material_id = #{materialId}
           AND tenant_id   = #{tenantId}
