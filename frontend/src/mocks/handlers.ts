@@ -872,6 +872,8 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'EDITOR_COMBO_ITEM', groupName: '에디터 콤보 하위목록', groupDesc: '에디터 콤보박스 선택지', parentGroupCode: 'EDITOR_COMBO' },
     { groupCode: 'COMBO_OK_NG', groupName: '적합여부', groupDesc: '', parentGroupCode: 'EDITOR_COMBO' },
     { groupCode: 'COMBO_OX', groupName: 'O/X', groupDesc: '', parentGroupCode: 'EDITOR_COMBO' },
+    { groupCode: 'EDITOR_RADIO', groupName: '에디터 라디오버튼', groupDesc: '에디터 라디오버튼 종류', parentGroupCode: '' },
+    { groupCode: 'EDITOR_RADIO_ITEM', groupName: '에디터 라디오 하위목록', groupDesc: '에디터 라디오버튼 선택지', parentGroupCode: 'EDITOR_RADIO' },
   ],
   details: [
     { groupCode: 'WF_FORM_CYCLE', code: 'DAY', codeName: '일', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
@@ -922,6 +924,14 @@ let commonCodeStore: CommonCodeData = {
     { groupCode: 'EDITOR_COMBO_ITEM', code: 'code02', codeName: '부적합', parentCode: 'OK_NG', parentCodeName: '적합부적합', useAt: true, sortOrder: 20, codeDesc: '' },
     { groupCode: 'EDITOR_COMBO_ITEM', code: 'code03', codeName: '사용', parentCode: 'USE_YN', parentCodeName: '사용미사용', useAt: true, sortOrder: 30, codeDesc: '' },
     { groupCode: 'EDITOR_COMBO_ITEM', code: 'code04', codeName: '미사용', parentCode: 'USE_YN', parentCodeName: '사용미사용', useAt: true, sortOrder: 40, codeDesc: '' },
+
+    { groupCode: 'EDITOR_RADIO', code: 'YES_NO', codeName: '예아니오', parentCodeName: '', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'EDITOR_RADIO', code: 'OK_NG', codeName: '적합부적합', parentCodeName: '', useAt: true, sortOrder: 20, codeDesc: '' },
+
+    { groupCode: 'EDITOR_RADIO_ITEM', code: 'radio01', codeName: '예', parentCode: 'YES_NO', parentCodeName: '예아니오', useAt: true, sortOrder: 10, codeDesc: '' },
+    { groupCode: 'EDITOR_RADIO_ITEM', code: 'radio02', codeName: '아니오', parentCode: 'YES_NO', parentCodeName: '예아니오', useAt: true, sortOrder: 20, codeDesc: '' },
+    { groupCode: 'EDITOR_RADIO_ITEM', code: 'radio03', codeName: '적합', parentCode: 'OK_NG', parentCodeName: '적합부적합', useAt: true, sortOrder: 30, codeDesc: '' },
+    { groupCode: 'EDITOR_RADIO_ITEM', code: 'radio04', codeName: '부적합', parentCode: 'OK_NG', parentCodeName: '적합부적합', useAt: true, sortOrder: 40, codeDesc: '' },
   ],
 };
 
