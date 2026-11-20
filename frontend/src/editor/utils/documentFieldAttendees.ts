@@ -56,6 +56,24 @@ export const ATTENDEES_STYLES = {
         maxHeight: '100%',
         objectFit: 'contain',
     },
+    // 서명 이미지가 없는 참석자의 서명 칸에 이름을 빨간 도장처럼 표시
+    stamp: {
+        width: '40px',
+        height: '40px',
+        boxSizing: 'border-box',
+        border: '2px solid #dc2626',
+        borderRadius: '50%',
+        color: '#dc2626',
+        fontSize: '11px',
+        fontWeight: 700,
+        lineHeight: 1.1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        wordBreak: 'keep-all',
+        printColorAdjust: 'exact',
+    },
 } satisfies Record<string, CSSProperties>;
 
 export function toStyleText(style: CSSProperties): string {

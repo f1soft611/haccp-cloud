@@ -82,4 +82,21 @@ describe('DocumentFieldAttendeesExtension HTML', () => {
             attrs: { attendees },
         });
     });
+
+    it('renders a red stamp with the name when signature image is missing', () => {
+        const html = toHtml([{ userId: 'u2', name: '김철수' }]);
+
+        expect(html).toMatch(/<span style="[^"]*border-radius: 50%[^"]*">김철수<\/span>/);
+        expect(html).toContain('#dc2626');
+        expect(html).not.toContain('<img');
+    });
+
+    it('does not render a stamp when signature image exists', () => {
+        const html = toHtml([
+            { userId: 'u1', name: '홍길동', signatureImage: 'data:image/png;base64,AA' },
+        ]);
+
+        expect(html).toContain('<img');
+        expect(html).not.toContain('<span');
+    });
 });
