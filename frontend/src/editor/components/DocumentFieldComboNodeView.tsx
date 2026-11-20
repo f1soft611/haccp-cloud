@@ -8,7 +8,7 @@ import {
     COMBO_EMPTY_KIND_TEXT,
     COMBO_PLACEHOLDER_TEXT,
     COMBO_STYLE,
-    getComboItemOptions,
+    getEditorItemOptions,
     normalizeComboAttrs,
 } from '../utils/documentFieldCombo';
 
@@ -30,7 +30,7 @@ export function DocumentFieldComboNodeView({ node, editor, updateAttributes }: N
         [data],
     );
     const options = useMemo(
-        () => getComboItemOptions(data?.groups ?? [], data?.details ?? [], comboCode),
+        () => getEditorItemOptions(data?.groups ?? [], data?.details ?? [], COMMON_CODE_GROUP.EDITOR_COMBO, comboCode),
         [data, comboCode],
     );
 

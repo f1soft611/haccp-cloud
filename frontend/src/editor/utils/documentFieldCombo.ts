@@ -3,7 +3,6 @@ import type {
     CommonCodeDetailItem,
     CommonCodeGroupItem,
 } from '../../services/basicinfo/commonCodeService';
-import { COMMON_CODE_GROUP } from '../../shared/constants/commonCodeGroups';
 import type { CommonCodeOption } from '../../shared/hooks/useCommonCodeOptions';
 
 export type DocumentFieldComboAttrs = {
@@ -46,21 +45,22 @@ export function normalizeComboAttrs(attrs: unknown): DocumentFieldComboAttrs {
     };
 }
 
-// 콤보 종류(EDITOR_COMBO 상세코드)에 속한 값 선택지: EDITOR_COMBO 하위 그룹 상세 중 상위코드가 같은 사용중 코드
+// 에디터 선택형 필드(콤보, 라디오) 종류에 속한 값 선택지: parentGroupCode 하위 그룹 상세 중 상위코드가 kindCode 인 사용중 코드
 // ponytail: 하위 그룹이 여러 개이고 같은 종류 아래 코드가 겹치면 중복 표시됨. 생기면 code 기준 중복 제거 추가
-export function getComboItemOptions(
+export function getEditorItemOptions(
     groups: CommonCodeGroupItem[],
     details: CommonCodeDetailItem[],
-    comboCode: string,
+    parentGroupCode: string,
+    kindCode: string,
 ): CommonCodeOption[] {
-    if (!comboCode) return [];
+    if (!kindCode) return [];
     const childGroupCodes = new Set(
         groups
-        .filter((group) => group.parentGroupCode === COMMON_CODE_GROUP.EDITOR_COMBO)
+        .filter((group) => group.parentGroupCode === parentGroupCode)
         .map((group) => group.groupCode),
     );
     return details
-    .filter((detail) => childGroupCodes.has(detail.groupCode) && detail.parentCode === comboCode && detail.useAt)
+    .filter((detail) => childGroupCodes.has(detail.groupCode) && detail.parentCode === kindCode && detail.useAt)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
     .map((detail) => ({ code: detail.code, name: detail.codeName }));
 }

@@ -9,7 +9,7 @@ import type {
 import { DocumentFieldComboExtension } from '../../editor/extensions/documentFieldComboExtension';
 import {
     COMBO_PLACEHOLDER_TEXT,
-    getComboItemOptions,
+    getEditorItemOptions,
     normalizeComboAttrs,
 } from '../../editor/utils/documentFieldCombo';
 
@@ -35,8 +35,9 @@ const groups: CommonCodeGroupItem[] = [
     { groupCode: 'EDITOR_COMBO', groupName: '에디터 콤보박스', groupDesc: '', parentGroupCode: '' },
     { groupCode: 'EDITOR_COMBO_ITEM', groupName: '에디터 콤보 하위목록', groupDesc: '', parentGroupCode: 'EDITOR_COMBO' },
     { groupCode: 'ITEM_UNIT', groupName: '품목 단위', groupDesc: '', parentGroupCode: 'ITEM' },
+    { groupCode: 'EDITOR_RADIO', groupName: '에디터 라디오버튼', groupDesc: '', parentGroupCode: '' },
+    { groupCode: 'EDITOR_RADIO_ITEM', groupName: '에디터 라디오 하위목록', groupDesc: '', parentGroupCode: 'EDITOR_RADIO' },
 ];
-
 function detail(
     groupCode: string,
     code: string,
@@ -57,6 +58,10 @@ const details: CommonCodeDetailItem[] = [
     detail('EDITOR_COMBO_ITEM', 'USE', '사용', 'USE_YN', true, 10),
     // 같은 상위코드 값이어도 EDITOR_COMBO 하위 그룹이 아니면 제외
     detail('ITEM_UNIT', 'KG', 'kg', 'OK_NG', true, 10),
+
+    // 라디오 하위 그룹에 같은 종류 코드(OK_NG)가 있어도 콤보 조회에는 섞이지 않아야 한다
+    detail('EDITOR_RADIO', 'OK_NG', '적합부적합', '', true, 10),
+    detail('EDITOR_RADIO_ITEM', 'R_OK', '적합(라디오)', 'OK_NG', true, 10),
 ];
 
 describe('normalizeComboAttrs', () => {
@@ -73,17 +78,25 @@ describe('normalizeComboAttrs', () => {
     });
 });
 
-describe('getComboItemOptions', () => {
-    it('EDITOR_COMBO 하위 그룹 상세 중 상위코드가 같고 사용중인 것만 정렬순서대로 돌려준다', () => {
-        expect(getComboItemOptions(groups, details, 'OK_NG')).toEqual([
+describe('getEditorItemOptions', () => {
+    it('상위그룹 하위 그룹 상세 중 상위코드가 같고 사용중인 것만 정렬순서대로 돌려준다', () => {
+        expect(getEditorItemOptions(groups, details, 'EDITOR_COMBO', 'OK_NG')).toEqual([
             { code: 'OK', name: '적합' },
             { code: 'NG', name: '부적합' },
         ]);
-        expect(getComboItemOptions(groups, details, 'USE_YN')).toEqual([{ code: 'USE', name: '사용' }]);
+        expect(getEditorItemOptions(groups, details, 'EDITOR_COMBO', 'USE_YN')).toEqual([
+            { code: 'USE', name: '사용' },
+        ]);
+    });
+
+    it('다른 상위그룹 아래의 같은 종류 코드는 섞이지 않는다', () => {
+        expect(getEditorItemOptions(groups, details, 'EDITOR_RADIO', 'OK_NG')).toEqual([
+            { code: 'R_OK', name: '적합(라디오)' },
+        ]);
     });
 
     it('종류가 비어 있으면 빈 배열', () => {
-        expect(getComboItemOptions(groups, details, '')).toEqual([]);
+        expect(getEditorItemOptions(groups, details, 'EDITOR_COMBO', '')).toEqual([]);
     });
 });
 
