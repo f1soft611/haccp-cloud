@@ -78,7 +78,13 @@ export const DocumentFieldAttendeesExtension = Node.create({
                                 },
                             ],
                         ]
-                        : []),
+                        : [
+                            [
+                                'span',
+                                { style: toStyleText(ATTENDEES_STYLES.stamp) },
+                                attendee.name,
+                            ],
+                        ]),
                 ],
             ]),
         ];

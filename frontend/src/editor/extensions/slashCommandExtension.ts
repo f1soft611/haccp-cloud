@@ -26,7 +26,8 @@ type SlashCommandKey =
   | 'documentFieldDepartment'
     | 'documentFieldAuthor'
     | 'documentFieldAttendees'
-    | 'documentFieldCombo';
+    | 'documentFieldCombo'
+    | 'documentFieldRadio';
 
 type SlashCommandOption = {
   key: SlashCommandKey;
@@ -114,6 +115,12 @@ const SLASH_OPTIONS: SlashCommandOption[] = [
     title: '콤보박스',
     description: '공통코드(EDITOR_COMBO) 선택지로 된 콤보박스를 추가합니다.',
     searchTerms: ['콤보', 'combo', 'select', '선택', '문서필드'],
+  },
+  {
+    key: 'documentFieldRadio',
+    title: '라디오버튼',
+    description: '공통코드(EDITOR_RADIO) 선택지로 된 라디오버튼을 추가합니다.',
+    searchTerms: ['라디오', 'radio', '예아니오', '적합', '문서필드'],
   },
 ];
 
@@ -213,6 +220,11 @@ function runSlashCommand(editor: Editor, range: Range, key: SlashCommandKey) {
 
   if (key === 'documentFieldCombo') {
     editor.chain().focus().deleteRange(range).insertDocumentFieldCombo().run();
+    return;
+  }
+
+  if (key === 'documentFieldRadio') {
+    editor.chain().focus().deleteRange(range).insertDocumentFieldRadio().run();
     return;
   }
 

@@ -50,7 +50,11 @@ export function DocumentFieldAttendeesNodeView(props: NodeViewProps) {
                                             alt={`${attendee.name} 서명`}
                                             style={ATTENDEES_STYLES.image}
                                         />
-                                    ) : null}
+                                    ) : (
+                                        <span style={ATTENDEES_STYLES.stamp}>
+                                            {attendee.name}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         ))}

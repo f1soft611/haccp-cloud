@@ -23,6 +23,7 @@ import {
 } from '../extensions/documentFieldImageExtension';
 import { DocumentFieldAttendeesExtension } from '../extensions/documentFieldAttendeesExtension';
 import { DocumentFieldComboExtension } from '../extensions/documentFieldComboExtension';
+import { DocumentFieldRadioExtension } from '../extensions/documentFieldRadioExtension';
 import { EditorImageExtension } from '../extensions/imageExtension';
 import { SlashCommandExtension } from '../extensions/slashCommandExtension';
 import {
@@ -129,6 +130,7 @@ export function NotionLikeEditor(props: NotionLikeEditorProps) {
       DocumentFieldImageExtension,
       DocumentFieldAttendeesExtension,
       DocumentFieldComboExtension,
+      DocumentFieldRadioExtension,
       EditorImageExtension,
       TaskList,
       TaskItem.configure({
