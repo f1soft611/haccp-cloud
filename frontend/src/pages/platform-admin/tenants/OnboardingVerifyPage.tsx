@@ -12,7 +12,6 @@ import { useMutation } from '@tanstack/react-query';
 import {
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ChangeEvent,
 } from 'react';
@@ -169,40 +168,6 @@ export function OnboardingVerifyPage() {
     verifyMutation.mutate();
   }, [authToken, verifyMutation]);
 
-  const hasAutoFilledDomainRef = useRef(false);
-
-  useEffect(() => {
-    if (!verifyMutation.data?.adminEmail || hasAutoFilledDomainRef.current) {
-      return;
-    }
-
-    const atIndex = verifyMutation.data.adminEmail.indexOf('@');
-    if (atIndex < 0) {
-      return;
-    }
-
-    hasAutoFilledDomainRef.current = true;
-    setLoginDomainInput(verifyMutation.data.adminEmail.slice(atIndex + 1));
-  }, [verifyMutation.data?.adminEmail]);
-
-  // 기존 -> loginDomain: 로그인 이동용 도메인 계산 / 변경 -> 업체번호로 이동하므로 제거
-  // const loginDomain = useMemo(() => {
-  //   const explicitDomain = normalizeDomainInput(loginDomainInput);
-  //   if (explicitDomain) {
-  //     return explicitDomain;
-  //   }
-  //
-  //   const email = verifyMutation.data?.adminEmail ?? '';
-  //   const atIndex = email.indexOf('@');
-  //   if (atIndex < 0) {
-  //     return '';
-  //   }
-  //   return email
-  //     .slice(atIndex + 1)
-  //     .trim()
-  //     .toLowerCase();
-  // }, [loginDomainInput, verifyMutation.data?.adminEmail]);
-
   const verificationMessage = verifyMutation.isError
     ? resolveVerificationErrorMessage(verifyMutation.error)
     : (verifyMutation.data?.message ?? '인증 정보를 확인하는 중입니다.');
@@ -256,12 +221,9 @@ export function OnboardingVerifyPage() {
       return;
     }
 
+    // 로그인 도메인은 선택 항목, 입력한 경우에만 형식 검사
     const normalizedDomain = normalizeDomainInput(loginDomainInput);
-    if (!normalizedDomain) {
-      setValidationMessage('로그인 도메인을 입력해 주세요.');
-      return;
-    }
-    if (!DOMAIN_PATTERN.test(normalizedDomain)) {
+    if (normalizedDomain && !DOMAIN_PATTERN.test(normalizedDomain)) {
       setValidationMessage('유효한 도메인 형식으로 입력해 주세요.');
       return;
     }
@@ -375,7 +337,7 @@ export function OnboardingVerifyPage() {
                 {!completeMutation.isSuccess ? (
                   <Stack spacing={1.25} sx={{ pt: 1 }}>
                     <AppTextField
-                      label="회사 로그인 도메인"
+                      label="회사 로그인 도메인(선택)"
                       placeholder="example.com"
                       value={loginDomainInput}
                       onChange={setLoginDomainInput
