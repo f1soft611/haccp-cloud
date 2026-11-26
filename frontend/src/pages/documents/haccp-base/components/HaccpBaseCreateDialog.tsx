@@ -53,6 +53,14 @@ function isExpirationTarget(categoryCode: string) {
     return categoryCode.startsWith('HCP-');
 }
 
+// HCP- 분류 업무는 작성주기 수시, 만료일 관리 해당으로 고정. 수시는 주차 기준을 못 쓰므로 일자 기준으로 되돌린다
+export function applyHcpFixedValues(form: HaccpBaseCreateForm, categoryCode: string): HaccpBaseCreateForm {
+    if (!isExpirationTarget(categoryCode)) {
+        return form;
+    }
+    return { ...form, ...WEEKDAY_ANCHOR_RESET, cycle: 'ANYTIME', expirationApply: 'Y' };
+}
+
 export function HaccpBaseCreateDialog(props: {
   open: boolean;
   mode: 'create' | 'edit';
@@ -100,8 +108,10 @@ export function HaccpBaseCreateDialog(props: {
 
     const findCategoryCode = (categoryId: string) =>
         categoryOptions.find((category) => category.id === categoryId)?.code ?? '';
-    // 기존 -> 분류코드로만 판단 / 변경 -> HCP- 분류코드 + 수시 주기일 때만 만료일 관리 표시
-    const showExpiration = isExpirationTarget(findCategoryCode(value.categoryId)) && value.cycle === 'ANYTIME';
+    // HCP- 분류면 작성주기, 만료일 관리 양식을 고정값으로 잠근다
+    const isHcpFixed = isExpirationTarget(findCategoryCode(value.categoryId));
+    // HCP- 분류코드 + 수시 주기일 때만 만료일 관리 표시
+    const showExpiration = isHcpFixed && value.cycle === 'ANYTIME';
     // 월 이상 주기만 주차 기준 선택 가능. 아니면 일자 기준 고정 + 비활성
     const canUseWeekday = isMonthlyOrLongerCycle(value.cycle);
 
@@ -129,18 +139,21 @@ export function HaccpBaseCreateDialog(props: {
       }
     >
       <Stack spacing={2}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <AppSelect
             fullWidth
             label="분류"
             value={value.categoryId}
-            onChange={(categoryId) =>
-                onChange({
-                    ...value,
-                    categoryId,
-                    ...(isExpirationTarget(findCategoryCode(categoryId)) ? {} : EXPIRATION_RESET),
-                })
-            }
+            onChange={(categoryId) => {
+                const categoryCode = findCategoryCode(categoryId);
+                const next = { ...value, categoryId };
+                // HCP- 면 고정값 덮어쓰기, 아니면 기존처럼 만료일 값 비우기
+                onChange(
+                    isExpirationTarget(categoryCode)
+                        ? applyHcpFixedValues(next, categoryCode)
+                        : { ...next, ...EXPIRATION_RESET },
+                );
+            }}
             required
             options={categoryOptions.map((category) => ({
               value: category.id,
@@ -178,10 +191,13 @@ export function HaccpBaseCreateDialog(props: {
                   })
               }
               required
+              disabled={isHcpFixed}
               helperText={
                 cycleOptions.length === 0
                     ? '공통코드 WF_FORM_CYCLE(등록주기)을 먼저 등록하세요.'
-                    : undefined
+                    : isHcpFixed
+                        ? '해당 분류는 작성주기가 수시로 고정됩니다.'
+                        : undefined
               }
               options={cycleOptions.map((option) => ({
                 value: option.code,
@@ -301,9 +317,10 @@ export function HaccpBaseCreateDialog(props: {
                       fullWidth
                       label="만료일 관리 양식"
                       value={value.expirationApply}
-                      onChange={(expirationApply) =>
-                          onChange({ ...value, ...EXPIRATION_RESET, expirationApply })
-                      }
+                      // ponytail: HCP- 분류에서만 보이고 항상 잠겨 있어 선택 변경이 일어나지 않는다
+                      onChange={() => undefined}
+                      disabled
+                      helperText="해당 분류는 만료일 관리로 고정됩니다."
                       options={EXPIRATION_APPLY_OPTIONS}
                   />
               ) : null}
