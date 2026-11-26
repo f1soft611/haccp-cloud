@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { type HaccpBaseWorkItem } from '../../../../services/documents/haccpBaseWorkService';
-import { getDashboardMetrics } from '../../../../services/documents/dashboardService';
 import {
   listHaccpWorkApprovalAlerts,
   listHaccpWorkTodos,
@@ -111,15 +110,6 @@ export function useTenantDashboardData() {
   const tenantCode = useAuthStore((state) => state.tenantCode || 'TENANT-A');
 
   const {
-    data: metrics,
-    isLoading: isMetricsLoading,
-    isError: isMetricsError,
-  } = useQuery({
-    queryKey: ['dashboard', tenantCode],
-    queryFn: () => getDashboardMetrics(tenantCode),
-    retry: 0,
-  });
-  const {
     data: todoDocuments = [],
     isLoading: isDocumentsLoading,
     isError: isTodoError,
@@ -165,17 +155,6 @@ export function useTenantDashboardData() {
     retry: 0,
   });
 
-  const totalDocuments = metrics?.totalDocuments ?? 0;
-  const draftDocuments = metrics?.draftTemplates ?? 0;
-  const updatedToday = metrics?.updatedToday ?? 0;
-  const activeDocuments = Math.max(totalDocuments - draftDocuments, 0);
-  const ccpCompletion =
-    totalDocuments === 0
-      ? 0
-      : Math.round((activeDocuments / totalDocuments) * 100);
-  const uncheckedCount = Math.max(totalDocuments - updatedToday, 0);
-  const todayActionCount = uncheckedCount + draftDocuments;
-
   const todoSections = useMemo(
       () => groupTodoSections(todoDocuments),
       [todoDocuments],
@@ -211,15 +190,9 @@ export function useTenantDashboardData() {
   );
 
   return {
-    ccpCompletion,
-    uncheckedCount,
-    draftDocuments,
-    todayActionCount,
     todoSections,
     approvalAlerts,
-    isMetricsLoading,
     isTodoLoading: isDocumentsLoading,
-    isMetricsError,
     isTodoError,
     approvalSections,
     isApprovalLoading,

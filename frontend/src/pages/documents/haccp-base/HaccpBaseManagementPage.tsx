@@ -20,7 +20,7 @@ import {
   type HaccpBaseWorkItem,
 } from '../../../services/documents/haccpBaseWorkService';
 import { listUsers } from '../../../services/organization/usersService';
-import { HaccpBaseCreateDialog } from './components/HaccpBaseCreateDialog';
+import { applyHcpFixedValues, HaccpBaseCreateDialog } from './components/HaccpBaseCreateDialog';
 import { HaccpBaseGrid } from './components/HaccpBaseGrid';
 import { useWorkCycleOptions } from '../../../shared/hooks/useWorkCycleOptions'
 import {
@@ -254,9 +254,14 @@ export function HaccpBaseManagementPage() {
     });
   };
 
+  // 분류 id 로 분류코드 찾기 (HCP- 고정값 판단용)
+  const findCategoryCode = (categoryId: string) =>
+    categoryOptions.find((category) => category.id === categoryId)?.code ?? '';
+
   const handleOpenEdit = (row: HaccpBaseRow) => {
     setEditTargetId(row.id);
-    setEditForm({
+    // 예전에 수시가 아니거나 미해당으로 저장된 HCP- 업무도 고정값으로 맞춰 연다
+    setEditForm(applyHcpFixedValues({
       categoryId: row.categoryId,
       divisionCode: row.divisionCode,
       divisionName: row.divisionName,
@@ -270,7 +275,7 @@ export function HaccpBaseManagementPage() {
       ...toCycleAnchorForm(row),
       approvalApply: row.approvalApply,
       useAt: row.useAt,
-    });
+    }, findCategoryCode(row.categoryId)));
     setEditOpen(true);
   };
 
@@ -353,14 +358,15 @@ export function HaccpBaseManagementPage() {
           setSearchSeq((n) => n + 1);
         }}
         onCreate={() => {
-          setCreateForm({
+          const categoryId = categoryOptions[0]?.id ?? '';
+          setCreateForm(applyHcpFixedValues({
             ...DEFAULT_CREATE_FORM,
             cycle: cycleOptions[0]?.code ?? '',
-            categoryId: categoryOptions[0]?.id ?? '',
+            categoryId,
             reviewerId: '',
             approverId: '',
             workStartDate: serviceStartDateQuery.data ?? '',
-          });
+          }, findCategoryCode(categoryId)));
           setCreateOpen(true);
         }}
         onCategorySettings={() => navigate('/docs/haccp-base/categories')}
