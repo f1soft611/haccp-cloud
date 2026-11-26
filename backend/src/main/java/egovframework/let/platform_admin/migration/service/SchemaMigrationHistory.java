@@ -75,11 +75,30 @@ public final class SchemaMigrationHistory {
         }
     }
 
-    /** 새 테넌트: SQL 실행 없이 현재 파일 전부를 성공으로 기록한다. */
-    public static void baseline(Connection connection, List<String> migrationIds) throws Exception {
+    /**
+     * 새 테넌트: 현재 마이그레이션 파일을 오름차순으로 실제 실행하고 파일마다 성공으로 기록한다.
+     * 마이그레이션은 재실행 안전(IF NOT EXISTS, CREATE OR REPLACE)하게 작성한다는 전제다.
+     * 하나라도 실패하면 그 파일을 롤백하고 예외를 던진다.
+     */
+    public static void applyAll(Connection connection, String appliedBy) throws Exception {
         ensureTable(connection);
-        for (String migrationId : migrationIds) {
-            record(connection, migrationId, true, null, "BASELINE");
+        boolean previousAutoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try {
+            for (String migrationId : SchemaMigrationFiles.listIds()) {
+                try (Statement statement = connection.createStatement()) {
+                    for (String sql : SchemaMigrationFiles.statements(migrationId)) {
+                        statement.execute(sql);
+                    }
+                    record(connection, migrationId, true, null, appliedBy);
+                    connection.commit();
+                } catch (Exception ex) {
+                    connection.rollback();
+                    throw new IllegalStateException("마이그레이션 적용 실패: " + migrationId, ex);
+                }
+            }
+        } finally {
+            connection.setAutoCommit(previousAutoCommit);
         }
     }
 }

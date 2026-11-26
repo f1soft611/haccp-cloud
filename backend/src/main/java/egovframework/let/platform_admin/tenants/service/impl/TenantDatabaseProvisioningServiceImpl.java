@@ -1,9 +1,6 @@
 package egovframework.let.platform_admin.tenants.service.impl;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -21,7 +18,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
-import egovframework.let.platform_admin.migration.service.SchemaMigrationFiles;
 import egovframework.let.platform_admin.migration.service.SchemaMigrationHistory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,10 +138,9 @@ public class TenantDatabaseProvisioningServiceImpl implements TenantDatabaseProv
                 runScriptSafely(tenantJdbcUrl, optionalScript, Collections.<String, String>emptyMap());
             }
 
-            // 기존 -> optional 스크립트 실행 후 바로 ACTIVE 처리
-            // 변경 -> 스키마 파일이 최신이므로 현재 마이그레이션 파일 전부를 적용됨(BASELINE)으로 기록
+            // 마이그레이션 파일을 순서대로 실제 실행하고 PROVISION 으로 기록
             try (Connection connection = openConnection(tenantJdbcUrl)) {
-                SchemaMigrationHistory.baseline(connection, SchemaMigrationFiles.listIds());
+                SchemaMigrationHistory.applyAll(connection, "PROVISION");
             }
 
             tenantInfoDAO.updateTenantDatabaseProvisioningStatus(tenantId, "ACTIVE");
