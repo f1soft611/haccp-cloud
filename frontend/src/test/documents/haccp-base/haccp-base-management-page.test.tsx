@@ -3,8 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppProviders } from '../../../app/providers/AppProviders';
 import { HaccpBaseManagementPage } from '../../../pages/documents/haccp-base/HaccpBaseManagementPage';
 
-const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, createHaccpBaseWorkMock } =
-  vi.hoisted(() => ({
+const {
+  listHaccpBaseCategoriesMock,
+  listHaccpBaseWorksMock,
+  listUsersMock,
+  createHaccpBaseWorkMock,
+  updateHaccpBaseWorkMock,
+} = vi.hoisted(() => ({
     listHaccpBaseCategoriesMock: vi.fn(async () => [
       {
         id: '10',
@@ -96,6 +101,7 @@ const { listHaccpBaseCategoriesMock, listHaccpBaseWorksMock, listUsersMock, crea
       },
     ]),
     createHaccpBaseWorkMock: vi.fn<(payload: unknown) => Promise<object>>(async () => ({})),
+    updateHaccpBaseWorkMock: vi.fn<(payload: unknown) => Promise<object>>(async () => ({})),
   }));
 
 // HCP- 분류를 고른 업무 추가 다이얼로그 열기 (작성주기 수시, 만료일 관리 해당이 자동 고정)
@@ -131,7 +137,7 @@ vi.mock('../../../services/documents/haccpBaseCategoryService', () => ({
 vi.mock('../../../services/documents/haccpBaseWorkService', () => ({
   listHaccpBaseWorks: listHaccpBaseWorksMock,
   createHaccpBaseWork: createHaccpBaseWorkMock,
-  updateHaccpBaseWork: vi.fn(),
+  updateHaccpBaseWork: updateHaccpBaseWorkMock,
 }));
 
 vi.mock('../../../services/organization/usersService', () => ({
@@ -508,5 +514,46 @@ describe('HaccpBaseManagementPage', () => {
     await waitFor(() =>
       expect(listHaccpBaseWorksMock.mock.calls.length).toBeGreaterThan(before),
     );
+  });
+
+  it('opens a legacy HCP- work with fixed 수시 and 해당 and saves them', async () => {
+    updateHaccpBaseWorkMock.mockClear();
+    const original = listHaccpBaseWorksMock.getMockImplementation()!;
+    const [hcpWork] = await original();
+    // 예전에 주 주기, 만료일 관리 미해당으로 저장된 HCP- 업무
+    listHaccpBaseWorksMock.mockImplementation(async () => [
+      {
+        ...hcpWork,
+        cycle: 'WEEK',
+        cycleName: '주',
+        expirationApply: false,
+        expirationNoticeStatus: 'NONE',
+        expirationNoticeCount: 0,
+      },
+    ]);
+
+    try {
+      render(
+          <AppProviders>
+            <HaccpBaseManagementPage />
+          </AppProviders>,
+      );
+      await screen.findByText('기안서');
+      fireEvent.click(screen.getByRole('button', { name: '업무 수정' }));
+
+      const cycle = screen.getByRole('combobox', { name: '작성주기' });
+      expect(cycle).toHaveTextContent('수시');
+      expect(cycle).toHaveAttribute('aria-disabled', 'true');
+      expect(screen.getByRole('combobox', { name: '만료일 관리 양식' })).toHaveTextContent(/^해당$/);
+
+      fireEvent.click(screen.getByRole('button', { name: '저장' }));
+      await vi.waitFor(() => expect(updateHaccpBaseWorkMock).toHaveBeenCalled());
+      expect(updateHaccpBaseWorkMock.mock.calls[0][0]).toMatchObject({
+        cycle: 'ANYTIME',
+        expirationApply: true,
+      });
+    } finally {
+      listHaccpBaseWorksMock.mockImplementation(original);
+    }
   });
 });
